@@ -1,9 +1,9 @@
-import { z } from 'zod';
+import { Schema as S } from 'effect';
 
-const envSchema = z.object({
-  PORT: z.string().default('3000').transform(Number),
-  REDCAP_API_URL: z.string().url(),
-  REDCAP_API_TOKEN: z.string().min(1),
+const envSchema = S.Struct({
+  PORT: S.optionalWith(S.NumberFromString, { default: () => 3000 }),
+  REDCAP_API_URL: S.String.pipe(S.pattern(/^https?:\/\/.+/)),
+  REDCAP_API_TOKEN: S.String.pipe(S.minLength(1)),
 });
 
-export const env = envSchema.parse(process.env);
+export const env = S.decodeUnknownSync(envSchema)(process.env);

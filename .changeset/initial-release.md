@@ -1,6 +1,6 @@
 ---
-"@univ-lehavre/atlas-redcap-api": minor
-"@univ-lehavre/atlas-redcap-service": minor
+'@univ-lehavre/atlas-redcap-api': minor
+'@univ-lehavre/atlas-redcap-service': minor
 ---
 
 Initial release of Atlas REDCap packages

@@ -12,5 +12,6 @@
     }
   },
   "ignore": ["**/dist/**"],
-  "ignoreDependencies": ["@typescript-eslint/eslint-plugin", "@typescript-eslint/parser"]
+  "ignoreDependencies": ["@typescript-eslint/eslint-plugin", "@typescript-eslint/parser"],
+  "ignoreBinaries": ["jq"]
 }

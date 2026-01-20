@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { z } from 'zod';
-import { zValidator } from '@hono/zod-validator';
+import { Schema as S } from 'effect';
+import { effectValidator } from '@hono/effect-validator';
 import { Effect, pipe } from 'effect';
 import { redcap } from '../redcap.js';
 import { runEffect, runEffectRaw } from '../effect-handler.js';
@@ -11,14 +11,14 @@ const records = new Hono();
  * GET /records
  * Export records from REDCap
  */
-const exportQuerySchema = z.object({
-  fields: z.string().optional(),
-  forms: z.string().optional(),
-  filterLogic: z.string().optional(),
-  rawOrLabel: z.enum(['raw', 'label']).optional(),
+const ExportQuerySchema = S.Struct({
+  fields: S.optional(S.String),
+  forms: S.optional(S.String),
+  filterLogic: S.optional(S.String),
+  rawOrLabel: S.optional(S.Literal('raw', 'label')),
 });
 
-records.get('/', zValidator('query', exportQuerySchema), (c) => {
+records.get('/', effectValidator('query', ExportQuerySchema), (c) => {
   const query = c.req.valid('query');
 
   return runEffect(
@@ -37,12 +37,12 @@ records.get('/', zValidator('query', exportQuerySchema), (c) => {
  * POST /records
  * Import records into REDCap
  */
-const importBodySchema = z.object({
-  records: z.array(z.record(z.string(), z.unknown())),
-  overwriteBehavior: z.enum(['normal', 'overwrite']).optional(),
+const ImportBodySchema = S.Struct({
+  records: S.Array(S.Record({ key: S.String, value: S.Unknown })),
+  overwriteBehavior: S.optional(S.Literal('normal', 'overwrite')),
 });
 
-records.post('/', zValidator('json', importBodySchema), (c) => {
+records.post('/', effectValidator('json', ImportBodySchema), (c) => {
   const body = c.req.valid('json');
 
   return runEffect(
@@ -58,11 +58,11 @@ records.post('/', zValidator('json', importBodySchema), (c) => {
  * GET /records/:recordId/pdf
  * Download PDF of a form for a specific record
  */
-const pdfQuerySchema = z.object({
-  instrument: z.string().default('form'),
+const PdfQuerySchema = S.Struct({
+  instrument: S.optionalWith(S.String, { default: () => 'form' }),
 });
 
-records.get('/:recordId/pdf', zValidator('query', pdfQuerySchema), (c) => {
+records.get('/:recordId/pdf', effectValidator('query', PdfQuerySchema), (c) => {
   const recordId = c.req.param('recordId');
   const { instrument } = c.req.valid('query');
 
@@ -87,11 +87,11 @@ records.get('/:recordId/pdf', zValidator('query', pdfQuerySchema), (c) => {
  * GET /records/:recordId/survey-link
  * Get survey link for a specific record and instrument
  */
-const surveyLinkQuerySchema = z.object({
-  instrument: z.string(),
+const SurveyLinkQuerySchema = S.Struct({
+  instrument: S.String,
 });
 
-records.get('/:recordId/survey-link', zValidator('query', surveyLinkQuerySchema), (c) => {
+records.get('/:recordId/survey-link', effectValidator('query', SurveyLinkQuerySchema), (c) => {
   const recordId = c.req.param('recordId');
   const { instrument } = c.req.valid('query');
 
