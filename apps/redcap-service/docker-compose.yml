@@ -1,7 +1,7 @@
 services:
   mock-redcap:
     build:
-      context: ./tools/mock-redcap
+      context: ../../tools/mock-redcap
     ports:
       - '8080:8080'
     healthcheck:
@@ -14,7 +14,7 @@ services:
   redcap-service:
     build:
       context: .
-      dockerfile: apps/redcap-service/Dockerfile
+      dockerfile: Dockerfile
     ports:
       - '3000:3000'
     environment:

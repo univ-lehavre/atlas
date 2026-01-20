@@ -57,15 +57,15 @@ records.get('/', effectValidator('query', ExportQuerySchema), (c) => {
 });
 
 /**
- * POST /records
- * Import records into REDCap
+ * PUT /records
+ * Import (upsert) records into REDCap
  */
 const ImportBodySchema = S.Struct({
   records: S.Array(S.Record({ key: S.String, value: S.Unknown })),
   overwriteBehavior: S.optional(S.Literal('normal', 'overwrite')),
 });
 
-records.post('/', effectValidator('json', ImportBodySchema), (c) => {
+records.put('/', effectValidator('json', ImportBodySchema), (c) => {
   const body = c.req.valid('json');
 
   return runEffect(

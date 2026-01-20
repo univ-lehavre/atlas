@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import { env } from './env.js';
+import { health } from './routes/health.js';
 import { records } from './routes/records.js';
 import { users } from './routes/users.js';
 
@@ -12,8 +13,8 @@ const app = new Hono();
 app.use('*', logger());
 app.use('*', cors());
 
-// Health check
-app.get('/health', (c) => c.json({ status: 'ok' }));
+// Health check routes
+app.route('/health', health);
 
 // API routes
 app.route('/api/v1/records', records);

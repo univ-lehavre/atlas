@@ -12,6 +12,6 @@
     }
   },
   "ignore": ["**/dist/**"],
-  "ignoreDependencies": ["@typescript-eslint/eslint-plugin", "@typescript-eslint/parser"],
-  "ignoreBinaries": ["jq"]
+  "ignoreDependencies": ["@typescript-eslint/eslint-plugin", "@typescript-eslint/parser", "tsx"],
+  "ignoreBinaries": ["jq", "docker:build", "docker:down"]
 }

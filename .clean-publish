@@ -1,0 +1,4 @@
+{
+  "fields": ["scripts", "devDependencies", "packageManager"],
+  "files": ["dist/**/*.map"]
+}

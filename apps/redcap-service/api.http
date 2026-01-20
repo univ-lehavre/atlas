@@ -1,21 +1,35 @@
 ### ============================================
 ### REDCap Service API Tests
-### Run with: httpyac send api.http --all
+###
+### Environments:
+###   docker:      pnpm docker:test
+###   integration: pnpm test:integration
+###
+### For integration tests, create .env.local with:
+###   baseUrl, recordId, instrument
 ### ============================================
-
-@baseUrl = http://localhost:3000
-@recordId = abcdef0123456789abcd
-@instrument = enrollment_form
 
 ### ============================================
 ### HEALTH CHECK
 ### ============================================
 
-# @name healthCheck
+# @name healthCheckSimple
 GET {{baseUrl}}/health
 
 ?? status == 200
 ?? body status == ok
+
+###
+
+# @name healthCheckDetailed
+GET {{baseUrl}}/health/detailed
+
+?? status == 200
+?? body status == ok
+?? body checks.redcap.status == ok
+?? body checks.token.status == ok
+?? body redcap.version isString
+?? body redcap.project isString
 
 ### ============================================
 ### EXPORT RECORDS
@@ -72,7 +86,7 @@ GET {{baseUrl}}/api/v1/records?rawOrLabel=label
 ### ============================================
 
 # @name importSingle
-POST {{baseUrl}}/api/v1/records
+PUT {{baseUrl}}/api/v1/records
 Content-Type: application/json
 
 {
@@ -87,7 +101,7 @@ Content-Type: application/json
 ###
 
 # @name importMultiple
-POST {{baseUrl}}/api/v1/records
+PUT {{baseUrl}}/api/v1/records
 Content-Type: application/json
 
 {
@@ -103,7 +117,7 @@ Content-Type: application/json
 ###
 
 # @name importOverwriteNormal
-POST {{baseUrl}}/api/v1/records
+PUT {{baseUrl}}/api/v1/records
 Content-Type: application/json
 
 {
@@ -118,7 +132,7 @@ Content-Type: application/json
 ###
 
 # @name importOverwriteOverwrite
-POST {{baseUrl}}/api/v1/records
+PUT {{baseUrl}}/api/v1/records
 Content-Type: application/json
 
 {
