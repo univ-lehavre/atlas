@@ -1,6 +1,17 @@
 {
   "name": "atlas",
   "private": true,
+  "description": "REDCap API monorepo",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/atlas#readme",
   "type": "module",
   "engines": {
     "node": ">=24.0.0"
