@@ -44,3 +44,34 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create Monorepo Release
+        if: steps.changesets.outputs.published == 'true'
+        run: |
+          # Extract version from first published package
+          VERSION=$(echo '${{ steps.changesets.outputs.publishedPackages }}' | jq -r '.[0].version')
+          TAG="v${VERSION}"
+
+          # Check if tag already exists
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists, skipping"
+            exit 0
+          fi
+
+          # Create tag
+          git tag "$TAG"
+          git push origin "$TAG"
+
+          # Generate release notes from published packages
+          PACKAGES=$(echo '${{ steps.changesets.outputs.publishedPackages }}' | jq -r '.[] | "- \(.name)@\(.version)"')
+
+          # Create GitHub release
+          gh release create "$TAG" \
+            --title "Release $TAG" \
+            --notes "## Published Packages
+
+          $PACKAGES
+
+          See individual package changelogs for details."
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
