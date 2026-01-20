@@ -36,7 +36,8 @@ jobs:
         id: changesets
         uses: changesets/action@v1
         with:
-          publish: pnpm release
+          version: pnpm run bump
+          publish: pnpm run release
           title: 'chore: version packages'
           commit: 'chore: version packages'
           createGithubReleases: true
