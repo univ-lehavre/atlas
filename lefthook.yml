@@ -15,23 +15,26 @@ pre-commit:
       run: pnpm eslint --fix {staged_files}
       stage_fixed: true
 
-    - name: knip
-      run: pnpm knip
-
-    - name: cpd
-      run: pnpm cpd
-
 pre-push:
-  parallel: true
-  jobs:
-    - name: typecheck
+  commands:
+    install:
+      run: pnpm install
+      priority: 1
+    typecheck:
       run: pnpm typecheck
-
-    - name: test
+      priority: 2
+    test:
       run: pnpm test
-
-    - name: audit
+      priority: 2
+    audit:
       run: pnpm audit:all
-
-    - name: build
+      priority: 2
+    build:
       run: pnpm build
+      priority: 2
+    knip:
+      run: pnpm knip
+      priority: 2
+    cpd:
+      run: pnpm cpd
+      priority: 2
