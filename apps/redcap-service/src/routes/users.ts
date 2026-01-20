@@ -2,7 +2,9 @@ import { Hono } from 'hono';
 import { Schema as S } from 'effect';
 import { effectValidator } from '@hono/effect-validator';
 import { Effect, pipe } from 'effect';
+import { RedcapApiError } from '@univ-lehavre/atlas-redcap-api';
 import { redcap } from '../redcap.js';
+import { runEffect } from '../effect-handler.js';
 
 /**
  * Branded type for Email
@@ -19,14 +21,20 @@ const ByEmailQuerySchema = S.Struct({
   email: Email,
 });
 
-users.get('/by-email', effectValidator('query', ByEmailQuerySchema), async (c) => {
+users.get('/by-email', effectValidator('query', ByEmailQuerySchema), (c) => {
   const { email } = c.req.valid('query');
 
-  const result = await pipe(redcap.findUserIdByEmail(email), Effect.runPromise);
-
-  return result !== null && result !== ''
-    ? c.json({ data: { userId: result } })
-    : c.json({ data: null, error: { code: 'not_found', message: 'User not found' } }, 404);
+  return runEffect(
+    c,
+    pipe(
+      redcap.findUserIdByEmail(email),
+      Effect.flatMap((result) =>
+        result !== null && result !== ''
+          ? Effect.succeed({ userId: result })
+          : Effect.fail(new RedcapApiError({ message: 'User not found' }))
+      )
+    )
+  );
 });
 
 export { users };
