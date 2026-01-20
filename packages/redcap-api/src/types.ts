@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { Schema as S } from 'effect';
 
 /**
  * Configuration for REDCap API client
@@ -46,23 +46,22 @@ export interface RedcapImportParams {
 
 /**
  * Generic record type for REDCap data
+ * Uses passthrough to allow additional fields
  */
-export const RecordSchema = z
-  .object({
-    record_id: z.string(),
-  })
-  .passthrough();
+export const RecordSchema = S.Struct({
+  record_id: S.String,
+}).pipe(S.extend(S.Record({ key: S.String, value: S.Unknown })));
 
-export type Record = z.infer<typeof RecordSchema>;
+export type Record = S.Schema.Type<typeof RecordSchema>;
 
 /**
  * REDCap import response
  */
-export const ImportResponseSchema = z.object({
-  count: z.number(),
+export const ImportResponseSchema = S.Struct({
+  count: S.Number,
 });
 
-export type ImportResponse = z.infer<typeof ImportResponseSchema>;
+export type ImportResponse = S.Schema.Type<typeof ImportResponseSchema>;
 
 /**
  * REDCap error response (returned with 200 status)
