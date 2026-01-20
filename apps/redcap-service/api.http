@@ -1,0 +1,212 @@
+### ============================================
+### REDCap Service API Tests
+### Run with: httpyac send api.http --all
+### ============================================
+
+@baseUrl = http://localhost:3000
+@recordId = abcdef0123456789abcd
+@instrument = enrollment_form
+
+### ============================================
+### HEALTH CHECK
+### ============================================
+
+# @name healthCheck
+GET {{baseUrl}}/health
+
+?? status == 200
+?? body status == ok
+
+### ============================================
+### EXPORT RECORDS
+### ============================================
+
+# @name exportAll
+GET {{baseUrl}}/api/v1/records
+
+?? status == 200
+?? body data isArray
+
+###
+
+# @name exportWithFields
+GET {{baseUrl}}/api/v1/records?fields=record_id,name
+
+?? status == 200
+?? body data isArray
+
+###
+
+# @name exportWithForms
+GET {{baseUrl}}/api/v1/records?forms=enrollment
+
+?? status == 200
+?? body data isArray
+
+###
+
+# @name exportWithFieldsAndForms
+GET {{baseUrl}}/api/v1/records?fields=record_id,name&forms=enrollment
+
+?? status == 200
+?? body data isArray
+
+###
+
+# @name exportRawOrLabelRaw
+GET {{baseUrl}}/api/v1/records?rawOrLabel=raw
+
+?? status == 200
+?? body data isArray
+
+###
+
+# @name exportRawOrLabelLabel
+GET {{baseUrl}}/api/v1/records?rawOrLabel=label
+
+?? status == 200
+?? body data isArray
+
+### ============================================
+### IMPORT RECORDS
+### ============================================
+
+# @name importSingle
+POST {{baseUrl}}/api/v1/records
+Content-Type: application/json
+
+{
+  "records": [
+    { "record_id": "test0123456789abcdef", "name": "Test User" }
+  ]
+}
+
+?? status == 200
+?? body data.count >= 1
+
+###
+
+# @name importMultiple
+POST {{baseUrl}}/api/v1/records
+Content-Type: application/json
+
+{
+  "records": [
+    { "record_id": "test0123456789abcdef", "name": "John Doe" },
+    { "record_id": "test0123456789abcdeg", "name": "Jane Doe" }
+  ]
+}
+
+?? status == 200
+?? body data.count == 2
+
+###
+
+# @name importOverwriteNormal
+POST {{baseUrl}}/api/v1/records
+Content-Type: application/json
+
+{
+  "records": [
+    { "record_id": "test0123456789abcdef", "name": "Updated" }
+  ],
+  "overwriteBehavior": "normal"
+}
+
+?? status == 200
+
+###
+
+# @name importOverwriteOverwrite
+POST {{baseUrl}}/api/v1/records
+Content-Type: application/json
+
+{
+  "records": [
+    { "record_id": "test0123456789abcdef", "name": "Overwritten" }
+  ],
+  "overwriteBehavior": "overwrite"
+}
+
+?? status == 200
+
+### ============================================
+### DOWNLOAD PDF
+### ============================================
+
+# @name downloadPdfDefault
+GET {{baseUrl}}/api/v1/records/{{recordId}}/pdf
+
+?? status == 200
+?? header content-type contains application/pdf
+
+###
+
+# @name downloadPdfWithInstrument
+GET {{baseUrl}}/api/v1/records/{{recordId}}/pdf?instrument={{instrument}}
+
+?? status == 200
+?? header content-type contains application/pdf
+
+###
+
+# @name downloadPdfInvalidRecordId
+GET {{baseUrl}}/api/v1/records/abc123/pdf
+
+?? status == 400
+
+### ============================================
+### SURVEY LINK
+### ============================================
+
+# @name getSurveyLink
+GET {{baseUrl}}/api/v1/records/{{recordId}}/survey-link?instrument={{instrument}}
+
+?? status == 200
+?? body data.url isString
+
+###
+
+# @name surveyLinkMissingInstrument
+GET {{baseUrl}}/api/v1/records/{{recordId}}/survey-link
+
+?? status == 400
+
+###
+
+# @name surveyLinkInvalidRecordId
+GET {{baseUrl}}/api/v1/records/abc123/survey-link?instrument={{instrument}}
+
+?? status == 400
+
+### ============================================
+### FIND USER BY EMAIL
+### ============================================
+
+# @name findUserByEmail
+GET {{baseUrl}}/api/v1/users/by-email?email=john.doe@example.com
+
+?? status == 200
+
+###
+
+# @name findUserMissingEmail
+GET {{baseUrl}}/api/v1/users/by-email
+
+?? status == 400
+
+###
+
+# @name findUserInvalidEmail
+GET {{baseUrl}}/api/v1/users/by-email?email=invalid
+
+?? status == 400
+
+### ============================================
+### ERROR SCENARIOS
+### ============================================
+
+# @name unknownEndpoint
+GET {{baseUrl}}/api/v1/unknown
+
+?? status == 404
