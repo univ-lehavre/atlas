@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-redcap-service",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "description": "HTTP microservice exposing a REST API for REDCap, built with Hono",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

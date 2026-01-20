@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-redcap-api",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "TypeScript client for the REDCap API, built with Effect",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
