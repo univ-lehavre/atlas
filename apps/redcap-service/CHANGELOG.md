@@ -1,5 +1,14 @@
 # @univ-lehavre/atlas-redcap-service
 
+## 0.2.3
+
+### Patch Changes
+
+- [#11](https://github.com/univ-lehavre/atlas/pull/11) [`559adeb`](https://github.com/univ-lehavre/atlas/commit/559adeb63a0f97c1835d6c58d422cfb40805c030) Thanks [@chasset](https://github.com/chasset)! - Add package metadata (author, license, repository) and README documentation
+
+- Updated dependencies [[`559adeb`](https://github.com/univ-lehavre/atlas/commit/559adeb63a0f97c1835d6c58d422cfb40805c030)]:
+  - @univ-lehavre/atlas-redcap-api@0.3.1
+
 ## 0.2.2
 
 ### Patch Changes
