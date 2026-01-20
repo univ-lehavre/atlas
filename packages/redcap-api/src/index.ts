@@ -5,6 +5,10 @@ export { RedcapUrl, RedcapToken, RecordId, InstrumentName } from './brands.js';
 export type {
   RedcapClient,
   RedcapConfig,
+  RedcapProjectInfo,
+  RedcapInstrument,
+  RedcapField,
+  RedcapExportFieldName,
   ExportRecordsOptions,
   ImportRecordsOptions,
 } from './types.js';
