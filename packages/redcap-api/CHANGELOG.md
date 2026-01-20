@@ -1,5 +1,19 @@
 # @univ-lehavre/atlas-redcap-api
 
+## 0.4.0
+
+### Minor Changes
+
+- [#15](https://github.com/univ-lehavre/atlas/pull/15) [`dac9758`](https://github.com/univ-lehavre/atlas/commit/dac975844f2036ed60c6531e20238a61f2e0b8e3) Thanks [@chasset](https://github.com/chasset)! - ### @univ-lehavre/atlas-redcap-api
+  - Add `getInstruments()` to retrieve available instruments/forms
+  - Add `getFields()` to retrieve field metadata
+  - Add `getExportFieldNames()` to retrieve export field name mappings
+
+  ### @univ-lehavre/atlas-redcap-service
+  - Add `/health/detailed` endpoint with connectivity checks, latency measurement, and project introspection
+  - Change import records endpoint from POST to PUT (proper upsert semantics)
+  - Move Docker and test scripts locally for better organization
+
 ## 0.3.1
 
 ### Patch Changes
