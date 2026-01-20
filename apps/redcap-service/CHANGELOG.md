@@ -1,5 +1,13 @@
 # @univ-lehavre/atlas-redcap-service
 
+## 0.2.2
+
+### Patch Changes
+
+- [#9](https://github.com/univ-lehavre/atlas/pull/9) [`5af57fd`](https://github.com/univ-lehavre/atlas/commit/5af57fd6e52318fcfbb0df2f90d59e15696265ac) Thanks [@chasset](https://github.com/chasset)! - Améliore la gestion des erreurs dans les routes:
+  - Utilise runEffect de manière cohérente dans la route users
+  - Encapsule le parsing des branded types dans Effect.try pour éviter les exceptions non capturées
+
 ## 0.2.1
 
 ### Patch Changes
