@@ -6,7 +6,7 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/' },
-      { text: 'API', link: '/api/' },
+      { text: 'API', link: '/api/redcap-api' },
     ],
     sidebar: {
       '/guide/': [
@@ -20,8 +20,11 @@ export default defineConfig({
       ],
       '/api/': [
         {
-          text: 'API Reference',
-          items: [{ text: 'RedcapClient', link: '/api/' }],
+          text: 'Packages',
+          items: [
+            { text: 'redcap-api', link: '/api/redcap-api' },
+            { text: 'redcap-service', link: '/api/redcap-service' },
+          ],
         },
       ],
     },

@@ -1,7 +1,29 @@
 {
   "name": "@univ-lehavre/atlas-redcap-service",
   "version": "0.2.2",
+  "description": "HTTP microservice exposing a REST API for REDCap, built with Hono",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "apps/redcap-service"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/apps/redcap-service#readme",
+  "keywords": [
+    "redcap",
+    "api",
+    "hono",
+    "microservice",
+    "rest"
+  ],
   "type": "module",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
