@@ -4,6 +4,10 @@ import type { RecordId, InstrumentName } from './brands.js';
 import type {
   RedcapConfig,
   RedcapClient,
+  RedcapProjectInfo,
+  RedcapInstrument,
+  RedcapField,
+  RedcapExportFieldName,
   ExportRecordsOptions,
   ImportRecordsOptions,
 } from './types.js';
@@ -244,6 +248,32 @@ const extractUserId = (results: readonly { readonly userid?: string }[]): string
  * @returns A RedcapClient instance
  */
 const makeRedcapClient = (config: RedcapConfig, fetchFn: typeof fetch = fetch): RedcapClient => ({
+  getVersion: () =>
+    pipe(
+      fetchText(config, { content: 'version', format: 'json' }, fetchFn),
+      Effect.map((version) => version.replace(/"/g, ''))
+    ),
+
+  getProjectInfo: () =>
+    fetchJSON<RedcapProjectInfo>(config, { content: 'project', format: 'json' }, fetchFn),
+
+  getInstruments: () =>
+    fetchJSON<readonly RedcapInstrument[]>(
+      config,
+      { content: 'instrument', format: 'json' },
+      fetchFn
+    ),
+
+  getFields: () =>
+    fetchJSON<readonly RedcapField[]>(config, { content: 'metadata', format: 'json' }, fetchFn),
+
+  getExportFieldNames: () =>
+    fetchJSON<readonly RedcapExportFieldName[]>(
+      config,
+      { content: 'exportFieldNames', format: 'json' },
+      fetchFn
+    ),
+
   exportRecords: <T>(options: ExportRecordsOptions = {}) =>
     fetchJSON<readonly T[]>(config, buildExportParams(options), fetchFn),
 
