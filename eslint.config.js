@@ -18,6 +18,7 @@ export default tseslint.config(
       '**/.turbo/**',
       '**/docs/**',
       '**/tools/**',
+      '**/scripts/**',
       '*.config.ts',
       '*.config.js',
     ],

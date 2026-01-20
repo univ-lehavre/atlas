@@ -42,9 +42,7 @@
     "outdated": "pnpm outdated -r",
     "outdated:major": "pnpm outdated -r --format json 2>/dev/null | jq -e 'to_entries | map(select((.value.current | split(\".\")[0] | tonumber) < (.value.latest | split(\".\")[0] | tonumber))) | if length > 0 then . else empty end' | jq -r '.[] | \"\\(.key): v\\(.value.current) → v\\(.value.latest)\"'",
     "ready": "pnpm check && pnpm typecheck && pnpm test && pnpm audit:all && pnpm outdated:major && pnpm build",
-    "docker": "docker compose up --build",
-    "docker:build": "docker compose build --no-cache",
-    "docker:test": "pnpm run docker:build && docker compose up -d && httpyac send apps/redcap-service/api.http --all --bail -o short; docker compose down"
+    "docker:test": "pnpm -C apps/redcap-service docker:build && pnpm -C apps/redcap-service docker -d && httpyac send apps/redcap-service/api.http --all --bail -o short -e docker; pnpm -C apps/redcap-service docker:down"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.2",
@@ -67,6 +65,7 @@
     "lefthook": "^2.0.15",
     "license-checker": "^25.0.1",
     "prettier": "^3.8.0",
+    "tsx": "^4.21.0",
     "turbo": "^2.7.5",
     "typedoc": "^0.28.16",
     "typedoc-plugin-markdown": "^4.9.0",
