@@ -24,7 +24,7 @@
     "docs:preview": "vitepress preview docs",
     "prepare": "lefthook install",
     "changeset": "changeset",
-    "version": "changeset version",
+    "bump": "changeset version",
     "release": "pnpm build && changeset publish",
     "check": "pnpm run \"/^(format:check|lint|knip|cpd)$/\"",
     "audit:all": "pnpm run \"/^(audit|license:audit)$/\"",
