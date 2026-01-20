@@ -1,5 +1,15 @@
 # @univ-lehavre/atlas-redcap-service
 
+## 0.2.4
+
+### Patch Changes
+
+- [#13](https://github.com/univ-lehavre/atlas/pull/13) [`3ecc5ec`](https://github.com/univ-lehavre/atlas/commit/3ecc5ec964fc33c391084057c4e6b6fa8d38c898) Thanks [@chasset](https://github.com/chasset)! - Add Docker infrastructure for local testing
+  - Add Dockerfile for containerized deployment
+  - Add docker-compose.yml with mock REDCap server
+  - Add httpyac-based API tests (22 endpoints)
+  - Add npm scripts: `docker`, `docker:build`, `docker:test`
+
 ## 0.2.3
 
 ### Patch Changes
