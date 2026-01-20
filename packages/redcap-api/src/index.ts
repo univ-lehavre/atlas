@@ -1,3 +1,18 @@
+// Brands
+export { RedcapUrl, RedcapToken, RecordId, InstrumentName } from './brands.js';
+
+// Types
+export type {
+  RedcapClient,
+  RedcapConfig,
+  ExportRecordsOptions,
+  ImportRecordsOptions,
+} from './types.js';
+
+// Errors
+export { RedcapHttpError, RedcapApiError, RedcapNetworkError } from './errors.js';
+export type { RedcapError } from './errors.js';
+
 // Client and service
 export {
   createRedcapClient,
@@ -5,18 +20,3 @@ export {
   makeRedcapClientLayer,
   RedcapClientService,
 } from './client.js';
-export type { RedcapClient, ExportRecordsOptions, ImportRecordsOptions } from './client.js';
-
-// Errors
-export { RedcapHttpError, RedcapApiError, RedcapNetworkError } from './errors.js';
-export type { RedcapError } from './errors.js';
-
-// Types
-export type {
-  RedcapConfig,
-  RedcapExportParams,
-  RedcapImportParams,
-  Record,
-  ImportResponse,
-} from './types.js';
-export { RecordSchema, ImportResponseSchema } from './types.js';
