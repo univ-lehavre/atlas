@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "effect-mcp": {
+      "command": "pnpm",
+      "args": ["dlx", "@niklaserik/effect-mcp"]
+    },
+    "svelte-mcp": {
+      "command": "pnpm",
+      "args": ["dlx", "@sveltejs/mcp"]
+    }
+  }
+}
