@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Schema as S } from 'effect';
 import { effectValidator } from '@hono/effect-validator';
 import { Effect, pipe } from 'effect';
+import { RecordId, InstrumentName } from '@univ-lehavre/atlas-redcap-api';
 import { redcap } from '../redcap.js';
 import { runEffect, runEffectRaw } from '../effect-handler.js';
 
@@ -63,8 +64,8 @@ const PdfQuerySchema = S.Struct({
 });
 
 records.get('/:recordId/pdf', effectValidator('query', PdfQuerySchema), (c) => {
-  const recordId = c.req.param('recordId');
-  const { instrument } = c.req.valid('query');
+  const recordId = RecordId(c.req.param('recordId'));
+  const instrument = InstrumentName(c.req.valid('query').instrument);
 
   return runEffectRaw(
     c,
@@ -92,8 +93,8 @@ const SurveyLinkQuerySchema = S.Struct({
 });
 
 records.get('/:recordId/survey-link', effectValidator('query', SurveyLinkQuerySchema), (c) => {
-  const recordId = c.req.param('recordId');
-  const { instrument } = c.req.valid('query');
+  const recordId = RecordId(c.req.param('recordId'));
+  const instrument = InstrumentName(c.req.valid('query').instrument);
 
   return runEffect(
     c,
