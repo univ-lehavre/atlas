@@ -1,71 +1,61 @@
-import { Schema as S } from 'effect';
+import type { Effect } from 'effect';
+import type { RedcapHttpError, RedcapApiError, RedcapNetworkError } from './errors.js';
+import type { RedcapUrl, RedcapToken, RecordId, InstrumentName } from './brands.js';
 
 /**
  * Configuration for REDCap API client
  */
 export interface RedcapConfig {
-  /** REDCap API URL */
-  readonly url: string;
-  /** REDCap API token */
-  readonly token: string;
+  readonly url: RedcapUrl;
+  readonly token: RedcapToken;
 }
 
 /**
- * REDCap API default parameters for record export
+ * Export options for records
  */
-export interface RedcapExportParams {
-  content?: string;
-  action?: string;
-  format?: string;
-  type?: 'flat' | 'eav';
-  csvDelimiter?: string;
-  records?: string;
-  fields?: string;
-  forms?: string;
-  rawOrLabel?: 'raw' | 'label';
-  rawOrLabelHeaders?: 'raw' | 'label';
-  exportCheckboxLabel?: string;
-  exportSurveyFields?: string;
-  exportDataAccessGroups?: string;
-  returnFormat?: string;
-  filterLogic?: string;
+export interface ExportRecordsOptions {
+  readonly fields?: readonly string[];
+  readonly forms?: readonly string[];
+  readonly filterLogic?: string;
+  readonly type?: 'flat' | 'eav';
+  readonly rawOrLabel?: 'raw' | 'label';
 }
 
 /**
- * REDCap API import parameters
+ * Import options for records
  */
-export interface RedcapImportParams {
-  content?: string;
-  action?: 'import';
-  type?: 'flat' | 'eav';
-  overwriteBehavior?: 'normal' | 'overwrite';
-  forceAutoNumber?: string;
-  data?: string;
-  returnContent?: 'count' | 'ids' | 'auto_ids';
+export interface ImportRecordsOptions {
+  readonly overwriteBehavior?: 'normal' | 'overwrite';
+  readonly returnContent?: 'count' | 'ids' | 'auto_ids';
 }
 
 /**
- * Generic record type for REDCap data
- * Uses passthrough to allow additional fields
+ * REDCap Client Service interface
  */
-export const RecordSchema = S.Struct({
-  record_id: S.String,
-}).pipe(S.extend(S.Record({ key: S.String, value: S.Unknown })));
+export interface RedcapClient {
+  readonly exportRecords: <T>(
+    options?: ExportRecordsOptions
+  ) => Effect.Effect<readonly T[], RedcapHttpError | RedcapApiError | RedcapNetworkError>;
 
-export type Record = S.Schema.Type<typeof RecordSchema>;
+  readonly importRecords: (
+    records: readonly Record<string, unknown>[],
+    options?: ImportRecordsOptions
+  ) => Effect.Effect<
+    { readonly count: number },
+    RedcapHttpError | RedcapApiError | RedcapNetworkError
+  >;
 
-/**
- * REDCap import response
- */
-export const ImportResponseSchema = S.Struct({
-  count: S.Number,
-});
+  readonly getSurveyLink: (
+    record: RecordId,
+    instrument: InstrumentName
+  ) => Effect.Effect<string, RedcapHttpError | RedcapNetworkError>;
 
-export type ImportResponse = S.Schema.Type<typeof ImportResponseSchema>;
+  readonly downloadPdf: (
+    recordId: RecordId,
+    instrument: InstrumentName
+  ) => Effect.Effect<ArrayBuffer, RedcapHttpError | RedcapNetworkError>;
 
-/**
- * REDCap error response (returned with 200 status)
- */
-export interface RedcapErrorResponse {
-  error: string;
+  readonly findUserIdByEmail: (
+    email: string
+  ) => Effect.Effect<string | null, RedcapHttpError | RedcapApiError | RedcapNetworkError>;
 }

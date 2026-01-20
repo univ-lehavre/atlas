@@ -1,27 +1,12 @@
 import { Effect, pipe, Context, Layer } from 'effect';
-import type { RedcapConfig, RedcapExportParams, RedcapErrorResponse } from './types.js';
 import { RedcapHttpError, RedcapApiError, RedcapNetworkError } from './errors.js';
-
-/**
- * Default parameters for REDCap record export
- */
-const defaultExportParams: RedcapExportParams = {
-  content: 'record',
-  action: 'export',
-  format: 'json',
-  type: 'eav',
-  csvDelimiter: '',
-  records: '',
-  fields: '',
-  forms: '',
-  rawOrLabel: 'raw',
-  rawOrLabelHeaders: 'raw',
-  exportCheckboxLabel: 'false',
-  exportSurveyFields: 'false',
-  exportDataAccessGroups: 'false',
-  returnFormat: 'json',
-  filterLogic: '',
-};
+import type { RecordId, InstrumentName } from './brands.js';
+import type {
+  RedcapConfig,
+  RedcapClient,
+  ExportRecordsOptions,
+  ImportRecordsOptions,
+} from './types.js';
 
 /**
  * Escapes special characters in a value to be used in REDCap filterLogic.
@@ -33,56 +18,6 @@ export const escapeFilterLogicValue = (value: string): string =>
   value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 
 /**
- * Export options for records
- */
-export interface ExportRecordsOptions {
-  readonly fields?: readonly string[];
-  readonly forms?: readonly string[];
-  readonly filterLogic?: string;
-  readonly type?: 'flat' | 'eav';
-  readonly rawOrLabel?: 'raw' | 'label';
-}
-
-/**
- * Import options for records
- */
-export interface ImportRecordsOptions {
-  readonly overwriteBehavior?: 'normal' | 'overwrite';
-  readonly returnContent?: 'count' | 'ids' | 'auto_ids';
-}
-
-/**
- * REDCap Client Service interface
- */
-export interface RedcapClient {
-  readonly exportRecords: <T>(
-    options?: ExportRecordsOptions
-  ) => Effect.Effect<readonly T[], RedcapHttpError | RedcapApiError | RedcapNetworkError>;
-
-  readonly importRecords: (
-    records: readonly Record<string, unknown>[],
-    options?: ImportRecordsOptions
-  ) => Effect.Effect<
-    { readonly count: number },
-    RedcapHttpError | RedcapApiError | RedcapNetworkError
-  >;
-
-  readonly getSurveyLink: (
-    record: string,
-    instrument: string
-  ) => Effect.Effect<string, RedcapHttpError | RedcapNetworkError>;
-
-  readonly downloadPdf: (
-    recordId: string,
-    instrument: string
-  ) => Effect.Effect<ArrayBuffer, RedcapHttpError | RedcapNetworkError>;
-
-  readonly findUserIdByEmail: (
-    email: string
-  ) => Effect.Effect<string | null, RedcapHttpError | RedcapApiError | RedcapNetworkError>;
-}
-
-/**
  * REDCap Client Service Tag
  */
 export class RedcapClientService extends Context.Tag('RedcapClientService')<
@@ -91,7 +26,7 @@ export class RedcapClientService extends Context.Tag('RedcapClientService')<
 >() {}
 
 /**
- * Build request params with defaults and token
+ * Build request params with token
  * @param config - The REDCap configuration
  * @param params - Additional parameters to merge
  * @returns The merged parameters with token
@@ -100,7 +35,6 @@ const buildParams = (
   config: RedcapConfig,
   params: Record<string, string>
 ): Record<string, string> => ({
-  ...defaultExportParams,
   ...params,
   token: config.token,
 });
@@ -157,12 +91,12 @@ const checkResponseStatus = (
  * @param data - The data to check
  * @returns True if data is a REDCap error response
  */
-const isRedcapErrorResponse = (data: unknown): data is RedcapErrorResponse =>
+const isRedcapErrorResponse = (data: unknown): data is { readonly error: string } =>
   data !== null &&
   typeof data === 'object' &&
   'error' in data &&
   !Array.isArray(data) &&
-  typeof (data as RedcapErrorResponse).error === 'string';
+  typeof (data as { error: string }).error === 'string';
 
 /**
  * Parse JSON response and check for API-level errors
@@ -318,10 +252,10 @@ const makeRedcapClient = (config: RedcapConfig, fetchFn: typeof fetch = fetch): 
     options: ImportRecordsOptions = {}
   ) => fetchJSON<{ readonly count: number }>(config, buildImportParams(records, options), fetchFn),
 
-  getSurveyLink: (record: string, instrument: string) =>
+  getSurveyLink: (record: RecordId, instrument: InstrumentName) =>
     fetchText(config, { content: 'surveyLink', instrument, record }, fetchFn),
 
-  downloadPdf: (recordId: string, instrument: string) =>
+  downloadPdf: (recordId: RecordId, instrument: InstrumentName) =>
     fetchBuffer(
       config,
       { content: 'pdf', record: recordId, instrument, returnFormat: 'json' },
