@@ -45,9 +45,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Enable Auto-Merge for Release PR
+      - name: Merge Release PR
         if: steps.changesets.outputs.pullRequestNumber
-        run: gh pr merge ${{ steps.changesets.outputs.pullRequestNumber }} --auto --squash
+        run: gh pr merge ${{ steps.changesets.outputs.pullRequestNumber }} --squash --delete-branch
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
 
