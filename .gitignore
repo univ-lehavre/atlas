@@ -1,0 +1,10 @@
+node_modules/
+.claude/
+dist/
+.env
+.env.local
+*.log
+.turbo/
+coverage/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
