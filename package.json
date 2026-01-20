@@ -28,7 +28,9 @@
     "release": "pnpm build && changeset publish",
     "check": "pnpm run \"/^(format:check|lint|knip|cpd)$/\"",
     "audit:all": "pnpm run \"/^(audit|license:audit)$/\"",
-    "ready": "pnpm check && pnpm typecheck && pnpm test && pnpm audit:all && pnpm build"
+    "outdated": "pnpm outdated -r",
+    "outdated:major": "pnpm outdated -r --format json 2>/dev/null | jq -e 'to_entries | map(select((.value.current | split(\".\")[0] | tonumber) < (.value.latest | split(\".\")[0] | tonumber))) | if length > 0 then . else empty end' | jq -r '.[] | \"\\(.key): v\\(.value.current) → v\\(.value.latest)\"'",
+    "ready": "pnpm check && pnpm typecheck && pnpm test && pnpm audit:all && pnpm outdated:major && pnpm build"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.2",
@@ -54,7 +56,7 @@
     "typedoc-plugin-markdown": "^4.9.0",
     "typescript-eslint": "^8.53.1",
     "vitepress": "^1.6.4",
-    "vitest": "^2.1.9"
+    "vitest": "^4.0.17"
   },
   "packageManager": "pnpm@10.28.0"
 }
