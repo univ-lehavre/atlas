@@ -1,6 +1,24 @@
 {
   "name": "@univ-lehavre/atlas-redcap-api",
   "version": "0.3.0",
+  "description": "TypeScript client for the REDCap API, built with Effect",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "packages/redcap-api"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/redcap-api#readme",
+  "keywords": [
+    "redcap",
+    "api",
+    "effect",
+    "typescript"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
