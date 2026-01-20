@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Effect, pipe } from 'effect';
 import { createRedcapClient, escapeFilterLogicValue } from './client.js';
+import { RedcapUrl, RedcapToken, RecordId, InstrumentName } from './brands.js';
 import { RedcapHttpError, RedcapApiError, RedcapNetworkError } from './errors.js';
 
 describe('escapeFilterLogicValue', () => {
@@ -23,8 +24,8 @@ describe('escapeFilterLogicValue', () => {
 
 describe('createRedcapClient', () => {
   const mockConfig = {
-    url: 'https://redcap.example.com/api/',
-    token: 'test-token',
+    url: RedcapUrl('https://redcap.example.com/api/'),
+    token: RedcapToken('E1B217963CCEE21EF78322345B3B8782'),
   };
 
   describe('exportRecords', () => {
@@ -121,7 +122,10 @@ describe('createRedcapClient', () => {
       });
 
       const client = createRedcapClient(mockConfig, mockFetch as unknown as typeof fetch);
-      const result = await pipe(client.getSurveyLink('1', 'my_survey'), Effect.runPromise);
+      const result = await pipe(
+        client.getSurveyLink(RecordId('abc12345678901234567'), InstrumentName('my_survey')),
+        Effect.runPromise
+      );
 
       expect(result).toBe(surveyUrl);
     });
