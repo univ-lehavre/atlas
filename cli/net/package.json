@@ -1,24 +1,22 @@
 {
-  "name": "@univ-lehavre/atlas-net",
+  "name": "@univ-lehavre/atlas-net-cli",
   "version": "0.1.0",
-  "description": "Network diagnostic utilities for Atlas CLI tools",
+  "description": "CLI tool for network diagnostics",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/univ-lehavre/atlas.git",
-    "directory": "packages/net"
+    "directory": "cli/net"
   },
   "bugs": {
     "url": "https://github.com/univ-lehavre/atlas/issues"
   },
-  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/net#readme",
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/cli/net#readme",
   "keywords": [
     "network",
     "diagnostics",
-    "dns",
-    "tcp",
-    "tls",
+    "cli",
     "effect",
     "typescript"
   ],
@@ -29,21 +27,21 @@
   "files": [
     "dist"
   ],
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
+  "bin": {
+    "atlas-net": "./dist/cli.js"
   },
+  "main": "./dist/cli.js",
+  "types": "./dist/cli.d.ts",
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "effect": "^3.19.14"
+    "@clack/prompts": "^0.11.0",
+    "@univ-lehavre/atlas-net": "workspace:*",
+    "effect": "^3.19.14",
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@types/node": "^25.0.10",

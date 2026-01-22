@@ -111,6 +111,31 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  cli/net:
+    dependencies:
+      '@clack/prompts':
+        specifier: ^0.11.0
+        version: 0.11.0
+      '@univ-lehavre/atlas-net':
+        specifier: workspace:*
+        version: link:../../packages/net
+      effect:
+        specifier: ^3.19.14
+        version: 3.19.14
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
+    devDependencies:
+      '@types/node':
+        specifier: ^25.0.10
+        version: 25.0.10
+      '@univ-lehavre/atlas-typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
   cli/redcap:
     dependencies:
       '@clack/prompts':
@@ -195,15 +220,9 @@ importers:
 
   packages/net:
     dependencies:
-      '@clack/prompts':
-        specifier: ^0.11.0
-        version: 0.11.0
       effect:
         specifier: ^3.19.14
         version: 3.19.14
-      picocolors:
-        specifier: ^1.1.1
-        version: 1.1.1
     devDependencies:
       '@types/node':
         specifier: ^25.0.10
