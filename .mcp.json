@@ -7,6 +7,23 @@
     "svelte-mcp": {
       "command": "pnpm",
       "args": ["dlx", "@sveltejs/mcp"]
+    },
+    "appwrite-docs": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://mcp-for-docs.appwrite.io"]
+    },
+    "appwrite-api": {
+      "command": "uvx",
+      "args": ["mcp-server-appwrite", "--all"],
+      "env": {
+        "APPWRITE_PROJECT_ID": "${APPWRITE_PROJECT_ID}",
+        "APPWRITE_API_KEY": "${APPWRITE_API_KEY}",
+        "APPWRITE_ENDPOINT": "${APPWRITE_ENDPOINT}"
+      }
+    },
+    "openalex": {
+      "command": "npx",
+      "args": ["openalex-mcp"]
     }
   }
 }
