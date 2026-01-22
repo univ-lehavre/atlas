@@ -12,7 +12,7 @@ import {
   tlsHandshake,
   checkInternet,
   type DiagnosticStep,
-} from './diagnostics.js';
+} from '@univ-lehavre/atlas-net';
 
 interface RunOptions {
   readonly ci: boolean;
