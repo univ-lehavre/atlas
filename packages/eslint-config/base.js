@@ -26,11 +26,25 @@ export default tseslint.config(
   regexp.configs['flat/recommended'],
   eslintComments.recommended,
 
-  // Node.js version (requires Node 24+)
+  // Node.js version (requires Node 24+) and workspace package resolution
   {
     rules: {
       'n/no-unsupported-features/node-builtins': ['error', { version: '>=24.0.0' }],
       'n/no-unsupported-features/es-syntax': ['error', { version: '>=24.0.0' }],
+      // Allow workspace packages (pnpm workspaces use symlinks that eslint-plugin-n doesn't resolve)
+      'n/no-missing-import': [
+        'error',
+        {
+          allowModules: [
+            '@univ-lehavre/atlas-redcap-api',
+            '@univ-lehavre/atlas-net',
+            '@univ-lehavre/atlas-redcap-cli',
+            '@univ-lehavre/atlas-net-cli',
+            '@univ-lehavre/atlas-eslint-config',
+            '@univ-lehavre/atlas-typescript-config',
+          ],
+        },
+      ],
     },
   },
 
