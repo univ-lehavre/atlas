@@ -4,6 +4,7 @@
     { "path": "packages/typescript-config" },
     { "path": "packages/eslint-config" },
     { "path": "packages/redcap-api" },
+    { "path": "packages/net" },
     { "path": "apps/redcap-service" }
   ]
 }
