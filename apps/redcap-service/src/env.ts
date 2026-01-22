@@ -1,9 +1,25 @@
-import { Schema as S } from 'effect';
+import { Config, Effect } from 'effect';
 
-const envSchema = S.Struct({
-  PORT: S.optionalWith(S.NumberFromString, { default: () => 3000 }),
-  REDCAP_API_URL: S.String.pipe(S.pattern(/^https?:\/\/.+/)),
-  REDCAP_API_TOKEN: S.String.pipe(S.minLength(1)),
+// Config definition
+export const AppConfig = Config.all({
+  port: Config.number('PORT').pipe(Config.withDefault(3000)),
+  redcapApiUrl: Config.string('REDCAP_API_URL').pipe(
+    Config.validate({
+      message: 'Must be a valid HTTP(S) URL',
+      validation: (s) => /^https?:\/\/.+/.test(s),
+    })
+  ),
+  redcapApiToken: Config.nonEmptyString('REDCAP_API_TOKEN'),
 });
 
-export const env = S.decodeUnknownSync(envSchema)(process.env);
+export type AppConfig = Config.Config.Success<typeof AppConfig>;
+
+// Load config synchronously
+const program = Effect.gen(function* () {
+  return yield* AppConfig;
+});
+
+export const loadConfig = (): AppConfig => Effect.runSync(program);
+
+// Legacy export for backwards compatibility
+export const env = loadConfig();

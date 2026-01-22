@@ -21,13 +21,16 @@
     "rest"
   ],
   "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "files": [
     "dist"
   ],
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch src/index.ts",
-    "start": "node dist/index.js",
+    "dev": "node --env-file=.env --import=tsx src/index.ts",
+    "start": "node --env-file=.env dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -45,8 +48,9 @@
     "hono": "^4.6.0"
   },
   "devDependencies": {
+    "@univ-lehavre/atlas-typescript-config": "workspace:*",
     "@types/node": "^25.0.9",
-    "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
   }
 }
