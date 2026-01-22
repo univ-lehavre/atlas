@@ -150,6 +150,45 @@ describe('createRedcapClient', () => {
 
       expect(result).toBe(surveyUrl);
     });
+
+    it('should fail with RedcapHttpError on 404', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        text: () => Promise.resolve('Survey not found'),
+      });
+
+      const client = createRedcapClient(mockConfig, mockFetch as unknown as typeof fetch);
+      const result = await pipe(
+        client.getSurveyLink(RecordId('abc12345678901234567'), InstrumentName('my_survey')),
+        Effect.either,
+        Effect.runPromise
+      );
+
+      expect(result._tag).toBe('Left');
+      if (result._tag === 'Left') {
+        expect(result.left).toBeInstanceOf(RedcapHttpError);
+        expect((result.left as RedcapHttpError).status).toBe(404);
+      }
+    });
+
+    it('should send correct parameters', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('https://example.com/survey'),
+      });
+
+      const client = createRedcapClient(mockConfig, mockFetch as unknown as typeof fetch);
+      await pipe(
+        client.getSurveyLink(RecordId('abc12345678901234567'), InstrumentName('consent_form')),
+        Effect.runPromise
+      );
+
+      const callBody = mockFetch.mock.calls[0]?.[1]?.body;
+      expect(callBody).toContain('content=surveyLink');
+      expect(callBody).toContain('record=abc12345678901234567');
+      expect(callBody).toContain('instrument=consent_form');
+    });
   });
 
   describe('findUserIdByEmail', () => {
