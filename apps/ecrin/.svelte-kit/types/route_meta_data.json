@@ -1,7 +1,0 @@
-{
-  "/": ["src/routes/+layout.server.ts", "src/routes/+layout.server.ts"],
-  "/about": ["src/routes/+layout.server.ts"],
-  "/dashboard": ["src/routes/dashboard/+page.server.ts", "src/routes/+layout.server.ts"],
-  "/records": ["src/routes/records/+page.server.ts", "src/routes/+layout.server.ts"],
-  "/users": ["src/routes/users/+page.server.ts", "src/routes/+layout.server.ts"]
-}
