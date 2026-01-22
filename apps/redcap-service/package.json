@@ -28,10 +28,10 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "dev": "node --env-file=.env --import=tsx src/index.ts",
     "start": "node --env-file=.env dist/index.js",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.build.json",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:api": "uvx schemathesis run http://localhost:3000/openapi.json --checks all",
