@@ -11,3 +11,4 @@ docs/.vitepress/dist/
 .env.dev.appwrite
 .env.prod.appwrite
 .mcp.json
+.hypothesis/

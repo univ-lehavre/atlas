@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: authelia-users
+  namespace: ecrin
+data:
+  users.yml: |
+    ---
+    # Authelia Users Database (Dev environment)
+    # In production, use LDAP or database backend
+    #
+    # Password hashes generated with:
+    # docker run --rm authelia/authelia:latest authelia crypto hash generate argon2 --password 'yourpassword'
+    #
+    # For magic links: users don't need passwords, but Authelia requires the field
+    # Use a dummy hash - authentication is via email link
+
+    users:
+      # Admin user
+      admin:
+        disabled: false
+        displayname: "Admin Dev"
+        email: admin@univ-lehavre.fr
+        groups:
+          - admin
+          - allowed-domain
+        # Dummy password hash (password: "devpassword123")
+        # In magic link flow, this is not used
+        password: "$argon2id$v=19$m=65536,t=3,p=4$BnJwM3J4UjVLMU5VQW5nUA$ZR3qPN7e2Md+c6kOqLPKQQJBwxlAGC8u4P3r2L8ydsc"
+
+      # Researcher user
+      researcher:
+        disabled: false
+        displayname: "Researcher Dev"
+        email: researcher@univ-lehavre.fr
+        groups:
+          - researcher
+          - allowed-domain
+        password: "$argon2id$v=19$m=65536,t=3,p=4$BnJwM3J4UjVLMU5VQW5nUA$ZR3qPN7e2Md+c6kOqLPKQQJBwxlAGC8u4P3r2L8ydsc"
+
+      # Viewer user
+      viewer:
+        disabled: false
+        displayname: "Viewer Dev"
+        email: viewer@univ-lehavre.fr
+        groups:
+          - viewer
+          - allowed-domain
+        password: "$argon2id$v=19$m=65536,t=3,p=4$BnJwM3J4UjVLMU5VQW5nUA$ZR3qPN7e2Md+c6kOqLPKQQJBwxlAGC8u4P3r2L8ydsc"
+
+      # Test user with any email for dev
+      testuser:
+        disabled: false
+        displayname: "Test User"
+        email: test@example.com
+        groups:
+          - viewer
+          - allowed-domain
+        password: "$argon2id$v=19$m=65536,t=3,p=4$BnJwM3J4UjVLMU5VQW5nUA$ZR3qPN7e2Md+c6kOqLPKQQJBwxlAGC8u4P3r2L8ydsc"
