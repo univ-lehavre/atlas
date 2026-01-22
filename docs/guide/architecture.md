@@ -128,3 +128,68 @@ Toutes ces licences sont **permissives** et permettent :
 - L'utilisation privee
 
 Elles n'imposent **pas** de partager le code source (contrairement aux licences copyleft comme GPL), ce qui est important pour un projet pouvant etre utilise dans des contextes varies.
+
+## MCP Servers
+
+Le projet est configure pour utiliser des serveurs [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) qui fournissent de la documentation et des outils aux assistants IA.
+
+### Configuration
+
+Les serveurs MCP sont configures dans `.mcp.json` :
+
+```json
+{
+  "mcpServers": {
+    "effect-mcp": {
+      "command": "pnpm",
+      "args": ["dlx", "@niklaserik/effect-mcp"]
+    },
+    "svelte-mcp": {
+      "command": "pnpm",
+      "args": ["dlx", "@sveltejs/mcp"]
+    },
+    "appwrite-docs": {
+      "command": "npx",
+      "args": ["mcp-remote", "https://mcp-for-docs.appwrite.io"]
+    },
+    "appwrite-api": {
+      "command": "uvx",
+      "args": ["mcp-server-appwrite", "--all"],
+      "env": {
+        "APPWRITE_PROJECT_ID": "${APPWRITE_PROJECT_ID}",
+        "APPWRITE_API_KEY": "${APPWRITE_API_KEY}",
+        "APPWRITE_ENDPOINT": "${APPWRITE_ENDPOINT}"
+      }
+    },
+    "openalex": {
+      "command": "npx",
+      "args": ["openalex-mcp"]
+    }
+  }
+}
+```
+
+### Serveurs disponibles
+
+| Serveur         | Description                                                |
+| --------------- | ---------------------------------------------------------- |
+| `effect-mcp`    | Documentation Effect.js                                    |
+| `svelte-mcp`    | Documentation Svelte 5 et SvelteKit                        |
+| `appwrite-docs` | Documentation Appwrite                                     |
+| `appwrite-api`  | API Appwrite (requires env vars)                           |
+| `openalex`      | API OpenAlex pour la recherche academique (240M+ articles) |
+
+### Pre-requis
+
+- **Node.js/npm** : Pour `effect-mcp`, `svelte-mcp`, `appwrite-docs`, `openalex`
+- **uv (Python)** : Pour `appwrite-api` (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+
+### Variables d'environnement pour Appwrite
+
+Pour utiliser le serveur `appwrite-api`, configurez :
+
+```bash
+export APPWRITE_PROJECT_ID="votre_project_id"
+export APPWRITE_API_KEY="votre_api_key"
+export APPWRITE_ENDPOINT="https://appwrite.votredomaine.com/v1"
+```

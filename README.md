@@ -6,12 +6,32 @@ Atlas est un ensemble d'outils TypeScript pour interagir avec l'API [REDCap](htt
 
 ## Packages
 
-| Package                                                             | Description                         | npm                                                                                                                                         |
-| ------------------------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| [@univ-lehavre/atlas-redcap-api](packages/redcap-api)               | Client TypeScript pour l'API REDCap | [![npm](https://img.shields.io/npm/v/@univ-lehavre/atlas-redcap-api)](https://www.npmjs.com/package/@univ-lehavre/atlas-redcap-api)         |
-| [@univ-lehavre/atlas-redcap-service](apps/redcap-service)           | Microservice HTTP REST pour REDCap  | [![npm](https://img.shields.io/npm/v/@univ-lehavre/atlas-redcap-service)](https://www.npmjs.com/package/@univ-lehavre/atlas-redcap-service) |
-| [@univ-lehavre/atlas-eslint-config](packages/eslint-config)         | Configuration ESLint partagee       | -                                                                                                                                           |
-| [@univ-lehavre/atlas-typescript-config](packages/typescript-config) | Configuration TypeScript partagee   | -                                                                                                                                           |
+### Applications
+
+| Package                                                   | Description                        | npm                                                                                                                                         |
+| --------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| [@univ-lehavre/atlas-redcap-service](apps/redcap-service) | Microservice HTTP REST pour REDCap | [![npm](https://img.shields.io/npm/v/@univ-lehavre/atlas-redcap-service)](https://www.npmjs.com/package/@univ-lehavre/atlas-redcap-service) |
+
+### Librairies
+
+| Package                                               | Description                         | npm                                                                                                                                 |
+| ----------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [@univ-lehavre/atlas-redcap-api](packages/redcap-api) | Client TypeScript pour l'API REDCap | [![npm](https://img.shields.io/npm/v/@univ-lehavre/atlas-redcap-api)](https://www.npmjs.com/package/@univ-lehavre/atlas-redcap-api) |
+| [@univ-lehavre/atlas-net](packages/net)               | Utilitaires de diagnostic reseau    | -                                                                                                                                   |
+
+### CLI
+
+| Package                                      | Description                                 |
+| -------------------------------------------- | ------------------------------------------- |
+| [@univ-lehavre/atlas-redcap-cli](cli/redcap) | CLI pour tester la connectivite REDCap      |
+| [@univ-lehavre/atlas-net-cli](cli/net)       | CLI pour diagnostiquer les problemes reseau |
+
+### Configuration partagee
+
+| Package                                                             | Description                       |
+| ------------------------------------------------------------------- | --------------------------------- |
+| [@univ-lehavre/atlas-eslint-config](packages/eslint-config)         | Configuration ESLint partagee     |
+| [@univ-lehavre/atlas-typescript-config](packages/typescript-config) | Configuration TypeScript partagee |
 
 ## Documentation
 
