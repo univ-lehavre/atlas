@@ -1,5 +1,13 @@
 # @univ-lehavre/atlas-redcap-service
 
+## 0.4.2
+
+### Patch Changes
+
+- Updated dependencies [[`3dbc50b`](https://github.com/univ-lehavre/atlas/commit/3dbc50b4cdfe1b29ca5a2986069a7f6bfcbd00df)]:
+  - @univ-lehavre/atlas-net@0.4.0
+  - @univ-lehavre/atlas-redcap-api@0.5.0
+
 ## 0.4.1
 
 ### Patch Changes

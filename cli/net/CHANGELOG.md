@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-net-cli
 
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [[`3dbc50b`](https://github.com/univ-lehavre/atlas/commit/3dbc50b4cdfe1b29ca5a2986069a7f6bfcbd00df)]:
+  - @univ-lehavre/atlas-net@0.4.0
+
 ## 0.2.1
 
 ### Patch Changes
