@@ -1,14 +1,8 @@
-[**@univ-lehavre/atlas-redcap-api**](../index.md)
-
----
-
-[@univ-lehavre/atlas-redcap-api](../index.md) / RedcapToken
-
 # Variable: RedcapToken
 
 > **RedcapToken**: `Constructor`\<[`RedcapToken`](../type-aliases/RedcapToken.md)\>
 
-Defined in: [packages/redcap-api/src/brands.ts:164](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/brands.ts#L164)
+Defined in: [packages/redcap-api/src/brands.ts:164](https://github.com/univ-lehavre/atlas/blob/c399ec78fb6de6d479acd00b2b8ce08b23561ed1/packages/redcap-api/src/brands.ts#L164)
 
 Constructor function for RedcapToken branded type.
 

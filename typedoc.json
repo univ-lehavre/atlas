@@ -6,6 +6,9 @@
   "readme": "none",
   "excludePrivate": true,
   "excludeInternal": true,
+  "excludeExternals": true,
   "entryFileName": "index",
-  "indexFormat": "table"
+  "indexFormat": "table",
+  "hidePageHeader": true,
+  "hideBreadcrumbs": true
 }

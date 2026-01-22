@@ -1,12 +1,6 @@
-[**@univ-lehavre/atlas-redcap-api**](../index.md)
-
----
-
-[@univ-lehavre/atlas-redcap-api](../index.md) / RedcapExportFieldName
-
 # Interface: RedcapExportFieldName
 
-Defined in: [packages/redcap-api/src/types.ts:174](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L174)
+Defined in: [packages/redcap-api/src/types.ts:174](https://github.com/univ-lehavre/atlas/blob/c399ec78fb6de6d479acd00b2b8ce08b23561ed1/packages/redcap-api/src/types.ts#L174)
 
 REDCap export field name mapping.
 
@@ -36,7 +30,7 @@ const symptomColumns = fieldNames
 
 > `readonly` **choice_value**: `string`
 
-Defined in: [packages/redcap-api/src/types.ts:178](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L178)
+Defined in: [packages/redcap-api/src/types.ts:178](https://github.com/univ-lehavre/atlas/blob/c399ec78fb6de6d479acd00b2b8ce08b23561ed1/packages/redcap-api/src/types.ts#L178)
 
 For checkbox fields: the choice value; empty for other field types
 
@@ -46,7 +40,7 @@ For checkbox fields: the choice value; empty for other field types
 
 > `readonly` **export_field_name**: `string`
 
-Defined in: [packages/redcap-api/src/types.ts:180](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L180)
+Defined in: [packages/redcap-api/src/types.ts:180](https://github.com/univ-lehavre/atlas/blob/c399ec78fb6de6d479acd00b2b8ce08b23561ed1/packages/redcap-api/src/types.ts#L180)
 
 The actual column name used in exports (e.g., 'symptoms\_\_\_1')
 
@@ -56,6 +50,6 @@ The actual column name used in exports (e.g., 'symptoms\_\_\_1')
 
 > `readonly` **original_field_name**: `string`
 
-Defined in: [packages/redcap-api/src/types.ts:176](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L176)
+Defined in: [packages/redcap-api/src/types.ts:176](https://github.com/univ-lehavre/atlas/blob/c399ec78fb6de6d479acd00b2b8ce08b23561ed1/packages/redcap-api/src/types.ts#L176)
 
 Original field name from the data dictionary
