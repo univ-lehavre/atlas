@@ -1,0 +1,31 @@
+---
+# SPIRE Controller Manager CRDs for automatic workload registration
+# These define the SPIFFE identities for our workloads
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spire-bundle
+  namespace: spire
+data: {}
+---
+# Registration entries are created via spire-server CLI in setup.sh
+# This file documents the expected identities
+
+# The following registrations will be created:
+#
+# 1. ecrin workload
+#    SPIFFE ID: spiffe://ecrin.local/ns/ecrin/sa/ecrin
+#    Selector: k8s:ns:ecrin, k8s:sa:ecrin
+#
+# 2. redcap-service workload
+#    SPIFFE ID: spiffe://ecrin.local/ns/ecrin/sa/redcap-service
+#    Selector: k8s:ns:ecrin, k8s:sa:redcap-service
+#
+# 3. authelia workload
+#    SPIFFE ID: spiffe://ecrin.local/ns/ecrin/sa/authelia
+#    Selector: k8s:ns:ecrin, k8s:sa:authelia
+#
+# 4. opa workload
+#    SPIFFE ID: spiffe://ecrin.local/ns/ecrin/sa/opa
+#    Selector: k8s:ns:ecrin, k8s:sa:opa

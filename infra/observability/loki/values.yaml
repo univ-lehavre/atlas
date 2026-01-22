@@ -1,0 +1,92 @@
+# Loki Helm values for local development
+# Minimal single-node configuration
+
+loki:
+  auth_enabled: false
+
+  commonConfig:
+    replication_factor: 1
+
+  storage:
+    type: filesystem
+
+  schemaConfig:
+    configs:
+      - from: '2024-01-01'
+        store: tsdb
+        object_store: filesystem
+        schema: v13
+        index:
+          prefix: index_
+          period: 24h
+
+# Single binary mode for dev
+deploymentMode: SingleBinary
+
+singleBinary:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Disable components not needed in single binary mode
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+
+# Gateway disabled - access directly
+gateway:
+  enabled: false
+
+# Promtail for log collection from pods
+promtail:
+  enabled: true
+  config:
+    clients:
+      - url: http://loki:3100/loki/api/v1/push
+
+    scrape_configs:
+      - job_name: kubernetes-pods
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            target_label: app
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+        pipeline_stages:
+          # Parse JSON logs from our services
+          - json:
+              expressions:
+                level: level
+                timestamp: timestamp
+                service: service
+                user: user
+                action: action
+                resource: resource
+                decision: decision
+          - labels:
+              level:
+              service:
+
+# Minimal test configuration
+test:
+  enabled: false
+
+# Monitoring disabled for dev
+monitoring:
+  selfMonitoring:
+    enabled: false
+    grafanaAgent:
+      installOperator: false
+  lokiCanary:
+    enabled: false
