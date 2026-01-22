@@ -1,7 +1,6 @@
 import { Config, Effect } from 'effect';
 
-// Config definition
-export const AppConfig = Config.all({
+const AppConfig = Config.all({
   port: Config.number('PORT').pipe(Config.withDefault(3000)),
   redcapApiUrl: Config.string('REDCAP_API_URL').pipe(
     Config.validate({
@@ -12,14 +11,6 @@ export const AppConfig = Config.all({
   redcapApiToken: Config.nonEmptyString('REDCAP_API_TOKEN'),
 });
 
-export type AppConfig = Config.Config.Success<typeof AppConfig>;
+type AppConfigType = Config.Config.Success<typeof AppConfig>;
 
-// Load config synchronously
-const program = Effect.gen(function* () {
-  return yield* AppConfig;
-});
-
-export const loadConfig = (): AppConfig => Effect.runSync(program);
-
-// Legacy export for backwards compatibility
-export const env = loadConfig();
+export const env: AppConfigType = Effect.runSync(AppConfig);
