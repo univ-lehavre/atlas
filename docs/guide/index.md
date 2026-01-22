@@ -66,6 +66,7 @@ pnpm ready
 ```
 atlas/
 ├── apps/
+│   ├── ecrin/              # Dashboard SvelteKit Zero Trust
 │   └── redcap-service/     # Microservice HTTP REST
 ├── cli/
 │   ├── redcap/             # CLI pour tester REDCap
@@ -75,5 +76,35 @@ atlas/
 │   ├── net/                # Utilitaires reseau
 │   ├── eslint-config/      # Configuration ESLint partagee
 │   └── typescript-config/  # Configuration TypeScript partagee
+├── infra/                  # Infrastructure Kubernetes Zero Trust
 └── docs/                   # Documentation (ce site)
 ```
+
+## Infrastructure locale
+
+Atlas inclut une infrastructure Kubernetes locale avec architecture Zero Trust complete.
+
+### Prerequis
+
+```bash
+# macOS
+brew install k3d kubectl helm cilium-cli
+```
+
+Docker Desktop doit etre installe et demarre.
+
+### Demarrage
+
+```bash
+./infra/scripts/setup.sh
+```
+
+### URLs
+
+| Service   | URL                             |
+| --------- | ------------------------------- |
+| Dashboard | http://localhost:8080           |
+| Authelia  | http://localhost:8080/authelia/ |
+| MailHog   | http://localhost:8025           |
+
+Pour plus de details, voir [Infrastructure Zero Trust](./infrastructure.md).
