@@ -5,6 +5,7 @@ import { cors } from 'hono/cors';
 import { openAPIRouteHandler } from 'hono-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { env } from './env.js';
+import { apiRateLimiter } from './middleware/rate-limit.js';
 import { health } from './routes/health.js';
 import { project } from './routes/project.js';
 import { records } from './routes/records.js';
@@ -15,6 +16,7 @@ const app = new Hono();
 // Middleware
 app.use('*', logger());
 app.use('*', cors());
+app.use('/api/*', apiRateLimiter);
 
 // Return 405 for unsupported methods (TRACE, OPTIONS handled by CORS)
 app.use('*', async (c, next) =>
