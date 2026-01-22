@@ -11,6 +11,8 @@ import {
   tcpPing,
   tlsHandshake,
   checkInternet,
+  Hostname,
+  Port,
   type DiagnosticStep,
 } from '@univ-lehavre/atlas-net';
 
@@ -61,8 +63,11 @@ const runDiagnostics = async (targetUrl: string, options: RunOptions): Promise<b
     return step;
   };
 
+  const hostname = Hostname(url.hostname);
+  const portBranded = Port(port);
+
   // Step 1: DNS Resolution
-  const dnsStep = await runStep('DNS Resolution', dnsResolve(url.hostname));
+  const dnsStep = await runStep('DNS Resolution', dnsResolve(hostname));
 
   if (dnsStep.status === 'error') {
     await runStep('Internet Check', checkInternet());
@@ -70,7 +75,7 @@ const runDiagnostics = async (targetUrl: string, options: RunOptions): Promise<b
   }
 
   // Step 2: TCP Connect
-  const tcpStep = await runStep('TCP Connect', tcpPing(url.hostname, port));
+  const tcpStep = await runStep('TCP Connect', tcpPing(hostname, portBranded));
 
   if (tcpStep.status === 'error') {
     await runStep('Internet Check', checkInternet());
@@ -79,7 +84,7 @@ const runDiagnostics = async (targetUrl: string, options: RunOptions): Promise<b
 
   // Step 3: TLS Handshake (HTTPS only)
   if (isHttps) {
-    await runStep('TLS Handshake', tlsHandshake(url.hostname, port));
+    await runStep('TLS Handshake', tlsHandshake(hostname, portBranded));
   }
 
   return !hasError;

@@ -1,6 +1,7 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["packages/redcap-api/src/index.ts"],
+  "entryPoints": ["packages/redcap-api", "packages/net"],
+  "entryPointStrategy": "packages",
   "out": "docs/api",
   "plugin": ["typedoc-plugin-markdown"],
   "readme": "none",

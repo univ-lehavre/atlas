@@ -9,6 +9,8 @@ export default tseslint.config(
       '**/scripts/**',
       '*.config.ts',
       '*.config.js',
+      '**/*.config.ts',
+      '**/*.config.js',
       'packages/eslint-config/**',
       'packages/typescript-config/**',
       'packages/redcap-cli/**',
