@@ -10,37 +10,60 @@ pnpm add @univ-lehavre/atlas-redcap-cli
 
 ## Usage
 
+### Interactive Mode (default)
+
 ```bash
-# Show help
-redcap --help
+redcap
+```
 
-# Run all connectivity tests
-redcap test --url http://localhost:3000
+Launches an interactive menu:
 
-# Quick check (service + health only)
-redcap test --quick
+```
+🔬 REDCap CLI
 
-# JSON output for CI integration
-redcap test --json
+Service URL: http://localhost:3000
 
-# Individual tests
-redcap test --service      # Check service connectivity
-redcap test --health       # Check REDCap server and token
-redcap test --project      # Show project information
-redcap test --instruments  # List available instruments
-redcap test --fields       # List available fields
-redcap test --records      # Fetch sample records
+  1. Check service connectivity
+  2. Health check (REDCap + token)
+  3. Show project info
+  4. List instruments
+  5. List fields
+  6. Fetch sample records
+  7. Run all tests
+  0. Exit
+
+>
+```
+
+### CI Mode
+
+```bash
+# Run all tests (non-interactive)
+redcap --ci
+
+# JSON output for CI pipelines
+redcap --ci --json
+
+# Custom service URL
+redcap --url http://localhost:3000 --ci
+```
+
+### Options
+
+```
+-u, --url <url>    Service base URL (default: http://localhost:3000)
+--ci               Run in CI mode (non-interactive)
+-j, --json         Output results as JSON (CI mode only)
+-h, --help         Show help
 ```
 
 ## Architecture
 
 ```
 src/
-├── bin.ts          # Entry point, Layer composition
-├── cli.ts          # Root command and subcommand registration
-├── commands/
-│   ├── index.ts    # Command exports
-│   └── test.ts     # Test command implementation
+├── bin.ts          # Entry point, argument parsing, Layer composition
+├── menu.ts         # Interactive menu (default mode)
+├── ci.ts           # CI mode runner
 ├── services.ts     # HTTP service layer (RedcapService)
 ├── terminal.ts     # ANSI styling utilities
 └── index.ts        # Public API exports
@@ -50,15 +73,20 @@ src/
 
 #### `bin.ts` - Entry Point
 
-Composes Effect Layers and runs the CLI:
+Parses arguments and routes to interactive or CI mode:
 
 ```typescript
-const ConfigLayer = Layer.succeed(RedcapServiceConfigTag, { baseUrl });
-const HttpLayer = NodeHttpClient.layer;
-const ServiceLayer = Layer.provide(RedcapServiceLive, Layer.merge(ConfigLayer, HttpLayer));
-
-yield * runCli(args).pipe(Effect.provide(ServiceLayer), Effect.provide(NodeContext.layer));
+const program = ciMode ? runCiMode(jsonOutput) : runInteractiveMenu(baseUrl);
+yield * program.pipe(Effect.provide(ServiceLayer));
 ```
+
+#### `menu.ts` - Interactive Menu
+
+Displays a numbered menu and handles user input. Each action runs, then waits for a key press before returning to the menu.
+
+#### `ci.ts` - CI Mode
+
+Runs all tests sequentially and outputs results. Supports JSON output for pipeline integration.
 
 #### `services.ts` - HTTP Layer
 
@@ -70,53 +98,12 @@ Defines the `RedcapService` Context.Tag with three methods:
 
 Uses Effect's `Schema` for response validation.
 
-#### `commands/test.ts` - Test Command
-
-Implements the test command with two output modes:
-
-- **Normal output** - Colored terminal output with progress indicators
-- **JSON output** - Structured JSON for CI pipelines
-
-### Adding a New Command
-
-1. Create `src/commands/your-command.ts`:
-
-```typescript
-import { Command, Options } from '@effect/cli';
-import { Effect } from 'effect';
-
-const someOption = Options.boolean('option').pipe(
-  Options.withDescription('Description'),
-  Options.withAlias('o')
-);
-
-export const yourCommand = Command.make('your-command', { option: someOption }, (config) =>
-  Effect.gen(function* () {
-    // Implementation
-  })
-);
-```
-
-2. Export from `src/commands/index.ts`:
-
-```typescript
-export { yourCommand } from './your-command.js';
-```
-
-3. Register in `src/cli.ts`:
-
-```typescript
-import { testCommand, yourCommand } from './commands/index.js';
-
-export const cli = rootCommand.pipe(Command.withSubcommands([testCommand, yourCommand]));
-```
-
 ### Terminal Styling
 
 Use the `terminal.ts` utilities for consistent output:
 
 ```typescript
-import { format, style, icon } from '../terminal.js';
+import { format, style, icon } from './terminal.js';
 
 // Formatted messages
 Console.log(format.success('Operation completed'));
@@ -155,9 +142,9 @@ The CLI is available as a dev dependency in `apps/redcap-service`:
 ```bash
 cd apps/redcap-service
 
-# Run with default URL
-pnpm redcap test
+# Interactive mode
+pnpm redcap
 
-# Run with custom URL
-pnpm redcap:test  # Uses http://localhost:3000
+# CI mode
+pnpm redcap --ci
 ```

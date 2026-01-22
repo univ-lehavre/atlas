@@ -60,7 +60,7 @@ const RecordsResponseSchema = Schema.Struct({
   data: Schema.Array(Schema.Unknown),
 });
 
-export type HealthCheck = Schema.Schema.Type<typeof HealthCheckSchema>;
+type HealthCheck = Schema.Schema.Type<typeof HealthCheckSchema>;
 export type HealthResponse = Schema.Schema.Type<typeof HealthResponseSchema>;
 type Instrument = Schema.Schema.Type<typeof InstrumentSchema>;
 export type Field = Schema.Schema.Type<typeof FieldSchema>;

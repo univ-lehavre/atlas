@@ -4,5 +4,6 @@
  * @module @univ-lehavre/atlas-redcap-cli
  */
 
-export { cli, runCli } from './cli.js';
-export { testCommand } from './commands/index.js';
+export { runInteractiveMenu } from './menu.js';
+export { runCiMode } from './ci.js';
+export { RedcapService, RedcapServiceLive, RedcapServiceConfigTag } from './services.js';
