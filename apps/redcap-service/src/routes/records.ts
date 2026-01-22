@@ -1,10 +1,30 @@
 import { Hono } from 'hono';
 import { Schema as S } from 'effect';
-import { resolver, validator as effectValidator, describeRoute } from 'hono-openapi';
+import { resolver, validator, describeRoute } from 'hono-openapi';
 import { Effect, pipe } from 'effect';
 import { RecordId, InstrumentName, RedcapApiError } from '@univ-lehavre/atlas-redcap-api';
 import { redcap } from '../redcap.js';
 import { runEffect, runEffectRaw } from '../effect-handler.js';
+
+/**
+ * Validation error hook that returns errors in the correct API format
+ */
+const validationErrorHook = (
+  result: { success: boolean; error?: readonly { message: string }[] },
+  c: { json: (data: unknown, status: number) => Response }
+): Response | undefined =>
+  result.success
+    ? undefined
+    : c.json(
+        {
+          data: null,
+          error: {
+            code: 'validation_error',
+            message: result.error?.map((i) => i.message).join(', ') ?? 'Validation failed',
+          },
+        },
+        400
+      );
 
 /**
  * Safely parse a RecordId, returning an Effect
@@ -32,9 +52,12 @@ const records = new Hono();
 
 // --- Schemas ---
 
+// Pattern for REDCap field/form names: ASCII alphanumeric, underscores, commas for lists
+const RedcapNamePattern = /^[\w,]*$/;
+
 const ExportQuerySchema = S.Struct({
-  fields: S.optional(S.String),
-  forms: S.optional(S.String),
+  fields: S.optional(S.String.pipe(S.pattern(RedcapNamePattern))),
+  forms: S.optional(S.String.pipe(S.pattern(RedcapNamePattern))),
   filterLogic: S.optional(S.String),
   rawOrLabel: S.optional(S.Literal('raw', 'label')),
 }).annotations({
@@ -43,24 +66,37 @@ const ExportQuerySchema = S.Struct({
 });
 
 const ImportBodySchema = S.Struct({
-  records: S.Array(S.Record({ key: S.String, value: S.Unknown })),
+  records: S.Array(
+    S.Record({ key: S.String, value: S.Union(S.String, S.Number, S.Boolean, S.Null) })
+  ),
   overwriteBehavior: S.optional(S.Literal('normal', 'overwrite')),
 }).annotations({ identifier: 'ImportRecordsBody', description: 'Body for importing records' });
 
+// Pattern for REDCap instrument names: lowercase letter followed by lowercase letters, digits, underscores
+const InstrumentNamePattern = /^[a-z][a-z0-9_]*$/;
+
 const PdfQuerySchema = S.Struct({
-  instrument: S.optionalWith(S.String, { default: () => 'form' }),
+  instrument: S.optionalWith(S.String.pipe(S.pattern(InstrumentNamePattern)), {
+    default: () => 'form',
+  }),
 }).annotations({ identifier: 'PdfQueryParams', description: 'Query parameters for PDF download' });
 
 const SurveyLinkQuerySchema = S.Struct({
-  instrument: S.String,
+  instrument: S.String.pipe(S.pattern(InstrumentNamePattern)),
 }).annotations({
   identifier: 'SurveyLinkQueryParams',
   description: 'Query parameters for survey link',
 });
 
-const SuccessResponseSchema = S.Struct({
-  data: S.Unknown,
-}).annotations({ identifier: 'SuccessResponse', description: 'Successful API response' });
+// OpenAPI schema for generic success response (not using Effect Schema due to S.Any issues)
+const SuccessResponseOpenAPI = {
+  type: 'object' as const,
+  required: ['data'] as string[],
+  properties: {
+    data: { description: 'Response data - structure varies by endpoint' },
+  },
+  additionalProperties: false,
+};
 
 const ErrorResponseSchema = S.Struct({
   data: S.Null,
@@ -86,7 +122,7 @@ records.get(
       200: {
         description: 'Records exported successfully',
         content: {
-          'application/json': { schema: resolver(S.standardSchemaV1(SuccessResponseSchema)) },
+          'application/json': { schema: SuccessResponseOpenAPI },
         },
       },
       400: {
@@ -97,7 +133,7 @@ records.get(
       },
     },
   }),
-  effectValidator('query', S.standardSchemaV1(ExportQuerySchema)),
+  validator('query', S.standardSchemaV1(ExportQuerySchema), validationErrorHook),
   (c) => {
     const query = c.req.valid('query');
 
@@ -128,7 +164,7 @@ records.put(
       200: {
         description: 'Records imported successfully',
         content: {
-          'application/json': { schema: resolver(S.standardSchemaV1(SuccessResponseSchema)) },
+          'application/json': { schema: SuccessResponseOpenAPI },
         },
       },
       400: {
@@ -139,7 +175,7 @@ records.put(
       },
     },
   }),
-  effectValidator('json', S.standardSchemaV1(ImportBodySchema)),
+  validator('json', S.standardSchemaV1(ImportBodySchema), validationErrorHook),
   (c) => {
     const body = c.req.valid('json');
 
@@ -163,6 +199,15 @@ records.get(
     tags: ['Records'],
     summary: 'Download PDF',
     description: 'Download PDF of a form for a specific record',
+    parameters: [
+      {
+        name: 'recordId',
+        in: 'path',
+        required: true,
+        description: 'The unique identifier of the record',
+        schema: { type: 'string', pattern: '^[a-zA-Z0-9]{20,}$', minLength: 20 },
+      },
+    ],
     responses: {
       200: {
         description: 'PDF file',
@@ -178,7 +223,7 @@ records.get(
       },
     },
   }),
-  effectValidator('query', S.standardSchemaV1(PdfQuerySchema)),
+  validator('query', S.standardSchemaV1(PdfQuerySchema), validationErrorHook),
   (c) => {
     const rawRecordId = c.req.param('recordId');
     const rawInstrument = c.req.valid('query').instrument;
@@ -212,11 +257,20 @@ records.get(
     tags: ['Records'],
     summary: 'Get survey link',
     description: 'Get survey link for a specific record and instrument',
+    parameters: [
+      {
+        name: 'recordId',
+        in: 'path',
+        required: true,
+        description: 'The unique identifier of the record',
+        schema: { type: 'string', pattern: '^[a-zA-Z0-9]{20,}$', minLength: 20 },
+      },
+    ],
     responses: {
       200: {
         description: 'Survey link',
         content: {
-          'application/json': { schema: resolver(S.standardSchemaV1(SuccessResponseSchema)) },
+          'application/json': { schema: SuccessResponseOpenAPI },
         },
       },
       400: {
@@ -227,7 +281,7 @@ records.get(
       },
     },
   }),
-  effectValidator('query', S.standardSchemaV1(SurveyLinkQuerySchema)),
+  validator('query', S.standardSchemaV1(SurveyLinkQuerySchema), validationErrorHook),
   (c) => {
     const rawRecordId = c.req.param('recordId');
     const rawInstrument = c.req.valid('query').instrument;
