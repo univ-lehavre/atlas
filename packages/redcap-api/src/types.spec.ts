@@ -486,6 +486,18 @@ describe('IsoTimestamp', () => {
     it('should accept date only', () => {
       expect(() => IsoTimestamp('2024-01-15')).not.toThrow();
     });
+
+    it('should accept leap year date', () => {
+      expect(() => IsoTimestamp('2024-02-29')).not.toThrow();
+    });
+
+    it('should accept end of month date', () => {
+      expect(() => IsoTimestamp('2024-01-31')).not.toThrow();
+    });
+
+    it('should accept negative timezone offset', () => {
+      expect(() => IsoTimestamp('2024-01-15T10:30:00-05:00')).not.toThrow();
+    });
   });
 
   describe('invalid timestamps', () => {
@@ -503,6 +515,18 @@ describe('IsoTimestamp', () => {
 
     it('should reject invalid date values', () => {
       expect(() => IsoTimestamp('2024-13-45')).toThrow();
+    });
+
+    it('should reject time without date', () => {
+      expect(() => IsoTimestamp('10:30:00')).toThrow();
+    });
+
+    it('should reject US date format', () => {
+      expect(() => IsoTimestamp('01-15-2024')).toThrow();
+    });
+
+    it('should reject timestamp with milliseconds not at end', () => {
+      expect(() => IsoTimestamp('2024-01-15T10:30:00.123')).toThrow();
     });
   });
 });
@@ -531,6 +555,18 @@ describe('BooleanFlag', () => {
 
     it('should reject 0.5', () => {
       expect(() => BooleanFlag(0.5 as unknown as 0 | 1)).toThrow();
+    });
+
+    it('should reject boolean true', () => {
+      expect(() => BooleanFlag(true as unknown as 0 | 1)).toThrow();
+    });
+
+    it('should reject boolean false', () => {
+      expect(() => BooleanFlag(false as unknown as 0 | 1)).toThrow();
+    });
+
+    it('should reject NaN', () => {
+      expect(() => BooleanFlag(Number.NaN as unknown as 0 | 1)).toThrow();
     });
   });
 });
