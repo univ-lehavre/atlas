@@ -5,5 +5,10 @@
   "plugin": ["typedoc-plugin-markdown"],
   "readme": "none",
   "excludePrivate": true,
-  "excludeInternal": true
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "entryFileName": "index",
+  "indexFormat": "table",
+  "hidePageHeader": true,
+  "hideBreadcrumbs": true
 }

@@ -9,7 +9,7 @@ import { runEffect } from '../effect-handler.js';
 /**
  * Branded type for Email
  */
-const Email = S.String.pipe(S.pattern(/^[^\s@]+@[^\s@]+\.[^\s@]+$/), S.brand('Email'));
+const Email = S.String.pipe(S.pattern(/^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/), S.brand('Email'));
 
 const users = new Hono();
 

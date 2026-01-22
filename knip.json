@@ -4,14 +4,20 @@
     ".": {
       "project": ["*.{js,ts}"]
     },
-    "packages/*": {
+    "packages/redcap-api": {
       "project": ["src/**/*.ts"]
+    },
+    "packages/eslint-config": {
+      "project": ["*.js"]
+    },
+    "packages/typescript-config": {
+      "project": ["*.json"]
     },
     "apps/*": {
       "project": ["src/**/*.ts"]
     }
   },
   "ignore": ["**/dist/**"],
-  "ignoreDependencies": ["@typescript-eslint/eslint-plugin", "@typescript-eslint/parser", "tsx"],
+  "ignoreDependencies": ["tsx"],
   "ignoreBinaries": ["jq", "docker:build", "docker:down"]
 }

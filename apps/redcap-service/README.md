@@ -43,21 +43,39 @@ pnpm docker:down
 
 ## Testing
 
-```bash
-# Test with running service (requires .env.local)
-pnpm test:redcap
+### With a real REDCap server
 
-# Test with Docker (auto-starts containers)
+1. Configure `.env` with your REDCap credentials (see [Configuration](#configuration))
+
+2. Create `.env.local` for the test script:
+
+```env
+baseUrl=http://localhost:3000
+```
+
+3. Run:
+
+```bash
+# Terminal 1: start the service
+pnpm dev
+
+# Terminal 2: run the test
+pnpm test:redcap
+```
+
+### With Docker (mock server)
+
+```bash
 pnpm test:redcap:docker
 ```
 
-The test CLI checks:
+### What the test checks
 
-1. Service connectivity
-2. REDCap server accessibility and latency
-3. API token validity
-4. Available instruments and fields
-5. Sample records
+- Service connectivity
+- REDCap server accessibility and latency
+- API token validity
+- Available instruments and fields
+- Sample records
 
 ## API Endpoints
 

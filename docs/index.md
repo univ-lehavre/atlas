@@ -4,7 +4,7 @@ layout: home
 hero:
   name: Atlas
   text: REDCap API Monorepo
-  tagline: Microservices pour interroger REDCap
+  tagline: Outils TypeScript pour interagir avec l'API REDCap
   actions:
     - theme: brand
       text: Guide
@@ -14,10 +14,15 @@ hero:
       link: /api/
 
 features:
-  - title: 📦 @univ-lehavre/atlas-redcap-api
-    details: Package TypeScript réutilisable pour communiquer avec l'API REDCap
-  - title: 🚀 @univ-lehavre/atlas-redcap-service
-    details: Microservice HTTP basé sur Hono pour exposer une API REST
-  - title: 🔒 Sécurisé
-    details: Protection contre les injections dans filterLogic, validation Zod
+  - title: Client API
+    details: Package TypeScript reutilisable pour communiquer avec l'API REDCap, construit avec Effect
+    link: /api/
+  - title: Microservice HTTP
+    details: Microservice REST base sur Hono pour exposer une API REDCap simplifiee
+    link: /guide/
+  - title: CLI Tools
+    details: Outils en ligne de commande pour tester la connectivite et diagnostiquer les problemes
+    link: /guide/cli
+  - title: Securise
+    details: Protection contre les injections dans filterLogic, branded types pour la validation
 ---

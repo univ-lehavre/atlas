@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/typescript-config" },
+    { "path": "packages/eslint-config" },
+    { "path": "packages/redcap-api" },
+    { "path": "apps/redcap-service" }
+  ]
+}
