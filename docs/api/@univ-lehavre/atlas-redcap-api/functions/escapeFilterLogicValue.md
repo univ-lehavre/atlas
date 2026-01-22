@@ -2,7 +2,7 @@
 
 > **escapeFilterLogicValue**(`value`): `string`
 
-Defined in: [packages/redcap-api/src/client.ts:72](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/client.ts#L72)
+Defined in: [packages/redcap-api/src/client.ts:72](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/client.ts#L72)
 
 Escapes special characters in a value to be used in REDCap filterLogic.
 

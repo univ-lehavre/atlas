@@ -2,7 +2,7 @@
 
 > **RecordId** = `string` & `Brand.Brand`\<`"RecordId"`\>
 
-Defined in: [packages/redcap-api/src/brands.ts:201](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/brands.ts#L201)
+Defined in: [packages/redcap-api/src/brands.ts:201](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/brands.ts#L201)
 
 Branded type for REDCap record IDs.
 

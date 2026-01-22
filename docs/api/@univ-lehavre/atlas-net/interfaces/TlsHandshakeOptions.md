@@ -1,6 +1,6 @@
 # Interface: TlsHandshakeOptions
 
-Defined in: [types.ts:56](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/types.ts#L56)
+Defined in: [types.ts:125](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L125)
 
 Options for TLS handshake operation.
 
@@ -10,7 +10,7 @@ Options for TLS handshake operation.
 
 > `readonly` `optional` **rejectUnauthorized**: `boolean`
 
-Defined in: [types.ts:60](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/types.ts#L60)
+Defined in: [types.ts:129](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L129)
 
 Whether to reject unauthorized certificates (default: true)
 
@@ -18,8 +18,8 @@ Whether to reject unauthorized certificates (default: true)
 
 ### timeoutMs?
 
-> `readonly` `optional` **timeoutMs**: `number`
+> `readonly` `optional` **timeoutMs**: [`TimeoutMs`](../type-aliases/TimeoutMs.md)
 
-Defined in: [types.ts:58](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/types.ts#L58)
+Defined in: [types.ts:127](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L127)
 
 Handshake timeout in milliseconds (default: 5000)

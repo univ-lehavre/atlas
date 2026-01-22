@@ -2,7 +2,7 @@
 
 > **InstrumentName** = `string` & `Brand.Brand`\<`"InstrumentName"`\>
 
-Defined in: [packages/redcap-api/src/brands.ts:244](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/brands.ts#L244)
+Defined in: [packages/redcap-api/src/brands.ts:244](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/brands.ts#L244)
 
 Branded type for REDCap instrument names.
 

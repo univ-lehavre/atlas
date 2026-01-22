@@ -1,6 +1,6 @@
 # Interface: ExportRecordsOptions
 
-Defined in: [packages/redcap-api/src/types.ts:206](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/types.ts#L206)
+Defined in: [packages/redcap-api/src/types.ts:206](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L206)
 
 Options for exporting records from REDCap.
 
@@ -33,7 +33,7 @@ const records = await Effect.runPromise(
 
 > `readonly` `optional` **fields**: readonly `string`[]
 
-Defined in: [packages/redcap-api/src/types.ts:208](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/types.ts#L208)
+Defined in: [packages/redcap-api/src/types.ts:208](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L208)
 
 List of field names to include; omit for all fields
 
@@ -43,7 +43,7 @@ List of field names to include; omit for all fields
 
 > `readonly` `optional` **filterLogic**: `string`
 
-Defined in: [packages/redcap-api/src/types.ts:215](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/types.ts#L215)
+Defined in: [packages/redcap-api/src/types.ts:215](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L215)
 
 REDCap filter logic expression (e.g., '[age] >= 18 AND [consent] = "1"').
 Use [escapeFilterLogicValue](../functions/escapeFilterLogicValue.md) when including user input.
@@ -54,7 +54,7 @@ Use [escapeFilterLogicValue](../functions/escapeFilterLogicValue.md) when includ
 
 > `readonly` `optional` **forms**: readonly `string`[]
 
-Defined in: [packages/redcap-api/src/types.ts:210](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/types.ts#L210)
+Defined in: [packages/redcap-api/src/types.ts:210](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L210)
 
 List of form/instrument names to include; omit for all forms
 
@@ -64,7 +64,7 @@ List of form/instrument names to include; omit for all forms
 
 > `readonly` `optional` **rawOrLabel**: `"raw"` \| `"label"`
 
-Defined in: [packages/redcap-api/src/types.ts:227](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/types.ts#L227)
+Defined in: [packages/redcap-api/src/types.ts:227](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L227)
 
 Value format for choice fields:
 
@@ -77,7 +77,7 @@ Value format for choice fields:
 
 > `readonly` `optional` **type**: `"flat"` \| `"eav"`
 
-Defined in: [packages/redcap-api/src/types.ts:221](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/types.ts#L221)
+Defined in: [packages/redcap-api/src/types.ts:221](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L221)
 
 Export format:
 

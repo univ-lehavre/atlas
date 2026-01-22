@@ -2,7 +2,7 @@
 
 > **dnsResolve**(`hostname`): `Effect`\<[`DiagnosticStep`](../interfaces/DiagnosticStep.md)\>
 
-Defined in: [diagnostics.ts:66](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/diagnostics.ts#L66)
+Defined in: [diagnostics.ts:84](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/diagnostics.ts#L84)
 
 Resolves a hostname to an IP address using DNS lookup.
 
@@ -13,9 +13,9 @@ It measures the time taken for DNS resolution and returns diagnostic information
 
 ### hostname
 
-`string`
+[`Hostname`](../type-aliases/Hostname.md)
 
-The hostname to resolve (e.g., 'example.com')
+A validated `Hostname` branded type
 
 ## Returns
 
@@ -26,7 +26,9 @@ An Effect that resolves to a DiagnosticStep with the resolved IP or error
 ## Example
 
 ```typescript
-const step = await Effect.runPromise(dnsResolve('example.com'));
+import { Hostname } from '@univ-lehavre/atlas-net';
+
+const step = await Effect.runPromise(dnsResolve(Hostname('example.com')));
 if (step.status === 'ok') {
   console.log(`Resolved to ${step.message} in ${step.latencyMs}ms`);
 }

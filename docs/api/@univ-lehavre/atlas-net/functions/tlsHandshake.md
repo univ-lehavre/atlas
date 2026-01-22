@@ -2,7 +2,7 @@
 
 > **tlsHandshake**(`host`, `port`, `options`): `Effect`\<[`DiagnosticStep`](../interfaces/DiagnosticStep.md)\>
 
-Defined in: [diagnostics.ts:187](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/diagnostics.ts#L187)
+Defined in: [diagnostics.ts:209](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/diagnostics.ts#L209)
 
 Tests TLS/SSL connectivity and validates the server certificate.
 
@@ -14,21 +14,21 @@ connectivity issues and certificate problems.
 
 ### host
 
-`string`
+[`Host`](../type-aliases/Host.md)
 
-The hostname to connect to
+A validated `Host` type (`Hostname` or `IpAddress`)
 
 ### port
 
-`number`
+[`Port`](../type-aliases/Port.md)
 
-The port number (typically 443 for HTTPS)
+A validated `Port` branded type (typically 443 for HTTPS)
 
 ### options
 
 [`TlsHandshakeOptions`](../interfaces/TlsHandshakeOptions.md) = `{}`
 
-Optional configuration for the handshake operation
+Optional configuration including `timeoutMs` (as `TimeoutMs`) and `rejectUnauthorized`
 
 ## Returns
 
@@ -39,14 +39,16 @@ An Effect that resolves to a DiagnosticStep with certificate info or error
 ## Example
 
 ```typescript
+import { Hostname, Port } from '@univ-lehavre/atlas-net';
+
 // Check TLS connectivity and certificate
-const step = await Effect.runPromise(tlsHandshake('example.com', 443));
+const step = await Effect.runPromise(tlsHandshake(Hostname('example.com'), Port(443)));
 if (step.status === 'ok') {
   console.log(`Certificate: ${step.message}`);
 }
 
 // Allow self-signed certificates
 const step2 = await Effect.runPromise(
-  tlsHandshake('internal-server.local', 443, { rejectUnauthorized: false })
+  tlsHandshake(Hostname('internal-server.local'), Port(443), { rejectUnauthorized: false })
 );
 ```
