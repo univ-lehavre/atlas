@@ -1,3 +1,4 @@
+/* eslint-disable functional/no-expression-statements, functional/no-conditional-statements, functional/no-loop-statements, functional/immutable-data -- CI mode requires imperative code */
 /**
  * CI mode for REDCap CLI - non-interactive test runner
  */
@@ -31,7 +32,7 @@ const groupFieldsByForm = (fields: readonly Field[]): Record<string, readonly Fi
   const result: Record<string, Field[]> = {};
   for (const field of fields) {
     const existing = result[field.form];
-    result[field.form] = existing !== undefined ? [...existing, field] : [field];
+    result[field.form] = existing === undefined ? [field] : [...existing, field];
   }
   return result;
 };
@@ -80,10 +81,15 @@ const runHealthTest = (): Effect.Effect<TestResult, never, RedcapService> =>
     return result;
   });
 
-const runProjectTest = (health: HealthResponse | null): Effect.Effect<TestResult, never, never> =>
+const runProjectTest = (health: HealthResponse | null): Effect.Effect<TestResult> =>
   Effect.succeed(
-    health?.redcap !== undefined
+    health?.redcap === undefined
       ? {
+          name: 'project',
+          success: false,
+          error: 'Project info not available',
+        }
+      : {
           name: 'project',
           success: true,
           data: {
@@ -92,42 +98,35 @@ const runProjectTest = (health: HealthResponse | null): Effect.Effect<TestResult
             id: health.redcap.projectId,
           },
         }
-      : {
-          name: 'project',
-          success: false,
-          error: 'Project info not available',
-        }
   );
 
-const runInstrumentsTest = (
-  health: HealthResponse | null
-): Effect.Effect<TestResult, never, never> =>
+const runInstrumentsTest = (health: HealthResponse | null): Effect.Effect<TestResult> =>
   Effect.succeed(
-    health?.instruments !== undefined
+    health?.instruments === undefined
       ? {
-          name: 'instruments',
-          success: true,
-          data: health.instruments,
-        }
-      : {
           name: 'instruments',
           success: false,
           error: 'Instruments not available',
         }
+      : {
+          name: 'instruments',
+          success: true,
+          data: health.instruments,
+        }
   );
 
-const runFieldsTest = (health: HealthResponse | null): Effect.Effect<TestResult, never, never> =>
+const runFieldsTest = (health: HealthResponse | null): Effect.Effect<TestResult> =>
   Effect.succeed(
-    health?.fields !== undefined
+    health?.fields === undefined
       ? {
-          name: 'fields',
-          success: true,
-          data: groupFieldsByForm(health.fields),
-        }
-      : {
           name: 'fields',
           success: false,
           error: 'Fields not available',
+        }
+      : {
+          name: 'fields',
+          success: true,
+          data: groupFieldsByForm(health.fields),
         }
   );
 
@@ -155,18 +154,18 @@ const runRecordsTest = (): Effect.Effect<TestResult, never, RedcapService> =>
 // Output Formatters
 // ============================================================================
 
-const displayTestResult = (result: TestResult): Effect.Effect<void, never, never> => {
+const displayTestResult = (result: TestResult): Effect.Effect<void> => {
   const statusIcon = result.success ? icon.success : icon.error;
   const status = result.success ? style.green('PASS') : style.red('FAIL');
-  const errorMsg = result.error !== undefined ? ` - ${style.dim(result.error)}` : '';
+  const errorMsg = result.error === undefined ? '' : ` - ${style.dim(result.error)}`;
 
   return Console.log(`  ${statusIcon} ${result.name.padEnd(12)} ${status}${errorMsg}`);
 };
 
-const displayJsonOutput = (output: CiOutput): Effect.Effect<void, never, never> =>
+const displayJsonOutput = (output: CiOutput): Effect.Effect<void> =>
   Console.log(JSON.stringify(output, null, 2));
 
-const displayNormalOutput = (output: CiOutput): Effect.Effect<void, never, never> =>
+const displayNormalOutput = (output: CiOutput): Effect.Effect<void> =>
   Effect.gen(function* () {
     yield* Console.log(style.bold('\n🔬 REDCap CI Test Results\n'));
     yield* Console.log(`Timestamp: ${style.dim(output.timestamp)}`);
@@ -234,3 +233,4 @@ export const runCiMode = (jsonOutput: boolean): Effect.Effect<void, never, Redca
       yield* Effect.fail(new Error('Some tests failed'));
     }
   }).pipe(Effect.catchAll(() => Effect.void));
+/* eslint-enable functional/no-expression-statements, functional/no-conditional-statements, functional/no-loop-statements, functional/immutable-data */

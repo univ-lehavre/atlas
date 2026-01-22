@@ -43,6 +43,7 @@
   "dependencies": {
     "@hono/effect-validator": "^1.2.0",
     "@hono/node-server": "^1.19.9",
+    "@univ-lehavre/atlas-net": "workspace:*",
     "@univ-lehavre/atlas-redcap-api": "workspace:*",
     "effect": "^3.19.14",
     "hono": "^4.11.5"
