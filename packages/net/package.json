@@ -44,12 +44,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "effect": "^3.19.14"
+    "effect": "^3.19.15"
   },
   "devDependencies": {
     "@types/node": "^25.0.10",
     "@univ-lehavre/atlas-typescript-config": "workspace:*",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.17"
+    "vitest": "^4.0.18"
   }
 }

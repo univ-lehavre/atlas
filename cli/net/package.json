@@ -40,7 +40,7 @@
   "dependencies": {
     "@clack/prompts": "^0.11.0",
     "@univ-lehavre/atlas-net": "workspace:*",
-    "effect": "^3.19.14",
+    "effect": "^3.19.15",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
