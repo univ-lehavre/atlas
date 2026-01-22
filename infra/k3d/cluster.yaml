@@ -1,0 +1,57 @@
+# k3d cluster configuration for ECRIN
+# https://k3d.io/v5.6.0/usage/configfile/
+
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: ecrin
+servers: 1
+agents: 0
+
+# Port mappings
+ports:
+  # HTTP (Cilium Ingress)
+  - port: 8080:80
+    nodeFilters:
+      - loadbalancer
+  # HTTPS (Cilium Ingress)
+  - port: 8443:443
+    nodeFilters:
+      - loadbalancer
+  # MailHog UI
+  - port: 8025:30025
+    nodeFilters:
+      - server:0
+
+# k3s configuration
+options:
+  k3s:
+    extraArgs:
+      # Disable default CNI (we use Cilium)
+      - arg: --flannel-backend=none
+        nodeFilters:
+          - server:*
+      # Disable default network policy controller (Cilium handles it)
+      - arg: --disable-network-policy
+        nodeFilters:
+          - server:*
+      # Disable Traefik (we use Cilium Ingress)
+      - arg: --disable=traefik
+        nodeFilters:
+          - server:*
+      # Disable ServiceLB (we use Cilium)
+      - arg: --disable=servicelb
+        nodeFilters:
+          - server:*
+
+# Local registry for faster image loading
+registries:
+  create:
+    name: ecrin-registry
+    host: '0.0.0.0'
+    hostPort: '5111'
+  config: |
+    mirrors:
+      "ecrin-registry:5111":
+        endpoint:
+          - http://ecrin-registry:5111
