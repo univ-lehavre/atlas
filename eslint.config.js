@@ -14,6 +14,8 @@ export default tseslint.config(
       'packages/eslint-config/**',
       'packages/typescript-config/**',
       'packages/redcap-cli/**',
+      // TODO: Configure eslint-plugin-svelte for ecrin
+      'apps/ecrin/**',
     ],
   },
   {
