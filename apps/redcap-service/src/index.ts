@@ -6,6 +6,7 @@ import { openAPIRouteHandler } from 'hono-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { env } from './env.js';
 import { health } from './routes/health.js';
+import { project } from './routes/project.js';
 import { records } from './routes/records.js';
 import { users } from './routes/users.js';
 
@@ -32,6 +33,7 @@ app.use('*', async (c, next) =>
 app.route('/health', health);
 
 // API routes
+app.route('/api/v1/project', project);
 app.route('/api/v1/records', records);
 app.route('/api/v1/users', users);
 
@@ -47,6 +49,7 @@ app.get(
       },
       servers: [{ url: `http://localhost:${String(env.port)}`, description: 'Local development' }],
       tags: [
+        { name: 'Project', description: 'REDCap project metadata' },
         { name: 'Records', description: 'REDCap records management' },
         { name: 'Users', description: 'REDCap users lookup' },
         { name: 'Health', description: 'Service health checks' },
