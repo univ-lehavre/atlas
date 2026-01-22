@@ -6,7 +6,7 @@ import {
   makeRedcapClientLayer,
   RedcapClientService,
 } from './client.js';
-import { RedcapUrl, RedcapToken, RecordId, InstrumentName } from './brands.js';
+import { RedcapUrl, RedcapToken, RecordId, InstrumentName } from './types.js';
 import { RedcapHttpError, RedcapApiError, RedcapNetworkError } from './errors.js';
 
 describe('escapeFilterLogicValue', () => {

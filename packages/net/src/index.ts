@@ -12,6 +12,8 @@ export {
   type IpAddress as IpAddressType,
   Port,
   type Port as PortType,
+  SafeApiUrl,
+  type SafeApiUrl as SafeApiUrlType,
   TimeoutMs,
   type TimeoutMs as TimeoutMsType,
   // Diagnostic Types
