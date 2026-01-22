@@ -32,8 +32,9 @@
  */
 import { Effect, pipe, Context, Layer } from 'effect';
 import { RedcapHttpError, RedcapApiError, RedcapNetworkError } from './errors.js';
-import type { RecordId, InstrumentName } from './brands.js';
 import type {
+  RecordId,
+  InstrumentName,
   RedcapConfig,
   RedcapClient,
   RedcapProjectInfo,

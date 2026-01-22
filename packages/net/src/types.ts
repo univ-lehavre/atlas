@@ -4,7 +4,7 @@
  * @description Type definitions and branded types for network diagnostic functions.
  */
 
-import { Brand } from 'effect';
+import { Brand, Effect } from 'effect';
 
 // ============================================================================
 // Branded Types
@@ -288,5 +288,89 @@ export const IpAddress = Brand.refined<IpAddress>(
 export const Hostname = Brand.refined<Hostname>(
   (s) => isValidHostname(s),
   (s) => Brand.error(`Invalid hostname: "${s}". Must be a valid hostname (RFC 1123)`)
+);
+
+// ============================================================================
+// URL Types
+// ============================================================================
+
+/**
+ * Branded type for safe API URLs.
+ *
+ * Ensures URLs meet security requirements for API communication:
+ * - Valid URL format parseable by the URL constructor
+ * - HTTP or HTTPS protocol only
+ * - No embedded credentials (username/password in URL)
+ * - Non-empty hostname
+ * - No query string parameters (API params should be in request body)
+ * - No URL fragments
+ *
+ * @example
+ * ```typescript
+ * // Valid URLs
+ * const url1 = SafeApiUrl('https://api.example.com/');
+ * const url2 = SafeApiUrl('http://localhost:8080/api/');
+ *
+ * // Invalid URLs throw BrandError
+ * SafeApiUrl('ftp://example.com');           // wrong protocol
+ * SafeApiUrl('https://user:pass@example.com'); // credentials in URL
+ * SafeApiUrl('https://example.com?token=x'); // query string not allowed
+ * SafeApiUrl('not-a-url');                   // invalid URL format
+ * ```
+ *
+ * @throws {Brand.BrandError} When the URL is invalid or fails security checks
+ */
+export type SafeApiUrl = string & Brand.Brand<'SafeApiUrl'>;
+
+/**
+ * Parses a URL safely, returning null if invalid.
+ * @internal
+ */
+const parseUrl = (url: string): URL | null =>
+  Effect.runSync(
+    Effect.try({
+      try: () => new URL(url),
+      catch: () => null,
+    })
+  );
+
+/**
+ * Validates that a parsed URL is safe for API usage.
+ * @internal
+ */
+const isUrlSafe = (parsed: URL): boolean =>
+  (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
+  parsed.username === '' &&
+  parsed.password === '' &&
+  parsed.hostname !== '' &&
+  parsed.search === '' &&
+  parsed.hash === '';
+
+/**
+ * Validates that a string is a safe API URL.
+ * @internal
+ */
+const isValidSafeApiUrl = (url: string): boolean => {
+  const parsed = parseUrl(url);
+  return parsed !== null && isUrlSafe(parsed);
+};
+
+/**
+ * Constructor for SafeApiUrl branded type with validation.
+ *
+ * @param url - The URL string to validate and brand
+ * @returns A validated SafeApiUrl branded value
+ * @throws {Brand.BrandError} When the URL is invalid or fails security checks
+ *
+ * @example
+ * ```typescript
+ * const apiUrl = SafeApiUrl('https://api.example.com/v1/');
+ * SafeApiUrl('ftp://example.com');  // Throws: Invalid safe API URL
+ * ```
+ */
+export const SafeApiUrl = Brand.refined<SafeApiUrl>(isValidSafeApiUrl, (url) =>
+  Brand.error(
+    `Invalid safe API URL: "${url}" must be a valid HTTP/HTTPS URL without credentials, query string, or fragments`
+  )
 );
 /* eslint-enable functional/no-conditional-statements */

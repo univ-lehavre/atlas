@@ -4,7 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { Hostname, IpAddress, Port, TimeoutMs } from './types.js';
+import { Hostname, IpAddress, Port, SafeApiUrl, TimeoutMs } from './types.js';
 
 describe('types (branded)', () => {
   describe('TimeoutMs', () => {
@@ -135,6 +135,51 @@ describe('types (branded)', () => {
 
     it('should reject hostname with invalid characters', () => {
       expect(() => Hostname('example_test.com')).toThrow();
+    });
+  });
+
+  describe('SafeApiUrl', () => {
+    it('should create valid HTTPS URL', () => {
+      const url = SafeApiUrl('https://api.example.com/');
+      expect(url).toBe('https://api.example.com/');
+    });
+
+    it('should create valid HTTP URL', () => {
+      const url = SafeApiUrl('http://localhost:8080/api/');
+      expect(url).toBe('http://localhost:8080/api/');
+    });
+
+    it('should create valid URL with path', () => {
+      const url = SafeApiUrl('https://example.com/api/v1/');
+      expect(url).toBe('https://example.com/api/v1/');
+    });
+
+    it('should reject invalid URL format', () => {
+      expect(() => SafeApiUrl('not-a-url')).toThrow();
+    });
+
+    it('should reject URL with wrong protocol (ftp)', () => {
+      expect(() => SafeApiUrl('ftp://example.com')).toThrow();
+    });
+
+    it('should reject URL with credentials', () => {
+      expect(() => SafeApiUrl('https://user:pass@example.com')).toThrow();
+    });
+
+    it('should reject URL with username only', () => {
+      expect(() => SafeApiUrl('https://user@example.com')).toThrow();
+    });
+
+    it('should reject URL with query string', () => {
+      expect(() => SafeApiUrl('https://example.com?token=abc')).toThrow();
+    });
+
+    it('should reject URL with hash fragment', () => {
+      expect(() => SafeApiUrl('https://example.com#section')).toThrow();
+    });
+
+    it('should reject URL with empty hostname', () => {
+      expect(() => SafeApiUrl('https://')).toThrow();
     });
   });
 });

@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { RedcapUrl, RedcapToken, RecordId, InstrumentName } from './brands.js';
+import {
+  RedcapUrl,
+  RedcapToken,
+  RecordId,
+  InstrumentName,
+  UserId,
+  Email,
+  PositiveInt,
+  NonEmptyString,
+  IsoTimestamp,
+  BooleanFlag,
+} from './types.js';
 
 describe('RedcapUrl', () => {
   describe('valid URLs', () => {
@@ -274,6 +285,252 @@ describe('InstrumentName', () => {
     it('should reject name with only numbers', () => {
       const name = '12345';
       expect(() => InstrumentName(name)).toThrow();
+    });
+  });
+});
+
+describe('UserId', () => {
+  describe('valid user IDs', () => {
+    it('should accept simple alphanumeric ID', () => {
+      const id = 'user123';
+      expect(() => UserId(id)).not.toThrow();
+      expect(UserId(id)).toBe(id);
+    });
+
+    it('should accept ID with underscores', () => {
+      const id = 'john_doe';
+      expect(() => UserId(id)).not.toThrow();
+    });
+
+    it('should accept all-digit ID', () => {
+      const id = '123456';
+      expect(() => UserId(id)).not.toThrow();
+    });
+
+    it('should accept single character ID', () => {
+      const id = 'a';
+      expect(() => UserId(id)).not.toThrow();
+    });
+
+    it('should accept mixed case ID', () => {
+      const id = 'JohnDoe123';
+      expect(() => UserId(id)).not.toThrow();
+    });
+  });
+
+  describe('invalid user IDs', () => {
+    it('should reject empty string', () => {
+      expect(() => UserId('')).toThrow();
+    });
+
+    it('should reject ID with @ symbol', () => {
+      expect(() => UserId('user@123')).toThrow();
+    });
+
+    it('should reject ID with spaces', () => {
+      expect(() => UserId('user 123')).toThrow();
+    });
+
+    it('should reject ID with hyphens', () => {
+      expect(() => UserId('user-123')).toThrow();
+    });
+
+    it('should reject ID with special characters', () => {
+      expect(() => UserId('user!123')).toThrow();
+    });
+  });
+});
+
+describe('Email', () => {
+  describe('valid emails', () => {
+    it('should accept standard email', () => {
+      const email = 'user@example.com';
+      expect(() => Email(email)).not.toThrow();
+      expect(Email(email)).toBe(email);
+    });
+
+    it('should accept email with subdomain', () => {
+      const email = 'user@mail.example.com';
+      expect(() => Email(email)).not.toThrow();
+    });
+
+    it('should accept email with plus tag', () => {
+      const email = 'user+tag@example.com';
+      expect(() => Email(email)).not.toThrow();
+    });
+
+    it('should accept email with dots in local part', () => {
+      const email = 'john.doe@example.com';
+      expect(() => Email(email)).not.toThrow();
+    });
+
+    it('should accept email with edu domain', () => {
+      const email = 'student@university.edu';
+      expect(() => Email(email)).not.toThrow();
+    });
+  });
+
+  describe('invalid emails', () => {
+    it('should reject empty string', () => {
+      expect(() => Email('')).toThrow();
+    });
+
+    it('should reject string without @', () => {
+      expect(() => Email('userexample.com')).toThrow();
+    });
+
+    it('should reject string without domain', () => {
+      expect(() => Email('user@')).toThrow();
+    });
+
+    it('should reject string without local part', () => {
+      expect(() => Email('@example.com')).toThrow();
+    });
+
+    it('should reject string without TLD', () => {
+      expect(() => Email('user@example')).toThrow();
+    });
+
+    it('should reject string with spaces', () => {
+      expect(() => Email('user @example.com')).toThrow();
+    });
+  });
+});
+
+describe('PositiveInt', () => {
+  describe('valid positive integers', () => {
+    it('should accept 1', () => {
+      expect(() => PositiveInt(1)).not.toThrow();
+      expect(PositiveInt(1)).toBe(1);
+    });
+
+    it('should accept large positive integer', () => {
+      expect(() => PositiveInt(12_345)).not.toThrow();
+    });
+
+    it('should accept Number.MAX_SAFE_INTEGER', () => {
+      expect(() => PositiveInt(Number.MAX_SAFE_INTEGER)).not.toThrow();
+    });
+  });
+
+  describe('invalid values', () => {
+    it('should reject 0', () => {
+      expect(() => PositiveInt(0)).toThrow();
+    });
+
+    it('should reject negative integers', () => {
+      expect(() => PositiveInt(-1)).toThrow();
+    });
+
+    it('should reject floats', () => {
+      expect(() => PositiveInt(1.5)).toThrow();
+    });
+
+    it('should reject negative floats', () => {
+      expect(() => PositiveInt(-1.5)).toThrow();
+    });
+
+    it('should reject NaN', () => {
+      expect(() => PositiveInt(Number.NaN)).toThrow();
+    });
+
+    it('should reject Infinity', () => {
+      expect(() => PositiveInt(Number.POSITIVE_INFINITY)).toThrow();
+    });
+  });
+});
+
+describe('NonEmptyString', () => {
+  describe('valid non-empty strings', () => {
+    it('should accept single character', () => {
+      expect(() => NonEmptyString('a')).not.toThrow();
+      expect(NonEmptyString('a')).toBe('a');
+    });
+
+    it('should accept multi-character string', () => {
+      expect(() => NonEmptyString('hello world')).not.toThrow();
+    });
+
+    it('should accept string with only spaces', () => {
+      expect(() => NonEmptyString('   ')).not.toThrow();
+    });
+  });
+
+  describe('invalid values', () => {
+    it('should reject empty string', () => {
+      expect(() => NonEmptyString('')).toThrow();
+    });
+  });
+});
+
+describe('IsoTimestamp', () => {
+  describe('valid timestamps', () => {
+    it('should accept REDCap format with space', () => {
+      const ts = '2024-01-15 10:30:00';
+      expect(() => IsoTimestamp(ts)).not.toThrow();
+      expect(IsoTimestamp(ts)).toBe(ts);
+    });
+
+    it('should accept ISO format with T', () => {
+      expect(() => IsoTimestamp('2024-01-15T10:30:00')).not.toThrow();
+    });
+
+    it('should accept ISO format with Z', () => {
+      expect(() => IsoTimestamp('2024-01-15T10:30:00Z')).not.toThrow();
+    });
+
+    it('should accept ISO format with timezone offset', () => {
+      expect(() => IsoTimestamp('2024-01-15T10:30:00+02:00')).not.toThrow();
+    });
+
+    it('should accept date only', () => {
+      expect(() => IsoTimestamp('2024-01-15')).not.toThrow();
+    });
+  });
+
+  describe('invalid timestamps', () => {
+    it('should reject invalid string', () => {
+      expect(() => IsoTimestamp('invalid')).toThrow();
+    });
+
+    it('should reject wrong date format', () => {
+      expect(() => IsoTimestamp('15/01/2024')).toThrow();
+    });
+
+    it('should reject empty string', () => {
+      expect(() => IsoTimestamp('')).toThrow();
+    });
+
+    it('should reject invalid date values', () => {
+      expect(() => IsoTimestamp('2024-13-45')).toThrow();
+    });
+  });
+});
+
+describe('BooleanFlag', () => {
+  describe('valid flags', () => {
+    it('should accept 0', () => {
+      expect(() => BooleanFlag(0)).not.toThrow();
+      expect(BooleanFlag(0)).toBe(0);
+    });
+
+    it('should accept 1', () => {
+      expect(() => BooleanFlag(1)).not.toThrow();
+      expect(BooleanFlag(1)).toBe(1);
+    });
+  });
+
+  describe('invalid flags', () => {
+    it('should reject 2', () => {
+      expect(() => BooleanFlag(2 as unknown as 0 | 1)).toThrow();
+    });
+
+    it('should reject -1', () => {
+      expect(() => BooleanFlag(-1 as unknown as 0 | 1)).toThrow();
+    });
+
+    it('should reject 0.5', () => {
+      expect(() => BooleanFlag(0.5 as unknown as 0 | 1)).toThrow();
     });
   });
 });
