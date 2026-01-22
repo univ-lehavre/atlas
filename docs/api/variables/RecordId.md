@@ -1,14 +1,14 @@
-[**@univ-lehavre/atlas-redcap-api**](../README.md)
+[**@univ-lehavre/atlas-redcap-api**](../index.md)
 
 ---
 
-[@univ-lehavre/atlas-redcap-api](../README.md) / RecordId
+[@univ-lehavre/atlas-redcap-api](../index.md) / RecordId
 
 # Variable: RecordId
 
 > **RecordId**: `Constructor`\<[`RecordId`](../type-aliases/RecordId.md)\>
 
-Defined in: [packages/redcap-api/src/brands.ts:201](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/brands.ts#L201)
+Defined in: [packages/redcap-api/src/brands.ts:201](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/brands.ts#L201)
 
 Constructor function for RecordId branded type.
 

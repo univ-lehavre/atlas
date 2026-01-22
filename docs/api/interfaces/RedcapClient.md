@@ -1,12 +1,12 @@
-[**@univ-lehavre/atlas-redcap-api**](../README.md)
+[**@univ-lehavre/atlas-redcap-api**](../index.md)
 
 ---
 
-[@univ-lehavre/atlas-redcap-api](../README.md) / RedcapClient
+[@univ-lehavre/atlas-redcap-api](../index.md) / RedcapClient
 
 # Interface: RedcapClient
 
-Defined in: [packages/redcap-api/src/types.ts:296](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L296)
+Defined in: [packages/redcap-api/src/types.ts:296](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L296)
 
 REDCap API client interface.
 
@@ -44,7 +44,7 @@ const { info, records } = await Effect.runPromise(program);
 
 > `readonly` **downloadPdf**: (`recordId`, `instrument`) => `Effect`\<`ArrayBuffer`, [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/redcap-api/src/types.ts:477](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L477)
+Defined in: [packages/redcap-api/src/types.ts:477](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L477)
 
 Downloads a PDF of a completed instrument for a record.
 
@@ -84,7 +84,7 @@ fs.writeFileSync('consent.pdf', Buffer.from(pdfBuffer));
 
 > `readonly` **exportRecords**: \<`T`\>(`options?`) => `Effect`\<readonly `T`[], [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapApiError`](../classes/RedcapApiError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/redcap-api/src/types.ts:403](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L403)
+Defined in: [packages/redcap-api/src/types.ts:403](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L403)
 
 Exports records from the project.
 
@@ -134,7 +134,7 @@ const patients = await Effect.runPromise(
 
 > `readonly` **findUserIdByEmail**: (`email`) => `Effect`\<`string` \| `null`, [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapApiError`](../classes/RedcapApiError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/redcap-api/src/types.ts:503](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L503)
+Defined in: [packages/redcap-api/src/types.ts:503](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L503)
 
 Finds a user's record ID by their email address.
 
@@ -172,7 +172,7 @@ if (userId) {
 
 > `readonly` **getExportFieldNames**: () => `Effect`\<readonly [`RedcapExportFieldName`](RedcapExportFieldName.md)[], [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapApiError`](../classes/RedcapApiError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/redcap-api/src/types.ts:374](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L374)
+Defined in: [packages/redcap-api/src/types.ts:374](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L374)
 
 Gets export field name mappings.
 
@@ -198,7 +198,7 @@ const checkboxCols = mappings.filter((m) => m.original_field_name === 'symptoms'
 
 > `readonly` **getFields**: () => `Effect`\<readonly [`RedcapField`](RedcapField.md)[], [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapApiError`](../classes/RedcapApiError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/redcap-api/src/types.ts:355](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L355)
+Defined in: [packages/redcap-api/src/types.ts:355](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L355)
 
 Gets all fields (data dictionary) from the project.
 
@@ -221,7 +221,7 @@ const textFields = fields.filter((f) => f.field_type === 'text');
 
 > `readonly` **getInstruments**: () => `Effect`\<readonly [`RedcapInstrument`](RedcapInstrument.md)[], [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapApiError`](../classes/RedcapApiError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/redcap-api/src/types.ts:339](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L339)
+Defined in: [packages/redcap-api/src/types.ts:339](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L339)
 
 Gets all instruments (forms) in the project.
 
@@ -244,7 +244,7 @@ const formNames = instruments.map((i) => i.instrument_name);
 
 > `readonly` **getProjectInfo**: () => `Effect`\<[`RedcapProjectInfo`](RedcapProjectInfo.md), [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapApiError`](../classes/RedcapApiError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/redcap-api/src/types.ts:323](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L323)
+Defined in: [packages/redcap-api/src/types.ts:323](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L323)
 
 Gets project information and settings.
 
@@ -269,7 +269,7 @@ if (info.in_production === 1) {
 
 > `readonly` **getSurveyLink**: (`record`, `instrument`) => `Effect`\<`string`, [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/redcap-api/src/types.ts:453](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L453)
+Defined in: [packages/redcap-api/src/types.ts:453](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L453)
 
 Gets a survey link for a specific record and instrument.
 
@@ -308,7 +308,7 @@ const surveyUrl = await Effect.runPromise(
 
 > `readonly` **getVersion**: () => `Effect`\<`string`, [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/redcap-api/src/types.ts:308](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L308)
+Defined in: [packages/redcap-api/src/types.ts:308](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L308)
 
 Gets the REDCap version number.
 
@@ -331,7 +331,7 @@ console.log(`REDCap version: ${version}`);
 
 > `readonly` **importRecords**: (`records`, `options?`) => `Effect`\<\{ `count`: `number`; \}, [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapApiError`](../classes/RedcapApiError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/redcap-api/src/types.ts:427](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L427)
+Defined in: [packages/redcap-api/src/types.ts:427](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L427)
 
 Imports records into the project.
 

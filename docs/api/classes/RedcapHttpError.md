@@ -1,12 +1,12 @@
-[**@univ-lehavre/atlas-redcap-api**](../README.md)
+[**@univ-lehavre/atlas-redcap-api**](../index.md)
 
 ---
 
-[@univ-lehavre/atlas-redcap-api](../README.md) / RedcapHttpError
+[@univ-lehavre/atlas-redcap-api](../index.md) / RedcapHttpError
 
 # Class: RedcapHttpError
 
-Defined in: [packages/redcap-api/src/errors.ts:58](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/errors.ts#L58)
+Defined in: [packages/redcap-api/src/errors.ts:58](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/errors.ts#L58)
 
 HTTP-level error from REDCap API.
 
@@ -184,7 +184,7 @@ Defined in: node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.
 
 > `readonly` **status**: `number`
 
-Defined in: [packages/redcap-api/src/errors.ts:60](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/errors.ts#L60)
+Defined in: [packages/redcap-api/src/errors.ts:60](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/errors.ts#L60)
 
 The HTTP status code (e.g., 401, 403, 404, 500)
 

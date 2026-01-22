@@ -1,12 +1,12 @@
-[**@univ-lehavre/atlas-redcap-api**](../README.md)
+[**@univ-lehavre/atlas-redcap-api**](../index.md)
 
 ---
 
-[@univ-lehavre/atlas-redcap-api](../README.md) / ImportRecordsOptions
+[@univ-lehavre/atlas-redcap-api](../index.md) / ImportRecordsOptions
 
 # Interface: ImportRecordsOptions
 
-Defined in: [packages/redcap-api/src/types.ts:252](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L252)
+Defined in: [packages/redcap-api/src/types.ts:252](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L252)
 
 Options for importing records into REDCap.
 
@@ -36,7 +36,7 @@ console.log(`Imported ${result.count} records`);
 
 > `readonly` `optional` **overwriteBehavior**: `"normal"` \| `"overwrite"`
 
-Defined in: [packages/redcap-api/src/types.ts:258](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L258)
+Defined in: [packages/redcap-api/src/types.ts:258](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L258)
 
 How to handle existing data:
 
@@ -49,7 +49,7 @@ How to handle existing data:
 
 > `readonly` `optional` **returnContent**: `"count"` \| `"ids"` \| `"auto_ids"`
 
-Defined in: [packages/redcap-api/src/types.ts:265](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/types.ts#L265)
+Defined in: [packages/redcap-api/src/types.ts:265](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L265)
 
 What to return after import:
 
