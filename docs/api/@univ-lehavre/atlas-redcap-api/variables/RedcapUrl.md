@@ -1,8 +1,8 @@
 # Variable: RedcapUrl
 
-> **RedcapUrl**: `Constructor`\<[`RedcapUrl`](../type-aliases/RedcapUrl.md)\>
+> **RedcapUrl**: `Constructor`\<[`SafeApiUrl`](../../atlas-net/type-aliases/SafeApiUrl.md)\>
 
-Defined in: [packages/redcap-api/src/brands.ts:127](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/brands.ts#L127)
+Defined in: [packages/redcap-api/src/types.ts:67](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/redcap-api/src/types.ts#L67)
 
 Constructor function for RedcapUrl branded type.
 
