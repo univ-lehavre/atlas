@@ -1,6 +1,6 @@
 # Interface: RedcapConfig
 
-Defined in: [packages/redcap-api/src/types.ts:42](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L42)
+Defined in: [packages/redcap-api/src/types.ts:453](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/redcap-api/src/types.ts#L453)
 
 Configuration for REDCap API client.
 
@@ -25,7 +25,7 @@ const config: RedcapConfig = {
 
 > `readonly` **token**: [`RedcapToken`](../type-aliases/RedcapToken.md)
 
-Defined in: [packages/redcap-api/src/types.ts:46](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L46)
+Defined in: [packages/redcap-api/src/types.ts:457](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/redcap-api/src/types.ts#L457)
 
 The API token for authentication
 
@@ -33,8 +33,8 @@ The API token for authentication
 
 ### url
 
-> `readonly` **url**: [`RedcapUrl`](../type-aliases/RedcapUrl.md)
+> `readonly` **url**: [`SafeApiUrl`](../../atlas-net/type-aliases/SafeApiUrl.md)
 
-Defined in: [packages/redcap-api/src/types.ts:44](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L44)
+Defined in: [packages/redcap-api/src/types.ts:455](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/redcap-api/src/types.ts#L455)
 
 The REDCap API endpoint URL

@@ -120,6 +120,28 @@ Validated port number between 1 and 65535.
 
 Validated timeout in milliseconds between 0 and 600000 (10 minutes).
 
+### `SafeApiUrl`
+
+Validated URL for API communication with security checks:
+
+- Valid URL format parseable by the URL constructor
+- HTTP or HTTPS protocol only
+- No embedded credentials (username/password in URL)
+- Non-empty hostname
+- No query string parameters
+- No URL fragments
+
+```typescript
+import { SafeApiUrl } from '@univ-lehavre/atlas-net';
+
+const url = SafeApiUrl('https://api.example.com/v1/');
+
+// These will throw:
+// SafeApiUrl('ftp://example.com')           // Wrong protocol
+// SafeApiUrl('https://user:pass@example.com') // Credentials in URL
+// SafeApiUrl('https://example.com?token=x') // Query string not allowed
+```
+
 ## Constants
 
 Pre-defined constants for common network configurations:
@@ -261,6 +283,7 @@ README.md for full documentation
 | [Hostname](type-aliases/Hostname.md)                 | Branded type for hostnames. Validates according to RFC 1123. Also accepts valid IP addresses.                                                                    |
 | [IpAddress](type-aliases/IpAddress.md)               | Branded type for IP addresses. Accepts valid IPv4 (e.g., '192.168.1.1') or IPv6 (e.g., '::1') addresses.                                                         |
 | [Port](type-aliases/Port.md)                         | Branded type for port numbers. Valid range: 1 to 65535.                                                                                                          |
+| [SafeApiUrl](type-aliases/SafeApiUrl.md)             | Branded type for safe API URLs.                                                                                                                                  |
 | [TimeoutMs](type-aliases/TimeoutMs.md)               | Branded type for timeout values in milliseconds. Valid range: 0 to 600000 (10 minutes).                                                                          |
 
 ## Variables
@@ -275,6 +298,7 @@ README.md for full documentation
 | [INTERNET_CHECK_HOST](variables/INTERNET_CHECK_HOST.md)                             | Host used for internet connectivity checks (Cloudflare DNS).      |
 | [IpAddress](variables/IpAddress.md)                                                 | Constructor for IpAddress branded type with validation.           |
 | [Port](variables/Port.md)                                                           | Constructor for Port branded type with validation.                |
+| [SafeApiUrl](variables/SafeApiUrl.md)                                               | Constructor for SafeApiUrl branded type with validation.          |
 | [TimeoutMs](variables/TimeoutMs.md)                                                 | Constructor for TimeoutMs branded type with validation.           |
 
 ## Functions
@@ -303,6 +327,12 @@ Renames and re-exports [IpAddress](variables/IpAddress.md)
 ### PortType
 
 Renames and re-exports [Port](variables/Port.md)
+
+---
+
+### SafeApiUrlType
+
+Renames and re-exports [SafeApiUrl](variables/SafeApiUrl.md)
 
 ---
 

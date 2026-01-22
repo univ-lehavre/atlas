@@ -2,7 +2,7 @@
 
 > **checkInternet**(`options`): `Effect`\<[`DiagnosticStep`](../interfaces/DiagnosticStep.md)\>
 
-Defined in: [diagnostics.ts:273](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/diagnostics.ts#L273)
+Defined in: [diagnostics.ts:273](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/net/src/diagnostics.ts#L273)
 
 Checks basic internet connectivity by pinging Cloudflare's DNS server.
 

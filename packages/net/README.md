@@ -120,6 +120,28 @@ Validated port number between 1 and 65535.
 
 Validated timeout in milliseconds between 0 and 600000 (10 minutes).
 
+### `SafeApiUrl`
+
+Validated URL for API communication with security checks:
+
+- Valid URL format parseable by the URL constructor
+- HTTP or HTTPS protocol only
+- No embedded credentials (username/password in URL)
+- Non-empty hostname
+- No query string parameters
+- No URL fragments
+
+```typescript
+import { SafeApiUrl } from '@univ-lehavre/atlas-net';
+
+const url = SafeApiUrl('https://api.example.com/v1/');
+
+// These will throw:
+// SafeApiUrl('ftp://example.com')           // Wrong protocol
+// SafeApiUrl('https://user:pass@example.com') // Credentials in URL
+// SafeApiUrl('https://example.com?token=x') // Query string not allowed
+```
+
 ## Constants
 
 Pre-defined constants for common network configurations:

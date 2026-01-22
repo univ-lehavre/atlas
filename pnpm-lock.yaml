@@ -239,6 +239,9 @@ importers:
 
   packages/redcap-api:
     dependencies:
+      '@univ-lehavre/atlas-net':
+        specifier: workspace:*
+        version: link:../net
       effect:
         specifier: ^3.19.14
         version: 3.19.14

@@ -2,7 +2,7 @@
 
 > **Hostname**: `Constructor`\<[`Hostname`](../type-aliases/Hostname.md)\>
 
-Defined in: [types.ts:59](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L59)
+Defined in: [types.ts:59](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/net/src/types.ts#L59)
 
 Constructor for Hostname branded type with validation.
 

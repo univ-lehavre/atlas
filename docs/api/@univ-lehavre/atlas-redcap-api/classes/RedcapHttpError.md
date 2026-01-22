@@ -1,6 +1,6 @@
 # Class: RedcapHttpError
 
-Defined in: [packages/redcap-api/src/errors.ts:58](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/errors.ts#L58)
+Defined in: [packages/redcap-api/src/errors.ts:58](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/redcap-api/src/errors.ts#L58)
 
 HTTP-level error from REDCap API.
 
@@ -178,7 +178,7 @@ Defined in: node_modules/.pnpm/typescript@5.9.3/node_modules/typescript/lib/lib.
 
 > `readonly` **status**: `number`
 
-Defined in: [packages/redcap-api/src/errors.ts:60](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/errors.ts#L60)
+Defined in: [packages/redcap-api/src/errors.ts:60](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/redcap-api/src/errors.ts#L60)
 
 The HTTP status code (e.g., 401, 403, 404, 500)
 
