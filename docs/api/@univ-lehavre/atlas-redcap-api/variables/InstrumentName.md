@@ -2,7 +2,7 @@
 
 > **InstrumentName**: `Constructor`\<[`InstrumentName`](../type-aliases/InstrumentName.md)\>
 
-Defined in: [packages/redcap-api/src/brands.ts:244](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/brands.ts#L244)
+Defined in: [packages/redcap-api/src/types.ts:181](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/redcap-api/src/types.ts#L181)
 
 Constructor function for InstrumentName branded type.
 

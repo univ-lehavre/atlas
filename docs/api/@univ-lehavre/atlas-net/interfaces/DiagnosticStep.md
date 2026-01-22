@@ -1,6 +1,6 @@
 # Interface: DiagnosticStep
 
-Defined in: [types.ts:91](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L91)
+Defined in: [types.ts:91](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/net/src/types.ts#L91)
 
 Result of a single diagnostic step.
 
@@ -10,7 +10,7 @@ Result of a single diagnostic step.
 
 > `readonly` `optional` **latencyMs**: `number`
 
-Defined in: [types.ts:97](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L97)
+Defined in: [types.ts:97](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/net/src/types.ts#L97)
 
 Time taken in milliseconds (optional)
 
@@ -20,7 +20,7 @@ Time taken in milliseconds (optional)
 
 > `readonly` `optional` **message**: `string`
 
-Defined in: [types.ts:99](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L99)
+Defined in: [types.ts:99](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/net/src/types.ts#L99)
 
 Additional information (e.g., resolved IP, error message)
 
@@ -30,7 +30,7 @@ Additional information (e.g., resolved IP, error message)
 
 > `readonly` **name**: `string`
 
-Defined in: [types.ts:93](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L93)
+Defined in: [types.ts:93](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/net/src/types.ts#L93)
 
 Name of the diagnostic step (e.g., 'DNS Resolve', 'TCP Connect')
 
@@ -40,6 +40,6 @@ Name of the diagnostic step (e.g., 'DNS Resolve', 'TCP Connect')
 
 > `readonly` **status**: [`DiagnosticStatus`](../type-aliases/DiagnosticStatus.md)
 
-Defined in: [types.ts:95](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L95)
+Defined in: [types.ts:95](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/net/src/types.ts#L95)
 
 Status of the step

@@ -2,7 +2,7 @@
 
 > **RecordId**: `Constructor`\<[`RecordId`](../type-aliases/RecordId.md)\>
 
-Defined in: [packages/redcap-api/src/brands.ts:201](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/brands.ts#L201)
+Defined in: [packages/redcap-api/src/types.ts:138](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/redcap-api/src/types.ts#L138)
 
 Constructor function for RecordId branded type.
 

@@ -2,7 +2,7 @@
 
 > **makeRedcapClientLayer**(`config`, `fetchFn`): `Layer`\<[`RedcapClientService`](../classes/RedcapClientService.md)\>
 
-Defined in: [packages/redcap-api/src/client.ts:493](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/client.ts#L493)
+Defined in: [packages/redcap-api/src/client.ts:494](https://github.com/univ-lehavre/atlas/blob/d53e1a534f87e749e0d344418b61514be7d9d0ba/packages/redcap-api/src/client.ts#L494)
 
 Creates an Effect Layer providing the RedcapClientService.
 
