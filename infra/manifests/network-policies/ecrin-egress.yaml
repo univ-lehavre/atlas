@@ -1,0 +1,49 @@
+---
+# ecrin can only talk to redcap-service and OPA
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: ecrin-egress
+  namespace: ecrin
+spec:
+  description: 'ecrin can only access redcap-service and OPA'
+  endpointSelector:
+    matchLabels:
+      app: ecrin
+  egress:
+    # Allow access to redcap-service
+    - toEndpoints:
+        - matchLabels:
+            app: redcap-service
+      toPorts:
+        - ports:
+            - port: '3000'
+              protocol: TCP
+    # Allow access to OPA
+    - toEndpoints:
+        - matchLabels:
+            app: opa
+      toPorts:
+        - ports:
+            - port: '8181'
+              protocol: TCP
+---
+# ecrin accepts traffic from Cilium Ingress only
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: ecrin-ingress
+  namespace: ecrin
+spec:
+  description: 'ecrin accepts traffic from ingress only'
+  endpointSelector:
+    matchLabels:
+      app: ecrin
+  ingress:
+    - fromEntities:
+        - world
+        - cluster
+      toPorts:
+        - ports:
+            - port: '3000'
+              protocol: TCP
