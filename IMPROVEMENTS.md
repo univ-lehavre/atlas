@@ -181,7 +181,9 @@ describe('Project Routes', () => {
 
 ### 6. Rate Limiting
 
-**Option 1: Middleware Hono**
+**Status**: ✅ **FAIT** (commit à venir)
+
+**Option 1: Middleware Hono** (implémentée)
 
 ```typescript
 import { rateLimiter } from 'hono-rate-limiter';
@@ -346,7 +348,7 @@ if (!res.ok) {
 - [x] 3. Ajouter .svelte-kit au .gitignore
 - [x] 4. Timeouts OPA
 - [ ] 5. Tests unitaires routes
-- [ ] 6. Rate limiting
+- [x] 6. Rate limiting
 - [x] 7. Retry logic REDCap
 - [ ] 8. OpenTelemetry
 - [ ] 9. Performance benchmarks
