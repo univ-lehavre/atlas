@@ -1,0 +1,56 @@
+{
+  "name": "@univ-lehavre/atlas-redcap-cli",
+  "version": "0.1.0",
+  "description": "CLI tool for testing REDCap connectivity and exploring projects",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "packages/redcap-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/redcap-cli#readme",
+  "keywords": [
+    "redcap",
+    "cli",
+    "effect",
+    "typescript"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "redcap": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@effect/cli": "^0.73.0",
+    "@effect/platform": "^0.94.1",
+    "@effect/platform-node": "^0.104.0",
+    "effect": "^3.19.14"
+  },
+  "devDependencies": {
+    "@univ-lehavre/atlas-typescript-config": "workspace:*",
+    "@types/node": "^25.0.10",
+    "typescript": "^5.9.3"
+  }
+}
