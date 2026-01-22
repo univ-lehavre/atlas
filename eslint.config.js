@@ -16,6 +16,7 @@ export default tseslint.config(
       'packages/redcap-cli/**',
       // TODO: Configure eslint-plugin-svelte for ecrin
       'apps/ecrin/**',
+      '**/coverage/**',
     ],
   },
   {
