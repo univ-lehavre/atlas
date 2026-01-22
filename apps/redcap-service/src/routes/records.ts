@@ -5,26 +5,13 @@ import { Effect, pipe } from 'effect';
 import { RecordId, InstrumentName, RedcapApiError } from '@univ-lehavre/atlas-redcap-api';
 import { redcap } from '../redcap.js';
 import { runEffect, runEffectRaw } from '../effect-handler.js';
-
-/**
- * Validation error hook that returns errors in the correct API format
- */
-const validationErrorHook = (
-  result: { success: boolean; error?: readonly { message: string }[] },
-  c: { json: (data: unknown, status: number) => Response }
-): Response | undefined =>
-  result.success
-    ? undefined
-    : c.json(
-        {
-          data: null,
-          error: {
-            code: 'validation_error',
-            message: result.error?.map((i) => i.message).join(', ') ?? 'Validation failed',
-          },
-        },
-        400
-      );
+import { validationErrorHook } from '../middleware/validation.js';
+import {
+  ErrorResponseSchema,
+  SuccessResponseOpenAPI,
+  REDCAP_NAME_PATTERN,
+  INSTRUMENT_NAME_PATTERN,
+} from '../schemas.js';
 
 /**
  * Safely parse a RecordId, returning an Effect
@@ -52,12 +39,9 @@ const records = new Hono();
 
 // --- Schemas ---
 
-// Pattern for REDCap field/form names: ASCII alphanumeric, underscores, commas for lists
-const RedcapNamePattern = /^[\w,]*$/;
-
 const ExportQuerySchema = S.Struct({
-  fields: S.optional(S.String.pipe(S.pattern(RedcapNamePattern))),
-  forms: S.optional(S.String.pipe(S.pattern(RedcapNamePattern))),
+  fields: S.optional(S.String.pipe(S.pattern(REDCAP_NAME_PATTERN))),
+  forms: S.optional(S.String.pipe(S.pattern(REDCAP_NAME_PATTERN))),
   filterLogic: S.optional(S.String),
   rawOrLabel: S.optional(S.Literal('raw', 'label')),
 }).annotations({
@@ -72,39 +56,18 @@ const ImportBodySchema = S.Struct({
   overwriteBehavior: S.optional(S.Literal('normal', 'overwrite')),
 }).annotations({ identifier: 'ImportRecordsBody', description: 'Body for importing records' });
 
-// Pattern for REDCap instrument names: lowercase letter followed by lowercase letters, digits, underscores
-const InstrumentNamePattern = /^[a-z][a-z0-9_]*$/;
-
 const PdfQuerySchema = S.Struct({
-  instrument: S.optionalWith(S.String.pipe(S.pattern(InstrumentNamePattern)), {
+  instrument: S.optionalWith(S.String.pipe(S.pattern(INSTRUMENT_NAME_PATTERN)), {
     default: () => 'form',
   }),
 }).annotations({ identifier: 'PdfQueryParams', description: 'Query parameters for PDF download' });
 
 const SurveyLinkQuerySchema = S.Struct({
-  instrument: S.String.pipe(S.pattern(InstrumentNamePattern)),
+  instrument: S.String.pipe(S.pattern(INSTRUMENT_NAME_PATTERN)),
 }).annotations({
   identifier: 'SurveyLinkQueryParams',
   description: 'Query parameters for survey link',
 });
-
-// OpenAPI schema for generic success response (not using Effect Schema due to S.Any issues)
-const SuccessResponseOpenAPI = {
-  type: 'object' as const,
-  required: ['data'] as string[],
-  properties: {
-    data: { description: 'Response data - structure varies by endpoint' },
-  },
-  additionalProperties: false,
-};
-
-const ErrorResponseSchema = S.Struct({
-  data: S.Null,
-  error: S.Struct({
-    code: S.String,
-    message: S.String,
-  }),
-}).annotations({ identifier: 'ErrorResponse', description: 'Error API response' });
 
 // --- Routes ---
 
