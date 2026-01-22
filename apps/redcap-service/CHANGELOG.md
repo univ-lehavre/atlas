@@ -1,5 +1,29 @@
 # @univ-lehavre/atlas-redcap-service
 
+## 0.4.0
+
+### Minor Changes
+
+- [#17](https://github.com/univ-lehavre/atlas/pull/17) [`9a86934`](https://github.com/univ-lehavre/atlas/commit/9a869343f43c6b65bd66cb1bfae3e3ffa42b1047) Thanks [@chasset](https://github.com/chasset)! - Add @univ-lehavre/atlas-net package for network diagnostics
+  - Create dedicated network diagnostics library with DNS, TCP, TLS, and internet checks
+  - Add @univ-lehavre/atlas-net-cli package with interactive and CI modes
+  - Add /health/diagnose SSE endpoint to redcap-service for progressive diagnostics
+  - Restructure CLI packages into cli/ directory
+
+### Patch Changes
+
+- [#17](https://github.com/univ-lehavre/atlas/pull/17) [`2952a6d`](https://github.com/univ-lehavre/atlas/commit/2952a6d9a30333d079aecb8bf609c05597852a2c) Thanks [@chasset](https://github.com/chasset)! - Add `@univ-lehavre/atlas-redcap-cli` package for REDCap connectivity testing
+  - New CLI tool built with `@effect/cli` for testing REDCap service connectivity
+  - `redcap test` command with multiple test options: `--all`, `--quick`, `--json`
+  - Individual test flags: `--service`, `--health`, `--project`, `--instruments`, `--fields`, `--records`
+  - Configurable service URL via `--url` option
+  - JSON output mode for CI integration
+  - Built-in help and shell completions
+  - Removed embedded `test-redcap.ts` script from `redcap-service` in favor of the new CLI
+
+- Updated dependencies [[`9a86934`](https://github.com/univ-lehavre/atlas/commit/9a869343f43c6b65bd66cb1bfae3e3ffa42b1047)]:
+  - @univ-lehavre/atlas-net@0.2.0
+
 ## 0.3.0
 
 ### Minor Changes
