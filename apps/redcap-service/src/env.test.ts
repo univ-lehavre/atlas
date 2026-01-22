@@ -19,9 +19,9 @@ describe('env', () => {
 
     const { env } = await import('./env.js');
 
-    expect(env.PORT).toBe(4000);
-    expect(env.REDCAP_API_URL).toBe('https://redcap.example.com/api/');
-    expect(env.REDCAP_API_TOKEN).toBe('test-token');
+    expect(env.port).toBe(4000);
+    expect(env.redcapApiUrl).toBe('https://redcap.example.com/api/');
+    expect(env.redcapApiToken).toBe('test-token');
   });
 
   it('should use default PORT when not provided', async () => {
@@ -31,6 +31,6 @@ describe('env', () => {
 
     const { env } = await import('./env.js');
 
-    expect(env.PORT).toBe(3000);
+    expect(env.port).toBe(3000);
   });
 });

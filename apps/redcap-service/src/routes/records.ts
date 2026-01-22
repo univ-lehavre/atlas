@@ -47,10 +47,10 @@ records.get('/', effectValidator('query', ExportQuerySchema), (c) => {
   return runEffect(
     c,
     redcap.exportRecords({
-      ...(query.fields !== undefined ? { fields: query.fields.split(',') } : {}),
-      ...(query.forms !== undefined ? { forms: query.forms.split(',') } : {}),
-      ...(query.filterLogic !== undefined ? { filterLogic: query.filterLogic } : {}),
-      ...(query.rawOrLabel !== undefined ? { rawOrLabel: query.rawOrLabel } : {}),
+      ...(query.fields === undefined ? {} : { fields: query.fields.split(',') }),
+      ...(query.forms === undefined ? {} : { forms: query.forms.split(',') }),
+      ...(query.filterLogic === undefined ? {} : { filterLogic: query.filterLogic }),
+      ...(query.rawOrLabel === undefined ? {} : { rawOrLabel: query.rawOrLabel }),
       type: 'flat',
     })
   );
@@ -72,7 +72,7 @@ records.put('/', effectValidator('json', ImportBodySchema), (c) => {
     c,
     redcap.importRecords(
       body.records,
-      body.overwriteBehavior !== undefined ? { overwriteBehavior: body.overwriteBehavior } : {}
+      body.overwriteBehavior === undefined ? {} : { overwriteBehavior: body.overwriteBehavior }
     )
   );
 });

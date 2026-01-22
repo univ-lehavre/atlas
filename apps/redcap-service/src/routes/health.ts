@@ -1,7 +1,17 @@
-/* eslint-disable functional/no-let, functional/no-expression-statements, functional/immutable-data, functional/no-try-statements, functional/no-loop-statements */
+/* eslint-disable functional/no-let, functional/no-expression-statements, functional/immutable-data, functional/no-try-statements, functional/no-loop-statements, functional/no-conditional-statements, @typescript-eslint/strict-boolean-expressions -- Health check requires imperative code for latency measurements */
 import { Hono } from 'hono';
+import { streamSSE } from 'hono/streaming';
 import { Effect, pipe } from 'effect';
+import {
+  dnsResolve,
+  tcpPing,
+  tlsHandshake,
+  checkInternet as netCheckInternet,
+  type DiagnosticStep,
+  type DiagnosticResult,
+} from '@univ-lehavre/atlas-net';
 import { redcap } from '../redcap.js';
+import { env } from '../env.js';
 
 const LATENCY_SAMPLES = 3;
 const CONNECTIVITY_CHECK_URL = 'https://www.google.com';
@@ -203,6 +213,17 @@ const computeOverallStatus = (checks: readonly HealthCheck[]): 'ok' | 'degraded'
 const getStatusCode = (status: 'ok' | 'degraded' | 'error'): 200 | 503 =>
   status === 'error' ? 503 : 200;
 
+/**
+ * Convert HealthCheck to DiagnosticStep
+ * Maps 'degraded' status to 'ok' (since DiagnosticStatus doesn't have 'degraded')
+ */
+const toDiagnosticStep = (check: HealthCheck): DiagnosticStep => ({
+  name: check.name,
+  status: check.status === 'degraded' ? 'ok' : check.status,
+  latencyMs: check.latencyMs,
+  message: check.message,
+});
+
 export const health = new Hono();
 
 /**
@@ -222,11 +243,11 @@ health.get('/detailed', async (c) => {
 
   // Check token (only if server is reachable)
   const tokenResult: TokenCheckResult =
-    redcapResult.check.status !== 'error'
-      ? await checkToken()
-      : {
+    redcapResult.check.status === 'error'
+      ? {
           check: { name: 'token', status: 'error', message: 'Skipped - REDCap server unreachable' },
-        };
+        }
+      : await checkToken();
 
   // Fetch instruments and fields (only if token is valid)
   const [instruments, fields] =
@@ -236,9 +257,9 @@ health.get('/detailed', async (c) => {
 
   // Build checks array
   const checks: readonly HealthCheck[] =
-    internetCheck !== null
-      ? [redcapResult.check, tokenResult.check, internetCheck]
-      : [redcapResult.check, tokenResult.check];
+    internetCheck === null
+      ? [redcapResult.check, tokenResult.check]
+      : [redcapResult.check, tokenResult.check, internetCheck];
 
   // Build response
   const response: HealthResponse = {
@@ -247,7 +268,7 @@ health.get('/detailed', async (c) => {
     checks: {
       redcap: redcapResult.check,
       token: tokenResult.check,
-      ...(internetCheck !== null ? { internet: internetCheck } : {}),
+      ...(internetCheck === null ? {} : { internet: internetCheck }),
     },
     ...(redcapResult.version !== undefined && tokenResult.project !== undefined
       ? {
@@ -258,9 +279,119 @@ health.get('/detailed', async (c) => {
           },
         }
       : {}),
-    ...(instruments !== null ? { instruments } : {}),
-    ...(fields !== null ? { fields } : {}),
+    ...(instruments === null ? {} : { instruments }),
+    ...(fields === null ? {} : { fields }),
   };
 
   return c.json(response, getStatusCode(response.status));
 });
+
+/**
+ * Network diagnostics via Server-Sent Events
+ * Progressive diagnostic checks: DNS → TCP → TLS → HTTP → REDCap → Token → API
+ */
+health.get('/diagnose', (c) => {
+  return streamSSE(c, async (stream) => {
+    const steps: DiagnosticStep[] = [];
+
+    const sendStep = async (step: DiagnosticStep): Promise<void> => {
+      steps.push(step);
+      await stream.writeSSE({
+        event: 'step',
+        data: JSON.stringify(step),
+      });
+    };
+
+    const url = new URL(env.redcapApiUrl);
+    const port = url.port ? Number.parseInt(url.port, 10) : url.protocol === 'https:' ? 443 : 80;
+    const isHttps = url.protocol === 'https:';
+
+    // Step 1: DNS Resolution
+    const dnsStep = await Effect.runPromise(dnsResolve(url.hostname));
+    await sendStep(dnsStep);
+
+    if (dnsStep.status === 'error') {
+      const internetStep = await Effect.runPromise(netCheckInternet());
+      await sendStep(internetStep);
+      await stream.writeSSE({
+        event: 'done',
+        data: JSON.stringify({ steps, overallStatus: 'error' } satisfies DiagnosticResult),
+      });
+      return;
+    }
+
+    // Step 2: TCP Connect
+    const tcpStep = await Effect.runPromise(tcpPing(url.hostname, port, { name: 'TCP Connect' }));
+    await sendStep(tcpStep);
+
+    if (tcpStep.status === 'error') {
+      const internetStep = await Effect.runPromise(netCheckInternet());
+      await sendStep(internetStep);
+      await stream.writeSSE({
+        event: 'done',
+        data: JSON.stringify({ steps, overallStatus: 'error' } satisfies DiagnosticResult),
+      });
+      return;
+    }
+
+    // Step 3: TLS Handshake (HTTPS only)
+    if (isHttps) {
+      const tlsStep = await Effect.runPromise(tlsHandshake(url.hostname, port));
+      await sendStep(tlsStep);
+
+      if (tlsStep.status === 'error') {
+        await stream.writeSSE({
+          event: 'done',
+          data: JSON.stringify({ steps, overallStatus: 'error' } satisfies DiagnosticResult),
+        });
+        return;
+      }
+    }
+
+    // Step 4: REDCap Version (tests HTTP + REDCap connectivity)
+    const redcapResult = await checkRedcapServer();
+    await sendStep(toDiagnosticStep(redcapResult.check));
+
+    if (redcapResult.check.status === 'error') {
+      await stream.writeSSE({
+        event: 'done',
+        data: JSON.stringify({ steps, overallStatus: 'error' } satisfies DiagnosticResult),
+      });
+      return;
+    }
+
+    // Step 5: Token validation
+    const tokenResult = await checkToken();
+    await sendStep(toDiagnosticStep(tokenResult.check));
+
+    if (tokenResult.check.status === 'error') {
+      await stream.writeSSE({
+        event: 'done',
+        data: JSON.stringify({ steps, overallStatus: 'partial' } satisfies DiagnosticResult),
+      });
+      return;
+    }
+
+    // Step 6: API Access (instruments)
+    const instruments = await fetchInstruments();
+    const apiStep: DiagnosticStep = {
+      name: 'API Access',
+      status: instruments === null ? 'error' : 'ok',
+      message:
+        instruments === null
+          ? 'Failed to fetch instruments'
+          : `${String(instruments.length)} instruments`,
+    };
+    await sendStep(apiStep);
+
+    const hasError = steps.some((s) => s.status === 'error');
+    await stream.writeSSE({
+      event: 'done',
+      data: JSON.stringify({
+        steps,
+        overallStatus: hasError ? 'partial' : 'ok',
+      } satisfies DiagnosticResult),
+    });
+  });
+});
+/* eslint-enable functional/no-let, functional/no-expression-statements, functional/immutable-data, functional/no-try-statements, functional/no-loop-statements, functional/no-conditional-statements, @typescript-eslint/strict-boolean-expressions */
