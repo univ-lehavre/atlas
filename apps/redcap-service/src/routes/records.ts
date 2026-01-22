@@ -1,10 +1,30 @@
 import { Hono } from 'hono';
 import { Schema as S } from 'effect';
-import { effectValidator } from '@hono/effect-validator';
+import { resolver, validator, describeRoute } from 'hono-openapi';
 import { Effect, pipe } from 'effect';
 import { RecordId, InstrumentName, RedcapApiError } from '@univ-lehavre/atlas-redcap-api';
 import { redcap } from '../redcap.js';
 import { runEffect, runEffectRaw } from '../effect-handler.js';
+
+/**
+ * Validation error hook that returns errors in the correct API format
+ */
+const validationErrorHook = (
+  result: { success: boolean; error?: readonly { message: string }[] },
+  c: { json: (data: unknown, status: number) => Response }
+): Response | undefined =>
+  result.success
+    ? undefined
+    : c.json(
+        {
+          data: null,
+          error: {
+            code: 'validation_error',
+            message: result.error?.map((i) => i.message).join(', ') ?? 'Validation failed',
+          },
+        },
+        400
+      );
 
 /**
  * Safely parse a RecordId, returning an Effect
@@ -30,103 +50,251 @@ const parseInstrumentName = (value: string): Effect.Effect<InstrumentName, Redca
 
 const records = new Hono();
 
+// --- Schemas ---
+
+// Pattern for REDCap field/form names: ASCII alphanumeric, underscores, commas for lists
+const RedcapNamePattern = /^[\w,]*$/;
+
+const ExportQuerySchema = S.Struct({
+  fields: S.optional(S.String.pipe(S.pattern(RedcapNamePattern))),
+  forms: S.optional(S.String.pipe(S.pattern(RedcapNamePattern))),
+  filterLogic: S.optional(S.String),
+  rawOrLabel: S.optional(S.Literal('raw', 'label')),
+}).annotations({
+  identifier: 'ExportQueryParams',
+  description: 'Query parameters for exporting records',
+});
+
+const ImportBodySchema = S.Struct({
+  records: S.Array(
+    S.Record({ key: S.String, value: S.Union(S.String, S.Number, S.Boolean, S.Null) })
+  ),
+  overwriteBehavior: S.optional(S.Literal('normal', 'overwrite')),
+}).annotations({ identifier: 'ImportRecordsBody', description: 'Body for importing records' });
+
+// Pattern for REDCap instrument names: lowercase letter followed by lowercase letters, digits, underscores
+const InstrumentNamePattern = /^[a-z][a-z0-9_]*$/;
+
+const PdfQuerySchema = S.Struct({
+  instrument: S.optionalWith(S.String.pipe(S.pattern(InstrumentNamePattern)), {
+    default: () => 'form',
+  }),
+}).annotations({ identifier: 'PdfQueryParams', description: 'Query parameters for PDF download' });
+
+const SurveyLinkQuerySchema = S.Struct({
+  instrument: S.String.pipe(S.pattern(InstrumentNamePattern)),
+}).annotations({
+  identifier: 'SurveyLinkQueryParams',
+  description: 'Query parameters for survey link',
+});
+
+// OpenAPI schema for generic success response (not using Effect Schema due to S.Any issues)
+const SuccessResponseOpenAPI = {
+  type: 'object' as const,
+  required: ['data'] as string[],
+  properties: {
+    data: { description: 'Response data - structure varies by endpoint' },
+  },
+  additionalProperties: false,
+};
+
+const ErrorResponseSchema = S.Struct({
+  data: S.Null,
+  error: S.Struct({
+    code: S.String,
+    message: S.String,
+  }),
+}).annotations({ identifier: 'ErrorResponse', description: 'Error API response' });
+
+// --- Routes ---
+
 /**
  * GET /records
  * Export records from REDCap
  */
-const ExportQuerySchema = S.Struct({
-  fields: S.optional(S.String),
-  forms: S.optional(S.String),
-  filterLogic: S.optional(S.String),
-  rawOrLabel: S.optional(S.Literal('raw', 'label')),
-});
+records.get(
+  '/',
+  describeRoute({
+    tags: ['Records'],
+    summary: 'Export records',
+    description: 'Export records from REDCap with optional filtering',
+    responses: {
+      200: {
+        description: 'Records exported successfully',
+        content: {
+          'application/json': { schema: SuccessResponseOpenAPI },
+        },
+      },
+      400: {
+        description: 'Invalid request parameters',
+        content: {
+          'application/json': { schema: resolver(S.standardSchemaV1(ErrorResponseSchema)) },
+        },
+      },
+    },
+  }),
+  validator('query', S.standardSchemaV1(ExportQuerySchema), validationErrorHook),
+  (c) => {
+    const query = c.req.valid('query');
 
-records.get('/', effectValidator('query', ExportQuerySchema), (c) => {
-  const query = c.req.valid('query');
-
-  return runEffect(
-    c,
-    redcap.exportRecords({
-      ...(query.fields === undefined ? {} : { fields: query.fields.split(',') }),
-      ...(query.forms === undefined ? {} : { forms: query.forms.split(',') }),
-      ...(query.filterLogic === undefined ? {} : { filterLogic: query.filterLogic }),
-      ...(query.rawOrLabel === undefined ? {} : { rawOrLabel: query.rawOrLabel }),
-      type: 'flat',
-    })
-  );
-});
+    return runEffect(
+      c,
+      redcap.exportRecords({
+        ...(query.fields === undefined ? {} : { fields: query.fields.split(',') }),
+        ...(query.forms === undefined ? {} : { forms: query.forms.split(',') }),
+        ...(query.filterLogic === undefined ? {} : { filterLogic: query.filterLogic }),
+        ...(query.rawOrLabel === undefined ? {} : { rawOrLabel: query.rawOrLabel }),
+        type: 'flat',
+      })
+    );
+  }
+);
 
 /**
  * PUT /records
  * Import (upsert) records into REDCap
  */
-const ImportBodySchema = S.Struct({
-  records: S.Array(S.Record({ key: S.String, value: S.Unknown })),
-  overwriteBehavior: S.optional(S.Literal('normal', 'overwrite')),
-});
+records.put(
+  '/',
+  describeRoute({
+    tags: ['Records'],
+    summary: 'Import records',
+    description: 'Import (upsert) records into REDCap',
+    responses: {
+      200: {
+        description: 'Records imported successfully',
+        content: {
+          'application/json': { schema: SuccessResponseOpenAPI },
+        },
+      },
+      400: {
+        description: 'Invalid request body',
+        content: {
+          'application/json': { schema: resolver(S.standardSchemaV1(ErrorResponseSchema)) },
+        },
+      },
+    },
+  }),
+  validator('json', S.standardSchemaV1(ImportBodySchema), validationErrorHook),
+  (c) => {
+    const body = c.req.valid('json');
 
-records.put('/', effectValidator('json', ImportBodySchema), (c) => {
-  const body = c.req.valid('json');
-
-  return runEffect(
-    c,
-    redcap.importRecords(
-      body.records,
-      body.overwriteBehavior === undefined ? {} : { overwriteBehavior: body.overwriteBehavior }
-    )
-  );
-});
+    return runEffect(
+      c,
+      redcap.importRecords(
+        body.records,
+        body.overwriteBehavior === undefined ? {} : { overwriteBehavior: body.overwriteBehavior }
+      )
+    );
+  }
+);
 
 /**
  * GET /records/:recordId/pdf
  * Download PDF of a form for a specific record
  */
-const PdfQuerySchema = S.Struct({
-  instrument: S.optionalWith(S.String, { default: () => 'form' }),
-});
+records.get(
+  '/:recordId/pdf',
+  describeRoute({
+    tags: ['Records'],
+    summary: 'Download PDF',
+    description: 'Download PDF of a form for a specific record',
+    parameters: [
+      {
+        name: 'recordId',
+        in: 'path',
+        required: true,
+        description: 'The unique identifier of the record',
+        schema: { type: 'string', pattern: '^[a-zA-Z0-9]{20,}$', minLength: 20 },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'PDF file',
+        content: {
+          'application/pdf': { schema: { type: 'string', format: 'binary' } },
+        },
+      },
+      400: {
+        description: 'Invalid record ID or instrument',
+        content: {
+          'application/json': { schema: resolver(S.standardSchemaV1(ErrorResponseSchema)) },
+        },
+      },
+    },
+  }),
+  validator('query', S.standardSchemaV1(PdfQuerySchema), validationErrorHook),
+  (c) => {
+    const rawRecordId = c.req.param('recordId');
+    const rawInstrument = c.req.valid('query').instrument;
 
-records.get('/:recordId/pdf', effectValidator('query', PdfQuerySchema), (c) => {
-  const rawRecordId = c.req.param('recordId');
-  const rawInstrument = c.req.valid('query').instrument;
-
-  return runEffectRaw(
-    c,
-    pipe(
-      Effect.all([parseRecordId(rawRecordId), parseInstrumentName(rawInstrument)]),
-      Effect.flatMap(([recordId, instrument]) => redcap.downloadPdf(recordId, instrument)),
-      Effect.map(
-        (pdfBuffer) =>
-          new Response(pdfBuffer, {
-            headers: {
-              'Content-Type': 'application/pdf',
-              'Content-Disposition': `attachment; filename="record_${rawRecordId}.pdf"`,
-            },
-          })
+    return runEffectRaw(
+      c,
+      pipe(
+        Effect.all([parseRecordId(rawRecordId), parseInstrumentName(rawInstrument)]),
+        Effect.flatMap(([recordId, instrument]) => redcap.downloadPdf(recordId, instrument)),
+        Effect.map(
+          (pdfBuffer) =>
+            new Response(pdfBuffer, {
+              headers: {
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': `attachment; filename="record_${rawRecordId}.pdf"`,
+              },
+            })
+        )
       )
-    )
-  );
-});
+    );
+  }
+);
 
 /**
  * GET /records/:recordId/survey-link
  * Get survey link for a specific record and instrument
  */
-const SurveyLinkQuerySchema = S.Struct({
-  instrument: S.String,
-});
+records.get(
+  '/:recordId/survey-link',
+  describeRoute({
+    tags: ['Records'],
+    summary: 'Get survey link',
+    description: 'Get survey link for a specific record and instrument',
+    parameters: [
+      {
+        name: 'recordId',
+        in: 'path',
+        required: true,
+        description: 'The unique identifier of the record',
+        schema: { type: 'string', pattern: '^[a-zA-Z0-9]{20,}$', minLength: 20 },
+      },
+    ],
+    responses: {
+      200: {
+        description: 'Survey link',
+        content: {
+          'application/json': { schema: SuccessResponseOpenAPI },
+        },
+      },
+      400: {
+        description: 'Invalid record ID or instrument',
+        content: {
+          'application/json': { schema: resolver(S.standardSchemaV1(ErrorResponseSchema)) },
+        },
+      },
+    },
+  }),
+  validator('query', S.standardSchemaV1(SurveyLinkQuerySchema), validationErrorHook),
+  (c) => {
+    const rawRecordId = c.req.param('recordId');
+    const rawInstrument = c.req.valid('query').instrument;
 
-records.get('/:recordId/survey-link', effectValidator('query', SurveyLinkQuerySchema), (c) => {
-  const rawRecordId = c.req.param('recordId');
-  const rawInstrument = c.req.valid('query').instrument;
-
-  return runEffect(
-    c,
-    pipe(
-      Effect.all([parseRecordId(rawRecordId), parseInstrumentName(rawInstrument)]),
-      Effect.flatMap(([recordId, instrument]) => redcap.getSurveyLink(recordId, instrument)),
-      Effect.map((url) => ({ url }))
-    )
-  );
-});
+    return runEffect(
+      c,
+      pipe(
+        Effect.all([parseRecordId(rawRecordId), parseInstrumentName(rawInstrument)]),
+        Effect.flatMap(([recordId, instrument]) => redcap.getSurveyLink(recordId, instrument)),
+        Effect.map((url) => ({ url }))
+      )
+    );
+  }
+);
 
 export { records };
