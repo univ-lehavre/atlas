@@ -30,7 +30,7 @@
  * Effect.runPromise(program).then(console.log);
  * ```
  */
-import { Effect, pipe, Context, Layer } from 'effect';
+import { Effect, pipe, Context, Layer, Schedule } from 'effect';
 import { RedcapHttpError, RedcapApiError, RedcapNetworkError } from './errors.js';
 import type {
   RecordId,
@@ -130,17 +130,34 @@ const buildParams = (
 });
 
 /**
- * Makes a raw HTTP POST request to the REDCap API.
+ * Retry schedule for transient network errors.
+ *
+ * Implements exponential backoff with jitter:
+ * - Base delay: 100ms
+ * - Exponential backoff with jitter to avoid thundering herd
+ * - Maximum 3 retries (4 total attempts)
+ *
+ * @internal
+ */
+const retrySchedule = pipe(
+  Schedule.exponential('100 millis'),
+  Schedule.jittered,
+  Schedule.compose(Schedule.recurs(3))
+);
+
+/**
+ * Makes a raw HTTP POST request to the REDCap API with automatic retry on network errors.
  *
  * All REDCap API calls use POST with URL-encoded form data.
- * This function wraps the fetch call in an Effect for error handling.
+ * This function wraps the fetch call in an Effect for error handling and
+ * automatically retries on transient network failures using exponential backoff.
  *
  * @internal
  * @param config - The REDCap configuration (URL and token)
  * @param params - The request parameters (will be URL-encoded)
  * @param fetchFn - The fetch function to use (allows injection for testing)
  * @returns An Effect that resolves to the raw Response object
- * @throws {RedcapNetworkError} When the fetch call fails (network issues, DNS, etc.)
+ * @throws {RedcapNetworkError} When the fetch call fails after all retries
  */
 const makeRequest = (
   config: RedcapConfig,
@@ -159,7 +176,8 @@ const makeRequest = (
           body: new URLSearchParams(buildParams(config, params)).toString(),
         }),
       catch: (cause) => new RedcapNetworkError({ cause }),
-    })
+    }),
+    Effect.retry(retrySchedule)
   );
 
 /**
