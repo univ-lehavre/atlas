@@ -15,6 +15,7 @@ export default defineConfig({
           items: [
             { text: 'Demarrage', link: '/guide/' },
             { text: 'Architecture', link: '/guide/architecture' },
+            { text: 'CLI Tools', link: '/guide/cli' },
           ],
         },
       ],
