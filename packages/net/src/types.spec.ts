@@ -4,9 +4,9 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { IpAddress, Port, TimeoutMs } from './brands.js';
+import { Hostname, IpAddress, Port, TimeoutMs } from './types.js';
 
-describe('brands', () => {
+describe('types (branded)', () => {
   describe('TimeoutMs', () => {
     it('should create valid TimeoutMs', () => {
       const timeout = TimeoutMs(5000);
@@ -101,6 +101,40 @@ describe('brands', () => {
 
     it('should reject invalid IPv4 (too many octets)', () => {
       expect(() => IpAddress('192.168.1.1.1')).toThrow();
+    });
+  });
+
+  describe('Hostname', () => {
+    it('should create valid hostname', () => {
+      const hostname = Hostname('example.com');
+      expect(hostname).toBe('example.com');
+    });
+
+    it('should create valid hostname with subdomain', () => {
+      const hostname = Hostname('sub.example.com');
+      expect(hostname).toBe('sub.example.com');
+    });
+
+    it('should create valid single-label hostname', () => {
+      const hostname = Hostname('localhost');
+      expect(hostname).toBe('localhost');
+    });
+
+    it('should accept IP addresses as hostnames', () => {
+      const hostname = Hostname('192.168.1.1');
+      expect(hostname).toBe('192.168.1.1');
+    });
+
+    it('should reject empty hostname', () => {
+      expect(() => Hostname('')).toThrow();
+    });
+
+    it('should reject hostname starting with hyphen', () => {
+      expect(() => Hostname('-example.com')).toThrow();
+    });
+
+    it('should reject hostname with invalid characters', () => {
+      expect(() => Hostname('example_test.com')).toThrow();
     });
   });
 });

@@ -40,7 +40,14 @@ import {
   INTERNET_CHECK_HOST,
 } from './constants.js';
 import { formatCertificateMessage, formatTlsErrorMessage } from './helpers.js';
-import type { DiagnosticStep, TcpPingOptions, TlsHandshakeOptions } from './types.js';
+import type {
+  DiagnosticStep,
+  Host,
+  Hostname,
+  Port,
+  TcpPingOptions,
+  TlsHandshakeOptions,
+} from './types.js';
 
 // ============================================================================
 // DNS Resolution
@@ -63,7 +70,7 @@ import type { DiagnosticStep, TcpPingOptions, TlsHandshakeOptions } from './type
  * }
  * ```
  */
-export const dnsResolve = (hostname: string): Effect.Effect<DiagnosticStep> =>
+export const dnsResolve = (hostname: Hostname): Effect.Effect<DiagnosticStep> =>
   Effect.async<DiagnosticStep>((resume) => {
     const start = Date.now();
 
@@ -119,8 +126,8 @@ export const dnsResolve = (hostname: string): Effect.Effect<DiagnosticStep> =>
  * ```
  */
 export const tcpPing = (
-  host: string,
-  port: number,
+  host: Host,
+  port: Port,
   options: TcpPingOptions = {}
 ): Effect.Effect<DiagnosticStep> =>
   Effect.async<DiagnosticStep>((resume) => {
@@ -185,8 +192,8 @@ export const tcpPing = (
  * ```
  */
 export const tlsHandshake = (
-  host: string,
-  port: number,
+  host: Host,
+  port: Port,
   options: TlsHandshakeOptions = {}
 ): Effect.Effect<DiagnosticStep> =>
   Effect.async<DiagnosticStep>((resume) => {

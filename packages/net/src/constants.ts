@@ -3,7 +3,7 @@
  * @description Network diagnostic constants.
  */
 
-import { IpAddress, Port, TimeoutMs } from './brands.js';
+import { IpAddress, Port, TimeoutMs } from './types.js';
 
 // ============================================================================
 // Timeouts

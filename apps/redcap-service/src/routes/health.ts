@@ -7,6 +7,8 @@ import {
   tcpPing,
   tlsHandshake,
   checkInternet as netCheckInternet,
+  Hostname,
+  Port,
   type DiagnosticStep,
   type DiagnosticResult,
 } from '@univ-lehavre/atlas-net';
@@ -303,11 +305,13 @@ health.get('/diagnose', (c) => {
     };
 
     const url = new URL(env.redcapApiUrl);
-    const port = url.port ? Number.parseInt(url.port, 10) : url.protocol === 'https:' ? 443 : 80;
+    const portNum = url.port ? Number.parseInt(url.port, 10) : url.protocol === 'https:' ? 443 : 80;
     const isHttps = url.protocol === 'https:';
+    const hostname = Hostname(url.hostname);
+    const port = Port(portNum);
 
     // Step 1: DNS Resolution
-    const dnsStep = await Effect.runPromise(dnsResolve(url.hostname));
+    const dnsStep = await Effect.runPromise(dnsResolve(hostname));
     await sendStep(dnsStep);
 
     if (dnsStep.status === 'error') {
@@ -321,7 +325,7 @@ health.get('/diagnose', (c) => {
     }
 
     // Step 2: TCP Connect
-    const tcpStep = await Effect.runPromise(tcpPing(url.hostname, port, { name: 'TCP Connect' }));
+    const tcpStep = await Effect.runPromise(tcpPing(hostname, port, { name: 'TCP Connect' }));
     await sendStep(tcpStep);
 
     if (tcpStep.status === 'error') {
@@ -336,7 +340,7 @@ health.get('/diagnose', (c) => {
 
     // Step 3: TLS Handshake (HTTPS only)
     if (isHttps) {
-      const tlsStep = await Effect.runPromise(tlsHandshake(url.hostname, port));
+      const tlsStep = await Effect.runPromise(tlsHandshake(hostname, port));
       await sendStep(tlsStep);
 
       if (tlsStep.status === 'error') {

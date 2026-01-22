@@ -4,6 +4,16 @@
  */
 
 export {
+  // Branded Types
+  type Host,
+  Hostname,
+  type Hostname as HostnameType,
+  IpAddress,
+  type IpAddress as IpAddressType,
+  Port,
+  type Port as PortType,
+  TimeoutMs,
+  type TimeoutMs as TimeoutMsType,
   // Diagnostic Types
   type DiagnosticStatus,
   type DiagnosticStep,
@@ -11,13 +21,6 @@ export {
   type TcpPingOptions,
   type TlsHandshakeOptions,
 } from './types.js';
-
-export {
-  // Branded Types
-  IpAddress,
-  Port,
-  TimeoutMs,
-} from './brands.js';
 
 export {
   // Constants
