@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-redcap-cli",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "CLI tool for testing REDCap connectivity and exploring projects",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
