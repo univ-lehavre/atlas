@@ -7,17 +7,26 @@
  * for functional error handling. These functions are used by CLI tools to diagnose
  * connectivity issues between services.
  *
+ * All functions use branded types for type-safe parameters:
+ * - `Hostname`: Validated hostname (RFC 1123) or IP address
+ * - `Host`: Union of `Hostname | IpAddress`
+ * - `Port`: Validated port number (1-65535)
+ * - `TimeoutMs`: Validated timeout in milliseconds (0-600000)
+ *
  * @example
  * ```typescript
  * import { Effect, pipe } from 'effect';
- * import { dnsResolve, tcpPing, tlsHandshake } from '@univ-lehavre/atlas-net';
+ * import { dnsResolve, tcpPing, tlsHandshake, Hostname, Port } from '@univ-lehavre/atlas-net';
+ *
+ * const host = Hostname('example.com');
+ * const port = Port(443);
  *
  * // Diagnose connectivity to a server
  * const diagnose = pipe(
  *   Effect.all([
- *     dnsResolve('example.com'),
- *     tcpPing('example.com', 443),
- *     tlsHandshake('example.com', 443),
+ *     dnsResolve(host),
+ *     tcpPing(host, port),
+ *     tlsHandshake(host, port),
  *   ]),
  *   Effect.map(steps => ({
  *     steps,
@@ -59,12 +68,14 @@ import type {
  * This function wraps Node's `dns.lookup` in an Effect for functional error handling.
  * It measures the time taken for DNS resolution and returns diagnostic information.
  *
- * @param hostname - The hostname to resolve (e.g., 'example.com')
+ * @param hostname - A validated `Hostname` branded type
  * @returns An Effect that resolves to a DiagnosticStep with the resolved IP or error
  *
  * @example
  * ```typescript
- * const step = await Effect.runPromise(dnsResolve('example.com'));
+ * import { Hostname } from '@univ-lehavre/atlas-net';
+ *
+ * const step = await Effect.runPromise(dnsResolve(Hostname('example.com')));
  * if (step.status === 'ok') {
  *   console.log(`Resolved to ${step.message} in ${step.latencyMs}ms`);
  * }
@@ -108,20 +119,22 @@ export const dnsResolve = (hostname: Hostname): Effect.Effect<DiagnosticStep> =>
  * Attempts to establish a TCP connection and measures the time taken.
  * This is useful for checking if a port is open and reachable.
  *
- * @param host - The hostname or IP address to connect to
- * @param port - The port number to connect to
- * @param options - Optional configuration for the ping operation
+ * @param host - A validated `Host` type (`Hostname` or `IpAddress`)
+ * @param port - A validated `Port` branded type (1-65535)
+ * @param options - Optional configuration including `name` and `timeoutMs` (as `TimeoutMs`)
  * @returns An Effect that resolves to a DiagnosticStep with connection status
  *
  * @example
  * ```typescript
+ * import { Hostname, Port, TimeoutMs } from '@univ-lehavre/atlas-net';
+ *
  * // Check if a web server is reachable
- * const step = await Effect.runPromise(tcpPing('example.com', 443));
+ * const step = await Effect.runPromise(tcpPing(Hostname('example.com'), Port(443)));
  * console.log(`Connection ${step.status} in ${step.latencyMs}ms`);
  *
  * // With custom timeout
  * const step2 = await Effect.runPromise(
- *   tcpPing('slow-server.com', 8080, { timeoutMs: 10000 })
+ *   tcpPing(Hostname('slow-server.com'), Port(8080), { timeoutMs: TimeoutMs(10000) })
  * );
  * ```
  */
@@ -172,22 +185,24 @@ export const tcpPing = (
  * the Common Name (CN) and expiration date. Useful for diagnosing HTTPS
  * connectivity issues and certificate problems.
  *
- * @param host - The hostname to connect to
- * @param port - The port number (typically 443 for HTTPS)
- * @param options - Optional configuration for the handshake operation
+ * @param host - A validated `Host` type (`Hostname` or `IpAddress`)
+ * @param port - A validated `Port` branded type (typically 443 for HTTPS)
+ * @param options - Optional configuration including `timeoutMs` (as `TimeoutMs`) and `rejectUnauthorized`
  * @returns An Effect that resolves to a DiagnosticStep with certificate info or error
  *
  * @example
  * ```typescript
+ * import { Hostname, Port } from '@univ-lehavre/atlas-net';
+ *
  * // Check TLS connectivity and certificate
- * const step = await Effect.runPromise(tlsHandshake('example.com', 443));
+ * const step = await Effect.runPromise(tlsHandshake(Hostname('example.com'), Port(443)));
  * if (step.status === 'ok') {
  *   console.log(`Certificate: ${step.message}`);
  * }
  *
  * // Allow self-signed certificates
  * const step2 = await Effect.runPromise(
- *   tlsHandshake('internal-server.local', 443, { rejectUnauthorized: false })
+ *   tlsHandshake(Hostname('internal-server.local'), Port(443), { rejectUnauthorized: false })
  * );
  * ```
  */

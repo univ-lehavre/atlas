@@ -26,6 +26,8 @@ import {
   tcpPing,
   tlsHandshake,
   checkInternet,
+  Hostname,
+  Port,
   type DiagnosticStep,
 } from '@univ-lehavre/atlas-net';
 
@@ -33,16 +35,18 @@ import {
 const internet = await Effect.runPromise(checkInternet());
 console.log(`Internet: ${internet.status}`);
 
-// Resolve hostname
-const dns = await Effect.runPromise(dnsResolve('example.com'));
+// Resolve hostname (requires Hostname branded type)
+const hostname = Hostname('example.com');
+const dns = await Effect.runPromise(dnsResolve(hostname));
 console.log(`DNS: ${dns.status} -> ${dns.message}`);
 
-// Test TCP connection
-const tcp = await Effect.runPromise(tcpPing('example.com', 443));
+// Test TCP connection (requires Hostname/IpAddress and Port branded types)
+const port = Port(443);
+const tcp = await Effect.runPromise(tcpPing(hostname, port));
 console.log(`TCP: ${tcp.status} (${tcp.latencyMs}ms)`);
 
 // Verify TLS certificate
-const tls = await Effect.runPromise(tlsHandshake('example.com', 443));
+const tls = await Effect.runPromise(tlsHandshake(hostname, port));
 console.log(`TLS: ${tls.status} - ${tls.message}`);
 ```
 
@@ -50,12 +54,19 @@ console.log(`TLS: ${tls.status} - ${tls.message}`);
 
 ```typescript
 import { Effect } from 'effect';
-import { dnsResolve, tcpPing, tlsHandshake, checkInternet } from '@univ-lehavre/atlas-net';
+import {
+  dnsResolve,
+  tcpPing,
+  tlsHandshake,
+  checkInternet,
+  Hostname,
+  Port,
+} from '@univ-lehavre/atlas-net';
 
-const diagnose = (host: string, port: number) =>
+const diagnose = (host: Hostname, port: Port) =>
   Effect.all([checkInternet(), dnsResolve(host), tcpPing(host, port), tlsHandshake(host, port)]);
 
-const steps = await Effect.runPromise(diagnose('example.com', 443));
+const steps = await Effect.runPromise(diagnose(Hostname('example.com'), Port(443)));
 steps.forEach((step) => {
   console.log(`${step.name}: ${step.status} (${step.latencyMs}ms)`);
 });
@@ -66,19 +77,29 @@ steps.forEach((step) => {
 The package provides type-safe branded types with runtime validation using Effect's Brand module.
 
 ```typescript
-import { IpAddress, Port, TimeoutMs } from '@univ-lehavre/atlas-net';
+import { Hostname, IpAddress, Port, TimeoutMs } from '@univ-lehavre/atlas-net';
 
 // Create validated values
+const hostname = Hostname('example.com'); // Validated hostname (RFC 1123)
 const ip = IpAddress('192.168.1.1'); // Validated IPv4 address
 const ipv6 = IpAddress('::1'); // Validated IPv6 address
 const port = Port(8080); // Validated port (1-65535)
 const timeout = TimeoutMs(5000); // Validated timeout (0-600000ms)
 
 // These will throw at runtime with descriptive errors:
+// Hostname('')            // Error: Invalid hostname
+// Hostname('-invalid')    // Error: Invalid hostname (can't start with hyphen)
 // IpAddress('invalid')    // Error: Invalid IP address format
 // Port(70000)             // Error: Invalid port number
 // TimeoutMs(-1)           // Error: Invalid timeout value
 ```
+
+### `Hostname`
+
+Validated hostname according to RFC 1123, or a valid IP address.
+
+- Hostnames: `example.com`, `sub.domain.org`, `localhost`
+- IP addresses are also accepted: `192.168.1.1`, `::1`
 
 ### `IpAddress`
 
@@ -86,6 +107,10 @@ Validated IPv4 or IPv6 address string.
 
 - IPv4: `192.168.1.1`, `10.0.0.1`
 - IPv6: `::1`, `2001:db8::1`, `fe80::1`
+
+### `Host`
+
+Union type accepting either `Hostname` or `IpAddress`. Used in function parameters that accept both.
 
 ### `Port`
 
@@ -111,43 +136,45 @@ import {
 
 ## API
 
-### `dnsResolve(hostname)`
+### `dnsResolve(hostname: Hostname)`
 
 Resolves a hostname to an IP address using DNS lookup.
 
 ```typescript
-const step = await Effect.runPromise(dnsResolve('example.com'));
+const step = await Effect.runPromise(dnsResolve(Hostname('example.com')));
 if (step.status === 'ok') {
   console.log(`Resolved to ${step.message}`);
 }
 ```
 
-### `tcpPing(host, port, options?)`
+### `tcpPing(host: Host, port: Port, options?)`
 
-Tests TCP connectivity to a host and port.
+Tests TCP connectivity to a host and port. Accepts `Hostname` or `IpAddress` as the host parameter.
 
 Options:
 
 - `name`: Custom name for the diagnostic step (default: `'TCP Connect'`)
-- `timeoutMs`: Connection timeout in milliseconds (default: `3000`)
+- `timeoutMs`: Connection timeout as `TimeoutMs` (default: `3000`)
 
 ```typescript
-const step = await Effect.runPromise(tcpPing('example.com', 443, { timeoutMs: 10000 }));
+const step = await Effect.runPromise(
+  tcpPing(Hostname('example.com'), Port(443), { timeoutMs: TimeoutMs(10000) })
+);
 ```
 
-### `tlsHandshake(host, port, options?)`
+### `tlsHandshake(host: Host, port: Port, options?)`
 
-Tests TLS/SSL connectivity and validates the server certificate.
+Tests TLS/SSL connectivity and validates the server certificate. Accepts `Hostname` or `IpAddress` as the host parameter.
 
 Options:
 
-- `timeoutMs`: Handshake timeout in milliseconds (default: `5000`)
+- `timeoutMs`: Handshake timeout as `TimeoutMs` (default: `5000`)
 - `rejectUnauthorized`: Whether to reject unauthorized certificates (default: `true`)
 
 ```typescript
 // Allow self-signed certificates
 const step = await Effect.runPromise(
-  tlsHandshake('internal-server.local', 443, { rejectUnauthorized: false })
+  tlsHandshake(Hostname('internal-server.local'), Port(443), { rejectUnauthorized: false })
 );
 ```
 
@@ -195,7 +222,7 @@ interface DiagnosticResult {
 ```typescript
 interface TcpPingOptions {
   name?: string;
-  timeoutMs?: number;
+  timeoutMs?: TimeoutMs;
 }
 ```
 
@@ -203,7 +230,7 @@ interface TcpPingOptions {
 
 ```typescript
 interface TlsHandshakeOptions {
-  timeoutMs?: number;
+  timeoutMs?: TimeoutMs;
   rejectUnauthorized?: boolean;
 }
 ```
