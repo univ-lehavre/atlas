@@ -19,5 +19,5 @@
   },
   "ignore": ["**/dist/**"],
   "ignoreDependencies": ["tsx"],
-  "ignoreBinaries": ["jq", "docker:build", "docker:down"]
+  "ignoreBinaries": ["jq", "docker:build", "docker:down", "uvx"]
 }
