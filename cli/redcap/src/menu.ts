@@ -1,3 +1,4 @@
+/* eslint-disable functional/no-expression-statements, functional/no-conditional-statements, functional/no-loop-statements, functional/immutable-data, @typescript-eslint/strict-boolean-expressions, @typescript-eslint/no-unnecessary-condition, no-console, unicorn/prefer-single-call, @typescript-eslint/no-invalid-void-type, unicorn/no-immediate-mutation -- CLI menu requires imperative code */
 /**
  * Interactive menu for REDCap CLI using @clack/prompts
  */
@@ -7,7 +8,7 @@ import * as readline from 'node:readline';
 import pc from 'picocolors';
 import { Effect, Console } from 'effect';
 import { style, format, icon } from './terminal.js';
-import { RedcapService, type HealthResponse, type Field } from './services.js';
+import { RedcapService, type HealthResponse, type Field, type DiagnosticStep } from './services.js';
 
 // ============================================================================
 // Display Helpers
@@ -17,7 +18,7 @@ const groupFieldsByForm = (fields: readonly Field[]): Record<string, readonly Fi
   const result: Record<string, Field[]> = {};
   for (const field of fields) {
     const existing = result[field.form];
-    result[field.form] = existing !== undefined ? [...existing, field] : [field];
+    result[field.form] = existing === undefined ? [field] : [...existing, field];
   }
   return result;
 };
@@ -28,16 +29,14 @@ const formatHealthResult = (health: HealthResponse): string => {
     health.status === 'ok' ? icon.success : health.status === 'degraded' ? icon.warn : icon.error;
 
   lines.push(`${statusIcon} Overall status: ${style.bold(health.status)}`);
-  lines.push(`  Timestamp: ${style.dim(health.timestamp)}`);
-  lines.push('');
-  lines.push('Checks:');
+  lines.push(`  Timestamp: ${style.dim(health.timestamp)}`, '', 'Checks:');
   lines.push(
     `  ${health.checks.redcap.status === 'ok' ? icon.success : icon.error} REDCap Server` +
-      (health.checks.redcap.latencyMs !== undefined
-        ? ` ${style.dim(`(${String(health.checks.redcap.latencyMs)}ms)`)}`
-        : '')
+      (health.checks.redcap.latencyMs === undefined
+        ? ''
+        : ` ${style.dim(`(${String(health.checks.redcap.latencyMs)}ms)`)}`),
+    `  ${health.checks.token.status === 'ok' ? icon.success : icon.error} API Token`
   );
-  lines.push(`  ${health.checks.token.status === 'ok' ? icon.success : icon.error} API Token`);
 
   if (health.checks.internet !== undefined) {
     lines.push(`  ${health.checks.internet.status === 'ok' ? icon.success : icon.error} Internet`);
@@ -116,15 +115,36 @@ const withSpinner = <A, E>(
     return result;
   });
 
+const formatDiagnosticStep = (step: DiagnosticStep): string => {
+  const statusIcon =
+    step.status === 'ok' ? icon.success : step.status === 'error' ? icon.error : icon.warn;
+  const latency =
+    step.latencyMs === undefined ? '' : ` ${style.dim(`(${String(step.latencyMs)}ms)`)}`;
+  const message = step.message ? ` ${style.dim(`- ${step.message}`)}` : '';
+  return `${statusIcon} ${step.name}${latency}${message}`;
+};
+
 const checkService = (): Effect.Effect<void, unknown, RedcapService> =>
   Effect.gen(function* () {
     const service = yield* RedcapService;
-    const ok = yield* withSpinner('Checking service connectivity', service.checkService());
+    const lines: string[] = [];
 
-    p.note(
-      ok ? format.success('Service is running') : format.error('Service is not reachable'),
-      'Result'
-    );
+    console.log(style.bold('\nRunning connectivity diagnostics...\n'));
+
+    const result = yield* service.runDiagnostics((step) => {
+      const line = formatDiagnosticStep(step);
+      lines.push(line);
+      console.log(line);
+    });
+
+    const statusText =
+      result.overallStatus === 'ok'
+        ? format.success('All checks passed')
+        : result.overallStatus === 'partial'
+          ? format.warn('Some checks failed')
+          : format.error('Connection failed');
+
+    p.note(`${lines.join('\n')}\n\n${statusText}`, 'Diagnostic Results');
   });
 
 const checkHealth = (): Effect.Effect<void, unknown, RedcapService> =>
@@ -220,22 +240,30 @@ const menuOptions: { value: MenuAction; label: string; hint?: string }[] = [
 
 const executeAction = (action: MenuAction): Effect.Effect<void, unknown, RedcapService> => {
   switch (action) {
-    case 'service':
+    case 'service': {
       return checkService();
-    case 'health':
+    }
+    case 'health': {
       return checkHealth();
-    case 'project':
+    }
+    case 'project': {
       return showProject();
-    case 'instruments':
+    }
+    case 'instruments': {
       return listInstruments();
-    case 'fields':
+    }
+    case 'fields': {
       return listFields();
-    case 'records':
+    }
+    case 'records': {
       return fetchRecords();
-    case 'all':
+    }
+    case 'all': {
       return runAllTests();
-    case 'exit':
+    }
+    case 'exit': {
       return Effect.void;
+    }
   }
 };
 
@@ -243,7 +271,7 @@ const executeAction = (action: MenuAction): Effect.Effect<void, unknown, RedcapS
 // Input Utilities
 // ============================================================================
 
-const waitForKey = (): Effect.Effect<void, never, never> =>
+const waitForKey = (): Effect.Effect<void> =>
   Effect.async<void>((resume) => {
     const rl = readline.createInterface({
       input: process.stdin,
@@ -284,9 +312,9 @@ export const runInteractiveMenu = (baseUrl: string): Effect.Effect<void, never, 
 
     const latency = yield* measureLatency();
     const status =
-      latency !== null
-        ? `${pc.green('●')} connected ${pc.dim(`(${String(latency)}ms)`)}`
-        : `${pc.red('●')} offline`;
+      latency === null
+        ? `${pc.red('●')} offline`
+        : `${pc.green('●')} connected ${pc.dim(`(${String(latency)}ms)`)}`;
 
     p.note(`${style.cyan(baseUrl)}\n${status}`, 'Service');
 
@@ -315,3 +343,4 @@ export const runInteractiveMenu = (baseUrl: string): Effect.Effect<void, never, 
       p.note(`${style.cyan(baseUrl)}\n${status}`, 'Service');
     }
   });
+/* eslint-enable functional/no-expression-statements, functional/no-conditional-statements, functional/no-loop-statements, functional/immutable-data, @typescript-eslint/strict-boolean-expressions, @typescript-eslint/no-unnecessary-condition, no-console, unicorn/prefer-single-call, @typescript-eslint/no-invalid-void-type, unicorn/no-immediate-mutation */

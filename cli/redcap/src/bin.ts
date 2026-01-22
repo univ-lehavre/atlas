@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+/* eslint-disable functional/no-conditional-statements -- CLI entry point requires imperative code */
 /**
  * REDCap CLI Entry Point
  *
@@ -26,7 +26,7 @@ interface CliArgs {
 /** Parse command line arguments */
 const parseArgs = (args: readonly string[]): CliArgs => {
   const urlIndex = args.findIndex((arg) => arg === '--url' || arg === '-u');
-  const nextArg = urlIndex !== -1 ? args[urlIndex + 1] : undefined;
+  const nextArg = urlIndex === -1 ? undefined : args[urlIndex + 1];
   const baseUrl = nextArg ?? DEFAULT_URL;
 
   const ciMode = args.includes('--ci');
@@ -35,7 +35,7 @@ const parseArgs = (args: readonly string[]): CliArgs => {
   return { baseUrl, ciMode, jsonOutput };
 };
 
-const showHelp = (): Effect.Effect<void, never, never> =>
+const showHelp = (): Effect.Effect<void> =>
   Console.log(`
 🔬 REDCap CLI - Test REDCap connectivity
 
@@ -53,7 +53,7 @@ Options:
   -h, --help         Show help
 `);
 
-const main: Effect.Effect<void, never, never> = Effect.gen(function* () {
+const main: Effect.Effect<void> = Effect.gen(function* () {
   const args = process.argv;
   const { baseUrl, ciMode, jsonOutput } = parseArgs(args);
 
@@ -72,3 +72,4 @@ const main: Effect.Effect<void, never, never> = Effect.gen(function* () {
 });
 
 NodeRuntime.runMain(main);
+/* eslint-enable functional/no-conditional-statements */
