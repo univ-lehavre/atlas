@@ -1,4 +1,4 @@
-/* eslint-disable functional/no-let, functional/no-expression-statements, functional/immutable-data, functional/no-try-statements, functional/no-loop-statements */
+/* eslint-disable functional/no-let, functional/no-expression-statements, functional/immutable-data, functional/no-try-statements, functional/no-loop-statements -- Health check requires imperative code for latency measurements */
 import { Hono } from 'hono';
 import { Effect, pipe } from 'effect';
 import { redcap } from '../redcap.js';
@@ -222,11 +222,11 @@ health.get('/detailed', async (c) => {
 
   // Check token (only if server is reachable)
   const tokenResult: TokenCheckResult =
-    redcapResult.check.status !== 'error'
-      ? await checkToken()
-      : {
+    redcapResult.check.status === 'error'
+      ? {
           check: { name: 'token', status: 'error', message: 'Skipped - REDCap server unreachable' },
-        };
+        }
+      : await checkToken();
 
   // Fetch instruments and fields (only if token is valid)
   const [instruments, fields] =
@@ -236,9 +236,9 @@ health.get('/detailed', async (c) => {
 
   // Build checks array
   const checks: readonly HealthCheck[] =
-    internetCheck !== null
-      ? [redcapResult.check, tokenResult.check, internetCheck]
-      : [redcapResult.check, tokenResult.check];
+    internetCheck === null
+      ? [redcapResult.check, tokenResult.check]
+      : [redcapResult.check, tokenResult.check, internetCheck];
 
   // Build response
   const response: HealthResponse = {
@@ -247,7 +247,7 @@ health.get('/detailed', async (c) => {
     checks: {
       redcap: redcapResult.check,
       token: tokenResult.check,
-      ...(internetCheck !== null ? { internet: internetCheck } : {}),
+      ...(internetCheck === null ? {} : { internet: internetCheck }),
     },
     ...(redcapResult.version !== undefined && tokenResult.project !== undefined
       ? {
@@ -258,9 +258,10 @@ health.get('/detailed', async (c) => {
           },
         }
       : {}),
-    ...(instruments !== null ? { instruments } : {}),
-    ...(fields !== null ? { fields } : {}),
+    ...(instruments === null ? {} : { instruments }),
+    ...(fields === null ? {} : { fields }),
   };
 
   return c.json(response, getStatusCode(response.status));
 });
+/* eslint-enable functional/no-let, functional/no-expression-statements, functional/immutable-data, functional/no-try-statements, functional/no-loop-statements */

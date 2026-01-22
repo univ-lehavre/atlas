@@ -3,16 +3,32 @@
 /**
  * REDCap Connection Test CLI
  *
- * Tests connectivity via the redcap-service /health/detailed endpoint:
- * 1. Checks if the service is running
- * 2. Validates REDCap server connectivity
- * 3. Validates API token
- * 4. Shows sample data from the project
+ * Tests connectivity via the redcap-service /health/detailed endpoint.
  *
  * Usage:
- *   pnpm test:redcap                    # Service must be running
+ *   pnpm test:redcap                    # Interactive mode
+ *   pnpm test:redcap --all              # Run all tests
+ *   pnpm test:redcap --quick            # Quick check (service + health only)
  *   pnpm test:redcap --docker           # Starts Docker first
+ *   pnpm test:redcap --json             # Output results as JSON
+ *
+ * Test selection flags:
+ *   --service      Check service connectivity
+ *   --health       Check REDCap server and token
+ *   --project      Show project information
+ *   --instruments  List available instruments
+ *   --fields       List available fields
+ *   --records      Fetch sample records
  */
+
+import fs from 'node:fs';
+import path from 'node:path';
+import { execSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import readline from 'node:readline';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ANSI colors
 const colors = {
@@ -36,6 +52,43 @@ const log = {
   title: (msg: string) => console.log(`\n${colors.bold}${msg}${colors.reset}\n`),
   json: (data: unknown) => console.log(JSON.stringify(data, null, 2)),
 };
+
+// Test options
+interface TestOptions {
+  docker: boolean;
+  json: boolean;
+  service: boolean;
+  health: boolean;
+  project: boolean;
+  instruments: boolean;
+  fields: boolean;
+  records: boolean;
+}
+
+// JSON output structure
+interface JsonOutput {
+  success: boolean;
+  timestamp: string;
+  serviceUrl: string;
+  tests: {
+    service?: { ok: boolean };
+    health?: HealthResponse;
+    project?: { version: string; name: string; id: number };
+    instruments?: InstrumentInfo[];
+    fields?: Record<string, FieldInfo[]>;
+    records?: { count: number; sample: unknown[] };
+  };
+  error?: string;
+}
+
+const TEST_CATEGORIES = [
+  { key: 'service', label: 'Service connectivity', description: 'Check if service is running' },
+  { key: 'health', label: 'Health checks', description: 'REDCap server and token validation' },
+  { key: 'project', label: 'Project info', description: 'Show REDCap version and project details' },
+  { key: 'instruments', label: 'Instruments', description: 'List available forms' },
+  { key: 'fields', label: 'Fields', description: 'List available fields by form' },
+  { key: 'records', label: 'Sample records', description: 'Fetch first 3 records' },
+] as const;
 
 interface HealthCheck {
   name: string;
@@ -73,16 +126,161 @@ interface HealthResponse {
   fields?: FieldInfo[];
 }
 
+// Interactive menu
+const showInteractiveMenu = async (): Promise<TestOptions> => {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+
+  const question = (prompt: string): Promise<string> =>
+    new Promise((resolve) => rl.question(prompt, resolve));
+
+  log.title('🔬 REDCap Test Selection');
+  console.log('Select tests to run:\n');
+  console.log(`  ${colors.cyan}1${colors.reset} Quick check (service + health)`);
+  console.log(`  ${colors.cyan}2${colors.reset} Full test (all checks)`);
+  console.log(`  ${colors.cyan}3${colors.reset} Custom selection\n`);
+
+  const choice = await question(`${colors.bold}Choice [1-3]:${colors.reset} `);
+
+  if (choice === '1') {
+    rl.close();
+    return {
+      docker: false,
+      json: false,
+      service: true,
+      health: true,
+      project: false,
+      instruments: false,
+      fields: false,
+      records: false,
+    };
+  }
+
+  if (choice === '2') {
+    rl.close();
+    return {
+      docker: false,
+      json: false,
+      service: true,
+      health: true,
+      project: true,
+      instruments: true,
+      fields: true,
+      records: true,
+    };
+  }
+
+  // Custom selection
+  console.log('\nSelect individual tests (y/n):\n');
+
+  const options: TestOptions = {
+    docker: false,
+    json: false,
+    service: true, // Always required
+    health: false,
+    project: false,
+    instruments: false,
+    fields: false,
+    records: false,
+  };
+
+  for (const cat of TEST_CATEGORIES) {
+    if (cat.key === 'service') {
+      console.log(
+        `  ${colors.green}✔${colors.reset} ${cat.label} ${colors.dim}(required)${colors.reset}`
+      );
+      continue;
+    }
+
+    const answer = await question(
+      `  ${colors.cyan}?${colors.reset} ${cat.label} ${colors.dim}(${cat.description})${colors.reset} [y/N]: `
+    );
+    options[cat.key as keyof TestOptions] = answer.toLowerCase() === 'y';
+  }
+
+  rl.close();
+  return options;
+};
+
+// Parse command line arguments
+const parseArgs = (): TestOptions | 'interactive' => {
+  const args = process.argv.slice(2);
+
+  // No args = interactive mode
+  if (args.length === 0 || (args.length === 1 && args[0] === '--docker')) {
+    return 'interactive';
+  }
+
+  const options: TestOptions = {
+    docker: args.includes('--docker'),
+    json: args.includes('--json'),
+    service: true, // Always run
+    health: false,
+    project: false,
+    instruments: false,
+    fields: false,
+    records: false,
+  };
+
+  // Preset modes
+  if (args.includes('--all')) {
+    return {
+      ...options,
+      health: true,
+      project: true,
+      instruments: true,
+      fields: true,
+      records: true,
+    };
+  }
+
+  if (args.includes('--quick')) {
+    return {
+      ...options,
+      health: true,
+    };
+  }
+
+  // Individual flags
+  if (args.includes('--health')) options.health = true;
+  if (args.includes('--project')) options.project = true;
+  if (args.includes('--instruments')) options.instruments = true;
+  if (args.includes('--fields')) options.fields = true;
+  if (args.includes('--records')) options.records = true;
+
+  // If only --docker was passed, default to all
+  const testFlags = [
+    '--health',
+    '--project',
+    '--instruments',
+    '--fields',
+    '--records',
+    '--all',
+    '--quick',
+  ];
+  if (!testFlags.some((f) => args.includes(f))) {
+    return {
+      ...options,
+      health: true,
+      project: true,
+      instruments: true,
+      fields: true,
+      records: true,
+    };
+  }
+
+  return options;
+};
+
 // Load environment variables
 const loadEnv = (): { baseUrl: string } => {
-  const fs = require('fs');
-  const path = require('path');
-
   const envPath = path.resolve(__dirname, '../.env.local');
 
   if (!fs.existsSync(envPath)) {
     log.error(`Missing .env.local at ${envPath}`);
-    log.info('Create it from .env.example with your credentials');
+    log.info('Create it with: baseUrl=http://localhost:3000');
     process.exit(1);
   }
 
@@ -105,8 +303,6 @@ const loadEnv = (): { baseUrl: string } => {
 
 // Docker management
 const startDocker = async (): Promise<void> => {
-  const { execSync } = require('child_process');
-
   log.step('Building Docker images...');
   execSync('pnpm docker:build', { stdio: 'inherit', cwd: __dirname + '/..' });
 
@@ -118,7 +314,6 @@ const startDocker = async (): Promise<void> => {
 };
 
 const stopDocker = async (): Promise<void> => {
-  const { execSync } = require('child_process');
   log.step('Stopping Docker containers...');
   execSync('pnpm docker:down', { stdio: 'inherit', cwd: __dirname + '/..' });
 };
@@ -208,7 +403,7 @@ const fetchSampleRecords = async (baseUrl: string): Promise<void> => {
       log.success(`Found ${count} record(s)`);
 
       if (count > 0) {
-        log.title('Sample Data (first 3 records):');
+        console.log(`\n${colors.dim}First 3 records:${colors.reset}`);
         const sample = records.slice(0, 3);
         log.json(sample);
       }
@@ -221,90 +416,205 @@ const fetchSampleRecords = async (baseUrl: string): Promise<void> => {
   }
 };
 
+// Fetch records and return data
+const fetchRecords = async (
+  baseUrl: string
+): Promise<{ count: number; sample: unknown[] } | null> => {
+  try {
+    const response = await fetch(`${baseUrl}/api/v1/records`);
+    if (response.ok) {
+      const result = await response.json();
+      const records = result.data;
+      const count = Array.isArray(records) ? records.length : 0;
+      return { count, sample: records.slice(0, 3) };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+};
+
 // Main
 const main = async () => {
-  const args = process.argv.slice(2);
-  const useDocker = args.includes('--docker');
+  const parsedArgs = parseArgs();
+  let options: TestOptions;
 
-  log.title('🔬 REDCap Connection Test');
+  if (parsedArgs === 'interactive') {
+    options = await showInteractiveMenu();
+    options.docker = process.argv.includes('--docker');
+  } else {
+    options = parsedArgs;
+  }
 
   // Load environment
   const { baseUrl } = loadEnv();
+
+  // JSON output mode
+  if (options.json) {
+    const output: JsonOutput = {
+      success: false,
+      timestamp: new Date().toISOString(),
+      serviceUrl: baseUrl,
+      tests: {},
+    };
+
+    let dockerStarted = false;
+
+    try {
+      if (options.docker) {
+        await startDocker();
+        dockerStarted = true;
+      }
+
+      // Service check
+      const serviceOk = await checkServiceRunning(baseUrl).catch(() => false);
+      output.tests.service = { ok: serviceOk };
+
+      if (!serviceOk) {
+        output.error = 'Service not running';
+        console.log(JSON.stringify(output, null, 2));
+        process.exit(1);
+      }
+
+      // Health check
+      if (options.health || options.project || options.instruments || options.fields) {
+        const health = await getHealthStatus(baseUrl);
+        if (health) {
+          output.tests.health = health;
+
+          if (options.project && health.redcap) {
+            output.tests.project = {
+              version: health.redcap.version,
+              name: health.redcap.project,
+              id: health.redcap.projectId,
+            };
+          }
+
+          if (options.instruments && health.instruments) {
+            output.tests.instruments = health.instruments;
+          }
+
+          if (options.fields && health.fields) {
+            output.tests.fields = health.fields.reduce(
+              (acc, field) => {
+                if (!acc[field.form]) acc[field.form] = [];
+                acc[field.form].push(field);
+                return acc;
+              },
+              {} as Record<string, FieldInfo[]>
+            );
+          }
+
+          if (health.status === 'error') {
+            output.error = 'Health check failed';
+            console.log(JSON.stringify(output, null, 2));
+            process.exit(1);
+          }
+        }
+      }
+
+      // Records
+      if (options.records) {
+        const records = await fetchRecords(baseUrl);
+        if (records) {
+          output.tests.records = records;
+        }
+      }
+
+      output.success = true;
+      console.log(JSON.stringify(output, null, 2));
+    } finally {
+      if (dockerStarted) {
+        await stopDocker();
+      }
+    }
+    return;
+  }
+
+  // Normal output mode
+  log.title('🔬 REDCap Connection Test');
+
+  // Show selected tests
+  const selected = TEST_CATEGORIES.filter((cat) => options[cat.key as keyof TestOptions]).map(
+    (cat) => cat.label
+  );
+  log.info(`Tests: ${selected.join(', ')}`);
   log.info(`Service URL: ${baseUrl}`);
 
   let dockerStarted = false;
+  let health: HealthResponse | null = null;
 
   try {
     // Start Docker if requested
-    if (useDocker) {
+    if (options.docker) {
       await startDocker();
       dockerStarted = true;
     }
 
-    // Step 1: Check service is running
+    // Step 1: Check service is running (always)
     log.title('1. Service Status');
     const serviceOk = await checkServiceRunning(baseUrl);
 
     if (!serviceOk) {
-      if (!useDocker) {
+      if (!options.docker) {
         log.info('Hint: Run with --docker to start the service automatically');
       }
       process.exit(1);
     }
 
-    // Step 2: Get detailed health status
-    log.title('2. Health Checks');
-    const health = await getHealthStatus(baseUrl);
+    // Step 2: Health checks
+    if (options.health || options.project || options.instruments || options.fields) {
+      log.title('2. Health Checks');
+      health = await getHealthStatus(baseUrl);
 
-    if (!health) {
-      log.error('Failed to retrieve health status');
-      process.exit(1);
-    }
+      if (!health) {
+        log.error('Failed to retrieve health status');
+        process.exit(1);
+      }
 
-    // Display checks
-    displayCheck('REDCap Server', health.checks.redcap);
-    displayCheck('API Token', health.checks.token);
+      displayCheck('REDCap Server', health.checks.redcap);
+      displayCheck('API Token', health.checks.token);
 
-    if (health.checks.internet) {
-      displayCheck('Internet', health.checks.internet);
-    }
+      if (health.checks.internet) {
+        displayCheck('Internet', health.checks.internet);
+      }
 
-    // Check if we should continue
-    if (health.status === 'error') {
-      log.title('❌ Health checks failed');
+      if (health.status === 'error') {
+        log.title('❌ Health checks failed');
 
-      if (health.checks.redcap.status === 'error') {
-        log.error('Cannot reach REDCap server');
+        if (health.checks.redcap.status === 'error') {
+          log.error('Cannot reach REDCap server');
 
-        if (health.checks.internet?.status === 'error') {
-          log.info('→ No internet connectivity detected');
-        } else {
-          log.info('→ Check REDCAP_API_URL in your configuration');
+          if (health.checks.internet?.status === 'error') {
+            log.info('→ No internet connectivity detected');
+          } else {
+            log.info('→ Check REDCAP_API_URL in your configuration');
+          }
         }
+
+        if (health.checks.token.status === 'error') {
+          log.error('Invalid API token');
+          log.info('→ Check REDCAP_API_TOKEN in your configuration');
+        }
+
+        process.exit(1);
       }
 
-      if (health.checks.token.status === 'error') {
-        log.error('Invalid API token');
-        log.info('→ Check REDCAP_API_TOKEN in your configuration');
+      if (health.status === 'degraded') {
+        log.warn('Health checks passed with warnings');
       }
-
-      process.exit(1);
     }
 
-    if (health.status === 'degraded') {
-      log.warn('Health checks passed with warnings');
-    }
-
-    // Step 3: Show project info
-    if (health.redcap) {
+    // Step 3: Project info
+    if (options.project && health?.redcap) {
       log.title('3. Project Information');
       log.success(`REDCap version: ${health.redcap.version}`);
       log.success(`Project: "${health.redcap.project}"`);
       log.info(`Project ID: ${health.redcap.projectId}`);
     }
 
-    // Step 4: Available instruments
-    if (health.instruments && health.instruments.length > 0) {
+    // Step 4: Instruments
+    if (options.instruments && health?.instruments && health.instruments.length > 0) {
       log.title('4. Available Instruments (Forms)');
       for (const instrument of health.instruments) {
         console.log(
@@ -313,8 +623,8 @@ const main = async () => {
       }
     }
 
-    // Step 5: Available fields (grouped by form)
-    if (health.fields && health.fields.length > 0) {
+    // Step 5: Fields
+    if (options.fields && health?.fields && health.fields.length > 0) {
       log.title('5. Available Fields');
       const fieldsByForm = health.fields.reduce(
         (acc, field) => {
@@ -338,8 +648,10 @@ const main = async () => {
     }
 
     // Step 6: Sample records
-    log.title('6. Sample Records');
-    await fetchSampleRecords(baseUrl);
+    if (options.records) {
+      log.title('6. Sample Records');
+      await fetchSampleRecords(baseUrl);
+    }
 
     log.title('✅ All checks passed!');
   } finally {

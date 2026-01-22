@@ -28,7 +28,7 @@ app.onError((err, c) => {
       data: null,
       error: {
         code: 'internal_error',
-        message: err.message !== '' ? err.message : 'An unexpected error occurred',
+        message: err.message === '' ? 'An unexpected error occurred' : err.message,
       },
     },
     500
@@ -36,11 +36,11 @@ app.onError((err, c) => {
 });
 
 // Start server
-console.warn(`Starting REDCap service on port ${String(env.PORT)}...`);
+console.warn(`Starting REDCap service on port ${String(env.port)}...`);
 
 serve({
   fetch: app.fetch,
-  port: env.PORT,
+  port: env.port,
 });
 
-console.warn(`REDCap service running at http://localhost:${String(env.PORT)}`);
+console.warn(`REDCap service running at http://localhost:${String(env.port)}`);
