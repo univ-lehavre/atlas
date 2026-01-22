@@ -1,5 +1,30 @@
 # @univ-lehavre/atlas-redcap-service
 
+## 0.5.0
+
+### Minor Changes
+
+- [#24](https://github.com/univ-lehavre/atlas/pull/24) [`a64b6a6`](https://github.com/univ-lehavre/atlas/commit/a64b6a65791f8b10d9290300c7f731ff0375eae6) Thanks [@chasset](https://github.com/chasset)! - feat(infra): add Zero Trust Kubernetes infrastructure with k3d
+  - Add k3d cluster configuration with local registry (localhost:5111)
+  - Add Cilium CNI with Ingress, Network Policies, and mTLS
+  - Add SPIRE for workload identity and automatic certificate rotation
+  - Add OPA with Rego policies for RBAC/ABAC authorization
+  - Add Authelia for magic link authentication
+  - Add MailHog for development email capture
+  - Add Loki/Grafana for observability and audit logs
+  - Add ecrin SvelteKit dashboard with Zero Trust integration
+  - Add setup.sh and teardown.sh scripts for easy deployment
+
+  ### New features
+  - **ecrin dashboard**: SvelteKit 2 app with Svelte 5 runes, integrated with OPA for authorization
+  - **Infrastructure scripts**: One-command setup (`./infra/scripts/setup.sh`) and teardown
+  - **Zero Trust architecture**: 4 levels of authorization (Network, Authentication, Authorization, mTLS)
+
+  ### Documentation
+  - Added CLAUDE.md with project conventions and patterns
+  - Added docs/guide/infrastructure.md for k3d setup documentation
+  - Updated README with architecture diagram and Zero Trust components
+
 ## 0.4.2
 
 ### Patch Changes
