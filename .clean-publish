@@ -1,4 +1,5 @@
 {
   "fields": ["scripts", "devDependencies", "packageManager"],
-  "files": ["dist/**/*.map"]
+  "files": ["dist/**/*.map"],
+  "beforeScript": "pnpm dlx @changesets/cli publish"
 }
