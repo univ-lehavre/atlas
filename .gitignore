@@ -12,3 +12,7 @@ docs/.vitepress/dist/
 .env.prod.appwrite
 .mcp.json
 .hypothesis/
+
+# SvelteKit generated files
+.svelte-kit/
+build/
