@@ -1,7 +1,3 @@
-**@univ-lehavre/atlas-redcap-api**
-
----
-
 # @univ-lehavre/atlas-redcap-api
 
 ## Classes

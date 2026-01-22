@@ -1,12 +1,6 @@
-[**@univ-lehavre/atlas-redcap-api**](../index.md)
-
----
-
-[@univ-lehavre/atlas-redcap-api](../index.md) / RedcapProjectInfo
-
 # Interface: RedcapProjectInfo
 
-Defined in: [packages/redcap-api/src/types.ts:64](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L64)
+Defined in: [packages/redcap-api/src/types.ts:64](https://github.com/univ-lehavre/atlas/blob/c399ec78fb6de6d479acd00b2b8ce08b23561ed1/packages/redcap-api/src/types.ts#L64)
 
 REDCap project information returned by the API.
 
@@ -31,7 +25,7 @@ console.log(`In production: ${info.in_production === 1}`);
 
 > `readonly` **creation_time**: `string`
 
-Defined in: [packages/redcap-api/src/types.ts:70](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L70)
+Defined in: [packages/redcap-api/src/types.ts:70](https://github.com/univ-lehavre/atlas/blob/c399ec78fb6de6d479acd00b2b8ce08b23561ed1/packages/redcap-api/src/types.ts#L70)
 
 ISO 8601 timestamp when the project was created
 
@@ -41,7 +35,7 @@ ISO 8601 timestamp when the project was created
 
 > `readonly` **in_production**: `0` \| `1`
 
-Defined in: [packages/redcap-api/src/types.ts:72](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L72)
+Defined in: [packages/redcap-api/src/types.ts:72](https://github.com/univ-lehavre/atlas/blob/c399ec78fb6de6d479acd00b2b8ce08b23561ed1/packages/redcap-api/src/types.ts#L72)
 
 Whether the project is in production mode (1) or development mode (0)
 
@@ -51,7 +45,7 @@ Whether the project is in production mode (1) or development mode (0)
 
 > `readonly` **project_id**: `number`
 
-Defined in: [packages/redcap-api/src/types.ts:66](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L66)
+Defined in: [packages/redcap-api/src/types.ts:66](https://github.com/univ-lehavre/atlas/blob/c399ec78fb6de6d479acd00b2b8ce08b23561ed1/packages/redcap-api/src/types.ts#L66)
 
 Unique identifier for the project in REDCap
 
@@ -61,7 +55,7 @@ Unique identifier for the project in REDCap
 
 > `readonly` **project_title**: `string`
 
-Defined in: [packages/redcap-api/src/types.ts:68](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L68)
+Defined in: [packages/redcap-api/src/types.ts:68](https://github.com/univ-lehavre/atlas/blob/c399ec78fb6de6d479acd00b2b8ce08b23561ed1/packages/redcap-api/src/types.ts#L68)
 
 Human-readable title of the project
 
@@ -71,6 +65,6 @@ Human-readable title of the project
 
 > `readonly` **record_autonumbering_enabled**: `0` \| `1`
 
-Defined in: [packages/redcap-api/src/types.ts:74](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/types.ts#L74)
+Defined in: [packages/redcap-api/src/types.ts:74](https://github.com/univ-lehavre/atlas/blob/c399ec78fb6de6d479acd00b2b8ce08b23561ed1/packages/redcap-api/src/types.ts#L74)
 
 Whether automatic record numbering is enabled (1) or disabled (0)
