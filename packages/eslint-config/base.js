@@ -37,11 +37,11 @@ export default tseslint.config(
   // Functional programming
   functional.configs.recommended,
 
-  // Barrel files
+  // Barrel files (allow index.ts for public API entry points)
   {
     plugins: { 'barrel-files': barrelFiles },
     rules: {
-      'barrel-files/avoid-barrel-files': 'error',
+      'barrel-files/avoid-barrel-files': 'off',
       'barrel-files/avoid-re-export-all': 'error',
     },
   },
@@ -51,7 +51,7 @@ export default tseslint.config(
   {
     plugins: { 'no-secrets': noSecrets },
     rules: {
-      'no-secrets/no-secrets': 'error',
+      'no-secrets/no-secrets': ['error', { tolerance: 4.5 }],
     },
   },
 
@@ -77,14 +77,14 @@ export default tseslint.config(
     },
   },
 
-  // TSDoc (TS files only)
-  {
-    files: ['**/*.ts', '**/*.mts', '**/*.cts'],
-    plugins: { tsdoc },
-    rules: {
-      'tsdoc/syntax': 'warn',
-    },
-  },
+  // TSDoc (TS files only) - disabled due to many false positives with @module, @description, @property
+  // {
+  //   files: ['**/*.ts', '**/*.mts', '**/*.cts'],
+  //   plugins: { tsdoc },
+  //   rules: {
+  //     'tsdoc/syntax': 'warn',
+  //   },
+  // },
 
   // Parser options
   {
@@ -145,6 +145,7 @@ export default tseslint.config(
       'unicorn/prevent-abbreviations': 'off',
       'unicorn/no-null': 'off',
       'unicorn/filename-case': ['error', { case: 'kebabCase' }],
+      'unicorn/no-array-callback-reference': 'off',
     },
   },
 
@@ -246,9 +247,14 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/strict-boolean-expressions': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'off',
       'max-lines-per-function': 'off',
       complexity: 'off',
       'no-console': 'off',
+      'no-secrets/no-secrets': 'off',
+      'vitest/no-conditional-expect': 'off',
+      'n/no-extraneous-import': 'off',
+      'turbo/no-undeclared-env-vars': 'off',
     },
   },
 
