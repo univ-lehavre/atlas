@@ -4,44 +4,26 @@
  */
 
 import * as dns from 'node:dns';
-import * as net from 'node:net';
 import * as tls from 'node:tls';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { checkInternet, dnsResolve, tcpPing, tlsHandshake } from './diagnostics.js';
+import { Hostname, Port, TimeoutMs } from './types.js';
+import { dnsResolve, tlsHandshake } from './diagnostics.js';
+
+// Test constants with branded types
+const TEST_HOSTNAME = Hostname('example.com');
+const TEST_HOSTNAME_NONEXISTENT = Hostname('nonexistent.invalid');
+const TEST_HOSTNAME_SLOW = Hostname('slow.example.com');
+const TEST_HOSTNAME_BAD_CERT = Hostname('bad-cert.example.com');
+const TEST_HOSTNAME_SELF_SIGNED = Hostname('self-signed.example.com');
+const TEST_HOSTNAME_WRONG_HOST = Hostname('wrong-host.example.com');
+const TEST_PORT_HTTPS = Port(443);
+const TEST_TIMEOUT_CUSTOM = TimeoutMs(10_000);
 
 // Mock node modules
 vi.mock('node:dns');
-vi.mock('node:net');
 vi.mock('node:tls');
-
-// Helper to create mock TCP socket
-const createMockSocket = (): {
-  mockSocket: {
-    setTimeout: ReturnType<typeof vi.fn>;
-    on: ReturnType<typeof vi.fn>;
-    connect: ReturnType<typeof vi.fn>;
-    removeAllListeners: ReturnType<typeof vi.fn>;
-    destroy: ReturnType<typeof vi.fn>;
-  };
-  getEventHandler: (event: string) => ((...args: unknown[]) => void) | undefined;
-} => {
-  const eventHandlers: Record<string, (...args: unknown[]) => void> = {};
-  const mockSocket = {
-    setTimeout: vi.fn(),
-    on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
-      eventHandlers[event] = handler;
-    }),
-    connect: vi.fn(),
-    removeAllListeners: vi.fn(),
-    destroy: vi.fn(),
-  };
-  return {
-    mockSocket,
-    getEventHandler: (event: string) => eventHandlers[event],
-  };
-};
 
 // Helper to create mock TLS socket
 const createMockTlsSocket = (): {
@@ -98,7 +80,7 @@ describe('diagnostics', () => {
         );
       });
 
-      const result = await Effect.runPromise(dnsResolve('example.com'));
+      const result = await Effect.runPromise(dnsResolve(TEST_HOSTNAME));
 
       expect(result.name).toBe('DNS Resolve');
       expect(result.status).toBe('ok');
@@ -114,7 +96,7 @@ describe('diagnostics', () => {
         (callback as (err: NodeJS.ErrnoException | null, address: string) => void)(error, '');
       });
 
-      const result = await Effect.runPromise(dnsResolve('nonexistent.invalid'));
+      const result = await Effect.runPromise(dnsResolve(TEST_HOSTNAME_NONEXISTENT));
 
       expect(result.name).toBe('DNS Resolve');
       expect(result.status).toBe('error');
@@ -129,7 +111,7 @@ describe('diagnostics', () => {
         (callback as (err: NodeJS.ErrnoException | null, address: string) => void)(error, '');
       });
 
-      const result = await Effect.runPromise(dnsResolve('example.com'));
+      const result = await Effect.runPromise(dnsResolve(TEST_HOSTNAME));
 
       expect(result.name).toBe('DNS Resolve');
       expect(result.status).toBe('error');
@@ -146,132 +128,11 @@ describe('diagnostics', () => {
         }, 100);
       });
 
-      const resultPromise = Effect.runPromise(dnsResolve('example.com'));
+      const resultPromise = Effect.runPromise(dnsResolve(TEST_HOSTNAME));
       await vi.advanceTimersByTimeAsync(100);
       const result = await resultPromise;
 
       expect(result.latencyMs).toBeGreaterThanOrEqual(100);
-    });
-  });
-
-  describe('tcpPing', () => {
-    it('should return ok status when connection succeeds', async () => {
-      const { mockSocket, getEventHandler } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      const resultPromise = Effect.runPromise(tcpPing('example.com', 443));
-
-      // Simulate successful connection
-      getEventHandler('connect')?.();
-
-      const result = await resultPromise;
-
-      expect(result.name).toBe('TCP Connect');
-      expect(result.status).toBe('ok');
-      expect(result.latencyMs).toBeDefined();
-      expect(mockSocket.connect).toHaveBeenCalledWith(443, 'example.com');
-    });
-
-    it('should return error status on timeout', async () => {
-      const { mockSocket, getEventHandler } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      const resultPromise = Effect.runPromise(tcpPing('slow.example.com', 443));
-
-      // Simulate timeout
-      getEventHandler('timeout')?.();
-
-      const result = await resultPromise;
-
-      expect(result.name).toBe('TCP Connect');
-      expect(result.status).toBe('error');
-      expect(result.message).toBe('Connection timeout');
-    });
-
-    it('should return error status on connection error', async () => {
-      const { mockSocket, getEventHandler } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      const resultPromise = Effect.runPromise(tcpPing('unreachable.example.com', 443));
-
-      // Simulate connection error
-      getEventHandler('error')?.(new Error('Connection refused'));
-
-      const result = await resultPromise;
-
-      expect(result.name).toBe('TCP Connect');
-      expect(result.status).toBe('error');
-      expect(result.message).toBe('Connection refused');
-    });
-
-    it('should use custom name when provided', async () => {
-      const { mockSocket, getEventHandler } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      const resultPromise = Effect.runPromise(tcpPing('example.com', 443, { name: 'Custom Ping' }));
-
-      getEventHandler('connect')?.();
-
-      const result = await resultPromise;
-
-      expect(result.name).toBe('Custom Ping');
-    });
-
-    it('should use custom timeout when provided', () => {
-      const { mockSocket } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      void Effect.runPromise(tcpPing('example.com', 443, { timeoutMs: 10_000 }));
-
-      expect(mockSocket.setTimeout).toHaveBeenCalledWith(10_000);
-    });
-
-    it('should use default timeout when not provided', () => {
-      const { mockSocket } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      void Effect.runPromise(tcpPing('example.com', 443));
-
-      expect(mockSocket.setTimeout).toHaveBeenCalledWith(3000);
-    });
-
-    it('should cleanup socket on success', async () => {
-      const { mockSocket, getEventHandler } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      const resultPromise = Effect.runPromise(tcpPing('example.com', 443));
-
-      getEventHandler('connect')?.();
-      await resultPromise;
-
-      expect(mockSocket.removeAllListeners).toHaveBeenCalled();
-      expect(mockSocket.destroy).toHaveBeenCalled();
-    });
-
-    it('should cleanup socket on error', async () => {
-      const { mockSocket, getEventHandler } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      const resultPromise = Effect.runPromise(tcpPing('example.com', 443));
-
-      getEventHandler('error')?.(new Error('Failed'));
-      await resultPromise;
-
-      expect(mockSocket.removeAllListeners).toHaveBeenCalled();
-      expect(mockSocket.destroy).toHaveBeenCalled();
-    });
-
-    it('should cleanup socket on timeout', async () => {
-      const { mockSocket, getEventHandler } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      const resultPromise = Effect.runPromise(tcpPing('example.com', 443));
-
-      getEventHandler('timeout')?.();
-      await resultPromise;
-
-      expect(mockSocket.removeAllListeners).toHaveBeenCalled();
-      expect(mockSocket.destroy).toHaveBeenCalled();
     });
   });
 
@@ -280,7 +141,7 @@ describe('diagnostics', () => {
       const { connectCallback, setupMock } = createMockTlsSocket();
       setupMock();
 
-      const resultPromise = Effect.runPromise(tlsHandshake('example.com', 443));
+      const resultPromise = Effect.runPromise(tlsHandshake(TEST_HOSTNAME, TEST_PORT_HTTPS));
 
       // Simulate successful handshake
       connectCallback.current?.();
@@ -297,7 +158,7 @@ describe('diagnostics', () => {
       const { getEventHandler, setupMock } = createMockTlsSocket();
       setupMock();
 
-      const resultPromise = Effect.runPromise(tlsHandshake('slow.example.com', 443));
+      const resultPromise = Effect.runPromise(tlsHandshake(TEST_HOSTNAME_SLOW, TEST_PORT_HTTPS));
 
       // Simulate timeout
       getEventHandler('timeout')?.();
@@ -313,7 +174,9 @@ describe('diagnostics', () => {
       const { getEventHandler, setupMock } = createMockTlsSocket();
       setupMock();
 
-      const resultPromise = Effect.runPromise(tlsHandshake('bad-cert.example.com', 443));
+      const resultPromise = Effect.runPromise(
+        tlsHandshake(TEST_HOSTNAME_BAD_CERT, TEST_PORT_HTTPS)
+      );
 
       const error = new Error('Certificate expired') as NodeJS.ErrnoException;
       error.code = 'CERT_HAS_EXPIRED';
@@ -330,7 +193,9 @@ describe('diagnostics', () => {
       const { getEventHandler, setupMock } = createMockTlsSocket();
       setupMock();
 
-      const resultPromise = Effect.runPromise(tlsHandshake('self-signed.example.com', 443));
+      const resultPromise = Effect.runPromise(
+        tlsHandshake(TEST_HOSTNAME_SELF_SIGNED, TEST_PORT_HTTPS)
+      );
 
       const error = new Error('Self signed') as NodeJS.ErrnoException;
       error.code = 'UNABLE_TO_VERIFY_LEAF_SIGNATURE';
@@ -345,7 +210,9 @@ describe('diagnostics', () => {
       const { getEventHandler, setupMock } = createMockTlsSocket();
       setupMock();
 
-      const resultPromise = Effect.runPromise(tlsHandshake('wrong-host.example.com', 443));
+      const resultPromise = Effect.runPromise(
+        tlsHandshake(TEST_HOSTNAME_WRONG_HOST, TEST_PORT_HTTPS)
+      );
 
       const error = new Error('Hostname mismatch') as NodeJS.ErrnoException;
       error.code = 'ERR_TLS_CERT_ALTNAME_INVALID';
@@ -360,7 +227,7 @@ describe('diagnostics', () => {
       const { setupMock } = createMockTlsSocket();
       setupMock();
 
-      void Effect.runPromise(tlsHandshake('example.com', 443));
+      void Effect.runPromise(tlsHandshake(TEST_HOSTNAME, TEST_PORT_HTTPS));
 
       expect(tls.connect).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -377,7 +244,9 @@ describe('diagnostics', () => {
       const { setupMock } = createMockTlsSocket();
       setupMock();
 
-      void Effect.runPromise(tlsHandshake('example.com', 443, { timeoutMs: 10_000 }));
+      void Effect.runPromise(
+        tlsHandshake(TEST_HOSTNAME, TEST_PORT_HTTPS, { timeoutMs: TEST_TIMEOUT_CUSTOM })
+      );
 
       expect(tls.connect).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -391,7 +260,9 @@ describe('diagnostics', () => {
       const { setupMock } = createMockTlsSocket();
       setupMock();
 
-      void Effect.runPromise(tlsHandshake('example.com', 443, { rejectUnauthorized: false }));
+      void Effect.runPromise(
+        tlsHandshake(TEST_HOSTNAME, TEST_PORT_HTTPS, { rejectUnauthorized: false })
+      );
 
       expect(tls.connect).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -409,7 +280,7 @@ describe('diagnostics', () => {
       });
       setupMock();
 
-      const resultPromise = Effect.runPromise(tlsHandshake('example.com', 443));
+      const resultPromise = Effect.runPromise(tlsHandshake(TEST_HOSTNAME, TEST_PORT_HTTPS));
       connectCallback.current?.();
       const result = await resultPromise;
 
@@ -420,7 +291,7 @@ describe('diagnostics', () => {
       const { mockSocket, connectCallback, setupMock } = createMockTlsSocket();
       setupMock();
 
-      const resultPromise = Effect.runPromise(tlsHandshake('example.com', 443));
+      const resultPromise = Effect.runPromise(tlsHandshake(TEST_HOSTNAME, TEST_PORT_HTTPS));
 
       connectCallback.current?.();
       await resultPromise;
@@ -432,7 +303,7 @@ describe('diagnostics', () => {
       const { mockSocket, getEventHandler, setupMock } = createMockTlsSocket();
       setupMock();
 
-      const resultPromise = Effect.runPromise(tlsHandshake('example.com', 443));
+      const resultPromise = Effect.runPromise(tlsHandshake(TEST_HOSTNAME, TEST_PORT_HTTPS));
 
       getEventHandler('error')?.(new Error('Failed'));
       await resultPromise;
@@ -444,83 +315,12 @@ describe('diagnostics', () => {
       const { mockSocket, getEventHandler, setupMock } = createMockTlsSocket();
       setupMock();
 
-      const resultPromise = Effect.runPromise(tlsHandshake('example.com', 443));
+      const resultPromise = Effect.runPromise(tlsHandshake(TEST_HOSTNAME, TEST_PORT_HTTPS));
 
       getEventHandler('timeout')?.();
       await resultPromise;
 
       expect(mockSocket.destroy).toHaveBeenCalled();
-    });
-  });
-
-  describe('checkInternet', () => {
-    it('should return ok status when internet is available', async () => {
-      const { mockSocket, getEventHandler } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      const resultPromise = Effect.runPromise(checkInternet());
-
-      getEventHandler('connect')?.();
-
-      const result = await resultPromise;
-
-      expect(result.name).toBe('Internet Check');
-      expect(result.status).toBe('ok');
-    });
-
-    it('should return error status when internet is unavailable', async () => {
-      const { mockSocket, getEventHandler } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      const resultPromise = Effect.runPromise(checkInternet());
-
-      getEventHandler('timeout')?.();
-
-      const result = await resultPromise;
-
-      expect(result.name).toBe('Internet Check');
-      expect(result.status).toBe('error');
-      expect(result.message).toBe('Connection timeout');
-    });
-
-    it('should connect to Cloudflare DNS (1.1.1.1) on port 443', () => {
-      const { mockSocket } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      void Effect.runPromise(checkInternet());
-
-      expect(mockSocket.connect).toHaveBeenCalledWith(443, '1.1.1.1');
-    });
-
-    it('should use default timeout of 5000ms', () => {
-      const { mockSocket } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      void Effect.runPromise(checkInternet());
-
-      expect(mockSocket.setTimeout).toHaveBeenCalledWith(5000);
-    });
-
-    it('should allow custom timeout', () => {
-      const { mockSocket } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      void Effect.runPromise(checkInternet({ timeoutMs: 10_000 }));
-
-      expect(mockSocket.setTimeout).toHaveBeenCalledWith(10_000);
-    });
-
-    it('should allow custom name', async () => {
-      const { mockSocket, getEventHandler } = createMockSocket();
-      vi.mocked(net.Socket).mockImplementation(() => mockSocket as unknown as net.Socket);
-
-      const resultPromise = Effect.runPromise(checkInternet({ name: 'Custom Internet Check' }));
-
-      getEventHandler('connect')?.();
-
-      const result = await resultPromise;
-
-      expect(result.name).toBe('Custom Internet Check');
     });
   });
 });
