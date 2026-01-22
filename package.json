@@ -36,7 +36,7 @@
     "prepare": "lefthook install",
     "changeset": "changeset",
     "bump": "changeset version",
-    "release": "pnpm build && clean-publish --before-script 'pnpm dlx @changesets/cli publish'",
+    "release": "pnpm build && clean-publish",
     "check": "pnpm run \"/^(format:check|lint|knip|cpd)$/\"",
     "audit:all": "pnpm run \"/^(audit|license:audit)$/\"",
     "outdated": "pnpm outdated -r",
