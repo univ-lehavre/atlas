@@ -1,10 +1,30 @@
 import { Hono } from 'hono';
 import { Schema as S } from 'effect';
-import { resolver, validator as effectValidator, describeRoute } from 'hono-openapi';
+import { resolver, validator, describeRoute } from 'hono-openapi';
 import { Effect, pipe } from 'effect';
 import { RedcapApiError } from '@univ-lehavre/atlas-redcap-api';
 import { redcap } from '../redcap.js';
 import { runEffect } from '../effect-handler.js';
+
+/**
+ * Validation error hook that returns errors in the correct API format
+ */
+const validationErrorHook = (
+  result: { success: boolean; error?: readonly { message: string }[] },
+  c: { json: (data: unknown, status: number) => Response }
+): Response | undefined =>
+  result.success
+    ? undefined
+    : c.json(
+        {
+          data: null,
+          error: {
+            code: 'validation_error',
+            message: result.error?.map((i) => i.message).join(', ') ?? 'Validation failed',
+          },
+        },
+        400
+      );
 
 // --- Schemas ---
 
@@ -66,7 +86,7 @@ users.get(
       },
     },
   }),
-  effectValidator('query', S.standardSchemaV1(ByEmailQuerySchema)),
+  validator('query', S.standardSchemaV1(ByEmailQuerySchema), validationErrorHook),
   (c) => {
     const { email } = c.req.valid('query');
 

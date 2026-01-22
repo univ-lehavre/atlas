@@ -15,6 +15,19 @@ const app = new Hono();
 app.use('*', logger());
 app.use('*', cors());
 
+// Return 405 for unsupported methods (TRACE, OPTIONS handled by CORS)
+app.use('*', async (c, next) =>
+  c.req.method === 'TRACE'
+    ? c.json(
+        {
+          data: null,
+          error: { code: 'method_not_allowed', message: 'Method TRACE is not allowed' },
+        },
+        405
+      )
+    : next()
+);
+
 // Health check routes
 app.route('/health', health);
 
