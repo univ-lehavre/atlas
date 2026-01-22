@@ -1,4 +1,4 @@
-/* eslint-disable functional/no-let, functional/no-expression-statements, functional/immutable-data, functional/no-try-statements, functional/no-loop-statements, functional/no-conditional-statements, @typescript-eslint/strict-boolean-expressions -- Health check requires imperative code for latency measurements */
+/* eslint-disable functional/no-let, functional/no-expression-statements, functional/immutable-data, functional/no-try-statements, functional/no-loop-statements, functional/no-conditional-statements, @typescript-eslint/strict-boolean-expressions, max-lines-per-function -- Health check requires imperative code for latency measurements and diagnostics */
 import { Hono } from 'hono';
 import { streamSSE } from 'hono/streaming';
 import { Effect, pipe } from 'effect';
@@ -398,4 +398,4 @@ health.get('/diagnose', (c) => {
     });
   });
 });
-/* eslint-enable functional/no-let, functional/no-expression-statements, functional/immutable-data, functional/no-try-statements, functional/no-loop-statements, functional/no-conditional-statements, @typescript-eslint/strict-boolean-expressions */
+/* eslint-enable functional/no-let, functional/no-expression-statements, functional/immutable-data, functional/no-try-statements, functional/no-loop-statements, functional/no-conditional-statements, @typescript-eslint/strict-boolean-expressions, max-lines-per-function */
