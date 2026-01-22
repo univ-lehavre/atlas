@@ -18,7 +18,11 @@ export default {
         'revert',
       ],
     ],
-    'scope-enum': [1, 'always', ['redcap-api', 'redcap-service', 'docs', 'deps', 'config']],
+    'scope-enum': [
+      1,
+      'always',
+      ['redcap-api', 'redcap-cli', 'redcap-service', 'docs', 'deps', 'config'],
+    ],
     'subject-case': [2, 'always', 'lower-case'],
   },
 };

@@ -37,8 +37,8 @@
     "docker": "docker compose up --build",
     "docker:build": "docker compose build --no-cache",
     "docker:down": "docker compose down",
-    "test:redcap": "tsx scripts/test-redcap.ts",
-    "test:redcap:docker": "tsx scripts/test-redcap.ts --docker"
+    "redcap": "redcap",
+    "redcap:test": "redcap test --url http://localhost:3000"
   },
   "dependencies": {
     "@hono/effect-validator": "^1.2.0",
@@ -48,6 +48,7 @@
     "hono": "^4.11.5"
   },
   "devDependencies": {
+    "@univ-lehavre/atlas-redcap-cli": "workspace:*",
     "@univ-lehavre/atlas-typescript-config": "workspace:*",
     "@types/node": "^25.0.10",
     "tsx": "^4.21.0",
