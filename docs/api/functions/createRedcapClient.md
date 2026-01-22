@@ -1,14 +1,14 @@
-[**@univ-lehavre/atlas-redcap-api**](../README.md)
+[**@univ-lehavre/atlas-redcap-api**](../index.md)
 
 ---
 
-[@univ-lehavre/atlas-redcap-api](../README.md) / createRedcapClient
+[@univ-lehavre/atlas-redcap-api](../index.md) / createRedcapClient
 
 # Function: createRedcapClient()
 
 > **createRedcapClient**(`config`, `fetchFn`): [`RedcapClient`](../interfaces/RedcapClient.md)
 
-Defined in: [packages/redcap-api/src/client.ts:565](https://github.com/univ-lehavre/atlas/blob/efca797d113c12556abf22a7fdb97dae8aa62ade/packages/redcap-api/src/client.ts#L565)
+Defined in: [packages/redcap-api/src/client.ts:565](https://github.com/univ-lehavre/atlas/blob/9f020e0b970df818d41e1532805b25c2cea7c1b7/packages/redcap-api/src/client.ts#L565)
 
 Creates a new REDCap API client instance.
 
