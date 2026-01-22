@@ -98,6 +98,8 @@ export const validationErrorHook = (
 
 ### 4. Ajouter Timeouts aux Appels OPA
 
+**Status**: ✅ **FAIT** (commit à venir)
+
 **Fichier**: `apps/ecrin/src/lib/server/opa.ts`
 
 ```typescript
@@ -340,7 +342,7 @@ if (!res.ok) {
 - [x] 1. Extraire schémas dupliqués
 - [x] 2. Extraire validation hook
 - [x] 3. Ajouter .svelte-kit au .gitignore
-- [ ] 4. Timeouts OPA
+- [x] 4. Timeouts OPA
 - [ ] 5. Tests unitaires routes
 - [ ] 6. Rate limiting
 - [ ] 7. Retry logic REDCap

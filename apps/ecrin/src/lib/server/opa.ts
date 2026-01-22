@@ -33,6 +33,9 @@
 /** URL du service OPA (interne au cluster) */
 const OPA_URL = process.env.OPA_URL ?? 'http://opa:8181';
 
+/** Timeout par defaut pour les appels OPA en millisecondes */
+const OPA_TIMEOUT_MS = 5000;
+
 /**
  * Input pour une decision d'autorisation OPA
  *
@@ -105,12 +108,18 @@ export interface AuthzResult {
  * ```
  */
 export async function checkAuthorization(input: AuthzInput): Promise<boolean> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OPA_TIMEOUT_MS);
+
   try {
     const res = await fetch(`${OPA_URL}/v1/data/ecrin/authz/allow`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ input }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       console.error(`OPA error: ${res.status} ${res.statusText}`);
@@ -120,7 +129,12 @@ export async function checkAuthorization(input: AuthzInput): Promise<boolean> {
     const data = await res.json();
     return data.result === true;
   } catch (error) {
-    console.error('OPA connection error:', error);
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('OPA request timeout');
+    } else {
+      console.error('OPA connection error:', error);
+    }
     return false; // Fail closed
   }
 }
@@ -145,12 +159,18 @@ export async function checkAuthorization(input: AuthzInput): Promise<boolean> {
  * ```
  */
 export async function getRiskScore(context: { ip: string }): Promise<number> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OPA_TIMEOUT_MS);
+
   try {
     const res = await fetch(`${OPA_URL}/v1/data/ecrin/context/final_risk_score`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ input: { context } }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       return 0.5; // Default medium risk
@@ -159,6 +179,7 @@ export async function getRiskScore(context: { ip: string }): Promise<number> {
     const data = await res.json();
     return typeof data.result === 'number' ? data.result : 0.5;
   } catch {
+    clearTimeout(timeoutId);
     return 0.5;
   }
 }
@@ -181,12 +202,18 @@ export async function getRiskScore(context: { ip: string }): Promise<number> {
  * ```
  */
 export async function isHighRisk(context: { ip: string }): Promise<boolean> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), OPA_TIMEOUT_MS);
+
   try {
     const res = await fetch(`${OPA_URL}/v1/data/ecrin/context/high_risk`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ input: { context } }),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!res.ok) {
       return true; // Assume high risk on error
@@ -195,6 +222,7 @@ export async function isHighRisk(context: { ip: string }): Promise<boolean> {
     const data = await res.json();
     return data.result === true;
   } catch {
+    clearTimeout(timeoutId);
     return true;
   }
 }
