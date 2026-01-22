@@ -1,4 +1,4 @@
-/* eslint-disable functional/no-let, functional/no-expression-statements, functional/no-conditional-statements, @typescript-eslint/strict-boolean-expressions, @typescript-eslint/no-unnecessary-condition, unicorn/no-negated-condition -- Network callbacks require imperative code */
+/* eslint-disable functional/no-expression-statements, functional/no-conditional-statements -- Network callbacks require imperative code */
 /**
  * @module diagnostics
  * @description Network diagnostic functions for connectivity testing.
@@ -7,17 +7,26 @@
  * for functional error handling. These functions are used by CLI tools to diagnose
  * connectivity issues between services.
  *
+ * All functions use branded types for type-safe parameters:
+ * - `Hostname`: Validated hostname (RFC 1123) or IP address
+ * - `Host`: Union of `Hostname | IpAddress`
+ * - `Port`: Validated port number (1-65535)
+ * - `TimeoutMs`: Validated timeout in milliseconds (0-600000)
+ *
  * @example
  * ```typescript
  * import { Effect, pipe } from 'effect';
- * import { dnsResolve, tcpPing, tlsHandshake } from '@univ-lehavre/atlas-net';
+ * import { dnsResolve, tcpPing, tlsHandshake, Hostname, Port } from '@univ-lehavre/atlas-net';
+ *
+ * const host = Hostname('example.com');
+ * const port = Port(443);
  *
  * // Diagnose connectivity to a server
  * const diagnose = pipe(
  *   Effect.all([
- *     dnsResolve('example.com'),
- *     tcpPing('example.com', 443),
- *     tlsHandshake('example.com', 443),
+ *     dnsResolve(host),
+ *     tcpPing(host, port),
+ *     tlsHandshake(host, port),
  *   ]),
  *   Effect.map(steps => ({
  *     steps,
@@ -32,63 +41,22 @@ import * as net from 'node:net';
 import * as tls from 'node:tls';
 import { Effect } from 'effect';
 
-// ============================================================================
-// Types
-// ============================================================================
-
-/**
- * Status of a diagnostic step.
- *
- * - `ok`: The check passed successfully
- * - `error`: The check failed
- * - `skipped`: The check was skipped (e.g., TLS check on non-HTTPS URL)
- */
-export type DiagnosticStatus = 'ok' | 'error' | 'skipped';
-
-/**
- * Result of a single diagnostic step.
- *
- * @example
- * ```typescript
- * const step: DiagnosticStep = {
- *   name: 'DNS Resolve',
- *   status: 'ok',
- *   latencyMs: 12,
- *   message: '192.168.1.1',
- * };
- * ```
- */
-export interface DiagnosticStep {
-  /** Name of the diagnostic step (e.g., 'DNS Resolve', 'TCP Connect') */
-  readonly name: string;
-  /** Status of the step */
-  readonly status: DiagnosticStatus;
-  /** Time taken in milliseconds (optional) */
-  readonly latencyMs?: number;
-  /** Additional information (e.g., resolved IP, error message) */
-  readonly message?: string;
-}
-
-/**
- * Aggregated result of multiple diagnostic steps.
- *
- * @example
- * ```typescript
- * const result: DiagnosticResult = {
- *   steps: [
- *     { name: 'DNS Resolve', status: 'ok', latencyMs: 12 },
- *     { name: 'TCP Connect', status: 'ok', latencyMs: 45 },
- *   ],
- *   overallStatus: 'ok',
- * };
- * ```
- */
-export interface DiagnosticResult {
-  /** Array of individual diagnostic steps */
-  readonly steps: readonly DiagnosticStep[];
-  /** Overall status: 'ok' if all passed, 'partial' if some passed, 'error' if all failed */
-  readonly overallStatus: 'ok' | 'partial' | 'error';
-}
+import {
+  DEFAULT_INTERNET_CHECK_TIMEOUT_MS,
+  DEFAULT_TCP_TIMEOUT_MS,
+  DEFAULT_TLS_TIMEOUT_MS,
+  HTTPS_PORT,
+  INTERNET_CHECK_HOST,
+} from './constants.js';
+import { formatCertificateMessage, formatTlsErrorMessage } from './helpers.js';
+import type {
+  DiagnosticStep,
+  Host,
+  Hostname,
+  Port,
+  TcpPingOptions,
+  TlsHandshakeOptions,
+} from './types.js';
 
 // ============================================================================
 // DNS Resolution
@@ -100,18 +68,20 @@ export interface DiagnosticResult {
  * This function wraps Node's `dns.lookup` in an Effect for functional error handling.
  * It measures the time taken for DNS resolution and returns diagnostic information.
  *
- * @param hostname - The hostname to resolve (e.g., 'example.com')
+ * @param hostname - A validated `Hostname` branded type
  * @returns An Effect that resolves to a DiagnosticStep with the resolved IP or error
  *
  * @example
  * ```typescript
- * const step = await Effect.runPromise(dnsResolve('example.com'));
+ * import { Hostname } from '@univ-lehavre/atlas-net';
+ *
+ * const step = await Effect.runPromise(dnsResolve(Hostname('example.com')));
  * if (step.status === 'ok') {
  *   console.log(`Resolved to ${step.message} in ${step.latencyMs}ms`);
  * }
  * ```
  */
-export const dnsResolve = (hostname: string): Effect.Effect<DiagnosticStep> =>
+export const dnsResolve = (hostname: Hostname): Effect.Effect<DiagnosticStep> =>
   Effect.async<DiagnosticStep>((resume) => {
     const start = Date.now();
 
@@ -144,45 +114,37 @@ export const dnsResolve = (hostname: string): Effect.Effect<DiagnosticStep> =>
 // ============================================================================
 
 /**
- * Options for TCP ping operation.
- */
-export interface TcpPingOptions {
-  /** Custom name for the diagnostic step (default: 'TCP Connect') */
-  readonly name?: string;
-  /** Connection timeout in milliseconds (default: 3000) */
-  readonly timeoutMs?: number;
-}
-
-/**
  * Tests TCP connectivity to a host and port.
  *
  * Attempts to establish a TCP connection and measures the time taken.
  * This is useful for checking if a port is open and reachable.
  *
- * @param host - The hostname or IP address to connect to
- * @param port - The port number to connect to
- * @param options - Optional configuration for the ping operation
+ * @param host - A validated `Host` type (`Hostname` or `IpAddress`)
+ * @param port - A validated `Port` branded type (1-65535)
+ * @param options - Optional configuration including `name` and `timeoutMs` (as `TimeoutMs`)
  * @returns An Effect that resolves to a DiagnosticStep with connection status
  *
  * @example
  * ```typescript
+ * import { Hostname, Port, TimeoutMs } from '@univ-lehavre/atlas-net';
+ *
  * // Check if a web server is reachable
- * const step = await Effect.runPromise(tcpPing('example.com', 443));
+ * const step = await Effect.runPromise(tcpPing(Hostname('example.com'), Port(443)));
  * console.log(`Connection ${step.status} in ${step.latencyMs}ms`);
  *
  * // With custom timeout
  * const step2 = await Effect.runPromise(
- *   tcpPing('slow-server.com', 8080, { timeoutMs: 10000 })
+ *   tcpPing(Hostname('slow-server.com'), Port(8080), { timeoutMs: TimeoutMs(10000) })
  * );
  * ```
  */
 export const tcpPing = (
-  host: string,
-  port: number,
+  host: Host,
+  port: Port,
   options: TcpPingOptions = {}
 ): Effect.Effect<DiagnosticStep> =>
   Effect.async<DiagnosticStep>((resume) => {
-    const { name = 'TCP Connect', timeoutMs = 3000 } = options;
+    const { name = 'TCP Connect', timeoutMs = DEFAULT_TCP_TIMEOUT_MS } = options;
     const start = Date.now();
     const socket = new net.Socket();
 
@@ -217,82 +179,48 @@ export const tcpPing = (
 // ============================================================================
 
 /**
- * Options for TLS handshake operation.
- */
-export interface TlsHandshakeOptions {
-  /** Handshake timeout in milliseconds (default: 5000) */
-  readonly timeoutMs?: number;
-  /** Whether to reject unauthorized certificates (default: true) */
-  readonly rejectUnauthorized?: boolean;
-}
-
-/**
  * Tests TLS/SSL connectivity and validates the server certificate.
  *
  * Performs a TLS handshake and retrieves certificate information including
  * the Common Name (CN) and expiration date. Useful for diagnosing HTTPS
  * connectivity issues and certificate problems.
  *
- * @param host - The hostname to connect to
- * @param port - The port number (typically 443 for HTTPS)
- * @param options - Optional configuration for the handshake operation
+ * @param host - A validated `Host` type (`Hostname` or `IpAddress`)
+ * @param port - A validated `Port` branded type (typically 443 for HTTPS)
+ * @param options - Optional configuration including `timeoutMs` (as `TimeoutMs`) and `rejectUnauthorized`
  * @returns An Effect that resolves to a DiagnosticStep with certificate info or error
  *
  * @example
  * ```typescript
+ * import { Hostname, Port } from '@univ-lehavre/atlas-net';
+ *
  * // Check TLS connectivity and certificate
- * const step = await Effect.runPromise(tlsHandshake('example.com', 443));
+ * const step = await Effect.runPromise(tlsHandshake(Hostname('example.com'), Port(443)));
  * if (step.status === 'ok') {
  *   console.log(`Certificate: ${step.message}`);
  * }
  *
  * // Allow self-signed certificates
  * const step2 = await Effect.runPromise(
- *   tlsHandshake('internal-server.local', 443, { rejectUnauthorized: false })
+ *   tlsHandshake(Hostname('internal-server.local'), Port(443), { rejectUnauthorized: false })
  * );
  * ```
  */
 export const tlsHandshake = (
-  host: string,
-  port: number,
+  host: Host,
+  port: Port,
   options: TlsHandshakeOptions = {}
 ): Effect.Effect<DiagnosticStep> =>
   Effect.async<DiagnosticStep>((resume) => {
-    const { timeoutMs = 5000, rejectUnauthorized = true } = options;
+    const { timeoutMs = DEFAULT_TLS_TIMEOUT_MS, rejectUnauthorized = true } = options;
     const start = Date.now();
 
-    const socket = tls.connect(
-      {
-        host,
-        port,
-        rejectUnauthorized,
-        timeout: timeoutMs,
-      },
-      () => {
-        const latencyMs = Date.now() - start;
-        const cert = socket.getPeerCertificate();
-        const validTo = cert.valid_to !== '' ? new Date(cert.valid_to) : null;
-        const daysLeft = validTo
-          ? Math.floor((validTo.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-          : null;
-
-        const cn = cert.subject ? cert.subject.CN : null;
-        let message = cn ?? 'Certificate valid';
-        if (daysLeft !== null && daysLeft < 30) {
-          message += ` (expires in ${String(daysLeft)} days)`;
-        }
-
-        socket.destroy();
-        resume(
-          Effect.succeed({
-            name: 'TLS Handshake',
-            status: 'ok',
-            latencyMs,
-            message,
-          })
-        );
-      }
-    );
+    const socket = tls.connect({ host, port, rejectUnauthorized, timeout: timeoutMs }, () => {
+      const latencyMs = Date.now() - start;
+      const message = formatCertificateMessage(socket.getPeerCertificate());
+      socket.destroy();
+      resume(Effect.succeed({ name: 'TLS Handshake', status: 'ok', latencyMs, message }));
+    });
 
     socket.on('timeout', () => {
       socket.destroy();
@@ -308,20 +236,12 @@ export const tlsHandshake = (
 
     socket.on('error', (err: NodeJS.ErrnoException) => {
       socket.destroy();
-      const message =
-        err.code === 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
-          ? 'Certificate not trusted (self-signed?)'
-          : err.code === 'CERT_HAS_EXPIRED'
-            ? 'Certificate has expired'
-            : err.code === 'ERR_TLS_CERT_ALTNAME_INVALID'
-              ? 'Certificate hostname mismatch'
-              : err.message;
       resume(
         Effect.succeed({
           name: 'TLS Handshake',
           status: 'error',
           latencyMs: Date.now() - start,
-          message,
+          message: formatTlsErrorMessage(err),
         })
       );
     });
@@ -351,5 +271,9 @@ export const tlsHandshake = (
  * ```
  */
 export const checkInternet = (options: TcpPingOptions = {}): Effect.Effect<DiagnosticStep> =>
-  tcpPing('1.1.1.1', 443, { name: 'Internet Check', timeoutMs: 5000, ...options });
-/* eslint-enable functional/no-let, functional/no-expression-statements, functional/no-conditional-statements, @typescript-eslint/strict-boolean-expressions, @typescript-eslint/no-unnecessary-condition, unicorn/no-negated-condition */
+  tcpPing(INTERNET_CHECK_HOST, HTTPS_PORT, {
+    name: 'Internet Check',
+    timeoutMs: DEFAULT_INTERNET_CHECK_TIMEOUT_MS,
+    ...options,
+  });
+/* eslint-enable functional/no-expression-statements, functional/no-conditional-statements */
