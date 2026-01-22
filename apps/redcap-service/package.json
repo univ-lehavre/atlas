@@ -46,8 +46,9 @@
     "@hono/standard-validator": "^0.2.2",
     "@univ-lehavre/atlas-net": "workspace:*",
     "@univ-lehavre/atlas-redcap-api": "workspace:*",
-    "effect": "^3.19.14",
-    "hono": "^4.11.5"
+    "effect": "^3.19.15",
+    "hono": "^4.11.5",
+    "hono-rate-limiter": "^0.5.3"
   },
   "devDependencies": {
     "@scalar/hono-api-reference": "^0.9.35",

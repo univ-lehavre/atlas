@@ -3,25 +3,7 @@ import { Schema as S, Effect, pipe } from 'effect';
 import { resolver, describeRoute } from 'hono-openapi';
 import { redcap } from '../redcap.js';
 import { runEffect } from '../effect-handler.js';
-
-// --- Schemas ---
-
-const SuccessResponseOpenAPI = {
-  type: 'object' as const,
-  required: ['data'] as string[],
-  properties: {
-    data: { description: 'Response data - structure varies by endpoint' },
-  },
-  additionalProperties: false,
-};
-
-const ErrorResponseSchema = S.Struct({
-  data: S.Null,
-  error: S.Struct({
-    code: S.String,
-    message: S.String,
-  }),
-}).annotations({ identifier: 'ErrorResponse', description: 'Error API response' });
+import { ErrorResponseSchema, SuccessResponseOpenAPI } from '../schemas.js';
 
 // --- Routes ---
 
