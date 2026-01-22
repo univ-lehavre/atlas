@@ -2,7 +2,7 @@
 
 > **DiagnosticStatus** = `"ok"` \| `"error"` \| `"skipped"`
 
-Defined in: [types.ts:17](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/types.ts#L17)
+Defined in: [types.ts:86](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L86)
 
 Status of a diagnostic step.
 

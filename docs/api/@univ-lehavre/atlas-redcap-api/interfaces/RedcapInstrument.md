@@ -1,6 +1,6 @@
 # Interface: RedcapInstrument
 
-Defined in: [packages/redcap-api/src/types.ts:93](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/types.ts#L93)
+Defined in: [packages/redcap-api/src/types.ts:93](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L93)
 
 REDCap instrument (form) metadata.
 
@@ -26,7 +26,7 @@ instruments.forEach((inst) => {
 
 > `readonly` **instrument_label**: `string`
 
-Defined in: [packages/redcap-api/src/types.ts:97](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/types.ts#L97)
+Defined in: [packages/redcap-api/src/types.ts:97](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L97)
 
 Human-readable display label (e.g., 'Demographics Form')
 
@@ -36,6 +36,6 @@ Human-readable display label (e.g., 'Demographics Form')
 
 > `readonly` **instrument_name**: `string`
 
-Defined in: [packages/redcap-api/src/types.ts:95](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/types.ts#L95)
+Defined in: [packages/redcap-api/src/types.ts:95](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L95)
 
 Internal name used in the API (lowercase, underscores, e.g., 'demographics')

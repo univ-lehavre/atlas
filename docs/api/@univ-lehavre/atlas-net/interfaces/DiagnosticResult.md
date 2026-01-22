@@ -1,6 +1,6 @@
 # Interface: DiagnosticResult
 
-Defined in: [types.ts:36](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/types.ts#L36)
+Defined in: [types.ts:105](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L105)
 
 Aggregated result of multiple diagnostic steps.
 
@@ -10,7 +10,7 @@ Aggregated result of multiple diagnostic steps.
 
 > `readonly` **overallStatus**: `"ok"` \| `"error"` \| `"partial"`
 
-Defined in: [types.ts:40](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/types.ts#L40)
+Defined in: [types.ts:109](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L109)
 
 Overall status: 'ok' if all passed, 'partial' if some passed, 'error' if all failed
 
@@ -20,6 +20,6 @@ Overall status: 'ok' if all passed, 'partial' if some passed, 'error' if all fai
 
 > `readonly` **steps**: readonly [`DiagnosticStep`](DiagnosticStep.md)[]
 
-Defined in: [types.ts:38](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/types.ts#L38)
+Defined in: [types.ts:107](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L107)
 
 Array of individual diagnostic steps

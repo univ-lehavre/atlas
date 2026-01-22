@@ -1,6 +1,6 @@
 # Interface: RedcapExportFieldName
 
-Defined in: [packages/redcap-api/src/types.ts:174](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/types.ts#L174)
+Defined in: [packages/redcap-api/src/types.ts:174](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L174)
 
 REDCap export field name mapping.
 
@@ -30,7 +30,7 @@ const symptomColumns = fieldNames
 
 > `readonly` **choice_value**: `string`
 
-Defined in: [packages/redcap-api/src/types.ts:178](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/types.ts#L178)
+Defined in: [packages/redcap-api/src/types.ts:178](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L178)
 
 For checkbox fields: the choice value; empty for other field types
 
@@ -40,7 +40,7 @@ For checkbox fields: the choice value; empty for other field types
 
 > `readonly` **export_field_name**: `string`
 
-Defined in: [packages/redcap-api/src/types.ts:180](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/types.ts#L180)
+Defined in: [packages/redcap-api/src/types.ts:180](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L180)
 
 The actual column name used in exports (e.g., 'symptoms\_\_\_1')
 
@@ -50,6 +50,6 @@ The actual column name used in exports (e.g., 'symptoms\_\_\_1')
 
 > `readonly` **original_field_name**: `string`
 
-Defined in: [packages/redcap-api/src/types.ts:176](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/redcap-api/src/types.ts#L176)
+Defined in: [packages/redcap-api/src/types.ts:176](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/redcap-api/src/types.ts#L176)
 
 Original field name from the data dictionary

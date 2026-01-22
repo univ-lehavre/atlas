@@ -2,10 +2,27 @@
 
 > **Port**: `Constructor`\<[`Port`](../type-aliases/Port.md)\>
 
-Defined in: [brands.ts:17](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/brands.ts#L17)
+Defined in: [types.ts:34](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L34)
 
 Constructor for Port branded type with validation.
+
+## Param
+
+The port number (1-65535)
+
+## Returns
+
+A validated Port branded value
 
 ## Throws
 
 Brand error if port is not a valid port number (1-65535)
+
+## Example
+
+```typescript
+const https = Port(443); // Valid
+const http = Port(80); // Valid
+Port(0); // Throws: Invalid port
+Port(70000); // Throws: Invalid port
+```

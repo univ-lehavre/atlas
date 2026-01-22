@@ -2,7 +2,7 @@
 
 > **tcpPing**(`host`, `port`, `options`): `Effect`\<[`DiagnosticStep`](../interfaces/DiagnosticStep.md)\>
 
-Defined in: [diagnostics.ts:121](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/diagnostics.ts#L121)
+Defined in: [diagnostics.ts:141](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/diagnostics.ts#L141)
 
 Tests TCP connectivity to a host and port.
 
@@ -13,21 +13,21 @@ This is useful for checking if a port is open and reachable.
 
 ### host
 
-`string`
+[`Host`](../type-aliases/Host.md)
 
-The hostname or IP address to connect to
+A validated `Host` type (`Hostname` or `IpAddress`)
 
 ### port
 
-`number`
+[`Port`](../type-aliases/Port.md)
 
-The port number to connect to
+A validated `Port` branded type (1-65535)
 
 ### options
 
 [`TcpPingOptions`](../interfaces/TcpPingOptions.md) = `{}`
 
-Optional configuration for the ping operation
+Optional configuration including `name` and `timeoutMs` (as `TimeoutMs`)
 
 ## Returns
 
@@ -38,10 +38,14 @@ An Effect that resolves to a DiagnosticStep with connection status
 ## Example
 
 ```typescript
+import { Hostname, Port, TimeoutMs } from '@univ-lehavre/atlas-net';
+
 // Check if a web server is reachable
-const step = await Effect.runPromise(tcpPing('example.com', 443));
+const step = await Effect.runPromise(tcpPing(Hostname('example.com'), Port(443)));
 console.log(`Connection ${step.status} in ${step.latencyMs}ms`);
 
 // With custom timeout
-const step2 = await Effect.runPromise(tcpPing('slow-server.com', 8080, { timeoutMs: 10000 }));
+const step2 = await Effect.runPromise(
+  tcpPing(Hostname('slow-server.com'), Port(8080), { timeoutMs: TimeoutMs(10000) })
+);
 ```

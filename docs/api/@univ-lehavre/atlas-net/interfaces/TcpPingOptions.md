@@ -1,6 +1,6 @@
 # Interface: TcpPingOptions
 
-Defined in: [types.ts:46](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/types.ts#L46)
+Defined in: [types.ts:115](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L115)
 
 Options for TCP ping operation.
 
@@ -10,7 +10,7 @@ Options for TCP ping operation.
 
 > `readonly` `optional` **name**: `string`
 
-Defined in: [types.ts:48](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/types.ts#L48)
+Defined in: [types.ts:117](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L117)
 
 Custom name for the diagnostic step (default: 'TCP Connect')
 
@@ -18,8 +18,8 @@ Custom name for the diagnostic step (default: 'TCP Connect')
 
 ### timeoutMs?
 
-> `readonly` `optional` **timeoutMs**: `number`
+> `readonly` `optional` **timeoutMs**: [`TimeoutMs`](../type-aliases/TimeoutMs.md)
 
-Defined in: [types.ts:50](https://github.com/univ-lehavre/atlas/blob/b25723f53414f4f00fc2d77f1fcbdf8e4dc1663e/packages/net/src/types.ts#L50)
+Defined in: [types.ts:119](https://github.com/univ-lehavre/atlas/blob/55f9855a424232d94722e95c6c935e435b5354ad/packages/net/src/types.ts#L119)
 
 Connection timeout in milliseconds (default: 3000)
