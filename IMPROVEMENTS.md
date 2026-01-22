@@ -231,6 +231,8 @@ spec:
 
 ### 7. Retry Logic REDCap
 
+**Status**: ✅ **FAIT** (commit à venir)
+
 **Fichier**: `packages/redcap-api/src/client.ts`
 
 ```typescript
@@ -345,7 +347,7 @@ if (!res.ok) {
 - [x] 4. Timeouts OPA
 - [ ] 5. Tests unitaires routes
 - [ ] 6. Rate limiting
-- [ ] 7. Retry logic REDCap
+- [x] 7. Retry logic REDCap
 - [ ] 8. OpenTelemetry
 - [ ] 9. Performance benchmarks
 - [ ] 10. Améliorer logs OPA
