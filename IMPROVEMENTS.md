@@ -6,7 +6,9 @@ Ce document liste les actions concrètes issues de la revue de code, avec un ord
 
 ### 1. Extraire les Schémas Dupliqués
 
-**Fichier**: `apps/redcap-service/src/schemas.ts` (à créer)
+**Status**: ✅ **FAIT** (commit 5ce6db0)
+
+**Fichier**: `apps/redcap-service/src/schemas.ts`
 
 ```typescript
 import { Schema as S } from 'effect';
@@ -48,7 +50,9 @@ export const EMAIL_PATTERN = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/;
 
 ### 2. Extraire le Validation Hook
 
-**Fichier**: `apps/redcap-service/src/middleware/validation.ts` (à créer)
+**Status**: ✅ **FAIT** (commit 5ce6db0)
+
+**Fichier**: `apps/redcap-service/src/middleware/validation.ts`
 
 ```typescript
 import type { Context } from 'hono';
@@ -333,8 +337,8 @@ if (!res.ok) {
 
 ## Checklist
 
-- [ ] 1. Extraire schémas dupliqués
-- [ ] 2. Extraire validation hook
+- [x] 1. Extraire schémas dupliqués
+- [x] 2. Extraire validation hook
 - [x] 3. Ajouter .svelte-kit au .gitignore
 - [ ] 4. Timeouts OPA
 - [ ] 5. Tests unitaires routes
