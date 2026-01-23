@@ -1,3 +1,12 @@
+/**
+ * REDCap connectivity test commands.
+ *
+ * Provides functionality to test REDCap API connectivity by running
+ * a series of sequential tests against the configured endpoint.
+ *
+ * @module
+ */
+
 import { Effect } from 'effect';
 import {
   createRedcapClient,
@@ -5,15 +14,49 @@ import {
   RedcapToken,
   type RedcapClient,
 } from '../../redcap/index.js';
-import { log } from '../shared/terminal.js';
+import {
+  type CliContext,
+  type StepStatus,
+  log,
+  outputJson,
+  ExitCode,
+  pc,
+} from '../shared/index.js';
 
-interface TestResult {
+/**
+ * Result of a single connectivity test.
+ */
+export interface TestResult {
   readonly name: string;
   readonly status: 'ok' | 'error';
   readonly latencyMs?: number;
   readonly message?: string;
 }
 
+/**
+ * Configuration for running REDCap tests.
+ */
+export interface TestConfig {
+  /** REDCap API URL */
+  readonly url: string;
+  /** REDCap API token */
+  readonly token: string;
+  /** CLI context for output handling */
+  readonly ctx: CliContext;
+}
+
+/**
+ * JSON output format for test results.
+ */
+interface TestResultsJson {
+  readonly url: string;
+  readonly results: readonly TestResult[];
+  readonly success: boolean;
+}
+
+/**
+ * Measures the execution time of an async function.
+ */
 const measureLatency = async <T>(
   fn: () => Promise<T>
 ): Promise<{ result: T; latencyMs: number }> => {
@@ -22,6 +65,9 @@ const measureLatency = async <T>(
   return { result, latencyMs: Math.round(performance.now() - start) };
 };
 
+/**
+ * Tests REDCap version endpoint.
+ */
 const testVersion = async (client: RedcapClient): Promise<TestResult> => {
   try {
     const { result, latencyMs } = await measureLatency(() =>
@@ -37,6 +83,9 @@ const testVersion = async (client: RedcapClient): Promise<TestResult> => {
   }
 };
 
+/**
+ * Tests REDCap project info endpoint.
+ */
 const testProjectInfo = async (client: RedcapClient): Promise<TestResult> => {
   try {
     const { result, latencyMs } = await measureLatency(() =>
@@ -52,6 +101,9 @@ const testProjectInfo = async (client: RedcapClient): Promise<TestResult> => {
   }
 };
 
+/**
+ * Tests REDCap instruments endpoint.
+ */
 const testInstruments = async (client: RedcapClient): Promise<TestResult> => {
   try {
     const { result, latencyMs } = await measureLatency(() =>
@@ -61,7 +113,7 @@ const testInstruments = async (client: RedcapClient): Promise<TestResult> => {
       name: 'Instruments',
       status: 'ok',
       latencyMs,
-      message: `${result.length} instrument(s)`,
+      message: `${String(result.length)} instrument(s)`,
     };
   } catch (e) {
     return {
@@ -72,10 +124,18 @@ const testInstruments = async (client: RedcapClient): Promise<TestResult> => {
   }
 };
 
+/**
+ * Tests REDCap fields endpoint.
+ */
 const testFields = async (client: RedcapClient): Promise<TestResult> => {
   try {
     const { result, latencyMs } = await measureLatency(() => Effect.runPromise(client.getFields()));
-    return { name: 'Fields', status: 'ok', latencyMs, message: `${result.length} field(s)` };
+    return {
+      name: 'Fields',
+      status: 'ok',
+      latencyMs,
+      message: `${String(result.length)} field(s)`,
+    };
   } catch (e) {
     return {
       name: 'Fields',
@@ -85,12 +145,20 @@ const testFields = async (client: RedcapClient): Promise<TestResult> => {
   }
 };
 
+/**
+ * Tests REDCap records export endpoint.
+ */
 const testRecords = async (client: RedcapClient): Promise<TestResult> => {
   try {
     const { result, latencyMs } = await measureLatency(() =>
       Effect.runPromise(client.exportRecords())
     );
-    return { name: 'Records', status: 'ok', latencyMs, message: `${result.length} record(s)` };
+    return {
+      name: 'Records',
+      status: 'ok',
+      latencyMs,
+      message: `${String(result.length)} record(s)`,
+    };
   } catch (e) {
     return {
       name: 'Records',
@@ -100,19 +168,35 @@ const testRecords = async (client: RedcapClient): Promise<TestResult> => {
   }
 };
 
-export interface TestConfig {
-  readonly url: string;
-  readonly token: string;
-  readonly jsonOutput?: boolean;
-}
+/**
+ * Runs REDCap connectivity tests.
+ *
+ * Performs sequential tests against a REDCap instance:
+ * 1. Version - Tests basic API connectivity
+ * 2. Project Info - Tests project access
+ * 3. Instruments - Tests instrument metadata access
+ * 4. Fields - Tests field metadata access
+ * 5. Records - Tests data export access
+ *
+ * @param config - Test configuration including URL, token, and CLI context
+ * @returns Exit code (0 for success, 1 for test failures, 2 for config errors)
+ *
+ * @example
+ * ```typescript
+ * const ctx = createCliContext({ ci: false });
+ * const exitCode = await runTests({
+ *   url: 'https://redcap.example.com/api',
+ *   token: 'your-api-token',
+ *   ctx,
+ * });
+ * process.exit(exitCode);
+ * ```
+ */
+export const runTests = async (config: TestConfig): Promise<ExitCode> => {
+  const { url, token, ctx } = config;
 
-export const runTests = async (config: TestConfig): Promise<void> => {
-  const { url, token, jsonOutput = false } = config;
-
-  if (!jsonOutput) {
-    log.info(`Testing REDCap at ${url}`);
-    console.log();
-  }
+  log.info(ctx, `Testing REDCap at ${url}`);
+  log.message(ctx, '');
 
   let client: RedcapClient;
   try {
@@ -121,12 +205,12 @@ export const runTests = async (config: TestConfig): Promise<void> => {
       token: RedcapToken(token),
     });
   } catch (e) {
-    if (jsonOutput) {
-      console.log(JSON.stringify({ error: 'Invalid configuration', details: String(e) }));
+    if (ctx.json) {
+      outputJson(ctx, { error: 'Invalid configuration', details: String(e) });
     } else {
-      log.error(`Invalid configuration: ${String(e)}`);
+      log.error(ctx, `Invalid configuration: ${String(e)}`);
     }
-    process.exit(1);
+    return ExitCode.InvalidConfig;
   }
 
   const results: TestResult[] = [];
@@ -138,23 +222,31 @@ export const runTests = async (config: TestConfig): Promise<void> => {
   results.push(await testFields(client));
   results.push(await testRecords(client));
 
-  if (jsonOutput) {
-    console.log(JSON.stringify({ results }, null, 2));
+  const hasError = results.some((r) => r.status === 'error');
+
+  if (ctx.json) {
+    const jsonOutput: TestResultsJson = {
+      url,
+      results,
+      success: !hasError,
+    };
+    outputJson(ctx, jsonOutput);
   } else {
     for (const r of results) {
-      log.step(r.name, r.status, r.latencyMs);
+      const status: StepStatus = r.status;
+      log.step(ctx, r.name, status, r.latencyMs);
       if (r.message) {
-        console.log(`     ${r.message}`);
+        log.message(ctx, `     ${pc.dim(r.message)}`);
       }
     }
 
-    console.log();
-    const hasError = results.some((r) => r.status === 'error');
+    log.message(ctx, '');
     if (hasError) {
-      log.error('Some tests failed');
-      process.exit(1);
+      log.error(ctx, 'Some tests failed');
     } else {
-      log.success('All tests passed');
+      log.success(ctx, 'All tests passed');
     }
   }
+
+  return hasError ? ExitCode.Error : ExitCode.Success;
 };

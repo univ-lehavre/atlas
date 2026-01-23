@@ -29,7 +29,7 @@
     "typecheck": "turbo typecheck",
     "knip": "knip --exclude unresolved,exports,types",
     "cpd": "jscpd --pattern \"packages/*/src/**/*.ts\" --pattern \"apps/*/src/**/*.ts\"",
-    "license:audit": "license-checker --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;Unlicense\"",
+    "license:audit": "license-checker --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;Unlicense\" --excludePrivatePackages",
     "audit": "pnpm audit --audit-level=high",
     "size": "size-limit",
     "docs:api": "typedoc",
@@ -68,8 +68,8 @@
     "@commitlint/config-conventional": "^20.3.1",
     "@size-limit/file": "^12.0.0",
     "@univ-lehavre/atlas-typescript-config": "workspace:*",
-    "@vitest/coverage-v8": "^4.0.17",
-    "httpyac": "^6.16.3",
+    "@vitest/coverage-v8": "^4.0.18",
+    "httpyac": "^6.16.7",
     "jscpd": "^4.0.7",
     "knip": "^5.82.1",
     "lefthook": "^2.0.15",
@@ -80,7 +80,7 @@
     "typedoc": "^0.28.16",
     "typedoc-plugin-markdown": "^4.9.0",
     "vitepress": "^1.6.4",
-    "vitest": "^4.0.17"
+    "vitest": "^4.0.18"
   },
-  "packageManager": "pnpm@10.28.0"
+  "packageManager": "pnpm@10.28.1"
 }
