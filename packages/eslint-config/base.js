@@ -9,7 +9,7 @@ import n from 'eslint-plugin-n';
 import noSecrets from 'eslint-plugin-no-secrets';
 import regexp from 'eslint-plugin-regexp';
 import security from 'eslint-plugin-security';
-import tsdoc from 'eslint-plugin-tsdoc';
+// import tsdoc from 'eslint-plugin-tsdoc';
 import turbo from 'eslint-plugin-turbo';
 import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
@@ -91,9 +91,11 @@ export default tseslint.config(
     },
   },
 
-  // TSDoc (TS files only) - disabled due to many false positives with @module, @description, @property
+  // TSDoc - disabled due to false positives with @module, @description tags
+  // Consider re-enabling when using standard TSDoc tags only
   // {
-  //   files: ['**/*.ts', '**/*.mts', '**/*.cts'],
+  //   files: ['**/src/**/*.ts'],
+  //   ignores: ['**/*.test.ts', '**/*.spec.ts', '**/cli/**/*.ts', '**/bin/**/*.ts'],
   //   plugins: { tsdoc },
   //   rules: {
   //     'tsdoc/syntax': 'warn',
