@@ -95,52 +95,6 @@ importers:
         specifier: ^7.3.1
         version: 7.3.1(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
 
-  apps/redcap-service:
-    dependencies:
-      '@hono/node-server':
-        specifier: ^1.19.9
-        version: 1.19.9(hono@4.11.5)
-      '@hono/standard-validator':
-        specifier: ^0.2.2
-        version: 0.2.2(@standard-schema/spec@1.1.0)(hono@4.11.5)
-      '@univ-lehavre/atlas-net':
-        specifier: workspace:*
-        version: link:../../packages/net
-      '@univ-lehavre/atlas-redcap-api':
-        specifier: workspace:*
-        version: link:../../packages/redcap-api
-      effect:
-        specifier: ^3.19.15
-        version: 3.19.15
-      hono:
-        specifier: ^4.11.5
-        version: 4.11.5
-      hono-rate-limiter:
-        specifier: ^0.5.3
-        version: 0.5.3(hono@4.11.5)
-    devDependencies:
-      '@scalar/hono-api-reference':
-        specifier: ^0.9.35
-        version: 0.9.35(hono@4.11.5)
-      '@types/node':
-        specifier: ^25.0.10
-        version: 25.0.10
-      '@univ-lehavre/atlas-redcap-cli':
-        specifier: workspace:*
-        version: link:../../cli/redcap
-      '@univ-lehavre/atlas-typescript-config':
-        specifier: workspace:*
-        version: link:../../packages/typescript-config
-      hono-openapi:
-        specifier: ^1.1.2
-        version: 1.1.2(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.11.5))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.19.15)(quansync@0.2.11)(zod@4.3.5))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.19.15)(quansync@0.2.11)(zod@4.3.5))(@standard-schema/spec@1.1.0)(effect@3.19.15)(openapi-types@12.1.3)(zod@4.3.5))(@types/json-schema@7.0.15)(hono@4.11.5)(openapi-types@12.1.3)
-      tsx:
-        specifier: ^4.21.0
-        version: 4.21.0
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
   cli/net:
     dependencies:
       '@clack/prompts':
@@ -290,6 +244,52 @@ importers:
         version: 4.0.18(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
 
   packages/typescript-config: {}
+
+  services/redcap:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^1.19.9
+        version: 1.19.9(hono@4.11.5)
+      '@hono/standard-validator':
+        specifier: ^0.2.2
+        version: 0.2.2(@standard-schema/spec@1.1.0)(hono@4.11.5)
+      '@univ-lehavre/atlas-net':
+        specifier: workspace:*
+        version: link:../../packages/net
+      '@univ-lehavre/atlas-redcap-api':
+        specifier: workspace:*
+        version: link:../../packages/redcap-api
+      effect:
+        specifier: ^3.19.15
+        version: 3.19.15
+      hono:
+        specifier: ^4.11.5
+        version: 4.11.5
+      hono-rate-limiter:
+        specifier: ^0.5.3
+        version: 0.5.3(hono@4.11.5)
+    devDependencies:
+      '@scalar/hono-api-reference':
+        specifier: ^0.9.35
+        version: 0.9.35(hono@4.11.5)
+      '@types/node':
+        specifier: ^25.0.10
+        version: 25.0.10
+      '@univ-lehavre/atlas-redcap-cli':
+        specifier: workspace:*
+        version: link:../../cli/redcap
+      '@univ-lehavre/atlas-typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      hono-openapi:
+        specifier: ^1.1.2
+        version: 1.1.2(@hono/standard-validator@0.2.2(@standard-schema/spec@1.1.0)(hono@4.11.5))(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.19.15)(quansync@0.2.11)(zod@4.3.5))(@standard-community/standard-openapi@0.2.9(@standard-community/standard-json@0.3.5(@standard-schema/spec@1.1.0)(@types/json-schema@7.0.15)(effect@3.19.15)(quansync@0.2.11)(zod@4.3.5))(@standard-schema/spec@1.1.0)(effect@3.19.15)(openapi-types@12.1.3)(zod@4.3.5))(@types/json-schema@7.0.15)(hono@4.11.5)(openapi-types@12.1.3)
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
 
   tools/mock-redcap:
     dependencies:

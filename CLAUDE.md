@@ -153,12 +153,12 @@ packages/redcap-api/
 └── package.json
 ```
 
-### apps/redcap-service
+### services/redcap
 
 Microservice HTTP exposant l'API REDCap.
 
 ```
-apps/redcap-service/
+services/redcap/
 ├── src/
 │   ├── index.ts           # Entry point
 │   ├── routes/            # Handlers HTTP

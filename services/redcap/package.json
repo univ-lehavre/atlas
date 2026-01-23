@@ -7,12 +7,12 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/univ-lehavre/atlas.git",
-    "directory": "apps/redcap-service"
+    "directory": "services/redcap"
   },
   "bugs": {
     "url": "https://github.com/univ-lehavre/atlas/issues"
   },
-  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/apps/redcap-service#readme",
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/services/redcap#readme",
   "keywords": [
     "redcap",
     "api",

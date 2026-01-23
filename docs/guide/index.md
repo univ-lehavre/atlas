@@ -28,10 +28,10 @@ pnpm add @univ-lehavre/atlas-redcap-service
 
 ## Configuration
 
-Creez un fichier `.env` dans `apps/redcap-service/` :
+Creez un fichier `.env` dans `services/redcap/` :
 
 ```bash
-cp apps/redcap-service/.env.example apps/redcap-service/.env
+cp services/redcap/.env.example services/redcap/.env
 ```
 
 Configurez les variables :

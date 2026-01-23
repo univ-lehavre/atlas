@@ -137,10 +137,10 @@ pnpm typecheck
 
 ## Integration with redcap-service
 
-The CLI is available as a dev dependency in `apps/redcap-service`:
+The CLI is available as a dev dependency in `services/redcap`:
 
 ```bash
-cd apps/redcap-service
+cd services/redcap
 
 # Interactive mode
 pnpm redcap

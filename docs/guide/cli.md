@@ -130,10 +130,10 @@ Si une etape echoue, un **Internet Check** est automatiquement execute pour dete
 
 ## Integration avec redcap-service
 
-Les CLI sont disponibles comme dependances de dev dans `apps/redcap-service` :
+Les CLI sont disponibles comme dependances de dev dans `services/redcap` :
 
 ```bash
-cd apps/redcap-service
+cd services/redcap
 
 # Mode interactif
 pnpm redcap
