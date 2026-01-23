@@ -120,6 +120,9 @@ jobs:
 
       - run: pnpm build
 
+      - name: Check bundle sizes
+        run: pnpm size
+
   audit:
     name: Audit
     runs-on: ubuntu-latest
@@ -176,5 +179,5 @@ jobs:
             echo "::warning::Dependencies with outdated major versions:"
             echo "$outdated" | jq -r 'to_entries[] | select((.value.current | split(".")[0] | tonumber) < (.value.latest | split(".")[0] | tonumber)) | "\(.key): v\(.value.current) → v\(.value.latest)"'
           else
-            echo "✅ All dependencies are on latest major version"
+            echo "All dependencies are on latest major version"
           fi

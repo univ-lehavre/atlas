@@ -1,0 +1,9 @@
+# Ignore all REDCap source code (proprietary)
+versions/
+
+# Ignore shared data (uploaded files)
+shared/
+
+# Keep structure files
+!.gitignore
+!README.md

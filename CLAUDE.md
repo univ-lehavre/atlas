@@ -11,15 +11,17 @@ Ce fichier fournit le contexte necessaire pour travailler efficacement sur ce pr
 ```
 atlas/
 ├── apps/
-│   ├── ecrin/              # Dashboard SvelteKit (Zero Trust)
-│   └── redcap-service/     # Microservice HTTP REST pour REDCap
+│   └── ecrin/              # Dashboard SvelteKit (Zero Trust)
 ├── packages/
-│   ├── redcap-api/         # Client TypeScript Effect pour REDCap
+│   ├── crf/                # Clinical Research Forms (REDCap client, server, CLI)
+│   │   ├── specs/          # OpenAPI spec (redcap.yaml)
+│   │   ├── src/redcap/     # Client Effect pour REDCap
+│   │   ├── src/server/     # Microservice HTTP REST (Hono)
+│   │   └── src/cli/        # CLI tools (crf-redcap, crf-server)
 │   ├── net/                # Utilitaires diagnostic reseau
 │   ├── eslint-config/      # Config ESLint partagee
 │   └── typescript-config/  # Config TypeScript partagee
 ├── cli/
-│   ├── redcap/             # CLI test connectivite REDCap
 │   └── net/                # CLI diagnostic reseau
 └── infra/                  # Infrastructure Kubernetes (k3d/k3s)
 ```
@@ -45,7 +47,7 @@ pnpm install
 
 # Developpement
 pnpm dev                    # Tous les packages en watch
-pnpm -F @univ-lehavre/atlas-redcap-api dev  # Un package specifique
+pnpm -F @univ-lehavre/crf dev  # Un package specifique
 
 # Build
 pnpm build                  # Tous les packages
@@ -53,7 +55,12 @@ pnpm -F ecrin build         # Un package specifique
 
 # Tests
 pnpm test                   # Tous les tests
-pnpm -F @univ-lehavre/atlas-redcap-api test  # Un package
+pnpm -F @univ-lehavre/crf test  # Un package
+
+# CRF specifique
+pnpm -F @univ-lehavre/crf generate:types  # Regenerer types depuis OpenAPI
+pnpm -F @univ-lehavre/crf mock:redcap     # Lancer mock Prism
+pnpm -F @univ-lehavre/crf start           # Lancer le serveur CRF
 
 # Lint
 pnpm lint                   # ESLint
@@ -130,42 +137,47 @@ type(scope): description
 Exemples :
 
 ```
-feat(redcap-api): add exportRecords method
+feat(crf): add exportRecords method
 fix(ecrin): handle auth header parsing
 docs(infra): update k3d setup instructions
 ```
 
 ## Structure des packages
 
-### packages/redcap-api
+### packages/crf (Clinical Research Forms)
 
-Client Effect pour l'API REDCap.
+Package unifie contenant le client REDCap, le serveur HTTP et les CLI.
+Architecture OpenAPI-first avec types generes depuis `specs/redcap.yaml`.
 
 ```
-packages/redcap-api/
+packages/crf/
+├── specs/
+│   └── redcap.yaml              # OpenAPI 3.1.0 spec REDCap
 ├── src/
-│   ├── index.ts           # Exports publics
-│   ├── client.ts          # Client principal
-│   ├── methods/           # Methodes API (exportRecords, etc.)
-│   ├── types/             # Types et schemas
-│   └── errors.ts          # Erreurs typees
+│   ├── redcap/                  # Client Effect pour REDCap
+│   │   ├── generated/types.ts   # Types generes (openapi-typescript)
+│   │   ├── brands.ts            # Branded types (RecordId, etc.)
+│   │   ├── client.ts            # Client principal
+│   │   ├── errors.ts            # Erreurs typees
+│   │   └── index.ts             # Exports
+│   ├── server/                  # Microservice HTTP (Hono)
+│   │   ├── routes/              # health, project, records, users
+│   │   ├── middleware/          # rate-limit, validation
+│   │   └── index.ts             # App Hono + serve
+│   ├── cli/                     # CLI tools
+│   │   ├── redcap/              # crf-redcap (test connectivite)
+│   │   └── server/              # crf-server (test serveur CRF)
+│   └── bin/                     # Entry points CLI
 ├── test/
 └── package.json
 ```
 
-### apps/redcap-service
+Scripts CRF :
 
-Microservice HTTP exposant l'API REDCap.
-
-```
-apps/redcap-service/
-├── src/
-│   ├── index.ts           # Entry point
-│   ├── routes/            # Handlers HTTP
-│   └── middleware/        # Auth, validation, etc.
-├── Dockerfile
-└── package.json
-```
+- `pnpm -F @univ-lehavre/crf generate:types` - Regenerer les types depuis OpenAPI
+- `pnpm -F @univ-lehavre/crf mock:redcap` - Lancer Prism (mock REDCap)
+- `pnpm -F @univ-lehavre/crf start` - Lancer le serveur CRF
+- `pnpm -F @univ-lehavre/crf test:api` - Tests Schemathesis contre l'API
 
 ### apps/ecrin
 
@@ -182,7 +194,7 @@ apps/ecrin/
 │   ├── lib/
 │   │   ├── components/    # Composants reutilisables
 │   │   └── server/        # Logique serveur uniquement
-│   │       ├── api.ts     # Client redcap-service
+│   │       ├── api.ts     # Client CRF service
 │   │       ├── opa.ts     # Client OPA (autorisation)
 │   │       └── audit.ts   # Logging audit
 │   ├── hooks.server.ts    # Lecture headers Authelia
@@ -218,7 +230,7 @@ infra/
 │   ├── authelia/              # Auth magic links
 │   ├── network-policies/      # Zero Trust networking
 │   ├── ecrin/deployment.yaml
-│   └── redcap-service/deployment.yaml
+│   └── crf-service/deployment.yaml
 └── scripts/
     ├── setup.sh               # Demarrage complet
     └── teardown.sh            # Nettoyage
@@ -266,29 +278,22 @@ export const load = async ({ locals }) => {
 ### Ajouter une methode au client REDCap
 
 ```typescript
-// packages/redcap-api/src/methods/newMethod.ts
-import { Effect, Schema } from 'effect';
-import type { RedcapClient } from '../client';
-import { RedcapError } from '../errors';
+// packages/crf/src/redcap/client.ts
+import { Effect } from 'effect';
+import type { components } from './generated/types.js';
+import { RedcapError } from './errors.js';
 
-const ResponseSchema = Schema.Array(
-  Schema.Struct({
-    // ...
-  })
-);
+// Utiliser les types generes depuis la spec OpenAPI
+type ProjectInfo = components['schemas']['ProjectInfo'];
 
-export const newMethod =
-  (client: RedcapClient) =>
-  (options: Options): Effect.Effect<Response, RedcapError> => {
-    return Effect.gen(function* () {
-      const response = yield* client.request({
-        content: 'record',
-        action: 'export',
-        // ...options
-      });
-      return yield* Schema.decodeUnknown(ResponseSchema)(response);
+export const getProjectInfo = (config: RedcapConfig): Effect.Effect<ProjectInfo, RedcapError> => {
+  return Effect.gen(function* () {
+    const response = yield* makeRequest(config, {
+      content: 'project',
     });
-  };
+    return response as ProjectInfo;
+  });
+};
 ```
 
 ### Modifier une policy OPA
@@ -357,5 +362,5 @@ kubectl rollout restart deployment/ecrin -n ecrin
 - Ne pas commiter de secrets reels (les secrets dans `infra/` sont pour dev uniquement)
 - Ne pas utiliser `any` en TypeScript
 - Ne pas utiliser les stores Svelte 4 (utiliser les runes Svelte 5)
-- Ne pas exposer `redcap-service` directement (toujours via `ecrin`)
+- Ne pas exposer le serveur CRF directement (toujours via `ecrin`)
 - Ne pas bypasser OPA pour les autorisations

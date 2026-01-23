@@ -9,7 +9,7 @@ import n from 'eslint-plugin-n';
 import noSecrets from 'eslint-plugin-no-secrets';
 import regexp from 'eslint-plugin-regexp';
 import security from 'eslint-plugin-security';
-import tsdoc from 'eslint-plugin-tsdoc';
+// import tsdoc from 'eslint-plugin-tsdoc';
 import turbo from 'eslint-plugin-turbo';
 import unicorn from 'eslint-plugin-unicorn';
 import tseslint from 'typescript-eslint';
@@ -91,9 +91,11 @@ export default tseslint.config(
     },
   },
 
-  // TSDoc (TS files only) - disabled due to many false positives with @module, @description, @property
+  // TSDoc - disabled due to false positives with @module, @description tags
+  // Consider re-enabling when using standard TSDoc tags only
   // {
-  //   files: ['**/*.ts', '**/*.mts', '**/*.cts'],
+  //   files: ['**/src/**/*.ts'],
+  //   ignores: ['**/*.test.ts', '**/*.spec.ts', '**/cli/**/*.ts', '**/bin/**/*.ts'],
   //   plugins: { tsdoc },
   //   rules: {
   //     'tsdoc/syntax': 'warn',
@@ -244,15 +246,20 @@ export default tseslint.config(
     },
   },
 
-  // Disable strict rules for test files
+  // Disable type-aware rules for test files (they may not be in tsconfig)
   {
-    files: ['**/*.test.ts', '**/*.spec.ts'],
+    files: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts'],
+    extends: [tseslint.configs.disableTypeChecked],
     rules: {
       'functional/no-expression-statements': 'off',
       'functional/no-conditional-statements': 'off',
       'functional/no-throw-statements': 'off',
       'functional/no-try-statements': 'off',
       'functional/immutable-data': 'off',
+      'functional/no-let': 'off',
+      'functional/no-loop-statements': 'off',
+      'functional/prefer-immutable-types': 'off',
+      'functional/functional-parameters': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',
@@ -262,6 +269,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/strict-boolean-expressions': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
       'max-lines-per-function': 'off',
       complexity: 'off',
       'no-console': 'off',
@@ -272,11 +280,64 @@ export default tseslint.config(
     },
   },
 
+  // Disable strict rules for CLI and bin files (scripts, not library code)
+  {
+    files: ['**/cli/**/*.ts', '**/bin/**/*.ts'],
+    rules: {
+      'functional/no-expression-statements': 'off',
+      'functional/no-conditional-statements': 'off',
+      'functional/no-throw-statements': 'off',
+      'functional/no-try-statements': 'off',
+      'functional/immutable-data': 'off',
+      'functional/no-let': 'off',
+      'functional/no-loop-statements': 'off',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/strict-boolean-expressions': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+      '@typescript-eslint/use-unknown-in-catch-callback-variable': 'off',
+      'max-lines-per-function': 'off',
+      complexity: 'off',
+      'no-console': 'off',
+      'n/hashbang': 'off',
+      'n/no-process-exit': 'off',
+      'unicorn/no-process-exit': 'off',
+      'unicorn/catch-error-name': 'off',
+      'unicorn/no-immediate-mutation': 'off',
+      'unicorn/prefer-top-level-await': 'off',
+      'unicorn/no-negated-condition': 'off',
+      'unicorn/prefer-single-call': 'off',
+      'turbo/no-undeclared-env-vars': 'off',
+    },
+  },
+
+  // Disable strict functional rules for server entry points (Hono patterns are imperative)
+  {
+    files: ['**/server/index.ts', '**/server/routes/**/*.ts'],
+    rules: {
+      'functional/no-expression-statements': 'off',
+      'functional/no-conditional-statements': 'off',
+      'functional/no-try-statements': 'off',
+      'functional/no-let': 'off',
+      'functional/no-loop-statements': 'off',
+      'functional/immutable-data': 'off',
+      'no-console': 'off',
+    },
+  },
+
   // Prettier (must be last to disable conflicting rules)
   prettier,
 
   // Ignores
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/.turbo/**', '**/docs/**'],
+    ignores: [
+      '**/dist/**',
+      '**/node_modules/**',
+      '**/.turbo/**',
+      '**/docs/**',
+      // Analyzer scripts and tests in packages/redcap (tooling, not library code)
+      'packages/redcap/**',
+      // Generated files
+      '**/generated/**',
+    ],
   }
 );

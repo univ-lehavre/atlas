@@ -84,7 +84,7 @@ export async function checkHealth(): Promise<{ status: string }> {
 /**
  * Enregistrement REDCap
  */
-export interface Record {
+export interface RedcapRecord {
   /** Identifiant unique du record */
   id: string;
   /** Donnees du record (champs REDCap) */
@@ -107,7 +107,7 @@ export interface Record {
  * const records = await getRecords();
  * ```
  */
-export async function getRecords(): Promise<Record[]> {
+export async function getRecords(): Promise<RedcapRecord[]> {
   return fetchApi('/api/v1/records');
 }
 
@@ -123,7 +123,7 @@ export async function getRecords(): Promise<Record[]> {
  * const record = await getRecord('123');
  * ```
  */
-export async function getRecord(id: string): Promise<Record> {
+export async function getRecord(id: string): Promise<RedcapRecord> {
   return fetchApi(`/api/v1/records/${encodeURIComponent(id)}`);
 }
 
@@ -138,7 +138,7 @@ export async function getRecord(id: string): Promise<Record> {
  * const record = await createRecord({ name: 'Test', value: 42 });
  * ```
  */
-export async function createRecord(data: Record<string, unknown>): Promise<Record> {
+export async function createRecord(data: Record<string, unknown>): Promise<RedcapRecord> {
   return fetchApi('/api/v1/records', {
     method: 'POST',
     body: JSON.stringify(data),
@@ -158,7 +158,10 @@ export async function createRecord(data: Record<string, unknown>): Promise<Recor
  * const record = await updateRecord('123', { name: 'Updated' });
  * ```
  */
-export async function updateRecord(id: string, data: Record<string, unknown>): Promise<Record> {
+export async function updateRecord(
+  id: string,
+  data: Record<string, unknown>
+): Promise<RedcapRecord> {
   return fetchApi(`/api/v1/records/${encodeURIComponent(id)}`, {
     method: 'PUT',
     body: JSON.stringify(data),
