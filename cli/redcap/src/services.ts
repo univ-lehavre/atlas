@@ -45,16 +45,17 @@ const HealthCheckSchema = Schema.Struct({
   message: Schema.optional(Schema.String),
 });
 
+// Use schemas aligned with redcap-api types
 const InstrumentSchema = Schema.Struct({
-  name: Schema.String,
-  label: Schema.String,
+  instrument_name: Schema.String,
+  instrument_label: Schema.String,
 });
 
 const FieldSchema = Schema.Struct({
-  name: Schema.String,
-  form: Schema.String,
-  type: Schema.String,
-  label: Schema.String,
+  field_name: Schema.String,
+  form_name: Schema.String,
+  field_type: Schema.String,
+  field_label: Schema.String,
 });
 
 const HealthResponseSchema = Schema.Struct({

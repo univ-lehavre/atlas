@@ -17,8 +17,8 @@ import { RedcapService, type HealthResponse, type Field, type DiagnosticStep } f
 const groupFieldsByForm = (fields: readonly Field[]): Record<string, readonly Field[]> => {
   const result: Record<string, Field[]> = {};
   for (const field of fields) {
-    const existing = result[field.form];
-    result[field.form] = existing === undefined ? [field] : [...existing, field];
+    const existing = result[field.form_name];
+    result[field.form_name] = existing === undefined ? [field] : [...existing, field];
   }
   return result;
 };
@@ -68,7 +68,9 @@ const formatInstruments = (health: HealthResponse): string => {
   const lines: string[] = [];
   lines.push(`${style.bold('Instruments')} (${String(instruments.length)})`);
   for (const instrument of instruments) {
-    lines.push(`  ${style.cyan('•')} ${instrument.name} - ${style.dim(instrument.label)}`);
+    lines.push(
+      `  ${style.cyan('•')} ${instrument.instrument_name} - ${style.dim(instrument.instrument_label)}`
+    );
   }
   return lines.join('\n');
 };
@@ -88,7 +90,7 @@ const formatFields = (health: HealthResponse): string => {
     lines.push(`  ${style.bold(formName)}:`);
     const displayed = formFields.slice(0, 5);
     for (const field of displayed) {
-      lines.push(`    ${style.dim(`[${field.type}]`.padEnd(12))} ${field.name}`);
+      lines.push(`    ${style.dim(`[${field.field_type}]`.padEnd(12))} ${field.field_name}`);
     }
     if (formFields.length > 5) {
       lines.push(`    ${style.dim(`... and ${String(formFields.length - 5)} more`)}`);
