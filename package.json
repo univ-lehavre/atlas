@@ -19,7 +19,7 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "lint": "eslint .",
+    "lint": "NODE_OPTIONS='--max-old-space-size=8192' eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "turbo test",
@@ -49,8 +49,6 @@
     "@changesets/cli": "^2.29.8",
     "@commitlint/cli": "^20.3.1",
     "@commitlint/config-conventional": "^20.3.1",
-    "@redocly/cli": "^2.14.7",
-    "@stoplight/spectral-cli": "^6.15.0",
     "@univ-lehavre/atlas-eslint-config": "workspace:*",
     "@univ-lehavre/atlas-typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^4.0.17",

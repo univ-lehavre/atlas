@@ -2,3 +2,7 @@ node_modules/
 dist/
 .turbo/
 package-lock.json
+pnpm-lock.yaml
+
+# REDCap source files (downloaded, not ours to format)
+packages/redcap/redcap-source/

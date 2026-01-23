@@ -20,12 +20,7 @@
       "project": ["src/**/*.ts"]
     }
   },
-  "ignore": [
-    "**/dist/**",
-    "**/.svelte-kit/**",
-    "**/build/**",
-    "**/redcap-source/**"
-  ],
+  "ignore": ["**/dist/**", "**/.svelte-kit/**", "**/build/**", "**/redcap-source/**"],
   "ignoreDependencies": ["tsx"],
-  "ignoreBinaries": ["jq", "docker:build", "docker:down", "uvx"]
+  "ignoreBinaries": ["jq", "docker:build", "docker:down"]
 }
