@@ -25,23 +25,18 @@ export default defineConfig({
           items: [{ text: "Vue d'ensemble", link: '/api/' }],
         },
         {
-          text: 'redcap-api',
+          text: 'crf',
           collapsed: true,
           items: [
-            { text: 'Overview', link: '/api/@univ-lehavre/atlas-redcap-api/' },
+            { text: 'Overview', link: '/api/@univ-lehavre/crf/' },
             {
-              text: 'Classes',
-              link: '/api/@univ-lehavre/atlas-redcap-api/classes/RedcapClientService',
+              text: 'REDCap Client',
+              link: '/api/@univ-lehavre/crf/redcap/',
             },
             {
-              text: 'Interfaces',
-              link: '/api/@univ-lehavre/atlas-redcap-api/interfaces/RedcapClient',
+              text: 'CRF Server',
+              link: '/api/@univ-lehavre/crf/server/',
             },
-            {
-              text: 'Functions',
-              link: '/api/@univ-lehavre/atlas-redcap-api/functions/createRedcapClient',
-            },
-            { text: 'Types', link: '/api/@univ-lehavre/atlas-redcap-api/type-aliases/RedcapUrl' },
           ],
         },
         {

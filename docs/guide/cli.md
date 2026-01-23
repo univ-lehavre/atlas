@@ -2,60 +2,52 @@
 
 Atlas fournit des outils en ligne de commande pour tester la connectivite et diagnostiquer les problemes.
 
-## REDCap CLI
+## CRF REDCap CLI
 
-Outil pour tester la connectivite avec un service REDCap.
+Outil pour tester la connectivite directe avec l'API REDCap.
 
 ### Installation
 
 ```bash
-pnpm add @univ-lehavre/atlas-redcap-cli
+pnpm add @univ-lehavre/crf
 ```
 
-### Mode interactif
+### Usage
 
 ```bash
-redcap
+# Tester la connectivite REDCap
+crf-redcap test
+
+# Avec URL et token personnalises
+REDCAP_API_URL=https://redcap.example.com/api/ \
+REDCAP_API_TOKEN=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA \
+crf-redcap test
+
+# Sortie JSON
+crf-redcap test --json
 ```
 
-Affiche un menu interactif :
+### Tests executes
 
-```
-🔬 REDCap CLI
-
-Service URL: http://localhost:3000
-
-  1. Check service connectivity
-  2. Health check (REDCap + token)
-  3. Show project info
-  4. List instruments
-  5. List fields
-  6. Fetch sample records
-  7. Run all tests
-  0. Exit
-```
-
-### Mode CI
-
-```bash
-# Executer tous les tests
-redcap --ci
-
-# Sortie JSON pour pipelines CI
-redcap --ci --json
-
-# URL personnalisee
-redcap --url http://localhost:3000 --ci
-```
+1. **Version** - Recupere la version REDCap
+2. **Project Info** - Informations du projet
+3. **Instruments** - Liste des formulaires
+4. **Fields** - Liste des champs
+5. **Records** - Export d'un echantillon de records
 
 ### Options
 
-| Option       | Description                                      |
-| ------------ | ------------------------------------------------ |
-| `-u, --url`  | URL de base du service (default: localhost:3000) |
-| `--ci`       | Mode CI (non-interactif)                         |
-| `-j, --json` | Sortie JSON (mode CI uniquement)                 |
-| `-h, --help` | Afficher l'aide                                  |
+| Option       | Description     |
+| ------------ | --------------- |
+| `--json`     | Sortie JSON     |
+| `-h, --help` | Afficher l'aide |
+
+### Variables d'environnement
+
+| Variable           | Description                     |
+| ------------------ | ------------------------------- |
+| `REDCAP_API_URL`   | URL de l'API REDCap             |
+| `REDCAP_API_TOKEN` | Token API REDCap (32 hex chars) |
 
 ## Network CLI
 
@@ -128,16 +120,17 @@ Si une etape echoue, un **Internet Check** est automatiquement execute pour dete
 - `0` : Tous les diagnostics ont reussi
 - `1` : Un ou plusieurs diagnostics ont echoue
 
-## Integration avec redcap-service
+## Integration avec le package CRF
 
-Les CLI sont disponibles comme dependances de dev dans `services/redcap` :
+Les CLI sont inclus dans le package `@univ-lehavre/crf` :
 
 ```bash
-cd services/redcap
+# Tester REDCap directement
+pnpm -F @univ-lehavre/crf crf-redcap test
 
-# Mode interactif
-pnpm redcap
+# Lancer le mock REDCap (Prism)
+pnpm -F @univ-lehavre/crf mock:redcap
 
-# Mode CI
-pnpm redcap --ci
+# Lancer le serveur CRF
+pnpm -F @univ-lehavre/crf start
 ```
