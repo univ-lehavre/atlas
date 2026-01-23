@@ -1,18 +1,36 @@
 /**
  * OpenAPI Spec Comparator
  *
- * Compares the extracted REDCap OpenAPI spec with the CRF package spec
- * to identify discrepancies and missing endpoints.
+ * Compares two REDCap OpenAPI specs (different versions) to identify
+ * discrepancies, breaking changes, and missing endpoints.
  *
- * Usage: pnpm compare
+ * Usage:
+ *   pnpm compare                           # Compare default versions (14.5.10 vs 15.5.32)
+ *   REDCAP_VERSION_OLD=14.5.10 REDCAP_VERSION_NEW=16.0.8 pnpm compare
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 
-const EXTRACTED_SPEC = join(import.meta.dirname, '../specs/redcap-extracted.yaml');
-const CRF_SPEC = join(import.meta.dirname, '../../crf/specs/redcap.yaml');
+const SPECS_DIR = join(import.meta.dirname, '../specs/versions');
+
+// Get available versions
+function getAvailableVersions(): string[] {
+  if (!existsSync(SPECS_DIR)) return [];
+  return readdirSync(SPECS_DIR)
+    .filter((f) => f.startsWith('redcap-') && f.endsWith('.yaml'))
+    .map((f) => f.replace('redcap-', '').replace('.yaml', ''))
+    .sort();
+}
+
+const availableVersions = getAvailableVersions();
+const REDCAP_VERSION_OLD = process.env.REDCAP_VERSION_OLD || availableVersions[0] || '14.5.10';
+const REDCAP_VERSION_NEW =
+  process.env.REDCAP_VERSION_NEW || availableVersions[availableVersions.length - 1] || '15.5.32';
+
+const OLD_SPEC = join(SPECS_DIR, `redcap-${REDCAP_VERSION_OLD}.yaml`);
+const NEW_SPEC = join(SPECS_DIR, `redcap-${REDCAP_VERSION_NEW}.yaml`);
 
 interface ComparisonResult {
   status: 'match' | 'mismatch' | 'missing_extracted' | 'missing_crf';
@@ -39,20 +57,20 @@ function getSchemaNames(spec: Record<string, unknown>): Set<string> {
 }
 
 function compareSchemas(
-  extractedSpec: Record<string, unknown>,
-  crfSpec: Record<string, unknown>
+  oldSpec: Record<string, unknown>,
+  newSpec: Record<string, unknown>
 ): ComparisonResult[] {
   const results: ComparisonResult[] = [];
 
-  const extractedSchemas = getSchemaNames(extractedSpec);
-  const crfSchemas = getSchemaNames(crfSpec);
+  const oldSchemas = getSchemaNames(oldSpec);
+  const newSchemas = getSchemaNames(newSpec);
 
-  // Find schemas in extracted but not in CRF
-  for (const schema of extractedSchemas) {
-    if (!crfSchemas.has(schema)) {
+  // Find schemas in old but not in new (removed)
+  for (const schema of oldSchemas) {
+    if (!newSchemas.has(schema)) {
       // Try to find a similar schema (removing Request suffix, etc.)
       const baseName = schema.replace(/Request$/, '');
-      const similar = [...crfSchemas].find(
+      const similar = [...newSchemas].find(
         (s) =>
           s.toLowerCase().includes(baseName.toLowerCase()) ||
           baseName.toLowerCase().includes(s.toLowerCase().replace(/request$/, ''))
@@ -63,17 +81,17 @@ function compareSchemas(
         field: `components.schemas.${schema}`,
         extracted: schema,
         message: similar
-          ? `Schema "${schema}" found in extracted but not in CRF (similar: "${similar}")`
-          : `Schema "${schema}" found in extracted but not in CRF`,
+          ? `Schema "${schema}" removed in new version (similar: "${similar}")`
+          : `Schema "${schema}" removed in new version`,
       });
     }
   }
 
-  // Find schemas in CRF but not in extracted
-  for (const schema of crfSchemas) {
-    if (!extractedSchemas.has(schema)) {
+  // Find schemas in new but not in old (added)
+  for (const schema of newSchemas) {
+    if (!oldSchemas.has(schema)) {
       const baseName = schema.replace(/Request$/, '');
-      const similar = [...extractedSchemas].find(
+      const similar = [...oldSchemas].find(
         (s) =>
           s.toLowerCase().includes(baseName.toLowerCase()) ||
           baseName.toLowerCase().includes(s.toLowerCase().replace(/request$/, ''))
@@ -84,8 +102,8 @@ function compareSchemas(
         field: `components.schemas.${schema}`,
         crf: schema,
         message: similar
-          ? `Schema "${schema}" found in CRF but not in extracted (similar: "${similar}")`
-          : `Schema "${schema}" found in CRF but not in extracted - may need to be added to REDCap source analysis`,
+          ? `Schema "${schema}" added in new version (similar: "${similar}")`
+          : `Schema "${schema}" added in new version`,
       });
     }
   }
@@ -94,52 +112,51 @@ function compareSchemas(
 }
 
 function comparePatterns(
-  extractedSpec: Record<string, unknown>,
-  crfSpec: Record<string, unknown>
+  oldSpec: Record<string, unknown>,
+  newSpec: Record<string, unknown>
 ): ComparisonResult[] {
   const results: ComparisonResult[] = [];
 
-  const extractedSchemas = ((extractedSpec.components as Record<string, unknown>)?.schemas ??
-    {}) as Record<string, Record<string, unknown>>;
-  const crfSchemas = ((crfSpec.components as Record<string, unknown>)?.schemas ?? {}) as Record<
+  const oldSchemas = ((oldSpec.components as Record<string, unknown>)?.schemas ?? {}) as Record<
+    string,
+    Record<string, unknown>
+  >;
+  const newSchemas = ((newSpec.components as Record<string, unknown>)?.schemas ?? {}) as Record<
     string,
     Record<string, unknown>
   >;
 
   // Compare patterns in matching schemas
-  for (const [name, extractedSchema] of Object.entries(extractedSchemas)) {
-    const crfSchema = crfSchemas[name];
-    if (!crfSchema) continue;
+  for (const [name, oldSchema] of Object.entries(oldSchemas)) {
+    const newSchema = newSchemas[name];
+    if (!newSchema) continue;
 
-    const extractedProps = (extractedSchema.properties ?? {}) as Record<
-      string,
-      Record<string, unknown>
-    >;
-    const crfProps = (crfSchema.properties ?? {}) as Record<string, Record<string, unknown>>;
+    const oldProps = (oldSchema.properties ?? {}) as Record<string, Record<string, unknown>>;
+    const newProps = (newSchema.properties ?? {}) as Record<string, Record<string, unknown>>;
 
-    for (const [propName, extractedProp] of Object.entries(extractedProps)) {
-      const crfProp = crfProps[propName];
-      if (!crfProp) continue;
+    for (const [propName, oldProp] of Object.entries(oldProps)) {
+      const newProp = newProps[propName];
+      if (!newProp) continue;
 
       // Compare patterns
-      if (extractedProp.pattern !== crfProp.pattern) {
+      if (oldProp.pattern !== newProp.pattern) {
         results.push({
           status: 'mismatch',
           field: `${name}.${propName}.pattern`,
-          extracted: extractedProp.pattern,
-          crf: crfProp.pattern,
-          message: `Pattern mismatch for ${name}.${propName}`,
+          extracted: oldProp.pattern,
+          crf: newProp.pattern,
+          message: `Pattern changed for ${name}.${propName}`,
         });
       }
 
       // Compare enums
-      if (JSON.stringify(extractedProp.enum) !== JSON.stringify(crfProp.enum)) {
+      if (JSON.stringify(oldProp.enum) !== JSON.stringify(newProp.enum)) {
         results.push({
           status: 'mismatch',
           field: `${name}.${propName}.enum`,
-          extracted: extractedProp.enum,
-          crf: crfProp.enum,
-          message: `Enum mismatch for ${name}.${propName}`,
+          extracted: oldProp.enum,
+          crf: newProp.enum,
+          message: `Enum changed for ${name}.${propName}`,
         });
       }
     }
@@ -152,14 +169,15 @@ function comparePatterns(
 console.log('OpenAPI Spec Comparator');
 console.log('=======================\n');
 
-console.log(`Extracted spec: ${EXTRACTED_SPEC}`);
-console.log(`CRF spec: ${CRF_SPEC}\n`);
+console.log(`Available versions: ${availableVersions.join(', ')}`);
+console.log(`Old spec (v${REDCAP_VERSION_OLD}): ${OLD_SPEC}`);
+console.log(`New spec (v${REDCAP_VERSION_NEW}): ${NEW_SPEC}\n`);
 
-const extractedSpec = loadSpec(EXTRACTED_SPEC, 'Extracted');
-const crfSpec = loadSpec(CRF_SPEC, 'CRF');
+const oldSpec = loadSpec(OLD_SPEC, `v${REDCAP_VERSION_OLD}`);
+const newSpec = loadSpec(NEW_SPEC, `v${REDCAP_VERSION_NEW}`);
 
-const schemaResults = compareSchemas(extractedSpec, crfSpec);
-const patternResults = comparePatterns(extractedSpec, crfSpec);
+const schemaResults = compareSchemas(oldSpec, newSpec);
+const patternResults = comparePatterns(oldSpec, newSpec);
 
 const allResults = [...schemaResults, ...patternResults];
 
@@ -176,7 +194,7 @@ if (allResults.length === 0) {
   };
 
   if (byStatus.missing_crf.length > 0) {
-    console.log('## Missing in CRF spec (found in extracted):');
+    console.log(`## Removed in v${REDCAP_VERSION_NEW} (was in v${REDCAP_VERSION_OLD}):`);
     for (const r of byStatus.missing_crf) {
       console.log(`  - ${r.message}`);
     }
@@ -184,7 +202,7 @@ if (allResults.length === 0) {
   }
 
   if (byStatus.missing_extracted.length > 0) {
-    console.log('## Missing in extracted (found in CRF):');
+    console.log(`## Added in v${REDCAP_VERSION_NEW} (not in v${REDCAP_VERSION_OLD}):`);
     for (const r of byStatus.missing_extracted) {
       console.log(`  - ${r.message}`);
     }
@@ -192,11 +210,11 @@ if (allResults.length === 0) {
   }
 
   if (byStatus.mismatch.length > 0) {
-    console.log('## Mismatches:');
+    console.log('## Changed between versions:');
     for (const r of byStatus.mismatch) {
       console.log(`  - ${r.message}`);
-      console.log(`    Extracted: ${JSON.stringify(r.extracted)}`);
-      console.log(`    CRF: ${JSON.stringify(r.crf)}`);
+      console.log(`    v${REDCAP_VERSION_OLD}: ${JSON.stringify(r.extracted)}`);
+      console.log(`    v${REDCAP_VERSION_NEW}: ${JSON.stringify(r.crf)}`);
     }
     console.log();
   }
