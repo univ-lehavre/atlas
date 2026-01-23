@@ -1,0 +1,10 @@
+# Package Managers
+package-lock.json
+pnpm-lock.yaml
+
+# Build outputs
+.svelte-kit/
+dist/
+
+# Static files
+/static/

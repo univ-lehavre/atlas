@@ -1,4 +1,3 @@
-/* eslint-disable functional/no-let, functional/no-expression-statements, functional/no-conditional-statements, functional/no-try-statements, functional/no-loop-statements, unicorn/no-process-exit, n/no-process-exit, no-console, @typescript-eslint/strict-boolean-expressions, unicorn/no-negated-condition, turbo/no-undeclared-env-vars, unicorn/prefer-top-level-await -- CLI requires imperative code */
 /**
  * CLI for network diagnostics
  */
@@ -203,4 +202,3 @@ main().catch((error: unknown) => {
   console.error('Fatal error:', error);
   process.exit(1);
 });
-/* eslint-enable functional/no-let, functional/no-expression-statements, functional/no-conditional-statements, functional/no-try-statements, functional/no-loop-statements, unicorn/no-process-exit, n/no-process-exit, no-console, @typescript-eslint/strict-boolean-expressions, unicorn/no-negated-condition, turbo/no-undeclared-env-vars, unicorn/prefer-top-level-await */
