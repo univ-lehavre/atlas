@@ -18,11 +18,7 @@ export default {
         'revert',
       ],
     ],
-    'scope-enum': [
-      1,
-      'always',
-      ['redcap-api', 'redcap-cli', 'redcap-service', 'ecrin', 'infra', 'docs', 'deps', 'config'],
-    ],
+    'scope-enum': [1, 'always', ['crf', 'net', 'ecrin', 'infra', 'docs', 'deps', 'config', 'ci']],
     'subject-case': [2, 'always', 'lower-case'],
   },
 };
