@@ -5,15 +5,8 @@
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
 import { Effect } from 'effect';
-import {
-  dnsResolve,
-  tcpPing,
-  tlsHandshake,
-  checkInternet,
-  Hostname,
-  Port,
-  type DiagnosticStep,
-} from '@univ-lehavre/atlas-net';
+import { dnsResolve, tcpPing, tlsHandshake, checkInternet } from '../diagnostics.js';
+import { Hostname, Port, type DiagnosticStep } from '../types.js';
 
 interface RunOptions {
   readonly ci: boolean;
@@ -129,7 +122,7 @@ ${pc.bold('Examples:')}
 `);
 };
 
-const main = async (): Promise<void> => {
+export const main = async (): Promise<void> => {
   const args = process.argv.slice(2);
   const { target, ci, help, error } = parseArgs(args);
 
@@ -197,8 +190,3 @@ const main = async (): Promise<void> => {
 
   process.exit(success ? 0 : 1);
 };
-
-main().catch((error: unknown) => {
-  console.error('Fatal error:', error);
-  process.exit(1);
-});

@@ -1,7 +1,7 @@
 {
   "name": "@univ-lehavre/atlas-net",
-  "version": "0.4.0",
-  "description": "Network diagnostic utilities for Atlas CLI tools",
+  "version": "0.5.0",
+  "description": "Network diagnostic utilities and CLI for Atlas",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
   "repository": {
@@ -35,11 +35,19 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js"
     }
+  },
+  "bin": {
+    "atlas-net": "./dist/bin/atlas-net.js"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "start": "node dist/bin/atlas-net.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",
@@ -48,7 +56,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "effect": "^3.19.15"
+    "@clack/prompts": "^0.11.0",
+    "effect": "^3.19.15",
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.5.0",

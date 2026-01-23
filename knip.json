@@ -10,9 +10,6 @@
     "packages/redcap": {
       "project": ["analyzer/**/*.ts", "tests/**/*.ts"]
     },
-    "packages/eslint-config": {
-      "project": ["*.js"]
-    },
     "packages/typescript-config": {
       "project": ["*.json"]
     },
@@ -21,6 +18,6 @@
     }
   },
   "ignore": ["**/dist/**", "**/.svelte-kit/**", "**/build/**", "**/redcap-source/**"],
-  "ignoreDependencies": ["tsx"],
+  "ignoreDependencies": ["tsx", "@univ-lehavre/atlas-typescript-config"],
   "ignoreBinaries": ["jq", "docker:build", "docker:down"]
 }

@@ -248,6 +248,36 @@ export default tseslint.config(
     },
   },
 
+  // CLI and bin files
+  {
+    files: ['**/cli/**/*.ts', '**/bin/**/*.ts'],
+    rules: {
+      'functional/no-expression-statements': 'off',
+      'functional/no-conditional-statements': 'off',
+      'functional/no-throw-statements': 'off',
+      'functional/no-try-statements': 'off',
+      'functional/immutable-data': 'off',
+      'functional/no-let': 'off',
+      'functional/no-loop-statements': 'off',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/strict-boolean-expressions': 'off',
+      '@typescript-eslint/restrict-template-expressions': 'off',
+      '@typescript-eslint/use-unknown-in-catch-callback-variable': 'off',
+      'max-lines-per-function': 'off',
+      complexity: 'off',
+      'no-console': 'off',
+      'n/hashbang': 'off',
+      'n/no-process-exit': 'off',
+      'unicorn/no-process-exit': 'off',
+      'unicorn/catch-error-name': 'off',
+      'unicorn/no-immediate-mutation': 'off',
+      'unicorn/prefer-top-level-await': 'off',
+      'unicorn/no-negated-condition': 'off',
+      'unicorn/prefer-single-call': 'off',
+      'turbo/no-undeclared-env-vars': 'off',
+    },
+  },
+
   // Prettier (must be last)
   prettier
 );

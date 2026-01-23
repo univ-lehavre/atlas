@@ -18,11 +18,8 @@ atlas/
 │   │   ├── src/redcap/     # Client Effect pour REDCap
 │   │   ├── src/server/     # Microservice HTTP REST (Hono)
 │   │   └── src/cli/        # CLI tools (crf-redcap, crf-server)
-│   ├── net/                # Utilitaires diagnostic reseau
-│   ├── eslint-config/      # Config ESLint partagee
+│   ├── net/                # Utilitaires et CLI diagnostic reseau (atlas-net)
 │   └── typescript-config/  # Config TypeScript partagee
-├── cli/
-│   └── net/                # CLI diagnostic reseau
 └── infra/                  # Infrastructure Kubernetes (k3d/k3s)
 ```
 
