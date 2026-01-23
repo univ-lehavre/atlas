@@ -18,7 +18,7 @@
     "docs": "tsx analyzer/serve-docs.ts",
     "compare": "tsx analyzer/compare-spec.ts",
     "test:setup": "tsx tests/fixtures/setup-test-projects.ts",
-    "test:contract": "vitest run tests/contract",
+    "test:contract": "./scripts/test-contract.sh",
     "test:security": "./scripts/test-security.sh",
     "test:api": "tsx tests/api-smoke.ts",
     "test": "vitest run"
