@@ -8,7 +8,7 @@ Ce document liste les actions concrètes issues de la revue de code, avec un ord
 
 **Status**: ✅ **FAIT** (commit 5ce6db0)
 
-**Fichier**: `apps/redcap-service/src/schemas.ts`
+**Fichier**: `services/redcap/src/schemas.ts`
 
 ```typescript
 import { Schema as S } from 'effect';
@@ -39,9 +39,9 @@ export const EMAIL_PATTERN = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/;
 
 **Fichiers à modifier**:
 
-- `apps/redcap-service/src/routes/project.ts`
-- `apps/redcap-service/src/routes/records.ts`
-- `apps/redcap-service/src/routes/users.ts`
+- `services/redcap/src/routes/project.ts`
+- `services/redcap/src/routes/records.ts`
+- `services/redcap/src/routes/users.ts`
 
 **Effort**: 30 min
 **Impact**: 🟢 Réduction de ~150 lignes de code dupliqué
@@ -52,7 +52,7 @@ export const EMAIL_PATTERN = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/;
 
 **Status**: ✅ **FAIT** (commit 5ce6db0)
 
-**Fichier**: `apps/redcap-service/src/middleware/validation.ts`
+**Fichier**: `services/redcap/src/middleware/validation.ts`
 
 ```typescript
 import type { Context } from 'hono';
@@ -80,8 +80,8 @@ export const validationErrorHook = (
 
 **Fichiers à modifier**:
 
-- `apps/redcap-service/src/routes/records.ts`
-- `apps/redcap-service/src/routes/users.ts`
+- `services/redcap/src/routes/records.ts`
+- `services/redcap/src/routes/users.ts`
 
 **Effort**: 15 min
 **Impact**: 🟢 Code plus DRY et maintenable
@@ -140,9 +140,9 @@ try {
 
 **Fichiers à créer**:
 
-- `apps/redcap-service/src/routes/project.test.ts`
-- `apps/redcap-service/src/routes/records.test.ts`
-- `apps/redcap-service/src/routes/users.test.ts`
+- `services/redcap/src/routes/project.test.ts`
+- `services/redcap/src/routes/records.test.ts`
+- `services/redcap/src/routes/users.test.ts`
 
 **Exemple de test**:
 
@@ -284,7 +284,7 @@ const makeRequest = (
 pnpm add @opentelemetry/api @opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node
 ```
 
-**Configuration**: `apps/redcap-service/src/telemetry.ts`
+**Configuration**: `services/redcap/src/telemetry.ts`
 
 **Effort**: 1-2 jours
 **Impact**: 🟡 Observabilité avancée
@@ -293,7 +293,7 @@ pnpm add @opentelemetry/api @opentelemetry/sdk-node @opentelemetry/auto-instrume
 
 ### 9. Performance Benchmarks
 
-**Fichier**: `apps/redcap-service/benchmarks/api.bench.ts`
+**Fichier**: `services/redcap/benchmarks/api.bench.ts`
 
 ```typescript
 import { bench, describe } from 'vitest';

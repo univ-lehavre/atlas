@@ -176,7 +176,7 @@ pnpm build
 Créer des tests E2E vérifiant :
 
 ```typescript
-// apps/redcap-service/src/integration.test.ts
+// services/redcap/src/integration.test.ts
 describe('redcap-service with mock-redcap', () => {
   it('should export records via HTTP', async () => {
     // Start mock-redcap on port X
@@ -206,7 +206,7 @@ Mettre à jour avec les nouvelles pratiques :
 1. Ajouter la méthode dans packages/redcap-api/src/client.ts
 2. Mettre à jour tools/mock-redcap/src/index.ts
 3. Ajouter un test dans tools/mock-redcap/src/index.test.ts
-4. Exposer via apps/redcap-service/src/routes/
+4. Exposer via services/redcap/src/routes/
 5. Vérifier avec cli/redcap
 ```
 

@@ -43,10 +43,10 @@ Atlas est un ensemble d'outils TypeScript pour interagir avec l'API [REDCap](htt
 
 ### Applications
 
-| Package                                                   | Description                        | npm                                                                                                                                         |
-| --------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| [ecrin](apps/ecrin)                                       | Dashboard SvelteKit Zero Trust     | -                                                                                                                                           |
-| [@univ-lehavre/atlas-redcap-service](apps/redcap-service) | Microservice HTTP REST pour REDCap | [![npm](https://img.shields.io/npm/v/@univ-lehavre/atlas-redcap-service)](https://www.npmjs.com/package/@univ-lehavre/atlas-redcap-service) |
+| Package                                               | Description                        | npm                                                                                                                                         |
+| ----------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| [ecrin](apps/ecrin)                                   | Dashboard SvelteKit Zero Trust     | -                                                                                                                                           |
+| [@univ-lehavre/atlas-redcap-service](services/redcap) | Microservice HTTP REST pour REDCap | [![npm](https://img.shields.io/npm/v/@univ-lehavre/atlas-redcap-service)](https://www.npmjs.com/package/@univ-lehavre/atlas-redcap-service) |
 
 ### Librairies
 
