@@ -4,8 +4,11 @@
     ".": {
       "project": ["*.{js,ts}"]
     },
-    "packages/redcap-api": {
+    "packages/crf": {
       "project": ["src/**/*.ts"]
+    },
+    "packages/redcap": {
+      "project": ["analyzer/**/*.ts", "tests/**/*.ts"]
     },
     "packages/eslint-config": {
       "project": ["*.js"]
@@ -17,7 +20,12 @@
       "project": ["src/**/*.ts"]
     }
   },
-  "ignore": ["**/dist/**", "**/.svelte-kit/**", "**/build/**"],
+  "ignore": [
+    "**/dist/**",
+    "**/.svelte-kit/**",
+    "**/build/**",
+    "**/redcap-source/**"
+  ],
   "ignoreDependencies": ["tsx"],
   "ignoreBinaries": ["jq", "docker:build", "docker:down", "uvx"]
 }
