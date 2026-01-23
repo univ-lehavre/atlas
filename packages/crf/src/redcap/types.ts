@@ -9,6 +9,7 @@ import type { Effect } from 'effect';
 import type { components } from './generated/types.js';
 import type { RedcapUrl, RedcapToken, RecordId, InstrumentName } from './brands.js';
 import type { RedcapHttpError, RedcapApiError, RedcapNetworkError } from './errors.js';
+import type { VersionParseError, UnsupportedVersionError } from './version.js';
 
 // ============================================================================
 // Re-export generated types with aliases for convenience
@@ -57,19 +58,34 @@ export interface ImportRecordsOptions {
 }
 
 // ============================================================================
+// Error Types
+// ============================================================================
+
+/**
+ * All possible errors from the REDCap client.
+ */
+export type RedcapClientError =
+  | RedcapHttpError
+  | RedcapApiError
+  | RedcapNetworkError
+  | VersionParseError
+  | UnsupportedVersionError;
+
+// ============================================================================
 // Client Interface
 // ============================================================================
 
 /**
  * REDCap API client interface.
+ *
+ * The client automatically detects the REDCap server version and adapts
+ * its requests accordingly. Methods that require version-specific behavior
+ * may fail with VersionParseError or UnsupportedVersionError.
  */
 export interface RedcapClient {
   readonly getVersion: () => Effect.Effect<string, RedcapHttpError | RedcapNetworkError>;
 
-  readonly getProjectInfo: () => Effect.Effect<
-    ProjectInfo,
-    RedcapHttpError | RedcapApiError | RedcapNetworkError
-  >;
+  readonly getProjectInfo: () => Effect.Effect<ProjectInfo, RedcapClientError>;
 
   readonly getInstruments: () => Effect.Effect<
     readonly Instrument[],
@@ -88,12 +104,12 @@ export interface RedcapClient {
 
   readonly exportRecords: <T>(
     options?: ExportRecordsOptions
-  ) => Effect.Effect<readonly T[], RedcapHttpError | RedcapApiError | RedcapNetworkError>;
+  ) => Effect.Effect<readonly T[], RedcapClientError>;
 
   readonly importRecords: (
     records: readonly Record<string, unknown>[],
     options?: ImportRecordsOptions
-  ) => Effect.Effect<ImportResult, RedcapHttpError | RedcapApiError | RedcapNetworkError>;
+  ) => Effect.Effect<ImportResult, RedcapClientError>;
 
   readonly getSurveyLink: (
     record: RecordId,
@@ -105,7 +121,5 @@ export interface RedcapClient {
     instrument: InstrumentName
   ) => Effect.Effect<ArrayBuffer, RedcapHttpError | RedcapNetworkError>;
 
-  readonly findUserIdByEmail: (
-    email: string
-  ) => Effect.Effect<string | null, RedcapHttpError | RedcapApiError | RedcapNetworkError>;
+  readonly findUserIdByEmail: (email: string) => Effect.Effect<string | null, RedcapClientError>;
 }
