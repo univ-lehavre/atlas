@@ -277,6 +277,6 @@ export default tseslint.config(
 
   // Ignores
   {
-    ignores: ['**/dist/**', '**/node_modules/**', '**/.turbo/**', '**/docs/**'],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/.turbo/**', '**/docs/**', '**/analyzer/**'],
   }
 );

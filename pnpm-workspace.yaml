@@ -6,5 +6,6 @@ packages:
   - tools/*
 
 onlyBuiltDependencies:
+  - core-js
   - lefthook
   - protobufjs
