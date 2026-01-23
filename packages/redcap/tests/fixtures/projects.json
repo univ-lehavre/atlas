@@ -1,0 +1,58 @@
+{
+  "apiUrl": "http://localhost:8888/api/",
+  "generatedAt": "2026-01-23T12:29:10.473Z",
+  "projects": [
+    {
+      "id": 1,
+      "name": "Classic Database",
+      "token": "3ED422AB16AFD8815A729EA57E56254B",
+      "recordCount": 3,
+      "expected": {
+        "metadata": 113,
+        "instruments": 6,
+        "hasEvents": false,
+        "hasRepeatingForms": false,
+        "hasSurveys": false
+      }
+    },
+    {
+      "id": 2,
+      "name": "Longitudinal Database (1 arm)",
+      "token": "2E1DFDF3F8C17DB540FDCF4AF6ABA2F1",
+      "recordCount": 2,
+      "expected": {
+        "metadata": 90,
+        "instruments": 8,
+        "hasEvents": true,
+        "hasRepeatingForms": false,
+        "hasSurveys": false
+      }
+    },
+    {
+      "id": 5,
+      "name": "Basic Demography",
+      "token": "4FF635F5D6984910DC2842F01DFA201B",
+      "recordCount": 2,
+      "expected": {
+        "metadata": 15,
+        "instruments": 1,
+        "hasEvents": false,
+        "hasRepeatingForms": false,
+        "hasSurveys": false
+      }
+    },
+    {
+      "id": 12,
+      "name": "Repeating Instruments",
+      "token": "05D2B58D2FA1B1F4F4D84B9537F0DE1E",
+      "recordCount": 3,
+      "expected": {
+        "metadata": 36,
+        "instruments": 5,
+        "hasEvents": false,
+        "hasRepeatingForms": true,
+        "hasSurveys": false
+      }
+    }
+  ]
+}

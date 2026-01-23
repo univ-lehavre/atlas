@@ -1,0 +1,29 @@
+{
+  "name": "@univ-lehavre/atlas-redcap",
+  "version": "1.0.0",
+  "description": "REDCap source analysis, Docker environment, and API contract testing",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "docker:up": "docker compose -f docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f docker/docker-compose.yml down",
+    "docker:logs": "docker compose -f docker/docker-compose.yml logs -f",
+    "docker:reset": "docker compose -f docker/docker-compose.yml down -v && docker compose -f docker/docker-compose.yml up -d",
+    "docker:install": "./scripts/install-redcap.sh",
+    "analyze": "tsx analyzer/extract-api.ts",
+    "docs": "tsx analyzer/serve-docs.ts",
+    "compare": "tsx analyzer/compare-spec.ts",
+    "test:setup": "tsx tests/fixtures/setup-test-projects.ts",
+    "test:contract": "vitest run tests/contract",
+    "test:security": "./scripts/test-security.sh",
+    "test:api": "tsx tests/api-smoke.ts",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.17.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3",
+    "vitest": "^4.0.18",
+    "yaml": "^2.7.0"
+  }
+}

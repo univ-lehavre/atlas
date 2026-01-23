@@ -1,0 +1,13 @@
+{
+  "extends": "@univ-lehavre/atlas-typescript-config/base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "noPropertyAccessFromIndexSignature": false
+  },
+  "include": ["analyzer/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist", "redcap-source"]
+}

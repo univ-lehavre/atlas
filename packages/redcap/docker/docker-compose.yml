@@ -1,0 +1,81 @@
+services:
+  redcap:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    ports:
+      - '8888:80'
+    volumes:
+      # Mount REDCap versioned directory as web root (configurable via REDCAP_VERSION)
+      - ../redcap-source/versions/${REDCAP_VERSION:-14.5.10}:/var/www/html:ro
+      - ./config/php.ini:/usr/local/etc/php/conf.d/redcap.ini:ro
+      # Database configuration (override the empty one)
+      - ./config/database.php:/var/www/html/database.php:ro
+      # Writable directories shared across versions
+      - ../redcap-source/shared/edocs:/var/www/html/edocs
+      - redcap-temp:/var/www/html/temp
+    environment:
+      - REDCAP_DB_HOST=mariadb
+      - REDCAP_DB_NAME=redcap
+      - REDCAP_DB_USER=redcap
+      - REDCAP_DB_PASSWORD=redcap_password
+      - REDCAP_VERSION=${REDCAP_VERSION:-14.5.10}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - redcap-net
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost/api/']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  mariadb:
+    image: mariadb:11.4
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=redcap
+      - MYSQL_USER=redcap
+      - MYSQL_PASSWORD=redcap_password
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./config/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - redcap-net
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    ports:
+      - '8889:80'
+    environment:
+      - PMA_HOST=mariadb
+      - PMA_USER=redcap
+      - PMA_PASSWORD=redcap_password
+    depends_on:
+      - mariadb
+    networks:
+      - redcap-net
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - '8025:8025'
+      - '1025:1025'
+    networks:
+      - redcap-net
+
+networks:
+  redcap-net:
+    driver: bridge
+
+volumes:
+  mariadb-data:
+  redcap-temp:
