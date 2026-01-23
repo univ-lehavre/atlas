@@ -1,8 +1,0 @@
-{
-  "extends": "@univ-lehavre/atlas-typescript-config/node.json",
-  "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "."
-  },
-  "include": ["*.js"]
-}

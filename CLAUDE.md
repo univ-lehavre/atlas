@@ -19,7 +19,6 @@ atlas/
 │   │   ├── src/server/     # Microservice HTTP REST (Hono)
 │   │   └── src/cli/        # CLI tools (crf-redcap, crf-server)
 │   ├── net/                # Utilitaires et CLI diagnostic reseau (atlas-net)
-│   ├── eslint-config/      # Config ESLint partagee
 │   └── typescript-config/  # Config TypeScript partagee
 └── infra/                  # Infrastructure Kubernetes (k3d/k3s)
 ```
