@@ -1,5 +1,20 @@
 # @univ-lehavre/atlas-crf
 
+## 1.2.1
+### Patch Changes
+
+
+
+- [#36](https://github.com/univ-lehavre/atlas/pull/36) [`9ce63eb`](https://github.com/univ-lehavre/atlas/commit/9ce63eb1ec489d1d0079162aa316e4bac68be262) Thanks [@chasset](https://github.com/chasset)! - Add extended test coverage for CRF package
+  
+  - Add comprehensive tests for branded types (RedcapToken, RecordId, InstrumentName, Email, etc.)
+  - Add tests for error types (RedcapHttpError, RedcapApiError, RedcapNetworkError)
+  - Add tests for version parsing, formatting, and comparison utilities
+  - Add tests for version adapters (v14, v15, v16) and adapter selection
+  - Extend client tests with mock fetch for all API methods
+  - Add tests for Effect-to-Hono response handler
+  - Add tests for server middleware and validation schemas
+
 ## 1.2.0
 ### Minor Changes
 
