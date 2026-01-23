@@ -185,12 +185,12 @@ build_and_push_images() {
     fi
 
     # Build redcap-service
-    if [ -d "$ROOT_DIR/apps/redcap-service" ]; then
+    if [ -d "$ROOT_DIR/services/redcap" ]; then
         log_info "Building redcap-service..."
-        docker build -t localhost:${REGISTRY_PORT}/redcap-service:dev "$ROOT_DIR/apps/redcap-service"
+        docker build -t localhost:${REGISTRY_PORT}/redcap-service:dev "$ROOT_DIR/services/redcap"
         docker push localhost:${REGISTRY_PORT}/redcap-service:dev
     else
-        log_warn "apps/redcap-service not found, skipping build"
+        log_warn "services/redcap not found, skipping build"
     fi
 
     log_info "Images built and pushed"

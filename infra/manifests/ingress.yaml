@@ -34,6 +34,7 @@ spec:
                   number: 3000
 ---
 # Ingress for protected routes with forward-auth
+# Note: Forward-auth is handled by CiliumEnvoyConfig below, not nginx annotations
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -41,10 +42,6 @@ metadata:
   namespace: ecrin
   annotations:
     kubernetes.io/ingress.class: cilium
-    # Authelia forward-auth configuration
-    nginx.ingress.kubernetes.io/auth-url: 'http://authelia.ecrin.svc.cluster.local:9091/api/authz/forward-auth'
-    nginx.ingress.kubernetes.io/auth-signin: 'http://localhost:8080/authelia/?rd=$scheme://$host$request_uri'
-    nginx.ingress.kubernetes.io/auth-response-headers: 'Remote-User,Remote-Email,Remote-Groups,Remote-Name'
 spec:
   rules:
     - host: localhost
