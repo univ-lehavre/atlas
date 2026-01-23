@@ -50,10 +50,37 @@ export type {
 export { RedcapHttpError, RedcapApiError, RedcapNetworkError } from './errors.js';
 export type { RedcapError } from './errors.js';
 
+// Version utilities
+export {
+  parseVersion,
+  formatVersion,
+  compareVersions,
+  isVersionAtLeast,
+  isVersionLessThan,
+  isVersionInRange,
+  getMajorVersion,
+  SUPPORTED_VERSIONS,
+  VersionParseError,
+  UnsupportedVersionError,
+} from './version.js';
+export type { Version, SupportedVersionString } from './version.js';
+
+// Adapters
+export {
+  getAdapter,
+  getAdapterEffect,
+  getSupportedVersionRanges,
+  isVersionSupported,
+  getMinSupportedVersion,
+  getLatestAdapter,
+} from './adapters/index.js';
+export type { RedcapAdapter, RedcapFeatures, TransformedParams } from './adapters/index.js';
+
 // Types
 export type {
   RedcapConfig,
   RedcapClient,
+  RedcapClientError,
   ProjectInfo,
   Instrument,
   Field,

@@ -1,7 +1,7 @@
 import { Effect, Match, pipe } from 'effect';
 import type { Context } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import { type RedcapError } from '../redcap/index.js';
+import { type RedcapClientError } from '../redcap/index.js';
 
 interface ErrorResponse {
   readonly data: null;
@@ -15,7 +15,7 @@ const toContentfulStatus = (status: number): ContentfulStatusCode =>
   (status >= 400 && status < 600 ? status : 502) as ContentfulStatusCode;
 
 const mapErrorToResponse = (
-  error: RedcapError
+  error: RedcapClientError
 ): { readonly body: ErrorResponse; readonly status: ContentfulStatusCode } =>
   pipe(
     Match.value(error),
@@ -40,6 +40,20 @@ const mapErrorToResponse = (
       },
       status: 503 as ContentfulStatusCode,
     })),
+    Match.tag('VersionParseError', (e) => ({
+      body: {
+        data: null,
+        error: { code: 'version_parse_error', message: e.message },
+      },
+      status: 502 as ContentfulStatusCode,
+    })),
+    Match.tag('UnsupportedVersionError', (e) => ({
+      body: {
+        data: null,
+        error: { code: 'unsupported_version', message: e.message },
+      },
+      status: 501 as ContentfulStatusCode,
+    })),
     Match.exhaustive
   );
 
@@ -48,7 +62,7 @@ const mapErrorToResponse = (
  */
 export const runEffect = <A>(
   c: Context,
-  effect: Effect.Effect<A, RedcapError>
+  effect: Effect.Effect<A, RedcapClientError>
 ): Promise<Response> =>
   pipe(
     effect,
@@ -65,7 +79,7 @@ export const runEffect = <A>(
  */
 export const runEffectRaw = <A extends Response>(
   c: Context,
-  effect: Effect.Effect<A, RedcapError>
+  effect: Effect.Effect<A, RedcapClientError>
 ): Promise<Response> =>
   pipe(
     effect,
