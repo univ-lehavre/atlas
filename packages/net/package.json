@@ -47,6 +47,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
+    "start": "node dist/bin/atlas-net.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",
