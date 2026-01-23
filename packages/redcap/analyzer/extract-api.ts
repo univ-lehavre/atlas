@@ -20,7 +20,7 @@ import { stringify } from 'yaml';
 
 // Configuration
 const REDCAP_VERSION = process.env.REDCAP_VERSION || '14.5.10';
-const OUTPUT_FILE = join(import.meta.dirname, '../specs/redcap-extracted.yaml');
+const OUTPUT_FILE = join(import.meta.dirname, `../specs/versions/redcap-${REDCAP_VERSION}.yaml`);
 
 // Types
 interface ApiEndpoint {
