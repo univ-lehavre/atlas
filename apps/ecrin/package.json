@@ -1,8 +1,23 @@
 {
   "name": "ecrin",
   "version": "0.0.1",
+  "description": "Zero Trust dashboard for REDCap clinical data",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "apps/ecrin"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/apps/ecrin#readme",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
@@ -16,6 +31,7 @@
     "format:check": "prettier --check src"
   },
   "devDependencies": {
+    "@univ-lehavre/atlas-typescript-config": "workspace:*",
     "@eslint-community/eslint-plugin-eslint-comments": "^4.5.0",
     "@eslint/js": "^9.39.2",
     "@sveltejs/adapter-node": "^5.5.1",

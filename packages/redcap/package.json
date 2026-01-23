@@ -2,8 +2,22 @@
   "name": "@univ-lehavre/atlas-redcap",
   "version": "1.0.0",
   "description": "REDCap source analysis, Docker environment, and API contract testing",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "packages/redcap"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/redcap#readme",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": ">=24.0.0"
+  },
   "scripts": {
     "lint": "eslint analyzer tests",
     "lint:fix": "eslint analyzer tests --fix",
