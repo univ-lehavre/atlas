@@ -1,5 +1,30 @@
 # @univ-lehavre/atlas-net
 
+## 0.6.0
+### Minor Changes
+
+
+
+- [#30](https://github.com/univ-lehavre/atlas/pull/30) [`b444a82`](https://github.com/univ-lehavre/atlas/commit/b444a82d74ed76b1a372bdafaa69f96156e2ac65) Thanks [@chasset](https://github.com/chasset)! - Merge CLI into net package
+  
+  - Move CLI from `cli/net/` to `packages/net/src/cli/`
+  - Add `bin.atlas-net` entry point
+  - Export CLI module via `@univ-lehavre/atlas-net/cli`
+  - Remove separate `@univ-lehavre/atlas-net-cli` package
+  - Update eslint config with CLI-specific rules
+
+### Patch Changes
+
+
+
+- [#29](https://github.com/univ-lehavre/atlas/pull/29) [`c5a5a55`](https://github.com/univ-lehavre/atlas/commit/c5a5a5536bb40425ee0f8dcc2e1ae5ee9ed2fff2) Thanks [@chasset](https://github.com/chasset)! - Migrate ESLint and Prettier to per-package configuration
+  
+  - Move ESLint config from root to each package/app with full rule set
+  - Move Prettier config from root to each package/app
+  - Update lefthook to use turbo tasks instead of direct eslint/prettier calls
+  - Remove eslint and prettier from root devDependencies
+  - Each package now has its own `.prettierrc`, `.prettierignore`, and `eslint.config.js`
+
 ## 0.4.0
 
 ### Minor Changes
