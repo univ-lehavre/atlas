@@ -65,6 +65,10 @@
     "test:api": "./scripts/test-api.sh"
   },
   "dependencies": {
+    "@clack/prompts": "^0.11.0",
+    "@effect/cli": "^0.73.1",
+    "@effect/platform": "^0.94.2",
+    "@effect/platform-node": "^0.104.1",
     "@hono/node-server": "^1.19.9",
     "@hono/standard-validator": "^0.2.2",
     "@univ-lehavre/atlas-net": "workspace:*",
