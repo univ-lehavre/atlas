@@ -1,7 +1,6 @@
 ---
 '@univ-lehavre/atlas-crf': patch
 '@univ-lehavre/atlas-net': patch
-'@univ-lehavre/atlas-net-cli': patch
 '@univ-lehavre/atlas-redcap': patch
 'ecrin': patch
 ---
