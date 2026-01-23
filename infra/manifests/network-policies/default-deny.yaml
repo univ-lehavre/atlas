@@ -9,9 +9,9 @@ metadata:
 spec:
   description: 'Default deny all traffic - Zero Trust baseline'
   endpointSelector: {}
-  ingress:
+  ingressDeny:
     - {}
-  egress:
+  egressDeny:
     - {}
 ---
 # Allow DNS resolution for all pods

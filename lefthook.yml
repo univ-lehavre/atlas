@@ -1,57 +1,65 @@
+# Lefthook configuration for Atlas
+# Documentation: https://github.com/evilmartians/lefthook
+
 commit-msg:
-  jobs:
-    - name: commitlint
+  commands:
+    commitlint:
       run: pnpm commitlint --edit {1}
 
 pre-commit:
   parallel: true
-  jobs:
-    - name: format
-      run: pnpm prettier --write .
+  commands:
+    # Format and lint use turbo to run per-package configs
+    format:
+      run: pnpm format
       stage_fixed: true
+      glob: '*.{js,ts,svelte,json,yaml,yml,md,css,html}'
 
-    - name: lint
-      glob: '*.{js,ts}'
-      run: pnpm eslint --fix {staged_files}
+    lint:
+      run: pnpm lint:fix
       stage_fixed: true
+      glob: '*.{js,ts,svelte}'
+
+    cpd:
+      run: pnpm cpd
+
+    knip:
+      run: pnpm knip
+
+    test:
+      run: pnpm test
+
+    typecheck:
+      run: pnpm typecheck
 
 pre-push:
   commands:
-    install:
-      run: pnpm install
-      priority: 1
-    check-majors:
+    check-branch:
       run: |
-        outdated=$(pnpm outdated -r --format json 2>/dev/null)
-        if echo "$outdated" | jq -e '
-          to_entries | map(
-            select(
-              (.value.current | split(".")[0] | tonumber) <
-              (.value.latest | split(".")[0] | tonumber)
-            )
-          ) | length > 0
-        ' > /dev/null; then
-          echo "❌ Dépendances avec une majeure en retard :"
-          echo "$outdated" | jq -r 'to_entries[] | select((.value.current | split(".")[0] | tonumber) < (.value.latest | split(".")[0] | tonumber)) | "\(.key): v\(.value.current) → v\(.value.latest)"'
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        if [ "$branch" = "main" ]; then
+          echo "❌ Push direct sur main interdit. Utilisez une branche et une PR."
           exit 1
         fi
-        echo "✅ Toutes les dépendances sont sur la dernière version majeure"
       priority: 1
-    typecheck:
-      run: pnpm typecheck
+
+    check-sync:
+      run: |
+        git fetch origin --quiet
+        if ! git merge-base --is-ancestor origin/main HEAD 2>/dev/null; then
+          echo "⚠️  Votre branche n'est pas à jour avec main."
+          echo "   Exécutez: git fetch origin && git rebase origin/main"
+        fi
+      priority: 1
+
+    check-audit:
+      run: pnpm audit --audit-level=high
       priority: 2
-    test:
-      run: pnpm test
+
+    check-licenses:
+      run: pnpm license:audit
       priority: 2
-    audit:
-      run: pnpm audit:all
-      priority: 2
-    build:
-      run: pnpm build
-      priority: 2
-    knip:
-      run: pnpm knip
-      priority: 2
-    cpd:
-      run: pnpm cpd
+
+    check-lockfile:
+      run: pnpm install --frozen-lockfile
       priority: 2

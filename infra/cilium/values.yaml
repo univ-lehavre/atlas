@@ -1,10 +1,10 @@
-# Cilium Helm values for kind cluster with Zero Trust
+# Cilium Helm values for k3d cluster with Zero Trust
 
 # Replace kube-proxy entirely
 kubeProxyReplacement: true
 
-# Required for kind
-k8sServiceHost: ecrin-control-plane
+# Note: k8sServiceHost is overridden dynamically by setup.sh for k3d
+k8sServiceHost: k3d-ecrin-server-0
 k8sServicePort: 6443
 
 # Ingress Controller
@@ -49,7 +49,7 @@ identityAllocationMode: crd
 operator:
   replicas: 1
 
-# IPAM configuration for kind
+# IPAM configuration for k3d
 ipam:
   mode: kubernetes
 

@@ -59,7 +59,7 @@ jobs:
             if [[ "$pkg" == *"redcap-api"* ]]; then
               pkg_dir="packages/redcap-api"
             elif [[ "$pkg" == *"redcap-service"* ]]; then
-              pkg_dir="apps/redcap-service"
+              pkg_dir="services/redcap"
             fi
 
             if [ -n "$pkg_dir" ]; then

@@ -3,13 +3,16 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
+      "outputs": ["dist/**", ".svelte-kit/**"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
     "lint": {},
+    "lint:fix": {},
+    "format": {},
+    "format:check": {},
     "test": {
       "dependsOn": ["^build"]
     },

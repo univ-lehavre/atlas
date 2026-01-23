@@ -35,7 +35,7 @@ Le code est de **très bonne qualité** globale avec une architecture solide, un
 
 ### Améliorations Mineures 🟡
 
-1. **DRY - Duplication de Schémas** ([redcap-service/src/routes/](apps/redcap-service/src/routes/))
+1. **DRY - Duplication de Schémas** ([redcap-service/src/routes/](services/redcap/src/routes/))
    ```typescript
    // Dupliqu
    ```
@@ -52,11 +52,11 @@ message: S.String,
 const validationErrorHook = (result, c) => { /_ ... _/ };
 
 ````
-**Recommandation**: Extraire dans `apps/redcap-service/src/schemas.ts` et `apps/redcap-service/src/validation.ts`
+**Recommandation**: Extraire dans `services/redcap/src/schemas.ts` et `services/redcap/src/validation.ts`
 
 2. **Magic Strings**
 ```typescript
-// apps/redcap-service/src/routes/records.ts
+// services/redcap/src/routes/records.ts
 const RedcapNamePattern = /^[\w,]*$/;
 const InstrumentNamePattern = /^[a-z][a-z0-9_]*$/;
 ````
@@ -82,7 +82,7 @@ const InstrumentNamePattern = /^[a-z][a-z0-9_]*$/;
 
 3. **Gestion des Secrets**
    - Secrets chargés via variables d'environnement
-   - Validation stricte des tokens ([redcap-service/src/env.ts:11](apps/redcap-service/src/env.ts:11))
+   - Validation stricte des tokens ([redcap-service/src/env.ts:11](services/redcap/src/env.ts:11))
    - Pas de secrets hardcodés
 
 ### Améliorations Critiques 🔴
@@ -129,11 +129,11 @@ const InstrumentNamePattern = /^[a-z][a-z0-9_]*$/;
 
 1. **Middleware Centralisé**
    - `validationErrorHook` dupliqué dans chaque route
-     **Recommandation**: Créer `apps/redcap-service/src/middleware/validation.ts`
+     **Recommandation**: Créer `services/redcap/src/middleware/validation.ts`
 
 2. **Tests Manquants**
    ```bash
-   apps/redcap-service/src/routes/*.ts  # Pas de tests unitaires
+   services/redcap/src/routes/*.ts  # Pas de tests unitaires
    apps/ecrin/src/lib/server/*.ts       # Pas de tests
    ```
    **Recommandation**: Ajouter tests unitaires avec Vitest
@@ -253,8 +253,8 @@ const InstrumentNamePattern = /^[a-z][a-z0-9_]*$/;
 ### Court Terme (Sprint actuel)
 
 1. **Extraire les schémas et hooks communs**
-   - Créer `apps/redcap-service/src/schemas.ts`
-   - Créer `apps/redcap-service/src/middleware/validation.ts`
+   - Créer `services/redcap/src/schemas.ts`
+   - Créer `services/redcap/src/middleware/validation.ts`
    - Impact: Réduction duplication, meilleure maintenabilité
 
 2. **Ajouter `.svelte-kit` au `.gitignore`**
