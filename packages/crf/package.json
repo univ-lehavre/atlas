@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-crf",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Clinical Research Forms - REDCap client, API server, and CLI tools",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
