@@ -9,10 +9,16 @@ commit-msg:
 pre-commit:
   parallel: true
   commands:
+    # Format and lint use turbo to run per-package configs
     format:
-      run: pnpm prettier --write --ignore-path .prettierignore {staged_files}
+      run: pnpm format
       stage_fixed: true
       glob: '*.{js,ts,svelte,json,yaml,yml,md,css,html}'
+
+    lint:
+      run: pnpm lint:fix
+      stage_fixed: true
+      glob: '*.{js,ts,svelte}'
 
     cpd:
       run: pnpm cpd
@@ -25,12 +31,6 @@ pre-commit:
 
     typecheck:
       run: pnpm typecheck
-
-    # Run svelte-kit sync first to generate .svelte-kit/tsconfig.json needed by eslint-plugin-n
-    lint:
-      run: pnpm -F ecrin exec svelte-kit sync && pnpm eslint --fix {staged_files}
-      stage_fixed: true
-      glob: '*.{js,ts,svelte}'
 
 pre-push:
   commands:
