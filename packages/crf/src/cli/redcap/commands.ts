@@ -1,4 +1,4 @@
-import { Effect, pipe } from 'effect';
+import { Effect } from 'effect';
 import {
   createRedcapClient,
   RedcapUrl,

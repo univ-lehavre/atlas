@@ -115,6 +115,7 @@ export const IsoTimestamp = Brand.refined<IsoTimestamp>(isValidIsoTimestamp, (ts
 export type BooleanFlag = (0 | 1) & Brand.Brand<'BooleanFlag'>;
 
 export const BooleanFlag = Brand.refined<BooleanFlag>(
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Brand refinement requires runtime check
   (n) => n === 0 || n === 1,
   (n) => Brand.error(`Invalid boolean flag: ${String(n)} must be 0 or 1`)
 );
