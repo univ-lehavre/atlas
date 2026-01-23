@@ -10,26 +10,27 @@ pre-commit:
   parallel: true
   commands:
     format:
-      run: pnpm prettier --write {staged_files}
+      run: pnpm prettier --write --ignore-path .prettierignore {staged_files}
       stage_fixed: true
       glob: '*.{js,ts,svelte,json,yaml,yml,md,css,html}'
 
-    lint:
-      run: pnpm eslint --fix {staged_files}
-      stage_fixed: true
-      glob: '*.{js,ts,svelte}'
-
-    typecheck:
-      run: pnpm typecheck
-
-    test:
-      run: pnpm test
+    cpd:
+      run: pnpm cpd
 
     knip:
       run: pnpm knip
 
-    cpd:
-      run: pnpm cpd
+    test:
+      run: pnpm test
+
+    typecheck:
+      run: pnpm typecheck
+
+    # Run svelte-kit sync first to generate .svelte-kit/tsconfig.json needed by eslint-plugin-n
+    lint:
+      run: pnpm -F ecrin exec svelte-kit sync && pnpm eslint --fix {staged_files}
+      stage_fixed: true
+      glob: '*.{js,ts,svelte}'
 
 pre-push:
   commands:
