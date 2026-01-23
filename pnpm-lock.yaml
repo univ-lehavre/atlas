@@ -291,6 +291,34 @@ importers:
 
   packages/typescript-config: {}
 
+  tools/mock-redcap:
+    dependencies:
+      '@hono/node-server':
+        specifier: ^1.19.9
+        version: 1.19.9(hono@4.11.5)
+      '@univ-lehavre/atlas-redcap-api':
+        specifier: workspace:*
+        version: link:../../packages/redcap-api
+      effect:
+        specifier: ^3.19.15
+        version: 3.19.15
+      hono:
+        specifier: ^4.11.5
+        version: 4.11.5
+    devDependencies:
+      '@types/node':
+        specifier: ^25.0.10
+        version: 25.0.10
+      '@univ-lehavre/atlas-typescript-config':
+        specifier: workspace:*
+        version: link:../../packages/typescript-config
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.0.10)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
+
 packages:
   '@algolia/abtesting@1.12.3':
     resolution:

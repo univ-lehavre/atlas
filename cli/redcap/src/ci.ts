@@ -31,8 +31,8 @@ interface CiOutput {
 const groupFieldsByForm = (fields: readonly Field[]): Record<string, readonly Field[]> => {
   const result: Record<string, Field[]> = {};
   for (const field of fields) {
-    const existing = result[field.form];
-    result[field.form] = existing === undefined ? [field] : [...existing, field];
+    const existing = result[field.form_name];
+    result[field.form_name] = existing === undefined ? [field] : [...existing, field];
   }
   return result;
 };
