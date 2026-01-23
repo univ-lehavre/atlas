@@ -1,0 +1,74 @@
+{
+  "name": "@univ-lehavre/atlas-crf",
+  "version": "1.0.0",
+  "description": "Clinical Research Forms - REDCap client, API server, and CLI tools",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "packages/crf"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./redcap": {
+      "types": "./dist/redcap/index.d.ts",
+      "import": "./dist/redcap/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
+    }
+  },
+  "bin": {
+    "crf-redcap": "./dist/bin/crf-redcap.js",
+    "crf-server": "./dist/bin/crf-server.js"
+  },
+  "files": [
+    "dist",
+    "specs"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "generate:types": "openapi-typescript specs/versions/redcap-${REDCAP_VERSION:-14.5.10}.yaml -o src/redcap/generated/types.ts",
+    "mock:redcap": "prism mock specs/versions/redcap-${REDCAP_VERSION:-14.5.10}.yaml --port 8080",
+    "start": "node --env-file=.env dist/server/index.js",
+    "start:dev": "node --env-file=.env --import=tsx src/server/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "./scripts/test-integration.sh",
+    "test:api": "./scripts/test-api.sh"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.11.0",
+    "@effect/platform": "^0.94.2",
+    "@effect/platform-node": "^0.104.1",
+    "@hono/node-server": "^1.19.9",
+    "@hono/standard-validator": "^0.2.2",
+    "@univ-lehavre/atlas-net": "workspace:*",
+    "effect": "^3.19.15",
+    "hono": "^4.11.5",
+    "hono-openapi": "^1.1.2",
+    "hono-rate-limiter": "^0.5.3",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@scalar/hono-api-reference": "^0.9.35",
+    "@stoplight/prism-cli": "^5.14.2",
+    "@types/node": "^25.0.10",
+    "@univ-lehavre/atlas-typescript-config": "workspace:*",
+    "openapi-typescript": "^7.10.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
