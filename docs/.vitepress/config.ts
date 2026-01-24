@@ -23,6 +23,7 @@ export default defineConfig({
           items: [
             { text: 'Vue d\'ensemble', link: '/guide/citations/' },
             { text: 'Architecture', link: '/guide/citations/architecture' },
+            { text: 'Schéma unifié', link: '/guide/citations/unified-schema' },
             { text: 'Cycle de vie OpenAPI', link: '/guide/citations/openapi-lifecycle' },
             { text: 'Rate Limiting', link: '/guide/citations/rate-limiting' },
             { text: 'Validateur OpenAPI', link: '/guide/citations/openapi-validator' },
@@ -30,10 +31,19 @@ export default defineConfig({
           ],
         },
         {
+          text: 'Atlas Verify',
+          items: [
+            { text: 'Fiabilisation auteur', link: '/guide/citations/author-verification' },
+            { text: 'Bases de données', link: '/guide/citations/database-analysis' },
+            { text: 'Bases avancées & Recherche', link: '/guide/citations/advanced-databases' },
+          ],
+        },
+        {
           text: 'Sources bibliographiques',
           items: [
             { text: 'Vue d\'ensemble', link: '/guide/citations/sources/' },
             { text: 'Catalogue complet', link: '/guide/citations/sources/catalog' },
+            { text: 'Référence entités', link: '/guide/citations/sources/entities-reference' },
             { text: 'OpenAlex', link: '/guide/citations/sources/openalex' },
             { text: 'Crossref', link: '/guide/citations/sources/crossref' },
             { text: 'HAL', link: '/guide/citations/sources/hal' },

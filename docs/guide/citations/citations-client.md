@@ -2,6 +2,8 @@
 
 `@univ-lehavre/atlas-citations` fournit une API unifiée pour interroger toutes les sources bibliographiques de manière transparente.
 
+> **Voir aussi :** [Schéma unifié](./unified-schema.md) pour la spécification OpenAPI complète, l'analyse du dénominateur commun entre sources, et le mapping détaillé.
+
 ## Installation
 
 ```bash
