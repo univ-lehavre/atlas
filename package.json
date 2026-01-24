@@ -66,6 +66,7 @@
     "@changesets/cli": "^2.29.8",
     "@commitlint/cli": "^20.3.1",
     "@commitlint/config-conventional": "^20.3.1",
+    "@modyfi/vite-plugin-yaml": "^1.1.1",
     "@size-limit/file": "^12.0.0",
     "@univ-lehavre/atlas-typescript-config": "workspace:*",
     "@vitest/coverage-v8": "^4.0.18",
@@ -80,6 +81,7 @@
     "typedoc": "^0.28.16",
     "typedoc-plugin-markdown": "^4.9.0",
     "vitepress": "^1.6.4",
+    "vitepress-openapi": "^0.1.13",
     "vitest": "^4.0.18"
   },
   "packageManager": "pnpm@10.28.1"
