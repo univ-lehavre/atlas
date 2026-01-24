@@ -1,110 +1,69 @@
-# Getting Started
+# Atlas
 
-## Installation
+Atlas est une plateforme développée par l'Université Le Havre Normandie pour faciliter la recherche clinique et la gestion des données bibliographiques.
 
-### Client API
+## Qu'est-ce qu'Atlas ?
 
-```bash
-pnpm add @univ-lehavre/atlas-redcap-api effect
-```
+Atlas comprend deux grandes familles d'outils :
 
-```typescript
-import { Effect } from 'effect';
-import { createRedcapClient, RedcapUrl, RedcapToken } from '@univ-lehavre/atlas-redcap-api';
+### Atlas CRF (Clinical Research Forms)
 
-const client = createRedcapClient({
-  url: RedcapUrl('https://redcap.example.com/api/'),
-  token: RedcapToken('YOUR_32_CHAR_HEXADECIMAL_TOKEN'),
-});
+**Pour qui ?** Équipes de recherche clinique, investigateurs, data managers.
 
-const records = await Effect.runPromise(client.exportRecords({ fields: ['record_id', 'name'] }));
-```
+Atlas CRF facilite la gestion des données de recherche clinique en se connectant à [REDCap](https://projectredcap.org/), la plateforme utilisée par de nombreuses institutions pour collecter des données de recherche.
 
-### Microservice
+**Ce que ça permet :**
+- Accéder aux données de vos études REDCap de manière sécurisée
+- Exporter et analyser vos données
+- Automatiser des tâches répétitives
 
-```bash
-pnpm add @univ-lehavre/atlas-redcap-service
-```
+### Atlas Citations
 
-## Configuration
+**Pour qui ?** Chercheurs de tous domaines, bibliothécaires, services de valorisation.
 
-Creez un fichier `.env` dans `services/redcap/` :
+Atlas Citations agrège les données de publications scientifiques depuis plusieurs sources (OpenAlex, HAL, Crossref, ORCID...) et permet de fiabiliser ces données.
 
-```bash
-cp services/redcap/.env.example services/redcap/.env
-```
+**Ce que ça permet :**
+- Retrouver toutes vos publications, quelle que soit la source
+- Vérifier et corriger les attributions erronées
+- Construire un profil de chercheur fiable et complet
 
-Configurez les variables :
+## Documentation
 
-```env
-PORT=3000
-REDCAP_API_URL=https://redcap.example.com/api/
-REDCAP_API_TOKEN=your_token_here
-```
+### Je suis chercheur
 
-## Developpement
+Consultez la documentation utilisateur pour comprendre comment Atlas peut vous aider :
 
-```bash
-# Installation des dependances
-pnpm install
+| Section | Description |
+|---------|-------------|
+| [Atlas Verify](./citations/user/) | Fiabiliser votre profil bibliographique |
+| [Vérifier vos publications](./citations/user/verify-publications.md) | Valider les articles qui vous sont attribués |
+| [Gérer votre parcours](./citations/user/manage-career.md) | Corriger vos affiliations |
+| [Sources de données](./citations/user/sources.md) | Comprendre d'où viennent les données |
 
-# Developpement avec hot-reload
-pnpm dev
+### Je suis développeur
 
-# Build
-pnpm build
+Consultez la documentation technique pour intégrer Atlas ou contribuer :
 
-# Tests
-pnpm test
+| Section | Description |
+|---------|-------------|
+| [Architecture technique](./dev/) | Vue d'ensemble technique |
+| [REDCap/CRF](./dev/crf.md) | Client et serveur REDCap |
+| [Atlas Citations](./citations/dev/) | Packages sources bibliographiques |
+| [Outils CLI](./dev/cli.md) | Outils en ligne de commande |
+| [Infrastructure](./dev/infrastructure.md) | Déploiement et sécurité |
 
-# Verifications pre-release
-pnpm ready
-```
+## Objectifs du projet
 
-## Structure du projet
+Atlas est développé avec plusieurs objectifs :
 
-```
-atlas/
-├── apps/
-│   ├── ecrin/              # Dashboard SvelteKit Zero Trust
-│   └── redcap-service/     # Microservice HTTP REST
-├── cli/
-│   ├── redcap/             # CLI pour tester REDCap
-│   └── net/                # CLI pour diagnostics reseau
-├── packages/
-│   ├── redcap-api/         # Client API REDCap
-│   ├── net/                # Utilitaires reseau
-│   ├── eslint-config/      # Configuration ESLint partagee
-│   └── typescript-config/  # Configuration TypeScript partagee
-├── infra/                  # Infrastructure Kubernetes Zero Trust
-└── docs/                   # Documentation (ce site)
-```
+1. **Simplifier l'accès aux données** - Les chercheurs ne devraient pas avoir besoin de connaissances techniques avancées pour accéder à leurs données
+2. **Fiabiliser les profils** - Les bases bibliographiques contiennent des erreurs (homonymes, mauvaises attributions) que seuls les chercheurs peuvent corriger
+3. **Sécuriser les échanges** - Les données de recherche sont sensibles et nécessitent une infrastructure sécurisée
+4. **Faciliter l'interopérabilité** - Atlas connecte des systèmes qui ne communiquent pas nativement ensemble
 
-## Infrastructure locale
+## Qui développe Atlas ?
 
-Atlas inclut une infrastructure Kubernetes locale avec architecture Zero Trust complete.
+Atlas est développé par l'équipe technique de l'Université Le Havre Normandie, en collaboration avec les équipes de recherche.
 
-### Prerequis
-
-```bash
-# macOS
-brew install k3d kubectl helm cilium-cli
-```
-
-Docker Desktop doit etre installe et demarre.
-
-### Demarrage
-
-```bash
-./infra/scripts/setup.sh
-```
-
-### URLs
-
-| Service   | URL                             |
-| --------- | ------------------------------- |
-| Dashboard | http://localhost:8080           |
-| Authelia  | http://localhost:8080/authelia/ |
-| MailHog   | http://localhost:8025           |
-
-Pour plus de details, voir [Infrastructure Zero Trust](./infrastructure.md).
+Le projet est open source et disponible sur [GitHub](https://github.com/univ-lehavre/atlas).

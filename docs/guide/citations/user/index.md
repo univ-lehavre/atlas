@@ -108,8 +108,19 @@ Oui, vous pouvez exporter vos publications vérifiées en :
 - JSON
 - CSV
 
+## Ce que les développeurs construisent
+
+Atlas Verify est développé en open source. Les développeurs travaillent sur :
+
+- **Agrégation automatique** : Connexion à 15+ bases de données bibliographiques
+- **Algorithmes de matching** : Intelligence artificielle pour détecter les homonymes
+- **Reconstruction de carrière** : Croisement des sources pour reconstituer votre parcours
+- **Analyse d'expertise** : Détection automatique de vos domaines de recherche
+
+> Voir la [documentation technique](../dev/) pour comprendre comment ça fonctionne.
+
 ## Support
 
-- **Documentation technique** : [Guide développeur](../dev/)
+- **Documentation générale Atlas** : [Retour à l'accueil](../../)
 - **Sources de données** : [Catalogue des sources](./sources.md)
-- **Contact** : support@atlas-verify.fr
+- **Documentation technique** : [Guide développeur](../dev/)
