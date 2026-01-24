@@ -6,6 +6,8 @@ Ce document définit le schéma unifié de `@univ-lehavre/atlas-citations`, le d
 > - [Client unifié](./citations-client.md) - Utilisation du client agrégateur
 > - [Catalogue des sources](./sources/catalog.md) - Détail de chaque source bibliographique
 > - [Référence entités](./sources/entities-reference.md) - Entités par source
+>
+> **Documentation utilisateur :** [Les sources de données](../user/sources.md) - Guide pour chercheurs
 
 ## Analyse du dénominateur commun
 

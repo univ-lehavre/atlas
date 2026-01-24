@@ -4,6 +4,7 @@ Ce document analyse les bases de données open source adaptées au stockage, req
 
 > **Voir aussi :**
 > - [Fiabilisation auteur](./author-verification.md) - Modèle de données et workflows de vérification
+> - [Profil chercheur](./researcher-profile.md) - Reconstruction carrière, expertises, collaborations
 > - [Bases avancées & Recherche](./advanced-databases.md) - ArangoDB, vector search, recherche multi-bases
 
 ## Exigences

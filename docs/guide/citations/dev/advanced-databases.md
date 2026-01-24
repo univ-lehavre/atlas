@@ -5,6 +5,7 @@ Ce document analyse les bases de données spécialisées, les moteurs de recherc
 > **Voir aussi :**
 > - [Bases de données](./database-analysis.md) - Analyse PostgreSQL/MongoDB pour le stockage principal
 > - [Fiabilisation auteur](./author-verification.md) - Modèle de données et workflows de vérification
+> - [Profil chercheur](./researcher-profile.md) - Reconstruction carrière, expertises, collaborations
 > - [Schéma unifié](./unified-schema.md) - Spécification OpenAPI et entités
 
 ## Cas d'usage des chercheurs

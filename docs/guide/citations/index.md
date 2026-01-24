@@ -2,98 +2,64 @@
 
 Atlas Citations est une suite de packages pour interroger des sources bibliographiques via des clients Effect typés, avec des specs OpenAPI validées contre les APIs réelles.
 
-## Vue d'ensemble
+## Qu'est-ce qu'Atlas Citations ?
 
-```
-packages/
-├── openapi-validator/  # Outil de validation OpenAPI
-├── openalex/           # Client OpenAlex
-├── crossref/           # Client Crossref
-├── hal/                # Client HAL
-├── arxiv/              # Client ArXiv
-├── orcid/              # Client ORCID
-└── citations/          # Agrégateur unifié
-```
+Atlas Citations permet de :
 
-## Principes
-
-1. **Un package par source** : Chaque source bibliographique a son propre package avec sa spec OpenAPI
-2. **OpenAPI-first** : Les types TypeScript sont générés depuis les specs OpenAPI
-3. **Validation continue** : Les specs sont testées contre les APIs réelles
-4. **Rate limiting natif** : Gestion des quotas et retry automatique
-5. **API unifiée** : `atlas-citations` agrège toutes les sources de manière transparente
-
-## Packages
-
-| Package | Source | Description |
-|---------|--------|-------------|
-| `@univ-lehavre/atlas-openapi-validator` | - | Validation des specs OpenAPI |
-| `@univ-lehavre/atlas-openalex` | [OpenAlex](https://openalex.org) | 240M+ publications académiques |
-| `@univ-lehavre/atlas-crossref` | [Crossref](https://crossref.org) | Métadonnées DOI |
-| `@univ-lehavre/atlas-hal` | [HAL](https://hal.science) | Archive ouverte française |
-| `@univ-lehavre/atlas-arxiv` | [ArXiv](https://arxiv.org) | Prépublications scientifiques |
-| `@univ-lehavre/atlas-orcid` | [ORCID](https://orcid.org) | Identifiants chercheurs |
-| `@univ-lehavre/atlas-citations` | - | Agrégateur multi-sources |
-
-## Utilisation rapide
-
-```typescript
-import { createCitationsClient } from '@univ-lehavre/atlas-citations';
-import { Effect } from 'effect';
-
-const client = createCitationsClient();
-
-// Recherche automatique (sélection intelligente des sources)
-const works = yield* client.searchWorks('machine learning');
-
-// Résolution d'un DOI
-const work = yield* client.getWork('10.1234/example');
-
-// Forcer une source spécifique
-const halWorks = yield* client.searchWorks('deep learning', {
-  sources: ['hal'],
-});
-```
+- **Interroger** plusieurs sources bibliographiques (OpenAlex, Crossref, HAL, ArXiv, ORCID)
+- **Unifier** les données dans un schéma commun
+- **Fiabiliser** les profils chercheurs avec Atlas Verify
 
 ## Documentation
 
-### Fondamentaux
+### Pour les chercheurs (Atlas Verify)
+
+Si vous êtes chercheur et souhaitez utiliser Atlas Verify pour gérer votre profil bibliographique :
+
+| Guide | Description |
+|-------|-------------|
+| [Introduction](./user/) | Découvrir Atlas Verify |
+| [Vérifier vos publications](./user/verify-publications.md) | Valider les articles qui vous sont attribués |
+| [Gérer votre parcours](./user/manage-career.md) | Vérifier vos affiliations et votre carrière |
+| [Profil d'expertise](./user/expertise-profile.md) | Vos domaines de recherche |
+| [Réseau de collaborations](./user/collaboration-network.md) | Vos co-auteurs et partenariats |
+| [Les sources de données](./user/sources.md) | D'où viennent les données |
+
+### Pour les développeurs
+
+Si vous souhaitez intégrer Atlas Citations dans votre projet ou contribuer au développement :
 
 | Document | Description |
 |----------|-------------|
-| [Architecture](./architecture.md) | Structure des packages et patterns Effect |
-| [Schéma unifié](./unified-schema.md) | Spécification OpenAPI et mapping des entités |
-| [Client unifié](./citations-client.md) | API d'agrégation multi-sources |
+| [Vue d'ensemble technique](./dev/) | Introduction pour développeurs |
+| [Architecture](./dev/architecture.md) | Structure des packages et patterns Effect |
+| [Schéma unifié](./dev/unified-schema.md) | Spécification OpenAPI et mapping des entités |
+| [Client unifié](./dev/citations-client.md) | API d'agrégation multi-sources |
 
-### OpenAPI & Validation
-
-| Document | Description |
-|----------|-------------|
-| [Cycle de vie OpenAPI](./openapi-lifecycle.md) | Versioning alpha → beta → stable |
-| [Validateur OpenAPI](./openapi-validator.md) | Outil CLI de validation des specs |
-| [Rate Limiting](./rate-limiting.md) | Gestion des quotas par source |
-
-### Sources bibliographiques
+#### OpenAPI & Validation
 
 | Document | Description |
 |----------|-------------|
-| [Vue d'ensemble](./sources/index.md) | Introduction aux sources |
-| [Catalogue complet](./sources/catalog.md) | Toutes les sources analysées |
-| [Référence entités](./sources/entities-reference.md) | Entités par source |
-| [OpenAlex](./sources/openalex.md) | Client et spec OpenAlex |
-| [Crossref](./sources/crossref.md) | Client et spec Crossref |
-| [HAL](./sources/hal.md) | Client et spec HAL |
-| [ArXiv](./sources/arxiv.md) | Client et spec ArXiv |
-| [ORCID](./sources/orcid.md) | Client et spec ORCID |
-| [Versioning](./sources/versioning.md) | Gestion des versions par source |
+| [Cycle de vie OpenAPI](./dev/openapi-lifecycle.md) | Versioning alpha → beta → stable |
+| [Validateur OpenAPI](./dev/openapi-validator.md) | Outil CLI de validation des specs |
+| [Rate Limiting](./dev/rate-limiting.md) | Gestion des quotas par source |
 
-### Atlas Verify (Fiabilisation)
+#### Atlas Verify (système de fiabilisation)
 
 | Document | Description |
 |----------|-------------|
-| [Fiabilisation auteur](./author-verification.md) | Modèle de données et workflows de vérification |
-| [Bases de données](./database-analysis.md) | Analyse PostgreSQL, MongoDB, etc. |
-| [Bases avancées & Recherche](./advanced-databases.md) | ArangoDB, vector search, fédération multi-bases |
+| [Fiabilisation auteur](./dev/author-verification.md) | Modèle de données et workflows de vérification |
+| [Profil chercheur](./dev/researcher-profile.md) | Reconstruction carrière, expertises, collaborations |
+| [Bases de données](./dev/database-analysis.md) | Analyse PostgreSQL, MongoDB, etc. |
+| [Bases avancées](./dev/advanced-databases.md) | ArangoDB, vector search, fédération multi-bases |
+
+#### Sources bibliographiques
+
+| Document | Description |
+|----------|-------------|
+| [Vue d'ensemble](./dev/sources/) | Introduction aux sources |
+| [Catalogue complet](./dev/sources/catalog.md) | Toutes les sources analysées |
+| [Référence entités](./dev/sources/entities-reference.md) | Entités par source |
 
 ## Architecture globale
 
@@ -153,4 +119,47 @@ Le schéma unifié définit 5 entités principales, communes à toutes les sourc
 | **Venue** | Journal, conférence, dépôt | ISSN, OpenAlex ID |
 | **Funder** | Organisme financeur | Crossref Funder ID, ROR |
 
-> Voir [Schéma unifié](./unified-schema.md) pour les spécifications détaillées et le mapping complet.
+> Voir [Schéma unifié](./dev/unified-schema.md) pour les spécifications détaillées.
+
+## Packages
+
+```
+packages/
+├── openapi-validator/  # Outil de validation OpenAPI
+├── openalex/           # Client OpenAlex
+├── crossref/           # Client Crossref
+├── hal/                # Client HAL
+├── arxiv/              # Client ArXiv
+├── orcid/              # Client ORCID
+└── citations/          # Agrégateur unifié
+```
+
+| Package | Source | Description |
+|---------|--------|-------------|
+| `@univ-lehavre/atlas-openapi-validator` | - | Validation des specs OpenAPI |
+| `@univ-lehavre/atlas-openalex` | [OpenAlex](https://openalex.org) | 240M+ publications académiques |
+| `@univ-lehavre/atlas-crossref` | [Crossref](https://crossref.org) | Métadonnées DOI |
+| `@univ-lehavre/atlas-hal` | [HAL](https://hal.science) | Archive ouverte française |
+| `@univ-lehavre/atlas-arxiv` | [ArXiv](https://arxiv.org) | Prépublications scientifiques |
+| `@univ-lehavre/atlas-orcid` | [ORCID](https://orcid.org) | Identifiants chercheurs |
+| `@univ-lehavre/atlas-citations` | - | Agrégateur multi-sources |
+
+## Utilisation rapide
+
+```typescript
+import { createCitationsClient } from '@univ-lehavre/atlas-citations';
+import { Effect } from 'effect';
+
+const client = createCitationsClient();
+
+// Recherche automatique (sélection intelligente des sources)
+const works = yield* client.searchWorks('machine learning');
+
+// Résolution d'un DOI
+const work = yield* client.getWork('10.1234/example');
+
+// Forcer une source spécifique
+const halWorks = yield* client.searchWorks('deep learning', {
+  sources: ['hal'],
+});
+```

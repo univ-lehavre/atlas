@@ -3,9 +3,11 @@
 Ce document décrit la structure des packages atlas-* et les patterns d'implémentation.
 
 > **Voir aussi :**
-> - [Vue d'ensemble](./index.md) - Introduction à Atlas Citations
+> - [Vue d'ensemble](./index.md) - Introduction technique à Atlas Citations
 > - [Cycle de vie OpenAPI](./openapi-lifecycle.md) - Processus alpha → beta → stable
 > - [Schéma unifié](./unified-schema.md) - Entités et spécification OpenAPI
+>
+> **Documentation utilisateur :** [Guide utilisateur Atlas Verify](../user/) - Documentation pour les chercheurs
 
 ## Structure d'un package atlas-*
 

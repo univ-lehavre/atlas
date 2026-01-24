@@ -3,9 +3,12 @@
 Ce document décrit le système permettant aux auteurs de fiabiliser leurs données bibliographiques agrégées depuis les différentes sources.
 
 > **Voir aussi :**
+> - [Profil chercheur](./researcher-profile.md) - Reconstruction carrière, expertises, collaborations
 > - [Bases de données](./database-analysis.md) - Analyse PostgreSQL, MongoDB et choix de stockage
 > - [Bases avancées & Recherche](./advanced-databases.md) - ArangoDB, vector search, fédération multi-bases
 > - [Schéma unifié](./unified-schema.md) - Spécification des entités Work, Author, etc.
+>
+> **Documentation utilisateur :** [Vérifier vos publications](../user/verify-publications.md) - Guide pour chercheurs
 
 ## Problématique
 
