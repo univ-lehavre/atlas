@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress';
 
 export default defineConfig({
   title: 'Atlas',
-  description: "Outils TypeScript pour l'API REDCap",
+  description: "Outils TypeScript pour REDCap et sources bibliographiques",
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/' },
@@ -16,6 +16,29 @@ export default defineConfig({
             { text: 'Demarrage', link: '/guide/' },
             { text: 'Architecture', link: '/guide/architecture' },
             { text: 'CLI Tools', link: '/guide/cli' },
+          ],
+        },
+        {
+          text: 'Citations',
+          items: [
+            { text: 'Vue d\'ensemble', link: '/guide/citations/' },
+            { text: 'Architecture', link: '/guide/citations/architecture' },
+            { text: 'Cycle de vie OpenAPI', link: '/guide/citations/openapi-lifecycle' },
+            { text: 'Rate Limiting', link: '/guide/citations/rate-limiting' },
+            { text: 'Validateur OpenAPI', link: '/guide/citations/openapi-validator' },
+            { text: 'Client unifié', link: '/guide/citations/citations-client' },
+          ],
+        },
+        {
+          text: 'Sources bibliographiques',
+          items: [
+            { text: 'Vue d\'ensemble', link: '/guide/citations/sources/' },
+            { text: 'OpenAlex', link: '/guide/citations/sources/openalex' },
+            { text: 'Crossref', link: '/guide/citations/sources/crossref' },
+            { text: 'HAL', link: '/guide/citations/sources/hal' },
+            { text: 'ArXiv', link: '/guide/citations/sources/arxiv' },
+            { text: 'ORCID', link: '/guide/citations/sources/orcid' },
+            { text: 'Versioning', link: '/guide/citations/sources/versioning' },
           ],
         },
       ],
