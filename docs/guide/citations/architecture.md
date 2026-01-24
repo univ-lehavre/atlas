@@ -1,5 +1,12 @@
 # Architecture
 
+Ce document décrit la structure des packages atlas-* et les patterns d'implémentation.
+
+> **Voir aussi :**
+> - [Vue d'ensemble](./index.md) - Introduction à Atlas Citations
+> - [Cycle de vie OpenAPI](./openapi-lifecycle.md) - Processus alpha → beta → stable
+> - [Schéma unifié](./unified-schema.md) - Entités et spécification OpenAPI
+
 ## Structure d'un package atlas-*
 
 Chaque package source suit la même structure :

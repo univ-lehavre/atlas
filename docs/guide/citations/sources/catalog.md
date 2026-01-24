@@ -2,6 +2,8 @@
 
 Ce document recense toutes les sources académiques potentielles pour atlas-citations, avec leur état actuel et la stratégie de construction de leur spec OpenAPI.
 
+> **Voir aussi :** [Référence des entités et champs](./entities-reference.md) pour le détail complet des objets et attributs récupérables par source.
+
 ## Vue d'ensemble
 
 ```

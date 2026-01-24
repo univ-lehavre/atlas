@@ -2,6 +2,11 @@
 
 Chaque module source (`atlas-openalex`, `atlas-crossref`, etc.) suit le même processus de construction mais avec des stratégies adaptées à chaque API.
 
+> **Voir aussi :**
+> - [Catalogue complet](./catalog.md) - Liste de toutes les sources analysées
+> - [Référence entités](./entities-reference.md) - Entités disponibles par source
+> - [Schéma unifié](../unified-schema.md) - Comment les sources sont mappées vers le schéma commun
+
 ## Vue d'ensemble du processus
 
 ```
