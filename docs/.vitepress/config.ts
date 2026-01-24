@@ -33,6 +33,7 @@ export default defineConfig({
           text: 'Sources bibliographiques',
           items: [
             { text: 'Vue d\'ensemble', link: '/guide/citations/sources/' },
+            { text: 'Catalogue complet', link: '/guide/citations/sources/catalog' },
             { text: 'OpenAlex', link: '/guide/citations/sources/openalex' },
             { text: 'Crossref', link: '/guide/citations/sources/crossref' },
             { text: 'HAL', link: '/guide/citations/sources/hal' },
