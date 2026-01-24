@@ -64,6 +64,6 @@ Atlas est développé avec plusieurs objectifs :
 
 ## Qui développe Atlas ?
 
-Atlas est développé par l'équipe technique de l'Université Le Havre Normandie, en collaboration avec les équipes de recherche.
+Atlas est développé par l'équipe du cabinet de la présidence de l'Université Le Havre Normandie, en collaboration avec la vice-présidente à la recherche Céline Picard.
 
 Le projet est open source et disponible sur [GitHub](https://github.com/univ-lehavre/atlas).
