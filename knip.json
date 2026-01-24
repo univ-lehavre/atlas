@@ -18,6 +18,6 @@
     }
   },
   "ignore": ["**/dist/**", "**/.svelte-kit/**", "**/build/**", "**/redcap-source/**"],
-  "ignoreDependencies": ["tsx", "@univ-lehavre/atlas-typescript-config"],
+  "ignoreDependencies": ["tsx", "@univ-lehavre/atlas-typescript-config", "vitepress-openapi", "@modyfi/vite-plugin-yaml"],
   "ignoreBinaries": ["jq", "docker:build", "docker:down"]
 }
