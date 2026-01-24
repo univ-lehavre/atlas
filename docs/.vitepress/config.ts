@@ -4,6 +4,12 @@ export default defineConfig({
   title: 'Atlas',
   description: "Outils TypeScript pour REDCap et sources bibliographiques",
   base: '/atlas/',
+  ignoreDeadLinks: [
+    // Localhost links in infrastructure docs
+    /^http:\/\/localhost/,
+    // API docs generated dynamically
+    /^\.\/@univ-lehavre/,
+  ],
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/' },
