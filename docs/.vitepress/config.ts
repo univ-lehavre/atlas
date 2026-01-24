@@ -3,6 +3,7 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
   title: 'Atlas',
   description: "Outils TypeScript pour REDCap et sources bibliographiques",
+  base: '/atlas/',
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/' },
