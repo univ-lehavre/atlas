@@ -2,9 +2,8 @@
   "files": [],
   "references": [
     { "path": "packages/typescript-config" },
-    { "path": "packages/eslint-config" },
-    { "path": "packages/redcap-api" },
+    { "path": "packages/crf" },
     { "path": "packages/net" },
-    { "path": "services/redcap" }
+    { "path": "packages/redcap" }
   ]
 }
