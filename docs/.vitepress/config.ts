@@ -13,19 +13,11 @@ export default defineConfig({
         {
           text: 'Introduction',
           items: [
-            { text: 'Demarrage', link: '/guide/' },
-            { text: 'Architecture', link: '/guide/architecture' },
-            { text: 'CLI Tools', link: '/guide/cli' },
+            { text: 'Présentation', link: '/guide/' },
           ],
         },
         {
-          text: 'Atlas Citations',
-          items: [
-            { text: 'Vue d\'ensemble', link: '/guide/citations/' },
-          ],
-        },
-        {
-          text: 'Atlas Verify - Guide utilisateur',
+          text: 'Atlas Verify - Guide chercheur',
           collapsed: false,
           items: [
             { text: 'Introduction', link: '/guide/citations/user/' },
@@ -40,13 +32,24 @@ export default defineConfig({
           text: 'Documentation technique',
           collapsed: true,
           items: [
+            { text: 'Vue d\'ensemble', link: '/guide/dev/' },
+            { text: 'Architecture', link: '/guide/dev/architecture' },
+            { text: 'REDCap/CRF', link: '/guide/dev/crf' },
+            { text: 'Outils CLI', link: '/guide/dev/cli' },
+            { text: 'Infrastructure', link: '/guide/dev/infrastructure' },
+          ],
+        },
+        {
+          text: 'Atlas Citations - Technique',
+          collapsed: true,
+          items: [
             { text: 'Vue d\'ensemble', link: '/guide/citations/dev/' },
             { text: 'Architecture', link: '/guide/citations/dev/architecture' },
             { text: 'Schéma unifié', link: '/guide/citations/dev/unified-schema' },
+            { text: 'Client unifié', link: '/guide/citations/dev/citations-client' },
             { text: 'Cycle de vie OpenAPI', link: '/guide/citations/dev/openapi-lifecycle' },
             { text: 'Rate Limiting', link: '/guide/citations/dev/rate-limiting' },
             { text: 'Validateur OpenAPI', link: '/guide/citations/dev/openapi-validator' },
-            { text: 'Client unifié', link: '/guide/citations/dev/citations-client' },
           ],
         },
         {
@@ -56,7 +59,7 @@ export default defineConfig({
             { text: 'Fiabilisation auteur', link: '/guide/citations/dev/author-verification' },
             { text: 'Profil chercheur', link: '/guide/citations/dev/researcher-profile' },
             { text: 'Bases de données', link: '/guide/citations/dev/database-analysis' },
-            { text: 'Bases avancées & Recherche', link: '/guide/citations/dev/advanced-databases' },
+            { text: 'Bases avancées', link: '/guide/citations/dev/advanced-databases' },
           ],
         },
         {
