@@ -1272,11 +1272,3 @@ const periodicSyncJob = Effect.gen(function* () {
   }
 });
 ```
-
----
-
-Maintenant, je vais créer la documentation sur l'analyse des bases de données.
-
-<function_calls>
-<invoke name="TodoWrite">
-<parameter name="todos">[{"content": "Concevoir le mod\u00e8le de donn\u00e9es pour la fiabilisation", "status": "completed", "activeForm": "Designing data model for verification"}, {"content": "D\u00e9finir l'architecture de l'application de fiabilisation", "status": "completed", "activeForm": "Defining verification app architecture"}, {"content": "Analyser les bases de donn\u00e9es adapt\u00e9es (Kubernetes)", "status": "in_progress", "activeForm": "Analyzing suitable databases for Kubernetes"}, {"content": "Documenter les workflows de fiabilisation", "status": "completed", "activeForm": "Documenting verification workflows"}]
