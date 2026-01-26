@@ -7,21 +7,10 @@
 
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { parse } from 'yaml';
+import type { ComparisonResult, ComparisonSummary } from '../core/types.js';
 
-export interface ComparisonResult {
-  status: 'match' | 'mismatch' | 'removed' | 'added';
-  field: string;
-  oldValue?: unknown;
-  newValue?: unknown;
-  message: string;
-}
-
-export interface ComparisonSummary {
-  removed: ComparisonResult[];
-  added: ComparisonResult[];
-  changed: ComparisonResult[];
-  hasBreakingChanges: boolean;
-}
+// Re-export types for consumers
+export type { ComparisonResult, ComparisonSummary } from '../core/types.js';
 
 /**
  * Get available spec versions from a directory

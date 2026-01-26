@@ -10,6 +10,7 @@
 // Types
 export type {
   ApiAction,
+  ApiPermission,
   ParameterType,
   Parameter,
   ContentTypeInfo,
@@ -20,6 +21,25 @@ export type {
   ComparisonResult,
   ComparisonSummary,
   OpenApiSpec,
+} from './types.js';
+
+// Re-exports from redcap-core (content types, mappings, permissions)
+export {
+  CONTENT_KEY_MAPPING,
+  mapContentKeyToType,
+  TAG_GROUPS,
+  getTagGroup,
+  getContentTypesInGroup,
+  PERMISSION_MAPPING,
+  mapPermission,
+  CORE_CONTENT_TYPES,
+  V15_CONTENT_TYPES,
+  V16_CONTENT_TYPES,
+  getContentTypesForVersion,
+  isContentTypeAvailable,
+  CONTENT_TYPE_ACTIONS,
+  getActionsForContentType,
+  isActionAvailable,
 } from './types.js';
 
 // Parsers
