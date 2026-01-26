@@ -159,7 +159,7 @@ Cette infrastructure utilise **k3d** (k3s dans Docker) au lieu de kind :
 
 ```bash
 # Build et push direct (plus de "kind load")
-docker build -t localhost:5111/ecrin:dev apps/ecrin
+docker build -t localhost:5111/ecrin:dev -f packages/ecrin/Dockerfile .
 docker push localhost:5111/ecrin:dev
 
 # Rollout
@@ -322,7 +322,7 @@ curl -X POST http://localhost:8181/v1/data/ecrin/authz/allow \
   -d '{"input":{"user":{"email":"admin@univ-lehavre.fr","groups":["admin"]},"action":"delete","resource":{"type":"record"}}}'
 
 # Rebuild et push image (via registre local)
-docker build -t localhost:5111/ecrin:dev apps/ecrin
+docker build -t localhost:5111/ecrin:dev -f packages/ecrin/Dockerfile .
 docker push localhost:5111/ecrin:dev
 kubectl rollout restart deployment/ecrin -n ecrin
 ```
