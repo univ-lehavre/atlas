@@ -176,12 +176,12 @@ build_and_push_images() {
     log_info "Building and pushing images to local registry..."
 
     # Build ecrin
-    if [ -d "$ROOT_DIR/apps/ecrin" ]; then
+    if [ -d "$ROOT_DIR/packages/ecrin" ]; then
         log_info "Building ecrin..."
-        docker build -t localhost:${REGISTRY_PORT}/ecrin:dev "$ROOT_DIR/apps/ecrin"
+        docker build -t localhost:${REGISTRY_PORT}/ecrin:dev "$ROOT_DIR/packages/ecrin"
         docker push localhost:${REGISTRY_PORT}/ecrin:dev
     else
-        log_warn "apps/ecrin not found, skipping build"
+        log_warn "packages/ecrin not found, skipping build"
     fi
 
     # Build redcap-service

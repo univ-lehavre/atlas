@@ -233,7 +233,7 @@ type(scope): description
 | -------- | ------------- |
 | `crf`    | packages/crf  |
 | `net`    | packages/net  |
-| `ecrin`  | apps/ecrin    |
+| `ecrin`  | packages/ecrin |
 | `infra`  | infra/        |
 | `docs`   | Documentation |
 | `deps`   | Dependances   |
@@ -254,9 +254,8 @@ ci: add size-limit check
 
 ```
 atlas/
-├── apps/
-│   └── ecrin/              # Dashboard SvelteKit
 ├── packages/
+│   ├── ecrin/              # Dashboard SvelteKit
 │   ├── crf/                # Client REDCap + server + CLI
 │   ├── net/                # Utilitaires reseau
 │   ├── eslint-config/      # Config ESLint partagee
