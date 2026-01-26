@@ -79,6 +79,47 @@ export default typescript({
 
 ### Preset Comparison
 
+#### Summary Table
+
+| Feature                          | `typescript`| `svelte` | `scripts` |
+| -------------------------------- | :----------: | :------: | :-------: |
+| **TypeScript**                   |              |          |           |
+| Type-checked rules               |      ✅      |    ✅    |     ❌    |
+| `no-explicit-any`                |    error     |  error   |   warn    |
+| `no-unused-vars`                 |    error     |  error   |   warn    |
+| `explicit-function-return-type`  |    error     |  error   |     ❌    |
+| `strict-boolean-expressions`     |    error     |  error   |     ❌    |
+| `consistent-type-imports`        |    error     |  error   |     ❌    |
+| **Functional Programming**       |              |          |           |
+| `functional/*` rules             |      ✅      |    ✅    |     ❌    |
+| `no-throw-statements`            |    error     |  error   |     ❌    |
+| `no-try-statements`              |    error     |  error   |     ❌    |
+| `immutable-data`                 |    error     |  error   |     ❌    |
+| **Code Quality**                 |              |          |           |
+| `eslint-plugin-unicorn`          |      ✅      |    ✅    |     ❌    |
+| `eslint-plugin-regexp`           |      ✅      |    ✅    |     ❌    |
+| `eslint-plugin-barrel-files`     |      ✅      |    ✅    |     ❌    |
+| **Security**                     |              |          |           |
+| `eslint-plugin-security`         |      ✅      |    ✅    |     ❌    |
+| `eslint-plugin-no-secrets`       |      ✅      |    ✅    |     ❌    |
+| **Imports**                      |              |          |           |
+| `eslint-plugin-import-x`         |      ✅      |    ✅    |     ❌    |
+| `import-x/no-cycle`              |    error     |    ❌    |     ❌    |
+| **Node.js**                      |              |          |           |
+| `eslint-plugin-n`                |      ✅      |    ✅    |     ❌    |
+| `n/no-missing-import`            |    error     |    ❌    |     ❌    |
+| **Framework-specific**           |              |          |           |
+| `eslint-plugin-svelte`           |      ❌      |    ✅    |     ❌    |
+| `eslint-plugin-turbo`            |      ✅      |    ✅    |     ❌    |
+| **Testing**                      |              |          |           |
+| `@vitest/eslint-plugin`          |      ✅      |    ❌    |     ✅    |
+| **Other**                        |              |          |           |
+| `no-console`                     |    error     |  error   |     ❌    |
+| `prefer-const`                   |    error     |  error   |   error   |
+| `eqeqeq`                         |    error     |  error   |   error   |
+
+✅ = enabled, ❌ = disabled, error/warn = rule severity
+
 #### Common Plugins (all presets)
 
 - `@eslint/js` - ESLint recommended rules
