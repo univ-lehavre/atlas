@@ -5,7 +5,11 @@ packages:
   - tools/*
 
 onlyBuiltDependencies:
+  - '@parcel/watcher'
   - core-js
-  - lefthook
-  - protobufjs
   - esbuild
+  - lefthook
+  - msgpackr-extract
+  - protobufjs
+  - unrs-resolver
+  - vue-demi
