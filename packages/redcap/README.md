@@ -16,7 +16,7 @@ This package provides:
 
 ```
 packages/redcap/
-├── redcap-source/              # REDCap PHP code (not committed)
+├── upstream/              # REDCap PHP code (not committed)
 │   ├── versions/               # Multiple REDCap versions
 │   │   ├── 14.5.10/           # Default version
 │   │   └── ...                # Add more versions here
@@ -56,7 +56,7 @@ Extract REDCap to the versions directory:
 unzip redcap14.5.10.zip
 
 # Move to versions directory
-mv redcap_v14.5.10 redcap-source/versions/14.5.10
+mv redcap_v14.5.10 upstream/versions/14.5.10
 ```
 
 ### 2. Start Docker environment
@@ -178,9 +178,9 @@ pnpm test:security   # Run Schemathesis security tests
 
 | Version | Status  | Directory                         |
 | ------- | ------- | --------------------------------- |
-| 14.5.10 | Default | `redcap-source/versions/14.5.10/` |
-| 14.6.x  | Planned | `redcap-source/versions/14.6.x/`  |
-| 15.x.x  | Planned | `redcap-source/versions/15.x.x/`  |
+| 14.5.10 | Default | `upstream/versions/14.5.10/` |
+| 14.6.x  | Planned | `upstream/versions/14.6.x/`  |
+| 15.x.x  | Planned | `upstream/versions/15.x.x/`  |
 
 ### Adding a new version
 
@@ -189,7 +189,7 @@ pnpm test:security   # Run Schemathesis security tests
 unzip redcap14.6.0.zip
 
 # 2. Move to versions directory
-mv redcap_v14.6.0 redcap-source/versions/14.6.0
+mv redcap_v14.6.0 upstream/versions/14.6.0
 
 # 3. Start with new version
 REDCAP_VERSION=14.6.0 pnpm docker:up

@@ -1,33 +1,33 @@
 # REDCap source code (proprietary - do not commit)
 # Keep directory structure but ignore actual PHP files
-redcap-source/**/*.php
-redcap-source/**/*.sql
-redcap-source/**/*.xml
-redcap-source/**/*.json
-redcap-source/**/*.css
-redcap-source/**/*.js
-redcap-source/**/*.html
-redcap-source/**/*.htm
-redcap-source/**/*.txt
-redcap-source/**/*.pdf
-redcap-source/**/*.png
-redcap-source/**/*.jpg
-redcap-source/**/*.gif
-redcap-source/**/*.ico
-redcap-source/**/*.woff
-redcap-source/**/*.woff2
-redcap-source/**/*.ttf
-redcap-source/**/*.eot
-redcap-source/**/*.svg
-!redcap-source/README.md
-!redcap-source/**/.gitkeep
+upstream/**/*.php
+upstream/**/*.sql
+upstream/**/*.xml
+upstream/**/*.json
+upstream/**/*.css
+upstream/**/*.js
+upstream/**/*.html
+upstream/**/*.htm
+upstream/**/*.txt
+upstream/**/*.pdf
+upstream/**/*.png
+upstream/**/*.jpg
+upstream/**/*.gif
+upstream/**/*.ico
+upstream/**/*.woff
+upstream/**/*.woff2
+upstream/**/*.ttf
+upstream/**/*.eot
+upstream/**/*.svg
+!upstream/README.md
+!upstream/**/.gitkeep
 
 # Generated specs
 specs/redcap-extracted.yaml
 
 # Docker volumes and runtime files
 docker/data/
-redcap-source/edocs/
+upstream/edocs/
 
 # Analysis output
 analyzer/output/

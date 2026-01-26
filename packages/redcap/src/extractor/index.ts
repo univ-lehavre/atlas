@@ -75,7 +75,7 @@ export function getAvailableVersions(basePath: string): string[] {
 export interface ExtractOptions {
   /** REDCap version to extract */
   version: string;
-  /** Base path to redcap-source/versions */
+  /** Base path to upstream/versions */
   sourcePath: string;
   /** Output path for the generated spec */
   outputPath: string;
