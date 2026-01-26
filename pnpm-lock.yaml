@@ -95,6 +95,9 @@ importers:
       '@univ-lehavre/atlas-net':
         specifier: workspace:*
         version: link:../net
+      '@univ-lehavre/atlas-redcap-core':
+        specifier: workspace:*
+        version: link:../redcap-core
       effect:
         specifier: ^3.19.15
         version: 3.19.15

@@ -29,9 +29,9 @@ const mapErrorToResponse = (
     Match.tag('RedcapApiError', (e) => ({
       body: {
         data: null,
-        error: { code: 'redcap_api_error', message: e.message },
+        error: { code: e.code ?? 'redcap_api_error', message: e.message },
       },
-      status: toContentfulStatus(e.status ?? 400),
+      status: 400 as ContentfulStatusCode,
     })),
     Match.tag('RedcapNetworkError', () => ({
       body: {
