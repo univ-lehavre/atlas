@@ -5,8 +5,8 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PACKAGE_DIR="$(dirname "$SCRIPT_DIR")"
-CONFIG_DIR="$PACKAGE_DIR/docker/config"
+DEV_DIR="$(dirname "$SCRIPT_DIR")"
+CONFIG_DIR="$DEV_DIR/docker/config"
 
 echo "=== REDCap Automated Installation ==="
 echo ""

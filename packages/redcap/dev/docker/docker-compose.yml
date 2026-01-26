@@ -7,12 +7,12 @@ services:
       - '8888:80'
     volumes:
       # Mount REDCap versioned directory as web root (configurable via REDCAP_VERSION)
-      - ../upstream/versions/${REDCAP_VERSION:-14.5.10}:/var/www/html:ro
+      - ../../upstream/versions/${REDCAP_VERSION:-14.5.10}:/var/www/html:ro
       - ./config/php.ini:/usr/local/etc/php/conf.d/redcap.ini:ro
       # Database configuration (override the empty one)
       - ./config/database.php:/var/www/html/database.php:ro
       # Writable directories shared across versions
-      - ../upstream/shared/edocs:/var/www/html/edocs
+      - ../../upstream/shared/edocs:/var/www/html/edocs
       - redcap-temp:/var/www/html/temp
     environment:
       - REDCAP_DB_HOST=mariadb
