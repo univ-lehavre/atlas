@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   // Ignores
   {
-    ignores: ['docker/**', 'specs/**', 'scripts/**', 'redcap-source/**'],
+    ignores: ['dist/**', 'docker/**', 'specs/**', 'scripts/**', 'redcap-source/**'],
   },
 
   // Base
