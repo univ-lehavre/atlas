@@ -11,7 +11,7 @@
       "project": ["src/**/*.ts", "sandbox/tests/**/*.ts"]
     },
     "packages/typescript-config": {
-      "project": ["*.json"]
+      "project": ["*.json", "eslint/**/*.js"]
     },
     "apps/*": {
       "project": ["src/**/*.ts"]
