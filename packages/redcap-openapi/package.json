@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.10.0",
+    "@univ-lehavre/atlas-redcap-core": "workspace:*",
     "picocolors": "^1.1.1",
     "yaml": "^2.8.2"
   },

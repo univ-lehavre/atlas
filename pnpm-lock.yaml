@@ -251,6 +251,9 @@ importers:
       '@clack/prompts':
         specifier: ^0.10.0
         version: 0.10.1
+      '@univ-lehavre/atlas-redcap-core':
+        specifier: workspace:*
+        version: link:../redcap-core
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1

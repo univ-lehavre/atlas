@@ -2,18 +2,29 @@
  * Core types for REDCap OpenAPI extraction
  *
  * These types represent the parsed structures from REDCap PHP source code.
+ * Re-exports common types from @univ-lehavre/atlas-redcap-core.
  */
 
-/** API endpoint action types */
-export type ApiAction =
-  | 'export'
-  | 'import'
-  | 'delete'
-  | 'switch'
-  | 'list'
-  | 'createFolder'
-  | 'rename'
-  | 'display';
+// Re-export from redcap-core
+export type { ApiAction, ApiPermission } from '@univ-lehavre/atlas-redcap-core';
+
+export {
+  CONTENT_KEY_MAPPING,
+  mapContentKeyToType,
+  TAG_GROUPS,
+  getTagGroup,
+  getContentTypesInGroup,
+  PERMISSION_MAPPING,
+  mapPermission,
+  CORE_CONTENT_TYPES,
+  V15_CONTENT_TYPES,
+  V16_CONTENT_TYPES,
+  getContentTypesForVersion,
+  isContentTypeAvailable,
+  CONTENT_TYPE_ACTIONS,
+  getActionsForContentType,
+  isActionAvailable,
+} from '@univ-lehavre/atlas-redcap-core';
 
 /** Parameter type in API documentation */
 export type ParameterType = 'string' | 'integer' | 'boolean' | 'array' | 'object';

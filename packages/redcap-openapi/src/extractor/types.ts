@@ -1,18 +1,26 @@
 /**
  * Types for REDCap API extraction
+ *
+ * Re-exports common types from core and adds extractor-specific types.
  */
 
+import type { ApiAction, Parameter } from '../core/types.js';
+
+// Re-export from core types
+export type {
+  ApiAction,
+  Parameter,
+  ParameterType,
+  ContentTypeInfo,
+  HelpSection,
+  ActionFileInfo,
+  SchemaDefinition,
+} from '../core/types.js';
+
+/** API endpoint definition for extractor */
 export interface ApiEndpoint {
   content: string;
-  action:
-    | 'export'
-    | 'import'
-    | 'delete'
-    | 'switch'
-    | 'list'
-    | 'createFolder'
-    | 'rename'
-    | 'display';
+  action: ApiAction;
   operationId: string;
   summary: string;
   description: string;
@@ -24,63 +32,25 @@ export interface ApiEndpoint {
   sourceFiles: string[];
 }
 
-export interface Parameter {
-  name: string;
-  type: 'string' | 'integer' | 'boolean' | 'array' | 'object';
-  description: string;
-  enum?: string[];
-  default?: string | number | boolean;
-  pattern?: string;
-  items?: { type: string };
-  format?: string;
-}
-
+/** Example for API documentation */
 export interface Example {
   format: string;
   value: string;
 }
 
-export interface ContentTypeInfo {
-  content: string;
-  actions: string[];
-  hasDataParam: boolean;
-}
-
-export interface HelpSection {
-  contentKey: string;
-  content: string;
-  action: string;
-  requiredParams: Parameter[];
-  optionalParams: Parameter[];
-  permissions: string[];
-  responseDescription: string;
-}
-
-export interface ActionFileInfo {
-  content: string;
-  action: string;
-  validations: string[];
-  responseFormats: string[];
-  usesDataExport: boolean;
-}
-
-export interface SchemaDefinition {
-  name: string;
-  properties: Record<string, { type: string; description: string }>;
-  source: string;
-}
-
+/** Configuration for the extractor */
 export interface ExtractorConfig {
   version: string;
   sourcePath: string;
   outputPath: string;
 }
 
+/** Result of extraction process */
 export interface ExtractorResult {
-  contentTypes: ContentTypeInfo[];
-  helpSections: Map<string, HelpSection>;
-  actionFiles: Map<string, ActionFileInfo>;
-  schemas: SchemaDefinition[];
+  contentTypes: import('../core/types.js').ContentTypeInfo[];
+  helpSections: Map<string, import('../core/types.js').HelpSection>;
+  actionFiles: Map<string, import('../core/types.js').ActionFileInfo>;
+  schemas: import('../core/types.js').SchemaDefinition[];
   examples: Map<string, string[]>;
   specPath: string;
 }
