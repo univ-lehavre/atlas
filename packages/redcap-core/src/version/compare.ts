@@ -64,7 +64,9 @@ export const isVersionAtMost = (current: Version, maximum: Version): boolean =>
   compareVersions(current, maximum) <= 0;
 
 /**
- * Check if current version is within the specified range (inclusive)
+ * Check if current version is within the specified range [min, max)
+ *
+ * min is inclusive, max is exclusive
  *
  * @example
  * ```ts
@@ -73,14 +75,21 @@ export const isVersionAtMost = (current: Version, maximum: Version): boolean =>
  *   { major: 14, minor: 0, patch: 0 },
  *   { major: 16, minor: 0, patch: 0 }
  * )
- * // true
+ * // true (14 <= 15 < 16)
+ *
+ * isVersionInRange(
+ *   { major: 16, minor: 0, patch: 0 },
+ *   { major: 14, minor: 0, patch: 0 },
+ *   { major: 16, minor: 0, patch: 0 }
+ * )
+ * // false (16 is not < 16)
  * ```
  */
 export const isVersionInRange = (current: Version, min: Version, max?: Version): boolean => {
   if (!isVersionAtLeast(current, min)) {
     return false;
   }
-  if (max && !isVersionAtMost(current, max)) {
+  if (max && !isVersionLessThan(current, max)) {
     return false;
   }
   return true;

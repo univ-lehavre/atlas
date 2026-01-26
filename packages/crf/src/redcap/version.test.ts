@@ -239,7 +239,7 @@ describe('Version Module', () => {
 
   describe('VersionParseError', () => {
     it('should have correct message', () => {
-      const error = new VersionParseError({ versionString: 'invalid' });
+      const error = new VersionParseError({ input: 'invalid' });
 
       expect(error.message).toContain('invalid');
       expect(error.message).toContain('Invalid version format');
@@ -247,16 +247,16 @@ describe('Version Module', () => {
     });
 
     it('should store version string', () => {
-      const error = new VersionParseError({ versionString: '1.2' });
+      const error = new VersionParseError({ input: '1.2' });
 
-      expect(error.versionString).toBe('1.2');
+      expect(error.input).toBe('1.2');
     });
   });
 
   describe('UnsupportedVersionError', () => {
     it('should have correct message', () => {
       const error = new UnsupportedVersionError({
-        version: { major: 13, minor: 0, patch: 0 },
+        version: '13.0.0',
       });
 
       expect(error.message).toContain('13.0.0');
@@ -265,10 +265,10 @@ describe('Version Module', () => {
     });
 
     it('should store version', () => {
-      const version: Version = { major: 13, minor: 0, patch: 0 };
+      const version = '13.0.0';
       const error = new UnsupportedVersionError({ version });
 
-      expect(error.version).toEqual(version);
+      expect(error.version).toBe(version);
     });
   });
 

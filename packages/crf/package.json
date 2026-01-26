@@ -72,6 +72,7 @@
     "@hono/node-server": "^1.19.9",
     "@hono/standard-validator": "^0.2.2",
     "@univ-lehavre/atlas-net": "workspace:*",
+    "@univ-lehavre/atlas-redcap-core": "workspace:*",
     "effect": "^3.19.15",
     "hono": "^4.11.5",
     "hono-openapi": "^1.1.2",
