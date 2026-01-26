@@ -8,7 +8,7 @@
       "project": ["src/**/*.ts"]
     },
     "packages/redcap": {
-      "project": ["src/**/*.ts", "dev/tests/**/*.ts"]
+      "project": ["src/**/*.ts", "sandbox/tests/**/*.ts"]
     },
     "packages/typescript-config": {
       "project": ["*.json"]
