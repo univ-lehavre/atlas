@@ -39,7 +39,7 @@ describe('Effect Handler', () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new RedcapHttpError({ status: 401, message: 'Unauthorized' })))
+        runEffect(c, Effect.fail(new RedcapHttpError({ status: 401, statusText: 'Unauthorized' })))
       );
 
       const res = await app.request('/test');
@@ -48,14 +48,14 @@ describe('Effect Handler', () => {
       expect(res.status).toBe(401);
       expect(body.data).toBeNull();
       expect(body.error.code).toBe('redcap_http_error');
-      expect(body.error.message).toBe('Unauthorized');
+      expect(body.error.message).toContain('401');
     });
 
     it('should handle RedcapHttpError with 404', async () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new RedcapHttpError({ status: 404, message: 'Not Found' })))
+        runEffect(c, Effect.fail(new RedcapHttpError({ status: 404, statusText: 'Not Found' })))
       );
 
       const res = await app.request('/test');
@@ -67,7 +67,7 @@ describe('Effect Handler', () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new RedcapHttpError({ status: 500, message: 'Server Error' })))
+        runEffect(c, Effect.fail(new RedcapHttpError({ status: 500, statusText: 'Server Error' })))
       );
 
       const res = await app.request('/test');
@@ -75,11 +75,11 @@ describe('Effect Handler', () => {
       expect(res.status).toBe(500);
     });
 
-    it('should handle RedcapApiError without status', async () => {
+    it('should handle RedcapApiError', async () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new RedcapApiError({ message: 'Invalid token' })))
+        runEffect(c, Effect.fail(new RedcapApiError({ error: 'Invalid token' })))
       );
 
       const res = await app.request('/test');
@@ -91,18 +91,21 @@ describe('Effect Handler', () => {
       expect(body.error.message).toBe('Invalid token');
     });
 
-    it('should handle RedcapApiError with custom status', async () => {
+    it('should handle RedcapApiError with custom code', async () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new RedcapApiError({ message: 'User not found', status: 404 })))
+        runEffect(
+          c,
+          Effect.fail(new RedcapApiError({ error: 'User not found', code: 'user_not_found' }))
+        )
       );
 
       const res = await app.request('/test');
       const body = await res.json();
 
-      expect(res.status).toBe(404);
-      expect(body.error.code).toBe('redcap_api_error');
+      expect(res.status).toBe(400);
+      expect(body.error.code).toBe('user_not_found');
     });
 
     it('should handle RedcapNetworkError', async () => {
@@ -125,7 +128,7 @@ describe('Effect Handler', () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new VersionParseError({ versionString: 'invalid' })))
+        runEffect(c, Effect.fail(new VersionParseError({ input: 'invalid' })))
       );
 
       const res = await app.request('/test');
@@ -140,10 +143,7 @@ describe('Effect Handler', () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(
-          c,
-          Effect.fail(new UnsupportedVersionError({ version: { major: 13, minor: 0, patch: 0 } }))
-        )
+        runEffect(c, Effect.fail(new UnsupportedVersionError({ version: '13.0.0' })))
       );
 
       const res = await app.request('/test');
@@ -222,12 +222,12 @@ describe('Effect Handler', () => {
 
       // Test 400 range
       app.get('/400', (c) =>
-        runEffect(c, Effect.fail(new RedcapHttpError({ status: 400, message: 'Bad Request' })))
+        runEffect(c, Effect.fail(new RedcapHttpError({ status: 400, statusText: 'Bad Request' })))
       );
 
       // Test 500 range
       app.get('/500', (c) =>
-        runEffect(c, Effect.fail(new RedcapHttpError({ status: 502, message: 'Bad Gateway' })))
+        runEffect(c, Effect.fail(new RedcapHttpError({ status: 502, statusText: 'Bad Gateway' })))
       );
 
       const res400 = await app.request('/400');
@@ -242,7 +242,7 @@ describe('Effect Handler', () => {
 
       // Status outside 400-599 range should map to 502
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new RedcapHttpError({ status: 200, message: 'Unexpected' })))
+        runEffect(c, Effect.fail(new RedcapHttpError({ status: 200, statusText: 'Unexpected' })))
       );
 
       const res = await app.request('/test');

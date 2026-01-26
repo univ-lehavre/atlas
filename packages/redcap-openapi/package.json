@@ -1,0 +1,75 @@
+{
+  "name": "@univ-lehavre/atlas-redcap-openapi",
+  "version": "1.2.0",
+  "description": "REDCap source analysis, OpenAPI spec extraction, and API documentation tools",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "packages/redcap-openapi"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/redcap-openapi#readme",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./extractor": {
+      "types": "./dist/extractor/index.d.ts",
+      "import": "./dist/extractor/index.js"
+    },
+    "./comparator": {
+      "types": "./dist/comparator/index.d.ts",
+      "import": "./dist/comparator/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
+    }
+  },
+  "bin": {
+    "redcap": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "specs"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "cli": "tsx src/cli/index.ts",
+    "extract": "tsx src/cli/index.ts extract",
+    "compare": "tsx src/cli/index.ts compare",
+    "docs": "tsx src/cli/index.ts docs",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.10.0",
+    "@univ-lehavre/atlas-redcap-core": "workspace:*",
+    "picocolors": "^1.1.1",
+    "yaml": "^2.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

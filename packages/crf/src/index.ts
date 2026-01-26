@@ -14,7 +14,7 @@
 
 // Re-export redcap module for convenience
 export {
-  // Branded types
+  // Branded types (values)
   RedcapUrl,
   RedcapToken,
   RecordId,
@@ -24,7 +24,8 @@ export {
   PositiveInt,
   NonEmptyString,
   IsoTimestamp,
-  BooleanFlag,
+  toBooleanFlag,
+  fromBooleanFlag,
   // Errors
   RedcapHttpError,
   RedcapApiError,
@@ -47,6 +48,7 @@ export type {
   PositiveIntType,
   NonEmptyStringType,
   IsoTimestampType,
+  BooleanFlag,
   BooleanFlagType,
   // Errors
   RedcapError,

@@ -64,25 +64,11 @@
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
-    "@eslint-community/eslint-plugin-eslint-comments": "^4.5.0",
-    "@eslint/js": "^9.39.2",
     "@types/node": "^25.0.10",
-    "@univ-lehavre/atlas-typescript-config": "workspace:*",
-    "@vitest/eslint-plugin": "^1.6.6",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-barrel-files": "^3.0.1",
-    "eslint-plugin-functional": "^9.0.2",
-    "eslint-plugin-import-x": "^4.16.1",
-    "eslint-plugin-n": "^17.23.2",
-    "eslint-plugin-no-secrets": "^2.2.1",
-    "eslint-plugin-regexp": "^3.0.0",
-    "eslint-plugin-security": "^3.0.1",
-    "eslint-plugin-turbo": "^2.7.5",
-    "eslint-plugin-unicorn": "^62.0.0",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.53.1",
     "vitest": "^4.0.18"
   }
 }

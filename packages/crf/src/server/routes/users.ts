@@ -63,7 +63,7 @@ users.get(
         Effect.flatMap((result) =>
           result !== null && result !== ''
             ? Effect.succeed({ userId: result })
-            : Effect.fail(new RedcapApiError({ message: 'User not found', status: 404 }))
+            : Effect.fail(new RedcapApiError({ error: 'User not found', code: 'user_not_found' }))
         )
       )
     );

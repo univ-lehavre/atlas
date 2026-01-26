@@ -1,0 +1,67 @@
+{
+  "name": "@univ-lehavre/atlas-shared-config",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Shared TypeScript, ESLint, and Prettier configuration for Atlas projects",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "packages/shared-config"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/shared-config#readme",
+  "keywords": [
+    "typescript",
+    "tsconfig",
+    "eslint",
+    "prettier",
+    "shared-config"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "files": [
+    "*.json",
+    "eslint/**/*.js",
+    "prettier/**/*.js"
+  ],
+  "exports": {
+    "./base.json": "./base.json",
+    "./node.json": "./node.json",
+    "./eslint": "./eslint/index.js",
+    "./eslint/typescript": "./eslint/typescript.js",
+    "./eslint/svelte": "./eslint/svelte.js",
+    "./eslint/scripts": "./eslint/scripts.js",
+    "./prettier": "./prettier/index.js",
+    "./prettier/base": "./prettier/base.js",
+    "./prettier/svelte": "./prettier/svelte.js"
+  },
+  "dependencies": {
+    "@eslint-community/eslint-plugin-eslint-comments": "^4.5.0",
+    "@eslint/js": "^9.39.2",
+    "@vitest/eslint-plugin": "^1.3.3",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-barrel-files": "^2.1.0",
+    "eslint-plugin-functional": "^9.0.1",
+    "eslint-plugin-import-x": "^4.15.0",
+    "eslint-plugin-n": "^17.23.2",
+    "eslint-plugin-no-secrets": "^1.1.2",
+    "eslint-plugin-regexp": "^2.9.0",
+    "eslint-plugin-security": "^3.0.1",
+    "eslint-plugin-svelte": "^3.9.1",
+    "eslint-plugin-turbo": "^2.7.5",
+    "eslint-plugin-unicorn": "^59.0.1",
+    "globals": "^16.2.0",
+    "typescript-eslint": "^8.53.1"
+  },
+  "peerDependencies": {
+    "eslint": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
+  }
+}
