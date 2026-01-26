@@ -1,7 +1,7 @@
 {
   "name": "@univ-lehavre/atlas-redcap",
-  "version": "1.1.0",
-  "description": "REDCap source analysis, Docker environment, and API contract testing",
+  "version": "1.2.0",
+  "description": "REDCap source analysis, OpenAPI spec extraction, and API documentation tools",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
   "repository": {
@@ -14,27 +14,60 @@
   },
   "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/redcap#readme",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./extractor": {
+      "types": "./dist/extractor/index.d.ts",
+      "import": "./dist/extractor/index.js"
+    },
+    "./comparator": {
+      "types": "./dist/comparator/index.d.ts",
+      "import": "./dist/comparator/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
+    }
+  },
+  "bin": {
+    "redcap": "./dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "specs"
+  ],
   "engines": {
     "node": ">=24.0.0"
   },
   "scripts": {
-    "lint": "eslint analyzer tests",
-    "lint:fix": "eslint analyzer tests --fix",
-    "format": "prettier --write analyzer tests",
-    "format:check": "prettier --check analyzer tests",
-    "docker:up": "docker compose -f docker/docker-compose.yml up -d",
-    "docker:down": "docker compose -f docker/docker-compose.yml down",
-    "docker:logs": "docker compose -f docker/docker-compose.yml logs -f",
-    "docker:reset": "docker compose -f docker/docker-compose.yml down -v && docker compose -f docker/docker-compose.yml up -d",
-    "docker:install": "./scripts/install-redcap.sh",
-    "analyze": "tsx analyzer/extract-api.ts",
-    "docs": "tsx analyzer/serve-docs.ts",
-    "compare": "tsx analyzer/compare-spec.ts",
-    "test:setup": "tsx tests/fixtures/setup-test-projects.ts",
-    "test:contract": "./scripts/test-contract.sh",
-    "test:security": "./scripts/test-security.sh",
-    "test:api": "tsx tests/api-smoke.ts",
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "cli": "tsx src/cli/index.ts",
+    "extract": "tsx src/cli/index.ts extract",
+    "compare": "tsx src/cli/index.ts compare",
+    "docs": "tsx src/cli/index.ts docs",
+    "lint": "eslint src sandbox/tests",
+    "lint:fix": "eslint src sandbox/tests --fix",
+    "format": "prettier --write src sandbox/tests",
+    "format:check": "prettier --check src sandbox/tests",
+    "docker:up": "docker compose -f sandbox/docker/docker-compose.yml up -d",
+    "docker:down": "docker compose -f sandbox/docker/docker-compose.yml down",
+    "docker:logs": "docker compose -f sandbox/docker/docker-compose.yml logs -f",
+    "docker:reset": "docker compose -f sandbox/docker/docker-compose.yml down -v && docker compose -f sandbox/docker/docker-compose.yml up -d",
+    "docker:install": "./sandbox/scripts/install-redcap.sh",
+    "test:setup": "tsx sandbox/tests/fixtures/setup-test-projects.ts",
+    "test:contract": "./sandbox/scripts/test-contract.sh",
+    "test:security": "./sandbox/scripts/test-security.sh",
+    "test:api": "tsx sandbox/tests/api-smoke.ts",
     "test": "vitest run"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.10.0",
+    "picocolors": "^1.1.1",
+    "yaml": "^2.8.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -48,7 +81,6 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.53.1",
-    "vitest": "^4.0.18",
-    "yaml": "^2.8.2"
+    "vitest": "^4.0.18"
   }
 }

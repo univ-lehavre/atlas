@@ -1,40 +1,37 @@
 # REDCap source code (proprietary - do not commit)
 # Keep directory structure but ignore actual PHP files
-redcap-source/**/*.php
-redcap-source/**/*.sql
-redcap-source/**/*.xml
-redcap-source/**/*.json
-redcap-source/**/*.css
-redcap-source/**/*.js
-redcap-source/**/*.html
-redcap-source/**/*.htm
-redcap-source/**/*.txt
-redcap-source/**/*.pdf
-redcap-source/**/*.png
-redcap-source/**/*.jpg
-redcap-source/**/*.gif
-redcap-source/**/*.ico
-redcap-source/**/*.woff
-redcap-source/**/*.woff2
-redcap-source/**/*.ttf
-redcap-source/**/*.eot
-redcap-source/**/*.svg
-!redcap-source/README.md
-!redcap-source/**/.gitkeep
+sandbox/upstream/**/*.php
+sandbox/upstream/**/*.sql
+sandbox/upstream/**/*.xml
+sandbox/upstream/**/*.json
+sandbox/upstream/**/*.css
+sandbox/upstream/**/*.js
+sandbox/upstream/**/*.html
+sandbox/upstream/**/*.htm
+sandbox/upstream/**/*.txt
+sandbox/upstream/**/*.pdf
+sandbox/upstream/**/*.png
+sandbox/upstream/**/*.jpg
+sandbox/upstream/**/*.gif
+sandbox/upstream/**/*.ico
+sandbox/upstream/**/*.woff
+sandbox/upstream/**/*.woff2
+sandbox/upstream/**/*.ttf
+sandbox/upstream/**/*.eot
+sandbox/upstream/**/*.svg
+!sandbox/upstream/README.md
+!sandbox/upstream/**/.gitkeep
 
 # Generated specs
 specs/redcap-extracted.yaml
 
 # Docker volumes and runtime files
-docker/data/
-redcap-source/edocs/
-
-# Analysis output
-analyzer/output/
+sandbox/docker/data/
+sandbox/upstream/edocs/
 
 # Test results
-tests/results/
+sandbox/tests/results/
 coverage/
 
 # Test environment files
-docker/config/.env.test
+sandbox/docker/config/.env.test

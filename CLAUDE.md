@@ -17,6 +17,10 @@ atlas/
 │   │   ├── src/redcap/     # Client Effect pour REDCap
 │   │   ├── src/server/     # Microservice HTTP REST (Hono)
 │   │   └── src/cli/        # CLI tools (crf-redcap, crf-server)
+│   ├── redcap/             # Analyse source REDCap et extraction OpenAPI
+│   │   ├── src/            # Modules exportables (extractor, comparator, server)
+│   │   ├── specs/          # Specs OpenAPI generees par version
+│   │   └── upstream/       # Sources PHP REDCap (gitignored)
 │   ├── net/                # Utilitaires et CLI diagnostic reseau (atlas-net)
 │   └── typescript-config/  # Config TypeScript partagee
 └── infra/                  # Infrastructure Kubernetes (k3d/k3s)
@@ -174,6 +178,35 @@ Scripts CRF :
 - `pnpm -F @univ-lehavre/crf mock:redcap` - Lancer Prism (mock REDCap)
 - `pnpm -F @univ-lehavre/crf start` - Lancer le serveur CRF
 - `pnpm -F @univ-lehavre/crf test:api` - Tests Schemathesis contre l'API
+
+### packages/redcap (REDCap Source Analysis)
+
+Outils d'analyse du code source PHP REDCap pour extraire les specifications OpenAPI.
+CLI unifie avec `@clack/prompts` pour une experience interactive.
+
+```
+packages/redcap/
+├── src/
+│   ├── extractor/          # Extraction OpenAPI depuis PHP
+│   ├── comparator/         # Comparaison de specs
+│   ├── server/             # Serveur docs (Swagger UI, Redoc)
+│   ├── cli/                # CLI unifie
+│   └── index.ts            # Exports publics
+├── specs/versions/         # Specs generees par version
+├── upstream/versions/      # Sources PHP (gitignored)
+├── dev/                    # Environnement de developpement
+│   ├── docker/             # Docker compose + config
+│   ├── scripts/            # Scripts d'automatisation
+│   └── tests/              # Tests de contrat
+└── package.json
+```
+
+Scripts REDCap :
+
+- `pnpm -F @univ-lehavre/atlas-redcap cli` - CLI interactif
+- `pnpm -F @univ-lehavre/atlas-redcap extract` - Extraire spec OpenAPI
+- `pnpm -F @univ-lehavre/atlas-redcap compare` - Comparer versions
+- `pnpm -F @univ-lehavre/atlas-redcap docs` - Serveur documentation
 
 ### packages/ecrin
 
