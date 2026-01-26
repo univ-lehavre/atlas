@@ -1,6 +1,6 @@
 # Class: UnsupportedVersionError
 
-Defined in: [packages/crf/src/redcap/version.ts:37](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/version.ts#L37)
+Defined in: [packages/crf/src/redcap/version.ts:37](https://github.com/univ-lehavre/atlas/blob/45d422725947bfe2a93b0baafcbbb59a4d8190f9/packages/crf/src/redcap/version.ts#L37)
 
 Error thrown when a version is not supported.
 
@@ -134,7 +134,7 @@ Defined in: node\_modules/.pnpm/typescript@5.9.3/node\_modules/typescript/lib/li
 
 > `readonly` **version**: [`Version`](../interfaces/Version.md)
 
-Defined in: [packages/crf/src/redcap/version.ts:38](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/version.ts#L38)
+Defined in: [packages/crf/src/redcap/version.ts:38](https://github.com/univ-lehavre/atlas/blob/45d422725947bfe2a93b0baafcbbb59a4d8190f9/packages/crf/src/redcap/version.ts#L38)
 
 #### Inherited from
 
@@ -148,7 +148,7 @@ Defined in: [packages/crf/src/redcap/version.ts:38](https://github.com/univ-leha
 
 > **get** **message**(): `string`
 
-Defined in: [packages/crf/src/redcap/version.ts:40](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/version.ts#L40)
+Defined in: [packages/crf/src/redcap/version.ts:40](https://github.com/univ-lehavre/atlas/blob/45d422725947bfe2a93b0baafcbbb59a4d8190f9/packages/crf/src/redcap/version.ts#L40)
 
 ##### Returns
 
