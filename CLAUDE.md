@@ -20,7 +20,7 @@ atlas/
 │   ├── redcap/             # Analyse source REDCap et extraction OpenAPI
 │   │   ├── src/            # Modules exportables (extractor, comparator, server)
 │   │   ├── specs/          # Specs OpenAPI generees par version
-│   │   └── redcap-source/  # Sources PHP REDCap (gitignored)
+│   │   └── upstream/       # Sources PHP REDCap (gitignored)
 │   ├── net/                # Utilitaires et CLI diagnostic reseau (atlas-net)
 │   └── typescript-config/  # Config TypeScript partagee
 └── infra/                  # Infrastructure Kubernetes (k3d/k3s)
@@ -199,7 +199,7 @@ packages/redcap/
 │   │   └── index.ts        # Commandes: extract, compare, docs
 │   └── index.ts            # Exports publics
 ├── specs/versions/         # Specs generees par version
-├── redcap-source/versions/ # Sources PHP (gitignored)
+├── upstream/versions/      # Sources PHP (gitignored)
 ├── docker/                 # Environnement Docker REDCap
 └── package.json
 ```

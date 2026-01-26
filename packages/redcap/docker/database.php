@@ -2,7 +2,7 @@
 /**
  * REDCap Database Configuration for Docker
  *
- * Copy this file to ../redcap-source/database.php
+ * Copy this file to ../upstream/database.php
  */
 
 // MySQL database connection

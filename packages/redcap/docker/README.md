@@ -5,7 +5,7 @@ This directory contains Docker configuration for running a local REDCap instance
 ## Prerequisites
 
 1. **Docker** and **Docker Compose** installed
-2. **REDCap source code** (version 14.5.10) placed in `../redcap-source/`
+2. **REDCap source code** (version 14.5.10) placed in `../upstream/`
 
 ## Quick Start
 
@@ -15,23 +15,23 @@ Download REDCap from [REDCap Community](https://projectredcap.org/resources/comm
 
 ```bash
 # From packages/redcap directory
-cd redcap-source
+cd upstream
 # Extract redcap_v14.5.10.zip here
-# Structure should be: redcap-source/redcap_v14.5.10/...
+# Structure should be: upstream/redcap_v14.5.10/...
 ```
 
 ### 2. Configure Database Connection
 
 ```bash
 # Copy the template database config
-cp docker/database.php redcap-source/database.php
+cp docker/database.php upstream/database.php
 ```
 
 ### 3. Create edocs Directory
 
 ```bash
-mkdir -p redcap-source/edocs
-chmod 777 redcap-source/edocs
+mkdir -p upstream/edocs
+chmod 777 upstream/edocs
 ```
 
 ### 4. Start Services
@@ -96,10 +96,10 @@ To import the REDCap schema:
 ```bash
 # Via phpMyAdmin (http://localhost:8081)
 # 1. Select 'redcap' database
-# 2. Import > Choose file: redcap-source/redcap_v14.5.10/Resources/sql/install.sql
+# 2. Import > Choose file: upstream/redcap_v14.5.10/Resources/sql/install.sql
 
 # Or via CLI
-docker compose exec -T db mysql -u redcap -predcap_password redcap < redcap-source/redcap_v14.5.10/Resources/sql/install.sql
+docker compose exec -T db mysql -u redcap -predcap_password redcap < upstream/redcap_v14.5.10/Resources/sql/install.sql
 ```
 
 ## Troubleshooting
@@ -117,7 +117,7 @@ docker compose up -d
 
 ```bash
 # Fix edocs permissions
-chmod -R 777 redcap-source/edocs
+chmod -R 777 upstream/edocs
 ```
 
 ### Database Connection Failed

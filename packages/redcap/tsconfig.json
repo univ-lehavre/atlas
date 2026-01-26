@@ -11,5 +11,5 @@
     "noPropertyAccessFromIndexSignature": false
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "redcap-source"]
+  "exclude": ["node_modules", "dist", "upstream"]
 }

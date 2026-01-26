@@ -7,7 +7,7 @@ This directory contains REDCap source code installations. Multiple versions can 
 ## Directory Structure
 
 ```
-redcap-source/
+upstream/
 ├── versions/               # REDCap installations by version
 │   ├── 14.5.10/           # Default version
 │   │   ├── api/
@@ -34,7 +34,7 @@ redcap-source/
 ```bash
 # Example for version 14.6.0
 unzip redcap14.6.0.zip
-mv redcap_v14.6.0 redcap-source/versions/14.6.0
+mv redcap_v14.6.0 upstream/versions/14.6.0
 ```
 
 ### Expected structure inside each version
