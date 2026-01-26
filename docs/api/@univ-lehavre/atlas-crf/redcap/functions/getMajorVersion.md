@@ -2,7 +2,7 @@
 
 > **getMajorVersion**(`version`): `number`
 
-Defined in: [packages/crf/src/redcap/version.ts:166](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/version.ts#L166)
+Defined in: [packages/crf/src/redcap/version.ts:166](https://github.com/univ-lehavre/atlas/blob/45d422725947bfe2a93b0baafcbbb59a4d8190f9/packages/crf/src/redcap/version.ts#L166)
 
 Get the major version number from a Version object.
 

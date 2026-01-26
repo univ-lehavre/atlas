@@ -2,7 +2,7 @@
 
 > **SafeApiUrl**: `Constructor`\<[`SafeApiUrl`](../type-aliases/SafeApiUrl.md)\>
 
-Defined in: [types.ts:323](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/net/src/types.ts#L323)
+Defined in: [types.ts:323](https://github.com/univ-lehavre/atlas/blob/45d422725947bfe2a93b0baafcbbb59a4d8190f9/packages/net/src/types.ts#L323)
 
 Constructor for SafeApiUrl branded type with validation.
 
