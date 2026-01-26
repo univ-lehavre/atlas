@@ -1,37 +1,37 @@
 # REDCap source code (proprietary - do not commit)
 # Keep directory structure but ignore actual PHP files
-upstream/**/*.php
-upstream/**/*.sql
-upstream/**/*.xml
-upstream/**/*.json
-upstream/**/*.css
-upstream/**/*.js
-upstream/**/*.html
-upstream/**/*.htm
-upstream/**/*.txt
-upstream/**/*.pdf
-upstream/**/*.png
-upstream/**/*.jpg
-upstream/**/*.gif
-upstream/**/*.ico
-upstream/**/*.woff
-upstream/**/*.woff2
-upstream/**/*.ttf
-upstream/**/*.eot
-upstream/**/*.svg
-!upstream/README.md
-!upstream/**/.gitkeep
+sandbox/upstream/**/*.php
+sandbox/upstream/**/*.sql
+sandbox/upstream/**/*.xml
+sandbox/upstream/**/*.json
+sandbox/upstream/**/*.css
+sandbox/upstream/**/*.js
+sandbox/upstream/**/*.html
+sandbox/upstream/**/*.htm
+sandbox/upstream/**/*.txt
+sandbox/upstream/**/*.pdf
+sandbox/upstream/**/*.png
+sandbox/upstream/**/*.jpg
+sandbox/upstream/**/*.gif
+sandbox/upstream/**/*.ico
+sandbox/upstream/**/*.woff
+sandbox/upstream/**/*.woff2
+sandbox/upstream/**/*.ttf
+sandbox/upstream/**/*.eot
+sandbox/upstream/**/*.svg
+!sandbox/upstream/README.md
+!sandbox/upstream/**/.gitkeep
 
 # Generated specs
 specs/redcap-extracted.yaml
 
 # Docker volumes and runtime files
-dev/docker/data/
-upstream/edocs/
+sandbox/docker/data/
+sandbox/upstream/edocs/
 
 # Test results
-dev/tests/results/
+sandbox/tests/results/
 coverage/
 
 # Test environment files
-dev/docker/config/.env.test
+sandbox/docker/config/.env.test

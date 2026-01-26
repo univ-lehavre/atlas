@@ -1,11 +1,11 @@
-# Development Environment
+# Sandbox
 
-This directory contains the development and testing infrastructure for validating the REDCap API extractor against real REDCap instances.
+This directory contains the development, testing infrastructure and REDCap source code for validating the REDCap API extractor against real REDCap instances.
 
 ## Structure
 
 ```
-dev/
+sandbox/
 ├── docker/                 # Docker environment for REDCap
 │   ├── docker-compose.yml  # Main compose file (MariaDB, PHP, Mailpit)
 │   ├── config/             # PHP and database configuration
@@ -14,10 +14,12 @@ dev/
 │   ├── install-redcap.sh   # Automated REDCap installation
 │   ├── test-contract.sh    # Run contract tests
 │   └── test-security.sh    # Run security/fuzzing tests
-└── tests/                  # Integration tests
-    ├── contract/           # API contract tests (require Docker)
-    ├── fixtures/           # Test data and setup scripts
-    └── api-smoke.ts        # Quick API smoke tests
+├── tests/                  # Integration tests
+│   ├── contract/           # API contract tests (require Docker)
+│   ├── fixtures/           # Test data and setup scripts
+│   └── api-smoke.ts        # Quick API smoke tests
+└── upstream/               # REDCap source code (gitignored)
+    └── versions/           # Multiple REDCap versions
 ```
 
 ## Purpose
@@ -88,7 +90,7 @@ REDCAP_VERSION=14.6.0 pnpm docker:up
 REDCAP_VERSION=14.6.0 pnpm extract
 ```
 
-Versions are stored in `../upstream/versions/<version>/`.
+Versions are stored in `upstream/versions/<version>/`.
 
 ## Commands Reference
 
@@ -160,6 +162,6 @@ Ensure REDCap is running and initialized:
 
 ```bash
 curl -X POST http://localhost:8888/api/ \
-  -d "token=$(cat dev/docker/config/.env.test | grep TOKEN | cut -d= -f2)" \
+  -d "token=$(cat sandbox/docker/config/.env.test | grep TOKEN | cut -d= -f2)" \
   -d "content=version"
 ```
