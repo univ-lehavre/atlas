@@ -1,6 +1,6 @@
 # Interface: RedcapAdapter
 
-Defined in: [packages/crf/src/redcap/adapters/types.ts:22](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/adapters/types.ts#L22)
+Defined in: [packages/crf/src/redcap/adapters/types.ts:22](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/adapters/types.ts#L22)
 
 Interface for adapting REDCap API requests/responses based on server version.
 
@@ -15,7 +15,7 @@ Each adapter handles the differences between REDCap versions, including:
 
 > `readonly` **getDefaultParams**: () => [`TransformedParams`](../type-aliases/TransformedParams.md)
 
-Defined in: [packages/crf/src/redcap/adapters/types.ts:70](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/adapters/types.ts#L70)
+Defined in: [packages/crf/src/redcap/adapters/types.ts:70](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/adapters/types.ts#L70)
 
 Get any version-specific default parameters.
 
@@ -31,7 +31,7 @@ Default parameters to include in all requests
 
 > `readonly` **getFeatures**: () => [`RedcapFeatures`](RedcapFeatures.md)
 
-Defined in: [packages/crf/src/redcap/adapters/types.ts:77](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/adapters/types.ts#L77)
+Defined in: [packages/crf/src/redcap/adapters/types.ts:77](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/adapters/types.ts#L77)
 
 Get supported features for this version.
 
@@ -47,7 +47,7 @@ Object describing feature availability
 
 > `readonly` **isEndpointAvailable**: (`content`, `action?`) => `boolean`
 
-Defined in: [packages/crf/src/redcap/adapters/types.ts:63](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/adapters/types.ts#L63)
+Defined in: [packages/crf/src/redcap/adapters/types.ts:63](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/adapters/types.ts#L63)
 
 Check if a specific endpoint/content type is available in this version.
 
@@ -77,7 +77,7 @@ true if the endpoint is available
 
 > `readonly` **maxVersion**: [`Version`](Version.md) \| `undefined`
 
-Defined in: [packages/crf/src/redcap/adapters/types.ts:30](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/adapters/types.ts#L30)
+Defined in: [packages/crf/src/redcap/adapters/types.ts:30](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/adapters/types.ts#L30)
 
 Maximum REDCap version supported by this adapter (exclusive)
 
@@ -87,7 +87,7 @@ Maximum REDCap version supported by this adapter (exclusive)
 
 > `readonly` **minVersion**: [`Version`](Version.md)
 
-Defined in: [packages/crf/src/redcap/adapters/types.ts:27](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/adapters/types.ts#L27)
+Defined in: [packages/crf/src/redcap/adapters/types.ts:27](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/adapters/types.ts#L27)
 
 Minimum REDCap version supported by this adapter (inclusive)
 
@@ -97,7 +97,7 @@ Minimum REDCap version supported by this adapter (inclusive)
 
 > `readonly` **name**: `string`
 
-Defined in: [packages/crf/src/redcap/adapters/types.ts:24](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/adapters/types.ts#L24)
+Defined in: [packages/crf/src/redcap/adapters/types.ts:24](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/adapters/types.ts#L24)
 
 Human-readable name for this adapter
 
@@ -107,7 +107,7 @@ Human-readable name for this adapter
 
 > `readonly` **parseProjectInfo**: (`response`) => `object`
 
-Defined in: [packages/crf/src/redcap/adapters/types.ts:54](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/adapters/types.ts#L54)
+Defined in: [packages/crf/src/redcap/adapters/types.ts:54](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/adapters/types.ts#L54)
 
 Parse and normalize the project info response.
 
@@ -167,7 +167,7 @@ Human-readable project title
 
 > `readonly` **transformExportParams**: (`params`) => [`TransformedParams`](../type-aliases/TransformedParams.md)
 
-Defined in: [packages/crf/src/redcap/adapters/types.ts:38](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/adapters/types.ts#L38)
+Defined in: [packages/crf/src/redcap/adapters/types.ts:38](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/adapters/types.ts#L38)
 
 Transform export records parameters for this version.
 
@@ -191,7 +191,7 @@ Transformed parameters suitable for this REDCap version
 
 > `readonly` **transformImportParams**: (`params`) => [`TransformedParams`](../type-aliases/TransformedParams.md)
 
-Defined in: [packages/crf/src/redcap/adapters/types.ts:46](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/adapters/types.ts#L46)
+Defined in: [packages/crf/src/redcap/adapters/types.ts:46](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/adapters/types.ts#L46)
 
 Transform import records parameters for this version.
 

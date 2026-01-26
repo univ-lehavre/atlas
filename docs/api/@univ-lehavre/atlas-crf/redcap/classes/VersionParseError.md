@@ -1,6 +1,6 @@
 # Class: VersionParseError
 
-Defined in: [packages/crf/src/redcap/version.ts:25](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/version.ts#L25)
+Defined in: [packages/crf/src/redcap/version.ts:25](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/version.ts#L25)
 
 Error thrown when a version string cannot be parsed.
 
@@ -138,7 +138,7 @@ Defined in: node\_modules/.pnpm/typescript@5.9.3/node\_modules/typescript/lib/li
 
 > `readonly` **versionString**: `string`
 
-Defined in: [packages/crf/src/redcap/version.ts:26](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/version.ts#L26)
+Defined in: [packages/crf/src/redcap/version.ts:26](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/version.ts#L26)
 
 #### Inherited from
 
@@ -152,7 +152,7 @@ Defined in: [packages/crf/src/redcap/version.ts:26](https://github.com/univ-leha
 
 > **get** **message**(): `string`
 
-Defined in: [packages/crf/src/redcap/version.ts:29](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/version.ts#L29)
+Defined in: [packages/crf/src/redcap/version.ts:29](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/version.ts#L29)
 
 ##### Returns
 
