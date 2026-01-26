@@ -7,12 +7,12 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/univ-lehavre/atlas.git",
-    "directory": "apps/ecrin"
+    "directory": "packages/ecrin"
   },
   "bugs": {
     "url": "https://github.com/univ-lehavre/atlas/issues"
   },
-  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/apps/ecrin#readme",
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/ecrin#readme",
   "private": true,
   "type": "module",
   "engines": {

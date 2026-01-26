@@ -10,9 +10,8 @@ Ce fichier fournit le contexte necessaire pour travailler efficacement sur ce pr
 
 ```
 atlas/
-├── apps/
-│   └── ecrin/              # Dashboard SvelteKit (Zero Trust)
 ├── packages/
+│   ├── ecrin/              # Dashboard SvelteKit (Zero Trust)
 │   ├── crf/                # Clinical Research Forms (REDCap client, server, CLI)
 │   │   ├── specs/          # OpenAPI spec (redcap.yaml)
 │   │   ├── src/redcap/     # Client Effect pour REDCap
@@ -176,12 +175,12 @@ Scripts CRF :
 - `pnpm -F @univ-lehavre/crf start` - Lancer le serveur CRF
 - `pnpm -F @univ-lehavre/crf test:api` - Tests Schemathesis contre l'API
 
-### apps/ecrin
+### packages/ecrin
 
 Dashboard SvelteKit avec architecture Zero Trust.
 
 ```
-apps/ecrin/
+packages/ecrin/
 ├── src/
 │   ├── routes/            # Pages SvelteKit
 │   │   ├── +page.svelte   # Accueil (public)
@@ -349,7 +348,7 @@ curl -X POST http://localhost:8181/v1/data/ecrin/authz/allow \
 ### Rebuild et deployer une image
 
 ```bash
-docker build -t localhost:5111/ecrin:dev apps/ecrin
+docker build -t localhost:5111/ecrin:dev packages/ecrin
 docker push localhost:5111/ecrin:dev
 kubectl rollout restart deployment/ecrin -n ecrin
 ```
