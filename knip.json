@@ -11,7 +11,7 @@
       "project": ["src/**/*.ts", "sandbox/tests/**/*.ts"]
     },
     "packages/shared-config": {
-      "project": ["*.json", "eslint/**/*.js"]
+      "project": ["*.json", "eslint/**/*.js", "prettier/**/*.js"]
     },
     "apps/*": {
       "project": ["src/**/*.ts"]
