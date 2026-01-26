@@ -1,6 +1,6 @@
 # @univ-lehavre/atlas-shared-config
 
-Shared TypeScript and ESLint configuration for Atlas projects.
+Shared TypeScript, ESLint, and Prettier configuration for Atlas projects.
 
 ## Installation
 
@@ -210,6 +210,43 @@ interface Options {
   workspaceModules?: string[]; // Workspace modules for n/no-missing-import (typescript only)
 }
 ```
+
+## Prettier Configuration
+
+Two presets for different use cases:
+
+| Preset   | Use Case                        |
+| -------- | ------------------------------- |
+| `base`   | TypeScript packages             |
+| `svelte` | SvelteKit applications          |
+
+### Usage
+
+```javascript
+// prettier.config.js (TypeScript packages)
+import { base } from '@univ-lehavre/atlas-shared-config/prettier';
+
+export default base;
+```
+
+```javascript
+// prettier.config.js (SvelteKit)
+import { svelte } from '@univ-lehavre/atlas-shared-config/prettier';
+
+export default svelte;
+```
+
+### Settings
+
+| Option          | Value   |
+| --------------- | ------- |
+| `semi`          | `true`  |
+| `singleQuote`   | `true`  |
+| `tabWidth`      | `2`     |
+| `trailingComma` | `es5`   |
+| `printWidth`    | `100`   |
+
+The `svelte` preset adds `prettier-plugin-svelte` with Svelte parser override.
 
 ## License
 
