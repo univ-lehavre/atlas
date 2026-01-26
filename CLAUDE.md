@@ -348,7 +348,7 @@ curl -X POST http://localhost:8181/v1/data/ecrin/authz/allow \
 ### Rebuild et deployer une image
 
 ```bash
-docker build -t localhost:5111/ecrin:dev packages/ecrin
+docker build -t localhost:5111/ecrin:dev -f packages/ecrin/Dockerfile .
 docker push localhost:5111/ecrin:dev
 kubectl rollout restart deployment/ecrin -n ecrin
 ```

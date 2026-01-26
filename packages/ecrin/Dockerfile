@@ -1,37 +1,33 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Copy package files
-COPY package.json ./
+# Copy workspace files
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY packages/typescript-config ./packages/typescript-config
+COPY packages/ecrin/package.json ./packages/ecrin/
 
 # Install dependencies
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
-# Copy source code
-COPY . .
+# Copy ecrin source code
+COPY packages/ecrin ./packages/ecrin
 
 # Build
-RUN pnpm build
+RUN pnpm -F ecrin build
 
 # Production stage
-FROM node:20-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
 # Copy built files
-COPY --from=builder /app/build ./build
-COPY --from=builder /app/package.json ./
-
-# Install production dependencies only
-RUN pnpm install --prod
+COPY --from=builder /app/packages/ecrin/build ./build
+COPY --from=builder /app/packages/ecrin/package.json ./
 
 # Set environment variables
 ENV NODE_ENV=production
