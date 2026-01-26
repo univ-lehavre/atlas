@@ -2,7 +2,7 @@
 
 > **tcpPing**(`host`, `port`, `options`): `Effect`\<[`DiagnosticStep`](../interfaces/DiagnosticStep.md)\>
 
-Defined in: [diagnostics.ts:141](https://github.com/univ-lehavre/atlas/blob/45d422725947bfe2a93b0baafcbbb59a4d8190f9/packages/net/src/diagnostics.ts#L141)
+Defined in: [diagnostics.ts:141](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/net/src/diagnostics.ts#L141)
 
 Tests TCP connectivity to a host and port.
 

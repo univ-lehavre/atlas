@@ -2,7 +2,7 @@
 
 > **parseVersion**(`versionString`): `Effect`\<[`Version`](../interfaces/Version.md), [`VersionParseError`](../classes/VersionParseError.md)\>
 
-Defined in: [packages/crf/src/redcap/version.ts:69](https://github.com/univ-lehavre/atlas/blob/45d422725947bfe2a93b0baafcbbb59a4d8190f9/packages/crf/src/redcap/version.ts#L69)
+Defined in: [packages/crf/src/redcap/version.ts:69](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/version.ts#L69)
 
 Parse a version string into a Version object.
 

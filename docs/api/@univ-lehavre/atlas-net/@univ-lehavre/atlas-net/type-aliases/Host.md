@@ -2,7 +2,7 @@
 
 > **Host** = [`Hostname`](Hostname.md) \| [`IpAddress`](IpAddress.md)
 
-Defined in: [types.ts:73](https://github.com/univ-lehavre/atlas/blob/45d422725947bfe2a93b0baafcbbb59a4d8190f9/packages/net/src/types.ts#L73)
+Defined in: [types.ts:73](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/net/src/types.ts#L73)
 
 Union type for host parameter.
 Accepts either a `Hostname` or `IpAddress` branded type.

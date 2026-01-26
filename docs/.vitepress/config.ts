@@ -10,26 +10,12 @@ export default defineConfig({
     // API docs generated dynamically
     /^\.\/@univ-lehavre/,
   ],
-  vite: {
-    optimizeDeps: {
-      exclude: ['vitepress-openapi'],
-    },
-  },
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/' },
       { text: 'API', link: '/api/' },
-      { text: 'OpenAPI REDCap', link: '/openapi/' },
     ],
     sidebar: {
-      '/openapi/': [
-        {
-          text: 'REDCap API',
-          items: [
-            { text: 'Vue d\'ensemble', link: '/openapi/' },
-          ],
-        },
-      ],
       '/guide/': [
         {
           text: 'Introduction',

@@ -2,7 +2,7 @@
 
 > **TimeoutMs** = `number` & `Brand.Brand`\<`"TimeoutMs"`\>
 
-Defined in: [types.ts:22](https://github.com/univ-lehavre/atlas/blob/45d422725947bfe2a93b0baafcbbb59a4d8190f9/packages/net/src/types.ts#L22)
+Defined in: [types.ts:22](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/net/src/types.ts#L22)
 
 Branded type for timeout values in milliseconds.
 Valid range: 0 to 600000 (10 minutes).
