@@ -178,7 +178,7 @@ build_and_push_images() {
     # Build ecrin
     if [ -d "$ROOT_DIR/packages/ecrin" ]; then
         log_info "Building ecrin..."
-        docker build -t localhost:${REGISTRY_PORT}/ecrin:dev "$ROOT_DIR/packages/ecrin"
+        docker build -t localhost:${REGISTRY_PORT}/ecrin:dev -f "$ROOT_DIR/packages/ecrin/Dockerfile" "$ROOT_DIR"
         docker push localhost:${REGISTRY_PORT}/ecrin:dev
     else
         log_warn "packages/ecrin not found, skipping build"
