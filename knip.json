@@ -8,7 +8,7 @@
       "project": ["src/**/*.ts"]
     },
     "packages/redcap": {
-      "project": ["analyzer/**/*.ts", "tests/**/*.ts"]
+      "project": ["src/**/*.ts", "sandbox/tests/**/*.ts"]
     },
     "packages/typescript-config": {
       "project": ["*.json"]
@@ -17,7 +17,7 @@
       "project": ["src/**/*.ts"]
     }
   },
-  "ignore": ["**/dist/**", "**/.svelte-kit/**", "**/build/**", "**/redcap-source/**"],
+  "ignore": ["**/dist/**", "**/.svelte-kit/**", "**/build/**", "**/upstream/**"],
   "ignoreDependencies": ["tsx", "@univ-lehavre/atlas-typescript-config", "vitepress-openapi", "@modyfi/vite-plugin-yaml"],
   "ignoreBinaries": ["jq", "docker:build", "docker:down"]
 }

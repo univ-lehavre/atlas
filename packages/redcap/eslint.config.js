@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint';
 export default tseslint.config(
   // Ignores
   {
-    ignores: ['docker/**', 'specs/**', 'scripts/**', 'redcap-source/**'],
+    ignores: ['dist/**', 'sandbox/docker/**', 'sandbox/scripts/**', 'specs/**', 'upstream/**'],
   },
 
   // Base
@@ -51,7 +51,7 @@ export default tseslint.config(
 
   // Disable strict rules for test files
   {
-    files: ['**/*.test.ts', '**/*.spec.ts', 'tests/**/*.ts'],
+    files: ['**/*.test.ts', '**/*.spec.ts', 'sandbox/tests/**/*.ts'],
     extends: [tseslint.configs.disableTypeChecked],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',

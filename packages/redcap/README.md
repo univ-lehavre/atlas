@@ -1,310 +1,173 @@
 # @univ-lehavre/atlas-redcap
 
-REDCap source analysis, Docker environment, and API contract testing.
+REDCap source analysis, OpenAPI spec extraction, and API documentation tools.
 
 ## Purpose
 
 This package provides:
 
-- **Docker environment** for running a local REDCap instance
-- **API analyzer** to extract OpenAPI spec from REDCap PHP source
-- **Contract tests** to validate spec against real REDCap responses
-- **Security tests** with Schemathesis fuzzing
-- **Multi-version support** for testing against different REDCap versions
+- **Extractor** - Parse REDCap PHP source to generate OpenAPI specs
+- **Comparator** - Compare OpenAPI specs between versions
+- **Server** - Serve API documentation with Swagger UI and Redoc
+- **CLI** - Interactive command-line interface for all tools
 
 ## Structure
 
 ```
 packages/redcap/
-├── redcap-source/              # REDCap PHP code (not committed)
-│   ├── versions/               # Multiple REDCap versions
-│   │   ├── 14.5.10/           # Default version
-│   │   └── ...                # Add more versions here
-│   └── shared/                # Data shared across versions
-│       └── edocs/             # Uploaded documents
-├── docker/
-│   ├── docker-compose.yml     # REDCap + MariaDB + phpMyAdmin
-│   ├── php/Dockerfile         # PHP 8.2 + extensions
-│   └── config/                # Configuration files
-├── analyzer/
-│   ├── extract-api.ts         # Parse PHP → OpenAPI
-│   └── compare-spec.ts        # Compare with CRF spec
-├── specs/
-│   └── redcap-extracted.yaml  # Generated OpenAPI spec
-├── tests/
-│   ├── contract/              # Contract tests
-│   ├── fixtures/              # Test project setup
-│   └── api-smoke.ts           # Smoke tests
-└── scripts/
-    └── install-redcap.sh      # Automated installation
+├── src/                    # Exportable module code
+│   ├── extractor/          # PHP source → OpenAPI
+│   ├── comparator/         # Spec comparison
+│   ├── server/             # Documentation server
+│   └── cli/                # Interactive CLI
+├── specs/                  # Generated OpenAPI specs (output)
+│   └── versions/           # Specs by REDCap version
+└── sandbox/                # Development environment
+    ├── docker/             # Docker compose + config
+    ├── scripts/            # Automation scripts
+    ├── tests/              # Contract & integration tests
+    └── upstream/           # REDCap PHP source (input, gitignored)
 ```
 
-## Prerequisites
+## Installation
+
+```bash
+pnpm add @univ-lehavre/atlas-redcap
+```
+
+## CLI Usage
+
+Interactive mode:
+
+```bash
+pnpm cli
+# or after build:
+npx redcap
+```
+
+Direct commands:
+
+```bash
+pnpm extract   # Extract OpenAPI spec from PHP source
+pnpm compare   # Compare two spec versions
+pnpm docs      # Start documentation server
+```
+
+## Programmatic Usage
+
+```typescript
+import { extract, compare, serve } from '@univ-lehavre/atlas-redcap';
+
+// Extract OpenAPI spec from REDCap source
+const result = extract({
+  version: '14.5.10',
+  sourcePath: './upstream/versions',
+  outputPath: './specs/versions/redcap-14.5.10.yaml',
+});
+
+// Compare two spec versions
+const diff = compare({
+  oldSpecPath: './specs/versions/redcap-14.5.10.yaml',
+  newSpecPath: './specs/versions/redcap-14.6.0.yaml',
+  oldVersion: '14.5.10',
+  newVersion: '14.6.0',
+});
+
+// Serve documentation
+serve({
+  specPath: './specs/versions/redcap-14.5.10.yaml',
+  port: 3000,
+});
+```
+
+## Exports
+
+| Export       | Description                     |
+| ------------ | ------------------------------- |
+| `.`          | All modules                     |
+| `./extractor`| OpenAPI extraction from PHP     |
+| `./comparator`| Spec comparison utilities      |
+| `./server`   | Documentation server            |
+
+## Development
+
+### Prerequisites
 
 1. **REDCap source code** - Download from [REDCap Community](https://projectredcap.org/resources/community/)
-2. **Docker** and **Docker Compose**
-3. **pnpm** (for running scripts)
+2. **Docker** and **Docker Compose** (for testing)
 
-## Setup
-
-### 1. Install REDCap source
-
-Extract REDCap to the versions directory:
+### Setup REDCap Source
 
 ```bash
-# Extract REDCap archive
+# Extract to versions directory
 unzip redcap14.5.10.zip
-
-# Move to versions directory
-mv redcap_v14.5.10 redcap-source/versions/14.5.10
+mv redcap_v14.5.10 sandbox/upstream/versions/14.5.10
 ```
 
-### 2. Start Docker environment
+### Commands
 
 ```bash
-# Start with default version (14.5.10)
-pnpm docker:up
+# CLI
+pnpm cli         # Interactive CLI
+pnpm extract     # Extract OpenAPI spec
+pnpm compare     # Compare specs
+pnpm docs        # Documentation server
 
-# Or start with a specific version
-REDCAP_VERSION=14.6.0 pnpm docker:up
-```
-
-This starts:
-
-- **REDCap** at http://localhost:8888
-- **phpMyAdmin** at http://localhost:8889
-- **Mailpit** at http://localhost:8025
-
-### 3. Initialize REDCap database
-
-#### Option A: Automated installation (recommended)
-
-```bash
-pnpm docker:install
-```
-
-This script:
-
-1. Submits the REDCap install form
-2. Extracts and executes the SQL schema (~7000 lines)
-3. Creates an API token for `site_admin` on project 1
-4. Saves config to `docker/config/.env.test`
-
-#### Option B: Manual steps
-
-<details>
-<summary>Click to expand manual installation steps</summary>
-
-```bash
-# 1. Submit install form and extract SQL
-curl -s -X POST http://localhost:8888/install.php \
-  -d "redcap_base_url=http://localhost:8888/" \
-  -d "institution=Atlas Dev" \
-  -d "site_org_type=SiteOrgType Academic/University" \
-  -d "language_global=English" \
-  -d "project_encoding=UTF-8" \
-  -d "auth_meth_global=none" \
-  -d "auto_report_stats=1" \
-  -d "superusers_only_create_project=0" \
-  -d "superusers_only_move_to_prod=1" \
-  -d "enable_url_shortener=1" > /tmp/redcap_install.html
-
-# 2. Extract SQL from response
-START_LINE=$(grep -n "textarea id='install-sql'" /tmp/redcap_install.html | head -1 | cut -d: -f1)
-sed -n "$((START_LINE + 1)),\$p" /tmp/redcap_install.html | sed '/<\/textarea>/,$d' > /tmp/redcap_install.sql
-
-# 3. Execute SQL in MariaDB
-docker exec -i docker-mariadb-1 mariadb -u redcap -predcap_password redcap < /tmp/redcap_install.sql
-
-# 4. Generate API token for site_admin on project 1
-TOKEN=$(openssl rand -hex 16 | tr 'a-f' 'A-F')
-docker exec docker-mariadb-1 mariadb -u redcap -predcap_password redcap -e "
-INSERT INTO redcap_user_rights (project_id, username, api_token, api_export, api_import, data_export_tool, data_import_tool, data_logging, user_rights, design, alerts, graphical, data_quality_design)
-VALUES (1, 'site_admin', '\$TOKEN', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-ON DUPLICATE KEY UPDATE api_token='\$TOKEN', api_export=1, api_import=1;"
-
-echo "API Token: $TOKEN"
-```
-
-</details>
-
-#### Option C: Wizard installation
-
-Follow REDCap installation wizard at http://localhost:8888
-
-### 4. Test API access
-
-```bash
-# Test version endpoint
-curl -X POST http://localhost:8888/api/ \
-  -d "token=YOUR_API_TOKEN" \
-  -d "content=version"
-
-# Test project info
-curl -X POST http://localhost:8888/api/ \
-  -d "token=YOUR_API_TOKEN" \
-  -d "content=project" \
-  -d "format=json"
-```
-
-## Commands
-
-```bash
-# Docker management
-pnpm docker:up       # Start services (default version)
+# Docker (requires REDCap source)
+pnpm docker:up       # Start REDCap instance
 pnpm docker:down     # Stop services
-pnpm docker:logs     # View logs
-pnpm docker:reset    # Reset database (destroys data)
-pnpm docker:install  # Automated installation + API token
+pnpm docker:install  # Initialize database
 
-# Multi-version support
-REDCAP_VERSION=14.6.0 pnpm docker:up    # Start specific version
-REDCAP_VERSION=14.6.0 pnpm analyze      # Analyze specific version
+# Testing (requires Docker)
+pnpm test:api        # API smoke tests
+pnpm test:contract   # Contract tests
+pnpm test:security   # Security tests
 
-# Analysis
-pnpm analyze         # Extract OpenAPI from PHP source
-pnpm compare         # Compare extracted vs CRF spec
-
-# Testing
-pnpm test:setup      # Setup test fixtures (tokens + data)
-pnpm test:api        # Run API smoke tests (10 endpoints)
-pnpm test:contract   # Run contract tests (26 tests)
-pnpm test:security   # Run Schemathesis security tests
+# Development
+pnpm build       # Build TypeScript
+pnpm dev         # Watch mode
+pnpm lint        # ESLint
+pnpm format      # Prettier
 ```
 
-## Multi-Version Support
-
-### Available versions
-
-| Version | Status  | Directory                         |
-| ------- | ------- | --------------------------------- |
-| 14.5.10 | Default | `redcap-source/versions/14.5.10/` |
-| 14.6.x  | Planned | `redcap-source/versions/14.6.x/`  |
-| 15.x.x  | Planned | `redcap-source/versions/15.x.x/`  |
-
-### Adding a new version
-
-```bash
-# 1. Download and extract
-unzip redcap14.6.0.zip
-
-# 2. Move to versions directory
-mv redcap_v14.6.0 redcap-source/versions/14.6.0
-
-# 3. Start with new version
-REDCAP_VERSION=14.6.0 pnpm docker:up
-
-# 4. Install database schema
-pnpm docker:install
-
-# 5. Analyze API
-REDCAP_VERSION=14.6.0 pnpm analyze
-```
-
-### Switching versions
-
-```bash
-# Stop current version
-pnpm docker:down
-
-# Start with different version (preserves database)
-REDCAP_VERSION=14.6.0 pnpm docker:up
-
-# Or reset for clean install
-pnpm docker:reset
-REDCAP_VERSION=14.6.0 pnpm docker:up
-pnpm docker:install
-```
-
-## Workflow
-
-```
-┌─────────────────┐
-│ REDCap PHP Code │
-└────────┬────────┘
-         │ pnpm analyze
-         ▼
-┌─────────────────────────┐
-│ specs/redcap-extracted  │
-└────────┬────────────────┘
-         │ pnpm compare
-         ▼
-┌─────────────────────────┐     ┌─────────────────┐
-│ Discrepancy Report      │────►│ Fix CRF spec    │
-└─────────────────────────┘     └─────────────────┘
-         │
-         │ pnpm test:contract
-         ▼
-┌─────────────────────────┐
-│ Validate against Docker │
-└─────────────────────────┘
-```
-
-## Generated OpenAPI Spec
-
-The analyzer extracts API information from multiple PHP sources:
-
-| Source                       | Information extracted                         |
-| ---------------------------- | --------------------------------------------- |
-| `API/index.php`              | Content types, actions, routing logic         |
-| `API/help.php`               | Documentation, parameters (required/optional) |
-| `API/<content>/<action>.php` | Validation logic, response formats            |
-| `Classes/*.php`              | Data schemas (Project, UserRights, etc.)      |
-| `API/examples/curl/*.sh`     | Example API calls                             |
-
-### Extracted endpoints (v14.5.10)
-
-- **35 content types** (record, metadata, file, etc.)
-- **60 action implementations** (export, import, delete, etc.)
-- **57 documented endpoints** with parameters
-- **3 data schemas** (ProjectInfo, ProjectSettingsImport, UserRights)
-
-### Spec validation
-
-```bash
-# Validate OpenAPI syntax
-pnpm spectral lint specs/redcap-extracted.yaml
-
-# Preview documentation
-pnpm redocly preview-docs specs/redcap-extracted.yaml
-```
-
-## Docker Services
+### Docker Services
 
 | Service    | URL                   | Credentials              |
 | ---------- | --------------------- | ------------------------ |
 | REDCap     | http://localhost:8888 | site_admin               |
 | phpMyAdmin | http://localhost:8889 | redcap / redcap_password |
 | Mailpit    | http://localhost:8025 | -                        |
-| MariaDB    | localhost:3306        | redcap / redcap_password |
 
-## Test Fixtures
+## Extracted Information
 
-The test setup creates fixtures for 4 project types:
+The extractor parses multiple PHP sources:
 
-| Project               | Type         | Forms | Records | Features          |
-| --------------------- | ------------ | ----- | ------- | ----------------- |
-| Classic Database      | Classic      | 6     | 3       | Basic data entry  |
-| Longitudinal (1 arm)  | Longitudinal | 8     | 2       | 8 events          |
-| Basic Demography      | Classic      | 1     | 2       | Single form       |
-| Repeating Instruments | Classic      | 5     | 3       | 4 repeating forms |
+| Source                       | Information                         |
+| ---------------------------- | ----------------------------------- |
+| `API/index.php`              | Content types, actions, routing     |
+| `API/help.php`               | Parameters (required/optional)      |
+| `API/<content>/<action>.php` | Validation, response formats        |
+| `Classes/*.php`              | Data schemas                        |
 
-### Contract Tests (26 tests)
+### Example Output (v14.5.10)
 
-- **Version endpoint** - Returns version string
-- **Project endpoint** - Returns project info, correct project_id
-- **Metadata endpoint** - Field definitions, structure validation
-- **Instrument endpoint** - Instrument list, structure
-- **Record endpoint** - Record export, filtering, rawOrLabel
-- **Export Field Names** - Field name mappings
-- **Event endpoint** - Events for longitudinal, error for classic
-- **Repeating Forms** - Configuration validation
-- **User endpoint** - User list, site_admin presence
-- **DAG endpoint** - Data access groups
-- **Error handling** - Invalid token, invalid content type
-- **Response formats** - JSON, CSV, XML support
+- 35 content types
+- 60 action implementations
+- 57 documented endpoints
+- 3 data schemas (ProjectInfo, UserRights, etc.)
+
+## Multi-Version Support
+
+```bash
+# Extract different versions
+REDCAP_VERSION=14.6.0 pnpm extract
+
+# Compare versions
+pnpm compare  # Interactive selection
+```
 
 ## License
 
+MIT
+
 The REDCap source code is proprietary and is NOT included in this repository.
-Only the analysis tools and Docker configuration are versioned.
