@@ -1,7 +1,7 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/typescript-config" },
+    { "path": "packages/shared-config" },
     { "path": "packages/crf" },
     { "path": "packages/net" },
     { "path": "packages/redcap" }

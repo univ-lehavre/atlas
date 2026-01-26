@@ -82,7 +82,7 @@
     "@scalar/hono-api-reference": "^0.9.35",
     "@stoplight/prism-cli": "^5.14.2",
     "@types/node": "^25.0.10",
-    "@univ-lehavre/atlas-typescript-config": "workspace:*",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^9.39.2",
     "openapi-typescript": "^7.10.1",
     "prettier": "^3.8.0",

@@ -71,7 +71,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.0.10",
-    "@univ-lehavre/atlas-typescript-config": "workspace:*",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^9.39.2",
     "prettier": "^3.8.1",
     "tsx": "^4.21.0",

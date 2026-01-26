@@ -1,5 +1,5 @@
 {
-  "extends": "@univ-lehavre/atlas-typescript-config/base.json",
+  "extends": "@univ-lehavre/atlas-shared-config/base.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",

@@ -34,7 +34,7 @@
     "@sveltejs/adapter-node": "^5.5.2",
     "@sveltejs/kit": "^2.50.1",
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
-    "@univ-lehavre/atlas-typescript-config": "workspace:*",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^9.39.2",
     "prettier": "^3.8.1",
     "prettier-plugin-svelte": "^3.4.1",
