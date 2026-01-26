@@ -1,4 +1,4 @@
-# @univ-lehavre/atlas-redcap
+# @univ-lehavre/atlas-redcap-openapi
 
 REDCap source analysis, OpenAPI spec extraction, and API documentation tools.
 
@@ -14,7 +14,7 @@ This package provides:
 ## Structure
 
 ```
-packages/redcap/
+packages/redcap-openapi/
 ├── src/                    # Exportable module code
 │   ├── extractor/          # PHP source → OpenAPI
 │   ├── comparator/         # Spec comparison
@@ -22,17 +22,16 @@ packages/redcap/
 │   └── cli/                # Interactive CLI
 ├── specs/                  # Generated OpenAPI specs (output)
 │   └── versions/           # Specs by REDCap version
-└── sandbox/                # Development environment
-    ├── docker/             # Docker compose + config
-    ├── scripts/            # Automation scripts
-    ├── tests/              # Contract & integration tests
-    └── upstream/           # REDCap PHP source (input, gitignored)
+└── upstream/               # REDCap PHP source (input, gitignored)
+    └── versions/           # Multiple REDCap versions
 ```
+
+Testing infrastructure is in the separate `redcap-sandbox` package.
 
 ## Installation
 
 ```bash
-pnpm add @univ-lehavre/atlas-redcap
+pnpm add @univ-lehavre/atlas-redcap-openapi
 ```
 
 ## CLI Usage
@@ -56,7 +55,7 @@ pnpm docs      # Start documentation server
 ## Programmatic Usage
 
 ```typescript
-import { extract, compare, serve } from '@univ-lehavre/atlas-redcap';
+import { extract, compare, serve } from '@univ-lehavre/atlas-redcap-openapi';
 
 // Extract OpenAPI spec from REDCap source
 const result = extract({
@@ -101,7 +100,7 @@ serve({
 ```bash
 # Extract to versions directory
 unzip redcap14.5.10.zip
-mv redcap_v14.5.10 sandbox/upstream/versions/14.5.10
+mv redcap_v14.5.10 upstream/versions/14.5.10
 ```
 
 ### Commands
@@ -113,16 +112,6 @@ pnpm extract     # Extract OpenAPI spec
 pnpm compare     # Compare specs
 pnpm docs        # Documentation server
 
-# Docker (requires REDCap source)
-pnpm docker:up       # Start REDCap instance
-pnpm docker:down     # Stop services
-pnpm docker:install  # Initialize database
-
-# Testing (requires Docker)
-pnpm test:api        # API smoke tests
-pnpm test:contract   # Contract tests
-pnpm test:security   # Security tests
-
 # Development
 pnpm build       # Build TypeScript
 pnpm dev         # Watch mode
@@ -130,13 +119,9 @@ pnpm lint        # ESLint
 pnpm format      # Prettier
 ```
 
-### Docker Services
+### Testing
 
-| Service    | URL                   | Credentials              |
-| ---------- | --------------------- | ------------------------ |
-| REDCap     | http://localhost:8888 | site_admin               |
-| phpMyAdmin | http://localhost:8889 | redcap / redcap_password |
-| Mailpit    | http://localhost:8025 | -                        |
+For Docker-based testing and contract tests, see the `redcap-sandbox` package.
 
 ## Extracted Information
 

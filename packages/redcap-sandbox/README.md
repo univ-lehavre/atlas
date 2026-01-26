@@ -1,15 +1,15 @@
-# Sandbox
+# REDCap Sandbox
 
-This directory contains the development, testing infrastructure and REDCap source code for validating the REDCap API extractor against real REDCap instances.
+Testing infrastructure for validating REDCap OpenAPI specs against real REDCap instances.
 
 ## Structure
 
 ```
-sandbox/
+redcap-sandbox/
 ├── docker/                 # Docker environment for REDCap
-│   ├── docker-compose.yml  # Main compose file (MariaDB, PHP, Mailpit)
+│   ├── docker-compose.yml  # Main compose file (MySQL, PHP, phpMyAdmin)
 │   ├── config/             # PHP and database configuration
-│   └── php/                # Custom PHP Dockerfile
+│   └── init.sql            # Database initialization
 ├── scripts/                # Automation scripts
 │   ├── install-redcap.sh   # Automated REDCap installation
 │   ├── test-contract.sh    # Run contract tests
@@ -18,9 +18,11 @@ sandbox/
 │   ├── contract/           # API contract tests (require Docker)
 │   ├── fixtures/           # Test data and setup scripts
 │   └── api-smoke.ts        # Quick API smoke tests
-└── upstream/               # REDCap source code (gitignored)
-    └── versions/           # Multiple REDCap versions
+├── docker-compose.yaml     # Main compose file
+└── vitest.config.ts        # Vitest configuration
 ```
+
+REDCap source code is located in the sibling package `redcap-openapi/upstream/`.
 
 ## Purpose
 
@@ -35,7 +37,7 @@ The development environment serves three main purposes:
 ### 1. Start Docker Environment
 
 ```bash
-# From packages/redcap directory
+# From packages/redcap-sandbox directory
 pnpm docker:up
 ```
 
@@ -90,7 +92,7 @@ REDCAP_VERSION=14.6.0 pnpm docker:up
 REDCAP_VERSION=14.6.0 pnpm extract
 ```
 
-Versions are stored in `upstream/versions/<version>/`.
+Versions are stored in `../redcap-openapi/upstream/versions/<version>/`.
 
 ## Commands Reference
 
