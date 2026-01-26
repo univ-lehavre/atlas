@@ -1,5 +1,5 @@
 {
-  "name": "ecrin",
+  "name": "@univ-lehavre/atlas-ecrin",
   "version": "0.0.2",
   "description": "Zero Trust dashboard for REDCap clinical data",
   "author": "Pierre-Olivier Chasset",
