@@ -11,8 +11,8 @@ COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY packages/typescript-config ./packages/typescript-config
 COPY packages/ecrin/package.json ./packages/ecrin/
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+# Install dependencies (ignore scripts to skip lefthook which needs git)
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Copy ecrin source code
 COPY packages/ecrin ./packages/ecrin
