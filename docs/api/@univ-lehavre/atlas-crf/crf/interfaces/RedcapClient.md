@@ -1,6 +1,6 @@
 # Interface: RedcapClient
 
-Defined in: [packages/crf/src/redcap/types.ts:85](https://github.com/univ-lehavre/atlas/blob/48acc16c89a79209d3be1763a73e3e9607aa38aa/packages/crf/src/redcap/types.ts#L85)
+Defined in: [packages/crf/src/redcap/types.ts:85](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/types.ts#L85)
 
 REDCap API client interface.
 
@@ -14,7 +14,7 @@ may fail with VersionParseError or UnsupportedVersionError.
 
 > `readonly` **downloadPdf**: (`recordId`, `instrument`) => `Effect`\<`ArrayBuffer`, [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/crf/src/redcap/types.ts:119](https://github.com/univ-lehavre/atlas/blob/48acc16c89a79209d3be1763a73e3e9607aa38aa/packages/crf/src/redcap/types.ts#L119)
+Defined in: [packages/crf/src/redcap/types.ts:119](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/types.ts#L119)
 
 #### Parameters
 
@@ -36,7 +36,7 @@ Defined in: [packages/crf/src/redcap/types.ts:119](https://github.com/univ-lehav
 
 > `readonly` **exportRecords**: \<`T`\>(`options?`) => `Effect`\<readonly `T`[], [`RedcapClientError`](../../redcap/type-aliases/RedcapClientError.md)\>
 
-Defined in: [packages/crf/src/redcap/types.ts:105](https://github.com/univ-lehavre/atlas/blob/48acc16c89a79209d3be1763a73e3e9607aa38aa/packages/crf/src/redcap/types.ts#L105)
+Defined in: [packages/crf/src/redcap/types.ts:105](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/types.ts#L105)
 
 #### Type Parameters
 
@@ -60,7 +60,7 @@ Defined in: [packages/crf/src/redcap/types.ts:105](https://github.com/univ-lehav
 
 > `readonly` **findUserIdByEmail**: (`email`) => `Effect`\<`string` \| `null`, [`RedcapClientError`](../../redcap/type-aliases/RedcapClientError.md)\>
 
-Defined in: [packages/crf/src/redcap/types.ts:124](https://github.com/univ-lehavre/atlas/blob/48acc16c89a79209d3be1763a73e3e9607aa38aa/packages/crf/src/redcap/types.ts#L124)
+Defined in: [packages/crf/src/redcap/types.ts:124](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/types.ts#L124)
 
 #### Parameters
 
@@ -78,7 +78,7 @@ Defined in: [packages/crf/src/redcap/types.ts:124](https://github.com/univ-lehav
 
 > `readonly` **getExportFieldNames**: () => `Effect`\<readonly `object`[], [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapApiError`](../classes/RedcapApiError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/crf/src/redcap/types.ts:100](https://github.com/univ-lehavre/atlas/blob/48acc16c89a79209d3be1763a73e3e9607aa38aa/packages/crf/src/redcap/types.ts#L100)
+Defined in: [packages/crf/src/redcap/types.ts:100](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/types.ts#L100)
 
 #### Returns
 
@@ -90,7 +90,7 @@ Defined in: [packages/crf/src/redcap/types.ts:100](https://github.com/univ-lehav
 
 > `readonly` **getFields**: () => `Effect`\<readonly `object`[], [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapApiError`](../classes/RedcapApiError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/crf/src/redcap/types.ts:95](https://github.com/univ-lehavre/atlas/blob/48acc16c89a79209d3be1763a73e3e9607aa38aa/packages/crf/src/redcap/types.ts#L95)
+Defined in: [packages/crf/src/redcap/types.ts:95](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/types.ts#L95)
 
 #### Returns
 
@@ -102,7 +102,7 @@ Defined in: [packages/crf/src/redcap/types.ts:95](https://github.com/univ-lehavr
 
 > `readonly` **getInstruments**: () => `Effect`\<readonly `object`[], [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapApiError`](../classes/RedcapApiError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/crf/src/redcap/types.ts:90](https://github.com/univ-lehavre/atlas/blob/48acc16c89a79209d3be1763a73e3e9607aa38aa/packages/crf/src/redcap/types.ts#L90)
+Defined in: [packages/crf/src/redcap/types.ts:90](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/types.ts#L90)
 
 #### Returns
 
@@ -114,7 +114,7 @@ Defined in: [packages/crf/src/redcap/types.ts:90](https://github.com/univ-lehavr
 
 > `readonly` **getProjectInfo**: () => `Effect`\<\{ `creation_time`: `string`; `in_production`: `0` \| `1`; `project_id`: `number`; `project_title`: `string`; `record_autonumbering_enabled`: `0` \| `1`; \}, [`RedcapClientError`](../../redcap/type-aliases/RedcapClientError.md)\>
 
-Defined in: [packages/crf/src/redcap/types.ts:88](https://github.com/univ-lehavre/atlas/blob/48acc16c89a79209d3be1763a73e3e9607aa38aa/packages/crf/src/redcap/types.ts#L88)
+Defined in: [packages/crf/src/redcap/types.ts:88](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/types.ts#L88)
 
 #### Returns
 
@@ -126,7 +126,7 @@ Defined in: [packages/crf/src/redcap/types.ts:88](https://github.com/univ-lehavr
 
 > `readonly` **getSurveyLink**: (`record`, `instrument`) => `Effect`\<`string`, [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/crf/src/redcap/types.ts:114](https://github.com/univ-lehavre/atlas/blob/48acc16c89a79209d3be1763a73e3e9607aa38aa/packages/crf/src/redcap/types.ts#L114)
+Defined in: [packages/crf/src/redcap/types.ts:114](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/types.ts#L114)
 
 #### Parameters
 
@@ -148,7 +148,7 @@ Defined in: [packages/crf/src/redcap/types.ts:114](https://github.com/univ-lehav
 
 > `readonly` **getVersion**: () => `Effect`\<`string`, [`RedcapHttpError`](../classes/RedcapHttpError.md) \| [`RedcapNetworkError`](../classes/RedcapNetworkError.md)\>
 
-Defined in: [packages/crf/src/redcap/types.ts:86](https://github.com/univ-lehavre/atlas/blob/48acc16c89a79209d3be1763a73e3e9607aa38aa/packages/crf/src/redcap/types.ts#L86)
+Defined in: [packages/crf/src/redcap/types.ts:86](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/types.ts#L86)
 
 #### Returns
 
@@ -160,7 +160,7 @@ Defined in: [packages/crf/src/redcap/types.ts:86](https://github.com/univ-lehavr
 
 > `readonly` **importRecords**: (`records`, `options?`) => `Effect`\<\{ `count`: `number`; \}, [`RedcapClientError`](../../redcap/type-aliases/RedcapClientError.md)\>
 
-Defined in: [packages/crf/src/redcap/types.ts:109](https://github.com/univ-lehavre/atlas/blob/48acc16c89a79209d3be1763a73e3e9607aa38aa/packages/crf/src/redcap/types.ts#L109)
+Defined in: [packages/crf/src/redcap/types.ts:109](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/types.ts#L109)
 
 #### Parameters
 
