@@ -1,5 +1,5 @@
-docker/
+dev/docker/
+dev/scripts/
 specs/
-scripts/
 upstream/
 node_modules/

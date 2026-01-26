@@ -26,15 +26,12 @@ upstream/**/*.svg
 specs/redcap-extracted.yaml
 
 # Docker volumes and runtime files
-docker/data/
+dev/docker/data/
 upstream/edocs/
 
-# Analysis output
-analyzer/output/
-
 # Test results
-tests/results/
+dev/tests/results/
 coverage/
 
 # Test environment files
-docker/config/.env.test
+dev/docker/config/.env.test

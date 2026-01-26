@@ -188,19 +188,16 @@ CLI unifie avec `@clack/prompts` pour une experience interactive.
 packages/redcap/
 ├── src/
 │   ├── extractor/          # Extraction OpenAPI depuis PHP
-│   │   ├── parsers.ts      # Parsers pour index.php, help.php, etc.
-│   │   ├── generator.ts    # Generation spec OpenAPI 3.1.0
-│   │   └── index.ts        # API publique
 │   ├── comparator/         # Comparaison de specs
-│   │   └── index.ts        # Detection breaking changes
 │   ├── server/             # Serveur docs (Swagger UI, Redoc)
-│   │   └── index.ts        # HTTP server
 │   ├── cli/                # CLI unifie
-│   │   └── index.ts        # Commandes: extract, compare, docs
 │   └── index.ts            # Exports publics
 ├── specs/versions/         # Specs generees par version
 ├── upstream/versions/      # Sources PHP (gitignored)
-├── docker/                 # Environnement Docker REDCap
+├── dev/                    # Environnement de developpement
+│   ├── docker/             # Docker compose + config
+│   ├── scripts/            # Scripts d'automatisation
+│   └── tests/              # Tests de contrat
 └── package.json
 ```
 

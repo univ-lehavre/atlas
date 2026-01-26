@@ -1,8 +1,8 @@
 # REDCap Development Server
 #
 # Prerequisites:
-# 1. Place REDCap source code in ./upstream/redcap_v14.5.10/
-# 2. Copy database.php.example to ./upstream/database.php and configure
+# 1. Place REDCap source code in ../upstream/versions/14.5.10/
+# 2. Database config is in docker/config/database.php
 #
 # Usage:
 #   docker compose up -d
@@ -23,7 +23,7 @@ services:
     ports:
       - '8080:80'
     volumes:
-      - ./upstream:/var/www/html
+      - ../upstream:/var/www/html
       - ./docker/php.ini:/usr/local/etc/php/conf.d/redcap.ini:ro
     environment:
       - APACHE_DOCUMENT_ROOT=/var/www/html
