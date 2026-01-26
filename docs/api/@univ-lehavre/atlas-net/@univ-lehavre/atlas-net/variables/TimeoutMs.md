@@ -2,7 +2,7 @@
 
 > **TimeoutMs**: `Constructor`\<[`TimeoutMs`](../type-aliases/TimeoutMs.md)\>
 
-Defined in: [types.ts:22](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/net/src/types.ts#L22)
+Defined in: [types.ts:22](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/net/src/types.ts#L22)
 
 Constructor for TimeoutMs branded type with validation.
 

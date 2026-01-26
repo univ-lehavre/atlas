@@ -2,7 +2,7 @@
 
 > **getAdapter**(`version`): [`RedcapAdapter`](../interfaces/RedcapAdapter.md) \| `undefined`
 
-Defined in: [packages/crf/src/redcap/adapters/index.ts:60](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/adapters/index.ts#L60)
+Defined in: [packages/crf/src/redcap/adapters/index.ts:60](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/adapters/index.ts#L60)
 
 Get the adapter for a specific REDCap version.
 Prefer using getAdapterEffect for better error handling.
