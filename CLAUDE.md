@@ -17,6 +17,10 @@ atlas/
 │   │   ├── src/redcap/     # Client Effect pour REDCap
 │   │   ├── src/server/     # Microservice HTTP REST (Hono)
 │   │   └── src/cli/        # CLI tools (crf-redcap, crf-server)
+│   ├── redcap/             # Analyse source REDCap et extraction OpenAPI
+│   │   ├── src/            # Modules exportables (extractor, comparator, server)
+│   │   ├── specs/          # Specs OpenAPI generees par version
+│   │   └── redcap-source/  # Sources PHP REDCap (gitignored)
 │   ├── net/                # Utilitaires et CLI diagnostic reseau (atlas-net)
 │   └── typescript-config/  # Config TypeScript partagee
 └── infra/                  # Infrastructure Kubernetes (k3d/k3s)
@@ -174,6 +178,38 @@ Scripts CRF :
 - `pnpm -F @univ-lehavre/crf mock:redcap` - Lancer Prism (mock REDCap)
 - `pnpm -F @univ-lehavre/crf start` - Lancer le serveur CRF
 - `pnpm -F @univ-lehavre/crf test:api` - Tests Schemathesis contre l'API
+
+### packages/redcap (REDCap Source Analysis)
+
+Outils d'analyse du code source PHP REDCap pour extraire les specifications OpenAPI.
+CLI unifie avec `@clack/prompts` pour une experience interactive.
+
+```
+packages/redcap/
+├── src/
+│   ├── extractor/          # Extraction OpenAPI depuis PHP
+│   │   ├── parsers.ts      # Parsers pour index.php, help.php, etc.
+│   │   ├── generator.ts    # Generation spec OpenAPI 3.1.0
+│   │   └── index.ts        # API publique
+│   ├── comparator/         # Comparaison de specs
+│   │   └── index.ts        # Detection breaking changes
+│   ├── server/             # Serveur docs (Swagger UI, Redoc)
+│   │   └── index.ts        # HTTP server
+│   ├── cli/                # CLI unifie
+│   │   └── index.ts        # Commandes: extract, compare, docs
+│   └── index.ts            # Exports publics
+├── specs/versions/         # Specs generees par version
+├── redcap-source/versions/ # Sources PHP (gitignored)
+├── docker/                 # Environnement Docker REDCap
+└── package.json
+```
+
+Scripts REDCap :
+
+- `pnpm -F @univ-lehavre/atlas-redcap cli` - CLI interactif
+- `pnpm -F @univ-lehavre/atlas-redcap extract` - Extraire spec OpenAPI
+- `pnpm -F @univ-lehavre/atlas-redcap compare` - Comparer versions
+- `pnpm -F @univ-lehavre/atlas-redcap docs` - Serveur documentation
 
 ### packages/ecrin
 

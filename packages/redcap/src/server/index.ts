@@ -2,39 +2,31 @@
  * OpenAPI Documentation Server
  *
  * Serves the generated REDCap OpenAPI specification with Swagger UI and Redoc.
- *
- * Usage: pnpm docs
- *
- * Access:
- *   - Swagger UI: http://localhost:3000/swagger
- *   - Redoc: http://localhost:3000/redoc
- *   - Raw YAML: http://localhost:3000/openapi.yaml
- *   - Raw JSON: http://localhost:3000/openapi.json
  */
 
 import { readFileSync, existsSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { createServer } from 'node:http';
+import { createServer, type Server, type IncomingMessage, type ServerResponse } from 'node:http';
 import { parse } from 'yaml';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const PORT = process.env.PORT || 3000;
-const SPEC_PATH = join(__dirname, '../specs/redcap-extracted.yaml');
-
-// Check if spec exists
-if (!existsSync(SPEC_PATH)) {
-  console.error('OpenAPI spec not found. Run "pnpm analyze" first.');
-  process.exit(1);
+export interface ServerOptions {
+  /** Path to the OpenAPI spec file */
+  specPath: string;
+  /** Port to listen on */
+  port?: number;
+  /** Callback when server starts */
+  onStart?: (urls: ServerUrls) => void;
 }
 
-// Load and parse the spec
-const yamlContent = readFileSync(SPEC_PATH, 'utf8');
-const spec = parse(yamlContent);
-const jsonContent = JSON.stringify(spec, null, 2);
+export interface ServerUrls {
+  home: string;
+  swagger: string;
+  redoc: string;
+  yaml: string;
+  json: string;
+}
 
-// HTML templates
-const swaggerHtml = `<!DOCTYPE html>
+function generateSwaggerHtml(): string {
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -72,8 +64,10 @@ const swaggerHtml = `<!DOCTYPE html>
   </script>
 </body>
 </html>`;
+}
 
-const redocHtml = `<!DOCTYPE html>
+function generateRedocHtml(): string {
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -96,8 +90,16 @@ const redocHtml = `<!DOCTYPE html>
   <script src="https://cdn.redoc.ly/redoc/latest/bundles/redoc.standalone.js"></script>
 </body>
 </html>`;
+}
 
-const indexHtml = `<!DOCTYPE html>
+function generateIndexHtml(spec: Record<string, unknown>): string {
+  const info = spec.info as Record<string, unknown> | undefined;
+  const paths = spec.paths as Record<string, unknown> | undefined;
+  const tags = spec.tags as unknown[] | undefined;
+  const components = spec.components as Record<string, unknown> | undefined;
+  const schemas = components?.schemas as Record<string, unknown> | undefined;
+
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -121,25 +123,10 @@ const indexHtml = `<!DOCTYPE html>
       max-width: 600px;
       width: 90%;
     }
-    h1 {
-      color: #1a202c;
-      font-size: 2.5rem;
-      margin-bottom: 8px;
-    }
-    .version {
-      color: #718096;
-      font-size: 1rem;
-      margin-bottom: 32px;
-    }
-    .description {
-      color: #4a5568;
-      line-height: 1.6;
-      margin-bottom: 32px;
-    }
-    .links {
-      display: grid;
-      gap: 16px;
-    }
+    h1 { color: #1a202c; font-size: 2.5rem; margin-bottom: 8px; }
+    .version { color: #718096; font-size: 1rem; margin-bottom: 32px; }
+    .description { color: #4a5568; line-height: 1.6; margin-bottom: 32px; }
+    .links { display: grid; gap: 16px; }
     a {
       display: flex;
       align-items: center;
@@ -153,29 +140,10 @@ const indexHtml = `<!DOCTYPE html>
       transform: translateY(-2px);
       box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.2);
     }
-    .swagger {
-      background: linear-gradient(135deg, #85ea2d 0%, #38b000 100%);
-      color: white;
-    }
-    .redoc {
-      background: linear-gradient(135deg, #c83232 0%, #8b0000 100%);
-      color: white;
-    }
-    .yaml {
-      background: #f7fafc;
-      color: #2d3748;
-      border: 2px solid #e2e8f0;
-    }
-    .json {
-      background: #f7fafc;
-      color: #2d3748;
-      border: 2px solid #e2e8f0;
-    }
-    .icon {
-      width: 24px;
-      height: 24px;
-      margin-right: 12px;
-    }
+    .swagger { background: linear-gradient(135deg, #85ea2d 0%, #38b000 100%); color: white; }
+    .redoc { background: linear-gradient(135deg, #c83232 0%, #8b0000 100%); color: white; }
+    .yaml, .json { background: #f7fafc; color: #2d3748; border: 2px solid #e2e8f0; }
+    .icon { width: 24px; height: 24px; margin-right: 12px; }
     .stats {
       margin-top: 32px;
       padding-top: 24px;
@@ -185,23 +153,16 @@ const indexHtml = `<!DOCTYPE html>
       gap: 16px;
       text-align: center;
     }
-    .stat-value {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #667eea;
-    }
-    .stat-label {
-      font-size: 0.875rem;
-      color: #718096;
-    }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: #667eea; }
+    .stat-label { font-size: 0.875rem; color: #718096; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>REDCap API</h1>
-    <p class="version">Version ${spec.info?.version || '14.5.10'}</p>
+    <p class="version">Version ${(info?.version as string) ?? '14.5.10'}</p>
     <p class="description">
-      ${spec.info?.description?.split('\n')[0] || 'OpenAPI specification for REDCap API'}
+      ${((info?.description as string) ?? 'OpenAPI specification for REDCap API').split('\n')[0]}
     </p>
 
     <div class="links">
@@ -233,88 +194,103 @@ const indexHtml = `<!DOCTYPE html>
 
     <div class="stats">
       <div>
-        <div class="stat-value">${Object.keys(spec.paths || {}).length}</div>
+        <div class="stat-value">${Object.keys(paths ?? {}).length}</div>
         <div class="stat-label">Endpoints</div>
       </div>
       <div>
-        <div class="stat-value">${(spec.tags || []).length}</div>
+        <div class="stat-value">${(tags ?? []).length}</div>
         <div class="stat-label">Tags</div>
       </div>
       <div>
-        <div class="stat-value">${Object.keys(spec.components?.schemas || {}).length}</div>
+        <div class="stat-value">${Object.keys(schemas ?? {}).length}</div>
         <div class="stat-label">Schemas</div>
       </div>
     </div>
   </div>
 </body>
 </html>`;
+}
 
-// Create HTTP server
-const server = createServer((req, res) => {
-  const url = req.url || '/';
+/**
+ * Create and start the documentation server
+ */
+export function serve(options: ServerOptions): Server {
+  const { specPath, port = 3000, onStart } = options;
 
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204);
-    res.end();
-    return;
+  if (!existsSync(specPath)) {
+    throw new Error(`OpenAPI spec not found: ${specPath}`);
   }
 
-  switch (url) {
-    case '/':
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(indexHtml);
-      break;
+  const yamlContent = readFileSync(specPath, 'utf8');
+  const spec = parse(yamlContent) as Record<string, unknown>;
+  const jsonContent = JSON.stringify(spec, null, 2);
 
-    case '/swagger':
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(swaggerHtml);
-      break;
+  const swaggerHtml = generateSwaggerHtml();
+  const redocHtml = generateRedocHtml();
+  const indexHtml = generateIndexHtml(spec);
 
-    case '/redoc':
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(redocHtml);
-      break;
+  const server = createServer((req: IncomingMessage, res: ServerResponse) => {
+    const url = req.url ?? '/';
 
-    case '/openapi.yaml':
-      res.writeHead(200, {
-        'Content-Type': 'text/yaml; charset=utf-8',
-        'Content-Disposition': 'inline; filename="redcap-api.yaml"',
-      });
-      res.end(yamlContent);
-      break;
+    // Set CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-    case '/openapi.json':
-      res.writeHead(200, {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Content-Disposition': 'inline; filename="redcap-api.json"',
-      });
-      res.end(jsonContent);
-      break;
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
 
-    default:
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('Not Found');
-  }
-});
+    switch (url) {
+      case '/':
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(indexHtml);
+        break;
 
-server.listen(PORT, () => {
-  console.log(`
-╔═══════════════════════════════════════════════════════════╗
-║           REDCap API Documentation Server                 ║
-╠═══════════════════════════════════════════════════════════╣
-║                                                           ║
-║  Home:         http://localhost:${PORT}/                    ║
-║  Swagger UI:   http://localhost:${PORT}/swagger             ║
-║  Redoc:        http://localhost:${PORT}/redoc               ║
-║  OpenAPI YAML: http://localhost:${PORT}/openapi.yaml        ║
-║  OpenAPI JSON: http://localhost:${PORT}/openapi.json        ║
-║                                                           ║
-║  Press Ctrl+C to stop                                     ║
-╚═══════════════════════════════════════════════════════════╝
-`);
-});
+      case '/swagger':
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(swaggerHtml);
+        break;
+
+      case '/redoc':
+        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+        res.end(redocHtml);
+        break;
+
+      case '/openapi.yaml':
+        res.writeHead(200, {
+          'Content-Type': 'text/yaml; charset=utf-8',
+          'Content-Disposition': 'inline; filename="redcap-api.yaml"',
+        });
+        res.end(yamlContent);
+        break;
+
+      case '/openapi.json':
+        res.writeHead(200, {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Content-Disposition': 'inline; filename="redcap-api.json"',
+        });
+        res.end(jsonContent);
+        break;
+
+      default:
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Not Found');
+    }
+  });
+
+  server.listen(port, () => {
+    const urls: ServerUrls = {
+      home: `http://localhost:${port}/`,
+      swagger: `http://localhost:${port}/swagger`,
+      redoc: `http://localhost:${port}/redoc`,
+      yaml: `http://localhost:${port}/openapi.yaml`,
+      json: `http://localhost:${port}/openapi.json`,
+    };
+    onStart?.(urls);
+  });
+
+  return server;
+}
