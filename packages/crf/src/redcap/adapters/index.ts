@@ -47,7 +47,7 @@ export const getAdapterEffect = (
 ): Effect.Effect<RedcapAdapter, UnsupportedVersionError> =>
   pipe(
     findAdapter(version),
-    Effect.mapError(() => new UnsupportedVersionError({ version }))
+    Effect.mapError(() => new UnsupportedVersionError({ version: formatVersion(version) }))
   );
 
 /**

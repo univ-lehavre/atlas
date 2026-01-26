@@ -20,7 +20,7 @@
  * ```
  */
 
-// Branded types
+// Branded types (values)
 export {
   RedcapUrl,
   RedcapToken,
@@ -31,8 +31,12 @@ export {
   PositiveInt,
   NonEmptyString,
   IsoTimestamp,
-  BooleanFlag,
+  // BooleanFlag utilities
+  toBooleanFlag,
+  fromBooleanFlag,
 } from './brands.js';
+
+// Branded types (types)
 export type {
   RedcapUrl as RedcapUrlType,
   RedcapToken as RedcapTokenType,
@@ -43,6 +47,7 @@ export type {
   PositiveInt as PositiveIntType,
   NonEmptyString as NonEmptyStringType,
   IsoTimestamp as IsoTimestampType,
+  BooleanFlag,
   BooleanFlag as BooleanFlagType,
 } from './brands.js';
 

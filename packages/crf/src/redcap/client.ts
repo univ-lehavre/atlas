@@ -92,8 +92,14 @@ const checkResponseStatus = (
           try: () => response.text(),
           catch: (cause) => new RedcapNetworkError({ cause }),
         }),
-        Effect.flatMap((errorText) =>
-          Effect.fail(new RedcapHttpError({ status: response.status, message: errorText }))
+        Effect.flatMap((body) =>
+          Effect.fail(
+            new RedcapHttpError({
+              status: response.status,
+              statusText: response.statusText,
+              body,
+            })
+          )
         )
       );
 
@@ -114,7 +120,7 @@ const parseJsonResponse = <T>(
     }),
     Effect.flatMap((data) =>
       isRedcapErrorResponse(data)
-        ? Effect.fail(new RedcapApiError({ message: data.error }))
+        ? Effect.fail(new RedcapApiError({ error: data.error }))
         : Effect.succeed(data as T)
     )
   );

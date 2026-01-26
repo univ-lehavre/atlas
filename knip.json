@@ -7,17 +7,20 @@
     "packages/crf": {
       "project": ["src/**/*.ts"]
     },
-    "packages/redcap": {
-      "project": ["src/**/*.ts", "sandbox/tests/**/*.ts"]
+    "packages/redcap-openapi": {
+      "project": ["src/**/*.ts"]
     },
-    "packages/typescript-config": {
-      "project": ["*.json"]
+    "packages/redcap-sandbox": {
+      "project": ["tests/**/*.ts"]
+    },
+    "packages/shared-config": {
+      "project": ["*.json", "eslint/**/*.js", "prettier/**/*.js"]
     },
     "apps/*": {
       "project": ["src/**/*.ts"]
     }
   },
   "ignore": ["**/dist/**", "**/.svelte-kit/**", "**/build/**", "**/upstream/**"],
-  "ignoreDependencies": ["tsx", "@univ-lehavre/atlas-typescript-config", "vitepress-openapi", "@modyfi/vite-plugin-yaml"],
+  "ignoreDependencies": ["tsx", "@univ-lehavre/atlas-shared-config", "vitepress-openapi", "@modyfi/vite-plugin-yaml"],
   "ignoreBinaries": ["jq", "docker:build", "docker:down"]
 }

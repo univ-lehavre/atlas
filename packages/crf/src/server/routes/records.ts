@@ -16,13 +16,13 @@ import {
 const parseRecordId = (value: string): Effect.Effect<RecordId, RedcapApiError> =>
   Effect.try({
     try: () => RecordId(value),
-    catch: () => new RedcapApiError({ message: `Invalid record ID: "${value}"` }),
+    catch: () => new RedcapApiError({ error: `Invalid record ID: "${value}"` }),
   });
 
 const parseInstrumentName = (value: string): Effect.Effect<InstrumentName, RedcapApiError> =>
   Effect.try({
     try: () => InstrumentName(value),
-    catch: () => new RedcapApiError({ message: `Invalid instrument name: "${value}"` }),
+    catch: () => new RedcapApiError({ error: `Invalid instrument name: "${value}"` }),
   });
 
 const records = new Hono();

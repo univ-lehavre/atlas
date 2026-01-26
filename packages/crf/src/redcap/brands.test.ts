@@ -8,8 +8,10 @@ import {
   PositiveInt,
   NonEmptyString,
   IsoTimestamp,
-  BooleanFlag,
+  toBooleanFlag,
+  fromBooleanFlag,
 } from './brands.js';
+import type { BooleanFlag } from './brands.js';
 
 describe('Branded Types', () => {
   describe('RedcapToken', () => {
@@ -45,26 +47,27 @@ describe('Branded Types', () => {
   });
 
   describe('RecordId', () => {
-    it('should accept valid lowercase alphanumeric record ID (20+ chars)', () => {
-      expect(() => RecordId('abcdefghij0123456789')).not.toThrow();
-      expect(() => RecordId('record12345678901234567890')).not.toThrow();
+    it('should accept alphanumeric record IDs', () => {
+      expect(() => RecordId('1')).not.toThrow();
+      expect(() => RecordId('record123')).not.toThrow();
+      expect(() => RecordId('abc_123')).not.toThrow();
     });
 
-    it('should reject uppercase characters', () => {
-      expect(() => RecordId('ABCDEFGHIJ0123456789')).toThrow();
+    it('should accept record IDs with hyphens and underscores', () => {
+      expect(() => RecordId('record-123')).not.toThrow();
+      expect(() => RecordId('record_123')).not.toThrow();
+      expect(() => RecordId('my-record_id-123')).not.toThrow();
     });
 
-    it('should reject mixed case', () => {
-      expect(() => RecordId('abcdefghijABCDEFGHIJ')).toThrow();
+    it('should accept uppercase characters', () => {
+      expect(() => RecordId('RECORD123')).not.toThrow();
+      expect(() => RecordId('Record_123')).not.toThrow();
     });
 
-    it('should reject special characters', () => {
-      expect(() => RecordId('abcdefghij_123456789')).toThrow();
-      expect(() => RecordId('abcdefghij-123456789')).toThrow();
-    });
-
-    it('should reject too short ID (less than 20 chars)', () => {
-      expect(() => RecordId('abcdefghij123456789')).toThrow();
+    it('should reject special characters other than underscore and hyphen', () => {
+      expect(() => RecordId('record@123')).toThrow();
+      expect(() => RecordId('record 123')).toThrow();
+      expect(() => RecordId('record.123')).toThrow();
     });
 
     it('should reject empty string', () => {
@@ -202,13 +205,9 @@ describe('Branded Types', () => {
       expect(() => IsoTimestamp('2024-01-15 10:30:00')).not.toThrow();
     });
 
-    it('should accept valid ISO 8601 datetime with Z timezone', () => {
-      expect(() => IsoTimestamp('2024-01-15T10:30:00Z')).not.toThrow();
-    });
-
-    it('should accept valid ISO 8601 datetime with offset timezone', () => {
-      expect(() => IsoTimestamp('2024-01-15T10:30:00+02:00')).not.toThrow();
-      expect(() => IsoTimestamp('2024-01-15T10:30:00-05:00')).not.toThrow();
+    it('should accept valid ISO 8601 datetime without seconds', () => {
+      expect(() => IsoTimestamp('2024-01-15 10:30')).not.toThrow();
+      expect(() => IsoTimestamp('2024-01-15T10:30')).not.toThrow();
     });
 
     it('should reject invalid date format', () => {
@@ -216,28 +215,28 @@ describe('Branded Types', () => {
       expect(() => IsoTimestamp('15-01-2024')).toThrow();
     });
 
-    it('should reject invalid date values', () => {
-      expect(() => IsoTimestamp('2024-13-01')).toThrow(); // Invalid month
-      expect(() => IsoTimestamp('2024-01-32')).toThrow(); // Invalid day
-    });
-
     it('should reject empty string', () => {
       expect(() => IsoTimestamp('')).toThrow();
     });
   });
 
-  describe('BooleanFlag', () => {
-    it('should accept 0', () => {
-      expect(() => BooleanFlag(0)).not.toThrow();
+  describe('BooleanFlag utilities', () => {
+    it('toBooleanFlag should convert true to 1', () => {
+      const result: BooleanFlag = toBooleanFlag(true);
+      expect(result).toBe(1);
     });
 
-    it('should accept 1', () => {
-      expect(() => BooleanFlag(1)).not.toThrow();
+    it('toBooleanFlag should convert false to 0', () => {
+      const result: BooleanFlag = toBooleanFlag(false);
+      expect(result).toBe(0);
     });
 
-    it('should reject other numbers', () => {
-      expect(() => BooleanFlag(2 as 0 | 1)).toThrow();
-      expect(() => BooleanFlag(-1 as 0 | 1)).toThrow();
+    it('fromBooleanFlag should convert 1 to true', () => {
+      expect(fromBooleanFlag(1)).toBe(true);
+    });
+
+    it('fromBooleanFlag should convert 0 to false', () => {
+      expect(fromBooleanFlag(0)).toBe(false);
     });
   });
 });

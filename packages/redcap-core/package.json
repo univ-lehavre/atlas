@@ -1,0 +1,76 @@
+{
+  "name": "@univ-lehavre/atlas-redcap-core",
+  "version": "1.0.0",
+  "description": "Pure functional core for REDCap domain logic with Effect",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./brands": {
+      "types": "./dist/brands/index.d.ts",
+      "import": "./dist/brands/index.js"
+    },
+    "./errors": {
+      "types": "./dist/errors/index.d.ts",
+      "import": "./dist/errors/index.js"
+    },
+    "./version": {
+      "types": "./dist/version/index.d.ts",
+      "import": "./dist/version/index.js"
+    },
+    "./content-types": {
+      "types": "./dist/content-types/index.d.ts",
+      "import": "./dist/content-types/index.js"
+    },
+    "./params": {
+      "types": "./dist/params/index.d.ts",
+      "import": "./dist/params/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/adapters/index.d.ts",
+      "import": "./dist/adapters/index.js"
+    },
+    "./validation": {
+      "types": "./dist/validation/index.d.ts",
+      "import": "./dist/validation/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/types/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "effect": "^3.19.15"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "eslint": "^9.28.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
