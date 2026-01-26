@@ -1,6 +1,6 @@
 # Class: RedcapHttpError
 
-Defined in: [packages/crf/src/redcap/errors.ts:14](https://github.com/univ-lehavre/atlas/blob/48acc16c89a79209d3be1763a73e3e9607aa38aa/packages/crf/src/redcap/errors.ts#L14)
+Defined in: [packages/crf/src/redcap/errors.ts:14](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/errors.ts#L14)
 
 HTTP-level error from REDCap API.
 
@@ -154,7 +154,7 @@ Defined in: node\_modules/.pnpm/typescript@5.9.3/node\_modules/typescript/lib/li
 
 > `readonly` **status**: `number`
 
-Defined in: [packages/crf/src/redcap/errors.ts:15](https://github.com/univ-lehavre/atlas/blob/48acc16c89a79209d3be1763a73e3e9607aa38aa/packages/crf/src/redcap/errors.ts#L15)
+Defined in: [packages/crf/src/redcap/errors.ts:15](https://github.com/univ-lehavre/atlas/blob/eb30e044e3b81463596de83b91ee0942c13da854/packages/crf/src/redcap/errors.ts#L15)
 
 #### Inherited from
 
