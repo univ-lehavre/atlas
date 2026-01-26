@@ -1,6 +1,6 @@
 # Interface: RedcapConfig
 
-Defined in: [packages/crf/src/redcap/types.ts:32](https://github.com/univ-lehavre/atlas/blob/45d422725947bfe2a93b0baafcbbb59a4d8190f9/packages/crf/src/redcap/types.ts#L32)
+Defined in: [packages/crf/src/redcap/types.ts:32](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/types.ts#L32)
 
 Configuration for REDCap API client.
 
@@ -10,7 +10,7 @@ Configuration for REDCap API client.
 
 > `readonly` **token**: [`RedcapToken`](../type-aliases/RedcapToken.md)
 
-Defined in: [packages/crf/src/redcap/types.ts:34](https://github.com/univ-lehavre/atlas/blob/45d422725947bfe2a93b0baafcbbb59a4d8190f9/packages/crf/src/redcap/types.ts#L34)
+Defined in: [packages/crf/src/redcap/types.ts:34](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/types.ts#L34)
 
 ***
 
@@ -18,4 +18,4 @@ Defined in: [packages/crf/src/redcap/types.ts:34](https://github.com/univ-lehavr
 
 > `readonly` **url**: [`SafeApiUrl`](../../../atlas-net/@univ-lehavre/atlas-net/type-aliases/SafeApiUrl.md)
 
-Defined in: [packages/crf/src/redcap/types.ts:33](https://github.com/univ-lehavre/atlas/blob/45d422725947bfe2a93b0baafcbbb59a4d8190f9/packages/crf/src/redcap/types.ts#L33)
+Defined in: [packages/crf/src/redcap/types.ts:33](https://github.com/univ-lehavre/atlas/blob/067e8421c3433ceb323de771c4474cc290439004/packages/crf/src/redcap/types.ts#L33)
