@@ -9,3 +9,8 @@ Split redcap package into redcap-openapi and redcap-sandbox
 - Created `@univ-lehavre/atlas-redcap-sandbox` (private) for testing infrastructure
 - Docker environment and contract tests now in separate sandbox package
 - REDCap upstream source moved to `upstream/` at package root
+- Extracted pure functional core module (`src/core/`) with:
+  - Pure parsers for PHP source files (index.php, help.php, action files, schemas)
+  - OpenAPI spec generator (pure function taking parsed data)
+  - Spec comparator for detecting breaking changes
+  - Exported via `@univ-lehavre/atlas-redcap-openapi/core`
