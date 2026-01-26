@@ -1,0 +1,42 @@
+{
+  "name": "@univ-lehavre/atlas-redcap-sandbox",
+  "version": "1.0.0",
+  "private": true,
+  "description": "REDCap testing sandbox - Docker environment and contract tests for validating OpenAPI specs",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "packages/redcap-sandbox"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "docker:up": "docker compose -f docker-compose.yaml up -d",
+    "docker:down": "docker compose -f docker-compose.yaml down",
+    "docker:logs": "docker compose -f docker-compose.yaml logs -f",
+    "docker:reset": "docker compose -f docker-compose.yaml down -v && docker compose -f docker-compose.yaml up -d",
+    "docker:install": "./scripts/install-redcap.sh",
+    "test:setup": "tsx tests/fixtures/setup-test-projects.ts",
+    "test:contract": "./scripts/test-contract.sh",
+    "test:security": "./scripts/test-security.sh",
+    "test:api": "tsx tests/api-smoke.ts",
+    "test": "vitest run",
+    "lint": "eslint tests",
+    "lint:fix": "eslint tests --fix",
+    "format": "prettier --write tests",
+    "format:check": "prettier --check tests"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
