@@ -5,7 +5,7 @@ This directory contains Docker configuration for running a local REDCap instance
 ## Prerequisites
 
 1. **Docker** and **Docker Compose** installed
-2. **REDCap source code** placed in `../../upstream/versions/`
+2. **REDCap source code** placed in `../upstream/versions/`
 
 ## Quick Start
 
@@ -101,7 +101,7 @@ docker compose up -d
 
 ```bash
 # Fix edocs permissions
-chmod -R 777 ../../upstream/shared/edocs
+chmod -R 777 ../upstream/shared/edocs
 ```
 
 ### Database Connection Failed

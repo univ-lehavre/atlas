@@ -20,14 +20,13 @@ packages/redcap/
 │   ├── comparator/         # Spec comparison
 │   ├── server/             # Documentation server
 │   └── cli/                # Interactive CLI
-├── specs/                  # Generated OpenAPI specs
+├── specs/                  # Generated OpenAPI specs (output)
 │   └── versions/           # Specs by REDCap version
-├── upstream/               # REDCap PHP source (gitignored)
-│   └── versions/           # Multiple REDCap versions
-└── dev/                    # Development environment
+└── sandbox/                # Development environment
     ├── docker/             # Docker compose + config
     ├── scripts/            # Automation scripts
-    └── tests/              # Contract & integration tests
+    ├── tests/              # Contract & integration tests
+    └── upstream/           # REDCap PHP source (input, gitignored)
 ```
 
 ## Installation
@@ -102,7 +101,7 @@ serve({
 ```bash
 # Extract to versions directory
 unzip redcap14.5.10.zip
-mv redcap_v14.5.10 upstream/versions/14.5.10
+mv redcap_v14.5.10 sandbox/upstream/versions/14.5.10
 ```
 
 ### Commands
