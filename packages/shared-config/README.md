@@ -1,11 +1,11 @@
-# @univ-lehavre/atlas-typescript-config
+# @univ-lehavre/atlas-shared-config
 
 Shared TypeScript configuration for Atlas projects.
 
 ## Installation
 
 ```bash
-pnpm add -D @univ-lehavre/atlas-typescript-config
+pnpm add -D @univ-lehavre/atlas-shared-config
 ```
 
 ## Available Configurations
@@ -20,7 +20,7 @@ pnpm add -D @univ-lehavre/atlas-typescript-config
 ```json
 // tsconfig.json
 {
-  "extends": "@univ-lehavre/atlas-typescript-config/node.json",
+  "extends": "@univ-lehavre/atlas-shared-config/node.json",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src"

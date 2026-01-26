@@ -1,4 +1,4 @@
-import { typescript } from '@univ-lehavre/atlas-typescript-config/eslint';
+import { typescript } from '@univ-lehavre/atlas-shared-config/eslint';
 
 export default typescript({
   ignores: ['**/generated/**'],
