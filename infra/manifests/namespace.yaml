@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: ecrin
-  labels:
-    name: ecrin
-    # Enable Cilium identity-based security
-    io.cilium.k8s.policy.cluster: 'ecrin'

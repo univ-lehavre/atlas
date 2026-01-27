@@ -1,101 +1,69 @@
 <script lang="ts">
-  interface Props {
-    data: {
-      user?: {
-        username: string;
-        email: string;
-        name?: string;
-        groups: string[];
-      };
-    };
-  }
+  import type { PageProps } from './$types';
 
-  let { data }: Props = $props();
+  import Collaborate from '$lib/ui/Collaborate.svelte';
+  import Introduce from '$lib/ui/Introduce.svelte';
+  import Explore from '$lib/ui/Explore.svelte';
+  import Administrate from '$lib/ui/Administrate.svelte';
+  import Ask from '$lib/ui/Ask.svelte';
+  import Publish from '$lib/ui/Publish.svelte';
+  import Options from '$lib/ui/Options.svelte';
+  import ECRIN from '$lib/ui/ECRIN.svelte';
+  import TopNavbar from '$lib/ui/TopNavbar.svelte';
+  import Rule from '$lib/ui/Rule.svelte';
+
+  let { data }: PageProps = $props();
+
+  const userId = $derived(data.user?.id);
+  const hasPushedAccount = $derived(
+    (data.pushed as { hasPushedAccount?: boolean } | null)?.hasPushedAccount
+  );
+  const url = $derived(data.url);
+  const email = $derived(data.user?.email);
+
+  console.log('Page data:', data);
+
+  let containerClass = $state<'container' | 'container-fluid' | 'container-fluid w-75'>(
+    'container'
+  );
+  const handleContainerChange = (mode: 'default' | 'w-75' | 'fluid') => {
+    containerClass =
+      mode === 'fluid' ? 'container-fluid' : mode === 'w-75' ? 'container-fluid w-75' : 'container';
+  };
 </script>
 
-<section class="hero">
-  <h1>ECRIN Dashboard</h1>
-  <p>Plateforme de gestion des donnees de recherche clinique</p>
+<ECRIN />
 
-  {#if data.user}
-    <p>Bienvenue, <strong>{data.user.name ?? data.user.email}</strong></p>
-    <a href="/dashboard" class="btn">Acceder au dashboard</a>
-  {:else}
-    <p>Connectez-vous pour acceder a vos donnees.</p>
-    <a href="/authelia/" class="btn">Se connecter</a>
-  {/if}
-</section>
+<TopNavbar user={data.user} />
 
-<section class="features">
-  <div class="feature">
-    <h3>Securise</h3>
-    <p>Architecture Zero Trust avec authentification forte et chiffrement de bout en bout.</p>
+<div class={containerClass}>
+  <div
+    data-bs-spy="scroll"
+    data-bs-target="#navbar1"
+    data-bs-root-margin="0px 0px -50%"
+    data-bs-smooth-scroll="true"
+  >
+    <Introduce />
+    <Rule />
+    <Collaborate {userId} {url} />
+    <Rule />
+    <Explore {userId} />
+    <Rule />
+    <Ask />
+    <Rule />
+    <Publish />
+    <Rule />
+    <Administrate {userId} {email} {url} {hasPushedAccount} />
+    {#if data.user?.labels?.includes('admin')}
+      <Rule />
+      <Options onChange={handleContainerChange} />
+    {/if}
   </div>
-  <div class="feature">
-    <h3>Conforme</h3>
-    <p>Respect des normes RGPD et des bonnes pratiques de recherche clinique.</p>
-  </div>
-  <div class="feature">
-    <h3>Collaboratif</h3>
-    <p>Acces controle par roles et partage securise entre chercheurs.</p>
-  </div>
-</section>
+</div>
 
 <style>
-  .hero {
-    text-align: center;
-    padding: 4rem 2rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-  }
-
-  .hero h1 {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .hero p {
-    font-size: 1.1rem;
-    opacity: 0.9;
-  }
-
-  .btn {
-    display: inline-block;
-    margin-top: 1.5rem;
-    padding: 0.75rem 2rem;
-    background: white;
-    color: #667eea;
-    text-decoration: none;
-    border-radius: 4px;
-    font-weight: 600;
-  }
-
-  .btn:hover {
-    background: #f0f0f0;
-  }
-
-  .features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-  }
-
-  .feature {
-    padding: 1.5rem;
-    background: #f9f9f9;
-    border-radius: 8px;
-    border: 1px solid #eee;
-  }
-
-  .feature h3 {
-    margin-bottom: 0.5rem;
-    color: #333;
-  }
-
-  .feature p {
-    color: #666;
-    font-size: 0.95rem;
+  :global(#introduce, #explore, #ask, #collaborate, #publish, #administrate) {
+    /* Empêche la navbar sticky de masquer le haut des sections ciblées */
+    scroll-margin-top: var(--nav-offset);
   }
 </style>

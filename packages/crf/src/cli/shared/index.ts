@@ -7,27 +7,11 @@
 export {
   type CliContext,
   type OutputMode,
-  CliContextService,
   createCliContext,
-  makeCliContextLayer,
   detectCi,
-  resolveOutputMode,
   ExitCode,
 } from './context.js';
 
 export type { ExitCode as ExitCodeType } from './context.js';
 
-export {
-  type StepStatus,
-  type SelectOption,
-  log,
-  spinner,
-  intro,
-  outro,
-  formatJson,
-  outputJson,
-  promptText,
-  promptConfirm,
-  promptSelect,
-  pc,
-} from './terminal.js';
+export { type StepStatus, log, intro, outro, outputJson, pc } from './terminal.js';

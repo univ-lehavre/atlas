@@ -36,6 +36,7 @@
     "./eslint": "./eslint/index.js",
     "./eslint/typescript": "./eslint/typescript.js",
     "./eslint/svelte": "./eslint/svelte.js",
+    "./eslint/svelte-relaxed": "./eslint/svelte-relaxed.js",
     "./eslint/scripts": "./eslint/scripts.js",
     "./prettier": "./prettier/index.js",
     "./prettier/base": "./prettier/base.js",
