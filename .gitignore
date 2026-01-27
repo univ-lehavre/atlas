@@ -16,3 +16,5 @@ docs/.vitepress/dist/
 # SvelteKit generated files
 .svelte-kit/
 build/
+assets/source/
+.DS_Store
