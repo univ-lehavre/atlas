@@ -57,7 +57,6 @@ describe('validateMagicUrlLogin', () => {
   });
 
   it('should throw for missing userId', () => {
-     
     expect(() => validateMagicUrlLogin(undefined, 'secret')).toThrow(MagicUrlLoginValidationError);
   });
 
