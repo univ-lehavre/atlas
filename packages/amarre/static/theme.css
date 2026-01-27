@@ -1,0 +1,191 @@
+/**
+ * Personnalisation du thème Bootstrap pour AMARRE
+ * Adapte les couleurs primary et warning aux couleurs du logo AMARRE
+ */
+
+body {
+  background-color: rgba(10, 126, 164, 0.05);
+}
+
+:root {
+  /* Couleur primaire (bleu marine du logo AMARRE) */
+  --bs-primary: #0c4e6a;
+  --bs-primary-rgb: 12, 78, 106;
+  --bs-primary-text-emphasis: #050e1a;
+  --bs-primary-bg-subtle: #cfe2e9;
+  --bs-primary-border-subtle: #a0c5d3;
+
+  /* Couleur warning (jaune/doré du logo AMARRE) */
+  --bs-warning: #e6b229;
+  --bs-warning-rgb: 230, 178, 41;
+  --bs-warning-text-emphasis: #5c470f;
+  --bs-warning-bg-subtle: #faf3d8;
+  --bs-warning-border-subtle: #f5e7b1;
+
+  /* Couleur info (bleu clair du logo AMARRE pour les actions en attente) */
+  --bs-info: #0a7ea4;
+  --bs-info-rgb: 10, 126, 164;
+  --bs-info-text-emphasis: #043242;
+  --bs-info-bg-subtle: #cfe8f0;
+  --bs-info-border-subtle: #9fd1e1;
+
+  /* Liens utilisant la couleur primaire */
+  --bs-link-color: #0c4e6a;
+  --bs-link-hover-color: #094058;
+  --bs-link-color-rgb: 12, 78, 106;
+  --bs-link-hover-color-rgb: 9, 64, 88;
+}
+
+/* Ajustement des boutons primary */
+.btn-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #0c4e6a;
+  --bs-btn-border-color: #0c4e6a;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #094058;
+  --bs-btn-hover-border-color: #083a4f;
+  --bs-btn-focus-shadow-rgb: 48, 105, 130;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #083a4f;
+  --bs-btn-active-border-color: #07344a;
+  --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: #0c4e6a;
+  --bs-btn-disabled-border-color: #0c4e6a;
+}
+
+/* Ajustement des boutons warning */
+.btn-warning {
+  --bs-btn-color: #000;
+  --bs-btn-bg: #e6b229;
+  --bs-btn-border-color: #e6b229;
+  --bs-btn-hover-color: #000;
+  --bs-btn-hover-bg: #ea9e21;
+  --bs-btn-hover-border-color: #e99a1e;
+  --bs-btn-focus-shadow-rgb: 207, 160, 39;
+  --bs-btn-active-color: #000;
+  --bs-btn-active-bg: #e99a1e;
+  --bs-btn-active-border-color: #e7961d;
+  --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+  --bs-btn-disabled-color: #000;
+  --bs-btn-disabled-bg: #e6b229;
+  --bs-btn-disabled-border-color: #e6b229;
+}
+
+/* Ajustement des badges primary */
+.badge.bg-primary {
+  --bs-badge-color: #fff;
+  background-color: #0c4e6a !important;
+}
+
+/* Ajustement des badges warning */
+.badge.bg-warning {
+  --bs-badge-color: #000;
+  background-color: #e6b229 !important;
+}
+
+/* Ajustement des alertes primary */
+.alert-primary {
+  --bs-alert-color: #050e1a;
+  --bs-alert-bg: #cfe2e9;
+  --bs-alert-border-color: #a0c5d3;
+}
+
+/* Ajustement des alertes warning */
+.alert-warning {
+  --bs-alert-color: #5c470f;
+  --bs-alert-bg: #faf3d8;
+  --bs-alert-border-color: #f5e7b1;
+}
+
+/* Ajustement des list-group-item-action avec couleur primaire */
+.list-group-item-action.active {
+  background-color: #0c4e6a !important;
+  border-color: #0c4e6a !important;
+  color: #fff !important;
+}
+
+.list-group-item-action:hover,
+.list-group-item-action:focus {
+  background-color: #cfe2e9;
+}
+
+/* Ajustement des list-group-item-primary */
+.list-group-item-primary {
+  background-color: #cfe2e9;
+  color: #050e1a;
+  border-color: #a0c5d3;
+}
+
+.list-group-item-primary.list-group-item-action:hover,
+.list-group-item-primary.list-group-item-action:focus {
+  background-color: #a0c5d3;
+  color: #050e1a;
+}
+
+/* Ajustement des spinners avec couleur primaire */
+.spinner-border.text-primary,
+.spinner-grow.text-primary {
+  color: #0c4e6a !important;
+}
+
+/* Ajustement de la navbar avec couleur primaire */
+.navbar.bg-primary {
+  background-color: #0c4e6a !important;
+}
+
+.bg-primary {
+  background-color: #0c4e6a !important;
+}
+
+.bg-warning {
+  background-color: #e6b229 !important;
+}
+
+.text-primary {
+  color: #0c4e6a !important;
+}
+
+.text-warning {
+  color: #e6b229 !important;
+}
+
+.border-primary {
+  border-color: #0c4e6a !important;
+}
+
+.border-warning {
+  border-color: #e6b229 !important;
+}
+
+/* Ajustement des list-group-item-info (bleu clair AMARRE pour actions en attente) */
+.list-group-item-info {
+  background-color: #cfe8f0;
+  color: #043242;
+  border-color: #9fd1e1;
+}
+
+.list-group-item-info.list-group-item-action:hover,
+.list-group-item-info.list-group-item-action:focus {
+  background-color: #9fd1e1;
+  color: #043242;
+}
+
+/* Ajustement des alertes info */
+.alert-info {
+  --bs-alert-color: #043242;
+  --bs-alert-bg: #cfe8f0;
+  --bs-alert-border-color: #9fd1e1;
+}
+
+.bg-info {
+  background-color: #0a7ea4 !important;
+}
+
+.text-info {
+  color: #0a7ea4 !important;
+}
+
+.border-info {
+  border-color: #0a7ea4 !important;
+}
