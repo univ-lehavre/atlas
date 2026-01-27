@@ -1,0 +1,70 @@
+const ECR = [
+  { code: 'ecr1', label: 'Maritime and port issues' },
+  { code: 'ecr2', label: 'The city of tomorrow' },
+  { code: 'ecr3', label: 'Transitions, risks and hazards' },
+];
+
+enum Colors {
+  RED = '#FA4F40',
+  BLUE = '#727EE0',
+  GREEN = '#5DB346',
+  YELLOW = '#F9D648',
+  PURPLE = '#A25DDC',
+  ORANGE = '#F28C28',
+  PINK = '#FF69B4',
+  BROWN = '#8B4513',
+  CYAN = '#00FFFF',
+  MAGENTA = '#FF00FF',
+  LIME = '#00FF00',
+  TEAL = '#008080',
+  OLIVE = '#808000',
+  MAROON = '#800000',
+  NAVY = '#000080',
+  WHITE = '#FFFFFF',
+  BLACK = '#000000',
+}
+
+const {
+  RED,
+  BLUE,
+  GREEN,
+  YELLOW,
+  PURPLE,
+  ORANGE,
+  PINK,
+  BROWN,
+  CYAN,
+  MAGENTA,
+  LIME,
+  TEAL,
+  OLIVE,
+  MAROON,
+  NAVY,
+  WHITE,
+  BLACK,
+} = Colors;
+
+const SESSION_COOKIE = 'session';
+
+export {
+  ECR,
+  Colors,
+  RED,
+  BLUE,
+  GREEN,
+  YELLOW,
+  PURPLE,
+  ORANGE,
+  PINK,
+  BROWN,
+  CYAN,
+  MAGENTA,
+  LIME,
+  TEAL,
+  OLIVE,
+  MAROON,
+  NAVY,
+  WHITE,
+  BLACK,
+  SESSION_COOKIE,
+};
