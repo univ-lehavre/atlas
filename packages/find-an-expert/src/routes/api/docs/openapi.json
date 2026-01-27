@@ -1,0 +1,1404 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ECRIN Talent finder API",
+    "description": "API REST pour l'application ECRIN Talent finder",
+    "version": "0.2.0"
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "API v1"
+    }
+  ],
+  "tags": [
+    {
+      "name": "auth",
+      "description": "Authentification par magic link"
+    },
+    {
+      "name": "users",
+      "description": "Gestion des utilisateurs"
+    },
+    {
+      "name": "consents",
+      "description": "Gestion du consentement utilisateur"
+    },
+    {
+      "name": "institutions",
+      "description": "Recherche et statistiques des institutions de recherche"
+    },
+    {
+      "name": "works",
+      "description": "Publications et travaux de recherche"
+    },
+    {
+      "name": "repositories",
+      "description": "Dépôts de code et statistiques GitHub"
+    },
+    {
+      "name": "health",
+      "description": "Vérification de l'état des services"
+    }
+  ],
+  "paths": {
+    "/auth/signup": {
+      "post": {
+        "operationId": "signupWithEmail",
+        "summary": "Inscription par email",
+        "description": "Envoie un magic link à l'adresse email fournie pour créer un compte.",
+        "tags": ["auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "description": "Adresse email de l'utilisateur"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Magic link envoyé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignupSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Email invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "loginWithMagicLink",
+        "summary": "Connexion avec magic link",
+        "description": "Valide le magic link et crée une session utilisateur.",
+        "tags": ["auth"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["userId", "secret"],
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "description": "ID utilisateur du magic link"
+                  },
+                  "secret": {
+                    "type": "string",
+                    "description": "Secret du magic link"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connexion réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginSuccess"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres invalides",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "summary": "Déconnexion",
+        "description": "Termine la session utilisateur courante.",
+        "tags": ["auth"],
+        "responses": {
+          "200": {
+            "description": "Déconnexion réussie",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "summary": "Profil utilisateur courant",
+        "description": "Retourne les informations du profil de l'utilisateur authentifié.",
+        "tags": ["users"],
+        "responses": {
+          "200": {
+            "description": "Profil utilisateur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/consents": {
+      "get": {
+        "operationId": "listConsents",
+        "summary": "Liste des consentements",
+        "description": "Retourne la liste de tous les consentements de l'utilisateur authentifié.",
+        "tags": ["consents"],
+        "responses": {
+          "200": {
+            "description": "Liste des consentements",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/consents/{id}": {
+      "get": {
+        "operationId": "getConsent",
+        "summary": "Obtenir un consentement",
+        "description": "Retourne le statut d'un type de consentement spécifique.",
+        "tags": ["consents"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["openalex_email"]
+            },
+            "description": "Type de consentement"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statut du consentement",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Type de consentement non trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateConsent",
+        "summary": "Mettre à jour un consentement",
+        "description": "Accorde ou révoque un consentement spécifique.",
+        "tags": ["consents"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["openalex_email"]
+            },
+            "description": "Type de consentement"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["granted"],
+                "properties": {
+                  "granted": {
+                    "type": "boolean",
+                    "description": "true pour accorder, false pour révoquer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Consentement mis à jour",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentStatus"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètre invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Type de consentement non trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "revokeConsent",
+        "summary": "Révoquer un consentement",
+        "description": "Révoque un consentement spécifique.",
+        "tags": ["consents"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": ["openalex_email"]
+            },
+            "description": "Type de consentement"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consentement révoqué",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConsentStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Type de consentement non trouvé",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/institutions/search": {
+      "get": {
+        "operationId": "searchInstitutions",
+        "summary": "Rechercher des institutions",
+        "description": "Recherche des institutions de recherche via l'API OpenAlex (autocomplete). Retourne jusqu'à 10 résultats.",
+        "tags": ["institutions"],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "description": "Terme de recherche (nom de l'institution)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Résultats de recherche",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstitutionSearchResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Erreur API OpenAlex",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/institutions/stats": {
+      "get": {
+        "operationId": "getInstitutionStatsBatch",
+        "summary": "Statistiques des institutions (batch)",
+        "description": "Retourne des statistiques complètes pour plusieurs institutions : nombre de publications, articles par année, nombre d'auteurs.",
+        "tags": ["institutions"],
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "IDs OpenAlex des institutions, séparés par des virgules (max 10)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistiques des institutions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstitutionStatsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètre manquant ou invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Consentement requis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Erreur API OpenAlex",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/institutions/{id}/stats": {
+      "get": {
+        "operationId": "getInstitutionStats",
+        "summary": "Statistiques d'une institution",
+        "description": "Retourne des statistiques complètes pour une institution spécifique.",
+        "tags": ["institutions"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "ID OpenAlex de l'institution"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistiques de l'institution",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstitutionStatsResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètre manquant ou invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Consentement requis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Erreur API OpenAlex",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/works/counts": {
+      "get": {
+        "operationId": "getWorksCount",
+        "summary": "Nombre de publications",
+        "description": "Retourne le nombre de publications des institutions spécifiées sur les 5 dernières années.",
+        "tags": ["works"],
+        "parameters": [
+          {
+            "name": "institutions",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "IDs OpenAlex des institutions, séparés par des virgules (max 10)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Comptage des publications",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorksCountResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètre manquant ou invalide",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Consentement requis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Erreur API OpenAlex",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{id}": {
+      "get": {
+        "operationId": "getRepository",
+        "summary": "Détails du dépôt",
+        "description": "Retourne les détails et URLs d'un dépôt.",
+        "tags": ["repositories"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant du dépôt"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Détails du dépôt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepositoryDetail"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{id}/stats": {
+      "get": {
+        "operationId": "getRepositoryStats",
+        "summary": "Statistiques du dépôt",
+        "description": "Retourne les statistiques complètes du dépôt git : commits, code, tests, GitHub.",
+        "tags": ["repositories"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant du dépôt"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistiques du dépôt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepositoryStats"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{id}/issues": {
+      "get": {
+        "operationId": "getRepositoryIssues",
+        "summary": "Issues du dépôt",
+        "description": "Retourne les statistiques des issues GitHub du dépôt.",
+        "tags": ["repositories"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant du dépôt"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistiques des issues",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GitHubItemStats"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{id}/pulls": {
+      "get": {
+        "operationId": "getRepositoryPulls",
+        "summary": "Pull requests du dépôt",
+        "description": "Retourne les statistiques des pull requests GitHub du dépôt.",
+        "tags": ["repositories"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant du dépôt"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistiques des pull requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GitHubItemStats"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{id}/contributors": {
+      "get": {
+        "operationId": "getRepositoryContributors",
+        "summary": "Contributeurs du dépôt",
+        "description": "Retourne la liste des contributeurs du dépôt. (Non implémenté)",
+        "tags": ["repositories"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant du dépôt"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liste des contributeurs",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContributorsResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/repositories/{id}/analysis": {
+      "post": {
+        "operationId": "triggerRepositoryAnalysis",
+        "summary": "Déclencher une analyse",
+        "description": "Déclenche une analyse du dépôt. (Non implémenté)",
+        "tags": ["repositories"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Identifiant du dépôt"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Analyse démarrée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur serveur",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "summary": "État de santé des services",
+        "description": "Retourne l'état de santé de l'application et de ses dépendances.",
+        "tags": ["health"],
+        "responses": {
+          "200": {
+            "description": "Services en bonne santé ou dégradés",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Services indisponibles",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiError": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "Code d'erreur machine"
+          },
+          "message": {
+            "type": "string",
+            "description": "Message d'erreur lisible"
+          },
+          "cause": {
+            "type": "string",
+            "description": "Cause technique (optionnel)"
+          }
+        }
+      },
+      "SignupSuccess": {
+        "type": "object",
+        "properties": {
+          "signedUp": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "LoginSuccess": {
+        "type": "object",
+        "properties": {
+          "loggedIn": {
+            "type": "boolean"
+          }
+        }
+      },
+      "LogoutSuccess": {
+        "type": "object",
+        "properties": {
+          "loggedOut": {
+            "type": "boolean"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ConsentStatus": {
+        "type": "object",
+        "required": ["consentType", "granted", "updatedAt"],
+        "properties": {
+          "consentType": {
+            "type": "string",
+            "enum": ["openalex_email"],
+            "description": "Type de consentement"
+          },
+          "granted": {
+            "type": "boolean",
+            "nullable": true,
+            "description": "true si accordé, false si révoqué, null si jamais demandé"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Date de dernière mise à jour (ISO 8601)"
+          }
+        }
+      },
+      "ConsentListResponse": {
+        "type": "object",
+        "required": ["consents"],
+        "properties": {
+          "consents": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConsentStatus"
+            },
+            "description": "Liste des consentements"
+          }
+        }
+      },
+      "Institution": {
+        "type": "object",
+        "required": ["id", "displayName", "citedByCount"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "OpenAlex ID de l'institution"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Nom de l'institution"
+          },
+          "location": {
+            "type": "string",
+            "nullable": true,
+            "description": "Localisation (ville, pays)"
+          },
+          "citedByCount": {
+            "type": "integer",
+            "description": "Nombre de citations"
+          },
+          "worksCount": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Nombre de publications"
+          }
+        }
+      },
+      "InstitutionSearchResponse": {
+        "type": "object",
+        "required": ["institutions", "meta"],
+        "properties": {
+          "institutions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Institution"
+            },
+            "description": "Liste des institutions trouvées (max 10)"
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "count": {
+                "type": "integer",
+                "description": "Nombre de résultats"
+              },
+              "responseTimeMs": {
+                "type": "integer",
+                "description": "Temps de réponse en millisecondes"
+              }
+            }
+          }
+        }
+      },
+      "YearlyArticleCount": {
+        "type": "object",
+        "required": ["year", "count"],
+        "properties": {
+          "year": {
+            "oneOf": [
+              {
+                "type": "integer",
+                "description": "Année de publication (ex: 2024)"
+              },
+              {
+                "type": "string",
+                "enum": ["before"],
+                "description": "Articles antérieurs à la période affichée"
+              }
+            ],
+            "description": "Année ou 'before' pour les articles plus anciens"
+          },
+          "count": {
+            "type": "integer",
+            "description": "Nombre d'articles"
+          }
+        }
+      },
+      "InstitutionStatsResponse": {
+        "type": "object",
+        "required": [
+          "worksCount",
+          "articlesCount",
+          "articlesByYear",
+          "authorsCount",
+          "responseTimeMs",
+          "institutionCount"
+        ],
+        "properties": {
+          "worksCount": {
+            "type": "integer",
+            "description": "Nombre total de publications (tous types)"
+          },
+          "articlesCount": {
+            "type": "integer",
+            "description": "Nombre d'articles (type:article uniquement)"
+          },
+          "articlesByYear": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/YearlyArticleCount"
+            },
+            "description": "Décompte des articles par année"
+          },
+          "authorsCount": {
+            "type": "integer",
+            "description": "Nombre d'auteurs distincts affiliés aux institutions"
+          },
+          "responseTimeMs": {
+            "type": "integer",
+            "description": "Temps de réponse total en millisecondes"
+          },
+          "institutionCount": {
+            "type": "integer",
+            "description": "Nombre d'institutions interrogées"
+          }
+        }
+      },
+      "WorksCountResponse": {
+        "type": "object",
+        "required": ["count", "responseTimeMs", "fromDate", "institutionCount"],
+        "properties": {
+          "count": {
+            "type": "integer",
+            "description": "Nombre de publications"
+          },
+          "responseTimeMs": {
+            "type": "integer",
+            "description": "Temps de réponse en millisecondes"
+          },
+          "fromDate": {
+            "type": "string",
+            "description": "Date de début de la période (format YYYY-MM-DD)"
+          },
+          "institutionCount": {
+            "type": "integer",
+            "description": "Nombre d'institutions interrogées"
+          }
+        }
+      },
+      "RepositoryDetail": {
+        "type": "object",
+        "required": ["id", "name", "owner", "urls"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Identifiant du dépôt"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Nom du dépôt"
+          },
+          "owner": {
+            "type": "string",
+            "nullable": true,
+            "description": "Propriétaire du dépôt"
+          },
+          "urls": {
+            "$ref": "#/components/schemas/GitHubUrls"
+          }
+        }
+      },
+      "GitHubUrls": {
+        "type": "object",
+        "properties": {
+          "repository": {
+            "type": "string",
+            "nullable": true
+          },
+          "issues": {
+            "type": "string",
+            "nullable": true
+          },
+          "newIssue": {
+            "type": "string",
+            "nullable": true
+          },
+          "pullRequests": {
+            "type": "string",
+            "nullable": true
+          },
+          "discussions": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      },
+      "CodeStats": {
+        "type": "object",
+        "properties": {
+          "files": {
+            "type": "integer"
+          },
+          "constants": {
+            "type": "integer"
+          },
+          "functions": {
+            "type": "integer"
+          },
+          "types": {
+            "type": "integer"
+          }
+        }
+      },
+      "TestStats": {
+        "type": "object",
+        "properties": {
+          "files": {
+            "type": "integer"
+          },
+          "describes": {
+            "type": "integer"
+          },
+          "tests": {
+            "type": "integer"
+          }
+        }
+      },
+      "GitHubItemStats": {
+        "type": "object",
+        "properties": {
+          "open": {
+            "type": "integer"
+          },
+          "closed": {
+            "type": "integer"
+          }
+        }
+      },
+      "PeriodStats": {
+        "type": "object",
+        "properties": {
+          "period": {
+            "type": "string",
+            "description": "Format ISO: YYYY-MM-DDTHH"
+          },
+          "commits": {
+            "type": "integer"
+          },
+          "additions": {
+            "type": "integer"
+          },
+          "deletions": {
+            "type": "integer"
+          },
+          "filesChanged": {
+            "type": "integer"
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "RepositoryStats": {
+        "type": "object",
+        "properties": {
+          "totalCommits": {
+            "type": "integer"
+          },
+          "totalAdditions": {
+            "type": "integer"
+          },
+          "totalDeletions": {
+            "type": "integer"
+          },
+          "firstCommitDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "lastCommitDate": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "currentCode": {
+            "$ref": "#/components/schemas/CodeStats"
+          },
+          "currentTests": {
+            "$ref": "#/components/schemas/TestStats"
+          },
+          "hourlyStats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PeriodStats"
+            }
+          },
+          "github": {
+            "type": "object",
+            "properties": {
+              "issues": {
+                "$ref": "#/components/schemas/GitHubItemStats"
+              },
+              "pullRequests": {
+                "$ref": "#/components/schemas/GitHubItemStats"
+              },
+              "repoUrl": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "ContributorsResponse": {
+        "type": "object",
+        "required": ["contributors", "message"],
+        "properties": {
+          "contributors": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "description": "Liste des contributeurs (vide - non implémenté)"
+          },
+          "message": {
+            "type": "string",
+            "description": "Message d'état"
+          }
+        }
+      },
+      "AnalysisResponse": {
+        "type": "object",
+        "required": ["status", "message"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in_progress", "completed", "failed"],
+            "description": "État de l'analyse"
+          },
+          "message": {
+            "type": "string",
+            "description": "Message d'état"
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["healthy", "degraded", "unhealthy"],
+            "description": "État global de l'application"
+          },
+          "services": {
+            "type": "object",
+            "description": "État des services individuels"
+          }
+        }
+      }
+    }
+  }
+}
