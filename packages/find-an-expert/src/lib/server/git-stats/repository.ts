@@ -47,9 +47,7 @@ export const parseNumstatLine = (line: string): ChangedFile | null => {
 /**
  * Parses git log output into CommitStats array.
  */
-export const parseGitLog = (
-  log: LogResult<DefaultLogFields & { numstat?: string }>
-): TCommitStats[] => {
+const parseGitLog = (log: LogResult<DefaultLogFields & { numstat?: string }>): TCommitStats[] => {
   return log.all.map((commit) => {
     let additions = 0;
     let deletions = 0;

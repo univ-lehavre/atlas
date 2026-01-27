@@ -2,8 +2,6 @@
 export {
   ApplicationError,
   SessionError,
-  InvalidContentTypeError,
-  InvalidJsonBodyError,
   NotAnEmailError,
   type ErrorOptions,
 } from '@univ-lehavre/atlas-errors';

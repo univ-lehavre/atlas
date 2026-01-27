@@ -27,7 +27,7 @@
     "test": "turbo test",
     "test:coverage": "turbo test:coverage",
     "typecheck": "turbo typecheck",
-    "knip": "knip --exclude unresolved,exports,types",
+    "knip": "knip --exclude unresolved,types",
     "cpd": "jscpd --pattern \"packages/*/src/**/*.ts\" --pattern \"apps/*/src/**/*.ts\"",
     "license:audit": "license-checker --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;Unlicense\" --excludePrivatePackages",
     "audit": "pnpm audit --audit-level=high",

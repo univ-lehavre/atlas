@@ -9,8 +9,7 @@
       "ignoreDependencies": ["@sveltejs/kit"]
     },
     "packages/atlas-auth": {
-      "project": ["src/**/*.ts"],
-      "ignoreDependencies": ["@sveltejs/kit"]
+      "project": ["src/**/*.ts"]
     },
     "packages/atlas-errors": {
       "project": ["src/**/*.ts"]
@@ -19,7 +18,15 @@
       "project": ["src/**/*.ts"]
     },
     "packages/crf": {
-      "project": ["src/**/*.ts"]
+      "project": ["src/**/*.ts"],
+      "ignore": [
+        "src/redcap/brands.ts",
+        "src/redcap/errors.ts",
+        "src/redcap/version.ts",
+        "src/cli/shared/context.ts",
+        "src/cli/shared/terminal.ts",
+        "src/server/schemas.ts"
+      ]
     },
     "packages/redcap-openapi": {
       "project": ["src/**/*.ts"]

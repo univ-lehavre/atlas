@@ -3,7 +3,7 @@ import { z } from 'zod';
 /**
  * GitHub issue/PR count statistics.
  */
-export const GitHubItemStats = z.object({
+const GitHubItemStats = z.object({
   open: z.number().int().nonnegative(),
   closed: z.number().int().nonnegative(),
 });

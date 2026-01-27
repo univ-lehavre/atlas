@@ -19,7 +19,7 @@ export type TConsentType = z.infer<typeof ConsentType>;
 /**
  * Consent action (grant or revoke).
  */
-export const ConsentAction = z.enum(['grant', 'revoke']);
+const ConsentAction = z.enum(['grant', 'revoke']);
 
 export type TConsentAction = z.infer<typeof ConsentAction>;
 

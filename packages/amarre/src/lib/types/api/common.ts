@@ -10,7 +10,7 @@ export const ApiError = z
   .strict()
   .openapi('ApiError');
 
-export const PaginationMeta = z
+const PaginationMeta = z
   .object({
     page: z.number().int().min(1),
     per_page: z.number().int().min(1),
