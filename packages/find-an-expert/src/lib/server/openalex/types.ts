@@ -18,14 +18,12 @@ export type TOpenAlexInstitution = z.infer<typeof OpenAlexInstitution>;
 /**
  * OpenAlex autocomplete response metadata.
  */
-export const OpenAlexAutocompleteMeta = z.object({
+const OpenAlexAutocompleteMeta = z.object({
   count: z.number().int().nonnegative(),
   db_response_time_ms: z.number().int().nonnegative(),
   page: z.number().int().positive(),
   per_page: z.number().int().positive(),
 });
-
-export type TOpenAlexAutocompleteMeta = z.infer<typeof OpenAlexAutocompleteMeta>;
 
 /**
  * OpenAlex autocomplete response for institutions.
@@ -66,12 +64,10 @@ export type TInstitutionSearchResponse = z.infer<typeof InstitutionSearchRespons
 /**
  * OpenAlex works endpoint meta response.
  */
-export const OpenAlexWorksMeta = z.object({
+const OpenAlexWorksMeta = z.object({
   count: z.number().int().nonnegative(),
   db_response_time_ms: z.number().int().nonnegative(),
 });
-
-export type TOpenAlexWorksMeta = z.infer<typeof OpenAlexWorksMeta>;
 
 /**
  * OpenAlex works response (minimal, only meta needed for counting).
@@ -97,12 +93,10 @@ export type TWorksCountResponse = z.infer<typeof WorksCountResponse>;
 /**
  * OpenAlex authors endpoint meta response.
  */
-export const OpenAlexAuthorsMeta = z.object({
+const OpenAlexAuthorsMeta = z.object({
   count: z.number().int().nonnegative(),
   db_response_time_ms: z.number().int().nonnegative(),
 });
-
-export type TOpenAlexAuthorsMeta = z.infer<typeof OpenAlexAuthorsMeta>;
 
 /**
  * OpenAlex authors response (minimal, only meta needed for counting).
@@ -128,13 +122,11 @@ export type TYearlyArticleCount = z.infer<typeof YearlyArticleCount>;
 /**
  * OpenAlex group_by item for publication year.
  */
-export const OpenAlexGroupByItem = z.object({
+const OpenAlexGroupByItem = z.object({
   key: z.string(),
   key_display_name: z.string(),
   count: z.number().int().nonnegative(),
 });
-
-export type TOpenAlexGroupByItem = z.infer<typeof OpenAlexGroupByItem>;
 
 /**
  * OpenAlex works response with group_by (for year statistics).

@@ -50,4 +50,4 @@ const getID = (data: EAV[]): string => {
 const getECRcode = (label: string) =>
   ECR.filter((record) => record.label === label).map((record) => record.code)[0];
 
-export { buildName, getID, getECRcode, capitalizeFirstLetter, transformToName };
+export { buildName, transformToName };

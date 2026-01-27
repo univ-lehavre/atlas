@@ -4,67 +4,17 @@ const ECR = [
   { code: 'ecr3', label: 'Transitions, risks and hazards' },
 ];
 
-enum Colors {
-  RED = '#FA4F40',
-  BLUE = '#727EE0',
-  GREEN = '#5DB346',
-  YELLOW = '#F9D648',
-  PURPLE = '#A25DDC',
-  ORANGE = '#F28C28',
-  PINK = '#FF69B4',
-  BROWN = '#8B4513',
-  CYAN = '#00FFFF',
-  MAGENTA = '#FF00FF',
-  LIME = '#00FF00',
-  TEAL = '#008080',
-  OLIVE = '#808000',
-  MAROON = '#800000',
-  NAVY = '#000080',
-  WHITE = '#FFFFFF',
-  BLACK = '#000000',
-}
-
-const {
-  RED,
-  BLUE,
-  GREEN,
-  YELLOW,
-  PURPLE,
-  ORANGE,
-  PINK,
-  BROWN,
-  CYAN,
-  MAGENTA,
-  LIME,
-  TEAL,
-  OLIVE,
-  MAROON,
-  NAVY,
-  WHITE,
-  BLACK,
-} = Colors;
+const RED = '#FA4F40';
+const BLUE = '#727EE0';
+const GREEN = '#5DB346';
+const YELLOW = '#F9D648';
+const PURPLE = '#A25DDC';
+const CYAN = '#00FFFF';
+const MAGENTA = '#FF00FF';
+const NAVY = '#000080';
+const WHITE = '#FFFFFF';
 
 // Re-export SESSION_COOKIE from shared package
 export { SESSION_COOKIE } from '@univ-lehavre/atlas-appwrite';
 
-export {
-  ECR,
-  Colors,
-  RED,
-  BLUE,
-  GREEN,
-  YELLOW,
-  PURPLE,
-  ORANGE,
-  PINK,
-  BROWN,
-  CYAN,
-  MAGENTA,
-  LIME,
-  TEAL,
-  OLIVE,
-  MAROON,
-  NAVY,
-  WHITE,
-  BLACK,
-};
+export { ECR, RED, BLUE, GREEN, YELLOW, PURPLE, CYAN, MAGENTA, NAVY, WHITE };

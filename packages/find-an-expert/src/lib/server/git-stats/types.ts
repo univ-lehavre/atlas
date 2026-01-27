@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { GitHubStats, type TGitHubStats, emptyGitHubStats } from '$lib/server/github';
+import { GitHubStats, type TGitHubStats } from '$lib/server/github';
 
 // Re-export GitHub types for convenience
-export { type TGitHubStats, emptyGitHubStats };
+export type { TGitHubStats };
 
 /**
  * Statistics for a single commit.
