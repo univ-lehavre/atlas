@@ -82,6 +82,18 @@ export default defineConfig({
             { text: 'Versioning', link: '/guide/citations/dev/sources/versioning' },
           ],
         },
+        {
+          text: 'AMARRE',
+          collapsed: true,
+          items: [
+            { text: 'Introduction', link: '/guide/amarre/' },
+            { text: 'Implémentation', link: '/guide/amarre/IMPLEMENTATION_GUIDE' },
+            { text: 'Architecture', link: '/guide/amarre/ARCHITECTURE_DIAGRAMS' },
+            { text: 'Sécurité', link: '/guide/amarre/SECURITY' },
+            { text: 'Tests IA', link: '/guide/amarre/AI_TESTING_GUIDE' },
+            { text: 'Audit Microservices', link: '/guide/amarre/MICROSERVICES_AUDIT' },
+          ],
+        },
       ],
       '/api/': [
         {
