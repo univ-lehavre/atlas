@@ -20,6 +20,16 @@
       "project": ["src/**/*.ts", "src/**/*.svelte"],
       "ignoreDependencies": ["@univ-lehavre/atlas-logos", "tailwindcss"]
     },
+    "packages/ecrin": {
+      "project": ["src/**/*.ts", "src/**/*.svelte"],
+      "ignore": ["src/lib/ui/Button.svelte", "src/lib/ui/TakeTheSurvey.svelte", "src/lib/redcap/index.ts"],
+      "ignoreDependencies": ["@univ-lehavre/atlas-logos", "appwrite", "graphology-layout-force", "luxon", "openapi-response-validator", "uuid", "@types/luxon"]
+    },
+    "packages/amarre": {
+      "project": ["src/**/*.ts", "src/**/*.svelte"],
+      "ignore": ["src/lib/ui/Retrieve.svelte", "src/lib/ui/Rule.svelte"],
+      "ignoreDependencies": ["@univ-lehavre/atlas-logos"]
+    },
     "apps/*": {
       "project": ["src/**/*.ts"]
     }
