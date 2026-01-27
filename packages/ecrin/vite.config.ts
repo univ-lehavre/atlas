@@ -8,7 +8,7 @@ export default defineConfig({
     viteStaticCopy({
       targets: [
         {
-          src: '../logos/*.{png,svg}',
+          src: 'node_modules/@univ-lehavre/atlas-logos/*.{png,svg}',
           dest: 'logos',
         },
       ],
