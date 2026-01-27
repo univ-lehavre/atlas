@@ -1,7 +1,7 @@
 /**
  * ESLint Svelte Configuration
  *
- * Strict configuration for SvelteKit applications (ecrin).
+ * Strict configuration for SvelteKit applications.
  * Extends TypeScript config with Svelte-specific rules.
  */
 
