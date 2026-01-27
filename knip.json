@@ -16,6 +16,10 @@
     "packages/shared-config": {
       "project": ["*.json", "eslint/**/*.js", "prettier/**/*.js"]
     },
+    "packages/find-an-expert": {
+      "project": ["src/**/*.ts", "src/**/*.svelte"],
+      "ignoreDependencies": ["@univ-lehavre/atlas-logos", "tailwindcss"]
+    },
     "apps/*": {
       "project": ["src/**/*.ts"]
     }

@@ -40,11 +40,13 @@
     "typedoc": "^0.28.16",
     "typescript": "^5.9.3",
     "vite": "^7.2.6",
+    "vite-plugin-static-copy": "^3.2.0",
     "vitest": "^4.0.15",
     "vitest-axe": "^0.1.0"
   },
   "dependencies": {
     "@iconify/svelte": "^5.2.1",
+    "@univ-lehavre/atlas-logos": "workspace:*",
     "node-appwrite": "^21.1.0",
     "simple-git": "^3.30.0",
     "swagger-ui-dist": "^5.31.0",
