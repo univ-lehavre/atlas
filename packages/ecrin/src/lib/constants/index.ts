@@ -44,7 +44,8 @@ const {
   BLACK,
 } = Colors;
 
-const SESSION_COOKIE = 'session';
+// Re-export SESSION_COOKIE from shared package
+export { SESSION_COOKIE } from '@univ-lehavre/atlas-appwrite';
 
 export {
   ECR,
@@ -66,5 +67,4 @@ export {
   NAVY,
   WHITE,
   BLACK,
-  SESSION_COOKIE,
 };

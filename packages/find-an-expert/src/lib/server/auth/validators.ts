@@ -1,24 +1,18 @@
-import { isEmail } from '$lib/validators';
-import { normalizeEmail } from '$lib/normalizers';
-import { SessionError, InvalidContentTypeError, InvalidJsonBodyError } from '$lib/server/http';
 import {
+  isEmail,
+  isHexadecimal,
+  normalizeEmail,
+  ensureJsonContentType as sharedEnsureJsonContentType,
+  parseJsonBody as sharedParseJsonBody,
+} from '@univ-lehavre/atlas-validators';
+import {
+  SessionError,
   NotAnEmailError,
   MagicUrlLoginValidationError,
   UserIdValidationError,
   RequestBodyValidationError,
-} from './errors';
+} from '@univ-lehavre/atlas-errors';
 import { ALLOWED_DOMAINS_REGEXP } from '$env/static/private';
-
-/**
- * Validates if a string contains only hexadecimal characters.
- * Used for validating Appwrite IDs and secrets.
- * @param str - The string to validate
- * @returns True if the string is valid hexadecimal, false otherwise
- */
-const isHexadecimal = (str: string): boolean => {
-  const HEX_RE = /^[0-9a-fA-F]+$/;
-  return HEX_RE.test(str);
-};
 
 /**
  * Validates an email address for signup.
@@ -95,38 +89,9 @@ export const validateUserId = (userId?: unknown): string => {
   return userId;
 };
 
-/**
- * Ensures the request has a JSON content type.
- * @param request - The incoming request
- * @throws InvalidContentTypeError if content type is not JSON
- */
-export const ensureJsonContentType = (request: Request): void => {
-  const contentType = request.headers.get('content-type')?.toLowerCase() ?? '';
-  if (!contentType.includes('application/json')) {
-    throw new InvalidContentTypeError();
-  }
-};
-
-/**
- * Parses the request body as JSON.
- * @param request - The incoming request
- * @returns The parsed JSON object
- * @throws InvalidJsonBodyError if body is not valid JSON
- */
-export const parseJsonBody = async (request: Request): Promise<Record<string, unknown>> => {
-  try {
-    const body = await request.json();
-
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      throw new InvalidJsonBodyError('Request body must be a JSON object');
-    }
-
-    return body as Record<string, unknown>;
-  } catch (error) {
-    if (error instanceof InvalidJsonBodyError) throw error;
-    throw new InvalidJsonBodyError('Request body must be valid JSON');
-  }
-};
+// Re-export shared validators
+export const ensureJsonContentType = sharedEnsureJsonContentType;
+export const parseJsonBody = sharedParseJsonBody;
 
 /**
  * Validates request body and extracts required properties.

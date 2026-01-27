@@ -1,14 +1,26 @@
-import { isEmail } from '$lib/validators';
-import { MagicUrlLoginValidationError, UserIdValidationError } from '$lib/errors/auth';
-import { isAlliance, isHexadecimal } from '$lib/validators/server';
+import { isEmail, isHexadecimal } from '@univ-lehavre/atlas-validators';
 import {
-  InvalidContentTypeError,
-  InvalidJsonBodyError,
+  ensureJsonContentType as sharedEnsureJsonContentType,
+  parseJsonBody as sharedParseJsonBody,
+} from '@univ-lehavre/atlas-validators';
+import {
   NotAnEmailError,
   NotPartOfAllianceError,
   SessionError,
-} from '$lib/errors';
+  MagicUrlLoginValidationError,
+  UserIdValidationError,
+} from '@univ-lehavre/atlas-errors';
+import { isAlliance } from '$lib/validators/server';
 
+/**
+ * Validates an email address for signup.
+ * Checks format and domain against allowed alliance domains (from database).
+ *
+ * @param email - The email to validate
+ * @returns The validated email string
+ * @throws NotAnEmailError if email format is invalid
+ * @throws NotPartOfAllianceError if domain is not in alliance
+ */
 export const validateSignupEmail = async (email?: unknown): Promise<string> => {
   if (!email)
     throw new NotAnEmailError('Registration not possible', { cause: 'No email address provided' });
@@ -23,6 +35,9 @@ export const validateSignupEmail = async (email?: unknown): Promise<string> => {
   return email;
 };
 
+/**
+ * Validates magic URL login parameters.
+ */
 export const validateMagicUrlLogin = (
   userId?: unknown,
   secret?: unknown
@@ -40,6 +55,9 @@ export const validateMagicUrlLogin = (
   return { userId, secret };
 };
 
+/**
+ * Validates a user ID from session.
+ */
 export const validateUserId = (userId?: unknown): string => {
   if (!userId) throw new SessionError('No active session', { cause: 'Missing userId in session' });
   if (typeof userId !== 'string')
@@ -49,24 +67,6 @@ export const validateUserId = (userId?: unknown): string => {
   return userId;
 };
 
-export const ensureJsonContentType = (request: Request): void => {
-  const contentType = request.headers.get('content-type')?.toLowerCase() ?? '';
-  if (!contentType.includes('application/json')) {
-    throw new InvalidContentTypeError();
-  }
-};
-
-export const parseJsonBody = async (request: Request): Promise<Record<string, unknown>> => {
-  try {
-    const body = await request.json();
-
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      throw new InvalidJsonBodyError('Request body must be a JSON object');
-    }
-
-    return body as Record<string, unknown>;
-  } catch (error) {
-    if (error instanceof InvalidJsonBodyError) throw error;
-    throw new InvalidJsonBodyError('Request body must be valid JSON');
-  }
-};
+// Re-export shared validators
+export const ensureJsonContentType = sharedEnsureJsonContentType;
+export const parseJsonBody = sharedParseJsonBody;

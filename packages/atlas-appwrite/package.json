@@ -1,0 +1,67 @@
+{
+  "name": "@univ-lehavre/atlas-appwrite",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared Appwrite client utilities for Atlas applications",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "packages/atlas-appwrite"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/atlas-appwrite#readme",
+  "keywords": [
+    "appwrite",
+    "client",
+    "sveltekit"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@univ-lehavre/atlas-errors": "workspace:*",
+    "node-appwrite": "^17.0.1"
+  },
+  "peerDependencies": {
+    "@sveltejs/kit": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@sveltejs/kit": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@sveltejs/kit": "^2.20.8",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "eslint": "^9.27.0",
+    "prettier": "^3.5.3",
+    "tsup": "^8.5.0",
+    "typescript": "~5.8.3",
+    "vitest": "^4.0.18"
+  }
+}

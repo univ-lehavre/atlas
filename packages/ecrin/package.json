@@ -39,7 +39,10 @@
   "dependencies": {
     "@sigma/node-border": "^3.0.0",
     "@sigma/node-image": "^3.0.0",
+    "@univ-lehavre/atlas-appwrite": "workspace:*",
+    "@univ-lehavre/atlas-errors": "workspace:*",
     "@univ-lehavre/atlas-logos": "workspace:*",
+    "@univ-lehavre/atlas-validators": "workspace:*",
     "appwrite": "^21.4.0",
     "graphology": "^0.26.0",
     "graphology-layout": "^0.6.1",
