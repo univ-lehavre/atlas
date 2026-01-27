@@ -1,24 +1,19 @@
+import { SessionError } from '$lib/errors';
+import { createSessionClient } from '$lib/appwrite/server';
+
 import type { Handle } from '@sveltejs/kit';
 
-/**
- * Server hooks for ecrin
- * Reads authentication headers injected by Authelia after forward-auth
- */
 export const handle: Handle = async ({ event, resolve }) => {
-  // Headers injected by Authelia after successful forward-auth
-  const username = event.request.headers.get('remote-user');
-  const email = event.request.headers.get('remote-email');
-  const name = event.request.headers.get('remote-name');
-  const groups = event.request.headers.get('remote-groups');
-
-  if (username && email) {
-    event.locals.user = {
-      username,
-      email,
-      name: name ?? undefined,
-      groups: groups?.split(',').map((g) => g.trim()) ?? [],
-    };
+  try {
+    const { account } = createSessionClient(event.cookies);
+    const user = await account.get();
+    event.locals.userId = user.$id;
+  } catch (error) {
+    // Ne pas lancer l'erreur ici pour éviter de faire planter toute la requête.
+    // On considère l'utilisateur comme non authentifié si la récupération échoue.
+    if (!(error instanceof SessionError))
+      console.error('Unexpected error while retrieving session', error);
   }
-
-  return resolve(event);
+  const response = await resolve(event);
+  return response;
 };

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Magnifying glass circle - uses primary-700 -->
+  <circle cx="26" cy="26" r="18" fill="none" stroke="var(--color-primary-700, #0369a1)" stroke-width="4"/>
+
+  <!-- Magnifying glass handle - uses primary-700 -->
+  <line x1="40" y1="40" x2="56" y2="56" stroke="var(--color-primary-700, #0369a1)" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Person silhouette inside the magnifying glass -->
+  <!-- Head - uses primary-500 -->
+  <circle cx="26" cy="20" r="6" fill="var(--color-primary-500, #0ea5e9)"/>
+
+  <!-- Body - uses primary-500 -->
+  <path d="M16 38 Q16 30 26 30 Q36 30 36 38" fill="var(--color-primary-500, #0ea5e9)"/>
+</svg>

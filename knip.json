@@ -4,8 +4,29 @@
     ".": {
       "project": ["*.{js,ts}"]
     },
-    "packages/crf": {
+    "packages/atlas-appwrite": {
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@sveltejs/kit"]
+    },
+    "packages/atlas-auth": {
       "project": ["src/**/*.ts"]
+    },
+    "packages/atlas-errors": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/atlas-validators": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/crf": {
+      "project": ["src/**/*.ts"],
+      "ignore": [
+        "src/redcap/brands.ts",
+        "src/redcap/errors.ts",
+        "src/redcap/version.ts",
+        "src/cli/shared/context.ts",
+        "src/cli/shared/terminal.ts",
+        "src/server/schemas.ts"
+      ]
     },
     "packages/redcap-openapi": {
       "project": ["src/**/*.ts"]
@@ -15,6 +36,20 @@
     },
     "packages/shared-config": {
       "project": ["*.json", "eslint/**/*.js", "prettier/**/*.js"]
+    },
+    "packages/find-an-expert": {
+      "project": ["src/**/*.ts", "src/**/*.svelte"],
+      "ignoreDependencies": ["@univ-lehavre/atlas-logos", "tailwindcss"]
+    },
+    "packages/ecrin": {
+      "project": ["src/**/*.ts", "src/**/*.svelte"],
+      "ignore": ["src/lib/ui/Button.svelte", "src/lib/ui/TakeTheSurvey.svelte", "src/lib/redcap/index.ts"],
+      "ignoreDependencies": ["@univ-lehavre/atlas-logos", "appwrite", "graphology-layout-force", "luxon", "openapi-response-validator", "uuid", "@types/luxon"]
+    },
+    "packages/amarre": {
+      "project": ["src/**/*.ts", "src/**/*.svelte"],
+      "ignore": ["src/lib/ui/Retrieve.svelte", "src/lib/ui/Rule.svelte"],
+      "ignoreDependencies": ["@univ-lehavre/atlas-logos"]
     },
     "apps/*": {
       "project": ["src/**/*.ts"]

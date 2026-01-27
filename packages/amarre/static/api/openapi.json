@@ -1,0 +1,945 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ECRIN API",
+    "version": "1.0.0",
+    "description": "Spécification initiale des endpoints versionnés /api/v1"
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "tags": [
+    {
+      "name": "users",
+      "description": "Gestion des utilisateurs"
+    },
+    {
+      "name": "surveys",
+      "description": "Gestion des questionnaires"
+    },
+    {
+      "name": "auth",
+      "description": "Authentification & session"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "session",
+        "description": "Authentification via cookie de session (défini après /auth/login). Aucun Bearer Token requis."
+      }
+    },
+    "requestBodies": {
+      "SignupForm": {
+        "description": "Formulaire d'inscription",
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SignupRequest"
+            },
+            "examples": {
+              "ExempleValide": {
+                "value": {
+                  "email": "alice@inserm.fr"
+                }
+              },
+              "DomaineRefuse": {
+                "value": {
+                  "email": "alice@gmail.com"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "examples": {
+      "ValidationError": {
+        "summary": "Validation error example",
+        "value": {
+          "data": null,
+          "error": {
+            "code": "validation_error",
+            "message": "Login failed",
+            "cause": "Missing userId or secret"
+          }
+        }
+      },
+      "InvalidContentType": {
+        "summary": "Invalid content type",
+        "value": {
+          "data": null,
+          "error": {
+            "code": "invalid_content_type",
+            "message": "Content-Type must be application/json"
+          }
+        }
+      },
+      "InvalidBody": {
+        "summary": "Invalid JSON body",
+        "value": {
+          "data": null,
+          "error": {
+            "code": "invalid_body",
+            "message": "Request body must be valid JSON"
+          }
+        }
+      },
+      "Unauthorized": {
+        "summary": "Unauthorized example",
+        "value": {
+          "data": null,
+          "error": {
+            "code": "unauthorized",
+            "message": "Invalid credentials or internal error"
+          }
+        }
+      },
+      "InternalError": {
+        "summary": "Internal server error",
+        "value": {
+          "data": null,
+          "error": {
+            "code": "internal_error",
+            "message": "Unexpected error"
+          }
+        }
+      },
+      "InvalidEmail": {
+        "summary": "Invalid email",
+        "value": {
+          "data": null,
+          "error": {
+            "code": "invalid_email",
+            "message": "Registration not possible",
+            "cause": "Invalid email format"
+          }
+        }
+      },
+      "NotInAlliance": {
+        "summary": "Not in alliance",
+        "value": {
+          "data": null,
+          "error": {
+            "code": "not_in_alliance",
+            "message": "Registration not possible",
+            "cause": "Email not part of alliance"
+          }
+        }
+      }
+    },
+    "responses": {
+      "LoginValidationResponse": {
+        "description": "Validation error for login",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/LoginResponse"
+            },
+            "examples": {
+              "ValidationError": {
+                "$ref": "#/components/examples/ValidationError"
+              }
+            }
+          }
+        }
+      },
+      "LoginInvalidContentTypeResponse": {
+        "description": "Invalid content type for login",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/LoginResponse"
+            },
+            "examples": {
+              "InvalidContentType": {
+                "$ref": "#/components/examples/InvalidContentType"
+              }
+            }
+          }
+        }
+      },
+      "LoginInvalidBodyResponse": {
+        "description": "Invalid JSON body for login",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/LoginResponse"
+            },
+            "examples": {
+              "InvalidBody": {
+                "$ref": "#/components/examples/InvalidBody"
+              }
+            }
+          }
+        }
+      },
+      "LoginUnauthorizedResponse": {
+        "description": "Unauthorized response for login",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/LoginResponse"
+            },
+            "examples": {
+              "Unauthorized": {
+                "$ref": "#/components/examples/Unauthorized"
+              }
+            }
+          }
+        }
+      },
+      "SignupValidationResponse": {
+        "description": "Validation errors for signup",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/SignupResponse"
+            },
+            "examples": {
+              "InvalidEmail": {
+                "$ref": "#/components/examples/InvalidEmail"
+              },
+              "NotInAlliance": {
+                "$ref": "#/components/examples/NotInAlliance"
+              }
+            }
+          }
+        }
+      },
+      "InternalErrorResponse": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/LoginResponse"
+            },
+            "examples": {
+              "InternalError": {
+                "$ref": "#/components/examples/InternalError"
+              }
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": ["string", "null"],
+            "format": "email"
+          },
+          "labels": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["id", "email", "labels"],
+        "additionalProperties": false
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {},
+          "cause": {}
+        },
+        "required": ["code", "message"],
+        "additionalProperties": false
+      },
+      "ListUsersResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": ["array", "null"],
+            "items": {
+              "$ref": "#/components/schemas/User"
+            },
+            "default": null
+          },
+          "error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiError"
+              },
+              {
+                "type": ["object", "null"],
+                "default": null
+              }
+            ]
+          },
+          "meta": {}
+        },
+        "additionalProperties": false
+      },
+      "MeResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/User"
+              },
+              {
+                "type": ["object", "null"],
+                "default": null
+              }
+            ]
+          },
+          "error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiError"
+              },
+              {
+                "type": ["object", "null"],
+                "default": null
+              }
+            ]
+          },
+          "meta": {}
+        },
+        "additionalProperties": false
+      },
+      "LogoutResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "loggedOut": {
+                "type": "boolean"
+              }
+            },
+            "required": ["loggedOut"]
+          },
+          "error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiError"
+              },
+              {
+                "type": ["object", "null"],
+                "default": null
+              }
+            ]
+          }
+        },
+        "required": ["data"],
+        "additionalProperties": false
+      },
+      "SignupResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "signedUp": {
+                "type": "boolean"
+              },
+              "createdAt": {
+                "type": "string",
+                "description": "ISO timestamp"
+              }
+            },
+            "required": ["signedUp", "createdAt"]
+          },
+          "error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiError"
+              },
+              {
+                "type": ["object", "null"],
+                "default": null
+              }
+            ]
+          }
+        },
+        "required": ["data"],
+        "additionalProperties": false
+      },
+      "SignupRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Adresse email de l'utilisateur",
+            "example": "alice@inserm.fr"
+          }
+        },
+        "required": ["email"],
+        "additionalProperties": false,
+        "example": {
+          "email": "alice@inserm.fr"
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "Appwrite user id",
+            "example": "0123456789abcdef01234567"
+          },
+          "secret": {
+            "type": "string",
+            "description": "Appwrite session secret",
+            "example": "abcdef0123456789abcdef0123456789"
+          }
+        },
+        "required": ["userId", "secret"],
+        "additionalProperties": false,
+        "example": {
+          "userId": "0123456789abcdef01234567",
+          "secret": "abcdef0123456789abcdef0123456789"
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "loggedIn": {
+                "type": "boolean"
+              }
+            },
+            "required": ["loggedIn"]
+          },
+          "error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiError"
+              },
+              {
+                "type": ["object", "null"],
+                "default": null
+              }
+            ]
+          }
+        },
+        "required": ["data"],
+        "additionalProperties": false
+      },
+      "SurveyLinkResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": ["url"]
+          },
+          "error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiError"
+              },
+              {
+                "type": ["object", "null"],
+                "default": null
+              }
+            ]
+          }
+        },
+        "required": ["data"]
+      },
+      "SurveyDownloadResponse": {
+        "type": "object",
+        "properties": {
+          "data": {},
+          "error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiError"
+              },
+              {
+                "type": ["object", "null"],
+                "default": null
+              }
+            ]
+          }
+        }
+      },
+      "SurveyNewResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": ["object", "null"],
+            "properties": {
+              "newRequestCreated": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Nombre de demandes créées"
+              }
+            },
+            "default": null,
+            "required": ["newRequestCreated"]
+          },
+          "error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiError"
+              },
+              {
+                "type": ["object", "null"],
+                "default": null
+              }
+            ]
+          }
+        }
+      },
+      "SurveyRequestItem": {
+        "type": "object",
+        "properties": {
+          "record_id": {
+            "type": "string",
+            "description": "Identifiant de la demande",
+            "example": "0123456789abcdef01234567"
+          },
+          "created_at": {
+            "type": "string",
+            "description": "Date de création (ISO)",
+            "example": "2025-12-17T12:34:56Z"
+          },
+          "form_timestamp": {
+            "type": "string"
+          },
+          "form_complete": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "composante_timestamp": {
+            "type": "string"
+          },
+          "demandeur_composante_complete": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "labo_timestamp": {
+            "type": "string"
+          },
+          "labo_complete": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "encadrant_timestamp": {
+            "type": "string"
+          },
+          "encadrant_complete": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          },
+          "validation_finale_timestamp": {
+            "type": "string"
+          },
+          "validation_finale_complete": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "number"
+              }
+            ]
+          }
+        },
+        "required": ["record_id"],
+        "additionalProperties": {}
+      },
+      "SurveyListResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": ["array", "null"],
+            "items": {
+              "$ref": "#/components/schemas/SurveyRequestItem"
+            },
+            "default": null
+          },
+          "error": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ApiError"
+              },
+              {
+                "type": ["object", "null"],
+                "default": null
+              }
+            ]
+          }
+        }
+      }
+    },
+    "parameters": {}
+  },
+  "paths": {
+    "/me": {
+      "get": {
+        "tags": ["users"],
+        "summary": "Informations de l’utilisateur courant",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/surveys/links": {
+      "get": {
+        "tags": ["surveys"],
+        "summary": "Récupère un lien de questionnaire (auth requis)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyLinkResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyLinkResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/surveys/download": {
+      "get": {
+        "tags": ["surveys"],
+        "summary": "Télécharge les réponses du questionnaire (auth requis)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyDownloadResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyDownloadResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/surveys/new": {
+      "post": {
+        "tags": ["surveys"],
+        "summary": "Crée une nouvelle demande (auth requis)",
+        "operationId": "surveys_new",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyNewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyNewResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["surveys"],
+        "summary": "Méthode non autorisée - utiliser POST",
+        "operationId": "surveys_new_get_not_allowed",
+        "responses": {
+          "405": {
+            "description": "Méthode non autorisée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyNewResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/surveys/list": {
+      "post": {
+        "tags": ["surveys"],
+        "summary": "Liste les demandes de l’utilisateur (auth requis)",
+        "operationId": "surveys_list",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Non authentifié",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": ["surveys"],
+        "summary": "Méthode non autorisée - utiliser POST",
+        "operationId": "surveys_list_get_not_allowed",
+        "responses": {
+          "405": {
+            "description": "Méthode non autorisée",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Déconnexion (auth requis)",
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Déconnecté",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LogoutResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/LoginValidationResponse"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Login via Appwrite credentials",
+        "operationId": "auth_login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              },
+              "examples": {
+                "ExempleValide": {
+                  "value": {
+                    "userId": "0123456789abcdef01234567",
+                    "secret": "abcdef0123456789abcdef0123456789"
+                  }
+                },
+                "MauvaisFormat": {
+                  "value": {
+                    "userId": "user-1",
+                    "secret": "not-hex"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connecté",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/LoginValidationResponse"
+          },
+          "401": {
+            "$ref": "#/components/responses/LoginUnauthorizedResponse"
+          }
+        }
+      }
+    },
+    "/auth/signup": {
+      "post": {
+        "tags": ["auth"],
+        "summary": "Inscription (Magic URL token)",
+        "operationId": "auth_signup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SignupRequest"
+              },
+              "examples": {
+                "ExempleValide": {
+                  "value": {
+                    "email": "alice@inserm.fr"
+                  }
+                },
+                "EmailInvalide": {
+                  "value": {
+                    "email": "alice@@inserm"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/SignupValidationResponse"
+          }
+        }
+      }
+    }
+  },
+  "webhooks": {}
+}

@@ -233,8 +233,6 @@ type(scope): description
 | -------- | ------------- |
 | `crf`    | packages/crf  |
 | `net`    | packages/net  |
-| `ecrin`  | packages/ecrin |
-| `infra`  | infra/        |
 | `docs`   | Documentation |
 | `deps`   | Dependances   |
 | `config` | Configuration |
@@ -244,7 +242,6 @@ type(scope): description
 
 ```bash
 feat(crf): add exportRecords method
-fix(ecrin): handle auth header parsing
 docs: update contributing guide
 chore(deps): update effect to v3.20
 ci: add size-limit check
@@ -255,12 +252,10 @@ ci: add size-limit check
 ```
 atlas/
 ├── packages/
-│   ├── ecrin/              # Dashboard SvelteKit
 │   ├── crf/                # Client REDCap + server + CLI
 │   ├── net/                # Utilitaires reseau
 │   ├── eslint-config/      # Config ESLint partagee
 │   └── typescript-config/  # Config TypeScript partagee
-├── infra/                  # Infrastructure Kubernetes
 └── docs/                   # Documentation VitePress
 ```
 

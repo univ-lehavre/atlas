@@ -3,6 +3,7 @@ versions/
 
 # Ignore shared data (uploaded files)
 shared/
+source/
 
 # Keep structure files
 !.gitignore
