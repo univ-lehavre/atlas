@@ -42,7 +42,10 @@
     "vitest": "^4.0.15"
   },
   "dependencies": {
+    "@univ-lehavre/atlas-appwrite": "workspace:*",
+    "@univ-lehavre/atlas-errors": "workspace:*",
     "@univ-lehavre/atlas-logos": "workspace:*",
+    "@univ-lehavre/atlas-validators": "workspace:*",
     "luxon": "^3.7.2",
     "node-appwrite": "^20.3.0",
     "zod": "^4.2.0"

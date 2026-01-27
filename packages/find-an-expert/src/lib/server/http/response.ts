@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { ApplicationError } from './errors';
+import { ApplicationError } from '@univ-lehavre/atlas-errors';
 
 /**
  * Error response format for REST API.

@@ -1,9 +1,2 @@
-/**
- * Name of the cookie used to store the Appwrite session token.
- */
-export const SESSION_COOKIE = 'session';
-
-/**
- * Appwrite label for admin users.
- */
-export const ADMIN_LABEL = 'admin';
+// Re-export constants from shared package
+export { SESSION_COOKIE, ADMIN_LABEL } from '@univ-lehavre/atlas-appwrite';

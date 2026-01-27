@@ -47,7 +47,10 @@
   },
   "dependencies": {
     "@iconify/svelte": "^5.2.1",
+    "@univ-lehavre/atlas-appwrite": "workspace:*",
+    "@univ-lehavre/atlas-errors": "workspace:*",
     "@univ-lehavre/atlas-logos": "workspace:*",
+    "@univ-lehavre/atlas-validators": "workspace:*",
     "node-appwrite": "^21.1.0",
     "simple-git": "^3.30.0",
     "swagger-ui-dist": "^5.31.0",

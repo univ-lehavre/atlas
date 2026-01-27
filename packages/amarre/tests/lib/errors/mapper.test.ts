@@ -34,6 +34,6 @@ describe('mapErrorToResponse', () => {
     const response = mapErrorToResponse(undefined);
     expect(response.status).toBe(500);
     const body = await response.json();
-    expect(body.error.code).toBe('unexpected_error');
+    expect(body.error.code).toBe('internal_error');
   });
 });

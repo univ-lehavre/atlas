@@ -4,6 +4,20 @@
     ".": {
       "project": ["*.{js,ts}"]
     },
+    "packages/atlas-appwrite": {
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@sveltejs/kit"]
+    },
+    "packages/atlas-auth": {
+      "project": ["src/**/*.ts"],
+      "ignoreDependencies": ["@sveltejs/kit"]
+    },
+    "packages/atlas-errors": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/atlas-validators": {
+      "project": ["src/**/*.ts"]
+    },
     "packages/crf": {
       "project": ["src/**/*.ts"]
     },

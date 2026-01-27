@@ -1,18 +1,27 @@
-import { isEmail } from '$lib/validators';
 import {
-  MagicUrlLoginValidationError,
-  RequestBodyValidationError,
-  UserIdValidationError,
-} from '$lib/errors/auth';
-import { isHexadecimal } from '$lib/server/validators';
+  isEmail,
+  isHexadecimal,
+  normalizeEmail,
+  ensureJsonContentType as sharedEnsureJsonContentType,
+  parseJsonBody as sharedParseJsonBody,
+} from '@univ-lehavre/atlas-validators';
 import {
-  InvalidContentTypeError,
-  InvalidJsonBodyError,
   NotAnEmailError,
   SessionError,
-} from '$lib/errors';
+  MagicUrlLoginValidationError,
+  UserIdValidationError,
+  RequestBodyValidationError,
+} from '@univ-lehavre/atlas-errors';
 import { ALLOWED_DOMAINS_REGEXP } from '$env/static/private';
 
+/**
+ * Validates an email address for signup.
+ * Checks format and domain against allowed domains (from env variable).
+ *
+ * @param email - The email to validate
+ * @returns The validated and normalized email string
+ * @throws NotAnEmailError if email format is invalid or domain not allowed
+ */
 export const validateSignupEmail = async (email?: unknown): Promise<string> => {
   if (!email)
     throw new NotAnEmailError('Authentication not possible', {
@@ -26,9 +35,12 @@ export const validateSignupEmail = async (email?: unknown): Promise<string> => {
     throw new NotAnEmailError('Authentication not possible', {
       cause: 'Your professional email domain is unknown',
     });
-  return email;
+  return normalizeEmail(email);
 };
 
+/**
+ * Validates magic URL login parameters.
+ */
 export const validateMagicUrlLogin = (
   userId?: unknown,
   secret?: unknown
@@ -46,6 +58,9 @@ export const validateMagicUrlLogin = (
   return { userId, secret };
 };
 
+/**
+ * Validates a user ID from session.
+ */
 export const validateUserId = (userId?: unknown): string => {
   if (!userId) throw new SessionError('No active session', { cause: 'Missing userId in session' });
   if (typeof userId !== 'string')
@@ -55,28 +70,13 @@ export const validateUserId = (userId?: unknown): string => {
   return userId;
 };
 
-export const ensureJsonContentType = (request: Request): void => {
-  const contentType = request.headers.get('content-type')?.toLowerCase() ?? '';
-  if (!contentType.includes('application/json')) {
-    throw new InvalidContentTypeError();
-  }
-};
+// Re-export shared validators
+export const ensureJsonContentType = sharedEnsureJsonContentType;
+export const parseJsonBody = sharedParseJsonBody;
 
-export const parseJsonBody = async (request: Request): Promise<Record<string, unknown>> => {
-  try {
-    const body = await request.json();
-
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      throw new InvalidJsonBodyError('Request body must be a JSON object');
-    }
-
-    return body as Record<string, unknown>;
-  } catch (error) {
-    if (error instanceof InvalidJsonBodyError) throw error;
-    throw new InvalidJsonBodyError('Request body must be valid JSON');
-  }
-};
-
+/**
+ * Validates request body and extracts required properties.
+ */
 export const checkRequestBody = async (
   request: Request,
   properties: string[]
@@ -85,14 +85,22 @@ export const checkRequestBody = async (
   if (contentType === null) throw new RequestBodyValidationError('Content-Type header is missing');
   if (!contentType.includes('application/json'))
     throw new RequestBodyValidationError('Unsupported Content-Type');
-  const body = await request.json();
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    throw new RequestBodyValidationError('Request body must be valid JSON');
+  }
+
   if (!body || typeof body !== 'object' || Array.isArray(body))
     throw new RequestBodyValidationError('Request body must be a JSON object');
+
   const result: Record<string, unknown> = {};
   for (const property of properties) {
     if (!Object.keys(body).includes(property))
       throw new RequestBodyValidationError('Request body missing correct data');
-    result[property] = body[property];
+    result[property] = (body as Record<string, unknown>)[property];
   }
   return result;
 };

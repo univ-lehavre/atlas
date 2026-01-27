@@ -1,23 +1,11 @@
 import { json } from '@sveltejs/kit';
-import { ApplicationError } from '.';
+import { mapErrorToApiResponse } from '@univ-lehavre/atlas-errors';
 
+/**
+ * Maps an error to a SvelteKit JSON Response.
+ * Uses the shared mapErrorToApiResponse and wraps it in json().
+ */
 export const mapErrorToResponse = (error: unknown): Response => {
-  if (error instanceof ApplicationError) {
-    return json(
-      { data: null, error: { code: error.code, message: error.message, cause: error.cause } },
-      { status: error.httpStatus }
-    );
-  }
-
-  if (error instanceof Error) {
-    return json(
-      { data: null, error: { code: 'internal_error', message: error.message } },
-      { status: 500 }
-    );
-  }
-
-  return json(
-    { data: null, error: { code: 'internal_error', message: 'Unknown error' } },
-    { status: 500 }
-  );
+  const { body, status } = mapErrorToApiResponse(error);
+  return json(body, { status });
 };

@@ -12,5 +12,6 @@
     "moduleResolution": "bundler",
     "noUncheckedIndexedAccess": true,
     "exactOptionalPropertyTypes": true
-  }
+  },
+  "exclude": ["vite.config.ts", "vitest.config.ts"]
 }
