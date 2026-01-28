@@ -83,7 +83,7 @@ export const createAuthService = (config: AuthConfig): AuthService => {
     }
 
     const { account } = createAdminClient(config.appwrite);
-    const token = await account.createMagicURLToken(userId, email, url);
+    const token = await account.createMagicURLToken({ userId, email, url });
 
     return token;
   };
@@ -104,7 +104,7 @@ export const createAuthService = (config: AuthConfig): AuthService => {
     const { userId, secret } = validateMagicUrlLogin(unsecuredUserId, unsecuredSecret);
 
     const { account } = createAdminClient(config.appwrite);
-    const session = await account.createSession(userId, secret);
+    const session = await account.createSession({ userId, secret });
     cookies.set(SESSION_COOKIE, session.secret, {
       sameSite: 'strict',
       expires: new Date(session.expire),
@@ -139,7 +139,7 @@ export const createAuthService = (config: AuthConfig): AuthService => {
     const userId = validateUserId(unsecuredUserId);
     await logout(userId, cookies);
     const { users } = createAdminClient(config.appwrite);
-    await users.delete(userId);
+    await users.delete({ userId });
   };
 
   return {

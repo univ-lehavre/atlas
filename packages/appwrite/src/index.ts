@@ -173,7 +173,7 @@ export class AppwriteUserRepository implements UserRepository {
   async getById(userId: string): Promise<TUser> {
     const { users } = createAdminClient(this.config);
     try {
-      const user: Models.User<Models.Preferences> = await users.get(userId);
+      const user: Models.User<Models.Preferences> = await users.get({ userId });
       return { id: user.$id, email: user.email, labels: user.labels };
     } catch (error) {
       console.error('AppwriteUserRepository.getById error', error);
