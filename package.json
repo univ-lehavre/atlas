@@ -32,7 +32,7 @@
     "audit:unused": "knip --exclude unresolved,types",
     "audit:duplicates": "jscpd --pattern \"packages/*/src/**/*.ts\" --pattern \"apps/*/src/**/*.ts\"",
     "audit:size": "size-limit",
-    "audit:versions": "taze -r",
+    "audit:versions": "taze -r --ignore-paths packages/redcap-openapi/upstream",
     "ci:audit": "pnpm audit:security && pnpm audit:licenses && pnpm audit:unused && pnpm audit:duplicates && pnpm audit:size && pnpm audit:versions",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
