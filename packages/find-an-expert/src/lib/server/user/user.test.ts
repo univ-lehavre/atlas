@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { User, type TUser, type UserRepository } from './types';
+import { isAdmin } from './service';
 
 describe('User schema', () => {
   it('should validate a complete user object', () => {
@@ -119,5 +120,51 @@ describe('UserRepository interface', () => {
     expect(user.id).toBe('test123');
     expect(user.email).toBe('mock@example.com');
     expect(user.labels).toEqual(['mock']);
+  });
+});
+
+describe('isAdmin', () => {
+  it('should return true for user with admin label', () => {
+    const user: TUser = {
+      id: 'user123',
+      email: 'admin@example.com',
+      labels: ['admin'],
+    };
+
+    expect(isAdmin(user)).toBe(true);
+  });
+
+  it('should return true for user with admin among other labels', () => {
+    const user: TUser = {
+      id: 'user123',
+      email: 'admin@example.com',
+      labels: ['verified', 'admin', 'premium'],
+    };
+
+    expect(isAdmin(user)).toBe(true);
+  });
+
+  it('should return false for user without admin label', () => {
+    const user: TUser = {
+      id: 'user123',
+      email: 'user@example.com',
+      labels: ['verified'],
+    };
+
+    expect(isAdmin(user)).toBe(false);
+  });
+
+  it('should return false for user with empty labels', () => {
+    const user: TUser = {
+      id: 'user123',
+      email: 'user@example.com',
+      labels: [],
+    };
+
+    expect(isAdmin(user)).toBe(false);
+  });
+
+  it('should return false for null user', () => {
+    expect(isAdmin(null)).toBe(false);
   });
 });
