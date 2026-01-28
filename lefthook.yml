@@ -29,6 +29,10 @@ pre-commit:
     typecheck:
       run: pnpm typecheck
 
+    svelte:check:
+      run: pnpm svelte:check
+      glob: '*.svelte'
+
 pre-push:
   commands:
     check-branch:

@@ -83,6 +83,8 @@ jobs:
 
       - run: pnpm typecheck
 
+      - run: pnpm svelte:check
+
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -183,3 +185,9 @@ jobs:
 
       - name: Code duplication
         run: pnpm audit:duplicates
+
+      - name: Bundle sizes
+        run: pnpm audit:size
+
+      - name: Outdated dependencies
+        run: pnpm audit:versions
