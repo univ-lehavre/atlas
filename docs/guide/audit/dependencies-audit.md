@@ -2,6 +2,18 @@
 
 > **Dernière mise à jour :** 28 janvier 2026
 
+## Prochaines étapes
+
+| Priorité | Action | Statut |
+|:--------:|--------|:------:|
+| 🔴 | Migrer `tsup` → `tsc` pour les packages utilitaires (appwrite, auth, errors, validators) | À faire |
+| 🟡 | Ajouter des tests pour les packages `appwrite` et `auth` (couverture < 80%) | À faire |
+| 🟡 | Évaluer la migration vers Bun comme runtime alternatif | À étudier |
+| 🟢 | Automatiser l'audit des dépendances via CI (Renovate ou Dependabot) | À planifier |
+| 🟢 | Documenter les breaking changes node-appwrite 21.x | ✅ Fait |
+
+---
+
 ## Versions standardisées
 
 Versions cibles pour tous les packages du monorepo :
