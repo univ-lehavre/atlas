@@ -8,49 +8,49 @@ Versions cibles pour tous les packages du monorepo :
 
 ### Stack principale
 
-| Dépendance | Version | Notes |
-|------------|---------|-------|
-| Node.js | >=24.0.0 | |
-| pnpm | 10.28.2 | |
-| TypeScript | ^5.9.3 | |
-| ESLint | ^9.39.2 | |
-| Prettier | ^3.8.1 | |
-| Vitest | ^4.0.18 | |
+| Dépendance | Version | Latest |
+|------------|---------|:------:|
+| Node.js | >=24.0.0 | ✅ |
+| pnpm | 10.28.2 | ✅ |
+| TypeScript | ^5.9.3 | ✅ |
+| ESLint | ^9.39.2 | ✅ |
+| Prettier | ^3.8.1 | ✅ |
+| Vitest | ^4.0.18 | ✅ |
 
 ### SvelteKit
 
-| Dépendance | Version |
-|------------|---------|
-| @sveltejs/kit | ^2.50.1 |
-| @sveltejs/adapter-node | ^5.5.2 |
-| @sveltejs/vite-plugin-svelte | ^6.2.4 |
-| svelte | ^5.48.5 |
-| svelte-check | ^4.3.5 |
-| vite | ^7.3.1 |
+| Dépendance | Version | Latest |
+|------------|---------|:------:|
+| @sveltejs/kit | ^2.50.1 | ✅ |
+| @sveltejs/adapter-node | ^5.5.2 | ✅ |
+| @sveltejs/vite-plugin-svelte | ^6.2.4 | ✅ |
+| svelte | ^5.48.5 | ✅ |
+| svelte-check | ^4.3.5 | ✅ |
+| vite | ^7.3.1 | ✅ |
 
 ### Appwrite
 
-| Dépendance | Version |
-|------------|---------|
-| node-appwrite | ^21.1.0 |
-| appwrite (client) | ^21.5.0 |
+| Dépendance | Version | Latest |
+|------------|---------|:------:|
+| node-appwrite | ^21.1.0 | ✅ |
+| appwrite (client) | ^21.5.0 | ✅ |
 
 ### Effect
 
-| Dépendance | Version |
-|------------|---------|
-| effect | ^3.19.15 |
-| @effect/cli | ^0.73.1 |
-| @effect/platform | ^0.94.2 |
-| @effect/platform-node | ^0.104.1 |
+| Dépendance | Version | Latest |
+|------------|---------|:------:|
+| effect | ^3.19.15 | ✅ |
+| @effect/cli | ^0.73.1 | ✅ |
+| @effect/platform | ^0.94.2 | ✅ |
+| @effect/platform-node | ^0.104.1 | ✅ |
 
 ### Hono (CRF)
 
-| Dépendance | Version |
-|------------|---------|
-| hono | ^4.11.7 |
-| hono-openapi | ^1.2.0 |
-| @hono/node-server | ^1.19.9 |
+| Dépendance | Version | Latest |
+|------------|---------|:------:|
+| hono | ^4.11.7 | ✅ |
+| hono-openapi | ^1.2.0 | ✅ |
+| @hono/node-server | ^1.19.9 | ✅ |
 
 ---
 
