@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "@univ-lehavre/atlas-errors": "workspace:*",
-    "node-appwrite": "^17.0.1"
+    "node-appwrite": "^21.1.0"
   },
   "peerDependencies": {
     "@sveltejs/kit": "^2.0.0"
@@ -56,12 +56,12 @@
     }
   },
   "devDependencies": {
-    "@sveltejs/kit": "^2.20.8",
+    "@sveltejs/kit": "^2.49.5",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "eslint": "^9.27.0",
-    "prettier": "^3.5.3",
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.1",
     "tsup": "^8.5.0",
-    "typescript": "~5.8.3",
+    "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   }
 }

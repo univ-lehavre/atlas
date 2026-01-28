@@ -87,7 +87,7 @@
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^9.39.2",
     "openapi-typescript": "^7.10.1",
-    "prettier": "^3.8.0",
+    "prettier": "^3.8.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"

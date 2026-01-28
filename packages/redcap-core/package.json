@@ -64,10 +64,10 @@
     "effect": "^3.19.15"
   },
   "devDependencies": {
-    "@types/node": "^24.10.4",
+    "@types/node": "^25.0.10",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^9.39.2",
-    "prettier": "^3.7.4",
+    "prettier": "^3.8.1",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
