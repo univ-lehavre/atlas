@@ -19,6 +19,8 @@ export default defineConfig({
     /type-aliases\/index/,
     // TypeDoc _media folder links (README files copied with broken relative links)
     /\.\.\/_media\/atlas-/,
+    // README links pointing to docs/api (broken when copied by TypeDoc)
+    /\.\.\/docs\/api\/@univ-lehavre/,
     // Relative links in CRF docs that reference external docs
     /^\.\/cli$/,
     /^\.\/architecture$/,
