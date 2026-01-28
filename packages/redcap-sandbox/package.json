@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-redcap-sandbox",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "REDCap testing sandbox - Docker environment and contract tests for validating OpenAPI specs",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
