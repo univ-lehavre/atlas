@@ -13,6 +13,17 @@ concurrency:
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  # SvelteKit apps require these env vars for typecheck/build
+  PUBLIC_APPWRITE_ENDPOINT: https://example.appwrite.io/v1
+  PUBLIC_APPWRITE_PROJECT: ci-placeholder
+  PUBLIC_LOGIN_URL: http://localhost:5173
+  PUBLIC_REDCAP_URL: https://redcap.example.com/api/
+  APPWRITE_KEY: ci-placeholder-key
+  APPWRITE_DB_ID: ci-placeholder-db
+  APPWRITE_TABLE_ID_ALLOWED_EMAIL_DOMAINS_TO_SUBSCRIBE: ci-placeholder-table
+  REDCAP_API_TOKEN: ci-placeholder-token
+  REDCAP_URL: https://redcap.example.com/api/
+  ALLOWED_DOMAINS_REGEXP: "@example\\.org"
 
 jobs:
   lint:
