@@ -1,7 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-auth",
   "version": "0.1.0",
-  "private": true,
   "description": "Shared authentication service for Atlas SvelteKit applications",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
@@ -50,7 +49,8 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@univ-lehavre/atlas-appwrite": "workspace:*",

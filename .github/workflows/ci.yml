@@ -30,6 +30,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Create SvelteKit env files
+        run: |
+          for app in packages/amarre packages/ecrin packages/find-an-expert; do
+            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
+          done
+
       - name: Turbo cache
         uses: actions/cache@v4
         with:
@@ -59,6 +65,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Create SvelteKit env files
+        run: |
+          for app in packages/amarre packages/ecrin packages/find-an-expert; do
+            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
+          done
+
       - name: Turbo cache
         uses: actions/cache@v4
         with:
@@ -66,6 +78,8 @@ jobs:
           key: turbo-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
             turbo-${{ runner.os }}-
+
+      - run: pnpm build
 
       - run: pnpm typecheck
 
@@ -84,6 +98,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Create SvelteKit env files
+        run: |
+          for app in packages/amarre packages/ecrin packages/find-an-expert; do
+            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
+          done
+
       - name: Turbo cache
         uses: actions/cache@v4
         with:
@@ -92,7 +112,9 @@ jobs:
           restore-keys: |
             turbo-${{ runner.os }}-
 
-      - run: pnpm test
+      - run: pnpm build
+
+      - run: pnpm test:coverage
 
   build:
     name: Build
@@ -110,6 +132,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Create SvelteKit env files
+        run: |
+          for app in packages/amarre packages/ecrin packages/find-an-expert; do
+            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
+          done
+
       - name: Turbo cache
         uses: actions/cache@v4
         with:
@@ -121,7 +149,7 @@ jobs:
       - run: pnpm build
 
       - name: Check bundle sizes
-        run: pnpm size
+        run: pnpm audit:size
 
   audit:
     name: Audit
@@ -138,46 +166,20 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Create SvelteKit env files
+        run: |
+          for app in packages/amarre packages/ecrin packages/find-an-expert; do
+            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
+          done
+
       - name: Security audit
-        run: pnpm audit --audit-level=high
+        run: pnpm audit:security
 
       - name: License audit
-        run: pnpm license:audit
+        run: pnpm audit:licenses
 
       - name: Unused code
-        run: pnpm knip
+        run: pnpm audit:unused
 
       - name: Code duplication
-        run: pnpm cpd
-
-  check-majors:
-    name: Check Major Versions
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Check for outdated major versions
-        run: |
-          outdated=$(pnpm outdated -r --format json 2>/dev/null || echo "{}")
-          if echo "$outdated" | jq -e '
-            to_entries | map(
-              select(
-                (.value.current | split(".")[0] | tonumber) <
-                (.value.latest | split(".")[0] | tonumber)
-              )
-            ) | length > 0
-          ' > /dev/null 2>&1; then
-            echo "::warning::Dependencies with outdated major versions:"
-            echo "$outdated" | jq -r 'to_entries[] | select((.value.current | split(".")[0] | tonumber) < (.value.latest | split(".")[0] | tonumber)) | "\(.key): v\(.value.current) → v\(.value.latest)"'
-          else
-            echo "All dependencies are on latest major version"
-          fi
+        run: pnpm audit:duplicates

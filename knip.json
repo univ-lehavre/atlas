@@ -57,5 +57,5 @@
   },
   "ignore": ["**/dist/**", "**/.svelte-kit/**", "**/build/**", "**/upstream/**"],
   "ignoreDependencies": ["tsx", "@univ-lehavre/atlas-shared-config", "vitepress-openapi", "@modyfi/vite-plugin-yaml"],
-  "ignoreBinaries": ["jq", "docker:build", "docker:down"]
+  "ignoreBinaries": ["jq"]
 }
