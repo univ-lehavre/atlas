@@ -79,6 +79,8 @@ jobs:
           restore-keys: |
             turbo-${{ runner.os }}-
 
+      - run: pnpm build
+
       - run: pnpm typecheck
 
   test:
@@ -109,6 +111,8 @@ jobs:
           key: turbo-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
             turbo-${{ runner.os }}-
+
+      - run: pnpm build
 
       - run: pnpm test:coverage
 
@@ -161,6 +165,12 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Create SvelteKit env files
+        run: |
+          for app in packages/amarre packages/ecrin packages/find-an-expert; do
+            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
+          done
 
       - name: Security audit
         run: pnpm audit:security
