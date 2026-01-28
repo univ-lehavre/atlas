@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Generated files
+**/generated/**
+
+# SvelteKit
+.svelte-kit/
+
+# VitePress
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
+# Turbo
+.turbo/
+
+# REDCap OpenAPI specific
+packages/redcap-openapi/sandbox/
+packages/redcap-openapi/specs/
+packages/redcap-openapi/upstream/

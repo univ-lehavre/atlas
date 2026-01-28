@@ -1,7 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-logos",
   "version": "1.0.0",
-  "private": true,
   "description": "Logos and brand assets for Atlas projects",
   "type": "module",
   "exports": {

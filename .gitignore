@@ -1,20 +1,37 @@
+# Dependencies
 node_modules/
-.claude/
+
+# Build outputs
 dist/
+build/
+coverage/
+
+# Environment files
 .env
 .env.local
-*.log
-.turbo/
-coverage/
-docs/.vitepress/cache/
-docs/.vitepress/dist/
 .env.dev.appwrite
 .env.prod.appwrite
+
+# IDE and tools
+.claude/
 .mcp.json
+.DS_Store
+
+# Turbo
+.turbo/
+
+# VitePress
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
+# SvelteKit
+.svelte-kit/
+
+# Testing
 .hypothesis/
 
-# SvelteKit generated files
-.svelte-kit/
-build/
+# Assets
 assets/source/
-.DS_Store
+
+# Logs
+*.log

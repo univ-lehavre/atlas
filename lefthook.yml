@@ -9,25 +9,22 @@ commit-msg:
 pre-commit:
   parallel: true
   commands:
-    # Format and lint use turbo to run per-package configs
     format:
-      run: pnpm format
-      stage_fixed: true
+      run: pnpm format:check
       glob: '*.{js,ts,svelte,json,yaml,yml,md,css,html}'
 
     lint:
-      run: pnpm lint:fix
-      stage_fixed: true
+      run: pnpm lint
       glob: '*.{js,ts,svelte}'
 
     cpd:
-      run: pnpm cpd
+      run: pnpm audit:duplicates
 
     knip:
-      run: pnpm knip
+      run: pnpm audit:unused
 
     test:
-      run: pnpm test
+      run: pnpm test:coverage
 
     typecheck:
       run: pnpm typecheck
@@ -53,11 +50,11 @@ pre-push:
       priority: 1
 
     check-audit:
-      run: pnpm audit --audit-level=high
+      run: pnpm audit:security
       priority: 2
 
     check-licenses:
-      run: pnpm license:audit
+      run: pnpm audit:licenses
       priority: 2
 
     check-lockfile:
