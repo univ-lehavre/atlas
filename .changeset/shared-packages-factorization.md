@@ -3,9 +3,9 @@
 "@univ-lehavre/atlas-appwrite": minor
 "@univ-lehavre/atlas-validators": minor
 "@univ-lehavre/atlas-auth": minor
-"@univ-lehavre/ecrin": patch
-"@univ-lehavre/amarre": patch
-"@univ-lehavre/find-an-expert": patch
+"@univ-lehavre/atlas-ecrin": patch
+"@univ-lehavre/atlas-amarre": patch
+"@univ-lehavre/atlas-find-an-expert": patch
 ---
 
 feat: create shared packages for auth, errors, validators, and appwrite

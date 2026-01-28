@@ -7,6 +7,7 @@ import {
   RequestBodyValidationError,
 } from './errors';
 import {
+  validateSignupEmail,
   validateMagicUrlLogin,
   validateUserId,
   ensureJsonContentType,
@@ -69,6 +70,24 @@ describe('RequestBodyValidationError', () => {
     expect(error.code).toBe('request_body_validation_error');
     expect(error.httpStatus).toBe(400);
     expect(error.message).toBe('Invalid request body');
+  });
+});
+
+describe('validateSignupEmail', () => {
+  it('should throw for missing email', async () => {
+    await expect(validateSignupEmail(undefined)).rejects.toThrow(NotAnEmailError);
+  });
+
+  it('should throw for null email', async () => {
+    await expect(validateSignupEmail(null)).rejects.toThrow(NotAnEmailError);
+  });
+
+  it('should throw for non-string email', async () => {
+    await expect(validateSignupEmail(123)).rejects.toThrow(NotAnEmailError);
+  });
+
+  it('should throw for invalid email format', async () => {
+    await expect(validateSignupEmail('not-an-email')).rejects.toThrow(NotAnEmailError);
   });
 });
 
