@@ -39,7 +39,7 @@
     "docs:preview": "vitepress preview docs",
     "docs:api": "typedoc",
     "changeset:add": "changeset",
-    "changeset:version": "changeset version",
+    "changeset:version": "changeset version && prettier --write '**/CHANGELOG.md'",
     "changeset:publish": "pnpm build && changeset publish",
     "release": "pnpm build && changeset publish",
     "prepare": "lefthook install"

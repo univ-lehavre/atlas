@@ -35,17 +35,11 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
 
-      - name: Create SvelteKit env files
-        run: |
-          for app in packages/amarre packages/ecrin packages/find-an-expert; do
-            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
-          done
-
       - name: Create Release Pull Request or Publish to npm
         id: changesets
         uses: changesets/action@v1
         with:
-          version: pnpm changeset version
+          version: pnpm run changeset:version
           publish: pnpm run release
           title: 'chore: version packages'
           commit: 'chore: version packages'
