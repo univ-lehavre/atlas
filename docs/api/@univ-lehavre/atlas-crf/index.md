@@ -99,9 +99,8 @@ pnpm test:api
 ### Workflow OpenAPI-first
 
 1. Modifier `specs/redcap.yaml` (source de vérité)
-2. Valider : `pnpm spectral lint specs/redcap.yaml`
-3. Régénérer les types : `pnpm generate:types`
-4. Adapter le code client/serveur si nécessaire
+2. Régénérer les types : `pnpm generate:types`
+3. Adapter le code client/serveur si nécessaire
 
 ### Tests avec Prism
 
