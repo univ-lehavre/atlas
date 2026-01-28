@@ -5,6 +5,7 @@ node_modules/
 dist/
 build/
 coverage/
+packages/*/coverage/
 
 # Generated files
 **/generated/**
