@@ -1,32 +1,17 @@
 # @univ-lehavre/atlas-redcap-openapi
 
-REDCap source analysis, OpenAPI spec extraction, and API documentation tools.
+Analyse du code source REDCap, extraction de spécifications OpenAPI et outils de documentation API.
 
-## Purpose
+## À propos
 
-This package provides:
+Ce package permet d'analyser le code source PHP de REDCap pour en extraire automatiquement des spécifications OpenAPI. Il fournit également des outils de comparaison entre versions et un serveur de documentation.
 
-- **Extractor** - Parse REDCap PHP source to generate OpenAPI specs
-- **Comparator** - Compare OpenAPI specs between versions
-- **Server** - Serve API documentation with Swagger UI and Redoc
-- **CLI** - Interactive command-line interface for all tools
+## Fonctionnalités
 
-## Structure
-
-```
-packages/redcap-openapi/
-├── src/                    # Exportable module code
-│   ├── extractor/          # PHP source → OpenAPI
-│   ├── comparator/         # Spec comparison
-│   ├── server/             # Documentation server
-│   └── cli/                # Interactive CLI
-├── specs/                  # Generated OpenAPI specs (output)
-│   └── versions/           # Specs by REDCap version
-└── upstream/               # REDCap PHP source (input, gitignored)
-    └── versions/           # Multiple REDCap versions
-```
-
-Testing infrastructure is in the separate `redcap-sandbox` package.
+- **Extracteur** : Génération de specs OpenAPI depuis le code PHP REDCap
+- **Comparateur** : Comparaison de specs entre versions
+- **Serveur** : Documentation API avec Swagger UI et Redoc
+- **CLI** : Interface interactive avec `@clack/prompts`
 
 ## Installation
 
@@ -34,125 +19,96 @@ Testing infrastructure is in the separate `redcap-sandbox` package.
 pnpm add @univ-lehavre/atlas-redcap-openapi
 ```
 
-## CLI Usage
+## Usage
 
-Interactive mode:
-
-```bash
-pnpm cli
-# or after build:
-npx redcap
-```
-
-Direct commands:
+### CLI interactif
 
 ```bash
-pnpm extract   # Extract OpenAPI spec from PHP source
-pnpm compare   # Compare two spec versions
-pnpm docs      # Start documentation server
+pnpm -F @univ-lehavre/atlas-redcap-openapi cli
 ```
 
-## Programmatic Usage
+### Commandes directes
+
+```bash
+pnpm -F @univ-lehavre/atlas-redcap-openapi extract  # Extraire spec OpenAPI
+pnpm -F @univ-lehavre/atlas-redcap-openapi compare  # Comparer versions
+pnpm -F @univ-lehavre/atlas-redcap-openapi docs     # Serveur documentation
+```
+
+### Usage programmatique
 
 ```typescript
 import { extract, compare, serve } from '@univ-lehavre/atlas-redcap-openapi';
 
-// Extract OpenAPI spec from REDCap source
+// Extraire une spec OpenAPI depuis le code source REDCap
 const result = extract({
   version: '14.5.10',
   sourcePath: './upstream/versions',
   outputPath: './specs/versions/redcap-14.5.10.yaml',
 });
 
-// Compare two spec versions
+// Comparer deux versions
 const diff = compare({
   oldSpecPath: './specs/versions/redcap-14.5.10.yaml',
   newSpecPath: './specs/versions/redcap-14.6.0.yaml',
-  oldVersion: '14.5.10',
-  newVersion: '14.6.0',
 });
 
-// Serve documentation
+// Servir la documentation
 serve({
   specPath: './specs/versions/redcap-14.5.10.yaml',
   port: 3000,
 });
 ```
 
+## Scripts
+
+```bash
+pnpm -F @univ-lehavre/atlas-redcap-openapi dev      # Développement
+pnpm -F @univ-lehavre/atlas-redcap-openapi build    # Build
+pnpm -F @univ-lehavre/atlas-redcap-openapi test     # Tests
+pnpm -F @univ-lehavre/atlas-redcap-openapi lint     # ESLint
+```
+
 ## Exports
 
-| Export       | Description                     |
-| ------------ | ------------------------------- |
-| `.`          | All modules                     |
-| `./extractor`| OpenAPI extraction from PHP     |
-| `./comparator`| Spec comparison utilities      |
-| `./server`   | Documentation server            |
+| Export | Description |
+|--------|-------------|
+| `.` | Tous les modules |
+| `./extractor` | Extraction OpenAPI depuis PHP |
+| `./comparator` | Utilitaires de comparaison |
+| `./server` | Serveur de documentation |
 
-## Development
+## Documentation
 
-### Prerequisites
+- [Documentation API](../../docs/api/@univ-lehavre/atlas-redcap-openapi/)
 
-1. **REDCap source code** - Download from [REDCap Community](https://projectredcap.org/resources/community/)
-2. **Docker** and **Docker Compose** (for testing)
+## Organisation
 
-### Setup REDCap Source
+Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
 
-```bash
-# Extract to versions directory
-unzip redcap14.5.10.zip
-mv redcap_v14.5.10 upstream/versions/14.5.10
-```
+Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
 
-### Commands
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
+- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
 
-```bash
-# CLI
-pnpm cli         # Interactive CLI
-pnpm extract     # Extract OpenAPI spec
-pnpm compare     # Compare specs
-pnpm docs        # Documentation server
+---
 
-# Development
-pnpm build       # Build TypeScript
-pnpm dev         # Watch mode
-pnpm lint        # ESLint
-pnpm format      # Prettier
-```
+<p align="center">
+  <a href="https://www.univ-lehavre.fr/">
+    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="50">
+  </a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://www.cptmp.fr/">
+    <img src="../logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="50">
+  </a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://eunicoast.eu/">
+    <img src="../logos/eunicoast.png" alt="EUNICoast" height="50">
+  </a>
+</p>
 
-### Testing
-
-For Docker-based testing and contract tests, see the `redcap-sandbox` package.
-
-## Extracted Information
-
-The extractor parses multiple PHP sources:
-
-| Source                       | Information                         |
-| ---------------------------- | ----------------------------------- |
-| `API/index.php`              | Content types, actions, routing     |
-| `API/help.php`               | Parameters (required/optional)      |
-| `API/<content>/<action>.php` | Validation, response formats        |
-| `Classes/*.php`              | Data schemas                        |
-
-### Example Output (v14.5.10)
-
-- 35 content types
-- 60 action implementations
-- 57 documented endpoints
-- 3 data schemas (ProjectInfo, UserRights, etc.)
-
-## Multi-Version Support
-
-```bash
-# Extract different versions
-REDCAP_VERSION=14.6.0 pnpm extract
-
-# Compare versions
-pnpm compare  # Interactive selection
-```
-
-## License
+## Licence
 
 MIT
 
-The REDCap source code is proprietary and is NOT included in this repository.
+Le code source REDCap est propriétaire et n'est PAS inclus dans ce dépôt.

@@ -1,6 +1,6 @@
 /**
  * @module crf
- * @description Clinical Research Forms - REDCap client, API server, and CLI tools.
+ * @description Case Report Form - REDCap client, API server, and CLI tools.
  *
  * @example
  * ```typescript
