@@ -61,6 +61,12 @@ atlas/
 | [Architecture générale](./architecture.md) | Patterns Effect, ESLint, scripts |
 | [Infrastructure Zero Trust](./infrastructure.md) | Kubernetes, sécurité |
 
+### Audits
+
+| Document | Description |
+|----------|-------------|
+| [Audit des dépendances](../audit/dependencies-audit.md) | Inventaire et roadmap de mise à jour |
+
 ## Démarrage rapide
 
 ### Installation
