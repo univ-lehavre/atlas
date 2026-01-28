@@ -21,7 +21,7 @@ features:
     details: Plateforme de collaboration pour chercheurs - présentez vos travaux, trouvez des collaborateurs, visualisez les réseaux de recherche
     link: /guide/audit/ecrin-audit
   - title: AMARRE
-    details: Visualisation et analyse de réseaux de recherche via des graphes interactifs
+    details: Gestion de la mobilité des chercheurs
     link: /guide/audit/ecrin-audit
   - title: CRF (Case Report Form)
     details: Outils TypeScript pour interagir avec REDCap, utilisé par 8 000+ institutions pour la collecte de données de recherche
@@ -44,14 +44,28 @@ Atlas est composé de **trois modules majeurs** :
 
 ### ECRIN
 
-ECRIN est une plateforme de collaboration pour chercheurs permettant de présenter ses travaux, trouver des collaborateurs et visualiser les réseaux de recherche. Elle est organisée autour de 6 cartes fonctionnelles : Introduce, Collaborate, Explore, Ask, Publish, Administrate.
+ECRIN est une plateforme de collaboration pour chercheurs permettant de présenter ses travaux, trouver des collaborateurs et visualiser les réseaux de recherche.
 
-**Sous-projet :**
-- **find-an-expert** : découverte d'expertise via les publications (OpenAlex) et contributions (GitHub)
+**Sous-projets :**
+
+| Sous-projet | État |
+|-------------|------|
+| introduce-my-scientific-questions | 🚧 En cours |
+| introduce-my-references | 🚧 En cours |
+| collaborate-create-my-project | 🚧 En cours |
+| collaborate-build-my-team | 📋 Prévu |
+| collaborate-find-my-expert | 📋 Prévu |
+| collaborate-fund-my-project | 📋 Prévu |
+| explore-my-graph | 📋 Prévu |
+| explore-community-graph | 📋 Prévu |
+| ask-data | 📋 Prévu |
+| ask-an-expert | 🚧 En cours |
+| publish-my-data | 📋 Prévu |
+| publish-my-news | 📋 Prévu |
 
 ### AMARRE
 
-AMARRE est une application de visualisation et d'analyse de réseaux de recherche utilisant des graphes interactifs (Sigma.js, Graphology).
+AMARRE est une application de gestion de la mobilité des chercheurs.
 
 ### CRF (Case Report Form)
 
