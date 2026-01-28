@@ -61,6 +61,7 @@
     "start:dev": "node --env-file=.env --import=tsx src/server/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "test:integration": "./scripts/test-integration.sh",
     "test:api": "./scripts/test-api.sh"
   },
