@@ -1,5 +1,48 @@
 # @univ-lehavre/atlas-redcap
 
+## 1.3.0
+### Minor Changes
+
+
+
+- [#46](https://github.com/univ-lehavre/atlas/pull/46) [`0b83927`](https://github.com/univ-lehavre/atlas/commit/0b839274782f50632aea3dcfc38e4ef6816f21dc) Thanks [@chasset](https://github.com/chasset)! - Integrate redcap-core across CRF and OpenAPI packages
+  
+  ### @univ-lehavre/atlas-crf
+  - Re-exports branded types, errors, and version utilities from `@univ-lehavre/atlas-redcap-core`
+  - Removed duplicate implementations in favor of core module
+  - Breaking: `BooleanFlag` is now a type-only export, use `toBooleanFlag`/`fromBooleanFlag` utilities
+  
+  ### @univ-lehavre/atlas-redcap-core
+  - Added comprehensive test suite (18 test files, 520 tests)
+  - Test coverage for: brands, errors, version, params, validation, adapters, utils, content-types, types
+  - Improved module documentation with usage examples
+  
+  ### @univ-lehavre/atlas-redcap-openapi
+  - Now depends on `@univ-lehavre/atlas-redcap-core` for shared types
+  - `ApiAction` type imported from redcap-core instead of being redefined
+  - Re-exports content type constants and utilities (CONTENT_KEY_MAPPING, TAG_GROUPS, PERMISSION_MAPPING, etc.)
+  - Consolidated types: extractor/types.ts now re-exports from core/types.ts
+  - Removed duplicate ComparisonResult/ComparisonSummary definitions
+
+
+- [#46](https://github.com/univ-lehavre/atlas/pull/46) [`9660c40`](https://github.com/univ-lehavre/atlas/commit/9660c402131b05e697a42441b7348eec93c88400) Thanks [@chasset](https://github.com/chasset)! - Split redcap package into redcap-openapi and redcap-sandbox
+  
+  - Renamed `@univ-lehavre/atlas-redcap` to `@univ-lehavre/atlas-redcap-openapi`
+  - Moved OpenAPI extraction code to dedicated package
+  - Created `@univ-lehavre/atlas-redcap-sandbox` (private) for testing infrastructure
+  - Docker environment and contract tests now in separate sandbox package
+  - REDCap upstream source moved to `upstream/` at package root
+  - Extracted pure functional core module (`src/core/`) with:
+    - Pure parsers for PHP source files (index.php, help.php, action files, schemas)
+    - OpenAPI spec generator (pure function taking parsed data)
+    - Spec comparator for detecting breaking changes
+    - Exported via `@univ-lehavre/atlas-redcap-openapi/core`
+
+### Patch Changes
+
+- Updated dependencies [[`0b83927`](https://github.com/univ-lehavre/atlas/commit/0b839274782f50632aea3dcfc38e4ef6816f21dc), [`9ad9099`](https://github.com/univ-lehavre/atlas/commit/9ad9099d3861a6595d2acd6ecb10cf29d46a6d63)]:
+  - @univ-lehavre/atlas-redcap-core@1.1.0
+
 ## 1.1.0
 ### Minor Changes
 
