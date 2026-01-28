@@ -2,14 +2,15 @@
 
 Atlas est une plateforme développée par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
 
-## Les trois modules majeurs
+## Les quatre modules majeurs
 
-Atlas est composé de **trois modules majeurs** :
+Atlas est composé de **quatre modules majeurs** :
 
 | Module | Description | Sous-projets |
 |--------|-------------|--------------|
 | **ECRIN** | Plateforme de collaboration pour chercheurs | find-an-expert |
 | **AMARRE** | Gestion de la mobilité des chercheurs | - |
+| **Citations** | Agrégation de sources bibliographiques et fiabilisation des profils | openalex, crossref, hal, arxiv, orcid, verify |
 | **CRF** | Outils pour interagir avec REDCap | redcap-core, redcap-openapi |
 
 ### Module ECRIN
@@ -51,6 +52,29 @@ AMARRE est une application de gestion de la mobilité des chercheurs.
 **Ce que ça permet :**
 
 - Gérer la mobilité internationale des chercheurs
+
+### Module Citations
+
+**Pour qui ?** Chercheurs souhaitant fiabiliser leur profil bibliographique et développeurs intégrant des sources bibliographiques.
+
+Atlas Citations est une suite de packages pour interroger des sources bibliographiques (OpenAlex, Crossref, HAL, ArXiv, ORCID) via des clients Effect typés. Atlas Verify permet aux chercheurs de fiabiliser leur profil bibliographique.
+
+**Ce que ça permet :**
+
+- Interroger plusieurs sources bibliographiques via une API unifiée
+- Fiabiliser les profils chercheurs (vérifier les publications, corriger les attributions)
+- Reconstruire le parcours et le réseau de collaboration d'un chercheur
+
+**Sous-projets :**
+
+| Sous-projet | État |
+|-------------|------|
+| openalex | 🚧 En cours |
+| crossref | 🚧 En cours |
+| hal | 📋 Prévu |
+| arxiv | 📋 Prévu |
+| orcid | 📋 Prévu |
+| verify | 🚧 En cours |
 
 ### Module CRF (Case Report Form)
 

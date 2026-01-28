@@ -23,6 +23,9 @@ features:
   - title: AMARRE
     details: Gestion de la mobilité des chercheurs
     link: /guide/audit/ecrin-audit
+  - title: Citations
+    details: Agrégation de sources bibliographiques (OpenAlex, Crossref, HAL, ORCID) et fiabilisation des profils chercheurs avec Atlas Verify
+    link: /guide/citations/
   - title: CRF (Case Report Form)
     details: Outils TypeScript pour interagir avec REDCap, utilisé par 8 000+ institutions pour la collecte de données de recherche
     link: /guide/dev/crf
@@ -32,14 +35,15 @@ features:
 
 Atlas est un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter le travail des chercheurs et des équipes de recherche.
 
-## Les trois modules majeurs
+## Les quatre modules majeurs
 
-Atlas est composé de **trois modules majeurs** :
+Atlas est composé de **quatre modules majeurs** :
 
 | Module | Description | Sous-projets |
 |--------|-------------|--------------|
 | **ECRIN** | Plateforme de collaboration pour chercheurs | find-an-expert |
-| **AMARRE** | Visualisation et analyse de réseaux de recherche | - |
+| **AMARRE** | Gestion de la mobilité des chercheurs | - |
+| **Citations** | Agrégation de sources bibliographiques et fiabilisation des profils | openalex, crossref, hal, arxiv, orcid, verify |
 | **CRF** | Outils pour interagir avec REDCap | redcap-core, redcap-openapi |
 
 ### ECRIN
@@ -66,6 +70,21 @@ ECRIN est une plateforme de collaboration pour chercheurs permettant de présent
 ### AMARRE
 
 AMARRE est une application de gestion de la mobilité des chercheurs.
+
+### Citations
+
+Atlas Citations est une suite de packages pour interroger des sources bibliographiques (OpenAlex, Crossref, HAL, ArXiv, ORCID) via des clients Effect typés. Atlas Verify permet aux chercheurs de fiabiliser leur profil bibliographique.
+
+**Sous-projets :**
+
+| Sous-projet | État |
+|-------------|------|
+| openalex | 🚧 En cours |
+| crossref | 🚧 En cours |
+| hal | 📋 Prévu |
+| arxiv | 📋 Prévu |
+| orcid | 📋 Prévu |
+| verify | 🚧 En cours |
 
 ### CRF (Case Report Form)
 
