@@ -21,8 +21,11 @@ features:
     details: Plateforme de collaboration pour chercheurs - présentez vos travaux, trouvez des collaborateurs, visualisez les réseaux de recherche
     link: /guide/audit/ecrin-audit
   - title: AMARRE
-    details: Visualisation et analyse de réseaux de recherche via des graphes interactifs
+    details: Gestion de la mobilité des chercheurs
     link: /guide/audit/ecrin-audit
+  - title: Citations
+    details: Agrégation de sources bibliographiques (OpenAlex, Crossref, HAL, ORCID) et fiabilisation des profils chercheurs avec Atlas Verify
+    link: /guide/citations/
   - title: CRF (Case Report Form)
     details: Outils TypeScript pour interagir avec REDCap, utilisé par 8 000+ institutions pour la collecte de données de recherche
     link: /guide/dev/crf
@@ -32,26 +35,56 @@ features:
 
 Atlas est un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter le travail des chercheurs et des équipes de recherche.
 
-## Les trois modules majeurs
+## Les quatre modules majeurs
 
-Atlas est composé de **trois modules majeurs** :
+Atlas est composé de **quatre modules majeurs** :
 
 | Module | Description | Sous-projets |
 |--------|-------------|--------------|
 | **ECRIN** | Plateforme de collaboration pour chercheurs | find-an-expert |
-| **AMARRE** | Visualisation et analyse de réseaux de recherche | - |
+| **AMARRE** | Gestion de la mobilité des chercheurs | - |
+| **Citations** | Agrégation de sources bibliographiques et fiabilisation des profils | openalex, crossref, hal, arxiv, orcid, verify |
 | **CRF** | Outils pour interagir avec REDCap | redcap-core, redcap-openapi |
 
 ### ECRIN
 
-ECRIN est une plateforme de collaboration pour chercheurs permettant de présenter ses travaux, trouver des collaborateurs et visualiser les réseaux de recherche. Elle est organisée autour de 6 cartes fonctionnelles : Introduce, Collaborate, Explore, Ask, Publish, Administrate.
+ECRIN est une plateforme de collaboration pour chercheurs permettant de présenter ses travaux, trouver des collaborateurs et visualiser les réseaux de recherche.
 
-**Sous-projet :**
-- **find-an-expert** : découverte d'expertise via les publications (OpenAlex) et contributions (GitHub)
+**Sous-projets :**
+
+| Sous-projet | État |
+|-------------|------|
+| introduce-my-scientific-questions | 🚧 En cours |
+| introduce-my-references | 🚧 En cours |
+| collaborate-create-my-project | 🚧 En cours |
+| collaborate-build-my-team | 📋 Prévu |
+| collaborate-find-my-expert | 📋 Prévu |
+| collaborate-fund-my-project | 📋 Prévu |
+| explore-my-graph | 📋 Prévu |
+| explore-community-graph | 📋 Prévu |
+| ask-data | 📋 Prévu |
+| ask-an-expert | 🚧 En cours |
+| publish-my-data | 📋 Prévu |
+| publish-my-news | 📋 Prévu |
 
 ### AMARRE
 
-AMARRE est une application de visualisation et d'analyse de réseaux de recherche utilisant des graphes interactifs (Sigma.js, Graphology).
+AMARRE est une application de gestion de la mobilité des chercheurs.
+
+### Citations
+
+Atlas Citations est une suite de packages pour interroger des sources bibliographiques (OpenAlex, Crossref, HAL, ArXiv, ORCID) via des clients Effect typés. Atlas Verify permet aux chercheurs de fiabiliser leur profil bibliographique.
+
+**Sous-projets :**
+
+| Sous-projet | État |
+|-------------|------|
+| openalex | 🚧 En cours |
+| crossref | 🚧 En cours |
+| hal | 📋 Prévu |
+| arxiv | 📋 Prévu |
+| orcid | 📋 Prévu |
+| verify | 🚧 En cours |
 
 ### CRF (Case Report Form)
 
