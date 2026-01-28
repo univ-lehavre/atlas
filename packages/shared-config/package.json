@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-shared-config",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Shared TypeScript, ESLint, and Prettier configuration for Atlas projects",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

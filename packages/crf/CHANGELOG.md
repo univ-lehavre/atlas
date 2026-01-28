@@ -1,5 +1,65 @@
 # @univ-lehavre/atlas-crf
 
+## 1.3.0
+### Minor Changes
+
+
+
+- [#38](https://github.com/univ-lehavre/atlas/pull/38) [`445211d`](https://github.com/univ-lehavre/atlas/commit/445211d3bd8c59fdde45a43c3d108740b80c9487) Thanks [@chasset](https://github.com/chasset)! - Harmonize CLI tools with @effect/cli and @clack/prompts
+  
+  - Migrate all CLI tools (crf-redcap, crf-server, atlas-net) to @effect/cli
+  - Add shared CLI utilities for consistent behavior across tools
+  - Implement auto-detection of CI environments
+  - Add standard options: --ci, --json, --verbose, --quiet, --help, --version
+  - Create new crf-server CLI with port, host, and rate-limit options
+  - Document exit codes: 0=success, 1=error, 2=config, 3=network, 4=auth
+  - Add CLI.md documentation for both packages
+
+
+- [#46](https://github.com/univ-lehavre/atlas/pull/46) [`0b83927`](https://github.com/univ-lehavre/atlas/commit/0b839274782f50632aea3dcfc38e4ef6816f21dc) Thanks [@chasset](https://github.com/chasset)! - Integrate redcap-core across CRF and OpenAPI packages
+  
+  ### @univ-lehavre/atlas-crf
+  - Re-exports branded types, errors, and version utilities from `@univ-lehavre/atlas-redcap-core`
+  - Removed duplicate implementations in favor of core module
+  - Breaking: `BooleanFlag` is now a type-only export, use `toBooleanFlag`/`fromBooleanFlag` utilities
+  
+  ### @univ-lehavre/atlas-redcap-core
+  - Added comprehensive test suite (18 test files, 520 tests)
+  - Test coverage for: brands, errors, version, params, validation, adapters, utils, content-types, types
+  - Improved module documentation with usage examples
+  
+  ### @univ-lehavre/atlas-redcap-openapi
+  - Now depends on `@univ-lehavre/atlas-redcap-core` for shared types
+  - `ApiAction` type imported from redcap-core instead of being redefined
+  - Re-exports content type constants and utilities (CONTENT_KEY_MAPPING, TAG_GROUPS, PERMISSION_MAPPING, etc.)
+  - Consolidated types: extractor/types.ts now re-exports from core/types.ts
+  - Removed duplicate ComparisonResult/ComparisonSummary definitions
+
+### Patch Changes
+
+
+
+- [#39](https://github.com/univ-lehavre/atlas/pull/39) [`1b814ac`](https://github.com/univ-lehavre/atlas/commit/1b814ac0b4bb2999d8271d503e78dd13b9973918) Thanks [@chasset](https://github.com/chasset)! - docs: restructure documentation and add GitHub Pages deployment
+  
+  - Separate researcher (user) and developer documentation
+  - Add landing page with clear entry points for both audiences
+  - Add GitHub Actions workflow for automatic documentation deployment
+  - Configure VitePress for GitHub Pages at /atlas/
+
+
+- [#47](https://github.com/univ-lehavre/atlas/pull/47) [`57244db`](https://github.com/univ-lehavre/atlas/commit/57244db507023838f05cf13ea93db471d00f4e1b) Thanks [@chasset](https://github.com/chasset)! - Remove unused exports and enable knip exports check
+  
+  - Enable knip to detect unused exports (remove --exclude exports flag)
+  - Clean up 105 unused exports across packages
+  - Configure knip to ignore public API files in crf package
+
+
+- [#48](https://github.com/univ-lehavre/atlas/pull/48) [`9ad9099`](https://github.com/univ-lehavre/atlas/commit/9ad9099d3861a6595d2acd6ecb10cf29d46a6d63) Thanks [@chasset](https://github.com/chasset)! - Add test:coverage script to packages
+
+- Updated dependencies [[`445211d`](https://github.com/univ-lehavre/atlas/commit/445211d3bd8c59fdde45a43c3d108740b80c9487), [`0b83927`](https://github.com/univ-lehavre/atlas/commit/0b839274782f50632aea3dcfc38e4ef6816f21dc), [`1b814ac`](https://github.com/univ-lehavre/atlas/commit/1b814ac0b4bb2999d8271d503e78dd13b9973918), [`9ad9099`](https://github.com/univ-lehavre/atlas/commit/9ad9099d3861a6595d2acd6ecb10cf29d46a6d63)]:
+  - @univ-lehavre/atlas-net@0.7.0
+  - @univ-lehavre/atlas-redcap-core@1.1.0
+
 ## 1.2.1
 ### Patch Changes
 

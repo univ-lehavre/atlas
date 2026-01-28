@@ -1,5 +1,34 @@
 # @univ-lehavre/atlas-net
 
+## 0.7.0
+### Minor Changes
+
+
+
+- [#38](https://github.com/univ-lehavre/atlas/pull/38) [`445211d`](https://github.com/univ-lehavre/atlas/commit/445211d3bd8c59fdde45a43c3d108740b80c9487) Thanks [@chasset](https://github.com/chasset)! - Harmonize CLI tools with @effect/cli and @clack/prompts
+  
+  - Migrate all CLI tools (crf-redcap, crf-server, atlas-net) to @effect/cli
+  - Add shared CLI utilities for consistent behavior across tools
+  - Implement auto-detection of CI environments
+  - Add standard options: --ci, --json, --verbose, --quiet, --help, --version
+  - Create new crf-server CLI with port, host, and rate-limit options
+  - Document exit codes: 0=success, 1=error, 2=config, 3=network, 4=auth
+  - Add CLI.md documentation for both packages
+
+### Patch Changes
+
+
+
+- [#39](https://github.com/univ-lehavre/atlas/pull/39) [`1b814ac`](https://github.com/univ-lehavre/atlas/commit/1b814ac0b4bb2999d8271d503e78dd13b9973918) Thanks [@chasset](https://github.com/chasset)! - docs: restructure documentation and add GitHub Pages deployment
+  
+  - Separate researcher (user) and developer documentation
+  - Add landing page with clear entry points for both audiences
+  - Add GitHub Actions workflow for automatic documentation deployment
+  - Configure VitePress for GitHub Pages at /atlas/
+
+
+- [#48](https://github.com/univ-lehavre/atlas/pull/48) [`9ad9099`](https://github.com/univ-lehavre/atlas/commit/9ad9099d3861a6595d2acd6ecb10cf29d46a6d63) Thanks [@chasset](https://github.com/chasset)! - Add test:coverage script to packages
+
 ## 0.6.0
 ### Minor Changes
 

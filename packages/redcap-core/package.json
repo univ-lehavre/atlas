@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-redcap-core",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Pure functional core for REDCap domain logic with Effect",
   "type": "module",
   "exports": {

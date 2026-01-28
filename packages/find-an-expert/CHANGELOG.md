@@ -1,30 +1,6 @@
-# @univ-lehavre/ecrin
+# @univ-lehavre/atlas-find-an-expert
 
-## 2.0.0
-### Major Changes
-
-
-
-- [#47](https://github.com/univ-lehavre/atlas/pull/47) [`78a8e8a`](https://github.com/univ-lehavre/atlas/commit/78a8e8a2cc9f2f24b181fdf82b3f3d215ae390b4) Thanks [@chasset](https://github.com/chasset)! - Import ecrin and amarre packages into atlas monorepo
-  
-  ### @univ-lehavre/atlas-logos
-  - Add AMARRE logos (amarre.png, amarre-icon.png)
-  - Add France 2030 and Région Normandie partner logos
-  
-  ### @univ-lehavre/atlas-ecrin (new package)
-  - SvelteKit application for research collaboration
-  - Appwrite backend integration
-  - REDCap integration for surveys
-  - Graph visualization (Sigma, Graphology)
-  - Svelte 5 with runes
-  
-  ### @univ-lehavre/atlas-amarre (new package)
-  - SvelteKit application for clinical research data management
-  - Appwrite backend integration
-  - REDCap integration
-  - Zod schema validation with OpenAPI generation
-  - Svelte 5 with runes
-
+## 0.5.1
 ### Patch Changes
 
 
@@ -37,10 +13,6 @@
 
 
 - [#48](https://github.com/univ-lehavre/atlas/pull/48) [`164e0cb`](https://github.com/univ-lehavre/atlas/commit/164e0cb99c3bb544426d6976529007e6d56a74aa) Thanks [@chasset](https://github.com/chasset)! - Remove `private` field from package.json to allow future publishing
-
-
-
-- [#48](https://github.com/univ-lehavre/atlas/pull/48) [`9ad9099`](https://github.com/univ-lehavre/atlas/commit/9ad9099d3861a6595d2acd6ecb10cf29d46a6d63) Thanks [@chasset](https://github.com/chasset)! - Add test:coverage script to packages
 
 
 
@@ -60,38 +32,3 @@
   - @univ-lehavre/atlas-appwrite@0.2.0
   - @univ-lehavre/atlas-errors@0.2.0
   - @univ-lehavre/atlas-validators@0.2.0
-
-## 1.2.0
-
-### Minor Changes
-
-- 8ba0e31: openapi.json has now its own endpoint
-- 986c540: Remove all unused code
-
-### Patch Changes
-
-- 14864a2: All services have now their own tests
-
-## 1.1.0
-
-### Minor Changes
-
-- c19bbfd: Adapt signup flow to match appwrite 1.8
-
-### Patch Changes
-
-- 63e3d9d: Remove all card images
-- a8eb381: Graph are now displayed on the whole canvas
-
-## 1.0.2
-
-### Patch Changes
-
-- 20e4037: Mise à jour de la documentation
-
-## 1.0.1
-
-### Patch Changes
-
-- dea0b67: Mise en place de changeset
-- 122f51b: Mise à jour des dépendancesw

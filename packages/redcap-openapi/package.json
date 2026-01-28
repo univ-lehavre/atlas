@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-redcap-openapi",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "REDCap source analysis, OpenAPI spec extraction, and API documentation tools",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
