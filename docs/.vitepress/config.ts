@@ -17,6 +17,11 @@ export default defineConfig({
     /\.\/CLAUDE/,
     // TypeDoc generated links
     /type-aliases\/index/,
+    // TypeDoc _media folder links (README files copied with broken relative links)
+    /\.\.\/_media\/atlas-/,
+    // Relative links in CRF docs that reference external docs
+    /^\.\/cli$/,
+    /^\.\/architecture$/,
   ],
   themeConfig: {
     nav: [
