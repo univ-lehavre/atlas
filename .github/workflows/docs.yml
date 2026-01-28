@@ -36,6 +36,12 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Create SvelteKit env files
+        run: |
+          for app in packages/amarre packages/ecrin packages/find-an-expert; do
+            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
+          done
+
       - name: Build packages (for API docs)
         run: pnpm build
 
