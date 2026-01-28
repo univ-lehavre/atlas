@@ -9,5 +9,8 @@
   "files": [
     "*.png",
     "*.svg"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

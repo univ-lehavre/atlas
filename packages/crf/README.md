@@ -1,29 +1,23 @@
 # @univ-lehavre/crf
 
-Clinical Research Forms - Package unifié pour interagir avec l'API REDCap.
+Case Report Form - Package unifié pour interagir avec l'API REDCap.
 
-## Architecture
+## À propos
 
-Ce package utilise une architecture **OpenAPI-first** :
+Ce package fournit un client TypeScript typé pour l'API REDCap, un serveur HTTP REST et des outils CLI. Il utilise une architecture OpenAPI-first avec des types générés depuis la spécification `specs/redcap.yaml`.
 
-```
-packages/crf/
-├── specs/redcap.yaml          # Source de vérité (OpenAPI 3.1.0)
-├── src/redcap/                # Client Effect pour REDCap
-│   ├── generated/types.ts     # Types générés depuis la spec
-│   ├── brands.ts              # Branded types (RecordId, etc.)
-│   ├── client.ts              # Client principal
-│   └── errors.ts              # Erreurs typées
-├── src/server/                # Microservice HTTP REST (Hono)
-│   ├── routes/                # health, project, records, users
-│   └── middleware/            # rate-limit, validation
-└── src/cli/                   # CLI tools
-```
+## Fonctionnalités
+
+- **Client REDCap** : Client Effect typé pour l'API REDCap
+- **Serveur HTTP** : Microservice REST avec Hono
+- **CLI** : Outils en ligne de commande pour tester la connectivité
+- **Types générés** : Types TypeScript générés depuis OpenAPI
+- **Branded types** : Validation runtime des identifiants
 
 ## Installation
 
 ```bash
-pnpm add @univ-lehavre/crf
+pnpm add @univ-lehavre/crf effect
 ```
 
 ## Usage
@@ -64,86 +58,71 @@ export PORT=3000
 pnpm -F @univ-lehavre/crf start
 ```
 
-Le serveur expose :
+## API du serveur
 
-- `GET /health` - Health check
-- `GET /api/v1/project/version` - Version REDCap
-- `GET /api/v1/project/info` - Informations projet
-- `GET /api/v1/records` - Exporter les records
-- `POST /api/v1/records` - Importer des records
-- `GET /api/v1/users/:email` - Trouver un utilisateur par email
-- `GET /openapi.json` - Spécification OpenAPI
-- `GET /docs` - Documentation Scalar
+| Endpoint | Description |
+|----------|-------------|
+| `GET /health` | Health check |
+| `GET /api/v1/project/version` | Version REDCap |
+| `GET /api/v1/project/info` | Informations projet |
+| `GET /api/v1/records` | Exporter les records |
+| `POST /api/v1/records` | Importer des records |
+| `GET /api/v1/users/:email` | Trouver un utilisateur |
+| `GET /openapi.json` | Spécification OpenAPI |
+| `GET /docs` | Documentation Scalar |
 
 ## Scripts
 
 ```bash
-# Régénérer les types depuis la spec OpenAPI
-pnpm generate:types
-
-# Lancer un mock REDCap (Prism)
-pnpm mock:redcap
-
-# Lancer le serveur CRF
-pnpm start
-
-# Tests unitaires
-pnpm test
-
-# Tests API (nécessite serveur en cours)
-pnpm test:api
-```
-
-## Développement
-
-### Workflow OpenAPI-first
-
-1. Modifier `specs/redcap.yaml` (source de vérité)
-2. Régénérer les types : `pnpm generate:types`
-3. Adapter le code client/serveur si nécessaire
-
-### Tests avec Prism
-
-```bash
-# Terminal 1: Lancer le mock REDCap
-pnpm mock:redcap
-
-# Terminal 2: Tester le client
-REDCAP_API_URL=http://localhost:8080/api/ \
-REDCAP_API_TOKEN=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA \
-pnpm crf-redcap test
-```
-
-### Tests API avec Schemathesis
-
-```bash
-# Terminal 1: Mock REDCap
-pnpm mock:redcap
-
-# Terminal 2: Serveur CRF
-REDCAP_API_URL=http://localhost:8080/api/ \
-REDCAP_API_TOKEN=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA \
-pnpm start
-
-# Terminal 3: Tests Schemathesis
-pnpm test:api
+pnpm -F @univ-lehavre/crf dev            # Développement
+pnpm -F @univ-lehavre/crf build          # Build production
+pnpm -F @univ-lehavre/crf test           # Tests unitaires
+pnpm -F @univ-lehavre/crf generate:types # Régénérer les types
+pnpm -F @univ-lehavre/crf mock:redcap    # Mock REDCap (Prism)
+pnpm -F @univ-lehavre/crf start          # Lancer le serveur
+pnpm -F @univ-lehavre/crf test:api       # Tests API (Schemathesis)
 ```
 
 ## Branded Types
 
-Le package utilise des **branded types** pour la validation runtime :
+Le package utilise des branded types pour la validation runtime :
 
 ```typescript
 import { RedcapToken, RecordId, InstrumentName, Email } from '@univ-lehavre/crf/redcap';
 
-// Ces appels valident le format
 const token = RedcapToken('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'); // OK
-const recordId = RecordId('abc12345678901234567'); // OK (20+ chars alphanumériques)
-
-// Ces appels lèvent une exception
-const badToken = RedcapToken('invalid'); // Error: token invalide
-const badId = RecordId('short'); // Error: doit avoir au moins 20 caractères
+const recordId = RecordId('abc12345678901234567'); // OK (20+ chars)
 ```
+
+## Documentation
+
+- [Documentation API](../../docs/api/@univ-lehavre/atlas-crf/)
+- [Guide CRF](../../docs/guide/dev/crf.md)
+
+## Organisation
+
+Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+
+Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
+- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
+
+---
+
+<p align="center">
+  <a href="https://www.univ-lehavre.fr/">
+    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="50">
+  </a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://www.cptmp.fr/">
+    <img src="../logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="50">
+  </a>
+  &nbsp;&nbsp;&nbsp;
+  <a href="https://eunicoast.eu/">
+    <img src="../logos/eunicoast.png" alt="EUNICoast" height="50">
+  </a>
+</p>
 
 ## Licence
 

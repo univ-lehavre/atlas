@@ -7,12 +7,12 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/univ-lehavre/atlas.git",
-    "directory": "packages/atlas-auth"
+    "directory": "packages/auth"
   },
   "bugs": {
     "url": "https://github.com/univ-lehavre/atlas/issues"
   },
-  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/atlas-auth#readme",
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/auth#readme",
   "keywords": [
     "auth",
     "appwrite",
@@ -69,5 +69,8 @@
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

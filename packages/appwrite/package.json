@@ -7,12 +7,12 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/univ-lehavre/atlas.git",
-    "directory": "packages/atlas-appwrite"
+    "directory": "packages/appwrite"
   },
   "bugs": {
     "url": "https://github.com/univ-lehavre/atlas/issues"
   },
-  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/atlas-appwrite#readme",
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/appwrite#readme",
   "keywords": [
     "appwrite",
     "client",
@@ -63,5 +63,8 @@
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -56,6 +56,6 @@
     }
   },
   "ignore": ["**/dist/**", "**/.svelte-kit/**", "**/build/**", "**/upstream/**"],
-  "ignoreDependencies": ["tsx", "@univ-lehavre/atlas-shared-config", "vitepress-openapi", "@modyfi/vite-plugin-yaml"],
+  "ignoreDependencies": ["@univ-lehavre/atlas-shared-config", "vitepress-openapi", "@modyfi/vite-plugin-yaml", "simple-git", "chart.js", "vue-chartjs"],
   "ignoreBinaries": ["prettier"]
 }
