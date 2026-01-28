@@ -19,18 +19,21 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "lint": "turbo lint",
     "format": "turbo format",
     "format:check": "turbo format:check",
+    "svelte:check": "turbo check",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
     "test": "turbo test",
     "test:coverage": "turbo test:coverage",
-    "typecheck": "turbo typecheck",
+    "ci": "pnpm format:check && pnpm svelte:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build",
     "audit:security": "pnpm audit --audit-level=high",
     "audit:licenses": "license-checker --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;Unlicense\" --excludePrivatePackages",
     "audit:unused": "knip --exclude unresolved,types",
     "audit:duplicates": "jscpd --pattern \"packages/*/src/**/*.ts\" --pattern \"apps/*/src/**/*.ts\"",
     "audit:size": "size-limit",
     "audit:versions": "taze -r",
+    "ci:audit": "pnpm audit:security && pnpm audit:licenses && pnpm audit:unused && pnpm audit:duplicates && pnpm audit:size && pnpm audit:versions",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
@@ -38,8 +41,6 @@
     "changeset:add": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "pnpm build && changeset publish",
-    "ci": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build",
-    "ci:audit": "pnpm audit:security && pnpm audit:licenses && pnpm audit:unused && pnpm audit:duplicates",
     "prepare": "lefthook install"
   },
   "size-limit": [
@@ -52,6 +53,28 @@
       "limit": "20 KB"
     }
   ],
+  "jscpd": {
+    "threshold": 5,
+    "reporters": ["console"],
+    "ignore": ["**/node_modules/**", "**/dist/**", "**/*.d.ts"],
+    "format": ["typescript"],
+    "minLines": 10,
+    "minTokens": 50
+  },
+  "typedocOptions": {
+    "entryPoints": ["packages/crf", "packages/net", "packages/redcap-openapi"],
+    "entryPointStrategy": "packages",
+    "out": "docs/api",
+    "plugin": ["typedoc-plugin-markdown"],
+    "readme": "none",
+    "excludePrivate": true,
+    "excludeInternal": true,
+    "excludeExternals": true,
+    "entryFileName": "index",
+    "indexFormat": "table",
+    "hidePageHeader": true,
+    "hideBreadcrumbs": true
+  },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.2",
     "@changesets/cli": "^2.29.8",
