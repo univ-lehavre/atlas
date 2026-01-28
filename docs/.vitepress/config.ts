@@ -39,6 +39,7 @@ export default defineConfig({
           items: [
             { text: "Vue d'ensemble", link: '/guide/dev/' },
             { text: 'Architecture', link: '/guide/dev/architecture' },
+            { text: 'Audit et qualité', link: '/guide/dev/audit' },
             { text: 'REDCap/CRF', link: '/guide/dev/crf' },
             { text: 'Outils CLI', link: '/guide/dev/cli' },
             { text: 'Infrastructure', link: '/guide/dev/infrastructure' },
