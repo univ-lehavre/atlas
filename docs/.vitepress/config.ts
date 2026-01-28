@@ -2,13 +2,21 @@ import { defineConfig } from 'vitepress';
 
 export default defineConfig({
   title: 'Atlas',
-  description: 'Outils TypeScript pour REDCap et sources bibliographiques',
+  description: 'Plateforme de recherche - Université Le Havre Normandie',
   base: '/atlas/',
   ignoreDeadLinks: [
     // Localhost links in infrastructure docs
     /^http:\/\/localhost/,
     // API docs generated dynamically
     /^\.\/@univ-lehavre/,
+    // External Appwrite documentation links
+    /^\/docs\/references/,
+    // Internal package documentation links
+    /\.\/README/,
+    /\.\/index/,
+    /\.\/CLAUDE/,
+    // TypeDoc generated links
+    /type-aliases\/index/,
   ],
   themeConfig: {
     nav: [
@@ -20,6 +28,17 @@ export default defineConfig({
         {
           text: 'Introduction',
           items: [{ text: 'Présentation', link: '/guide/' }],
+        },
+        {
+          text: 'ECRIN - Plateforme chercheurs',
+          collapsed: false,
+          items: [
+            { text: 'Audit ECRIN', link: '/guide/audit/ecrin-audit' },
+            { text: 'Find an Expert', link: '/guide/find-an-expert/technical-setup' },
+            { text: 'Configuration Appwrite', link: '/guide/find-an-expert/appwrite-setup' },
+            { text: 'Design System', link: '/guide/find-an-expert/design-system' },
+            { text: 'Architecture CSS', link: '/guide/find-an-expert/css-architecture' },
+          ],
         },
         {
           text: 'Atlas Verify - Guide chercheur',
@@ -95,6 +114,16 @@ export default defineConfig({
             { text: 'Audit Microservices', link: '/guide/amarre/MICROSERVICES_AUDIT' },
           ],
         },
+        {
+          text: 'Audits',
+          collapsed: true,
+          items: [
+            { text: 'Introduction', link: '/guide/audit/' },
+            { text: 'Audit de la documentation', link: '/guide/audit/documentation-audit' },
+            { text: 'Audit ECRIN', link: '/guide/audit/ecrin-audit' },
+            { text: 'Audit des dépendances', link: '/guide/audit/dependencies-audit' },
+          ],
+        },
       ],
       '/api/': [
         {
@@ -102,17 +131,29 @@ export default defineConfig({
           items: [{ text: "Vue d'ensemble", link: '/api/' }],
         },
         {
-          text: '@univ-lehavre/atlas-crf',
+          text: 'REDCap',
           collapsed: false,
           items: [
-            { text: 'Overview', link: '/api/@univ-lehavre/atlas-crf/' },
+            { text: '@univ-lehavre/atlas-crf', link: '/api/@univ-lehavre/atlas-crf/' },
+            { text: '@univ-lehavre/atlas-redcap-core', link: '/api/@univ-lehavre/atlas-redcap-core/' },
+            { text: '@univ-lehavre/atlas-redcap-openapi', link: '/api/@univ-lehavre/atlas-redcap-openapi/' },
           ],
         },
         {
-          text: '@univ-lehavre/atlas-net',
+          text: 'Utilitaires',
           collapsed: false,
           items: [
-            { text: 'Overview', link: '/api/@univ-lehavre/atlas-net/' },
+            { text: '@univ-lehavre/atlas-net', link: '/api/@univ-lehavre/atlas-net/' },
+            { text: '@univ-lehavre/atlas-errors', link: '/api/@univ-lehavre/atlas-errors/' },
+            { text: '@univ-lehavre/atlas-validators', link: '/api/@univ-lehavre/atlas-validators/' },
+          ],
+        },
+        {
+          text: 'Appwrite',
+          collapsed: false,
+          items: [
+            { text: '@univ-lehavre/atlas-appwrite', link: '/api/@univ-lehavre/atlas-appwrite/' },
+            { text: '@univ-lehavre/atlas-auth', link: '/api/@univ-lehavre/atlas-auth/' },
           ],
         },
       ],

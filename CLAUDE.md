@@ -12,7 +12,7 @@ Ce fichier fournit le contexte necessaire pour travailler efficacement sur ce pr
 atlas/
 ├── packages/
 │   ├── find-an-expert/     # App SvelteKit - analyse expertise chercheurs
-│   ├── crf/                # Clinical Research Forms (REDCap client, server, CLI)
+│   ├── crf/                # Case Report Form (REDCap client, server, CLI)
 │   ├── redcap-openapi/     # Analyse source REDCap et extraction OpenAPI
 │   ├── net/                # Utilitaires et CLI diagnostic reseau
 │   └── shared-config/      # Config TypeScript et ESLint partagee
@@ -143,7 +143,7 @@ Conventions Svelte 5 :
 - Pas de stores Svelte 4
 - Ne jamais utiliser `fetch('/api/...')` cote serveur, utiliser les services `$lib/server/*`
 
-### packages/crf (Clinical Research Forms)
+### packages/crf (Case Report Form)
 
 Package unifie contenant le client REDCap, le serveur HTTP et les CLI.
 Architecture OpenAPI-first avec types generes depuis `specs/redcap.yaml`.
