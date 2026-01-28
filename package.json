@@ -56,17 +56,31 @@
   ],
   "jscpd": {
     "threshold": 5,
-    "reporters": ["console"],
-    "ignore": ["**/node_modules/**", "**/dist/**", "**/*.d.ts"],
-    "format": ["typescript"],
+    "reporters": [
+      "console"
+    ],
+    "ignore": [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/*.d.ts"
+    ],
+    "format": [
+      "typescript"
+    ],
     "minLines": 10,
     "minTokens": 50
   },
   "typedocOptions": {
-    "entryPoints": ["packages/crf", "packages/net", "packages/redcap-openapi"],
+    "entryPoints": [
+      "packages/crf",
+      "packages/net",
+      "packages/redcap-openapi"
+    ],
     "entryPointStrategy": "packages",
     "out": "docs/api",
-    "plugin": ["typedoc-plugin-markdown"],
+    "plugin": [
+      "typedoc-plugin-markdown"
+    ],
     "readme": "none",
     "excludePrivate": true,
     "excludeInternal": true,
@@ -87,17 +101,17 @@
     "@vitest/coverage-v8": "^4.0.18",
     "jscpd": "^4.0.7",
     "knip": "^5.82.1",
-    "lefthook": "^2.0.15",
+    "lefthook": "^2.0.16",
     "license-checker": "^25.0.1",
     "size-limit": "^12.0.0",
     "taze": "^19.9.2",
     "tsx": "^4.21.0",
-    "turbo": "^2.7.5",
+    "turbo": "^2.7.6",
     "typedoc": "^0.28.16",
     "typedoc-plugin-markdown": "^4.9.0",
     "vitepress": "^1.6.4",
     "vitepress-openapi": "^0.1.13",
     "vitest": "^4.0.18"
   },
-  "packageManager": "pnpm@10.28.1"
+  "packageManager": "pnpm@10.28.2"
 }
