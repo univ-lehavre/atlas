@@ -34,14 +34,15 @@
     "audit:size": "size-limit",
     "audit:versions": "taze -r --ignore-paths packages/redcap-openapi/upstream",
     "ci:audit": "pnpm audit:security && pnpm audit:licenses && pnpm audit:unused && pnpm audit:duplicates && pnpm audit:size && pnpm audit:versions",
+    "stats:generate": "tsx scripts/generate-repo-stats.ts",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
+    "docs:build": "pnpm stats:generate && vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "docs:api": "typedoc",
     "changeset:add": "changeset",
     "changeset:version": "changeset version && prettier --write '**/CHANGELOG.md'",
     "changeset:publish": "pnpm build && changeset publish",
-    "release": "pnpm build && changeset publish",
+    "release": "pnpm build && ./scripts/publish-packages.sh",
     "prepare": "lefthook install"
   },
   "size-limit": [
@@ -74,7 +75,12 @@
     "entryPoints": [
       "packages/crf",
       "packages/net",
-      "packages/redcap-openapi"
+      "packages/redcap-core",
+      "packages/redcap-openapi",
+      "packages/errors",
+      "packages/validators",
+      "packages/appwrite",
+      "packages/auth"
     ],
     "entryPointStrategy": "packages",
     "out": "docs/api",
@@ -92,6 +98,9 @@
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.2",
+    "chart.js": "^4.5.0",
+    "simple-git": "^3.27.0",
+    "vue-chartjs": "^5.3.2",
     "@changesets/cli": "^2.29.8",
     "@commitlint/cli": "^20.3.1",
     "@commitlint/config-conventional": "^20.3.1",
