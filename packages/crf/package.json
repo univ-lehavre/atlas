@@ -75,13 +75,13 @@
     "@univ-lehavre/atlas-net": "workspace:*",
     "@univ-lehavre/atlas-redcap-core": "workspace:*",
     "effect": "^3.19.15",
-    "hono": "^4.11.5",
-    "hono-openapi": "^1.1.2",
+    "hono": "^4.11.7",
+    "hono-openapi": "^1.2.0",
     "hono-rate-limiter": "^0.5.3",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
-    "@scalar/hono-api-reference": "^0.9.35",
+    "@scalar/hono-api-reference": "^0.9.37",
     "@stoplight/prism-cli": "^5.14.2",
     "@types/node": "^25.0.10",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
