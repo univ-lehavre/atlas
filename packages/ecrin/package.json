@@ -15,7 +15,8 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test:unit": "vitest",
-    "test": "pnpm run test:unit -- --run"
+    "test": "pnpm run test:unit -- --run",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.4.0",

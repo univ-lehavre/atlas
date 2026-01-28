@@ -1,13 +1,28 @@
-node_modules
-**/node_modules
-**/dist
-**/.turbo
-.git
-.gitignore
-*.md
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+**/dist/
+coverage/
+
+# Environment files
 .env*
 !.env.example
-.vscode
-.idea
-coverage
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Turbo
+**/.turbo/
+
+# Documentation
+*.md
+
+# Logs
 **/*.log
