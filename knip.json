@@ -4,17 +4,17 @@
     ".": {
       "project": ["*.{js,ts}"]
     },
-    "packages/atlas-appwrite": {
+    "packages/appwrite": {
       "project": ["src/**/*.ts"],
       "ignoreDependencies": ["@sveltejs/kit"]
     },
-    "packages/atlas-auth": {
+    "packages/auth": {
       "project": ["src/**/*.ts"]
     },
-    "packages/atlas-errors": {
+    "packages/errors": {
       "project": ["src/**/*.ts"]
     },
-    "packages/atlas-validators": {
+    "packages/validators": {
       "project": ["src/**/*.ts"]
     },
     "packages/crf": {
@@ -57,5 +57,5 @@
   },
   "ignore": ["**/dist/**", "**/.svelte-kit/**", "**/build/**", "**/upstream/**"],
   "ignoreDependencies": ["tsx", "@univ-lehavre/atlas-shared-config", "vitepress-openapi", "@modyfi/vite-plugin-yaml"],
-  "ignoreBinaries": ["jq"]
+  "ignoreBinaries": ["prettier"]
 }
