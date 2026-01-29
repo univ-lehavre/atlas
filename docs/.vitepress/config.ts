@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitepress';
+import { withMermaid } from 'vitepress-plugin-mermaid';
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   title: 'Atlas',
   description: 'Plateforme de recherche - Université Le Havre Normandie',
   base: '/atlas/',
@@ -233,4 +234,4 @@ export default defineConfig({
     },
     socialLinks: [{ icon: 'github', link: 'https://github.com/univ-lehavre/atlas' }],
   },
-});
+}));
