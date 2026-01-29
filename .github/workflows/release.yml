@@ -35,6 +35,11 @@ jobs:
       - name: Install Dependencies
         run: pnpm install
 
+      - name: Configure Git identity
+        run: |
+          git config user.name "chasset"
+          git config user.email "chasset@users.noreply.github.com"
+
       - name: Create SvelteKit env files
         run: |
           for app in packages/amarre packages/ecrin packages/find-an-expert; do
