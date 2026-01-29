@@ -8,7 +8,7 @@ hero:
   actions:
     - theme: brand
       text: Guide chercheur
-      link: /guide/citations/user/
+      link: /guide/researchers/
     - theme: alt
       text: Documentation technique
       link: /guide/dev/
