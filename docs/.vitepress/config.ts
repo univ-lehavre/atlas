@@ -174,11 +174,34 @@ export default defineConfig({
           ],
         },
       ],
+      // Guide chercheur
+      '/guide/researchers/': [
+        {
+          text: 'Guide chercheur',
+          items: [
+            { text: 'Introduction', link: '/guide/researchers/' },
+          ],
+        },
+        {
+          text: 'Modules',
+          items: [
+            { text: 'ECRIN', link: '/guide/audit/ecrin-audit' },
+            { text: 'AMARRE', link: '/guide/amarre/' },
+            { text: 'Citations', link: '/guide/citations/user/' },
+          ],
+        },
+      ],
       // Guide général (fallback)
       '/guide/': [
         {
           text: 'Introduction',
           items: [{ text: 'Présentation', link: '/guide/' }],
+        },
+        {
+          text: 'Pour les chercheurs',
+          items: [
+            { text: 'Guide chercheur', link: '/guide/researchers/' },
+          ],
         },
         {
           text: 'Pour les développeurs',
