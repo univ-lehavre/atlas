@@ -60,13 +60,33 @@ export class GitAnalyzer {
 
   /**
    * Gets all commits from the repository.
+   * @param sinceCommit Optional commit hash to start from (exclusive)
    */
-  async getAllCommits(): Promise<CommitStats[]> {
-    const log = await this.git.log({
+  async getAllCommits(sinceCommit?: string): Promise<CommitStats[]> {
+    const options: Record<string, unknown> = {
       '--stat': null,
       '--all': null,
-    });
+    };
+
+    if (sinceCommit) {
+      options['--ancestry-path'] = null;
+      options[`${sinceCommit}..HEAD`] = null;
+    }
+
+    const log = await this.git.log(options);
     return parseGitLog(log);
+  }
+
+  /**
+   * Gets the latest commit hash.
+   */
+  async getLatestCommitHash(): Promise<string | null> {
+    try {
+      const log = await this.git.log({ '-1': null });
+      return log.latest?.hash ?? null;
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -86,7 +106,7 @@ export class GitAnalyzer {
   }
 
   /**
-   * Gets the latest commit date for a path.
+   * Gets the latest commit date for a path as ISO string.
    */
   async getLatestCommitForPath(path: string): Promise<string | null> {
     try {
@@ -96,7 +116,8 @@ export class GitAnalyzer {
         [path]: null,
       });
       if (log.latest) {
-        return log.latest.date;
+        // Convert to ISO format for consistent date handling
+        return new Date(log.latest.date).toISOString();
       }
     } catch {
       // Path has no commits
@@ -110,6 +131,49 @@ export class GitAnalyzer {
   getRepoPath(): string {
     return this.repoPath;
   }
+
+  /**
+   * Counts PRs that touched a specific path/package.
+   * Extracts unique PR numbers (e.g., #123) from commit messages for the path.
+   */
+  async getPRCountForPath(path: string): Promise<number> {
+    try {
+      const log = await this.git.log({
+        '--': null,
+        [path]: null,
+      });
+
+      // Extract unique PR numbers from commit messages
+      const prNumbers = new Set<string>();
+      const prPattern = /#(\d+)/g;
+
+      for (const commit of log.all) {
+        const matches = commit.message.matchAll(prPattern);
+        for (const match of matches) {
+          prNumbers.add(match[1]);
+        }
+      }
+
+      return prNumbers.size;
+    } catch {
+      return 0;
+    }
+  }
+
+  /**
+   * Counts releases (git tags) for a specific package.
+   * Tags follow the format: @scope/package-name@version
+   */
+  async getReleaseCountForPackage(packageName: string): Promise<number> {
+    try {
+      const tags = await this.git.tags();
+      // Count tags that start with the package name
+      const packageTags = tags.all.filter((tag) => tag.startsWith(`${packageName}@`));
+      return packageTags.length;
+    } catch {
+      return 0;
+    }
+  }
 }
 
 /**
@@ -117,6 +181,18 @@ export class GitAnalyzer {
  */
 export const formatDailyPeriod = (date: Date): string => {
   return date.toISOString().slice(0, 10);
+};
+
+/**
+ * Formats a date to weekly period string (YYYY-Www).
+ * Week numbers follow ISO 8601 standard.
+ */
+export const formatWeeklyPeriod = (date: Date): string => {
+  const year = date.getFullYear();
+  const startOfYear = new Date(Date.UTC(year, 0, 1));
+  const dayOfYear = Math.floor((date.getTime() - startOfYear.getTime()) / 86400000);
+  const weekNumber = Math.ceil((dayOfYear + startOfYear.getUTCDay() + 1) / 7);
+  return `${year}-W${weekNumber.toString().padStart(2, '0')}`;
 };
 
 /**
@@ -179,6 +255,14 @@ const aggregateToTimeline = (groups: Map<string, CommitStats[]>): TimelineEntry[
  */
 export const aggregateByDay = (commits: CommitStats[]): TimelineEntry[] => {
   const groups = groupCommitsByPeriod(commits, formatDailyPeriod);
+  return aggregateToTimeline(groups);
+};
+
+/**
+ * Aggregates commits by week.
+ */
+export const aggregateByWeek = (commits: CommitStats[]): TimelineEntry[] => {
+  const groups = groupCommitsByPeriod(commits, formatWeeklyPeriod);
   return aggregateToTimeline(groups);
 };
 

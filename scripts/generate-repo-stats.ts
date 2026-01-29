@@ -17,36 +17,106 @@
  * @module
  */
 
-import { readdir, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import {
   GitAnalyzer,
   aggregateByDay,
+  aggregateByWeek,
   aggregateByMonth,
   calculateTotals,
   findDateRange,
 } from './lib/git-analyzer.js';
 import { analyzeDirectory, addCodeStats, addTestStats } from './lib/code-analyzer.js';
-import { type RepoStatsOutput, type PackageStats, emptyCodeStats, emptyTestStats } from './lib/types.js';
+import {
+  type RepoStatsOutput,
+  type PackageStats,
+  type TimelineEntry,
+  emptyCodeStats,
+  emptyTestStats,
+} from './lib/types.js';
 
 /**
- * Package definitions for analysis.
- * Each entry defines a package to analyze with its display name and path.
+ * Merges new timeline entries with existing ones.
+ * Updates existing periods and adds new ones.
  */
-const PACKAGES = [
-  { name: 'ecrin', path: 'packages/ecrin' },
-  { name: 'find-an-expert', path: 'packages/find-an-expert' },
-  { name: 'amarre', path: 'packages/amarre' },
-  { name: '@univ-lehavre/crf', path: 'packages/crf' },
-  { name: '@univ-lehavre/atlas-redcap-core', path: 'packages/redcap-core' },
-  { name: '@univ-lehavre/atlas-redcap-openapi', path: 'packages/redcap-openapi' },
-  { name: '@univ-lehavre/atlas-net', path: 'packages/net' },
-  { name: '@univ-lehavre/atlas-appwrite', path: 'packages/appwrite' },
-  { name: '@univ-lehavre/atlas-auth', path: 'packages/auth' },
-  { name: '@univ-lehavre/atlas-errors', path: 'packages/errors' },
-  { name: '@univ-lehavre/atlas-validators', path: 'packages/validators' },
-  { name: '@univ-lehavre/atlas-shared-config', path: 'packages/shared-config' },
+function mergeTimeline(existing: TimelineEntry[], newEntries: TimelineEntry[]): TimelineEntry[] {
+  const map = new Map<string, TimelineEntry>();
+
+  // Add existing entries
+  for (const entry of existing) {
+    map.set(entry.period, entry);
+  }
+
+  // Merge or add new entries
+  for (const entry of newEntries) {
+    const existingEntry = map.get(entry.period);
+    if (existingEntry) {
+      map.set(entry.period, {
+        period: entry.period,
+        commits: existingEntry.commits + entry.commits,
+        additions: existingEntry.additions + entry.additions,
+        deletions: existingEntry.deletions + entry.deletions,
+        filesChanged: existingEntry.filesChanged + entry.filesChanged,
+      });
+    } else {
+      map.set(entry.period, entry);
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => a.period.localeCompare(b.period));
+}
+
+/**
+ * Loads existing statistics from the output file.
+ */
+async function loadExistingStats(outputPath: string): Promise<RepoStatsOutput | null> {
+  try {
+    const content = await readFile(outputPath, 'utf-8');
+    return JSON.parse(content) as RepoStatsOutput;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Package paths for analysis.
+ * Names and versions are read dynamically from package.json.
+ */
+const PACKAGE_PATHS = [
+  'packages/ecrin',
+  'packages/find-an-expert',
+  'packages/amarre',
+  'packages/crf',
+  'packages/redcap-core',
+  'packages/redcap-openapi',
+  'packages/net',
+  'packages/appwrite',
+  'packages/auth',
+  'packages/errors',
+  'packages/validators',
+  'packages/shared-config',
+  'packages/logos',
 ] as const;
+
+/**
+ * Reads package.json and extracts name and version.
+ */
+async function readPackageInfo(
+  pkgPath: string
+): Promise<{ name: string; version: string | null } | null> {
+  try {
+    const packageJsonPath = join(pkgPath, 'package.json');
+    const content = await readFile(packageJsonPath, 'utf-8');
+    const pkg = JSON.parse(content) as { name?: string; version?: string };
+    return {
+      name: pkg.name ?? pkgPath,
+      version: pkg.version ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Output path for generated statistics.
@@ -58,26 +128,55 @@ const OUTPUT_PATH = 'docs/.vitepress/data/repo-stats.json';
  */
 async function main(): Promise<void> {
   const repoPath = process.cwd();
+  const outputPath = join(repoPath, OUTPUT_PATH);
 
   console.log('📊 Generating repository statistics...');
   console.log(`   Repository: ${repoPath}`);
 
+  // Load existing stats for incremental update
+  const existingStats = await loadExistingStats(outputPath);
+  const lastProcessedCommit = existingStats?.lastProcessedCommit ?? null;
+
+  if (lastProcessedCommit) {
+    console.log(`   Incremental update from commit: ${lastProcessedCommit.slice(0, 7)}`);
+  }
+
   // Initialize git analyzer
   const gitAnalyzer = new GitAnalyzer(repoPath);
 
-  // Get all commits
+  // Get commits (all or since last processed)
   console.log('   Fetching commit history...');
-  const allCommits = await gitAnalyzer.getAllCommits();
-  console.log(`   Found ${allCommits.length} commits`);
+  const newCommits = await gitAnalyzer.getAllCommits(lastProcessedCommit ?? undefined);
+  const latestCommitHash = await gitAnalyzer.getLatestCommitHash();
 
-  // Calculate repository totals
-  const { totalAdditions, totalDeletions } = calculateTotals(allCommits);
-  const { firstCommit, lastCommit } = findDateRange(allCommits);
+  if (newCommits.length === 0 && existingStats) {
+    console.log('   No new commits since last update.');
+    console.log('✅ Statistics are up to date!');
+    return;
+  }
 
-  // Generate timeline data
+  console.log(`   Found ${newCommits.length} new commits`);
+
+  // Calculate totals (merge with existing if incremental)
+  const newTotals = calculateTotals(newCommits);
+  const totalAdditions = (existingStats?.repository.totalAdditions ?? 0) + newTotals.totalAdditions;
+  const totalDeletions = (existingStats?.repository.totalDeletions ?? 0) + newTotals.totalDeletions;
+  const totalCommits = (existingStats?.repository.totalCommits ?? 0) + newCommits.length;
+
+  // Find date range (use existing first commit if available)
+  const newDateRange = findDateRange(newCommits);
+  const firstCommit = existingStats?.repository.firstCommit ?? newDateRange.firstCommit;
+  const lastCommit = newDateRange.lastCommit ?? existingStats?.repository.lastCommit ?? null;
+
+  // Generate timeline data (merge with existing if incremental)
   console.log('   Aggregating timeline data...');
-  const daily = aggregateByDay(allCommits);
-  const monthly = aggregateByMonth(allCommits);
+  const newDaily = aggregateByDay(newCommits);
+  const newWeekly = aggregateByWeek(newCommits);
+  const newMonthly = aggregateByMonth(newCommits);
+
+  const daily = existingStats ? mergeTimeline(existingStats.timeline.daily, newDaily) : newDaily;
+  const weekly = existingStats ? mergeTimeline(existingStats.timeline.weekly, newWeekly) : newWeekly;
+  const monthly = existingStats ? mergeTimeline(existingStats.timeline.monthly, newMonthly) : newMonthly;
 
   // Analyze each package
   console.log('   Analyzing packages...');
@@ -85,14 +184,13 @@ async function main(): Promise<void> {
   let totalCode = emptyCodeStats();
   let totalTests = emptyTestStats();
 
-  for (const pkg of PACKAGES) {
-    const pkgPath = join(repoPath, pkg.path);
+  for (const path of PACKAGE_PATHS) {
+    const pkgPath = join(repoPath, path);
 
-    // Check if package exists
-    try {
-      await readdir(pkgPath);
-    } catch {
-      console.log(`   ⚠️  Skipping ${pkg.name} (not found)`);
+    // Check if package exists and read package info
+    const pkgInfo = await readPackageInfo(pkgPath);
+    if (!pkgInfo) {
+      console.log(`   ⚠️  Skipping ${path} (not found or no package.json)`);
       continue;
     }
 
@@ -100,8 +198,10 @@ async function main(): Promise<void> {
     const { code, tests } = await analyzeDirectory(pkgPath);
 
     // Get git stats for package
-    const commits = await gitAnalyzer.getCommitsForPath(pkg.path);
-    const latestCommit = await gitAnalyzer.getLatestCommitForPath(pkg.path);
+    const commits = await gitAnalyzer.getCommitsForPath(path);
+    const latestCommit = await gitAnalyzer.getLatestCommitForPath(path);
+    const prCount = await gitAnalyzer.getPRCountForPath(path);
+    const releaseCount = await gitAnalyzer.getReleaseCountForPackage(pkgInfo.name);
 
     let linesAdded = 0;
     let linesDeleted = 0;
@@ -111,12 +211,15 @@ async function main(): Promise<void> {
     }
 
     packages.push({
-      name: pkg.name,
-      path: pkg.path,
+      name: pkgInfo.name,
+      path,
+      version: pkgInfo.version,
       code,
       tests,
       latestCommit,
       commitCount: commits.length,
+      prCount,
+      releaseCount,
       linesAdded,
       linesDeleted,
     });
@@ -125,18 +228,19 @@ async function main(): Promise<void> {
     totalTests = addTestStats(totalTests, tests);
 
     console.log(
-      `   ✓ ${pkg.name}: ${code.files} files, ${code.functions} functions, ${tests.tests} tests`
+      `   ✓ ${pkgInfo.name}@${pkgInfo.version ?? '?'}: ${code.files} files, ${code.functions} functions, ${tests.tests} tests, ${prCount} PRs, ${releaseCount} releases`
     );
   }
 
-  // Sort packages by commit count (most active first)
-  packages.sort((a, b) => b.commitCount - a.commitCount);
+  // Sort packages alphabetically by name
+  packages.sort((a, b) => a.name.localeCompare(b.name));
 
   // Build output
   const output: RepoStatsOutput = {
     generatedAt: new Date().toISOString(),
+    lastProcessedCommit: latestCommitHash,
     repository: {
-      totalCommits: allCommits.length,
+      totalCommits,
       totalAdditions,
       totalDeletions,
       firstCommit,
@@ -145,6 +249,7 @@ async function main(): Promise<void> {
     packages,
     timeline: {
       daily,
+      weekly,
       monthly,
     },
     current: {
@@ -158,7 +263,6 @@ async function main(): Promise<void> {
   await mkdir(outputDir, { recursive: true });
 
   // Write output
-  const outputPath = join(repoPath, OUTPUT_PATH);
   await writeFile(outputPath, JSON.stringify(output, null, 2), 'utf-8');
 
   console.log('');
@@ -166,7 +270,7 @@ async function main(): Promise<void> {
   console.log(`   Output: ${OUTPUT_PATH}`);
   console.log('');
   console.log('📈 Summary:');
-  console.log(`   Commits: ${allCommits.length}`);
+  console.log(`   Commits: ${totalCommits}`);
   console.log(`   Packages: ${packages.length}`);
   console.log(`   Files: ${totalCode.files} source + ${totalTests.files} test`);
   console.log(`   Functions: ${totalCode.functions}`);
