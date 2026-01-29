@@ -4,7 +4,7 @@ Cette section contient la documentation technique d'Atlas destinée aux dévelop
 
 > **Vous êtes chercheur ?** Consultez plutôt :
 > - [Accueil Atlas](../) - Présentation générale
-> - [Guide Atlas Verify](../citations/user/) - Documentation utilisateur pour les chercheurs
+> - [Guide Atlas Verify](/projects/citations/user/) - Documentation utilisateur pour les chercheurs
 
 ## Vue d'ensemble
 
@@ -43,16 +43,16 @@ atlas/
 
 | Document | Description |
 |----------|-------------|
-| [Client et serveur](./crf.md) | Intégration REDCap avec Effect |
+| [Client et serveur](/projects/crf/) | Intégration REDCap avec Effect |
 | [Outils CLI](./cli.md) | Commandes en ligne |
 
 ### Atlas Citations
 
 | Document | Description |
 |----------|-------------|
-| [Vue d'ensemble](../citations/dev/) | Architecture des packages |
-| [Sources bibliographiques](../citations/dev/sources/) | Clients par source |
-| [Atlas Verify](../citations/dev/author-verification.md) | Système de fiabilisation |
+| [Vue d'ensemble](/projects/citations/dev/) | Architecture des packages |
+| [Sources bibliographiques](/projects/citations/dev/sources/) | Clients par source |
+| [Atlas Verify](/projects/citations/dev/author-verification) | Système de fiabilisation |
 
 ### Infrastructure
 
@@ -65,7 +65,7 @@ atlas/
 
 | Document | Description |
 |----------|-------------|
-| [Audit des dépendances](../audit/dependencies-audit.md) | Inventaire et roadmap de mise à jour |
+| [Audit des dépendances](/audit/common/dependencies-audit) | Inventaire et roadmap de mise à jour |
 
 ## Démarrage rapide
 
