@@ -29,30 +29,29 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/' },
       { text: 'ECRIN', link: '/guide/audit/ecrin-audit' },
+      { text: 'AMARRE', link: '/guide/amarre/' },
       { text: 'Citations', link: '/guide/citations/' },
       { text: 'CRF', link: '/guide/dev/crf' },
+      { text: 'Audits', link: '/guide/audit/' },
       { text: 'API', link: '/api/' },
     ],
     sidebar: {
-      '/guide/': [
+      // ECRIN - Find an Expert
+      '/guide/find-an-expert/': [
         {
-          text: 'Introduction',
-          items: [{ text: 'Présentation', link: '/guide/' }],
-        },
-        {
-          text: 'ECRIN - Plateforme chercheurs',
-          collapsed: false,
+          text: 'Find an Expert',
           items: [
-            { text: 'Audit ECRIN', link: '/guide/audit/ecrin-audit' },
-            { text: 'Find an Expert', link: '/guide/find-an-expert/technical-setup' },
+            { text: 'Configuration technique', link: '/guide/find-an-expert/technical-setup' },
             { text: 'Configuration Appwrite', link: '/guide/find-an-expert/appwrite-setup' },
             { text: 'Design System', link: '/guide/find-an-expert/design-system' },
             { text: 'Architecture CSS', link: '/guide/find-an-expert/css-architecture' },
           ],
         },
+      ],
+      // Citations - guide chercheur et technique
+      '/guide/citations/': [
         {
-          text: 'Atlas Verify - Guide chercheur',
-          collapsed: false,
+          text: 'Guide chercheur',
           items: [
             { text: 'Introduction', link: '/guide/citations/user/' },
             { text: 'Vérifier vos publications', link: '/guide/citations/user/verify-publications' },
@@ -64,19 +63,6 @@ export default defineConfig({
         },
         {
           text: 'Documentation technique',
-          collapsed: true,
-          items: [
-            { text: "Vue d'ensemble", link: '/guide/dev/' },
-            { text: 'Architecture', link: '/guide/dev/architecture' },
-            { text: 'Audit et qualité', link: '/guide/dev/audit' },
-            { text: 'REDCap/CRF', link: '/guide/dev/crf' },
-            { text: 'Outils CLI', link: '/guide/dev/cli' },
-            { text: 'Infrastructure', link: '/guide/dev/infrastructure' },
-          ],
-        },
-        {
-          text: 'Atlas Citations - Technique',
-          collapsed: true,
           items: [
             { text: "Vue d'ensemble", link: '/guide/citations/dev/' },
             { text: 'Architecture', link: '/guide/citations/dev/architecture' },
@@ -88,8 +74,7 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Atlas Verify - Technique',
-          collapsed: true,
+          text: 'Atlas Verify',
           items: [
             { text: 'Fiabilisation auteur', link: '/guide/citations/dev/author-verification' },
             { text: 'Profil chercheur', link: '/guide/citations/dev/researcher-profile' },
@@ -99,7 +84,6 @@ export default defineConfig({
         },
         {
           text: 'Sources bibliographiques',
-          collapsed: true,
           items: [
             { text: "Vue d'ensemble", link: '/guide/citations/dev/sources/' },
             { text: 'Catalogue complet', link: '/guide/citations/dev/sources/catalog' },
@@ -112,9 +96,41 @@ export default defineConfig({
             { text: 'Versioning', link: '/guide/citations/dev/sources/versioning' },
           ],
         },
+      ],
+      // CRF - documentation technique
+      '/guide/dev/crf': [
+        {
+          text: 'CRF / REDCap',
+          items: [
+            { text: 'Documentation', link: '/guide/dev/crf' },
+          ],
+        },
+        {
+          text: 'Référence API',
+          items: [
+            { text: '@univ-lehavre/atlas-crf', link: '/api/@univ-lehavre/atlas-crf/' },
+            { text: '@univ-lehavre/atlas-redcap-core', link: '/api/@univ-lehavre/atlas-redcap-core/' },
+            { text: '@univ-lehavre/atlas-redcap-openapi', link: '/api/@univ-lehavre/atlas-redcap-openapi/' },
+          ],
+        },
+      ],
+      // Audits
+      '/guide/audit/': [
+        {
+          text: 'Audits',
+          items: [
+            { text: 'Introduction', link: '/guide/audit/' },
+            { text: 'Audit de la documentation', link: '/guide/audit/documentation-audit' },
+            { text: 'Audit ECRIN', link: '/guide/audit/ecrin-audit' },
+            { text: 'Audit des dépendances', link: '/guide/audit/dependencies-audit' },
+            { text: 'Dette technique', link: '/guide/audit/technical-debt' },
+          ],
+        },
+      ],
+      // AMARRE
+      '/guide/amarre/': [
         {
           text: 'AMARRE',
-          collapsed: true,
           items: [
             { text: 'Introduction', link: '/guide/amarre/' },
             { text: 'Implémentation', link: '/guide/amarre/IMPLEMENTATION_GUIDE' },
@@ -124,14 +140,33 @@ export default defineConfig({
             { text: 'Audit Microservices', link: '/guide/amarre/MICROSERVICES_AUDIT' },
           ],
         },
+      ],
+      // Guide général (fallback)
+      '/guide/': [
         {
-          text: 'Audits',
-          collapsed: true,
+          text: 'Introduction',
+          items: [{ text: 'Présentation', link: '/guide/' }],
+        },
+        {
+          text: 'Documentation technique',
           items: [
-            { text: 'Introduction', link: '/guide/audit/' },
-            { text: 'Audit de la documentation', link: '/guide/audit/documentation-audit' },
-            { text: 'Audit ECRIN', link: '/guide/audit/ecrin-audit' },
-            { text: 'Audit des dépendances', link: '/guide/audit/dependencies-audit' },
+            { text: "Vue d'ensemble", link: '/guide/dev/' },
+            { text: 'Architecture', link: '/guide/dev/architecture' },
+            { text: 'Audit et qualité', link: '/guide/dev/audit' },
+            { text: 'REDCap/CRF', link: '/guide/dev/crf' },
+            { text: 'Outils CLI', link: '/guide/dev/cli' },
+            { text: 'Infrastructure', link: '/guide/dev/infrastructure' },
+          ],
+        },
+        {
+          text: 'AMARRE',
+          items: [
+            { text: 'Introduction', link: '/guide/amarre/' },
+            { text: 'Implémentation', link: '/guide/amarre/IMPLEMENTATION_GUIDE' },
+            { text: 'Architecture', link: '/guide/amarre/ARCHITECTURE_DIAGRAMS' },
+            { text: 'Sécurité', link: '/guide/amarre/SECURITY' },
+            { text: 'Tests IA', link: '/guide/amarre/AI_TESTING_GUIDE' },
+            { text: 'Audit Microservices', link: '/guide/amarre/MICROSERVICES_AUDIT' },
           ],
         },
       ],

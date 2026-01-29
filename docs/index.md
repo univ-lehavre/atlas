@@ -41,77 +41,23 @@ features:
 
 Atlas est un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter le travail des chercheurs et des équipes de recherche.
 
-## Les quatre modules majeurs
-
-Atlas est composé de **quatre modules majeurs** :
-
-| Module | Description | Sous-projets |
-|--------|-------------|--------------|
-| **ECRIN** | Plateforme de collaboration pour chercheurs | find-an-expert |
-| **AMARRE** | Gestion de la mobilité des chercheurs | - |
-| **Citations** | Agrégation de sources bibliographiques et fiabilisation des profils | openalex, crossref, hal, arxiv, orcid, verify |
-| **CRF** | Outils pour interagir avec REDCap | redcap-core, redcap-openapi |
-
-### ECRIN
-
-ECRIN est une plateforme de collaboration pour chercheurs permettant de présenter ses travaux, trouver des collaborateurs et visualiser les réseaux de recherche.
-
-**Sous-projets :**
-
-| Sous-projet | État |
-|-------------|------|
-| introduce-my-scientific-questions | 🚧 En cours |
-| introduce-my-references | 🚧 En cours |
-| collaborate-create-my-project | 🚧 En cours |
-| collaborate-build-my-team | 📋 Prévu |
-| collaborate-find-my-expert | 📋 Prévu |
-| collaborate-fund-my-project | 📋 Prévu |
-| explore-my-graph | 📋 Prévu |
-| explore-community-graph | 📋 Prévu |
-| ask-data | 📋 Prévu |
-| ask-an-expert | 🚧 En cours |
-| publish-my-data | 📋 Prévu |
-| publish-my-news | 📋 Prévu |
-
-### AMARRE
-
-AMARRE est une application de gestion de la mobilité des chercheurs.
-
-### Citations
-
-Atlas Citations est une suite de packages pour interroger des sources bibliographiques (OpenAlex, Crossref, HAL, ArXiv, ORCID) via des clients Effect typés. Atlas Verify permet aux chercheurs de fiabiliser leur profil bibliographique.
-
-**Sous-projets :**
-
-| Sous-projet | État |
-|-------------|------|
-| openalex | 🚧 En cours |
-| crossref | 🚧 En cours |
-| hal | 📋 Prévu |
-| arxiv | 📋 Prévu |
-| orcid | 📋 Prévu |
-| verify | 🚧 En cours |
-
-### CRF (Case Report Form)
-
-CRF fournit des outils TypeScript pour interagir avec l'API REDCap de manière sécurisée et typée.
-
-**Sous-projets :**
-- **redcap-core** : logique métier REDCap pure avec Effect
-- **redcap-openapi** : extraction et analyse de spécifications OpenAPI depuis le code source REDCap
-
 ## Pour les chercheurs
 
-- **Vérifiez vos publications** : identifiez et corrigez les attributions erronées dans les bases bibliographiques
-- **Gérez votre parcours** : maintenez un historique fiable de vos affiliations
-- **Découvrez des experts** : trouvez des collaborateurs potentiels dans votre domaine
-- **Visualisez vos réseaux** : explorez vos connexions avec la communauté scientifique
+- **Vérifiez vos publications** : identifiez et corrigez les attributions erronées dans OpenAlex, Crossref et HAL grâce à Atlas Verify
+- **Gérez votre parcours** : maintenez un historique fiable de vos affiliations, suivez vos changements d'institution et vos périodes de mobilité
+- **Découvrez des experts** : recherchez des collaborateurs par thématique, localisation ou compétences spécifiques via ECRIN
+- **Visualisez vos réseaux** : explorez vos co-auteurs, projets communs et connexions interdisciplinaires avec des graphes interactifs
+- **Déclarez vos projets** : créez des fiches projet pour recruter des collaborateurs et obtenir des financements
+- **Publiez vos données** : partagez vos jeux de données et actualités avec la communauté scientifique
 
 ## Pour les développeurs
 
-- **Client REDCap** : bibliothèque TypeScript avec Effect pour interagir avec l'API REDCap
-- **Outils CLI** : diagnostics réseau et tests de connectivité
-- **Configuration partagée** : ESLint, TypeScript et Prettier standardisés
+- **Client REDCap** : bibliothèque TypeScript avec Effect pour interroger l'API REDCap de manière typée et sécurisée
+- **Extraction OpenAPI** : génération automatique de spécifications OpenAPI depuis le code source PHP de REDCap
+- **Clients bibliographiques** : packages Effect pour OpenAlex, Crossref, HAL, ArXiv et ORCID avec rate limiting intégré
+- **Outils CLI** : diagnostics réseau, tests de connectivité et validation de configurations
+- **Configuration partagée** : ESLint, TypeScript et Prettier standardisés pour tout le monorepo
+- **Intégration Appwrite** : authentification, gestion des sessions et stockage de données utilisateurs
 
 <RepoDynamics />
 
