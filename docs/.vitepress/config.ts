@@ -33,6 +33,7 @@ export default defineConfig({
       { text: 'Citations', link: '/guide/citations/' },
       { text: 'CRF', link: '/guide/dev/crf' },
       { text: 'Audits', link: '/guide/audit/' },
+      { text: 'Roadmaps', link: '/guide/roadmaps/' },
       { text: 'API', link: '/api/' },
     ],
     sidebar: {
@@ -141,6 +142,15 @@ export default defineConfig({
           ],
         },
       ],
+      // Roadmaps
+      '/guide/roadmaps/': [
+        {
+          text: 'Roadmaps',
+          items: [
+            { text: 'Vue d\'ensemble', link: '/guide/roadmaps/' },
+          ],
+        },
+      ],
       // Guide général (fallback)
       '/guide/': [
         {
@@ -148,20 +158,10 @@ export default defineConfig({
           items: [{ text: 'Présentation', link: '/guide/' }],
         },
         {
-          text: 'Pour les chercheurs',
-          items: [
-            { text: 'Atlas Verify', link: '/guide/citations/user/' },
-            { text: 'Vérifier vos publications', link: '/guide/citations/user/verify-publications' },
-            { text: 'Gérer votre parcours', link: '/guide/citations/user/manage-career' },
-            { text: 'Sources de données', link: '/guide/citations/user/sources' },
-          ],
-        },
-        {
           text: 'Pour les développeurs',
           items: [
             { text: "Vue d'ensemble", link: '/guide/dev/' },
             { text: 'Architecture', link: '/guide/dev/architecture' },
-            { text: 'REDCap/CRF', link: '/guide/dev/crf' },
             { text: 'Outils CLI', link: '/guide/dev/cli' },
             { text: 'Infrastructure', link: '/guide/dev/infrastructure' },
           ],
