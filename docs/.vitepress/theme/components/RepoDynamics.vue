@@ -28,15 +28,9 @@ const generatedAt = computed(() => {
 
 <template>
   <div class="repo-dynamics">
-    <h2>Dynamique du dépôt</h2>
-
-    <p class="description">
-      Statistiques du dépôt Atlas, générées automatiquement à partir de l'historique Git.
-    </p>
-
     <!-- Package table -->
     <div class="section">
-      <h3>État des packages <span class="badge">{{ repoStats.packages.length }}</span></h3>
+      <h2>État des packages <span class="badge">{{ repoStats.packages.length }}</span></h2>
       <PackageTable :packages="repoStats.packages" />
     </div>
 
@@ -63,11 +57,6 @@ const generatedAt = computed(() => {
   margin-top: 0;
   margin-bottom: 0.5rem;
   border-bottom: none;
-}
-
-.description {
-  color: var(--vp-c-text-2);
-  margin-bottom: 1.5rem;
 }
 
 .section {
