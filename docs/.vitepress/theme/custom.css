@@ -1,0 +1,5 @@
+/* Force hero text on single line */
+.VPHero .text {
+  white-space: nowrap;
+}
+

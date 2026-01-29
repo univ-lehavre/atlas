@@ -57,9 +57,6 @@ const generatedAt = computed(() => {
 <style scoped>
 .repo-dynamics {
   margin: 2rem 0;
-  padding: 1.5rem;
-  background-color: var(--vp-c-bg-soft);
-  border-radius: 12px;
 }
 
 .repo-dynamics h2 {
