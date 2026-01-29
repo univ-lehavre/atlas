@@ -12,6 +12,7 @@ export interface CodeStats {
   types: number;
   interfaces: number;
   constants: number;
+  tsdocComments: number;
 }
 
 /**
@@ -24,10 +25,10 @@ export interface TestStats {
 }
 
 /**
- * Timeline entry for daily or monthly aggregation.
+ * Timeline entry for daily, weekly, or monthly aggregation.
  */
 export interface TimelineEntry {
-  /** Period string: "2024-01-15" (daily) or "2024-01" (monthly) */
+  /** Period string: "2024-01-15" (daily), "2024-W03" (weekly) or "2024-01" (monthly) */
   period: string;
   commits: number;
   additions: number;
@@ -41,10 +42,13 @@ export interface TimelineEntry {
 export interface PackageStats {
   name: string;
   path: string;
+  version: string | null;
   code: CodeStats;
   tests: TestStats;
   latestCommit: string | null;
   commitCount: number;
+  prCount: number;
+  releaseCount: number;
   linesAdded: number;
   linesDeleted: number;
 }
@@ -54,6 +58,8 @@ export interface PackageStats {
  */
 export interface RepoStatsOutput {
   generatedAt: string;
+  /** Hash of the last processed commit for incremental updates */
+  lastProcessedCommit: string | null;
   repository: {
     totalCommits: number;
     totalAdditions: number;
@@ -64,6 +70,7 @@ export interface RepoStatsOutput {
   packages: PackageStats[];
   timeline: {
     daily: TimelineEntry[];
+    weekly: TimelineEntry[];
     monthly: TimelineEntry[];
   };
   current: {
@@ -81,6 +88,7 @@ export const emptyCodeStats = (): CodeStats => ({
   types: 0,
   interfaces: 0,
   constants: 0,
+  tsdocComments: 0,
 });
 
 /**
