@@ -33,7 +33,7 @@ Cet audit analyse l'application AMARRE (application SvelteKit monolithique de ~2
 
 Cette analyse est documentée dans 3 fichiers complémentaires :
 
-### 1. [MICROSERVICES_AUDIT.md](./MICROSERVICES_AUDIT.md) - L'audit complet
+### 1. [Audit détaillé](./microservices-audit.md) - L'audit complet
 
 **Contenu :**
 
@@ -47,7 +47,7 @@ Cette analyse est documentée dans 3 fichiers complémentaires :
 
 **À lire si :** Vous voulez comprendre en profondeur les recommandations et le raisonnement derrière.
 
-### 2. [ARCHITECTURE_DIAGRAMS.md](./ARCHITECTURE_DIAGRAMS.md) - Les diagrammes
+### 2. [Architecture AMARRE](/projects/amarre/ARCHITECTURE_DIAGRAMS) - Les diagrammes
 
 **Contenu :**
 
@@ -60,7 +60,7 @@ Cette analyse est documentée dans 3 fichiers complémentaires :
 
 **À lire si :** Vous préférez les schémas visuels pour comprendre l'architecture.
 
-### 3. [IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md) - Le guide pratique
+### 3. [Guide d'implémentation](/projects/amarre/IMPLEMENTATION_GUIDE) - Le guide pratique
 
 **Contenu :**
 
@@ -82,19 +82,19 @@ Cette analyse est documentée dans 3 fichiers complémentaires :
 
 ### Lecture Rapide (15 min)
 
-1. Lire le **Résumé Exécutif** de [MICROSERVICES_AUDIT.md](./MICROSERVICES_AUDIT.md)
-2. Voir les **diagrammes d'architecture** dans [ARCHITECTURE_DIAGRAMS.md](./ARCHITECTURE_DIAGRAMS.md)
+1. Lire le **Résumé Exécutif** de [Audit détaillé](./microservices-audit.md)
+2. Voir les **diagrammes d'architecture** dans [Architecture AMARRE](/projects/amarre/ARCHITECTURE_DIAGRAMS)
 3. Consulter les **recommandations** dans l'audit
 
 ### Lecture Complète (1-2h)
 
-1. [MICROSERVICES_AUDIT.md](./MICROSERVICES_AUDIT.md) - Comprendre l'analyse
-2. [ARCHITECTURE_DIAGRAMS.md](./ARCHITECTURE_DIAGRAMS.md) - Visualiser l'architecture
-3. [IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md) - Préparer l'implémentation
+1. [Audit détaillé](./microservices-audit.md) - Comprendre l'analyse
+2. [Architecture AMARRE](/projects/amarre/ARCHITECTURE_DIAGRAMS) - Visualiser l'architecture
+3. [Guide d'implémentation](/projects/amarre/IMPLEMENTATION_GUIDE) - Préparer l'implémentation
 
 ### Implémentation (3-4 sprints)
 
-1. Suivre la **checklist** dans [IMPLEMENTATION_GUIDE.md](./IMPLEMENTATION_GUIDE.md)
+1. Suivre la **checklist** dans [Guide d'implémentation](/projects/amarre/IMPLEMENTATION_GUIDE)
 2. Utiliser les **exemples de code** fournis
 3. Respecter le **plan de migration** de l'audit
 

@@ -22,6 +22,8 @@ export default withMermaid(defineConfig({
     /\.\.\/_media\/atlas-/,
     // README links pointing to docs/api (broken when copied by TypeDoc)
     /\.\.\/docs\/api\/@univ-lehavre/,
+    // TypeDoc generated links pointing to old guide paths
+    /\.\.\/\.\.\/docs\/guide\/dev\/crf/,
     // Relative links in CRF docs that reference external docs
     /^\.\/cli$/,
     /^\.\/architecture$/,

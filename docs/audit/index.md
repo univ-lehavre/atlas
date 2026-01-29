@@ -6,9 +6,9 @@ Cette section contient les audits techniques du monorepo Atlas.
 
 | Document | Description | Dernière mise à jour |
 |----------|-------------|----------------------|
-| [Audit de la documentation](./documentation-audit.md) | État des lieux de la documentation, incohérences identifiées et recommandations | Janvier 2026 |
-| [Audit ECRIN](./ecrin-audit.md) | Analyse des 6 cartes fonctionnelles et potentiel d'extraction en applications autonomes | Janvier 2026 |
-| [Audit des dépendances](./dependencies-audit.md) | Inventaire des versions et roadmap de mise à jour | Janvier 2026 |
+| [Audit de la documentation](./common/documentation-audit.md) | État des lieux de la documentation, incohérences identifiées et recommandations | Janvier 2026 |
+| [Audit ECRIN](./ecrin/) | Analyse des 6 cartes fonctionnelles et potentiel d'extraction en applications autonomes | Janvier 2026 |
+| [Audit des dépendances](./common/dependencies-audit.md) | Inventaire des versions et roadmap de mise à jour | Janvier 2026 |
 
 ## Objectif
 
