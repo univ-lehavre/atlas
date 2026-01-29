@@ -62,55 +62,57 @@ const formatRelativeDate = (dateString: string | null) => {
         <tr>
           <th>Package</th>
           <th>Version</th>
-          <th class="numeric vertical">
+          <th class="numeric vertical hide-below-xxl">
             <span class="vertical-label">Releases</span>
           </th>
-          <th class="numeric vertical">
+          <th class="numeric vertical hide-below-xxl">
             <span class="vertical-label">PRs</span>
           </th>
-          <th class="numeric vertical">
+          <th class="numeric vertical hide-below-xxl">
             <span class="vertical-label">Commits</span>
           </th>
-          <th class="numeric vertical">
+          <th class="numeric vertical hide-below-xxl">
             <span class="vertical-label">Fichiers</span>
           </th>
-          <th class="numeric vertical">
+          <th class="numeric vertical hide-below-xxl">
             <span class="vertical-label">Lignes</span>
           </th>
-          <th class="numeric vertical">
+          <th class="numeric vertical hide-below-xxl">
             <span class="vertical-label">Types</span>
           </th>
-          <th class="numeric vertical">
+          <th class="numeric vertical hide-below-xxl">
             <span class="vertical-label">Fonctions</span>
           </th>
-          <th class="numeric vertical">
+          <th class="numeric vertical hide-below-xxl">
             <span class="vertical-label">TSDoc</span>
           </th>
-          <th class="numeric vertical">
+          <th class="numeric vertical hide-below-xxl">
             <span class="vertical-label">Tests</span>
           </th>
-          <th class="numeric">Dernier commit</th>
+          <th class="numeric hide-below-xxl">Dernier commit</th>
         </tr>
       </thead>
       <tbody>
         <tr v-for="pkg in packages" :key="pkg.name">
           <td class="package-name">
-            <code>{{ pkg.name.replace('@univ-lehavre/atlas-', '') }}</code>
+            <a :href="`https://github.com/univ-lehavre/atlas/tree/main/${pkg.path}`" target="_blank" rel="noopener">
+              <code>{{ pkg.name.replace('@univ-lehavre/atlas-', '') }}</code>
+            </a>
           </td>
           <td class="version">
             <code v-if="pkg.version">{{ pkg.version }}</code>
             <span v-else>-</span>
           </td>
-          <td class="numeric">{{ pkg.releaseCount }}</td>
-          <td class="numeric">{{ pkg.prCount }}</td>
-          <td class="numeric">{{ pkg.commitCount }}</td>
-          <td class="numeric">{{ pkg.code.files }}</td>
-          <td class="numeric">{{ pkg.linesAdded + pkg.linesDeleted }}</td>
-          <td class="numeric">{{ pkg.code.types + pkg.code.interfaces }}</td>
-          <td class="numeric">{{ pkg.code.functions }}</td>
-          <td class="numeric">{{ pkg.code.tsdocComments }}</td>
-          <td class="numeric">{{ pkg.tests.tests }}</td>
-          <td class="numeric date">{{ formatRelativeDate(pkg.latestCommit) }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.releaseCount }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.prCount }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.commitCount }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.code.files }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.linesAdded + pkg.linesDeleted }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.code.types + pkg.code.interfaces }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.code.functions }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.code.tsdocComments }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.tests.tests }}</td>
+          <td class="numeric date hide-below-xxl">{{ formatRelativeDate(pkg.latestCommit) }}</td>
         </tr>
       </tbody>
     </table>
@@ -185,5 +187,12 @@ const formatRelativeDate = (dateString: string | null) => {
 
 .package-table tbody tr:hover {
   background-color: var(--vp-c-bg-soft);
+}
+
+/* Hide detailed columns on screens smaller than md (768px) */
+@media (max-width: 767px) {
+  .hide-below-xxl {
+    display: none;
+  }
 }
 </style>

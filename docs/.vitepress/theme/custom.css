@@ -1,5 +1,7 @@
-/* Force hero text on single line */
-.VPHero .text {
-  white-space: nowrap;
+/* Force hero text on single line on large screens only */
+@media (min-width: 768px) {
+  .VPHero .text {
+    white-space: nowrap;
+  }
 }
 
