@@ -174,24 +174,7 @@ export default defineConfig({
           ],
         },
       ],
-      // Guide chercheur
-      '/guide/researchers/': [
-        {
-          text: 'Guide chercheur',
-          items: [
-            { text: 'Introduction', link: '/guide/researchers/' },
-          ],
-        },
-        {
-          text: 'Modules',
-          items: [
-            { text: 'ECRIN', link: '/guide/audit/ecrin-audit' },
-            { text: 'AMARRE', link: '/guide/amarre/' },
-            { text: 'Citations', link: '/guide/citations/user/' },
-          ],
-        },
-      ],
-      // Guide général (fallback)
+      // Guide général (fallback pour /guide/ et /guide/researchers/)
       '/guide/': [
         {
           text: 'Introduction',
