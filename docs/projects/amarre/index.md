@@ -8,8 +8,8 @@ Application SvelteKit pour la gestion des données de recherche clinique.
 - [Architecture](./ARCHITECTURE_DIAGRAMS.md) - Diagrammes d'architecture
 - [Sécurité](./SECURITY.md) - Considérations de sécurité
 - [Tests avec IA](./AI_TESTING_GUIDE.md) - Guide pour les tests assistés par IA
-- [Audit Microservices](./MICROSERVICES_AUDIT.md) - Audit de l'architecture microservices
-- [README Audit](./MICROSERVICES_AUDIT_README.md) - Documentation de l'audit
+- [Audit Microservices](/audit/amarre/) - Audit de l'architecture microservices
+- [Détails Microservices](/audit/amarre/microservices-audit) - Documentation de l'audit
 
 ## Stack technique
 
