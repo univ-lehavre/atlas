@@ -28,6 +28,9 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/' },
+      { text: 'ECRIN', link: '/guide/audit/ecrin-audit' },
+      { text: 'Citations', link: '/guide/citations/' },
+      { text: 'CRF', link: '/guide/dev/crf' },
       { text: 'API', link: '/api/' },
     ],
     sidebar: {
