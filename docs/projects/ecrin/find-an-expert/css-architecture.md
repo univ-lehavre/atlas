@@ -443,7 +443,7 @@ pnpm build
 
 ## Audit et qualité
 
-- [CSS Audit Report](./audit/css-audit-report.md) - Rapport d'audit détaillé (Issue #41)
+- [CSS Audit Report](/audit/ecrin/css-audit-report) - Rapport d'audit détaillé (Issue #41)
 
 ## Ressources
 

@@ -2,7 +2,7 @@
 
 **Date:** 20 décembre 2025  
 **Version:** 1.0  
-**Lié à:** [Audit Microservices](./MICROSERVICES_AUDIT.md) | [Diagrammes](./ARCHITECTURE_DIAGRAMS.md)
+**Lié à:** [Audit Microservices](/audit/amarre/) | [Diagrammes](./ARCHITECTURE_DIAGRAMS)
 
 ## Table des matières
 

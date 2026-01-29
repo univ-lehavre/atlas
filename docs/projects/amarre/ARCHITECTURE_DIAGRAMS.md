@@ -2,7 +2,7 @@
 
 **Date:** 20 décembre 2025  
 **Version:** 1.0  
-**Lié à:** [Audit Microservices](./MICROSERVICES_AUDIT.md)
+**Lié à:** [Audit Microservices](/audit/amarre/)
 
 ## Table des matières
 
