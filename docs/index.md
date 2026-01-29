@@ -11,7 +11,7 @@ hero:
       link: /guide/researchers/
     - theme: alt
       text: Documentation technique
-      link: /guide/dev/
+      link: /guide/developers/
     - theme: alt
       text: Référence API
       link: /api/
@@ -19,15 +19,15 @@ hero:
 features:
   - title: ECRIN
     details: Plateforme de collaboration pour chercheurs - présentez vos travaux, trouvez des collaborateurs, visualisez les réseaux de recherche
-    link: /guide/audit/ecrin-audit
+    link: /projects/ecrin/
   - title: AMARRE
     details: Gestion de la mobilité des chercheurs
   - title: Citations
     details: Agrégation de sources bibliographiques (OpenAlex, Crossref, HAL, ORCID) et fiabilisation des profils chercheurs avec Atlas Verify
-    link: /guide/citations/
+    link: /projects/citations/
   - title: CRF
     details: Outils TypeScript pour interagir avec REDCap, utilisé par 8 000+ institutions pour la collecte de données de recherche
-    link: /guide/dev/crf
+    link: /projects/crf/
   - title: SARtraces
     details: Analyse spatio-temporelle des opérations de sauvetage en mer - traces AIS, données PREMAR et conditions météorologiques
   - title: RENOMMÉE
@@ -41,7 +41,7 @@ features:
 
 Atlas est un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter le travail des chercheurs et des équipes de recherche.
 
-## Pour les chercheurs
+### Pour les chercheurs
 
 - **Vérifiez vos publications** : identifiez et corrigez les attributions erronées dans OpenAlex, Crossref et HAL grâce à Atlas Verify
 - **Gérez votre parcours** : maintenez un historique fiable de vos affiliations, suivez vos changements d'institution et vos périodes de mobilité
@@ -50,7 +50,7 @@ Atlas est un ensemble d'outils développés par l'**Université Le Havre Normand
 - **Déclarez vos projets** : créez des fiches projet pour recruter des collaborateurs et obtenir des financements
 - **Publiez vos données** : partagez vos jeux de données et actualités avec la communauté scientifique
 
-## Pour les développeurs
+### Pour les développeurs
 
 - **Client REDCap** : bibliothèque TypeScript avec Effect pour interroger l'API REDCap de manière typée et sécurisée
 - **Extraction OpenAPI** : génération automatique de spécifications OpenAPI depuis le code source PHP de REDCap
@@ -58,24 +58,6 @@ Atlas est un ensemble d'outils développés par l'**Université Le Havre Normand
 - **Outils CLI** : diagnostics réseau, tests de connectivité et validation de configurations
 - **Configuration partagée** : ESLint, TypeScript et Prettier standardisés pour tout le monorepo
 - **Intégration Appwrite** : authentification, gestion des sessions et stockage de données utilisateurs
-
-<RepoDynamics />
-
-## Plateformes tierces
-
-Atlas s'appuie sur deux plateformes tierces :
-
-### REDCap (Research Electronic Data Capture)
-
-[REDCap](https://project-redcap.org/) est une application web sécurisée développée par l'Université Vanderbilt pour la création et la gestion d'enquêtes en ligne et de bases de données de recherche. REDCap est utilisé par plus de **8 000 institutions** dans **164 pays** et a été cité dans plus de **51 000 articles scientifiques**.
-
-REDCap permet la collecte de données sur le web et sur mobile (y compris hors connexion) tout en respectant les réglementations sur la protection des données (RGPD, HIPAA, 21 CFR Part 11). Il est gratuit pour les organisations à but non lucratif membres du Consortium REDCap.
-
-### Appwrite
-
-[Appwrite](https://appwrite.io/) est une plateforme backend open source fournissant les services essentiels pour le développement d'applications web et mobiles : authentification, base de données, stockage et fonctions serverless.
-
-Appwrite est conforme aux normes SOC-2, RGPD et HIPAA. Les modules ECRIN et AMARRE utilisent Appwrite pour l'authentification et la gestion des données utilisateurs.
 
 ## Projets institutionnels
 

@@ -8,10 +8,10 @@ Cette section présente les feuilles de route des différents modules Atlas.
 
 | Module | État | Prochaine étape |
 |--------|------|-----------------|
-| [ECRIN](/guide/audit/ecrin-audit) | En développement | Finalisation des cartes Introduce et Collaborate |
-| [AMARRE](/guide/amarre/) | En développement | Intégration microservices |
-| [Citations](/guide/citations/) | En développement | Clients OpenAlex et Crossref |
-| [CRF](/guide/dev/crf) | Stable | Extraction redcap-openapi |
+| [ECRIN](/projects/ecrin/) | En développement | Finalisation des cartes Introduce et Collaborate |
+| [AMARRE](/projects/amarre/) | En développement | Intégration microservices |
+| [Citations](/projects/citations/) | En développement | Clients OpenAlex et Crossref |
+| [CRF](/projects/crf/) | Stable | Extraction redcap-openapi |
 
 ## Calendrier prévisionnel
 
@@ -35,4 +35,4 @@ Cette section présente les feuilles de route des différents modules Atlas.
 
 ## Suivi
 
-Consultez les [audits](/guide/audit/) pour l'état détaillé de chaque module.
+Consultez les [audits](/audit/) pour l'état détaillé de chaque module.

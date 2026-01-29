@@ -6,11 +6,11 @@ Ce guide presente les fonctionnalites d'Atlas destinees aux chercheurs.
 
 ### Verifier vos publications
 
-Identifiez et corrigez les attributions erronees dans les bases bibliographiques (OpenAlex, Crossref, HAL) grace a [Atlas Verify](/guide/citations/user/verify-publications).
+Identifiez et corrigez les attributions erronees dans les bases bibliographiques (OpenAlex, Crossref, HAL) grace a [Atlas Verify](/projects/citations/user/verify-publications).
 
 ### Gerer votre parcours
 
-Maintenez un historique fiable de vos affiliations, suivez vos changements d'institution et vos periodes de mobilite. [En savoir plus](/guide/citations/user/manage-career)
+Maintenez un historique fiable de vos affiliations, suivez vos changements d'institution et vos periodes de mobilite. [En savoir plus](/projects/citations/user/manage-career)
 
 ### Decouvrir des experts
 
@@ -18,7 +18,7 @@ Recherchez des collaborateurs par thematique, localisation ou competences specif
 
 ### Visualiser vos reseaux
 
-Explorez vos co-auteurs, projets communs et connexions interdisciplinaires avec des graphes interactifs. [En savoir plus](/guide/citations/user/collaboration-network)
+Explorez vos co-auteurs, projets communs et connexions interdisciplinaires avec des graphes interactifs. [En savoir plus](/projects/citations/user/collaboration-network)
 
 ### Declarer vos projets
 
@@ -32,9 +32,9 @@ Partagez vos jeux de donnees et actualites avec la communaute scientifique.
 
 | Module | Description | Acces |
 |--------|-------------|-------|
-| **ECRIN** | Plateforme de collaboration pour chercheurs | [En savoir plus](/guide/audit/ecrin-audit) |
-| **AMARRE** | Gestion de la mobilite des chercheurs | [En savoir plus](/guide/amarre/) |
-| **Citations** | Agregation de sources bibliographiques et fiabilisation des profils | [Guide complet](/guide/citations/user/) |
+| **ECRIN** | Plateforme de collaboration pour chercheurs | [En savoir plus](/projects/ecrin/) |
+| **AMARRE** | Gestion de la mobilite des chercheurs | [En savoir plus](/projects/amarre/) |
+| **Citations** | Agregation de sources bibliographiques et fiabilisation des profils | [Guide complet](/projects/citations/user/) |
 
 ## Premiers pas
 

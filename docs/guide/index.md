@@ -139,11 +139,11 @@ graph TB
 
 Consultez la barre de navigation pour accéder aux différentes sections :
 
-- **[ECRIN](/guide/audit/ecrin-audit)** - Plateforme de collaboration pour chercheurs
-- **[AMARRE](/guide/amarre/)** - Gestion de la mobilité des chercheurs
-- **[Citations](/guide/citations/)** - Agrégation de sources bibliographiques
-- **[CRF](/guide/dev/crf)** - Outils pour interagir avec REDCap
-- **[Audits](/guide/audit/)** - Audits techniques et documentation
+- **[ECRIN](/projects/ecrin/)** - Plateforme de collaboration pour chercheurs
+- **[AMARRE](/projects/amarre/)** - Gestion de la mobilité des chercheurs
+- **[Citations](/projects/citations/)** - Agrégation de sources bibliographiques
+- **[CRF](/projects/crf/)** - Outils pour interagir avec REDCap
+- **[Audits](/audit/)** - Audits techniques et documentation
 - **[API](/api/)** - Référence des packages
 
 ## Plateformes tierces
