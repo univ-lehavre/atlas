@@ -5,16 +5,6 @@ export default withMermaid(defineConfig({
   title: 'Atlas',
   description: 'Plateforme de recherche - Université Le Havre Normandie',
   base: '/atlas/',
-  vite: {
-    optimizeDeps: {
-      include: ['@braintree/sanitize-url'],
-    },
-    resolve: {
-      alias: {
-        dayjs: 'dayjs/esm/index.js',
-      },
-    },
-  },
   ignoreDeadLinks: [
     // Localhost links in infrastructure docs
     /^http:\/\/localhost/,
