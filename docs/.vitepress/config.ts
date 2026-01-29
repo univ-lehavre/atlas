@@ -28,12 +28,23 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/' },
-      { text: 'ECRIN', link: '/guide/audit/ecrin-audit' },
-      { text: 'AMARRE', link: '/guide/amarre/' },
-      { text: 'Citations', link: '/guide/citations/' },
-      { text: 'CRF', link: '/guide/dev/crf' },
-      { text: 'Audits', link: '/guide/audit/' },
-      { text: 'Roadmaps', link: '/guide/roadmaps/' },
+      {
+        text: 'Modules',
+        items: [
+          { text: 'ECRIN', link: '/guide/audit/ecrin-audit' },
+          { text: 'AMARRE', link: '/guide/amarre/' },
+          { text: 'Citations', link: '/guide/citations/' },
+          { text: 'CRF', link: '/guide/dev/crf' },
+        ],
+      },
+      {
+        text: 'Projet',
+        items: [
+          { text: 'Audits', link: '/guide/audit/' },
+          { text: 'Roadmaps', link: '/guide/roadmaps/' },
+          { text: 'Archives', link: '/guide/archives/' },
+        ],
+      },
       { text: 'API', link: '/api/' },
     ],
     sidebar: {
@@ -151,6 +162,18 @@ export default defineConfig({
           ],
         },
       ],
+      // Archives
+      '/guide/archives/': [
+        {
+          text: 'Archives',
+          items: [
+            { text: 'Introduction', link: '/guide/archives/' },
+            { text: 'Audit CSS Find an Expert', link: '/guide/archives/css-audit-report' },
+            { text: 'Audit Microservices AMARRE', link: '/guide/archives/microservices-audit-readme' },
+            { text: 'Audit et qualité du code', link: '/guide/archives/code-audit' },
+          ],
+        },
+      ],
       // Guide général (fallback)
       '/guide/': [
         {
@@ -173,12 +196,22 @@ export default defineConfig({
           items: [{ text: "Vue d'ensemble", link: '/api/' }],
         },
         {
+          text: 'Applications',
+          collapsed: false,
+          items: [
+            { text: '@univ-lehavre/atlas-ecrin', link: '/api/@univ-lehavre/atlas-ecrin/' },
+            { text: '@univ-lehavre/atlas-find-an-expert', link: '/api/@univ-lehavre/atlas-find-an-expert/' },
+            { text: '@univ-lehavre/atlas-amarre', link: '/api/@univ-lehavre/atlas-amarre/' },
+          ],
+        },
+        {
           text: 'REDCap',
           collapsed: false,
           items: [
             { text: '@univ-lehavre/atlas-crf', link: '/api/@univ-lehavre/atlas-crf/' },
             { text: '@univ-lehavre/atlas-redcap-core', link: '/api/@univ-lehavre/atlas-redcap-core/' },
             { text: '@univ-lehavre/atlas-redcap-openapi', link: '/api/@univ-lehavre/atlas-redcap-openapi/' },
+            { text: '@univ-lehavre/atlas-redcap-sandbox', link: '/api/@univ-lehavre/atlas-redcap-sandbox/' },
           ],
         },
         {
@@ -188,6 +221,8 @@ export default defineConfig({
             { text: '@univ-lehavre/atlas-net', link: '/api/@univ-lehavre/atlas-net/' },
             { text: '@univ-lehavre/atlas-errors', link: '/api/@univ-lehavre/atlas-errors/' },
             { text: '@univ-lehavre/atlas-validators', link: '/api/@univ-lehavre/atlas-validators/' },
+            { text: '@univ-lehavre/atlas-shared-config', link: '/api/@univ-lehavre/atlas-shared-config/' },
+            { text: '@univ-lehavre/atlas-logos', link: '/api/@univ-lehavre/atlas-logos/' },
           ],
         },
         {

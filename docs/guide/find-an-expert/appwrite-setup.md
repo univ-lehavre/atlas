@@ -3,16 +3,9 @@ title: Configuration Appwrite
 description: Guide de configuration de la base de données Appwrite pour Talent Finder
 scope: infrastructure
 tags: [appwrite, database, setup, configuration]
-parent: /CLAUDE.md
-related:
-  - src/lib/server/appwrite/index.ts
-  - src/lib/server/consent/repository.ts
-  - src/lib/server/health/service.ts
 ---
 
 # Configuration Appwrite
-
-> **Parent** : [/CLAUDE.md](../CLAUDE.md) | **Voir aussi** : [Consent Repository](../src/lib/server/consent/repository.ts) | [Health Service](../src/lib/server/health/service.ts)
 
 Ce guide explique comment configurer Appwrite pour Talent Finder.
 
