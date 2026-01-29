@@ -140,6 +140,7 @@ const formatRelativeDate = (dateString: string | null) => {
   background-color: var(--vp-c-bg-soft);
   font-weight: 600;
   white-space: nowrap;
+  text-align: center;
 }
 
 .package-table th.vertical {

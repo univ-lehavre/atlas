@@ -90,6 +90,7 @@ const PACKAGE_PATHS = [
   'packages/crf',
   'packages/redcap-core',
   'packages/redcap-openapi',
+  'packages/redcap-sandbox',
   'packages/net',
   'packages/appwrite',
   'packages/auth',

@@ -111,9 +111,8 @@ export class GitAnalyzer {
   async getLatestCommitForPath(path: string): Promise<string | null> {
     try {
       const log = await this.git.log({
-        '-1': null,
-        '--': null,
-        [path]: null,
+        maxCount: 1,
+        file: path,
       });
       if (log.latest) {
         // Convert to ISO format for consistent date handling
