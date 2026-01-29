@@ -2,170 +2,203 @@
 
 > **Dernière mise à jour :** 29 janvier 2026
 
-Ce document présente un audit de la dette technique du monorepo Atlas, identifiant les zones nécessitant une attention particulière.
+Ce document analyse l'équilibre entre réutilisation de bibliothèques existantes et risque de sur-dépendance dans le monorepo Atlas.
 
 ## Résumé exécutif
 
-| Catégorie | Nombre | Sévérité |
-|-----------|--------|----------|
-| Fichiers volumineux (>400 lignes) | 5 | Haute |
-| Packages sans tests | 3 | Critique |
-| Assertions de type `as any` | 1 | Moyenne |
-| Commentaires `eslint-disable` | 15 | Basse |
-| Scripts manquants | 1 | Moyenne |
+| Métrique | Valeur |
+|----------|--------|
+| Dépendances de production | 43 packages |
+| Dépendances de développement | 47 packages |
+| Packages internes (workspace) | 14 |
+| Dépendances inutilisées identifiées | 3 |
+| Duplications fonctionnelles | 4 |
 
 ---
 
-## 1. Couverture de tests
+## 1. Philosophie : réutiliser vs réinventer
 
-### 1.1 Packages sans tests
+### 1.1 Arguments pour la réutilisation
 
-| Package | Fichiers source | Impact |
-|---------|-----------------|--------|
-| `@univ-lehavre/atlas-redcap-openapi` | 18 | **Critique** - Logique complexe d'extraction OpenAPI |
-| `@univ-lehavre/atlas-logos` | 0 | Faible - Assets uniquement |
-| `@univ-lehavre/atlas-shared-config` | 0 | Faible - Configuration uniquement |
+- **Gain de temps** : Ne pas recoder ce qui existe déjà
+- **Qualité** : Bibliothèques testées par la communauté
+- **Maintenance** : Mises à jour de sécurité externalisées
+- **Documentation** : Ressources existantes
 
-### 1.2 Couverture insuffisante
+### 1.2 Risques de la sur-dépendance
 
-| Package | Tests | Fichiers | Ratio |
-|---------|-------|----------|-------|
-| `@univ-lehavre/atlas-crf` | 7 | 41 | 17% |
-| `@univ-lehavre/atlas-errors` | 1 | 4 | 25% |
-| `@univ-lehavre/atlas-net` | 3 | 10 | 30% |
-
-### 1.3 Bonne couverture
-
-| Package | Tests | Fichiers | Ratio |
-|---------|-------|----------|-------|
-| `@univ-lehavre/atlas-redcap-core` | 18 | 60 | 30% |
-| `@univ-lehavre/atlas-amarre` | 11 | 31 | 35% |
-| `@univ-lehavre/atlas-auth` | 2 | 5 | 40% |
+- **Taille du bundle** : Impact sur les performances
+- **Sécurité** : Surface d'attaque élargie
+- **Maintenance** : Mises à jour en cascade
+- **Obsolescence** : Bibliothèques abandonnées
+- **Complexité** : Conflits de versions
 
 ---
 
-## 2. Fichiers volumineux
+## 2. Analyse des dépendances critiques
 
-### 2.1 Fichiers critiques (>500 lignes)
+### 2.1 Écosystème Effect (justifié)
 
-| Fichier | Lignes | Problème |
-|---------|--------|----------|
-| `find-an-expert/src/lib/content/types.ts` | 821 | Types i18n monolithiques |
-| `redcap-openapi/src/extractor/generator.ts` | 580 | Générateur complexe |
-| `redcap-openapi/src/core/generator.ts` | 534 | Logique de génération |
-| `redcap-openapi/src/extractor/parsers.ts` | 500 | Parseurs PHP |
-| `crf/src/redcap/client.ts` | 412 | Client REDCap principal |
+| Package | Utilisé par | Taille | Verdict |
+|---------|-------------|--------|---------|
+| `effect` | 5 packages | ~150KB | **Essentiel** - Architecture du projet |
+| `@effect/platform` | 2 packages | ~50KB | **Justifié** - Abstractions plateforme |
+| `@effect/cli` | 2 packages | ~30KB | **Justifié** - CLI typés |
 
-### 2.2 Recommandations
+**Conclusion** : L'écosystème Effect est le cœur architectural d'Atlas. La dette est acceptée.
 
-1. **content/types.ts** : Diviser par domaine (common, health, profile, research)
-2. **extractor/generator.ts** : Extraire les sous-générateurs en modules
-3. **crf/client.ts** : Modulariser par fonctionnalité (records, users, surveys)
+### 2.2 Visualisation graphe (à surveiller)
+
+| Package | Utilisé par | Taille | Verdict |
+|---------|-------------|--------|---------|
+| `graphology` | ecrin | ~100KB | **Justifié** - Pas d'alternative légère |
+| `sigma` | ecrin | ~200KB | **Justifié** - WebGL performant |
+| `graphology-layout-*` | ecrin | ~50KB | **À évaluer** - 3 plugins layout |
+
+**Conclusion** : Ces dépendances sont lourdes mais essentielles pour ECRIN. Envisager l'extraction en package optionnel.
+
+### 2.3 Utilitaires remplaçables
+
+| Package | Utilisé par | Alternative native | Verdict |
+|---------|-------------|-------------------|---------|
+| `uuid` | ecrin | `crypto.randomUUID()` | **Remplaçable** |
+| `lodash` | ecrin | Méthodes Array/Object | **Partiellement remplaçable** |
+| `luxon` | amarre, ecrin | `Intl.DateTimeFormat` | **À évaluer** |
 
 ---
 
-## 3. Qualité du code
+## 3. Problèmes identifiés
 
-### 3.1 Assertions de type
+### 3.1 Dépendances inutilisées
 
-```typescript
-// packages/crf/src/cli/shared/terminal.ts:314
-options: selectOptions as any
+| Package | Emplacement | Action |
+|---------|-------------|--------|
+| `vue-chartjs` | racine | **Supprimer** - Jamais utilisé |
+| `chart.js` | racine | **Supprimer** - Jamais utilisé |
+
+### 3.2 Duplication Appwrite
+
+Le package `ecrin` utilise **deux** clients Appwrite :
+
+```json
+{
+  "appwrite": "21.5.0",      // Client navigateur
+  "node-appwrite": "17.0.1"  // Client serveur
+}
 ```
 
-**Contexte** : Limitation des types conditionnels de `@clack/prompts`.
+**Recommandation** : Utiliser uniquement `node-appwrite` côté serveur via `@univ-lehavre/atlas-appwrite`.
 
-### 3.2 Exemptions ESLint
+### 3.3 Versions désalignées
 
-| Catégorie | Nombre | Packages |
-|-----------|--------|----------|
-| Règles fonctionnelles | 8 | net, crf |
-| Tests | 6 | appwrite, auth, errors |
-| Sécurité | 1 | net |
+| Package | Versions trouvées | Recommandation |
+|---------|-------------------|----------------|
+| `simple-git` | 3.27.0 (root), 3.30.0 (find-an-expert) | Aligner sur 3.30.0 |
 
-**Observation** : La plupart des exemptions sont justifiées pour du code impératif ou des tests.
+### 3.4 Validation fragmentée
 
----
+- `zod` utilisé dans amarre et find-an-expert
+- `@univ-lehavre/atlas-validators` existe mais n'utilise pas zod
 
-## 4. Scripts manquants
-
-### 4.1 Script `typecheck`
-
-| Package | Impact |
-|---------|--------|
-| `@univ-lehavre/atlas-redcap-openapi` | Moyen - Erreurs de type non détectées localement |
-
-**Solution** : Ajouter `"typecheck": "tsc --noEmit"` au package.json.
+**Recommandation** : Consolider la validation dans le package validators avec zod.
 
 ---
 
-## 5. Dépendances
+## 4. Dépendances à usage unique
 
-### 5.1 Versions peer dependencies
+Ces dépendances ne sont utilisées que dans un seul package :
 
-| Outil | shared-config | Packages |
-|-------|---------------|----------|
-| TypeScript | `^5.0.0` | `^5.9.3` |
-| ESLint | `^9.0.0` | `^9.39.2` |
-| Prettier | `^3.0.0` | `^3.8.1` |
-
-**Observation** : Les peer dependencies sont volontairement larges pour la compatibilité.
-
-### 5.2 Cohérence
-
-- **Effect** : Toutes les versions alignées sur `^3.19.15`
-- **Vitest** : Toutes les versions alignées sur `^4.0.18`
+| Package | Utilisé par | Justification |
+|---------|-------------|---------------|
+| `hono-rate-limiter` | crf | **Justifié** - Fonctionnalité spécifique |
+| `openapi-response-validator` | ecrin | **À évaluer** - Lourd pour un seul usage |
+| `@stoplight/prism-cli` | crf (dev) | **Justifié** - Mock server pour tests |
+| `swagger-ui-dist` | find-an-expert | **Justifié** - Documentation API |
 
 ---
 
-## 6. Patterns dépréciés
+## 5. Ce qui fonctionne bien
 
-| Fichier | Pattern | Alternative |
-|---------|---------|-------------|
-| `find-an-expert/src/lib/content/index.ts` | Barrel imports | Imports modulaires |
-| `find-an-expert/src/lib/content/core/i18n-context.svelte.ts` | Ancien API content | common, health, profile, research |
+### 5.1 Configuration centralisée
 
----
+`@univ-lehavre/atlas-shared-config` centralise :
+- ESLint 9.x
+- Prettier 3.x
+- TypeScript 5.x
 
-## 7. Plan de remédiation
+**Résultat** : Cohérence garantie, maintenance simplifiée.
 
-### Priorité 1 - Critique
+### 5.2 Packages internes
 
-| Action | Package | Effort |
-|--------|---------|--------|
-| Ajouter des tests | redcap-openapi | Élevé |
-| Diviser types.ts | find-an-expert | Moyen |
-| Ajouter script typecheck | redcap-openapi | Faible |
+Les 14 packages workspace évitent la duplication :
+- `atlas-errors` : Gestion d'erreurs unifiée
+- `atlas-validators` : Validation centralisée
+- `atlas-appwrite` : Abstraction Appwrite
+- `atlas-auth` : Authentification partagée
 
-### Priorité 2 - Important
+### 5.3 Écosystème cohérent
 
-| Action | Package | Effort |
-|--------|---------|--------|
-| Refactoriser generators | redcap-openapi | Élevé |
-| Améliorer couverture tests | crf | Moyen |
-| Modulariser client.ts | crf | Moyen |
-
-### Priorité 3 - Souhaitable
-
-| Action | Package | Effort |
-|--------|---------|--------|
-| Extraire données statiques | find-an-expert | Faible |
-| Partager config vitest | monorepo | Moyen |
-| Documenter API publique | redcap-openapi | Faible |
+| Domaine | Choix | Cohérence |
+|---------|-------|-----------|
+| Frontend | Svelte 5 + SvelteKit 2 | 3/3 apps |
+| Backend | Effect + Hono | 2/2 services |
+| Tests | Vitest | 100% packages |
+| Build | Vite + tsup | 100% packages |
 
 ---
 
-## 8. Métriques de suivi
+## 6. Plan d'action
 
-Pour suivre la réduction de la dette technique :
+### Priorité 1 - Nettoyage immédiat
+
+| Action | Impact | Effort |
+|--------|--------|--------|
+| Supprimer vue-chartjs et chart.js | Réduction dépendances | Faible |
+| Aligner version simple-git | Cohérence | Faible |
+
+### Priorité 2 - Optimisation
+
+| Action | Impact | Effort |
+|--------|--------|--------|
+| Remplacer uuid par crypto.randomUUID() | -1 dépendance | Faible |
+| Consolider clients Appwrite dans ecrin | -1 dépendance | Moyen |
+| Évaluer remplacement lodash par natif | -1 dépendance | Moyen |
+
+### Priorité 3 - Architecture
+
+| Action | Impact | Effort |
+|--------|--------|--------|
+| Intégrer zod dans atlas-validators | Cohérence validation | Moyen |
+| Extraire graphologie en package optionnel | Modularité | Élevé |
+
+---
+
+## 7. Métriques de suivi
 
 ```bash
-# Fichiers volumineux (>400 lignes)
-find packages -name "*.ts" -exec wc -l {} \; | awk '$1 > 400 {print}' | wc -l
+# Compter les dépendances uniques
+pnpm ls --depth 0 | wc -l
 
-# Couverture de tests
-pnpm test -- --coverage
+# Analyser les dépendances inutilisées
+pnpm knip
 
-# Commentaires TODO/FIXME
-grep -r "TODO\|FIXME" packages/*/src --include="*.ts" | wc -l
+# Vérifier les mises à jour disponibles
+pnpm taze
+
+# Auditer les vulnérabilités
+pnpm audit
 ```
+
+---
+
+## 8. Conclusion
+
+Le monorepo Atlas maintient un **équilibre raisonnable** entre réutilisation et contrôle :
+
+- **Points forts** : Configuration centralisée, packages internes bien structurés, écosystème cohérent
+- **Points d'amélioration** : Quelques dépendances inutilisées, duplication Appwrite, validation fragmentée
+
+La dette technique liée aux dépendances reste **maîtrisée** grâce à :
+1. L'utilisation de pnpm (déduplication efficace)
+2. Les packages workspace (réutilisation interne)
+3. Des choix technologiques cohérents (Effect, Svelte, Vite)
