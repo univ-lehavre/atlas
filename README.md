@@ -122,15 +122,38 @@ Appwrite est conforme aux normes SOC-2, RGPD et HIPAA. Les modules ECRIN et AMAR
 
 ## Projets institutionnels
 
-Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+Atlas est développé dans le cadre de projets structurants portés par l'Université Le Havre Normandie.
 
 ### Campus Polytechnique des Territoires Maritimes et Portuaires
 
-Programme de recherche et de formation centré sur les enjeux maritimes et portuaires du territoire havrais et normand.
+Le [Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/) (CPTMP) est un consortium unique en Europe, inauguré le 30 janvier 2025. Il rassemble **12 membres fondateurs** autour de l'Université Le Havre Normandie : CNRS, INSA Rouen Normandie, École Nationale Supérieure Maritime, Sciences Po, EM Normandie, ENSA Normandie, ESADHaR, IFEN, Le Havre Seine Métropole, Synerzip LH, UMEP et la Région Normandie.
+
+Le Campus est lauréat de l'appel à projets « ExcellencES » de **France 2030**, avec un financement de **7,3 M€** sur 7 ans (2023-2030).
+
+**Axes stratégiques :**
+- Villes de demain
+- Enjeux maritimes et portuaires
+- Transitions, risques et incertitudes
+
+**Cinq hubs opérationnels :**
+- Hub Expertise et Qualifications
+- Hub Créations et Innovations
+- Hub International
+- Hub Digital et Plateformes Technologiques
+- Hub Sports Academy
 
 ### EUNICoast
 
-[EUNICoast](https://eunicoast.eu/) est une alliance universitaire européenne regroupant des établissements d'enseignement supérieur situés sur les zones côtières européennes.
+[EUNICoast](https://eunicoast.eu/) (European University of Islands, Ports & Coastal Territories) est une alliance de **13 universités européennes** coordonnée par l'Université Le Havre Normandie, financée à hauteur de **14,4 M€** par la Commission européenne (2024-2028).
+
+**Universités partenaires :** Åland (Finlande), Bourgas (Bulgarie), Stralsund (Allemagne), EMUNI (Slovénie), Açores (Portugal), Baléares (Espagne), Patras (Grèce), Sassari (Italie), Féroé, Antilles (France), Le Havre (France), Dubrovnik (Croatie), Szczecin (Pologne).
+
+**Hubs de recherche :**
+- Identités et patrimoines des communautés côtières et insulaires
+- Économie bleue circulaire, logistique portuaire et tourisme durable
+- Gouvernance et aménagement des territoires côtiers
+- Santé, biodiversité et solutions fondées sur la nature
+- Solutions d'ingénierie et données pour les infrastructures côtières, énergies marines renouvelables et sécurité maritime
 
 ## Documentation
 
@@ -179,22 +202,20 @@ pnpm ready
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="packages/logos/ulhn.svg" alt="Université Le Havre Normandie" height="50">
+    <img src="packages/logos/ulhn.svg" alt="Université Le Havre Normandie" height="40">
   </a>
   &nbsp;&nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
-    <img src="packages/logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="50">
+    <img src="packages/logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="40">
   </a>
   &nbsp;&nbsp;&nbsp;&nbsp;
   <a href="https://eunicoast.eu/">
-    <img src="packages/logos/eunicoast.png" alt="EUNICoast" height="50">
+    <img src="packages/logos/eunicoast.png" alt="EUNICoast" height="40">
   </a>
-</p>
-
-<p align="center">
-  <img src="packages/logos/france-2030.png" alt="France 2030" height="50">
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="packages/logos/region-normandie.png" alt="Région Normandie" height="50">
+  <img src="packages/logos/france-2030.png" alt="France 2030" height="40">
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="packages/logos/region-normandie.png" alt="Région Normandie" height="40">
 </p>
 
 ## Licence

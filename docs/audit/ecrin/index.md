@@ -15,6 +15,23 @@ ECRIN est une plateforme de collaboration pour chercheurs développée par l'Uni
 | Applications candidates à extraction | 3 |
 | Technologies principales | SvelteKit 2, Svelte 5, Sigma.js, Appwrite |
 
+### Sous-projets
+
+| Sous-projet | État |
+|-------------|------|
+| introduce-my-scientific-questions | 🚧 En cours |
+| introduce-my-references | 🚧 En cours |
+| collaborate-create-my-project | 🚧 En cours |
+| collaborate-build-my-team | 📋 Prévu |
+| collaborate-find-my-expert | 📋 Prévu |
+| collaborate-fund-my-project | 📋 Prévu |
+| explore-my-graph | 📋 Prévu |
+| explore-community-graph | 📋 Prévu |
+| ask-data | 📋 Prévu |
+| ask-an-expert | 🚧 En cours |
+| publish-my-data | 📋 Prévu |
+| publish-my-news | 📋 Prévu |
+
 ---
 
 ## 1. Architecture générale

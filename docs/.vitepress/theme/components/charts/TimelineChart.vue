@@ -23,9 +23,19 @@ interface TimelineEntry {
   filesChanged: number;
 }
 
+export type MetricType = 'commits' | 'filesChanged' | 'additions' | 'deletions';
+
+const metricConfig: Record<MetricType, { label: string; color: string }> = {
+  commits: { label: 'Commits', color: 'rgb(59, 130, 246)' },
+  filesChanged: { label: 'Fichiers modifiés', color: 'rgb(16, 185, 129)' },
+  additions: { label: 'Lignes ajoutées', color: 'rgb(34, 197, 94)' },
+  deletions: { label: 'Lignes supprimées', color: 'rgb(239, 68, 68)' },
+};
+
 const props = defineProps<{
   data: TimelineEntry[];
   title?: string;
+  metrics?: MetricType[];
 }>();
 
 const isMounted = ref(false);
@@ -34,29 +44,24 @@ onMounted(() => {
   isMounted.value = true;
 });
 
+const activeMetrics = computed(() => props.metrics?.length ? props.metrics : ['commits'] as MetricType[]);
+
 const chartData = computed(() => {
   const labels = props.data.map((d) => d.period);
-  return {
-    labels,
-    datasets: [
-      {
-        label: 'Commits',
-        data: props.data.map((d) => d.commits),
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        fill: true,
-        tension: 0.3,
-      },
-      {
-        label: 'Fichiers modifiés',
-        data: props.data.map((d) => d.filesChanged),
-        borderColor: 'rgb(16, 185, 129)',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        fill: true,
-        tension: 0.3,
-      },
-    ],
-  };
+
+  const datasets = activeMetrics.value.map((metric) => {
+    const config = metricConfig[metric];
+    return {
+      label: config.label,
+      data: props.data.map((d) => d[metric]),
+      borderColor: config.color,
+      backgroundColor: config.color.replace('rgb', 'rgba').replace(')', ', 0.1)'),
+      fill: false,
+      tension: 0.3,
+    };
+  });
+
+  return { labels, datasets };
 });
 
 const chartOptions = computed(() => ({

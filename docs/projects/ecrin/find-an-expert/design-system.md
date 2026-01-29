@@ -190,4 +190,4 @@ Then use with `bg-custom-500`, `text-custom-500`, etc.
 ## Related Documentation
 
 - [Tailwind CSS v4 Documentation](https://tailwindcss.com/docs)
-- [CLAUDE.md](../CLAUDE.md) - Project coding standards
+- [Code source](https://github.com/univ-lehavre/atlas/tree/main/packages/find-an-expert)

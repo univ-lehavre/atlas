@@ -70,15 +70,15 @@ Atlas est développé dans le cadre de deux projets portés par l'Université Le
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="50">
+    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
-    <img src="../logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="50">
+    <img src="../logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://eunicoast.eu/">
-    <img src="../logos/eunicoast.png" alt="EUNICoast" height="50">
+    <img src="../logos/eunicoast.png" alt="EUNICoast" height="20">
   </a>
 </p>
 

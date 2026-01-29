@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-
 interface CodeStats {
   files: number;
   functions: number;
   types: number;
   interfaces: number;
   constants: number;
+  tsdocComments: number;
 }
 
 interface TestStats {
@@ -18,91 +17,41 @@ interface TestStats {
 interface PackageStats {
   name: string;
   path: string;
+  version: string | null;
   code: CodeStats;
   tests: TestStats;
   latestCommit: string | null;
   commitCount: number;
+  prCount: number;
+  releaseCount: number;
   linesAdded: number;
   linesDeleted: number;
 }
 
-const props = defineProps<{
+defineProps<{
   packages: PackageStats[];
 }>();
 
-type SortKey = 'name' | 'commits' | 'files' | 'functions' | 'tests';
-type SortDirection = 'asc' | 'desc';
-
-const sortKey = ref<SortKey>('commits');
-const sortDirection = ref<SortDirection>('desc');
-
-const sortedPackages = computed(() => {
-  const sorted = [...props.packages];
-
-  sorted.sort((a, b) => {
-    let valueA: number | string;
-    let valueB: number | string;
-
-    switch (sortKey.value) {
-      case 'name':
-        valueA = a.name.toLowerCase();
-        valueB = b.name.toLowerCase();
-        break;
-      case 'commits':
-        valueA = a.commitCount;
-        valueB = b.commitCount;
-        break;
-      case 'files':
-        valueA = a.code.files;
-        valueB = b.code.files;
-        break;
-      case 'functions':
-        valueA = a.code.functions;
-        valueB = b.code.functions;
-        break;
-      case 'tests':
-        valueA = a.tests.tests;
-        valueB = b.tests.tests;
-        break;
-      default:
-        valueA = a.commitCount;
-        valueB = b.commitCount;
-    }
-
-    if (typeof valueA === 'string' && typeof valueB === 'string') {
-      return sortDirection.value === 'asc' ? valueA.localeCompare(valueB) : valueB.localeCompare(valueA);
-    }
-
-    return sortDirection.value === 'asc'
-      ? (valueA as number) - (valueB as number)
-      : (valueB as number) - (valueA as number);
-  });
-
-  return sorted;
-});
-
-const toggleSort = (key: SortKey) => {
-  if (sortKey.value === key) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
-  } else {
-    sortKey.value = key;
-    sortDirection.value = 'desc';
-  }
-};
-
-const getSortIcon = (key: SortKey) => {
-  if (sortKey.value !== key) return '↕';
-  return sortDirection.value === 'asc' ? '↑' : '↓';
-};
-
-const formatDate = (dateString: string | null) => {
+const formatRelativeDate = (dateString: string | null) => {
   if (!dateString) return '-';
   const date = new Date(dateString);
-  return date.toLocaleDateString('fr-FR', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Aujourd'hui";
+  if (diffDays === 1) return 'Hier';
+  if (diffDays < 7) return `Il y a ${diffDays} jours`;
+  if (diffDays < 30) {
+    const weeks = Math.floor(diffDays / 7);
+    return `Il y a ${weeks} semaine${weeks > 1 ? 's' : ''}`;
+  }
+  if (diffDays < 365) {
+    const months = Math.floor(diffDays / 30);
+    return `Il y a ${months} mois`;
+  }
+  const years = Math.floor(diffDays / 365);
+  return `Il y a ${years} an${years > 1 ? 's' : ''}`;
 };
 </script>
 
@@ -111,34 +60,59 @@ const formatDate = (dateString: string | null) => {
     <table class="package-table">
       <thead>
         <tr>
-          <th class="sortable" @click="toggleSort('name')">
-            Package <span class="sort-icon">{{ getSortIcon('name') }}</span>
+          <th>Package</th>
+          <th>Version</th>
+          <th class="numeric vertical hide-below-xxl">
+            <span class="vertical-label">Releases</span>
           </th>
-          <th class="sortable numeric" @click="toggleSort('commits')">
-            Commits <span class="sort-icon">{{ getSortIcon('commits') }}</span>
+          <th class="numeric vertical hide-below-xxl">
+            <span class="vertical-label">PRs</span>
           </th>
-          <th class="sortable numeric" @click="toggleSort('files')">
-            Fichiers <span class="sort-icon">{{ getSortIcon('files') }}</span>
+          <th class="numeric vertical hide-below-xxl">
+            <span class="vertical-label">Commits</span>
           </th>
-          <th class="sortable numeric" @click="toggleSort('functions')">
-            Fonctions <span class="sort-icon">{{ getSortIcon('functions') }}</span>
+          <th class="numeric vertical hide-below-xxl">
+            <span class="vertical-label">Fichiers</span>
           </th>
-          <th class="sortable numeric" @click="toggleSort('tests')">
-            Tests <span class="sort-icon">{{ getSortIcon('tests') }}</span>
+          <th class="numeric vertical hide-below-xxl">
+            <span class="vertical-label">Lignes</span>
           </th>
-          <th class="numeric">Dernier commit</th>
+          <th class="numeric vertical hide-below-xxl">
+            <span class="vertical-label">Types</span>
+          </th>
+          <th class="numeric vertical hide-below-xxl">
+            <span class="vertical-label">Fonctions</span>
+          </th>
+          <th class="numeric vertical hide-below-xxl">
+            <span class="vertical-label">TSDoc</span>
+          </th>
+          <th class="numeric vertical hide-below-xxl">
+            <span class="vertical-label">Tests</span>
+          </th>
+          <th class="numeric hide-below-xxl">Dernier commit</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="pkg in sortedPackages" :key="pkg.name">
+        <tr v-for="pkg in packages" :key="pkg.name">
           <td class="package-name">
-            <code>{{ pkg.name }}</code>
+            <a :href="`https://github.com/univ-lehavre/atlas/tree/main/${pkg.path}`" target="_blank" rel="noopener">
+              <code>{{ pkg.name.replace('@univ-lehavre/atlas-', '') }}</code>
+            </a>
           </td>
-          <td class="numeric">{{ pkg.commitCount }}</td>
-          <td class="numeric">{{ pkg.code.files }}</td>
-          <td class="numeric">{{ pkg.code.functions }}</td>
-          <td class="numeric">{{ pkg.tests.tests }}</td>
-          <td class="numeric date">{{ formatDate(pkg.latestCommit) }}</td>
+          <td class="version">
+            <code v-if="pkg.version">{{ pkg.version }}</code>
+            <span v-else>-</span>
+          </td>
+          <td class="numeric hide-below-xxl">{{ pkg.releaseCount }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.prCount }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.commitCount }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.code.files }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.linesAdded + pkg.linesDeleted }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.code.types + pkg.code.interfaces }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.code.functions }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.code.tsdocComments }}</td>
+          <td class="numeric hide-below-xxl">{{ pkg.tests.tests }}</td>
+          <td class="numeric date hide-below-xxl">{{ formatRelativeDate(pkg.latestCommit) }}</td>
         </tr>
       </tbody>
     </table>
@@ -168,20 +142,22 @@ const formatDate = (dateString: string | null) => {
   background-color: var(--vp-c-bg-soft);
   font-weight: 600;
   white-space: nowrap;
+  text-align: center;
 }
 
-.package-table th.sortable {
-  cursor: pointer;
-  user-select: none;
+.package-table th.vertical {
+  height: 100px;
+  vertical-align: bottom;
+  padding: 0.5rem 0.25rem;
+  text-align: center;
 }
 
-.package-table th.sortable:hover {
-  background-color: var(--vp-c-bg-mute);
-}
-
-.sort-icon {
-  margin-left: 0.25rem;
-  opacity: 0.6;
+.vertical-label {
+  display: block;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  white-space: nowrap;
   font-size: 0.8rem;
 }
 
@@ -196,6 +172,14 @@ const formatDate = (dateString: string | null) => {
   border-radius: 4px;
 }
 
+.version code {
+  font-size: 0.8rem;
+  padding: 0.1rem 0.35rem;
+  background-color: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  border-radius: 4px;
+}
+
 .date {
   white-space: nowrap;
   color: var(--vp-c-text-2);
@@ -203,5 +187,12 @@ const formatDate = (dateString: string | null) => {
 
 .package-table tbody tr:hover {
   background-color: var(--vp-c-bg-soft);
+}
+
+/* Hide detailed columns on screens smaller than md (768px) */
+@media (max-width: 767px) {
+  .hide-below-xxl {
+    display: none;
+  }
 }
 </style>

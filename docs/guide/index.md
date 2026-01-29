@@ -137,36 +137,14 @@ graph TB
 
 ## Documentation
 
-### Je suis chercheur
+Consultez la barre de navigation pour accéder aux différentes sections :
 
-Consultez la documentation utilisateur pour comprendre comment Atlas peut vous aider :
-
-| Section | Description |
-|---------|-------------|
-| [Atlas Verify](./citations/user/) | Fiabiliser votre profil bibliographique |
-| [Vérifier vos publications](./citations/user/verify-publications.md) | Valider les articles qui vous sont attribués |
-| [Gérer votre parcours](./citations/user/manage-career.md) | Corriger vos affiliations |
-| [Sources de données](./citations/user/sources.md) | Comprendre d'où viennent les données |
-
-### Je suis développeur
-
-Consultez la documentation technique pour intégrer Atlas ou contribuer :
-
-| Section | Description |
-|---------|-------------|
-| [Architecture technique](./dev/) | Vue d'ensemble technique |
-| [REDCap/CRF](./dev/crf.md) | Client et serveur REDCap |
-| [Atlas Citations](./citations/dev/) | Packages sources bibliographiques |
-| [Outils CLI](./dev/cli.md) | Outils en ligne de commande |
-| [Infrastructure](./dev/infrastructure.md) | Déploiement et sécurité |
-
-### Audits
-
-| Document | Description |
-|----------|-------------|
-| [Audit de la documentation](./audit/documentation-audit.md) | État des lieux de la documentation |
-| [Audit ECRIN](./audit/ecrin-audit.md) | Analyse des 6 cartes fonctionnelles |
-| [Audit des dépendances](./audit/dependencies-audit.md) | Inventaire et roadmap des dépendances |
+- **[ECRIN](/projects/ecrin/)** - Plateforme de collaboration pour chercheurs
+- **[AMARRE](/projects/amarre/)** - Gestion de la mobilité des chercheurs
+- **[Citations](/projects/citations/)** - Agrégation de sources bibliographiques
+- **[CRF](/projects/crf/)** - Outils pour interagir avec REDCap
+- **[Audits](/audit/)** - Audits techniques et documentation
+- **[API](/api/)** - Référence des packages
 
 ## Plateformes tierces
 
