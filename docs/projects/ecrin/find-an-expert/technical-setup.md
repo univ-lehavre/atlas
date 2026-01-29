@@ -3,15 +3,11 @@ title: Technical Setup
 description: Installation and development guide for Talent Finder
 scope: technical
 tags: [installation, development, setup, nodejs, sveltekit]
-parent: /README.md
-related:
-  - appwrite-setup.md
-  - design-system.md
 ---
 
 # Technical Setup
 
-> **Back**: [README](../README.md) | **See also**: [Appwrite Setup](appwrite-setup.md) | [Design System](design-system.md)
+> **Voir aussi** : [Appwrite Setup](appwrite-setup.md) | [Design System](design-system.md)
 
 ## Tech Stack
 

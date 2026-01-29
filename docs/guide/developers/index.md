@@ -104,6 +104,24 @@ export REDCAP_API_TOKEN=YOUR_32_CHAR_HEXADECIMAL_TOKEN
 pnpm -F @univ-lehavre/crf crf-redcap test
 ```
 
+<RepoDynamics />
+
+## Plateformes tierces
+
+Atlas s'appuie sur deux plateformes tierces :
+
+### REDCap (Research Electronic Data Capture)
+
+[REDCap](https://project-redcap.org/) est une application web sécurisée développée par l'Université Vanderbilt pour la création et la gestion d'enquêtes en ligne et de bases de données de recherche. REDCap est utilisé par plus de **8 000 institutions** dans **164 pays** et a été cité dans plus de **51 000 articles scientifiques**.
+
+REDCap permet la collecte de données sur le web et sur mobile (y compris hors connexion) tout en respectant les réglementations sur la protection des données (RGPD, HIPAA, 21 CFR Part 11). Il est gratuit pour les organisations à but non lucratif membres du Consortium REDCap.
+
+### Appwrite
+
+[Appwrite](https://appwrite.io/) est une plateforme backend open source fournissant les services essentiels pour le développement d'applications web et mobiles : authentification, base de données, stockage et fonctions serverless.
+
+Appwrite est conforme aux normes SOC-2, RGPD et HIPAA. Les modules ECRIN et AMARRE utilisent Appwrite pour l'authentification et la gestion des données utilisateurs.
+
 ## Contribuer
 
 1. Créer une branche depuis `main`

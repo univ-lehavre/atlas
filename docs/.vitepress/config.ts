@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitepress';
+import { withMermaid } from 'vitepress-plugin-mermaid';
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   title: 'Atlas',
   description: 'Plateforme de recherche - Université Le Havre Normandie',
   base: '/atlas/',
@@ -28,107 +29,256 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: 'Guide', link: '/guide/' },
+      {
+        text: 'Projects',
+        items: [
+          { text: 'ECRIN', link: '/projects/ecrin/' },
+          { text: 'AMARRE', link: '/projects/amarre/' },
+          { text: 'Citations', link: '/projects/citations/' },
+          { text: 'CRF', link: '/projects/crf/' },
+        ],
+      },
+      { text: 'Audit', link: '/audit/' },
+      { text: 'Roadmaps', link: '/roadmaps/' },
       { text: 'API', link: '/api/' },
     ],
     sidebar: {
+      // ECRIN
+      '/projects/ecrin/': [
+        {
+          text: 'ECRIN',
+          items: [
+            { text: 'Présentation', link: '/projects/ecrin/' },
+          ],
+        },
+        {
+          text: 'Find an Expert',
+          items: [
+            { text: 'Configuration technique', link: '/projects/ecrin/find-an-expert/technical-setup' },
+            { text: 'Configuration Appwrite', link: '/projects/ecrin/find-an-expert/appwrite-setup' },
+            { text: 'Design System', link: '/projects/ecrin/find-an-expert/design-system' },
+            { text: 'Architecture CSS', link: '/projects/ecrin/find-an-expert/css-architecture' },
+          ],
+        },
+        {
+          text: 'Audit',
+          items: [
+            { text: 'Audit ECRIN', link: '/audit/ecrin/' },
+            { text: 'Audit CSS', link: '/audit/ecrin/css-audit-report' },
+          ],
+        },
+        {
+          text: 'Roadmap',
+          items: [
+            { text: 'Feuille de route', link: '/roadmaps/ecrin/' },
+          ],
+        },
+      ],
+      // Citations - guide chercheur et technique
+      '/projects/citations/': [
+        {
+          text: 'Citations',
+          items: [
+            { text: 'Présentation', link: '/projects/citations/' },
+          ],
+        },
+        {
+          text: 'Guide chercheur',
+          items: [
+            { text: 'Introduction', link: '/projects/citations/user/' },
+            { text: 'Vérifier vos publications', link: '/projects/citations/user/verify-publications' },
+            { text: 'Gérer votre parcours', link: '/projects/citations/user/manage-career' },
+            { text: "Profil d'expertise", link: '/projects/citations/user/expertise-profile' },
+            { text: 'Réseau de collaborations', link: '/projects/citations/user/collaboration-network' },
+            { text: 'Les sources de données', link: '/projects/citations/user/sources' },
+          ],
+        },
+        {
+          text: 'Documentation technique',
+          items: [
+            { text: "Vue d'ensemble", link: '/projects/citations/dev/' },
+            { text: 'Architecture', link: '/projects/citations/dev/architecture' },
+            { text: 'Schéma unifié', link: '/projects/citations/dev/unified-schema' },
+            { text: 'Client unifié', link: '/projects/citations/dev/citations-client' },
+            { text: 'Cycle de vie OpenAPI', link: '/projects/citations/dev/openapi-lifecycle' },
+            { text: 'Rate Limiting', link: '/projects/citations/dev/rate-limiting' },
+            { text: 'Validateur OpenAPI', link: '/projects/citations/dev/openapi-validator' },
+          ],
+        },
+        {
+          text: 'Atlas Verify',
+          items: [
+            { text: 'Fiabilisation auteur', link: '/projects/citations/dev/author-verification' },
+            { text: 'Profil chercheur', link: '/projects/citations/dev/researcher-profile' },
+            { text: 'Bases de données', link: '/projects/citations/dev/database-analysis' },
+            { text: 'Bases avancées', link: '/projects/citations/dev/advanced-databases' },
+          ],
+        },
+        {
+          text: 'Sources bibliographiques',
+          items: [
+            { text: "Vue d'ensemble", link: '/projects/citations/dev/sources/' },
+            { text: 'Catalogue complet', link: '/projects/citations/dev/sources/catalog' },
+            { text: 'Référence entités', link: '/projects/citations/dev/sources/entities-reference' },
+            { text: 'OpenAlex', link: '/projects/citations/dev/sources/openalex' },
+            { text: 'Crossref', link: '/projects/citations/dev/sources/crossref' },
+            { text: 'HAL', link: '/projects/citations/dev/sources/hal' },
+            { text: 'ArXiv', link: '/projects/citations/dev/sources/arxiv' },
+            { text: 'ORCID', link: '/projects/citations/dev/sources/orcid' },
+            { text: 'Versioning', link: '/projects/citations/dev/sources/versioning' },
+          ],
+        },
+        {
+          text: 'Audit',
+          items: [
+            { text: 'Audit Citations', link: '/audit/citations/' },
+          ],
+        },
+        {
+          text: 'Roadmap',
+          items: [
+            { text: 'Feuille de route', link: '/roadmaps/citations/' },
+          ],
+        },
+      ],
+      // CRF - documentation technique
+      '/projects/crf/': [
+        {
+          text: 'CRF / REDCap',
+          items: [
+            { text: 'Documentation', link: '/projects/crf/' },
+          ],
+        },
+        {
+          text: 'Référence API',
+          items: [
+            { text: '@univ-lehavre/atlas-crf', link: '/api/@univ-lehavre/atlas-crf/' },
+            { text: '@univ-lehavre/atlas-redcap-core', link: '/api/@univ-lehavre/atlas-redcap-core/' },
+            { text: '@univ-lehavre/atlas-redcap-openapi', link: '/api/@univ-lehavre/atlas-redcap-openapi/' },
+          ],
+        },
+        {
+          text: 'Audit',
+          items: [
+            { text: 'Audit CRF', link: '/audit/crf/' },
+          ],
+        },
+        {
+          text: 'Roadmap',
+          items: [
+            { text: 'Feuille de route', link: '/roadmaps/crf/' },
+          ],
+        },
+      ],
+      // Audits
+      '/audit/': [
+        {
+          text: 'Audits',
+          items: [
+            { text: 'Introduction', link: '/audit/' },
+          ],
+        },
+        {
+          text: 'Commun',
+          items: [
+            { text: 'Outils d\'audit', link: '/audit/common/audit-tools' },
+            { text: 'Audit de la documentation', link: '/audit/common/documentation-audit' },
+            { text: 'Audit des dépendances', link: '/audit/common/dependencies-audit' },
+            { text: 'Dette technique', link: '/audit/common/technical-debt' },
+            { text: 'Audit qualité du code', link: '/audit/common/code-audit' },
+          ],
+        },
+        {
+          text: 'ECRIN',
+          items: [
+            { text: 'Audit ECRIN', link: '/audit/ecrin/' },
+            { text: 'Audit CSS Find an Expert', link: '/audit/ecrin/css-audit-report' },
+          ],
+        },
+        {
+          text: 'AMARRE',
+          items: [
+            { text: 'Audit Microservices', link: '/audit/amarre/' },
+            { text: 'Détails Microservices', link: '/audit/amarre/microservices-audit' },
+            { text: 'README Microservices', link: '/audit/amarre/microservices-readme' },
+          ],
+        },
+        {
+          text: 'Citations',
+          items: [
+            { text: 'Audit Citations', link: '/audit/citations/' },
+          ],
+        },
+        {
+          text: 'CRF',
+          items: [
+            { text: 'Audit CRF', link: '/audit/crf/' },
+          ],
+        },
+      ],
+      // AMARRE
+      '/projects/amarre/': [
+        {
+          text: 'AMARRE',
+          items: [
+            { text: 'Introduction', link: '/projects/amarre/' },
+            { text: 'Implémentation', link: '/projects/amarre/IMPLEMENTATION_GUIDE' },
+            { text: 'Architecture', link: '/projects/amarre/ARCHITECTURE_DIAGRAMS' },
+            { text: 'Sécurité', link: '/projects/amarre/SECURITY' },
+            { text: 'Tests IA', link: '/projects/amarre/AI_TESTING_GUIDE' },
+          ],
+        },
+        {
+          text: 'Audit',
+          items: [
+            { text: 'Audit Microservices', link: '/audit/amarre/' },
+            { text: 'Détails Microservices', link: '/audit/amarre/microservices-audit' },
+          ],
+        },
+        {
+          text: 'Roadmap',
+          items: [
+            { text: 'Feuille de route', link: '/roadmaps/amarre/' },
+          ],
+        },
+      ],
+      // Roadmaps
+      '/roadmaps/': [
+        {
+          text: 'Roadmaps',
+          items: [
+            { text: 'Vue d\'ensemble', link: '/roadmaps/' },
+          ],
+        },
+        {
+          text: 'Par projet',
+          items: [
+            { text: 'ECRIN', link: '/roadmaps/ecrin/' },
+            { text: 'AMARRE', link: '/roadmaps/amarre/' },
+            { text: 'Citations', link: '/roadmaps/citations/' },
+            { text: 'CRF', link: '/roadmaps/crf/' },
+          ],
+        },
+      ],
+      // Guide général (fallback pour /guide/ et /guide/researchers/)
       '/guide/': [
         {
           text: 'Introduction',
           items: [{ text: 'Présentation', link: '/guide/' }],
         },
         {
-          text: 'ECRIN - Plateforme chercheurs',
-          collapsed: false,
+          text: 'Pour les chercheurs',
           items: [
-            { text: 'Audit ECRIN', link: '/guide/audit/ecrin-audit' },
-            { text: 'Find an Expert', link: '/guide/find-an-expert/technical-setup' },
-            { text: 'Configuration Appwrite', link: '/guide/find-an-expert/appwrite-setup' },
-            { text: 'Design System', link: '/guide/find-an-expert/design-system' },
-            { text: 'Architecture CSS', link: '/guide/find-an-expert/css-architecture' },
+            { text: 'Guide chercheur', link: '/guide/researchers/' },
           ],
         },
         {
-          text: 'Atlas Verify - Guide chercheur',
-          collapsed: false,
+          text: 'Pour les développeurs',
           items: [
-            { text: 'Introduction', link: '/guide/citations/user/' },
-            { text: 'Vérifier vos publications', link: '/guide/citations/user/verify-publications' },
-            { text: 'Gérer votre parcours', link: '/guide/citations/user/manage-career' },
-            { text: "Profil d'expertise", link: '/guide/citations/user/expertise-profile' },
-            { text: 'Réseau de collaborations', link: '/guide/citations/user/collaboration-network' },
-            { text: 'Les sources de données', link: '/guide/citations/user/sources' },
-          ],
-        },
-        {
-          text: 'Documentation technique',
-          collapsed: true,
-          items: [
-            { text: "Vue d'ensemble", link: '/guide/dev/' },
-            { text: 'Architecture', link: '/guide/dev/architecture' },
-            { text: 'Audit et qualité', link: '/guide/dev/audit' },
-            { text: 'REDCap/CRF', link: '/guide/dev/crf' },
-            { text: 'Outils CLI', link: '/guide/dev/cli' },
-            { text: 'Infrastructure', link: '/guide/dev/infrastructure' },
-          ],
-        },
-        {
-          text: 'Atlas Citations - Technique',
-          collapsed: true,
-          items: [
-            { text: "Vue d'ensemble", link: '/guide/citations/dev/' },
-            { text: 'Architecture', link: '/guide/citations/dev/architecture' },
-            { text: 'Schéma unifié', link: '/guide/citations/dev/unified-schema' },
-            { text: 'Client unifié', link: '/guide/citations/dev/citations-client' },
-            { text: 'Cycle de vie OpenAPI', link: '/guide/citations/dev/openapi-lifecycle' },
-            { text: 'Rate Limiting', link: '/guide/citations/dev/rate-limiting' },
-            { text: 'Validateur OpenAPI', link: '/guide/citations/dev/openapi-validator' },
-          ],
-        },
-        {
-          text: 'Atlas Verify - Technique',
-          collapsed: true,
-          items: [
-            { text: 'Fiabilisation auteur', link: '/guide/citations/dev/author-verification' },
-            { text: 'Profil chercheur', link: '/guide/citations/dev/researcher-profile' },
-            { text: 'Bases de données', link: '/guide/citations/dev/database-analysis' },
-            { text: 'Bases avancées', link: '/guide/citations/dev/advanced-databases' },
-          ],
-        },
-        {
-          text: 'Sources bibliographiques',
-          collapsed: true,
-          items: [
-            { text: "Vue d'ensemble", link: '/guide/citations/dev/sources/' },
-            { text: 'Catalogue complet', link: '/guide/citations/dev/sources/catalog' },
-            { text: 'Référence entités', link: '/guide/citations/dev/sources/entities-reference' },
-            { text: 'OpenAlex', link: '/guide/citations/dev/sources/openalex' },
-            { text: 'Crossref', link: '/guide/citations/dev/sources/crossref' },
-            { text: 'HAL', link: '/guide/citations/dev/sources/hal' },
-            { text: 'ArXiv', link: '/guide/citations/dev/sources/arxiv' },
-            { text: 'ORCID', link: '/guide/citations/dev/sources/orcid' },
-            { text: 'Versioning', link: '/guide/citations/dev/sources/versioning' },
-          ],
-        },
-        {
-          text: 'AMARRE',
-          collapsed: true,
-          items: [
-            { text: 'Introduction', link: '/guide/amarre/' },
-            { text: 'Implémentation', link: '/guide/amarre/IMPLEMENTATION_GUIDE' },
-            { text: 'Architecture', link: '/guide/amarre/ARCHITECTURE_DIAGRAMS' },
-            { text: 'Sécurité', link: '/guide/amarre/SECURITY' },
-            { text: 'Tests IA', link: '/guide/amarre/AI_TESTING_GUIDE' },
-            { text: 'Audit Microservices', link: '/guide/amarre/MICROSERVICES_AUDIT' },
-          ],
-        },
-        {
-          text: 'Audits',
-          collapsed: true,
-          items: [
-            { text: 'Introduction', link: '/guide/audit/' },
-            { text: 'Audit de la documentation', link: '/guide/audit/documentation-audit' },
-            { text: 'Audit ECRIN', link: '/guide/audit/ecrin-audit' },
-            { text: 'Audit des dépendances', link: '/guide/audit/dependencies-audit' },
+            { text: "Vue d'ensemble", link: '/guide/developers/' },
+            { text: 'Architecture', link: '/guide/developers/architecture' },
+            { text: 'Outils CLI', link: '/guide/developers/cli' },
+            { text: 'Infrastructure', link: '/guide/developers/infrastructure' },
           ],
         },
       ],
@@ -138,12 +288,22 @@ export default defineConfig({
           items: [{ text: "Vue d'ensemble", link: '/api/' }],
         },
         {
+          text: 'Applications',
+          collapsed: false,
+          items: [
+            { text: '@univ-lehavre/atlas-ecrin', link: '/api/@univ-lehavre/atlas-ecrin/' },
+            { text: '@univ-lehavre/atlas-find-an-expert', link: '/api/@univ-lehavre/atlas-find-an-expert/' },
+            { text: '@univ-lehavre/atlas-amarre', link: '/api/@univ-lehavre/atlas-amarre/' },
+          ],
+        },
+        {
           text: 'REDCap',
           collapsed: false,
           items: [
             { text: '@univ-lehavre/atlas-crf', link: '/api/@univ-lehavre/atlas-crf/' },
             { text: '@univ-lehavre/atlas-redcap-core', link: '/api/@univ-lehavre/atlas-redcap-core/' },
             { text: '@univ-lehavre/atlas-redcap-openapi', link: '/api/@univ-lehavre/atlas-redcap-openapi/' },
+            { text: '@univ-lehavre/atlas-redcap-sandbox', link: '/api/@univ-lehavre/atlas-redcap-sandbox/' },
           ],
         },
         {
@@ -153,6 +313,8 @@ export default defineConfig({
             { text: '@univ-lehavre/atlas-net', link: '/api/@univ-lehavre/atlas-net/' },
             { text: '@univ-lehavre/atlas-errors', link: '/api/@univ-lehavre/atlas-errors/' },
             { text: '@univ-lehavre/atlas-validators', link: '/api/@univ-lehavre/atlas-validators/' },
+            { text: '@univ-lehavre/atlas-shared-config', link: '/api/@univ-lehavre/atlas-shared-config/' },
+            { text: '@univ-lehavre/atlas-logos', link: '/api/@univ-lehavre/atlas-logos/' },
           ],
         },
         {
@@ -167,4 +329,4 @@ export default defineConfig({
     },
     socialLinks: [{ icon: 'github', link: 'https://github.com/univ-lehavre/atlas' }],
   },
-});
+}));

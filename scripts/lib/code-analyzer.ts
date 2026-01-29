@@ -24,6 +24,9 @@ export const PATTERNS = {
   /** Matches exported interfaces */
   exportedInterface: /export\s+interface\s+\w+/g,
 
+  /** Matches TSDoc comments */
+  tsdocComment: /\/\*\*[\s\S]*?\*\//g,
+
   /** Matches describe blocks in tests */
   describeBlock: /describe\s*\(\s*['"`]/g,
 
@@ -66,12 +69,14 @@ export const analyzeTypeScriptContent = (content: string): Omit<CodeStats, 'file
   const functions = countMatches(content, PATTERNS.exportedFunction);
   const types = countMatches(content, PATTERNS.exportedType);
   const interfaces = countMatches(content, PATTERNS.exportedInterface);
+  const tsdocComments = countMatches(content, PATTERNS.tsdocComment);
 
   return {
     constants,
     functions,
     types,
     interfaces,
+    tsdocComments,
   };
 };
 
@@ -154,6 +159,7 @@ export const analyzeDirectory = async (
         code.functions += stats.functions;
         code.types += stats.types;
         code.interfaces += stats.interfaces;
+        code.tsdocComments += stats.tsdocComments;
       } else if (isTestFile(filePath)) {
         const content = await readFile(fullPath, 'utf-8');
         const stats = analyzeTestContent(content);
@@ -178,6 +184,7 @@ export const addCodeStats = (a: CodeStats, b: CodeStats): CodeStats => ({
   functions: a.functions + b.functions,
   types: a.types + b.types,
   interfaces: a.interfaces + b.interfaces,
+  tsdocComments: a.tsdocComments + b.tsdocComments,
 });
 
 /**
