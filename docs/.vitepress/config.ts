@@ -5,6 +5,16 @@ export default withMermaid(defineConfig({
   title: 'Atlas',
   description: 'Plateforme de recherche - Université Le Havre Normandie',
   base: '/atlas/',
+  vite: {
+    optimizeDeps: {
+      include: ['mermaid', 'dayjs'],
+    },
+    resolve: {
+      alias: {
+        dayjs: 'dayjs/',
+      },
+    },
+  },
   ignoreDeadLinks: [
     // Localhost links in infrastructure docs
     /^http:\/\/localhost/,
