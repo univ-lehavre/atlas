@@ -7,11 +7,11 @@ export default withMermaid(defineConfig({
   base: '/atlas/',
   vite: {
     optimizeDeps: {
-      include: ['mermaid', 'dayjs'],
+      include: ['@braintree/sanitize-url'],
     },
     resolve: {
       alias: {
-        dayjs: 'dayjs/',
+        dayjs: 'dayjs/esm/index.js',
       },
     },
   },
