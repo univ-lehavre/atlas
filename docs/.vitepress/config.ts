@@ -42,7 +42,6 @@ export default defineConfig({
         items: [
           { text: 'Audits', link: '/guide/audit/' },
           { text: 'Roadmaps', link: '/guide/roadmaps/' },
-          { text: 'Archives', link: '/guide/archives/' },
         ],
       },
       { text: 'API', link: '/api/' },
@@ -136,6 +135,9 @@ export default defineConfig({
             { text: 'Audit ECRIN', link: '/guide/audit/ecrin-audit' },
             { text: 'Audit des dépendances', link: '/guide/audit/dependencies-audit' },
             { text: 'Dette technique', link: '/guide/audit/technical-debt' },
+            { text: 'Audit CSS Find an Expert', link: '/guide/audit/css-audit-report' },
+            { text: 'Audit Microservices AMARRE', link: '/guide/audit/microservices-audit-readme' },
+            { text: 'Audit qualité du code', link: '/guide/audit/code-audit' },
           ],
         },
       ],
@@ -159,18 +161,6 @@ export default defineConfig({
           text: 'Roadmaps',
           items: [
             { text: 'Vue d\'ensemble', link: '/guide/roadmaps/' },
-          ],
-        },
-      ],
-      // Archives
-      '/guide/archives/': [
-        {
-          text: 'Archives',
-          items: [
-            { text: 'Introduction', link: '/guide/archives/' },
-            { text: 'Audit CSS Find an Expert', link: '/guide/archives/css-audit-report' },
-            { text: 'Audit Microservices AMARRE', link: '/guide/archives/microservices-audit-readme' },
-            { text: 'Audit et qualité du code', link: '/guide/archives/code-audit' },
           ],
         },
       ],
