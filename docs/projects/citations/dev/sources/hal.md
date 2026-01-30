@@ -495,7 +495,7 @@ components:
 
 ### Search Operators
 
-```solr
+```txt
 # AND (implicit)
 machine learning
 

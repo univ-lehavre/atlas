@@ -1,8 +1,8 @@
-# Audit de la documentation
+# Documentation audit
 
-> **Dernière mise à jour :** 28 janvier 2026
+> **Last updated:** 28 January 2026
 
-Ce document présente un audit complet de la documentation du monorepo Atlas, identifiant les incohérences et proposant des recommandations de mise en cohérence.
+This document presents a comprehensive audit of the Atlas monorepo documentation, identifying inconsistencies and proposing alignment recommendations.
 
 ## Résumé exécutif
 

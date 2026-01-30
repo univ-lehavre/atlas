@@ -198,7 +198,7 @@ ArangoDB is a native multi-model database combining documents, graphs, and searc
 
 #### Advanced AQL Queries
 
-```aql
+```sql
 // 1. Find experts on a topic in a geographic area
 FOR author IN authors
   // Geographic filter: authors within 50km radius of Paris

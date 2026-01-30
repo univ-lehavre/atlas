@@ -137,17 +137,15 @@ function buildModuleItems(packagePath: string, moduleName: string, baseLinkPath:
 
 /**
  * Build sidebar items for a package.
+ * Returns null if the package has no API documentation.
  */
-function buildPackageItems(packageName: string): SidebarItem {
+function buildPackageItems(packageName: string): SidebarItem | null {
   const packagePath = join(API_DIR, packageName);
   const baseLinkPath = `/api/@univ-lehavre/${packageName}`;
 
-  // Check if package directory exists
+  // Skip packages without API documentation
   if (!isValidDirectory(packagePath)) {
-    return {
-      text: `@univ-lehavre/${packageName}`,
-      link: baseLinkPath + '/',
-    };
+    return null;
   }
 
   const subdirs = getSubdirectories(packagePath);
@@ -222,14 +220,19 @@ function generateApiSidebar(): SidebarItem[] {
 
     for (const packageName of packages) {
       const packageItem = buildPackageItems(packageName);
-      groupItems.push(packageItem);
+      if (packageItem) {
+        groupItems.push(packageItem);
+      }
     }
 
-    sidebar.push({
-      text: groupName,
-      collapsed: false,
-      items: groupItems,
-    });
+    // Only add group if it has packages with documentation
+    if (groupItems.length > 0) {
+      sidebar.push({
+        text: groupName,
+        collapsed: false,
+        items: groupItems,
+      });
+    }
   }
 
   return sidebar;
