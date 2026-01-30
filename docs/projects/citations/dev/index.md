@@ -1,73 +1,73 @@
-# Documentation technique
+# Technical Documentation
 
-Cette section contient la documentation technique d'Atlas Citations destinée aux développeurs.
+This section contains the technical documentation for Atlas Citations intended for developers.
 
-## Vue d'ensemble
+## Overview
 
-Atlas Citations est une suite de packages TypeScript/Effect pour interroger des sources bibliographiques via des clients typés, avec des specs OpenAPI validées contre les APIs réelles.
+Atlas Citations is a suite of TypeScript/Effect packages for querying bibliographic sources via typed clients, with OpenAPI specs validated against real APIs.
 
 ```
 packages/
-├── openapi-validator/  # Outil de validation OpenAPI
-├── openalex/           # Client OpenAlex
-├── crossref/           # Client Crossref
-├── hal/                # Client HAL
-├── arxiv/              # Client ArXiv
-├── orcid/              # Client ORCID
-└── citations/          # Agrégateur unifié
+├── openapi-validator/  # OpenAPI validation tool
+├── openalex/           # OpenAlex client
+├── crossref/           # Crossref client
+├── hal/                # HAL client
+├── arxiv/              # ArXiv client
+├── orcid/              # ORCID client
+└── citations/          # Unified aggregator
 ```
 
 ## Architecture
 
 | Document | Description |
 |----------|-------------|
-| [Architecture](./architecture.md) | Structure des packages et patterns Effect |
-| [Schéma unifié](./unified-schema.md) | Spécification OpenAPI et mapping des entités |
-| [Client unifié](./citations-client.md) | API d'agrégation multi-sources |
+| [Architecture](./architecture.md) | Package structure and Effect patterns |
+| [Unified Schema](./unified-schema.md) | OpenAPI specification and entity mapping |
+| [Unified Client](./citations-client.md) | Multi-source aggregation API |
 
 ## OpenAPI & Validation
 
 | Document | Description |
 |----------|-------------|
-| [Cycle de vie OpenAPI](./openapi-lifecycle.md) | Versioning alpha → beta → stable |
-| [Validateur OpenAPI](./openapi-validator.md) | Outil CLI de validation des specs |
-| [Rate Limiting](./rate-limiting.md) | Gestion des quotas par source |
+| [OpenAPI Lifecycle](./openapi-lifecycle.md) | Versioning alpha -> beta -> stable |
+| [OpenAPI Validator](./openapi-validator.md) | CLI spec validation tool |
+| [Rate Limiting](./rate-limiting.md) | Quota management by source |
 
-## Sources bibliographiques
-
-| Document | Description |
-|----------|-------------|
-| [Vue d'ensemble](./sources/) | Introduction aux sources |
-| [Catalogue complet](./sources/catalog.md) | Toutes les sources analysées |
-| [Référence entités](./sources/entities-reference.md) | Entités par source |
-| [OpenAlex](./sources/openalex.md) | Client et spec OpenAlex |
-| [Crossref](./sources/crossref.md) | Client et spec Crossref |
-| [HAL](./sources/hal.md) | Client et spec HAL |
-| [ArXiv](./sources/arxiv.md) | Client et spec ArXiv |
-| [ORCID](./sources/orcid.md) | Client et spec ORCID |
-| [Versioning](./sources/versioning.md) | Gestion des versions par source |
-
-## Atlas Verify (système de fiabilisation)
+## Bibliographic Sources
 
 | Document | Description |
 |----------|-------------|
-| [Vérification auteur](./author-verification.md) | Modèle de données et workflows |
-| [Profil chercheur](./researcher-profile.md) | Algorithmes de reconstruction carrière/expertise |
-| [Bases de données](./database-analysis.md) | Analyse PostgreSQL, MongoDB, etc. |
-| [Bases avancées](./advanced-databases.md) | ArangoDB, vector search, fédération multi-bases |
+| [Overview](./sources/) | Introduction to sources |
+| [Complete Catalog](./sources/catalog.md) | All analyzed sources |
+| [Entity Reference](./sources/entities-reference.md) | Entities by source |
+| [OpenAlex](./sources/openalex.md) | OpenAlex client and spec |
+| [Crossref](./sources/crossref.md) | Crossref client and spec |
+| [HAL](./sources/hal.md) | HAL client and spec |
+| [ArXiv](./sources/arxiv.md) | ArXiv client and spec |
+| [ORCID](./sources/orcid.md) | ORCID client and spec |
+| [Versioning](./sources/versioning.md) | Version management by source |
 
-## Stack technique
+## Atlas Verify (Verification System)
 
-| Technologie | Usage |
-|-------------|-------|
-| **TypeScript 5.x** | Langage principal |
-| **Effect** | Gestion d'effets et erreurs |
-| **openapi-typescript** | Génération de types depuis OpenAPI |
-| **Vitest** | Tests unitaires |
-| **tsup** | Build des packages |
+| Document | Description |
+|----------|-------------|
+| [Author Verification](./author-verification.md) | Data model and workflows |
+| [Researcher Profile](./researcher-profile.md) | Career/expertise reconstruction algorithms |
+| [Databases](./database-analysis.md) | PostgreSQL, MongoDB analysis, etc. |
+| [Advanced Databases](./advanced-databases.md) | ArangoDB, vector search, multi-database federation |
 
-## Liens vers documentation utilisateur
+## Technical Stack
 
-Pour la documentation destinée aux chercheurs (utilisateurs finaux), voir :
+| Technology | Usage |
+|------------|-------|
+| **TypeScript 5.x** | Primary language |
+| **Effect** | Effect and error management |
+| **openapi-typescript** | Type generation from OpenAPI |
+| **Vitest** | Unit tests |
+| **tsup** | Package builds |
 
-- [Guide utilisateur Atlas Verify](../user/) - Documentation pour les chercheurs
+## Links to User Documentation
+
+For documentation intended for researchers (end users), see:
+
+- [Atlas Verify User Guide](../user/) - Documentation for researchers

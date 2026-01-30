@@ -1,26 +1,26 @@
 # atlas-crossref
 
-Client Effect pour l'API [Crossref](https://www.crossref.org/), registre officiel des métadonnées DOI.
+Effect client for the [Crossref](https://www.crossref.org/) API, the official DOI metadata registry.
 
-## Caractéristiques de l'API
+## API Characteristics
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | Base URL | `https://api.crossref.org` |
 | Format | JSON |
-| Auth | Aucune (email recommandé pour "polite pool") |
-| Rate limit | 50 req/s (polite pool), moins sans email |
-| Versioning API | Non versionné |
-| OpenAPI officielle | **Oui** - [Swagger UI](https://api.crossref.org/swagger-ui) |
+| Auth | None (email recommended for "polite pool") |
+| Rate limit | 50 req/s (polite pool), less without email |
+| API Versioning | Not versioned |
+| Official OpenAPI | **Yes** - [Swagger UI](https://api.crossref.org/swagger-ui) |
 
-## Construction de la spec alpha
+## Building the Alpha Spec
 
-### Source : Swagger officiel
+### Source: Official Swagger
 
-Crossref fournit une spec OpenAPI officielle accessible via Swagger UI.
+Crossref provides an official OpenAPI spec accessible via Swagger UI.
 
 ```bash
-# Télécharger la spec officielle
+# Download the official spec
 atlas-openapi-validator fetch https://api.crossref.org/swagger.json \
   --output specs/alpha/crossref-v1-2025-01.yaml \
   --format yaml \
@@ -28,15 +28,15 @@ atlas-openapi-validator fetch https://api.crossref.org/swagger.json \
   --add-metadata
 ```
 
-### Adaptations nécessaires
+### Required Adaptations
 
-La spec officielle nécessite quelques adaptations :
+The official spec requires some adaptations:
 
 ```bash
-# 1. Récupérer la spec brute
+# 1. Retrieve the raw spec
 curl -o specs/alpha/crossref-raw.json https://api.crossref.org/swagger.json
 
-# 2. Convertir et adapter
+# 2. Convert and adapt
 atlas-openapi-validator transform specs/alpha/crossref-raw.json \
   --output specs/alpha/crossref-v1-2025-01.yaml \
   --format yaml \
@@ -45,10 +45,10 @@ atlas-openapi-validator transform specs/alpha/crossref-raw.json \
   --set-stage alpha
 ```
 
-### Adaptations typiques
+### Typical Adaptations
 
 ```yaml
-# Ajouter les métadonnées atlas
+# Add atlas metadata
 info:
   x-atlas-metadata:
     stage: alpha
@@ -58,7 +58,7 @@ info:
       fetchedAt: '2025-01-24T10:00:00Z'
     createdAt: '2025-01-24T10:00:00Z'
 
-# Ajouter les headers de rate limit (souvent manquants)
+# Add rate limit headers (often missing)
 components:
   responses:
     WorksResponse:
@@ -72,17 +72,17 @@ components:
           schema:
             type: string
 
-# Corriger les types nullable
+# Fix nullable types
 components:
   schemas:
     Work:
       properties:
         abstract:
           type: string
-          nullable: true  # Souvent manquant dans la spec officielle
+          nullable: true  # Often missing in official spec
 ```
 
-## Structure de la spec adaptée
+## Adapted Spec Structure
 
 ```yaml
 openapi: '3.1.0'
@@ -350,7 +350,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Funder'
-        # ... autres champs
+        # ... other fields
 
     Author:
       type: object
@@ -383,7 +383,7 @@ components:
 
 ## Polite Pool
 
-Crossref offre un meilleur rate limit si vous incluez votre email :
+Crossref offers a better rate limit if you include your email:
 
 ```typescript
 const client = createCrossrefClient({
@@ -391,21 +391,21 @@ const client = createCrossrefClient({
 });
 ```
 
-**Avantages du polite pool :**
-- Rate limit augmenté
-- Priorité dans la file d'attente
-- Notifications en cas de problème avec vos requêtes
+**Polite pool benefits:**
+- Increased rate limit
+- Priority in queue
+- Notifications for issues with your requests
 
 ## Validation
 
 ```bash
-# Comparer notre spec adaptée avec la spec officielle
+# Compare our adapted spec with the official spec
 atlas-openapi-validator diff \
   specs/alpha/crossref-raw.json \
   specs/alpha/crossref-v1-2025-01.yaml \
   --output reports/crossref-adaptations.json
 
-# Valider contre l'API réelle
+# Validate against the real API
 atlas-openapi-validator validate specs/alpha/crossref-v1-2025-01.yaml \
   --base-url https://api.crossref.org \
   --headers "mailto=test@example.com" \
@@ -413,11 +413,11 @@ atlas-openapi-validator validate specs/alpha/crossref-v1-2025-01.yaml \
   --output reports/crossref-alpha.json
 ```
 
-## Client Effect
+## Effect Client
 
 ```typescript
 interface CrossrefConfig {
-  mailto?: string;  // Recommandé pour polite pool
+  mailto?: string;  // Recommended for polite pool
 }
 
 interface CrossrefClient {
@@ -441,7 +441,7 @@ interface CrossrefClient {
 
 ## Versioning
 
-Crossref n'a pas de versioning d'API explicite. Les specs sont versionnées par **date + version API implicite** :
+Crossref has no explicit API versioning. Specs are versioned by **date + implicit API version**:
 
 ```
 specs/
@@ -449,7 +449,7 @@ specs/
 │   └── crossref-v1-2025-01.yaml
 ├── stable/
 │   └── crossref-v1-2025-01.yaml
-└── current.yaml → stable/crossref-v1-2025-01.yaml
+└── current.yaml -> stable/crossref-v1-2025-01.yaml
 ```
 
-Le préfixe `v1` indique la version majeure de l'API Crossref (actuellement stable depuis des années).
+The `v1` prefix indicates the major version of the Crossref API (currently stable for years).

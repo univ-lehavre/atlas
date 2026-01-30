@@ -1,81 +1,81 @@
-# Modules sources
+# Source Modules
 
-Chaque module source (`atlas-openalex`, `atlas-crossref`, etc.) suit le même processus de construction mais avec des stratégies adaptées à chaque API.
+Each source module (`atlas-openalex`, `atlas-crossref`, etc.) follows the same construction process but with strategies adapted to each API.
 
-> **Voir aussi :**
-> - [Catalogue complet](./catalog.md) - Liste de toutes les sources analysées
-> - [Référence entités](./entities-reference.md) - Entités disponibles par source
-> - [Schéma unifié](../unified-schema.md) - Comment les sources sont mappées vers le schéma commun
+> **See also:**
+> - [Full Catalog](./catalog.md) - List of all analyzed sources
+> - [Entities Reference](./entities-reference.md) - Available entities per source
+> - [Unified Schema](../unified-schema.md) - How sources are mapped to the common schema
 
-## Vue d'ensemble du processus
+## Process Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    PROCESSUS DE CONSTRUCTION D'UN MODULE                     │
+│                    MODULE CONSTRUCTION PROCESS                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  1. ANALYSE          2. SPEC ALPHA       3. VALIDATION      4. CLIENT      │
-│  ──────────          ────────────        ────────────       ────────       │
+│  1. ANALYSIS         2. ALPHA SPEC      3. VALIDATION      4. CLIENT       │
+│  ──────────          ────────────       ────────────       ────────        │
 │                                                                             │
 │  ┌──────────┐       ┌──────────┐       ┌──────────┐       ┌──────────┐    │
-│  │ Swagger  │──┐    │          │       │          │       │          │    │
-│  │ officiel │  │    │  alpha/  │       │  beta/   │       │ Client   │    │
-│  └──────────┘  │    │  source- │       │  source- │       │ Effect   │    │
+│  │ Official │──┐    │          │       │          │       │          │    │
+│  │ Swagger  │  │    │  alpha/  │       │  beta/   │       │ Effect   │    │
+│  └──────────┘  │    │  source- │       │  source- │       │ Client   │    │
 │                ├───>│  version │──────>│  version │──────>│          │    │
 │  ┌──────────┐  │    │  .yaml   │       │  .yaml   │       │ + Types  │    │
-│  │ Docs API │──┤    │          │       │          │       │ générés  │    │
+│  │ API Docs │──┤    │          │       │          │       │ generated│    │
 │  └──────────┘  │    └──────────┘       └──────────┘       └──────────┘    │
 │                │          │                  │                  │          │
 │  ┌──────────┐  │          │                  │                  │          │
 │  │ Reverse  │──┘          ▼                  ▼                  ▼          │
-│  │ engineer │        Validation         Validation         stable/        │
-│  └──────────┘        initiale           itérative          + current      │
+│  │ engineer │        Initial            Iterative          stable/        │
+│  └──────────┘        validation         validation         + current      │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Méthodes de construction de la spec alpha
+## Alpha Spec Construction Methods
 
-### Méthode 1 : Récupération depuis Swagger officiel
+### Method 1: Retrieval from Official Swagger
 
-**Applicable à :** Crossref
+**Applicable to:** Crossref
 
 ```bash
-# Télécharger et convertir
+# Download and convert
 atlas-openapi-validator fetch https://api.crossref.org/swagger.json \
   --output specs/alpha/crossref-v1-2025-01.yaml \
   --format yaml \
   --set-stage alpha
 ```
 
-**Avantages :**
-- Spec officiellement maintenue
-- Généralement complète et à jour
+**Advantages:**
+- Officially maintained spec
+- Generally complete and up-to-date
 
-**Inconvénients :**
-- Peut contenir des erreurs ou omissions
-- Format parfois non standard
+**Disadvantages:**
+- May contain errors or omissions
+- Sometimes non-standard format
 
-### Méthode 2 : Construction depuis la documentation
+### Method 2: Construction from Documentation
 
-**Applicable à :** OpenAlex, HAL, ORCID
+**Applicable to:** OpenAlex, HAL, ORCID
 
-Processus manuel ou semi-automatique basé sur la documentation officielle.
+Manual or semi-automatic process based on official documentation.
 
 ```bash
-# Étape 1 : Créer le squelette
+# Step 1: Create skeleton
 atlas-openapi-validator scaffold \
   --name openalex \
   --base-url https://api.openalex.org \
   --output specs/alpha/openalex-2025-01-24.yaml
 
-# Étape 2 : Enrichir avec les endpoints découverts
+# Step 2: Enrich with discovered endpoints
 atlas-openapi-validator discover https://api.openalex.org \
   --probe-endpoints /works,/authors,/sources,/institutions \
   --append-to specs/alpha/openalex-2025-01-24.yaml
 ```
 
-**Structure manuelle recommandée :**
+**Recommended manual structure:**
 
 ```yaml
 # specs/alpha/openalex-2025-01-24.yaml
@@ -84,7 +84,7 @@ info:
   title: OpenAlex API
   version: '2025-01-24'
   description: |
-    Spec construite depuis la documentation officielle.
+    Spec built from official documentation.
     Source: https://docs.openalex.org
   x-atlas-metadata:
     stage: alpha
@@ -102,24 +102,24 @@ paths:
   /works:
     get:
       operationId: listWorks
-      # ... construit depuis la doc
+      # ... built from documentation
 ```
 
-### Méthode 3 : Reverse engineering
+### Method 3: Reverse Engineering
 
-**Applicable à :** ArXiv (API Atom/XML), APIs sans documentation
+**Applicable to:** ArXiv (Atom/XML API), APIs without documentation
 
-Inférence du schéma depuis les réponses réelles.
+Schema inference from real responses.
 
 ```bash
-# Capturer des réponses et inférer le schéma
+# Capture responses and infer schema
 atlas-openapi-validator infer \
   --base-url http://export.arxiv.org/api \
   --endpoints /query \
   --sample-size 50 \
   --output specs/alpha/arxiv-2025-01.yaml
 
-# Pour APIs XML, convertir en JSON schema
+# For XML APIs, convert to JSON schema
 atlas-openapi-validator infer \
   --base-url http://export.arxiv.org/api \
   --response-format xml \
@@ -127,63 +127,63 @@ atlas-openapi-validator infer \
   --output specs/alpha/arxiv-2025-01.yaml
 ```
 
-**Processus d'inférence :**
+**Inference process:**
 
 ```typescript
-// Pseudo-code du processus d'inférence
+// Pseudo-code of the inference process
 const inferSchema = async (baseUrl: string, endpoint: string) => {
   const samples: unknown[] = [];
 
-  // Collecter des échantillons
+  // Collect samples
   for (let i = 0; i < sampleSize; i++) {
     const response = await fetch(`${baseUrl}${endpoint}`);
     samples.push(await response.json());
   }
 
-  // Analyser les types
+  // Analyze types
   const schema = analyzeTypes(samples);
 
-  // Détecter les champs optionnels (absents dans certaines réponses)
+  // Detect optional fields (absent in some responses)
   const optionalFields = detectOptionalFields(samples);
 
-  // Détecter les enums (valeurs répétitives)
+  // Detect enums (repetitive values)
   const enums = detectEnums(samples);
 
   return buildOpenAPISchema(schema, optionalFields, enums);
 };
 ```
 
-### Méthode 4 : Hybride (recommandée)
+### Method 4: Hybrid (Recommended)
 
-Combiner plusieurs sources pour une spec plus robuste.
+Combine multiple sources for a more robust spec.
 
 ```bash
-# 1. Partir de la documentation
+# 1. Start from documentation
 atlas-openapi-validator scaffold \
   --from-docs https://docs.openalex.org \
   --output specs/alpha/openalex-2025-01-24.yaml
 
-# 2. Enrichir par inférence
+# 2. Enrich by inference
 atlas-openapi-validator infer \
   --base-url https://api.openalex.org \
   --merge-into specs/alpha/openalex-2025-01-24.yaml \
-  --only-missing  # N'ajoute que ce qui manque
+  --only-missing  # Only add what's missing
 
-# 3. Valider et corriger
+# 3. Validate and correct
 atlas-openapi-validator validate specs/alpha/openalex-2025-01-24.yaml \
   --base-url https://api.openalex.org \
   --auto-fix \
   --confidence 0.95
 ```
 
-## Modules sources détaillés
+## Detailed Source Modules
 
-- [OpenAlex](./openalex.md) - Construction depuis documentation
-- [Crossref](./crossref.md) - Récupération Swagger + adaptation
-- [HAL](./hal.md) - API Solr, construction manuelle
-- [ArXiv](./arxiv.md) - API XML, reverse engineering
-- [ORCID](./orcid.md) - Construction depuis documentation
+- [OpenAlex](./openalex.md) - Construction from documentation
+- [Crossref](./crossref.md) - Swagger retrieval + adaptation
+- [HAL](./hal.md) - Solr API, manual construction
+- [ArXiv](./arxiv.md) - XML API, reverse engineering
+- [ORCID](./orcid.md) - Construction from documentation
 
-## Versioning cohérent
+## Consistent Versioning
 
-Voir [Stratégie de versioning](./versioning.md) pour la cohérence entre modules.
+See [Versioning Strategy](./versioning.md) for consistency between modules.

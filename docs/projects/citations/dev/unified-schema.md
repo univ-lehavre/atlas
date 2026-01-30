@@ -1,33 +1,33 @@
-# Schéma unifié atlas-citations
+# Unified atlas-citations Schema
 
-Ce document définit le schéma unifié de `@univ-lehavre/atlas-citations`, le dénominateur commun entre toutes les sources bibliographiques, et la spécification OpenAPI complète.
+This document defines the unified schema for `@univ-lehavre/atlas-citations`, the common denominator between all bibliographic sources, and the complete OpenAPI specification.
 
-> **Voir aussi :**
-> - [Client unifié](./citations-client.md) - Utilisation du client agrégateur
-> - [Catalogue des sources](./sources/catalog.md) - Détail de chaque source bibliographique
-> - [Référence entités](./sources/entities-reference.md) - Entités par source
+> **See also:**
+> - [Unified Client](./citations-client.md) - Using the aggregator client
+> - [Source Catalog](./sources/catalog.md) - Detail of each bibliographic source
+> - [Entity Reference](./sources/entities-reference.md) - Entities by source
 >
-> **Documentation utilisateur :** [Les sources de données](../user/sources.md) - Guide pour chercheurs
+> **User documentation:** [Data Sources](../user/sources.md) - Guide for researchers
 
-## Analyse du dénominateur commun
+## Common Denominator Analysis
 
-### Méthodologie
+### Methodology
 
-Pour construire un schéma unifié pertinent, nous avons analysé les entités et champs de 15+ sources bibliographiques. Le schéma retenu maximise :
+To build a relevant unified schema, we analyzed entities and fields from 15+ bibliographic sources. The retained schema maximizes:
 
-1. **Couverture** : champs présents dans la majorité des sources
-2. **Utilité** : champs fréquemment utilisés en pratique
-3. **Interopérabilité** : identifiants permettant le croisement entre sources
+1. **Coverage**: fields present in the majority of sources
+2. **Utility**: fields frequently used in practice
+3. **Interoperability**: identifiers enabling cross-source linking
 
-### Matrice de disponibilité des champs
+### Field Availability Matrix
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                           MATRICE DE DISPONIBILITÉ DES CHAMPS                                   │
+│                           FIELD AVAILABILITY MATRIX                                              │
 ├────────────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                                 │
-│  CHAMP WORK          │ OA │ CR │ HAL│ ArX│ ORC│ S2 │ PM │ EPM│ DC │ ZEN│ DBL│ BRX│ COR│ UNIF │
-│  ────────────────────┼────┼────┼────┼────┼────┼────┼────┼────┼────┼────┼────┼────┼────┼──────│
+│  WORK FIELD            │ OA │ CR │ HAL│ ArX│ ORC│ S2 │ PM │ EPM│ DC │ ZEN│ DBL│ BRX│ COR│ UNIF │
+│  ──────────────────────┼────┼────┼────┼────┼────┼────┼────┼────┼────┼────┼────┼────┼────┼──────│
 │  title               │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅   │
 │  doi                 │ ✅ │ ✅ │ ✅ │ ⚠️ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅   │
 │  authors             │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅ │ ✅   │
@@ -45,48 +45,48 @@ Pour construire un schéma unifié pertinent, nous avons analysé les entités e
 │  references          │ ✅ │ ✅ │ ⚠️ │ ❌ │ ❌ │ ✅ │ ✅ │ ✅ │ ⚠️ │ ⚠️ │ ❌ │ ❌ │ ✅ │ ⚠️   │
 │  fullText            │ ❌ │ ❌ │ ⚠️ │ ❌ │ ❌ │ ❌ │ ⚠️ │ ✅ │ ❌ │ ✅ │ ❌ │ ⚠️ │ ✅ │ ⚠️   │
 │                                                                                                 │
-│  ✅ = Disponible   ⚠️ = Partiel/Optionnel   ❌ = Non disponible                                │
+│  ✅ = Available   ⚠️ = Partial/Optional   ❌ = Not available                                   │
 │                                                                                                 │
 │  OA=OpenAlex, CR=Crossref, HAL, ArX=ArXiv, ORC=ORCID, S2=SemanticScholar,                      │
 │  PM=PubMed, EPM=EuropePMC, DC=DataCite, ZEN=Zenodo, DBL=DBLP, BRX=bioRxiv, COR=CORE           │
 └────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Champs retenus pour le schéma unifié
+### Fields Retained for Unified Schema
 
-| Catégorie | Champs | Justification |
-|-----------|--------|---------------|
-| **Identifiants** | `id`, `externalIds` | Obligatoires pour le croisement inter-sources |
-| **Core** | `title`, `authors`, `publicationDate`, `type` | Présents dans 100% des sources |
-| **Contenu** | `abstract`, `keywords` | Présents dans 80%+ des sources |
-| **Publication** | `venue`, `volume`, `issue`, `pages` | Essentiels pour les citations |
-| **Métriques** | `citationCount` | Présent dans 60%+ des sources |
-| **Open Access** | `isOpenAccess`, `openAccessStatus`, `pdfUrl`, `license` | Critiques pour l'accès |
-| **Relations** | `references`, `funders` | Présents dans 50%+ des sources |
-| **Métadonnées** | `language`, `source`, `updatedAt` | Contexte et traçabilité |
-| **Raw** | `_raw` | Données complètes de la source pour cas avancés |
+| Category | Fields | Justification |
+|----------|--------|---------------|
+| **Identifiers** | `id`, `externalIds` | Required for cross-source linking |
+| **Core** | `title`, `authors`, `publicationDate`, `type` | Present in 100% of sources |
+| **Content** | `abstract`, `keywords` | Present in 80%+ of sources |
+| **Publication** | `venue`, `volume`, `issue`, `pages` | Essential for citations |
+| **Metrics** | `citationCount` | Present in 60%+ of sources |
+| **Open Access** | `isOpenAccess`, `openAccessStatus`, `pdfUrl`, `license` | Critical for access |
+| **Relations** | `references`, `funders` | Present in 50%+ of sources |
+| **Metadata** | `language`, `source`, `updatedAt` | Context and traceability |
+| **Raw** | `_raw` | Complete source data for advanced use cases |
 
 ---
 
-## Schéma unifié détaillé
+## Detailed Unified Schema
 
-### Entités principales
+### Main Entities
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           ENTITÉS ATLAS-CITATIONS                            │
+│                           ATLAS-CITATIONS ENTITIES                           │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐                   │
 │  │     Work     │───>│    Author    │<───│  Institution │                   │
-│  │ (Publication)│    │ (Chercheur)  │    │(Organisation)│                   │
+│  │ (Publication)│    │ (Researcher) │    │(Organization)│                   │
 │  └──────────────┘    └──────────────┘    └──────────────┘                   │
 │         │                   │                   │                            │
 │         │                   │                   │                            │
 │         ▼                   ▼                   ▼                            │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐                   │
 │  │    Venue     │    │  Affiliation │    │    Funder    │                   │
-│  │(Journal/Conf)│    │   (Poste)    │    │ (Financeur)  │                   │
+│  │(Journal/Conf)│    │  (Position)  │    │  (Funder)    │                   │
 │  └──────────────┘    └──────────────┘    └──────────────┘                   │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -94,25 +94,25 @@ Pour construire un schéma unifié pertinent, nous avons analysé les entités e
 
 ### Work (Publication)
 
-L'entité centrale du schéma unifié.
+The central entity of the unified schema.
 
 ```typescript
 interface Work {
   // ═══════════════════════════════════════════════════════════════
-  // IDENTIFIANTS
+  // IDENTIFIERS
   // ═══════════════════════════════════════════════════════════════
 
-  /** Identifiant unique dans atlas-citations (préfixé par source) */
+  /** Unique identifier in atlas-citations (prefixed by source) */
   id: string;                          // "openalex:W2741809807"
 
-  /** Source d'origine */
+  /** Source of origin */
   source: SourceType;                  // "openalex" | "crossref" | ...
 
-  /** Identifiants externes connus */
+  /** Known external identifiers */
   externalIds: {
     doi?: string;                      // "10.1038/nature12373"
     openalex?: string;                 // "W2741809807"
-    crossref?: string;                 // Identique au DOI
+    crossref?: string;                 // Same as DOI
     hal?: string;                      // "hal-01234567"
     arxiv?: string;                    // "2301.12345"
     pmid?: string;                     // "12345678"
@@ -121,104 +121,104 @@ interface Work {
     dblp?: string;                     // "journals/nature/Smith23"
     core?: string;                     // CORE ID
     zenodo?: string;                   // "1234567"
-    datacite?: string;                 // DOI DataCite
+    datacite?: string;                 // DataCite DOI
   };
 
   // ═══════════════════════════════════════════════════════════════
-  // MÉTADONNÉES BIBLIOGRAPHIQUES (Core)
+  // BIBLIOGRAPHIC METADATA (Core)
   // ═══════════════════════════════════════════════════════════════
 
-  /** Titre de la publication */
+  /** Publication title */
   title: string;
 
-  /** Liste des auteurs */
+  /** Author list */
   authors: WorkAuthor[];
 
-  /** Date de publication (ISO 8601) */
+  /** Publication date (ISO 8601) */
   publicationDate?: string;            // "2023-06-15"
 
-  /** Année de publication */
+  /** Publication year */
   year?: number;                       // 2023
 
-  /** Type de publication normalisé */
+  /** Normalized publication type */
   type: WorkType;
 
-  /** Type original de la source */
+  /** Original type from source */
   originalType?: string;               // "journal-article", "Article", etc.
 
   // ═══════════════════════════════════════════════════════════════
-  // CONTENU
+  // CONTENT
   // ═══════════════════════════════════════════════════════════════
 
-  /** Résumé */
+  /** Abstract */
   abstract?: string;
 
-  /** Mots-clés (normalisés) */
+  /** Keywords (normalized) */
   keywords?: string[];
 
-  /** Domaines de recherche */
+  /** Research fields */
   fieldsOfStudy?: string[];
 
-  /** Langue (ISO 639-1) */
+  /** Language (ISO 639-1) */
   language?: string;                   // "en", "fr"
 
   // ═══════════════════════════════════════════════════════════════
   // PUBLICATION (Venue)
   // ═══════════════════════════════════════════════════════════════
 
-  /** Lieu de publication */
+  /** Publication venue */
   venue?: Venue;
 
   /** Volume */
   volume?: string;
 
-  /** Numéro */
+  /** Issue */
   issue?: string;
 
   /** Pages */
   pages?: string;                      // "123-145"
 
-  /** Éditeur */
+  /** Publisher */
   publisher?: string;
 
   // ═══════════════════════════════════════════════════════════════
-  // MÉTRIQUES
+  // METRICS
   // ═══════════════════════════════════════════════════════════════
 
-  /** Nombre de citations */
+  /** Citation count */
   citationCount?: number;
 
-  /** Nombre de références */
+  /** Reference count */
   referenceCount?: number;
 
-  /** Citations influentes (Semantic Scholar) */
+  /** Influential citations (Semantic Scholar) */
   influentialCitationCount?: number;
 
   // ═══════════════════════════════════════════════════════════════
   // OPEN ACCESS
   // ═══════════════════════════════════════════════════════════════
 
-  /** Statut Open Access */
+  /** Open Access status */
   openAccess?: {
-    /** Est Open Access ? */
+    /** Is Open Access? */
     isOa: boolean;
 
-    /** Statut OA normalisé */
+    /** Normalized OA status */
     status: OpenAccessStatus;          // "gold" | "green" | "hybrid" | "bronze" | "closed"
 
-    /** URL PDF direct (si disponible) */
+    /** Direct PDF URL (if available) */
     pdfUrl?: string;
 
-    /** URL landing page OA */
+    /** OA landing page URL */
     oaUrl?: string;
 
-    /** Licence */
+    /** License */
     license?: string;                  // "cc-by", "cc-by-nc", etc.
 
-    /** Version OA */
+    /** OA version */
     version?: OaVersion;               // "published" | "accepted" | "submitted"
 
-    /** Toutes les localisations OA */
+    /** All OA locations */
     locations?: OaLocation[];
   };
 
@@ -226,28 +226,28 @@ interface Work {
   // RELATIONS
   // ═══════════════════════════════════════════════════════════════
 
-  /** Références citées */
+  /** Cited references */
   references?: WorkReference[];
 
-  /** Financements */
+  /** Funding */
   funders?: Funder[];
 
-  /** Identifiants liés (datasets, code, etc.) */
+  /** Related identifiers (datasets, code, etc.) */
   relatedIdentifiers?: RelatedIdentifier[];
 
   // ═══════════════════════════════════════════════════════════════
-  // MÉTADONNÉES
+  // METADATA
   // ═══════════════════════════════════════════════════════════════
 
-  /** Date de dernière mise à jour dans atlas-citations */
+  /** Last update date in atlas-citations */
   updatedAt: string;
 
-  /** Données brutes de la source originale */
+  /** Raw data from original source */
   _raw: unknown;
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// TYPES ÉNUMÉRÉS
+// ENUMERATED TYPES
 // ═══════════════════════════════════════════════════════════════════
 
 type SourceType =
@@ -270,56 +270,56 @@ type SourceType =
   | 'opencitations';
 
 type WorkType =
-  | 'article'           // Article de journal
+  | 'article'           // Journal article
   | 'preprint'          // Preprint
-  | 'conference-paper'  // Article de conférence
-  | 'book'              // Livre
-  | 'book-chapter'      // Chapitre de livre
-  | 'thesis'            // Thèse
-  | 'dissertation'      // Mémoire
-  | 'report'            // Rapport technique
-  | 'dataset'           // Jeu de données
-  | 'software'          // Logiciel
-  | 'review'            // Article de revue
-  | 'editorial'         // Éditorial
-  | 'letter'            // Lettre/Correspondance
+  | 'conference-paper'  // Conference paper
+  | 'book'              // Book
+  | 'book-chapter'      // Book chapter
+  | 'thesis'            // Thesis
+  | 'dissertation'      // Dissertation
+  | 'report'            // Technical report
+  | 'dataset'           // Dataset
+  | 'software'          // Software
+  | 'review'            // Review article
+  | 'editorial'         // Editorial
+  | 'letter'            // Letter/Correspondence
   | 'erratum'           // Erratum
-  | 'other';            // Autre
+  | 'other';            // Other
 
 type OpenAccessStatus =
-  | 'gold'              // OA chez l'éditeur (journal OA)
-  | 'green'             // OA dans un dépôt
-  | 'hybrid'            // OA dans journal hybride
-  | 'bronze'            // Lecture gratuite (sans licence)
-  | 'diamond'           // OA sans APC
-  | 'closed';           // Accès fermé
+  | 'gold'              // OA at publisher (OA journal)
+  | 'green'             // OA in repository
+  | 'hybrid'            // OA in hybrid journal
+  | 'bronze'            // Free to read (no license)
+  | 'diamond'           // OA without APC
+  | 'closed';           // Closed access
 
 type OaVersion =
-  | 'published'         // Version éditeur
-  | 'accepted'          // Manuscrit accepté (AAM)
-  | 'submitted';        // Preprint soumis
+  | 'published'         // Publisher version
+  | 'accepted'          // Accepted manuscript (AAM)
+  | 'submitted';        // Submitted preprint
 ```
 
-### WorkAuthor (Auteur d'une publication)
+### WorkAuthor (Publication Author)
 
 ```typescript
 interface WorkAuthor {
-  /** Position dans la liste d'auteurs */
+  /** Position in author list */
   position: number;
 
-  /** Nom affiché */
+  /** Display name */
   displayName: string;
 
-  /** Prénom (si séparé) */
+  /** First name (if separated) */
   firstName?: string;
 
-  /** Nom de famille (si séparé) */
+  /** Last name (if separated) */
   lastName?: string;
 
   /** ORCID */
   orcid?: string;
 
-  /** Identifiants par source */
+  /** Identifiers by source */
   externalIds?: {
     openalex?: string;
     hal?: string;
@@ -327,36 +327,36 @@ interface WorkAuthor {
     dblp?: string;
   };
 
-  /** Affiliations au moment de la publication */
+  /** Affiliations at publication time */
   affiliations?: WorkAffiliation[];
 
-  /** Est auteur correspondant ? */
+  /** Is corresponding author? */
   isCorresponding?: boolean;
 }
 
 interface WorkAffiliation {
-  /** Nom de l'institution */
+  /** Institution name */
   name: string;
 
   /** ROR ID */
   ror?: string;
 
-  /** Pays (ISO 3166-1 alpha-2) */
+  /** Country (ISO 3166-1 alpha-2) */
   country?: string;
 }
 ```
 
-### Author (Profil auteur)
+### Author (Author Profile)
 
 ```typescript
 interface Author {
-  /** Identifiant unique atlas-citations */
+  /** Unique atlas-citations identifier */
   id: string;                          // "orcid:0000-0002-1825-0097"
 
-  /** Source d'origine */
+  /** Source of origin */
   source: SourceType;
 
-  /** Identifiants externes */
+  /** External identifiers */
   externalIds: {
     orcid?: string;
     openalex?: string;
@@ -366,16 +366,16 @@ interface Author {
     scopus?: string;
   };
 
-  /** Nom affiché */
+  /** Display name */
   displayName: string;
 
-  /** Noms alternatifs / alias */
+  /** Alternative names / aliases */
   alternativeNames?: string[];
 
-  /** Affiliations actuelles */
+  /** Current affiliations */
   affiliations?: Affiliation[];
 
-  /** Métriques */
+  /** Metrics */
   metrics?: {
     worksCount?: number;
     citationCount?: number;
@@ -383,16 +383,16 @@ interface Author {
     i10Index?: number;
   };
 
-  /** URL du profil */
+  /** Profile URL */
   profileUrl?: string;
 
-  /** Page personnelle */
+  /** Personal homepage */
   homepage?: string;
 
-  /** Dernière mise à jour */
+  /** Last update */
   updatedAt: string;
 
-  /** Données brutes */
+  /** Raw data */
   _raw: unknown;
 }
 
@@ -400,48 +400,48 @@ interface Affiliation {
   /** Institution */
   institution: Institution;
 
-  /** Dates (si connues) */
+  /** Dates (if known) */
   startYear?: number;
   endYear?: number;
 
-  /** Rôle */
+  /** Role */
   role?: string;
 }
 ```
 
-### Institution (Organisation)
+### Institution (Organization)
 
 ```typescript
 interface Institution {
-  /** Identifiant unique atlas-citations */
+  /** Unique atlas-citations identifier */
   id: string;                          // "ror:03yrm5c26"
 
-  /** Source d'origine */
+  /** Source of origin */
   source: SourceType;
 
-  /** Identifiants externes */
+  /** External identifiers */
   externalIds: {
     ror?: string;                      // "03yrm5c26"
     openalex?: string;                 // "I27837315"
-    grid?: string;                     // Obsolète mais présent
+    grid?: string;                     // Obsolete but present
     isni?: string;
     wikidata?: string;
     fundref?: string;
   };
 
-  /** Nom officiel */
+  /** Official name */
   name: string;
 
-  /** Noms alternatifs */
+  /** Alternative names */
   alternativeNames?: string[];
 
-  /** Acronyme */
+  /** Acronym */
   acronym?: string;
 
   /** Type */
   type?: InstitutionType;
 
-  /** Localisation */
+  /** Location */
   location?: {
     city?: string;
     region?: string;
@@ -449,76 +449,76 @@ interface Institution {
     countryName?: string;
   };
 
-  /** URL du site */
+  /** Website URL */
   homepage?: string;
 
-  /** Métriques */
+  /** Metrics */
   metrics?: {
     worksCount?: number;
     citationCount?: number;
   };
 
-  /** Dernière mise à jour */
+  /** Last update */
   updatedAt: string;
 
-  /** Données brutes */
+  /** Raw data */
   _raw: unknown;
 }
 
 type InstitutionType =
-  | 'education'         // Université, école
-  | 'healthcare'        // Hôpital, CHU
-  | 'company'           // Entreprise
-  | 'government'        // Gouvernement, ministère
-  | 'nonprofit'         // ONG, association
-  | 'facility'          // Infrastructure de recherche
-  | 'archive'           // Archive, bibliothèque
+  | 'education'         // University, school
+  | 'healthcare'        // Hospital, medical center
+  | 'company'           // Company
+  | 'government'        // Government, ministry
+  | 'nonprofit'         // NGO, association
+  | 'facility'          // Research infrastructure
+  | 'archive'           // Archive, library
   | 'other';
 ```
 
-### Venue (Journal/Conférence)
+### Venue (Journal/Conference)
 
 ```typescript
 interface Venue {
-  /** Identifiant unique atlas-citations */
+  /** Unique atlas-citations identifier */
   id: string;
 
-  /** Source d'origine */
+  /** Source of origin */
   source: SourceType;
 
-  /** Identifiants externes */
+  /** External identifiers */
   externalIds: {
     openalex?: string;
-    issn?: string;                     // ISSN-L ou premier ISSN
-    issns?: string[];                  // Tous les ISSNs
+    issn?: string;                     // ISSN-L or first ISSN
+    issns?: string[];                  // All ISSNs
     issnL?: string;
     eissn?: string;
     pissn?: string;
     doaj?: string;
   };
 
-  /** Nom */
+  /** Name */
   name: string;
 
-  /** Nom abrégé */
+  /** Abbreviated name */
   abbreviation?: string;
 
   /** Type */
   type: VenueType;
 
-  /** Éditeur */
+  /** Publisher */
   publisher?: string;
 
-  /** Est Open Access ? */
+  /** Is Open Access? */
   isOa?: boolean;
 
   /** URL */
   homepage?: string;
 
-  /** Dernière mise à jour */
+  /** Last update */
   updatedAt: string;
 
-  /** Données brutes */
+  /** Raw data */
   _raw: unknown;
 }
 
@@ -530,17 +530,17 @@ type VenueType =
   | 'other';
 ```
 
-### Funder (Financeur)
+### Funder
 
 ```typescript
 interface Funder {
-  /** Identifiant unique atlas-citations */
+  /** Unique atlas-citations identifier */
   id: string;
 
-  /** Source d'origine */
+  /** Source of origin */
   source: SourceType;
 
-  /** Identifiants externes */
+  /** External identifiers */
   externalIds: {
     openalex?: string;
     crossref?: string;                 // Funder Registry ID
@@ -549,69 +549,69 @@ interface Funder {
     doi?: string;
   };
 
-  /** Nom */
+  /** Name */
   name: string;
 
-  /** Pays */
+  /** Country */
   country?: string;
 
-  /** Numéro de grant/award */
+  /** Grant/award number */
   awardId?: string;
 
-  /** Données brutes */
+  /** Raw data */
   _raw: unknown;
 }
 ```
 
-### Types auxiliaires
+### Auxiliary Types
 
 ```typescript
 interface WorkReference {
-  /** DOI de la référence */
+  /** Reference DOI */
   doi?: string;
 
-  /** Identifiants connus */
+  /** Known identifiers */
   externalIds?: {
     doi?: string;
     openalex?: string;
     pmid?: string;
   };
 
-  /** Position dans la liste des références */
+  /** Position in reference list */
   position?: number;
 
-  /** Texte brut de la référence (si DOI inconnu) */
+  /** Raw reference text (if DOI unknown) */
   rawText?: string;
 }
 
 interface OaLocation {
-  /** URL de la ressource */
+  /** Resource URL */
   url: string;
 
-  /** URL directe du PDF */
+  /** Direct PDF URL */
   pdfUrl?: string;
 
-  /** Type d'hébergeur */
+  /** Host type */
   hostType: 'publisher' | 'repository';
 
-  /** Licence */
+  /** License */
   license?: string;
 
   /** Version */
   version?: OaVersion;
 
-  /** Nom du dépôt (si repository) */
+  /** Repository name (if repository) */
   repositoryName?: string;
 }
 
 interface RelatedIdentifier {
-  /** Identifiant */
+  /** Identifier */
   id: string;
 
-  /** Type d'identifiant */
+  /** Identifier type */
   idType: 'doi' | 'url' | 'arxiv' | 'pmid' | 'handle';
 
-  /** Type de relation */
+  /** Relation type */
   relationType:
     | 'cites'
     | 'is-cited-by'
@@ -636,39 +636,39 @@ interface RelatedIdentifier {
 
 ---
 
-## Mapping sources vers schéma unifié
+## Source to Unified Schema Mapping
 
-### Work : Table de correspondance
+### Work: Correspondence Table
 
-| Champ unifié | OpenAlex | Crossref | HAL | ArXiv | Semantic Scholar | PubMed |
-|--------------|----------|----------|-----|-------|------------------|--------|
+| Unified Field | OpenAlex | Crossref | HAL | ArXiv | Semantic Scholar | PubMed |
+|---------------|----------|----------|-----|-------|------------------|--------|
 | `id` | `id` | `DOI` | `docid` | `id` | `paperId` | `PMID` |
 | `title` | `title` | `title[0]` | `title_s` | `title` | `title` | `ArticleTitle` |
-| `doi` | `doi` | `DOI` | `doiId_s` | — | `externalIds.DOI` | `ELocationID[doi]` |
+| `doi` | `doi` | `DOI` | `doiId_s` | - | `externalIds.DOI` | `ELocationID[doi]` |
 | `authors[].displayName` | `authorships[].author.display_name` | `author[].given + family` | `authFullName_s` | `authors[].name` | `authors[].name` | `AuthorList[].ForeName + LastName` |
-| `authors[].orcid` | `authorships[].author.orcid` | `author[].ORCID` | `authOrcidIdExt_s` | — | `authors[].externalIds.ORCID` | `AuthorList[].Identifier[Source=ORCID]` |
+| `authors[].orcid` | `authorships[].author.orcid` | `author[].ORCID` | `authOrcidIdExt_s` | - | `authors[].externalIds.ORCID` | `AuthorList[].Identifier[Source=ORCID]` |
 | `publicationDate` | `publication_date` | `published.date-parts` | `publicationDate_s` | `published` | `publicationDate` | `PubDate` |
-| `year` | `publication_year` | `published.date-parts[0][0]` | `publicationDateY_i` | — | `year` | `PubDate/Year` |
-| `type` | `type` | `type` | `docType_s` | — | `publicationTypes[0]` | `PublicationType` |
+| `year` | `publication_year` | `published.date-parts[0][0]` | `publicationDateY_i` | - | `year` | `PubDate/Year` |
+| `type` | `type` | `type` | `docType_s` | - | `publicationTypes[0]` | `PublicationType` |
 | `abstract` | `abstract` | `abstract` | `abstract_s` | `summary` | `abstract` | `Abstract/AbstractText` |
-| `keywords` | `keywords[].keyword` | — | `keyword_s` | `categories` | `fieldsOfStudy` | `KeywordList` |
-| `venue.name` | `primary_location.source.display_name` | `container-title[0]` | `journalTitle_s` | — | `venue` | `Journal/Title` |
-| `venue.issn` | `primary_location.source.issn_l` | `ISSN[0]` | `journalIdExt_s` | — | `publicationVenue.issn` | `Journal/ISSN` |
-| `volume` | `biblio.volume` | `volume` | `volume_s` | — | `journal.volume` | `Volume` |
-| `issue` | `biblio.issue` | `issue` | `issue_s` | — | — | `Issue` |
-| `pages` | `biblio.first_page-last_page` | `page` | `page_s` | — | `journal.pages` | `Pagination` |
-| `publisher` | `primary_location.source.host_organization_name` | `publisher` | `publisher_s` | — | — | `Publisher` |
-| `citationCount` | `cited_by_count` | `is-referenced-by-count` | — | — | `citationCount` | — |
-| `referenceCount` | `referenced_works_count` | `reference-count` | — | — | `referenceCount` | — |
-| `openAccess.isOa` | `open_access.is_oa` | — | `openAccess_bool` | `true` | `isOpenAccess` | — |
-| `openAccess.status` | `open_access.oa_status` | — | — | `"green"` | — | — |
-| `openAccess.pdfUrl` | `open_access.oa_url` | — | `fileMain_s` | `links[rel=pdf].href` | `openAccessPdf.url` | `pmc/pdf` |
-| `openAccess.license` | `primary_location.license` | `license[0].URL` | `licence_s` | — | — | — |
-| `language` | `language` | `language` | `language_s` | — | — | `Language` |
-| `funders` | `grants[].funder` | `funder` | `anrProjectId_s` | — | — | `GrantList` |
-| `references` | `referenced_works` | `reference` | — | — | `references` | `ReferenceList` |
+| `keywords` | `keywords[].keyword` | - | `keyword_s` | `categories` | `fieldsOfStudy` | `KeywordList` |
+| `venue.name` | `primary_location.source.display_name` | `container-title[0]` | `journalTitle_s` | - | `venue` | `Journal/Title` |
+| `venue.issn` | `primary_location.source.issn_l` | `ISSN[0]` | `journalIdExt_s` | - | `publicationVenue.issn` | `Journal/ISSN` |
+| `volume` | `biblio.volume` | `volume` | `volume_s` | - | `journal.volume` | `Volume` |
+| `issue` | `biblio.issue` | `issue` | `issue_s` | - | - | `Issue` |
+| `pages` | `biblio.first_page-last_page` | `page` | `page_s` | - | `journal.pages` | `Pagination` |
+| `publisher` | `primary_location.source.host_organization_name` | `publisher` | `publisher_s` | - | - | `Publisher` |
+| `citationCount` | `cited_by_count` | `is-referenced-by-count` | - | - | `citationCount` | - |
+| `referenceCount` | `referenced_works_count` | `reference-count` | - | - | `referenceCount` | - |
+| `openAccess.isOa` | `open_access.is_oa` | - | `openAccess_bool` | `true` | `isOpenAccess` | - |
+| `openAccess.status` | `open_access.oa_status` | - | - | `"green"` | - | - |
+| `openAccess.pdfUrl` | `open_access.oa_url` | - | `fileMain_s` | `links[rel=pdf].href` | `openAccessPdf.url` | `pmc/pdf` |
+| `openAccess.license` | `primary_location.license` | `license[0].URL` | `licence_s` | - | - | - |
+| `language` | `language` | `language` | `language_s` | - | - | `Language` |
+| `funders` | `grants[].funder` | `funder` | `anrProjectId_s` | - | - | `GrantList` |
+| `references` | `referenced_works` | `reference` | - | - | `references` | `ReferenceList` |
 
-### Normalisation des types
+### Type Normalization
 
 ```typescript
 const normalizeWorkType = (source: SourceType, originalType: string): WorkType => {
@@ -717,7 +717,7 @@ const normalizeWorkType = (source: SourceType, originalType: string): WorkType =
       'UNDEFINED': 'other',
     },
     arxiv: {
-      // ArXiv = toujours preprint
+      // ArXiv = always preprint
       'default': 'preprint',
     },
     semanticscholar: {
@@ -736,7 +736,7 @@ const normalizeWorkType = (source: SourceType, originalType: string): WorkType =
 };
 ```
 
-### Normalisation Open Access status
+### Open Access Status Normalization
 
 ```typescript
 const normalizeOaStatus = (
@@ -748,8 +748,8 @@ const normalizeOaStatus = (
       return data.open_access?.oa_status ?? 'closed';
 
     case 'crossref':
-      // Crossref n'a pas de champ OA direct
-      // Déduire depuis license ou utiliser Unpaywall
+      // Crossref has no direct OA field
+      // Infer from license or use Unpaywall
       if (data.license?.some(l => l.URL?.includes('creativecommons'))) {
         return 'hybrid';
       }
@@ -759,14 +759,14 @@ const normalizeOaStatus = (
       return data.openAccess_bool ? 'green' : 'closed';
 
     case 'arxiv':
-      return 'green'; // ArXiv = toujours green OA
+      return 'green'; // ArXiv = always green OA
 
     case 'biorxiv':
     case 'medrxiv':
       return 'green'; // Preprint servers = green
 
     case 'doaj':
-      return 'gold'; // DOAJ = toujours gold
+      return 'gold'; // DOAJ = always gold
 
     case 'zenodo':
       return data.metadata?.access_right === 'open' ? 'green' : 'closed';
@@ -779,9 +779,9 @@ const normalizeOaStatus = (
 
 ---
 
-## Spécification OpenAPI complète
+## Complete OpenAPI Specification
 
-La spec OpenAPI complète de atlas-citations est disponible dans `packages/citations/specs/citations.yaml`.
+The complete OpenAPI spec for atlas-citations is available at `packages/citations/specs/citations.yaml`.
 
 ```yaml
 openapi: '3.1.0'
@@ -789,26 +789,26 @@ info:
   title: Atlas Citations API
   version: '1.0.0'
   description: |
-    API unifiée pour interroger plusieurs sources bibliographiques.
+    Unified API for querying multiple bibliographic sources.
 
-    Agrège de manière transparente :
-    - **Priorité 1** : OpenAlex, Crossref, HAL, ArXiv, ORCID
-    - **Priorité 2** : Semantic Scholar, PubMed, Unpaywall, OpenCitations
-    - **Priorité 3** : Europe PMC, DataCite, DOAJ, Zenodo, CORE
-    - **Spécialisées** : DBLP, bioRxiv/medRxiv
+    Transparently aggregates:
+    - **Priority 1**: OpenAlex, Crossref, HAL, ArXiv, ORCID
+    - **Priority 2**: Semantic Scholar, PubMed, Unpaywall, OpenCitations
+    - **Priority 3**: Europe PMC, DataCite, DOAJ, Zenodo, CORE
+    - **Specialized**: DBLP, bioRxiv/medRxiv
 
-    ## Sélection de sources
+    ## Source Selection
 
-    Par défaut, le client sélectionne automatiquement les sources les plus
-    pertinentes selon l'identifiant ou la requête. Vous pouvez forcer des
-    sources spécifiques via le paramètre `sources`.
+    By default, the client automatically selects the most relevant sources
+    based on the identifier or query. You can force specific sources via
+    the `sources` parameter.
 
     ## Rate limiting
 
-    Chaque source a ses propres limites. L'API gère automatiquement le
-    backoff et expose les quotas via `/health/rate-limits`.
+    Each source has its own limits. The API automatically handles backoff
+    and exposes quotas via `/health/rate-limits`.
   contact:
-    name: Université Le Havre Normandie
+    name: Universite Le Havre Normandie
     url: https://github.com/univ-lehavre/atlas
   license:
     name: MIT
@@ -816,27 +816,27 @@ info:
 
 servers:
   - url: '{baseUrl}'
-    description: Serveur atlas-citations
+    description: atlas-citations server
     variables:
       baseUrl:
         default: 'http://localhost:3000'
-        description: URL de base du serveur
+        description: Server base URL
 
 tags:
   - name: Works
-    description: Publications scientifiques
+    description: Scientific publications
   - name: Authors
-    description: Profils d'auteurs
+    description: Author profiles
   - name: Institutions
-    description: Organisations et affiliations
+    description: Organizations and affiliations
   - name: Venues
-    description: Journaux et conférences
+    description: Journals and conferences
   - name: Funders
-    description: Financeurs de recherche
+    description: Research funders
   - name: Resolve
-    description: Résolution universelle d'identifiants
+    description: Universal identifier resolution
   - name: Health
-    description: Monitoring et rate limits
+    description: Monitoring and rate limits
 
 paths:
   # ════════════════════════════════════════════════════════════════════
@@ -846,7 +846,7 @@ paths:
   /works:
     get:
       operationId: searchWorks
-      summary: Rechercher des publications
+      summary: Search publications
       tags: [Works]
       parameters:
         - $ref: '#/components/parameters/query'
@@ -856,8 +856,8 @@ paths:
         - name: filter
           in: query
           description: |
-            Filtres sur les champs. Format: `field:value` ou `field:op:value`.
-            Exemples:
+            Field filters. Format: `field:value` or `field:op:value`.
+            Examples:
             - `year:2023`
             - `year:gte:2020`
             - `type:article`
@@ -872,17 +872,17 @@ paths:
         - name: sort
           in: query
           description: |
-            Tri des résultats. Format: `field:direction`.
-            Exemples: `citationCount:desc`, `publicationDate:asc`
+            Result sorting. Format: `field:direction`.
+            Examples: `citationCount:desc`, `publicationDate:asc`
           schema:
             type: string
             default: 'relevance:desc'
         - name: fields
           in: query
           description: |
-            Champs à inclure dans la réponse (projection).
-            Par défaut, tous les champs standards sont inclus.
-            Utilisez `_raw` pour inclure les données brutes.
+            Fields to include in response (projection).
+            By default, all standard fields are included.
+            Use `_raw` to include raw data.
           schema:
             type: array
             items:
@@ -891,7 +891,7 @@ paths:
           explode: false
       responses:
         '200':
-          description: Résultats de recherche
+          description: Search results
           content:
             application/json:
               schema:
@@ -904,20 +904,20 @@ paths:
   /works/{id}:
     get:
       operationId: getWork
-      summary: Récupérer une publication par identifiant
+      summary: Get a publication by identifier
       tags: [Works]
       parameters:
         - name: id
           in: path
           required: true
           description: |
-            Identifiant de la publication. Formats supportés :
-            - DOI : `10.1038/nature12373`
-            - OpenAlex : `W2741809807` ou `openalex:W2741809807`
-            - HAL : `hal-01234567`
-            - ArXiv : `2301.12345` ou `arxiv:2301.12345`
-            - PMID : `pmid:12345678`
-            - Semantic Scholar : `s2:abc123...`
+            Publication identifier. Supported formats:
+            - DOI: `10.1038/nature12373`
+            - OpenAlex: `W2741809807` or `openalex:W2741809807`
+            - HAL: `hal-01234567`
+            - ArXiv: `2301.12345` or `arxiv:2301.12345`
+            - PMID: `pmid:12345678`
+            - Semantic Scholar: `s2:abc123...`
           schema:
             type: string
           examples:
@@ -942,7 +942,7 @@ paths:
               type: string
       responses:
         '200':
-          description: Publication trouvée
+          description: Publication found
           content:
             application/json:
               schema:
@@ -955,7 +955,7 @@ paths:
   /works/{id}/references:
     get:
       operationId: getWorkReferences
-      summary: Récupérer les références d'une publication
+      summary: Get references of a publication
       tags: [Works]
       parameters:
         - name: id
@@ -968,7 +968,7 @@ paths:
         - $ref: '#/components/parameters/perPage'
       responses:
         '200':
-          description: Références de la publication
+          description: Publication references
           content:
             application/json:
               schema:
@@ -977,7 +977,7 @@ paths:
   /works/{id}/citations:
     get:
       operationId: getWorkCitations
-      summary: Récupérer les citations d'une publication
+      summary: Get citations of a publication
       tags: [Works]
       parameters:
         - name: id
@@ -990,7 +990,7 @@ paths:
         - $ref: '#/components/parameters/perPage'
       responses:
         '200':
-          description: Articles citant cette publication
+          description: Articles citing this publication
           content:
             application/json:
               schema:
@@ -1003,7 +1003,7 @@ paths:
   /authors:
     get:
       operationId: searchAuthors
-      summary: Rechercher des auteurs
+      summary: Search authors
       tags: [Authors]
       parameters:
         - $ref: '#/components/parameters/query'
@@ -1018,7 +1018,7 @@ paths:
               type: string
       responses:
         '200':
-          description: Résultats de recherche
+          description: Search results
           content:
             application/json:
               schema:
@@ -1027,24 +1027,24 @@ paths:
   /authors/{id}:
     get:
       operationId: getAuthor
-      summary: Récupérer un auteur par identifiant
+      summary: Get an author by identifier
       tags: [Authors]
       parameters:
         - name: id
           in: path
           required: true
           description: |
-            Identifiant de l'auteur :
-            - ORCID : `0000-0002-1825-0097`
-            - OpenAlex : `A5023888391`
-            - HAL : `hal-00001`
-            - Semantic Scholar : `s2:1741101`
+            Author identifier:
+            - ORCID: `0000-0002-1825-0097`
+            - OpenAlex: `A5023888391`
+            - HAL: `hal-00001`
+            - Semantic Scholar: `s2:1741101`
           schema:
             type: string
         - $ref: '#/components/parameters/sources'
       responses:
         '200':
-          description: Auteur trouvé
+          description: Author found
           content:
             application/json:
               schema:
@@ -1055,7 +1055,7 @@ paths:
   /authors/{id}/works:
     get:
       operationId: getAuthorWorks
-      summary: Publications d'un auteur
+      summary: Publications by an author
       tags: [Authors]
       parameters:
         - name: id
@@ -1073,7 +1073,7 @@ paths:
             default: 'publicationDate:desc'
       responses:
         '200':
-          description: Publications de l'auteur
+          description: Author's publications
           content:
             application/json:
               schema:
@@ -1086,7 +1086,7 @@ paths:
   /institutions:
     get:
       operationId: searchInstitutions
-      summary: Rechercher des institutions
+      summary: Search institutions
       tags: [Institutions]
       parameters:
         - $ref: '#/components/parameters/query'
@@ -1101,7 +1101,7 @@ paths:
               type: string
       responses:
         '200':
-          description: Résultats de recherche
+          description: Search results
           content:
             application/json:
               schema:
@@ -1110,22 +1110,22 @@ paths:
   /institutions/{id}:
     get:
       operationId: getInstitution
-      summary: Récupérer une institution par identifiant
+      summary: Get an institution by identifier
       tags: [Institutions]
       parameters:
         - name: id
           in: path
           required: true
           description: |
-            Identifiant de l'institution :
-            - ROR : `03yrm5c26`
-            - OpenAlex : `I27837315`
+            Institution identifier:
+            - ROR: `03yrm5c26`
+            - OpenAlex: `I27837315`
           schema:
             type: string
         - $ref: '#/components/parameters/sources'
       responses:
         '200':
-          description: Institution trouvée
+          description: Institution found
           content:
             application/json:
               schema:
@@ -1134,7 +1134,7 @@ paths:
   /institutions/{id}/works:
     get:
       operationId: getInstitutionWorks
-      summary: Publications d'une institution
+      summary: Publications by an institution
       tags: [Institutions]
       parameters:
         - name: id
@@ -1147,7 +1147,7 @@ paths:
         - $ref: '#/components/parameters/perPage'
       responses:
         '200':
-          description: Publications de l'institution
+          description: Institution's publications
           content:
             application/json:
               schema:
@@ -1156,7 +1156,7 @@ paths:
   /institutions/{id}/authors:
     get:
       operationId: getInstitutionAuthors
-      summary: Auteurs d'une institution
+      summary: Authors at an institution
       tags: [Institutions]
       parameters:
         - name: id
@@ -1169,7 +1169,7 @@ paths:
         - $ref: '#/components/parameters/perPage'
       responses:
         '200':
-          description: Auteurs affiliés à l'institution
+          description: Authors affiliated with the institution
           content:
             application/json:
               schema:
@@ -1182,7 +1182,7 @@ paths:
   /venues:
     get:
       operationId: searchVenues
-      summary: Rechercher des venues (journaux, conférences)
+      summary: Search venues (journals, conferences)
       tags: [Venues]
       parameters:
         - $ref: '#/components/parameters/query'
@@ -1191,7 +1191,7 @@ paths:
         - $ref: '#/components/parameters/perPage'
       responses:
         '200':
-          description: Résultats de recherche
+          description: Search results
           content:
             application/json:
               schema:
@@ -1200,19 +1200,19 @@ paths:
   /venues/{id}:
     get:
       operationId: getVenue
-      summary: Récupérer une venue par identifiant
+      summary: Get a venue by identifier
       tags: [Venues]
       parameters:
         - name: id
           in: path
           required: true
-          description: ISSN, OpenAlex ID, ou DOAJ ID
+          description: ISSN, OpenAlex ID, or DOAJ ID
           schema:
             type: string
         - $ref: '#/components/parameters/sources'
       responses:
         '200':
-          description: Venue trouvée
+          description: Venue found
           content:
             application/json:
               schema:
@@ -1225,7 +1225,7 @@ paths:
   /funders:
     get:
       operationId: searchFunders
-      summary: Rechercher des financeurs
+      summary: Search funders
       tags: [Funders]
       parameters:
         - $ref: '#/components/parameters/query'
@@ -1234,7 +1234,7 @@ paths:
         - $ref: '#/components/parameters/perPage'
       responses:
         '200':
-          description: Résultats de recherche
+          description: Search results
           content:
             application/json:
               schema:
@@ -1243,19 +1243,19 @@ paths:
   /funders/{id}:
     get:
       operationId: getFunder
-      summary: Récupérer un financeur par identifiant
+      summary: Get a funder by identifier
       tags: [Funders]
       parameters:
         - name: id
           in: path
           required: true
-          description: OpenAlex ID, Crossref Funder ID, ou ROR
+          description: OpenAlex ID, Crossref Funder ID, or ROR
           schema:
             type: string
         - $ref: '#/components/parameters/sources'
       responses:
         '200':
-          description: Financeur trouvé
+          description: Funder found
           content:
             application/json:
               schema:
@@ -1264,7 +1264,7 @@ paths:
   /funders/{id}/works:
     get:
       operationId: getFunderWorks
-      summary: Publications financées
+      summary: Funded publications
       tags: [Funders]
       parameters:
         - name: id
@@ -1277,7 +1277,7 @@ paths:
         - $ref: '#/components/parameters/perPage'
       responses:
         '200':
-          description: Publications financées
+          description: Funded publications
           content:
             application/json:
               schema:
@@ -1290,20 +1290,20 @@ paths:
   /resolve/{id}:
     get:
       operationId: resolve
-      summary: Résoudre un identifiant
+      summary: Resolve an identifier
       description: |
-        Détecte automatiquement le type d'identifiant et retourne l'entité
-        correspondante.
+        Automatically detects the identifier type and returns the
+        corresponding entity.
 
-        **Identifiants supportés :**
-        - DOI : `10.1038/nature12373` → Work
-        - ORCID : `0000-0002-1825-0097` → Author
-        - ROR : `03yrm5c26` → Institution
-        - ISSN : `1234-5678` → Venue
-        - OpenAlex : `W...` | `A...` | `I...` | `S...` | `F...`
-        - HAL : `hal-...` → Work
-        - ArXiv : `1234.56789` → Work
-        - PMID : `12345678` → Work
+        **Supported identifiers:**
+        - DOI: `10.1038/nature12373` -> Work
+        - ORCID: `0000-0002-1825-0097` -> Author
+        - ROR: `03yrm5c26` -> Institution
+        - ISSN: `1234-5678` -> Venue
+        - OpenAlex: `W...` | `A...` | `I...` | `S...` | `F...`
+        - HAL: `hal-...` -> Work
+        - ArXiv: `1234.56789` -> Work
+        - PMID: `12345678` -> Work
       tags: [Resolve]
       parameters:
         - name: id
@@ -1314,7 +1314,7 @@ paths:
         - $ref: '#/components/parameters/sources'
       responses:
         '200':
-          description: Entité résolue
+          description: Resolved entity
           content:
             application/json:
               schema:
@@ -1336,11 +1336,11 @@ paths:
   /health:
     get:
       operationId: getHealth
-      summary: État de santé du service
+      summary: Service health status
       tags: [Health]
       responses:
         '200':
-          description: État du service
+          description: Service status
           content:
             application/json:
               schema:
@@ -1349,11 +1349,11 @@ paths:
   /health/rate-limits:
     get:
       operationId: getRateLimits
-      summary: Quotas par source
+      summary: Quotas by source
       tags: [Health]
       responses:
         '200':
-          description: État des quotas
+          description: Quota status
           content:
             application/json:
               schema:
@@ -1362,11 +1362,11 @@ paths:
   /health/sources:
     get:
       operationId: getSourcesHealth
-      summary: État de santé par source
+      summary: Health status by source
       tags: [Health]
       responses:
         '200':
-          description: État des sources
+          description: Source status
           content:
             application/json:
               schema:
@@ -1385,7 +1385,7 @@ components:
     query:
       name: q
       in: query
-      description: Terme de recherche
+      description: Search term
       schema:
         type: string
       example: 'machine learning'
@@ -1394,7 +1394,7 @@ components:
       name: sources
       in: query
       description: |
-        Sources à interroger. Si omis, sélection automatique intelligente.
+        Sources to query. If omitted, intelligent automatic selection.
       schema:
         type: array
         items:
@@ -1406,7 +1406,7 @@ components:
     page:
       name: page
       in: query
-      description: Numéro de page (1-indexed)
+      description: Page number (1-indexed)
       schema:
         type: integer
         minimum: 1
@@ -1415,7 +1415,7 @@ components:
     perPage:
       name: per_page
       in: query
-      description: Résultats par page (max 100)
+      description: Results per page (max 100)
       schema:
         type: integer
         minimum: 1
@@ -1428,28 +1428,28 @@ components:
 
   responses:
     BadRequest:
-      description: Requête invalide
+      description: Invalid request
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
 
     NotFound:
-      description: Ressource non trouvée
+      description: Resource not found
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
 
     RateLimited:
-      description: Quota dépassé
+      description: Quota exceeded
       headers:
         Retry-After:
-          description: Secondes avant retry
+          description: Seconds before retry
           schema:
             type: integer
         X-RateLimit-Source:
-          description: Source ayant atteint sa limite
+          description: Source that reached its limit
           schema:
             type: string
       content:
@@ -1486,7 +1486,7 @@ components:
         - core
         - unpaywall
         - opencitations
-      description: Source bibliographique
+      description: Bibliographic source
 
     WorkType:
       type: string
@@ -1506,7 +1506,7 @@ components:
         - letter
         - erratum
         - other
-      description: Type de publication
+      description: Publication type
 
     OpenAccessStatus:
       type: string
@@ -1517,7 +1517,7 @@ components:
         - bronze
         - diamond
         - closed
-      description: Statut Open Access
+      description: Open Access status
 
     OaVersion:
       type: string
@@ -1525,7 +1525,7 @@ components:
         - published
         - accepted
         - submitted
-      description: Version du manuscrit OA
+      description: OA manuscript version
 
     InstitutionType:
       type: string
@@ -1566,7 +1566,7 @@ components:
           const: 'work'
         id:
           type: string
-          description: Identifiant unique atlas-citations
+          description: Unique atlas-citations identifier
           example: 'openalex:W2741809807'
         source:
           $ref: '#/components/schemas/SourceType'
@@ -1587,7 +1587,7 @@ components:
           $ref: '#/components/schemas/WorkType'
         originalType:
           type: string
-          description: Type original de la source
+          description: Original type from source
         abstract:
           type: string
         keywords:
@@ -1600,7 +1600,7 @@ components:
             type: string
         language:
           type: string
-          description: Code ISO 639-1
+          description: ISO 639-1 code
         venue:
           $ref: '#/components/schemas/VenueRef'
         volume:
@@ -1636,7 +1636,7 @@ components:
           format: date-time
         _raw:
           type: object
-          description: Données brutes de la source
+          description: Raw data from source
 
     WorkAuthor:
       type: object
@@ -1684,7 +1684,7 @@ components:
           type: string
         country:
           type: string
-          description: Code ISO 3166-1 alpha-2
+          description: ISO 3166-1 alpha-2 code
 
     Author:
       type: object
@@ -1874,7 +1874,7 @@ components:
 
     ExternalIds:
       type: object
-      description: Identifiants externes
+      description: External identifiers
       properties:
         doi:
           type: string
@@ -2148,7 +2148,7 @@ components:
                 type: integer
               took:
                 type: integer
-                description: Temps de réponse en ms
+                description: Response time in ms
 
     HealthResponse:
       type: object
@@ -2160,7 +2160,7 @@ components:
           type: string
         uptime:
           type: integer
-          description: Secondes depuis démarrage
+          description: Seconds since startup
 
     RateLimitsResponse:
       type: object
@@ -2191,7 +2191,7 @@ components:
           latency:
             type: integer
             nullable: true
-            description: Latence en ms
+            description: Latency in ms
           lastCheck:
             type: string
             format: date-time
@@ -2226,7 +2226,7 @@ components:
           $ref: '#/components/schemas/SourceType'
         retryAfter:
           type: integer
-          description: Secondes avant retry
+          description: Seconds before retry
         resetAt:
           type: string
           format: date-time
@@ -2234,93 +2234,93 @@ components:
 
 ---
 
-## Tableau idéal de couverture
+## Ideal Coverage Table
 
-Le tableau suivant montre la couverture théorique maximale atteignable en combinant toutes les sources :
+The following table shows the maximum theoretical coverage achievable by combining all sources:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────┐
-│                        COUVERTURE IDÉALE ATLAS-CITATIONS                        │
+│                        IDEAL ATLAS-CITATIONS COVERAGE                            │
 ├────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                 │
-│  FONCTIONNALITÉ              │ COUVERTURE │ SOURCES PRINCIPALES                │
+│  FEATURE                      │ COVERAGE   │ PRIMARY SOURCES                   │
 │  ───────────────────────────────────────────────────────────────────────────   │
 │  Publications (Works)         │ 250M+      │ OpenAlex, CORE, S2                │
-│  Profils auteurs              │ 100M+      │ ORCID, OpenAlex, S2               │
+│  Author profiles              │ 100M+      │ ORCID, OpenAlex, S2               │
 │  Institutions                 │ 100k+      │ ROR via OpenAlex                  │
-│  Journaux/Venues              │ 250k+      │ OpenAlex, DOAJ                    │
-│  Financeurs                   │ 30k+       │ OpenAlex, Crossref                │
+│  Journals/Venues              │ 250k+      │ OpenAlex, DOAJ                    │
+│  Funders                      │ 30k+       │ OpenAlex, Crossref                │
 │                                                                                 │
 │  ───────────────────────────────────────────────────────────────────────────   │
 │                                                                                 │
-│  ENRICHISSEMENT               │            │                                   │
+│  ENRICHMENT                   │            │                                   │
 │  ───────────────────────────────────────────────────────────────────────────   │
-│  Citations (graphe)           │ 1.4B+      │ OpenCitations, S2, OpenAlex       │
+│  Citations (graph)            │ 1.4B+      │ OpenCitations, S2, OpenAlex       │
 │  Open Access (status + URLs)  │ 40M+ DOIs  │ Unpaywall, OpenAlex               │
-│  Texte intégral               │ 50M+       │ CORE, Europe PMC, ArXiv           │
-│  Embeddings sémantiques       │ 200M+      │ Semantic Scholar (SPECTER)        │
-│  Résumés IA (TL;DR)           │ 200M+      │ Semantic Scholar                  │
-│  Annotations text-mining      │ 35M+       │ Europe PMC                        │
-│  Données de financement       │ 20M+       │ OpenAlex, Crossref                │
+│  Full text                    │ 50M+       │ CORE, Europe PMC, ArXiv           │
+│  Semantic embeddings          │ 200M+      │ Semantic Scholar (SPECTER)        │
+│  AI summaries (TL;DR)         │ 200M+      │ Semantic Scholar                  │
+│  Text-mining annotations      │ 35M+       │ Europe PMC                        │
+│  Funding data                 │ 20M+       │ OpenAlex, Crossref                │
 │                                                                                 │
 │  ───────────────────────────────────────────────────────────────────────────   │
 │                                                                                 │
-│  DOMAINES SPÉCIALISÉS         │            │                                   │
+│  SPECIALIZED DOMAINS          │            │                                   │
 │  ───────────────────────────────────────────────────────────────────────────   │
-│  Biomédical                   │ 40M+       │ PubMed, Europe PMC, bioRxiv       │
-│  Informatique                 │ 6M+        │ DBLP, Semantic Scholar            │
+│  Biomedical                   │ 40M+       │ PubMed, Europe PMC, bioRxiv       │
+│  Computer Science             │ 6M+        │ DBLP, Semantic Scholar            │
 │  Preprints                    │ 500k+      │ ArXiv, bioRxiv, medRxiv           │
-│  Données de recherche         │ 50M+       │ DataCite, Zenodo                  │
+│  Research data                │ 50M+       │ DataCite, Zenodo                  │
 │  France/HAL                   │ 4M+        │ HAL                               │
-│  Open Access exclusif         │ 9M+        │ DOAJ                              │
+│  Open Access exclusive        │ 9M+        │ DOAJ                              │
 │                                                                                 │
 └────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Implémentation recommandée
+## Recommended Implementation
 
-### Ordre d'implémentation des sources
+### Source Implementation Order
 
 | Phase | Sources | Justification |
 |-------|---------|---------------|
-| **1** | OpenAlex, Crossref, HAL, ArXiv, ORCID | Base solide, déjà planifiées |
-| **2** | Semantic Scholar, Unpaywall, OpenCitations | Enrichissement (citations, OA, embeddings) |
-| **3** | PubMed, Europe PMC | Biomédical |
-| **4** | CORE, DataCite, Zenodo, DOAJ | Compléments (texte, données, OA) |
-| **5** | DBLP, bioRxiv/medRxiv | Domaines spécialisés |
+| **1** | OpenAlex, Crossref, HAL, ArXiv, ORCID | Solid base, already planned |
+| **2** | Semantic Scholar, Unpaywall, OpenCitations | Enrichment (citations, OA, embeddings) |
+| **3** | PubMed, Europe PMC | Biomedical |
+| **4** | CORE, DataCite, Zenodo, DOAJ | Supplements (text, data, OA) |
+| **5** | DBLP, bioRxiv/medRxiv | Specialized domains |
 
-### Configuration recommandée par cas d'usage
+### Recommended Configuration by Use Case
 
 ```typescript
-// Recherche généraliste
+// General search
 const generalClient = createCitationsClient({
   defaultSources: ['openalex', 'crossref'],
   parallelRequests: true,
 });
 
-// Recherche biomédicale
+// Biomedical search
 const biomedClient = createCitationsClient({
   defaultSources: ['pubmed', 'europepmc', 'biorxiv'],
   parallelRequests: true,
 });
 
-// Recherche avec enrichissement OA
+// Search with OA enrichment
 const oaClient = createCitationsClient({
   defaultSources: ['openalex', 'crossref'],
-  enrichWith: ['unpaywall'],  // Enrichit les résultats avec URLs OA
+  enrichWith: ['unpaywall'],  // Enriches results with OA URLs
   parallelRequests: true,
 });
 
-// Recherche avec graphe de citations
+// Search with citation graph
 const citationsClient = createCitationsClient({
   defaultSources: ['openalex', 'semanticscholar'],
   includeCitations: true,
   includeReferences: true,
 });
 
-// Recherche France/institutionnelle
+// France/institutional search
 const frenchClient = createCitationsClient({
   defaultSources: ['hal', 'openalex'],
   filterCountry: 'FR',
@@ -2329,10 +2329,10 @@ const frenchClient = createCitationsClient({
 
 ---
 
-## Fichiers associés
+## Associated Files
 
-- **Spec OpenAPI** : `packages/citations/specs/citations.yaml`
-- **Types TypeScript** : `packages/citations/src/entities/*.ts`
-- **Adaptateurs** : `packages/citations/src/adapters/*.ts`
-- **Documentation entités** : [Référence des entités par source](./sources/entities-reference.md)
-- **Catalogue des sources** : [Catalogue complet](./sources/catalog.md)
+- **OpenAPI Spec**: `packages/citations/specs/citations.yaml`
+- **TypeScript Types**: `packages/citations/src/entities/*.ts`
+- **Adapters**: `packages/citations/src/adapters/*.ts`
+- **Entity Documentation**: [Entity Reference by Source](./sources/entities-reference.md)
+- **Source Catalog**: [Complete Catalog](./sources/catalog.md)

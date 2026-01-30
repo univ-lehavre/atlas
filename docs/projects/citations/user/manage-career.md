@@ -1,47 +1,47 @@
-# Gérer votre parcours
+# Manage Your Career
 
-Ce guide vous explique comment Atlas Verify reconstitue et vous permet de valider votre parcours professionnel.
+This guide explains how Atlas Verify reconstructs and allows you to validate your professional career.
 
-## Pourquoi gérer votre parcours ?
+## Why Manage Your Career?
 
-Votre parcours professionnel (affiliations, laboratoires, universités) est automatiquement reconstitué à partir de vos publications. Cette information permet de :
+Your professional career (affiliations, laboratories, universities) is automatically reconstructed from your publications. This information allows you to:
 
-- **Contextualiser vos publications** : Associer chaque article à la bonne période
-- **Identifier les homonymes** : Un chercheur au même nom mais dans un autre laboratoire
-- **Compléter votre profil** : Certaines affiliations peuvent manquer dans les bases
+- **Contextualize your publications**: Associate each article with the correct period
+- **Identify homonyms**: A researcher with the same name but in a different laboratory
+- **Complete your profile**: Some affiliations may be missing from databases
 
-## Ce que nous reconstituons
+## What We Reconstruct
 
-### Vos affiliations
+### Your Affiliations
 
-Pour chaque période de votre carrière, nous identifions :
+For each period of your career, we identify:
 
-| Information | Exemple |
+| Information | Example |
 |-------------|---------|
-| **Institution** | Université Le Havre Normandie |
-| **Laboratoire** | LITIS - EA 4108 |
-| **Pays/Ville** | France, Le Havre |
-| **Période** | 2018 - présent |
-| **Rôle** | Maître de conférences |
+| **Institution** | Le Havre Normandie University |
+| **Laboratory** | LITIS - EA 4108 |
+| **Country/City** | France, Le Havre |
+| **Period** | 2018 - present |
+| **Role** | Associate Professor |
 
-### Sources utilisées
+### Sources Used
 
-Nous croisons plusieurs sources pour reconstituer votre parcours :
+We cross-reference multiple sources to reconstruct your career:
 
-| Source | Fiabilité | Ce qu'elle apporte |
-|--------|-----------|-------------------|
-| **ORCID** | ⭐⭐⭐⭐⭐ | Données que vous avez vous-même saisies |
-| **OpenAlex** | ⭐⭐⭐⭐ | Affiliations extraites de millions de publications |
-| **HAL** | ⭐⭐⭐⭐ | Structures de recherche françaises normalisées |
-| **Crossref** | ⭐⭐⭐ | Affiliations déclarées par les éditeurs |
+| Source | Reliability | What it provides |
+|--------|-------------|------------------|
+| **ORCID** | ⭐⭐⭐⭐⭐ | Data you have entered yourself |
+| **OpenAlex** | ⭐⭐⭐⭐ | Affiliations extracted from millions of publications |
+| **HAL** | ⭐⭐⭐⭐ | Standardized French research structures |
+| **Crossref** | ⭐⭐⭐ | Affiliations declared by publishers |
 
-> 💡 **Conseil** : Maintenir votre profil ORCID à jour améliore grandement la qualité de la reconstitution.
+> **Tip**: Keeping your ORCID profile up to date greatly improves the quality of the reconstruction.
 
-## Visualiser votre parcours
+## Visualize Your Career
 
-### Frise chronologique
+### Timeline
 
-Votre parcours s'affiche sous forme de frise :
+Your career is displayed as a timeline:
 
 ```
 2010        2015        2020        2025
@@ -50,104 +50,104 @@ Votre parcours s'affiche sous forme de frise :
   [====== Univ. Paris ======]
                     [=== LITIS, Le Havre ===]
 
-  Doctorant           MCF
+  PhD Student          Associate Prof.
 ```
 
-### Détail d'une affiliation
+### Affiliation Details
 
-En cliquant sur une période, vous accédez au détail :
+By clicking on a period, you access the details:
 
-- **Institution principale** : Université Le Havre Normandie
-- **Laboratoire** : LITIS (Laboratoire d'Informatique, de Traitement de l'Information et des Systèmes)
-- **Identifiant ROR** : https://ror.org/01k40cz91
-- **Période détectée** : Janvier 2018 - présent
-- **Publications associées** : 23 articles
-- **Sources concordantes** : ORCID ✓, OpenAlex ✓, HAL ✓
+- **Main institution**: Le Havre Normandie University
+- **Laboratory**: LITIS (Laboratory of Computer Science, Information Processing and Systems)
+- **ROR identifier**: https://ror.org/01k40cz91
+- **Detected period**: January 2018 - present
+- **Associated publications**: 23 articles
+- **Concordant sources**: ORCID ✓, OpenAlex ✓, HAL ✓
 
-## Valider et corriger
+## Validate and Correct
 
-### Confirmer une affiliation
+### Confirm an Affiliation
 
-Si l'affiliation est correcte, confirmez-la. Cela :
-- Augmente la confiance du système
-- Aide à désambiguïser les homonymes
-- Améliore les suggestions futures
+If the affiliation is correct, confirm it. This:
+- Increases system confidence
+- Helps disambiguate homonyms
+- Improves future suggestions
 
-### Corriger une période
+### Correct a Period
 
-Si les dates sont incorrectes :
+If the dates are incorrect:
 
-1. Cliquez sur **Modifier les dates**
-2. Ajustez la date de début et/ou de fin
-3. Validez la modification
+1. Click on **Modify dates**
+2. Adjust the start and/or end date
+3. Validate the modification
 
-> 📝 **Note** : Vos corrections sont prioritaires sur les données automatiques.
+> **Note**: Your corrections take priority over automatic data.
 
-### Ajouter une affiliation manquante
+### Add a Missing Affiliation
 
-Certaines affiliations peuvent ne pas apparaître si :
-- Vous n'avez pas publié pendant cette période
-- L'information n'est pas dans les bases
-- L'affiliation était mal orthographiée
+Some affiliations may not appear if:
+- You did not publish during that period
+- The information is not in the databases
+- The affiliation was misspelled
 
-Pour ajouter une affiliation :
+To add an affiliation:
 
-1. Cliquez sur **Ajouter une affiliation**
-2. Recherchez l'institution (par nom ou identifiant ROR)
-3. Indiquez les dates
-4. Précisez votre rôle (optionnel)
+1. Click on **Add an affiliation**
+2. Search for the institution (by name or ROR identifier)
+3. Enter the dates
+4. Specify your role (optional)
 
-### Supprimer une affiliation erronée
+### Delete an Erroneous Affiliation
 
-Si une affiliation ne vous appartient pas (erreur ou homonyme) :
+If an affiliation doesn't belong to you (error or homonym):
 
-1. Cliquez sur **Signaler comme erronée**
-2. Indiquez la raison (homonyme, erreur de base, etc.)
-3. L'affiliation sera retirée de votre profil
+1. Click on **Report as erroneous**
+2. Indicate the reason (homonym, database error, etc.)
+3. The affiliation will be removed from your profile
 
-## Conflits et incohérences
+## Conflicts and Inconsistencies
 
-### Chevauchements
+### Overlaps
 
-Deux affiliations peuvent se chevaucher si vous aviez un double rattachement. Le système vous demande confirmation :
+Two affiliations may overlap if you had a dual affiliation. The system asks for confirmation:
 
 ```
-⚠️ Chevauchement détecté (2019-2020)
+⚠️ Overlap detected (2019-2020)
 
-Pendant cette période, vous apparaissez affilié à :
-- Université Paris-Saclay (selon OpenAlex)
-- Université Le Havre Normandie (selon HAL)
+During this period, you appear affiliated with:
+- Paris-Saclay University (according to OpenAlex)
+- Le Havre Normandie University (according to HAL)
 
-[ ] Les deux sont correctes (double affiliation)
-[ ] Seule Paris-Saclay est correcte
-[ ] Seul Le Havre est correct
+[ ] Both are correct (dual affiliation)
+[ ] Only Paris-Saclay is correct
+[ ] Only Le Havre is correct
 ```
 
-### Lacunes
+### Gaps
 
-Si une période sans affiliation est détectée, vous pouvez :
-- Confirmer qu'il s'agit d'une période sans activité académique
-- Ajouter l'affiliation manquante
+If a period without affiliation is detected, you can:
+- Confirm that it was a period without academic activity
+- Add the missing affiliation
 
-## Impact sur vos publications
+## Impact on Your Publications
 
-La validation de votre parcours améliore :
+Validating your career improves:
 
-1. **Le matching des publications** : Les articles de la période confirmée ont un score plus élevé
-2. **La détection d'homonymes** : Un article avec une affiliation différente sera scruté
-3. **Votre profil d'expertise** : Les thématiques sont contextualisées par période
+1. **Publication matching**: Articles from the confirmed period have a higher score
+2. **Homonym detection**: An article with a different affiliation will be scrutinized
+3. **Your expertise profile**: Themes are contextualized by period
 
-## Exporter votre parcours
+## Export Your Career
 
-Vous pouvez exporter votre parcours validé au format :
+You can export your validated career in the following formats:
 
-- **PDF** : CV académique formaté
-- **JSON-LD** : Données structurées (pour intégration)
-- **BibTeX** : Pour logiciels de bibliographie
+- **PDF**: Formatted academic CV
+- **JSON-LD**: Structured data (for integration)
+- **BibTeX**: For bibliography software
 
-## Voir aussi
+## See Also
 
-- [Vérifier vos publications](./verify-publications.md) - Valider vos articles
-- [Profil d'expertise](./expertise-profile.md) - Vos domaines de recherche
+- [Verify your publications](./verify-publications.md) - Validate your articles
+- [Expertise profile](./expertise-profile.md) - Your research domains
 
-**Documentation technique :** [Profil chercheur](../dev/researcher-profile.md) - Pour les développeurs
+**Technical documentation:** [Researcher profile](../dev/researcher-profile.md) - For developers
