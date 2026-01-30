@@ -32,10 +32,9 @@ features:
   - title: SARtraces
     details: Spatio-temporal analysis of maritime rescue operations - AIS traces, PREMAR data and weather conditions
   - title: RENOMMÉE
-    details: Institutional reputation analysis via bibliographic data - publications, citations, weighted impact and benchmarking with comparable universities
+    details: Analyse de la renommée institutionnelle via les données bibliographiques – publications, citations, impact pondéré et comparaison avec des universités similaires
   - title: ICO
     details: Measuring the impact of international cooperation on scientific output - bibliometric analysis of publications within the EUNICoast alliance
-
 ---
 
 ## About Atlas
@@ -71,11 +70,13 @@ The [Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.c
 The Campus is a laureate of the "ExcellencES" call for projects of **France 2030**, with funding of **€7.3M** over 7 years (2023-2030).
 
 **Strategic axes:**
+
 - Cities of tomorrow
 - Maritime and port issues
 - Transitions, risks and uncertainties
 
 **Five operational hubs:**
+
 - Expertise and Qualifications Hub
 - Creations and Innovations Hub
 - International Hub
@@ -89,6 +90,7 @@ The Campus is a laureate of the "ExcellencES" call for projects of **France 2030
 **Partner universities:** Åland (Finland), Bourgas (Bulgaria), Stralsund (Germany), EMUNI (Slovenia), Azores (Portugal), Balearic Islands (Spain), Patras (Greece), Sassari (Italy), Faroe Islands, Antilles (France), Le Havre (France), Dubrovnik (Croatia), Szczecin (Poland).
 
 **Research hubs:**
+
 - Identities and heritage of coastal and island communities
 - Circular blue economy, port logistics and sustainable tourism
 - Governance and planning of coastal territories
