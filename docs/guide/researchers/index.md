@@ -38,8 +38,6 @@ ECRIN is organized into **6 sections** representing the stages of scientific col
 | Feature | Description |
 |---------|-------------|
 | Manage your mobility | Declare your incoming or outgoing mobility periods |
-| Track procedures | Administrative support (visa, accommodation, insurance) |
-| Affiliation history | Maintain a reliable history of your institutions |
 
 👉 [Access the AMARRE guide](/projects/amarre/)
 
