@@ -167,7 +167,6 @@ GET /api/v1/repositories/[id]/stats         # Non implémenté
 
 ### Audits et références
 
-- [Audit technique](/audit/ecrin/) - Architecture et cartes fonctionnelles
-- [Audit CSS](/audit/ecrin/css-audit-report) - Rapport d'audit CSS
-- [Roadmap](/roadmaps/ecrin/) - Feuille de route T1-T3 2026
+- [Audit technique](/projects/ecrin/audit/) - Architecture et cartes fonctionnelles
+- [Audit CSS](/projects/ecrin/audit/css-audit-report) - Rapport d'audit CSS
 - [API Reference](/api/@univ-lehavre/atlas-find-an-expert/) - Documentation TypeDoc

@@ -41,7 +41,6 @@ export default withMermaid(defineConfig({
         ],
       },
       { text: 'Audit', link: '/audit/' },
-      { text: 'Roadmaps', link: '/roadmaps/' },
       { text: 'API', link: '/api/' },
     ],
     sidebar: {
@@ -72,14 +71,8 @@ export default withMermaid(defineConfig({
         {
           text: 'Audit',
           items: [
-            { text: 'Audit ECRIN', link: '/audit/ecrin/' },
-            { text: 'Audit CSS', link: '/audit/ecrin/css-audit-report' },
-          ],
-        },
-        {
-          text: 'Roadmap',
-          items: [
-            { text: 'Feuille de route', link: '/roadmaps/ecrin/' },
+            { text: 'Audit ECRIN', link: '/projects/ecrin/audit/' },
+            { text: 'Audit CSS', link: '/projects/ecrin/audit/css-audit-report' },
           ],
         },
       ],
@@ -140,13 +133,7 @@ export default withMermaid(defineConfig({
         {
           text: 'Audit',
           items: [
-            { text: 'Audit Citations', link: '/audit/citations/' },
-          ],
-        },
-        {
-          text: 'Roadmap',
-          items: [
-            { text: 'Feuille de route', link: '/roadmaps/citations/' },
+            { text: 'Audit Citations', link: '/projects/citations/audit/' },
           ],
         },
       ],
@@ -169,13 +156,7 @@ export default withMermaid(defineConfig({
         {
           text: 'Audit',
           items: [
-            { text: 'Audit CRF', link: '/audit/crf/' },
-          ],
-        },
-        {
-          text: 'Roadmap',
-          items: [
-            { text: 'Feuille de route', link: '/roadmaps/crf/' },
+            { text: 'Audit CRF', link: '/projects/crf/audit/' },
           ],
         },
       ],
@@ -198,30 +179,12 @@ export default withMermaid(defineConfig({
           ],
         },
         {
-          text: 'ECRIN',
+          text: 'Par projet',
           items: [
-            { text: 'Audit ECRIN', link: '/audit/ecrin/' },
-            { text: 'Audit CSS Find an Expert', link: '/audit/ecrin/css-audit-report' },
-          ],
-        },
-        {
-          text: 'AMARRE',
-          items: [
-            { text: 'Audit Microservices', link: '/audit/amarre/' },
-            { text: 'Détails Microservices', link: '/audit/amarre/microservices-audit' },
-            { text: 'README Microservices', link: '/audit/amarre/microservices-readme' },
-          ],
-        },
-        {
-          text: 'Citations',
-          items: [
-            { text: 'Audit Citations', link: '/audit/citations/' },
-          ],
-        },
-        {
-          text: 'CRF',
-          items: [
-            { text: 'Audit CRF', link: '/audit/crf/' },
+            { text: 'ECRIN', link: '/projects/ecrin/audit/' },
+            { text: 'AMARRE', link: '/projects/amarre/audit/' },
+            { text: 'Citations', link: '/projects/citations/audit/' },
+            { text: 'CRF', link: '/projects/crf/audit/' },
           ],
         },
       ],
@@ -240,32 +203,9 @@ export default withMermaid(defineConfig({
         {
           text: 'Audit',
           items: [
-            { text: 'Audit Microservices', link: '/audit/amarre/' },
-            { text: 'Détails Microservices', link: '/audit/amarre/microservices-audit' },
-          ],
-        },
-        {
-          text: 'Roadmap',
-          items: [
-            { text: 'Feuille de route', link: '/roadmaps/amarre/' },
-          ],
-        },
-      ],
-      // Roadmaps
-      '/roadmaps/': [
-        {
-          text: 'Roadmaps',
-          items: [
-            { text: 'Vue d\'ensemble', link: '/roadmaps/' },
-          ],
-        },
-        {
-          text: 'Par projet',
-          items: [
-            { text: 'ECRIN', link: '/roadmaps/ecrin/' },
-            { text: 'AMARRE', link: '/roadmaps/amarre/' },
-            { text: 'Citations', link: '/roadmaps/citations/' },
-            { text: 'CRF', link: '/roadmaps/crf/' },
+            { text: 'Audit Microservices', link: '/projects/amarre/audit/' },
+            { text: 'Détails Microservices', link: '/projects/amarre/audit/microservices-audit' },
+            { text: 'README Microservices', link: '/projects/amarre/audit/microservices-readme' },
           ],
         },
       ],

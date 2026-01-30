@@ -33,19 +33,18 @@ Atlas est développé avec plusieurs objectifs :
 
 ### Par projet
 
-| Projet | Description |
-|--------|-------------|
-| [ECRIN](/projects/ecrin/) | Plateforme de collaboration pour chercheurs |
-| [AMARRE](/projects/amarre/) | Gestion de la mobilité des chercheurs |
-| [Citations](/projects/citations/) | Agrégation de sources bibliographiques |
-| [CRF](/projects/crf/) | Outils pour interagir avec REDCap |
+| Projet | Description | Audit |
+|--------|-------------|-------|
+| [ECRIN](/projects/ecrin/) | Plateforme de collaboration pour chercheurs | [Audit](/projects/ecrin/audit/) |
+| [AMARRE](/projects/amarre/) | Gestion de la mobilité des chercheurs | [Audit](/projects/amarre/audit/) |
+| [Citations](/projects/citations/) | Agrégation de sources bibliographiques | [Audit](/projects/citations/audit/) |
+| [CRF](/projects/crf/) | Outils pour interagir avec REDCap | [Audit](/projects/crf/audit/) |
 
 ### Ressources
 
 | Ressource | Description |
 |-----------|-------------|
-| [Audits](/audit/) | Audits techniques et qualité du code |
-| [Roadmaps](/roadmaps/) | Feuilles de route par projet |
+| [Audits communs](/audit/common/) | Outils d'audit, dépendances, dette technique |
 | [API](/api/) | Référence des packages TypeDoc |
 
 ## Plateformes tierces
