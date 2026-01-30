@@ -1,4 +1,4 @@
-# Procédure d'installation du cluster ATLAS sur un Kubernetes sur une seule machine
+# ATLAS Cluster Installation Procedure on Single-Server Kubernetes
 
 ## Architecture cible
 
@@ -23,10 +23,13 @@
                     │  │       :80 / :443          │  │
                     │  └─────────────┬─────────────┘  │
                     │               │                 │
-                    │  ┌────┬────┬──┴──┬────┬────┬────┐│
-                    │  ▼    ▼    ▼     ▼    ▼    ▼    ▼│
-                    │ auth chat office ecrin redcap git│
+                    │  ┌───┬───┬───┬┴──┬───┬───┬───┐  │
+                    │  ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼  │
+                    │ auth chat office ecrin redcap   │
+                    │              git  argo          │
                     └─────────────────────────────────┘
+
+    Services internes (non exposés) : SeaweedFS
 ```
 
 ### 2. Composants K3s et Cilium
@@ -75,7 +78,7 @@
 │  │ authelia  │ │ mattermost│ │ onlyoffice│ │  redcap   │ │   ecrin   ││
 │  │           │ │           │ │           │ │           │ │           ││
 │  │ Authelia  │ │Mattermost │ │ OnlyOffice│ │ REDCap 16 │ │  SvelteKit││
-│  │ Redis     │ │PostgreSQL │ │           │ │ MySQL     │ │           ││
+│  │ Redis     │ │PostgreSQL │ │           │ │ MariaDB     │ │           ││
 │  └───────────┘ └───────────┘ └───────────┘ └───────────┘ └───────────┘│
 │                                                                       │
 │  ┌───────────┐                                                        │
@@ -145,15 +148,15 @@
 │   (demande)        (allocation)            (répliqué + snapshots)  │
 │                                                                    │
 │  ┌──────────┐     ┌──────────┐     ┌────────────────────────┐     │
-│  │ MongoDB  │ ──▶ │  20 Gi   │ ──▶ │  /var/lib/longhorn/    │     │
+│  │PostgreSQL│ ──▶ │  20 Gi   │ ──▶ │  /var/lib/longhorn/    │     │
 │  └──────────┘     └──────────┘     │  replicas/             │     │
-│                                    │  pvc-xxx-mongodb/      │     │
+│                                    │  pvc-xxx-postgres/     │     │
 │  ┌──────────┐     ┌──────────┐     ├────────────────────────┤     │
-│  │ Redis    │ ──▶ │   1 Gi   │ ──▶ │  pvc-xxx-redis/        │     │
+│  │ MariaDB    │ ──▶ │  10 Gi   │ ──▶ │  pvc-xxx-mariadb/        │     │
 │  └──────────┘     └──────────┘     ├────────────────────────┤     │
-│                                    │  pvc-xxx-seaweed/      │     │
-│  ┌──────────┐     ┌──────────┐     │        ...             │     │
-│  │SeaweedFS │ ──▶ │  65 Gi   │ ──▶ │                        │     │
+│                                    │  pvc-xxx-redis/        │     │
+│  ┌──────────┐     ┌──────────┐     ├────────────────────────┤     │
+│  │SeaweedFS │ ──▶ │  65 Gi   │ ──▶ │  pvc-xxx-seaweed/      │     │
 │  └──────────┘     └──────────┘     └────────────────────────┘     │
 │                                                                    │
 │   StorageClass: longhorn (CNCF incubating)                        │
@@ -167,7 +170,7 @@
 | ----------------- | ---------------------- | ---------------------------- |
 | **Namespace**     | Isolation logique      | `mattermost`, `authelia`     |
 | **Deployment**    | Gestion pods sans état | Authelia, OnlyOffice, ECRIN  |
-| **StatefulSet**   | Pods avec état         | PostgreSQL, MySQL, Redis     |
+| **StatefulSet**   | Pods avec état         | PostgreSQL, MariaDB, Redis     |
 | **Service**       | Réseau interne         | `mattermost:8065`            |
 | **Ingress**       | Routing HTTP externe   | `chat.example.com → :8065`   |
 | **PVC**           | Demande stockage       | `20Gi` pour PostgreSQL       |
@@ -187,7 +190,7 @@
 | Longhorn               | Stockage distribué + Backups S3     | ~300-500MB RAM      |
 | cert-manager           | Certificats TLS Let's Encrypt       | ~100MB RAM          |
 | PostgreSQL             | Base de données Mattermost + REDCap | ~300-500MB RAM      |
-| MySQL                  | Base de données REDCap              | ~200-300MB RAM      |
+| MariaDB                  | Base de données REDCap              | ~200-300MB RAM      |
 | Redis                  | Sessions Authelia                   | ~20-50MB RAM        |
 | SeaweedFS              | Stockage S3-compatible              | ~200MB RAM          |
 | OnlyOffice             | Édition collaborative               | ~1.5-2GB RAM        |
@@ -199,6 +202,26 @@
 | ArgoCD                 | GitOps CD (déploiement continu)     | ~300-500MB RAM      |
 
 **Total estimé** : 12-14GB RAM, 4 CPU cores
+
+### Résumé des accès
+
+| Service | URL | Authentification | Qui a accès | Notes |
+|---------|-----|------------------|-------------|-------|
+| **Authelia** | `auth.example.com` | - | Tous | Portail SSO |
+| **Mattermost** | `chat.example.com` | Authelia (1FA) | Chercheurs, Techniciens | Messagerie d'équipe |
+| **OnlyOffice** | `office.example.com` | Authelia (1FA) | Chercheurs, Techniciens | Édition collaborative |
+| **ECRIN** | `ecrin.example.com` | Authelia (1FA) | Chercheurs | Plateforme collaboration |
+| **REDCap Surveys** | `redcap.example.com/surveys/*` | **Aucune** | Public | Formulaires enquêtés |
+| **REDCap Projets** | `redcap.example.com` | Authelia (1FA) | Chercheurs, Admins REDCap | Saisie de données |
+| **REDCap Admin** | `redcap.example.com/ControlCenter/*` | Authelia (2FA) | Admins REDCap | Administration |
+| **REDCap API** | Interne uniquement | - | ECRIN | Non exposé sur internet |
+| **Gitea** | `git.example.com` | Authelia (1FA) | Admins, Chercheurs, Développeurs | Forge Git |
+| **ArgoCD** | `argocd.example.com` | Authelia (2FA) | Admins | GitOps CD |
+| **Hubble UI** | `hubble.example.com` | Authelia (2FA) | Admins | Observabilité réseau |
+| **Longhorn UI** | `longhorn.example.com` | Authelia (2FA) | Admins | Gestion stockage |
+| **SeaweedFS** | Interne uniquement | - | Longhorn, REDCap | Stockage S3 |
+
+**Légende** : 1FA = mot de passe, 2FA = mot de passe + TOTP
 
 ### Composants K3s et réseau
 
@@ -235,6 +258,7 @@ K3s inclut par défaut plusieurs composants essentiels. Flannel (CNI par défaut
   - `redcap.votre-domaine.com` → IP serveur
   - `ecrin.votre-domaine.com` → IP serveur
   - `git.votre-domaine.com` → IP serveur
+  - `argocd.votre-domaine.com` → IP serveur
 - Ressources minimales :
   - RAM libre : >12GB
   - Disque libre : >100GB (pour `/var/lib/longhorn`)
@@ -450,12 +474,16 @@ kubectl wait --for=condition=ready pod \
 
 ### Configuration DNS
 
-Créer 3 enregistrements A dans votre DNS :
+Créer les enregistrements A dans votre DNS :
 
 ```
 auth.votre-domaine.com    → IP-du-serveur
-office.votre-domaine.com  → IP-du-serveur
 chat.votre-domaine.com    → IP-du-serveur
+office.votre-domaine.com  → IP-du-serveur
+redcap.votre-domaine.com  → IP-du-serveur
+ecrin.votre-domaine.com   → IP-du-serveur
+git.votre-domaine.com     → IP-du-serveur
+argocd.votre-domaine.com  → IP-du-serveur
 ```
 
 ### ClusterIssuers Let's Encrypt
@@ -504,9 +532,13 @@ kubectl get pods -n cert-manager
 
 # Test DNS
 dig auth.votre-domaine.com +short
-dig office.votre-domaine.com +short
 dig chat.votre-domaine.com +short
-# Attendu : votre IP serveur pour les 3
+dig office.votre-domaine.com +short
+dig redcap.votre-domaine.com +short
+dig ecrin.votre-domaine.com +short
+dig git.votre-domaine.com +short
+dig argocd.votre-domaine.com +short
+# Attendu : votre IP serveur pour tous les domaines
 
 # Vérifier ClusterIssuers
 kubectl get clusterissuer
@@ -1110,7 +1142,7 @@ echo "MATTERMOST_SECRET=${MATTERMOST_SECRET}" >> ~/k3s-secrets.env
 # Installer Mattermost avec authentification OIDC via Authelia
 helm install mattermost mattermost/mattermost-team-edition \
   --namespace mattermost \
-  --set mysql.enabled=false \
+  --set mariadb.enabled=false \
   --set externalDB.enabled=true \
   --set externalDB.externalDriverType=postgres \
   --set externalDB.externalConnectionString="postgres://mattermost:${MATTERMOST_DB_PASSWORD}@postgresql.mattermost.svc.cluster.local:5432/mattermost?sslmode=disable" \
@@ -1221,7 +1253,7 @@ curl -k https://chat.${DOMAIN}/api/v4/system/ping
 - Licence REDCap (gratuite pour institutions académiques) : https://projectredcap.org/
 - Télécharger le package d'installation depuis le consortium REDCap
 
-### Installation MySQL pour REDCap
+### Installation MariaDB pour REDCap
 
 ```bash
 # Créer namespace
@@ -1235,8 +1267,8 @@ MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
 REDCAP_DB_PASSWORD=${REDCAP_DB_PASSWORD}
 EOF
 
-# Installer MySQL
-helm install mysql bitnami/mysql \
+# Installer MariaDB
+helm install mariadb bitnami/mariadb \
   --namespace redcap \
   --set auth.rootPassword="${MYSQL_ROOT_PASSWORD}" \
   --set auth.username=redcap \
@@ -1245,7 +1277,7 @@ helm install mysql bitnami/mysql \
   --set primary.persistence.size=20Gi
 
 # Attendre déploiement
-kubectl wait --for=condition=ready pod mysql-0 \
+kubectl wait --for=condition=ready pod mariadb-0 \
   -n redcap --timeout=300s
 ```
 
@@ -1277,7 +1309,7 @@ metadata:
 data:
   database.php: |
     <?php
-    \$hostname = 'mysql.redcap.svc.cluster.local';
+    \$hostname = 'mariadb.redcap.svc.cluster.local';
     \$db = 'redcap';
     \$username = 'redcap';
     \$password = '${REDCAP_DB_PASSWORD}';
@@ -1436,7 +1468,7 @@ EOF
 ```bash
 # Vérifier pods
 kubectl get pods -n redcap
-# Attendu : redcap et mysql-0 Running
+# Attendu : redcap et mariadb-0 Running
 
 # Test accès public (surveys)
 curl -k https://redcap.${DOMAIN}/surveys/
@@ -1453,14 +1485,92 @@ curl -k -I https://redcap.${DOMAIN}/ControlCenter/
 2. Copier les fichiers dans le PVC : `kubectl cp redcap16.zip redcap/<pod>:/var/www/html/`
 3. Extraire et configurer via l'interface web
 4. Configurer les politiques d'accès Authelia (voir PHASE 16)
+5. Configurer SMTP et stockage S3 (voir ci-dessous)
+
+### Configuration SMTP pour REDCap
+
+REDCap peut envoyer des emails pour les notifications, invitations aux enquêtes, et alertes.
+
+```bash
+# Dans l'interface REDCap : Control Center > General Configuration
+# Ou via le fichier de configuration :
+
+kubectl exec -it deploy/redcap -n redcap -- bash -c 'cat >> /var/www/html/redcap/database.php << "EOF"
+
+// SMTP Configuration
+\$smtp_server = getenv("SMTP_HOST") ?: "smtp.example.com";
+\$smtp_port = getenv("SMTP_PORT") ?: 587;
+\$smtp_protocol = "STARTTLS";
+\$smtp_username = getenv("SMTP_USER");
+\$smtp_password = getenv("SMTP_PASSWORD");
+\$from_email = getenv("SMTP_FROM") ?: "noreply@example.com";
+EOF'
+```
+
+Configuration via **Control Center > General Configuration** :
+
+| Paramètre | Valeur |
+|-----------|--------|
+| **SMTP Server** | `smtp.example.com` |
+| **SMTP Port** | `587` |
+| **SMTP Protocol** | `STARTTLS` |
+| **SMTP Username** | `username` |
+| **SMTP Password** | `(mot de passe)` |
+| **From Email** | `noreply@example.com` |
+
+### Configuration S3 pour le stockage des fichiers REDCap
+
+REDCap v16 supporte le stockage S3 pour les fichiers uploadés (pièces jointes, signatures, etc.).
+
+```bash
+# Configuration S3 via SeaweedFS interne
+source ~/k3s-secrets.env
+
+# Créer un bucket dédié pour REDCap dans SeaweedFS
+kubectl exec -it deploy/seaweedfs-filer -n seaweedfs -- \
+  /usr/bin/weed shell -master=seaweedfs-master:9333 \
+  -filer=seaweedfs-filer:8888 << EOF
+s3.bucket.create -name redcap-files
+EOF
+```
+
+Configuration via **Control Center > File Repository Settings** :
+
+| Paramètre | Valeur |
+|-----------|--------|
+| **Storage Type** | `Amazon S3` |
+| **S3 Endpoint** | `http://seaweedfs-s3.seaweedfs.svc.cluster.local:8333` |
+| **S3 Bucket** | `redcap-files` |
+| **S3 Access Key** | `${SEAWEEDFS_ACCESS_KEY}` |
+| **S3 Secret Key** | `${SEAWEEDFS_SECRET_KEY}` |
+| **S3 Region** | `us-east-1` (ou laisser vide) |
+| **Use Path Style** | `Yes` (requis pour SeaweedFS) |
+
+> **Note** : L'endpoint S3 utilise le service Kubernetes interne. Le trafic reste dans le cluster.
+
+### Test de la configuration S3
+
+```bash
+# Vérifier que le bucket existe
+kubectl exec -it deploy/seaweedfs-filer -n seaweedfs -- \
+  curl -s http://seaweedfs-s3:8333/redcap-files/ | head -20
+# Attendu : XML listing (peut être vide initialement)
+
+# Test upload depuis REDCap (via l'interface web)
+# 1. Aller dans un projet REDCap
+# 2. Uploader un fichier dans un champ "File Upload"
+# 3. Vérifier que le fichier est stocké dans S3
+```
 
 **Métriques attendues** :
 
 - Pod status : Running
 - RAM REDCap : ~500MB
-- MySQL connexion : OK
+- MariaDB connexion : OK
 - Surveys : Accès public OK
 - Admin : Protégé par Authelia
+- SMTP : Emails fonctionnels
+- S3 : Fichiers stockés dans SeaweedFS
 
 ---
 
@@ -2072,6 +2182,8 @@ done
 ### Configuration OnlyOffice pour Mattermost (édition collaborative)
 
 > **OnlyOffice** permet l'édition collaborative de documents directement depuis Mattermost via un plugin.
+>
+> **Note** : OnlyOffice n'est pas exposé sur internet. Le plugin Mattermost utilise l'URL interne du cluster Kubernetes.
 
 #### Installation du plugin OnlyOffice
 
@@ -2397,11 +2509,12 @@ access_control:
         - "group:researchers"
         - "group:technicians"
 
-    # OnlyOffice - accès depuis Mattermost (referer check)
+    # OnlyOffice - accessible aux chercheurs (édition collaborative)
     - domain: office.example.com
       policy: one_factor
       subject:
         - "group:researchers"
+        - "group:technicians"
 
     # Hubble UI - admins uniquement avec 2FA
     - domain: hubble.example.com
@@ -2716,6 +2829,28 @@ spec:
       - port: "5432"
         protocol: TCP
 ---
+# Mattermost → OnlyOffice (édition collaborative interne)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mattermost-to-onlyoffice
+  namespace: onlyoffice
+spec:
+  endpointSelector:
+    matchLabels:
+      app: onlyoffice
+  ingress:
+  - fromEndpoints:
+    - matchExpressions:
+      - key: k8s:io.kubernetes.pod.namespace
+        operator: In
+        values:
+        - mattermost
+    toPorts:
+    - ports:
+      - port: "80"
+        protocol: TCP
+---
 # Authelia → Redis
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -2735,16 +2870,16 @@ spec:
       - port: "6379"
         protocol: TCP
 ---
-# REDCap → MySQL
+# REDCap → MariaDB
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: redcap-to-mysql
+  name: redcap-to-mariadb
   namespace: redcap
 spec:
   endpointSelector:
     matchLabels:
-      app.kubernetes.io/name: mysql
+      app.kubernetes.io/name: mariadb
   ingress:
   - fromEndpoints:
     - matchLabels:
@@ -2958,8 +3093,9 @@ Une fois les NetworkPolicies appliquées, vous devriez voir dans Hubble :
 | Ingress → Gitea             | FORWARDED | Autorisé par CNP         |
 | Ingress → ArgoCD            | FORWARDED | Autorisé par CNP         |
 | Mattermost → PostgreSQL     | FORWARDED | Autorisé par CNP         |
+| Mattermost → OnlyOffice     | FORWARDED | Autorisé par CNP (interne) |
 | Authelia → Redis            | FORWARDED | Autorisé par CNP         |
-| REDCap → MySQL              | FORWARDED | Autorisé par CNP         |
+| REDCap → MariaDB              | FORWARDED | Autorisé par CNP         |
 | ECRIN → REDCap              | FORWARDED | Autorisé par CNP         |
 | Gitea → PostgreSQL          | FORWARDED | Autorisé par CNP         |
 | ArgoCD → Gitea              | FORWARDED | Autorisé par CNP         |
@@ -2977,7 +3113,8 @@ Une fois les NetworkPolicies appliquées, vous devriez voir dans Hubble :
 | **Backups**      | Longhorn (pas Velero)                  | Intégré au stockage, moins de composants à gérer                        |
 | **Messagerie**   | Mattermost (pas Rocket.Chat)           | OIDC natif, PostgreSQL (plus simple), meilleure intégration Authelia    |
 | **Formulaires**  | REDCap v16                             | Standard recherche, utilisé par ECRIN pour les enquêtes                 |
-| **OnlyOffice**   | Image all-in-one                       | Chart Helm nécessite NFS                                                |
+| **OnlyOffice**   | Image all-in-one, accès public         | Chart Helm nécessite NFS, accessible via Authelia                       |
+| **Base données** | MariaDB (pas MySQL)                    | Fork communautaire, licence GPL, meilleure compatibilité                |
 | **Authelia**     | Déploiement manuel nommé `auth-server` | Chart incompatible + conflit variables env                              |
 | **SeaweedFS**    | Chart officiel                         | Images Bitnami nécessitent subscription                                 |
 | **Certificats**  | Staging d'abord                        | Éviter les rate limits Let's Encrypt                                    |
@@ -2993,7 +3130,7 @@ Une fois les NetworkPolicies appliquées, vous devriez voir dans Hubble :
 | -------------------------------- | ---------------------------------------- |
 | `~/k3s-secrets.env`              | Tous les mots de passe générés           |
 | `/etc/rancher/k3s/k3s.yaml`      | Kubeconfig                               |
-| `INSTALLATION-K3S-ROCKETCHAT.md` | Documentation complète post-installation |
+| `INSTALLATION-K3S-ATLAS.md`      | Documentation complète post-installation |
 | `k3s-install.log`                | Log complet de l'installation initiale   |
 
 ---
@@ -3022,13 +3159,13 @@ kubectl get certificates -A
 helm repo update
 
 # Lister versions disponibles
-helm search repo rocketchat
-helm search repo bitnami/mongodb
+helm search repo mattermost/mattermost-team-edition
+helm search repo bitnami/postgresql
 
 # Créer un snapshot avant mise à jour (via Longhorn UI ou CLI)
 # Puis upgrade
-helm upgrade rocketchat rocketchat/rocketchat \
-  --namespace rocketchat \
+helm upgrade mattermost mattermost/mattermost-team-edition \
+  --namespace mattermost \
   --reuse-values
 ```
 
