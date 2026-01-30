@@ -109,7 +109,7 @@ Authentication by **magic link** only. Emails arrive in MailHog.
 
 ### OPA Policies
 
-```rego
+```txt
 # Admin: full access
 allow if { "admin" in input.user.groups }
 
