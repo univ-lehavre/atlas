@@ -226,7 +226,8 @@ Le package `@univ-lehavre/atlas-logos` contient :
 | `cptmp.png` | Campus Polytechnique des Territoires Maritimes et Portuaires | Projet porté par l'Université Le Havre Normandie |
 | `eunicoast.png` | EUNICoast | Projet porté par l'Université Le Havre Normandie |
 | `france-2030.png` | France 2030 | Financeur |
-| `region-normandie.png` | Région Normandie | Partenaire |
+| `region-normandie.jpg` | Région Normandie (haute qualité) | Partenaire |
+| `region-normandie.png` | Région Normandie (compacte) | Usage web optimisé |
 | `ecrin-color.png` | ECRIN (couleur) | Application principale |
 | `ecrin-bw.png` | ECRIN (noir et blanc) | Usage alternatif |
 | `find-an-expert.svg` | Find an Expert | Sous-projet |

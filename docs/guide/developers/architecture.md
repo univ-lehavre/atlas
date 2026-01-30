@@ -235,3 +235,34 @@ export APPWRITE_PROJECT_ID="votre_project_id"
 export APPWRITE_API_KEY="votre_api_key"
 export APPWRITE_ENDPOINT="https://appwrite.votredomaine.com/v1"
 ```
+
+## Plateformes tierces
+
+Atlas s'appuie sur deux plateformes tierces pour ses fonctionnalités :
+
+### REDCap (Research Electronic Data Capture)
+
+[REDCap](https://project-redcap.org/) est une application web sécurisée développée par l'Université Vanderbilt pour la création et la gestion d'enquêtes en ligne et de bases de données de recherche.
+
+| Caractéristique | Valeur |
+|-----------------|--------|
+| Institutions partenaires | 8 000+ |
+| Pays | 164 |
+| Citations scientifiques | 51 000+ |
+| Conformité | RGPD, HIPAA, 21 CFR Part 11 |
+| Coût | Gratuit pour les membres du Consortium |
+
+REDCap permet la collecte de données sur le web et sur mobile (y compris hors connexion). Le module CRF fournit des outils TypeScript pour interagir avec l'API REDCap.
+
+### Appwrite
+
+[Appwrite](https://appwrite.io/) est une plateforme backend open source fournissant les services essentiels pour le développement d'applications :
+
+| Service | Description |
+|---------|-------------|
+| Authentification | Connexion par email, OAuth, liens magiques |
+| Base de données | Stockage et requêtage de données |
+| Stockage | Gestion de fichiers avec chiffrement |
+| Fonctions | Exécution de code serverless |
+
+Appwrite est conforme aux normes SOC-2, RGPD et HIPAA. Les projets ECRIN et AMARRE utilisent Appwrite pour l'authentification et la gestion des données utilisateurs.
