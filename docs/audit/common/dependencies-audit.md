@@ -1,26 +1,27 @@
-# Audit des dépendances
 
-> **Dernière mise à jour :** 28 janvier 2026
+# Dependencies audit
 
-## Prochaines étapes
+> **Last updated:** 28 January 2026
 
-| Priorité | Action | Statut |
+## Next steps
+
+| Priority | Action | Status |
 |:--------:|--------|:------:|
-| 🔴 | Migrer `tsup` → `tsc` pour les packages utilitaires (appwrite, auth, errors, validators) | À faire |
-| 🟡 | Ajouter des tests pour les packages `appwrite` et `auth` (couverture < 80%) | À faire |
-| 🟡 | Évaluer la migration vers Bun comme runtime alternatif | À étudier |
-| 🟢 | Automatiser l'audit des dépendances via CI (Renovate ou Dependabot) | À planifier |
-| 🟢 | Documenter les breaking changes node-appwrite 21.x | ✅ Fait |
+| 🔴 | Migrate `tsup` → `tsc` for utility packages (appwrite, auth, errors, validators) | To do |
+| 🟡 | Add tests for `appwrite` and `auth` packages (coverage < 80%) | To do |
+| 🟡 | Evaluate migration to Bun as an alternative runtime | To investigate |
+| 🟢 | Automate dependency audits via CI (Renovate or Dependabot) | Planned |
+| 🟢 | Document node-appwrite 21.x breaking changes | ✅ Done |
 
 ---
 
-## Versions standardisées
+## Standardized versions
 
-Versions cibles pour tous les packages du monorepo :
+Target versions for all monorepo packages:
 
-### Stack principale
+### Main stack
 
-| Dépendance | Version | Latest |
+| Dependency | Version | Latest |
 |------------|---------|:------:|
 | Node.js | >=24.0.0 | ✅ |
 | pnpm | 10.28.2 | ✅ |
@@ -31,7 +32,7 @@ Versions cibles pour tous les packages du monorepo :
 
 ### SvelteKit
 
-| Dépendance | Version | Latest |
+| Dependency | Version | Latest |
 |------------|---------|:------:|
 | @sveltejs/kit | ^2.50.1 | ✅ |
 | @sveltejs/adapter-node | ^5.5.2 | ✅ |
@@ -42,14 +43,14 @@ Versions cibles pour tous les packages du monorepo :
 
 ### Appwrite
 
-| Dépendance | Version | Latest |
+| Dependency | Version | Latest |
 |------------|---------|:------:|
 | node-appwrite | ^21.1.0 | ✅ |
 | appwrite (client) | ^21.5.0 | ✅ |
 
 ### Effect
 
-| Dépendance | Version | Latest |
+| Dependency | Version | Latest |
 |------------|---------|:------:|
 | effect | ^3.19.15 | ✅ |
 | @effect/cli | ^0.73.1 | ✅ |
@@ -58,7 +59,7 @@ Versions cibles pour tous les packages du monorepo :
 
 ### Hono (CRF)
 
-| Dépendance | Version | Latest |
+| Dependency | Version | Latest |
 |------------|---------|:------:|
 | hono | ^4.11.7 | ✅ |
 | hono-openapi | ^1.2.0 | ✅ |
@@ -66,27 +67,27 @@ Versions cibles pour tous les packages du monorepo :
 
 ---
 
-## Commandes utiles
+## Useful commands
 
 ```bash
-# Voir les dépendances obsolètes
+# Show outdated dependencies
 pnpm taze -r
 
-# Mettre à jour toutes les dépendances (écrit dans package.json)
+# Update all dependencies (writes to package.json)
 pnpm taze -r -w
 
-# Installer après mise à jour
+# Install after update
 pnpm install
 
-# Vérifier que tout fonctionne
+# Verify everything works
 pnpm lint && pnpm test && pnpm build
 ```
 
 ---
 
-## Vue d'ensemble
+## Overview
 
-Le monorepo Atlas contient **14 packages** gérés avec pnpm workspaces.
+The Atlas monorepo contains **14 packages** managed with pnpm workspaces.
 
 ### Packages
 
@@ -110,102 +111,102 @@ Le monorepo Atlas contient **14 packages** gérés avec pnpm workspaces.
 
 ---
 
-## Détail par package
+## Details by package
 
-### Applications SvelteKit
+### SvelteKit applications
 
 #### find-an-expert (v0.5.1)
 
-Application d'analyse d'expertise des chercheurs.
+Expertise analysis application for researchers.
 
-**Dependencies :**
+**Dependencies:**
 - @iconify/svelte, node-appwrite, simple-git, swagger-ui-dist, zod
 
 #### amarre (v2.0.0)
 
-Application SvelteKit avec graphes (Sigma.js).
+SvelteKit application with graphs (Sigma.js).
 
-**Dependencies :**
+**Dependencies:**
 - node-appwrite, luxon, zod, @sigma/*, graphology-*
 
 #### ecrin (v2.0.0)
 
-Application SvelteKit avec graphes (Sigma.js).
+SvelteKit application with graphs (Sigma.js).
 
-**Dependencies :**
+**Dependencies:**
 - node-appwrite, appwrite, luxon, lodash, @sigma/*, graphology-*, sigma
 
 ---
 
-### Packages REDCap
+### REDCap packages
 
 #### @univ-lehavre/crf (v1.3.0)
 
-Client REDCap, serveur HTTP (Hono), CLI.
+REDCap client, HTTP server (Hono), CLI.
 
-**Dependencies :**
+**Dependencies:**
 - effect, @effect/*, hono, hono-openapi, @clack/prompts, picocolors
 
 #### @univ-lehavre/atlas-redcap-openapi (v1.3.0)
 
-Analyse source REDCap et extraction OpenAPI.
+REDCap source analysis and OpenAPI extraction.
 
-**Dependencies :**
+**Dependencies:**
 - @clack/prompts, picocolors, yaml
 
 #### @univ-lehavre/atlas-redcap-core (v1.1.0)
 
-Logique domaine REDCap pure (Effect).
+Pure REDCap domain logic (Effect).
 
-**Dependencies :**
+**Dependencies:**
 - effect
 
 ---
 
-### Packages utilitaires
+### Utility packages
 
 #### @univ-lehavre/atlas-net (v0.7.0)
 
-Utilitaires et CLI diagnostic réseau.
+Network utilities and diagnostic CLI.
 
-**Dependencies :**
+**Dependencies:**
 - effect, @effect/*, @clack/prompts, picocolors
 
 #### @univ-lehavre/atlas-shared-config (v0.3.0)
 
-Configuration partagée ESLint, TypeScript, Prettier.
+Shared ESLint, TypeScript and Prettier configuration.
 
-**Dependencies :**
+**Dependencies:**
 - typescript-eslint, eslint-plugin-*, globals
 
 #### @univ-lehavre/atlas-appwrite (v0.2.0)
 
-Utilitaires Appwrite partagés.
+Shared Appwrite utilities.
 
-**Dependencies :**
+**Dependencies:**
 - node-appwrite
 
 #### @univ-lehavre/atlas-auth (v0.2.0)
 
-Service d'authentification partagé.
+Shared authentication service.
 
-**Dependencies :**
+**Dependencies:**
 - node-appwrite
 
 #### @univ-lehavre/atlas-errors (v0.2.0)
 
-Classes d'erreurs partagées.
+Shared error classes.
 
 #### @univ-lehavre/atlas-validators (v0.2.0)
 
-Utilitaires de validation.
+Validation utilities.
 
 ---
 
-## Historique
+## History
 
 | Date | Action |
 |------|--------|
-| 28 janvier 2026 | Mise à jour complète via `taze -r -w` |
-| 28 janvier 2026 | Alignement node-appwrite 21.1.0 + migration API |
-| 28 janvier 2026 | Audit initial |
+| 28 January 2026 | Full update via `taze -r -w` |
+| 28 January 2026 | Align node-appwrite 21.1.0 + API migration |
+| 28 January 2026 | Initial audit |
