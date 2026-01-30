@@ -4,7 +4,7 @@ import apiSidebar from './data/api-sidebar.json';
 
 export default withMermaid(defineConfig({
   title: 'Atlas',
-  description: 'Plateforme de recherche - Université Le Havre Normandie',
+  description: 'Research Platform - Le Havre Normandie University',
   base: '/atlas/',
   ignoreDeadLinks: [
     // Localhost links in infrastructure docs
@@ -47,8 +47,8 @@ export default withMermaid(defineConfig({
       {
         text: 'Guide',
         items: [
-          { text: 'Chercheurs', link: '/guide/researchers/' },
-          { text: 'Développeurs', link: '/guide/developers/' },
+          { text: 'Researchers', link: '/guide/researchers/' },
+          { text: 'Developers', link: '/guide/developers/' },
         ],
       },
       {
@@ -70,30 +70,30 @@ export default withMermaid(defineConfig({
         {
           text: 'ECRIN',
           items: [
-            { text: 'Présentation', link: '/projects/ecrin/' },
+            { text: 'Overview', link: '/projects/ecrin/' },
           ],
         },
         {
-          text: 'Guide chercheur',
+          text: 'Researcher Guide',
           items: [
             { text: 'Introduction', link: '/projects/ecrin/user/' },
           ],
         },
         {
-          text: 'Documentation technique',
+          text: 'Technical Documentation',
           items: [
-            { text: 'Vue d\'ensemble', link: '/projects/ecrin/dev/' },
-            { text: 'Configuration technique', link: '/projects/ecrin/find-an-expert/technical-setup' },
-            { text: 'Configuration Appwrite', link: '/projects/ecrin/find-an-expert/appwrite-setup' },
+            { text: 'Overview', link: '/projects/ecrin/dev/' },
+            { text: 'Technical Setup', link: '/projects/ecrin/find-an-expert/technical-setup' },
+            { text: 'Appwrite Setup', link: '/projects/ecrin/find-an-expert/appwrite-setup' },
             { text: 'Design System', link: '/projects/ecrin/find-an-expert/design-system' },
-            { text: 'Architecture CSS', link: '/projects/ecrin/find-an-expert/css-architecture' },
+            { text: 'CSS Architecture', link: '/projects/ecrin/find-an-expert/css-architecture' },
           ],
         },
         {
           text: 'Audit',
           items: [
-            { text: 'Audit ECRIN', link: '/projects/ecrin/audit/' },
-            { text: 'Audit CSS', link: '/projects/ecrin/audit/css-audit-report' },
+            { text: 'ECRIN Audit', link: '/projects/ecrin/audit/' },
+            { text: 'CSS Audit', link: '/projects/ecrin/audit/css-audit-report' },
           ],
         },
       ],
@@ -102,47 +102,47 @@ export default withMermaid(defineConfig({
         {
           text: 'Citations',
           items: [
-            { text: 'Présentation', link: '/projects/citations/' },
+            { text: 'Overview', link: '/projects/citations/' },
           ],
         },
         {
-          text: 'Guide chercheur',
+          text: 'Researcher Guide',
           items: [
             { text: 'Introduction', link: '/projects/citations/user/' },
-            { text: 'Vérifier vos publications', link: '/projects/citations/user/verify-publications' },
-            { text: 'Gérer votre parcours', link: '/projects/citations/user/manage-career' },
-            { text: "Profil d'expertise", link: '/projects/citations/user/expertise-profile' },
-            { text: 'Réseau de collaborations', link: '/projects/citations/user/collaboration-network' },
-            { text: 'Les sources de données', link: '/projects/citations/user/sources' },
+            { text: 'Verify Your Publications', link: '/projects/citations/user/verify-publications' },
+            { text: 'Manage Your Career', link: '/projects/citations/user/manage-career' },
+            { text: 'Expertise Profile', link: '/projects/citations/user/expertise-profile' },
+            { text: 'Collaboration Network', link: '/projects/citations/user/collaboration-network' },
+            { text: 'Data Sources', link: '/projects/citations/user/sources' },
           ],
         },
         {
-          text: 'Documentation technique',
+          text: 'Technical Documentation',
           items: [
-            { text: "Vue d'ensemble", link: '/projects/citations/dev/' },
+            { text: 'Overview', link: '/projects/citations/dev/' },
             { text: 'Architecture', link: '/projects/citations/dev/architecture' },
-            { text: 'Schéma unifié', link: '/projects/citations/dev/unified-schema' },
-            { text: 'Client unifié', link: '/projects/citations/dev/citations-client' },
-            { text: 'Cycle de vie OpenAPI', link: '/projects/citations/dev/openapi-lifecycle' },
+            { text: 'Unified Schema', link: '/projects/citations/dev/unified-schema' },
+            { text: 'Unified Client', link: '/projects/citations/dev/citations-client' },
+            { text: 'OpenAPI Lifecycle', link: '/projects/citations/dev/openapi-lifecycle' },
             { text: 'Rate Limiting', link: '/projects/citations/dev/rate-limiting' },
-            { text: 'Validateur OpenAPI', link: '/projects/citations/dev/openapi-validator' },
+            { text: 'OpenAPI Validator', link: '/projects/citations/dev/openapi-validator' },
           ],
         },
         {
           text: 'Atlas Verify',
           items: [
-            { text: 'Fiabilisation auteur', link: '/projects/citations/dev/author-verification' },
-            { text: 'Profil chercheur', link: '/projects/citations/dev/researcher-profile' },
-            { text: 'Bases de données', link: '/projects/citations/dev/database-analysis' },
-            { text: 'Bases avancées', link: '/projects/citations/dev/advanced-databases' },
+            { text: 'Author Verification', link: '/projects/citations/dev/author-verification' },
+            { text: 'Researcher Profile', link: '/projects/citations/dev/researcher-profile' },
+            { text: 'Databases', link: '/projects/citations/dev/database-analysis' },
+            { text: 'Advanced Databases', link: '/projects/citations/dev/advanced-databases' },
           ],
         },
         {
-          text: 'Sources bibliographiques',
+          text: 'Bibliographic Sources',
           items: [
-            { text: "Vue d'ensemble", link: '/projects/citations/dev/sources/' },
-            { text: 'Catalogue complet', link: '/projects/citations/dev/sources/catalog' },
-            { text: 'Référence entités', link: '/projects/citations/dev/sources/entities-reference' },
+            { text: 'Overview', link: '/projects/citations/dev/sources/' },
+            { text: 'Full Catalog', link: '/projects/citations/dev/sources/catalog' },
+            { text: 'Entities Reference', link: '/projects/citations/dev/sources/entities-reference' },
             { text: 'OpenAlex', link: '/projects/citations/dev/sources/openalex' },
             { text: 'Crossref', link: '/projects/citations/dev/sources/crossref' },
             { text: 'HAL', link: '/projects/citations/dev/sources/hal' },
@@ -154,7 +154,7 @@ export default withMermaid(defineConfig({
         {
           text: 'Audit',
           items: [
-            { text: 'Audit Citations', link: '/projects/citations/audit/' },
+            { text: 'Citations Audit', link: '/projects/citations/audit/' },
           ],
         },
       ],
