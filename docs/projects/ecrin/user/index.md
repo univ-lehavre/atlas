@@ -20,6 +20,7 @@ L'application est organisée en **6 sections** représentant les différentes é
 
 | Carte | Ce que vous pouvez faire |
 |-------|--------------------------|
+| **Me** | Décrivez votre profil |
 | **My scientific question** | Décrivez votre question scientifique pour obtenir des retours de la communauté |
 | **My references** | Référencez vos publications scientifiques récentes en un seul endroit |
 

@@ -1,8 +1,12 @@
 # Guide d'Implémentation - Survey Microservice
 
-**Date:** 20 décembre 2025  
-**Version:** 1.0  
-**Lié à:** [Audit Microservices](/audit/amarre/) | [Diagrammes](./ARCHITECTURE_DIAGRAMS)
+::: warning Projet en cours de développement
+Ce guide décrit l'architecture cible du microservice Survey. L'implémentation n'est pas encore réalisée.
+:::
+
+**Date:** 20 décembre 2025
+**Version:** 1.0
+**Lié à:** [Diagrammes](./ARCHITECTURE_DIAGRAMS)
 
 ## Table des matières
 

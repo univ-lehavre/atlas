@@ -1,5 +1,9 @@
 # Infrastructure Zero Trust
 
+::: warning Projet non implémenté
+Cette documentation décrit une architecture cible pour une infrastructure Zero Trust. **Elle n'est pas encore implémentée.** Les scripts et configurations mentionnés n'existent pas actuellement dans le dépôt.
+:::
+
 Atlas inclut une infrastructure Kubernetes locale avec une architecture Zero Trust complete.
 
 ## Architecture
