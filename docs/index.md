@@ -32,7 +32,7 @@ features:
   - title: SARtraces
     details: Spatio-temporal analysis of maritime rescue operations - AIS traces, PREMAR data and weather conditions
   - title: RENOMMÉE
-    details: Analyse de la renommée institutionnelle via les données bibliographiques – publications, citations, impact pondéré et comparaison avec des universités similaires
+    details: Analysis of institutional RENOMMÉE using bibliographic data — publications, citations, weighted impact, and comparison with similar universities
   - title: ICO
     details: Measuring the impact of international cooperation on scientific output - bibliometric analysis of publications within the EUNICoast alliance
 ---
