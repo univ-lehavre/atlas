@@ -1361,12 +1361,51 @@ kubectl wait --for=condition=ready pod -l app=redcap \
 
 ### Créer Ingress REDCap (STAGING)
 
+> **Politique d'accès REDCap** :
+> - `/surveys/` : Accès public (formulaires pour les enquêtés)
+> - `/api/` : Accès restreint à ECRIN uniquement (interne cluster)
+> - `/ControlCenter/` et admin : Authentification Authelia requise
+
 ```bash
+# Ingress pour les formulaires publics (surveys)
 cat <<EOF | kubectl apply -f -
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: redcap
+  name: redcap-public
+  namespace: redcap
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+spec:
+  ingressClassName: cilium
+  tls:
+  - hosts:
+    - redcap.${DOMAIN}
+    secretName: redcap-tls
+  rules:
+  - host: redcap.${DOMAIN}
+    http:
+      paths:
+      - path: /surveys
+        pathType: Prefix
+        backend:
+          service:
+            name: redcap
+            port:
+              number: 80
+      - path: /redcap_v16/surveys
+        pathType: Prefix
+        backend:
+          service:
+            name: redcap
+            port:
+              number: 80
+---
+# Ingress pour l'interface admin (protégé par Authelia)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: redcap-admin
   namespace: redcap
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-staging
@@ -1390,6 +1429,8 @@ spec:
 EOF
 ```
 
+> **Note** : L'API REDCap (`/api/`) n'est pas exposée via Ingress. Elle est accessible uniquement depuis le cluster (ECRIN → REDCap via Service interne).
+
 ### Tests de validation
 
 ```bash
@@ -1397,9 +1438,13 @@ EOF
 kubectl get pods -n redcap
 # Attendu : redcap et mysql-0 Running
 
-# Test HTTP
-curl -k https://redcap.${DOMAIN}/
-# Attendu : Page d'installation REDCap ou login
+# Test accès public (surveys)
+curl -k https://redcap.${DOMAIN}/surveys/
+# Attendu : Page de formulaire ou erreur "survey not found"
+
+# Test accès admin (doit rediriger vers Authelia)
+curl -k -I https://redcap.${DOMAIN}/ControlCenter/
+# Attendu : Redirection 302 vers auth.${DOMAIN}
 ```
 
 **Post-installation** :
@@ -1407,13 +1452,15 @@ curl -k https://redcap.${DOMAIN}/
 1. Télécharger REDCap v16 depuis le consortium
 2. Copier les fichiers dans le PVC : `kubectl cp redcap16.zip redcap/<pod>:/var/www/html/`
 3. Extraire et configurer via l'interface web
-4. Configurer l'authentification OIDC (voir PHASE 14)
+4. Configurer les politiques d'accès Authelia (voir PHASE 16)
 
 **Métriques attendues** :
 
 - Pod status : Running
 - RAM REDCap : ~500MB
 - MySQL connexion : OK
+- Surveys : Accès public OK
+- Admin : Protégé par Authelia
 
 ---
 
@@ -2276,10 +2323,11 @@ users:
 
 | Groupe | Description | Accès |
 |--------|-------------|-------|
-| `admins` | Administrateurs système | Tout (Hubble, Longhorn UI, etc.) |
-| `researchers` | Chercheurs | ECRIN, REDCap, Mattermost, OnlyOffice |
+| `admins` | Administrateurs système | Tout (Hubble, Longhorn, ArgoCD, Gitea, etc.) |
+| `researchers` | Chercheurs | ECRIN, REDCap (projets), Mattermost, OnlyOffice, Gitea |
+| `developers` | Développeurs | Gitea, Mattermost |
 | `ecrin-users` | Utilisateurs ECRIN | ECRIN uniquement |
-| `redcap-admins` | Administrateurs REDCap | REDCap admin |
+| `redcap-admins` | Administrateurs REDCap | REDCap ControlCenter (2FA) |
 | `technicians` | Support technique | Monitoring, logs |
 
 ### Autorisations dynamiques : Politiques d'accès Authelia
@@ -2318,18 +2366,29 @@ access_control:
         - "group:researchers"
         - "group:ecrin-users"
 
-    # REDCap - accès différencié
+    # REDCap - accès différencié selon les chemins
+    # Formulaires publics (surveys) - accessible sans authentification
+    - domain: redcap.example.com
+      resources:
+        - "^/surveys.*"
+        - "^/redcap_v[0-9]+/surveys.*"
+      policy: bypass
+
+    # Interface d'administration REDCap - 2FA requis
     - domain: redcap.example.com
       resources:
         - "^/ControlCenter/.*"
+        - "^/redcap_v[0-9]+/ControlCenter/.*"
       policy: two_factor
       subject:
         - "group:redcap-admins"
 
+    # Reste de l'interface REDCap (projets, data entry) - chercheurs
     - domain: redcap.example.com
       policy: one_factor
       subject:
         - "group:researchers"
+        - "group:redcap-admins"
 
     # Mattermost - authentification simple
     - domain: chat.example.com
@@ -2352,6 +2411,20 @@ access_control:
 
     # Longhorn UI - admins uniquement avec 2FA
     - domain: longhorn.example.com
+      policy: two_factor
+      subject:
+        - "group:admins"
+
+    # Gitea - accessible aux développeurs et chercheurs
+    - domain: git.example.com
+      policy: one_factor
+      subject:
+        - "group:admins"
+        - "group:researchers"
+        - "group:developers"
+
+    # ArgoCD - admins uniquement avec 2FA (déploiement production)
+    - domain: argocd.example.com
       policy: two_factor
       subject:
         - "group:admins"
