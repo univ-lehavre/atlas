@@ -54,8 +54,15 @@ export default withMermaid(defineConfig({
           ],
         },
         {
-          text: 'Find an Expert',
+          text: 'Guide chercheur',
           items: [
+            { text: 'Introduction', link: '/projects/ecrin/user/' },
+          ],
+        },
+        {
+          text: 'Documentation technique',
+          items: [
+            { text: 'Vue d\'ensemble', link: '/projects/ecrin/dev/' },
             { text: 'Configuration technique', link: '/projects/ecrin/find-an-expert/technical-setup' },
             { text: 'Configuration Appwrite', link: '/projects/ecrin/find-an-expert/appwrite-setup' },
             { text: 'Design System', link: '/projects/ecrin/find-an-expert/design-system' },
