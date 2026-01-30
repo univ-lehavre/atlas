@@ -1,40 +1,40 @@
 # Atlas CRF (REDCap)
 
-Atlas CRF fournit un client TypeScript et un serveur HTTP pour interagir avec l'API REDCap.
+Atlas CRF provides a TypeScript client and HTTP server for interacting with the REDCap API.
 
-> **Documentation utilisateur :** [Qu'est-ce qu'Atlas CRF ?](../#atlas-crf-clinical-research-forms)
+> **User documentation:** [What is Atlas CRF?](../#atlas-crf-clinical-research-forms)
 
 ## Packages
 
 | Package | Description |
 |---------|-------------|
-| `@univ-lehavre/atlas-crf` | Client Effect + serveur Hono + CLI |
+| `@univ-lehavre/atlas-crf` | Effect client + Hono server + CLI |
 
 ## Architecture
 
 ```
 packages/crf/
 ├── specs/
-│   └── redcap.yaml              # OpenAPI 3.1.0 spec REDCap
+│   └── redcap.yaml              # OpenAPI 3.1.0 REDCap spec
 ├── src/
-│   ├── redcap/                  # Client Effect pour REDCap
-│   │   ├── generated/types.ts   # Types générés (openapi-typescript)
+│   ├── redcap/                  # Effect client for REDCap
+│   │   ├── generated/types.ts   # Generated types (openapi-typescript)
 │   │   ├── brands.ts            # Branded types (RecordId, etc.)
-│   │   ├── client.ts            # Client principal
-│   │   ├── errors.ts            # Erreurs typées
+│   │   ├── client.ts            # Main client
+│   │   ├── errors.ts            # Typed errors
 │   │   └── index.ts
-│   ├── server/                  # Microservice HTTP (Hono)
+│   ├── server/                  # HTTP microservice (Hono)
 │   │   ├── routes/              # health, project, records, users
 │   │   ├── middleware/          # rate-limit, validation
 │   │   └── index.ts
 │   ├── cli/                     # CLI tools
-│   │   ├── redcap/              # crf-redcap (test connectivité)
-│   │   └── server/              # crf-server (test serveur CRF)
-│   └── bin/                     # Entry points CLI
+│   │   ├── redcap/              # crf-redcap (connectivity test)
+│   │   └── server/              # crf-server (CRF server test)
+│   └── bin/                     # CLI entry points
 └── test/
 ```
 
-## Client REDCap
+## REDCap Client
 
 ### Installation
 
@@ -42,7 +42,7 @@ packages/crf/
 pnpm add @univ-lehavre/atlas-crf effect
 ```
 
-### Usage basique
+### Basic usage
 
 ```typescript
 import { Effect } from 'effect';
@@ -53,19 +53,19 @@ const client = createRedcapClient({
   token: RedcapToken('YOUR_32_CHAR_HEXADECIMAL_TOKEN'),
 });
 
-// Exporter des records
+// Export records
 const records = await Effect.runPromise(
   client.exportRecords({ fields: ['record_id', 'name'] })
 );
 
-// Informations du projet
+// Project information
 const projectInfo = await Effect.runPromise(client.getProjectInfo());
 
-// Liste des instruments
+// List of instruments
 const instruments = await Effect.runPromise(client.listInstruments());
 ```
 
-### Gestion des erreurs
+### Error handling
 
 ```typescript
 import { Effect, Match } from 'effect';
@@ -73,11 +73,11 @@ import { RedcapError, RedcapNetworkError, RedcapAuthError } from '@univ-lehavre/
 
 const program = client.exportRecords({ fields: ['record_id'] }).pipe(
   Effect.catchTag('RedcapAuthError', (error) => {
-    console.error('Token invalide:', error.message);
+    console.error('Invalid token:', error.message);
     return Effect.succeed([]);
   }),
   Effect.catchTag('RedcapNetworkError', (error) => {
-    console.error('Erreur réseau:', error.message);
+    console.error('Network error:', error.message);
     return Effect.succeed([]);
   })
 );
@@ -85,110 +85,110 @@ const program = client.exportRecords({ fields: ['record_id'] }).pipe(
 
 ### Branded Types
 
-Le client utilise des branded types pour la validation à la compilation :
+The client uses branded types for compile-time validation:
 
 ```typescript
 import { RecordId, RedcapUrl, RedcapToken } from '@univ-lehavre/atlas-crf';
 
-// Ces lignes échouent à la compilation si le format est invalide
+// These lines fail at compile time if the format is invalid
 const recordId = RecordId('123');                    // OK
 const url = RedcapUrl('https://redcap.example.com/api/');  // OK
 const token = RedcapToken('AAAABBBBCCCCDDDDEEEE11112222'); // 32 chars hex
 
-// Erreur de compilation :
+// Compilation error:
 const badToken = RedcapToken('too-short');  // ❌ Type error
 ```
 
-## Serveur HTTP
+## HTTP Server
 
-Le package inclut un serveur HTTP (Hono) qui expose l'API REDCap de manière REST.
+The package includes an HTTP server (Hono) that exposes the REDCap API in a REST manner.
 
-### Lancement
+### Starting the server
 
 ```bash
-# Variables d'environnement
+# Environment variables
 export REDCAP_API_URL=https://redcap.example.com/api/
 export REDCAP_API_TOKEN=your_token
 
-# Lancer le serveur
+# Start the server
 pnpm -F @univ-lehavre/atlas-crf start
 ```
 
 ### Endpoints
 
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| GET | `/health` | Santé du service |
-| GET | `/project` | Informations du projet |
-| GET | `/records` | Exporter les records |
-| POST | `/records` | Importer des records |
-| GET | `/users` | Liste des utilisateurs |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Service health |
+| GET | `/project` | Project information |
+| GET | `/records` | Export records |
+| POST | `/records` | Import records |
+| GET | `/users` | List of users |
 
 ### Middleware
 
-- **Rate Limiting** : Protection contre les abus
-- **Validation** : Validation des paramètres d'entrée
+- **Rate Limiting**: Protection against abuse
+- **Validation**: Input parameter validation
 
 ## CLI
 
 ### crf-redcap
 
-Test de connectivité avec l'API REDCap :
+Connectivity test with the REDCap API:
 
 ```bash
-# Test basique
+# Basic test
 crf-redcap test
 
-# Avec configuration personnalisée
+# With custom configuration
 REDCAP_API_URL=https://redcap.example.com/api/ \
 REDCAP_API_TOKEN=AAAABBBBCCCCDDDDEEEE11112222 \
 crf-redcap test
 
-# Sortie JSON
+# JSON output
 crf-redcap test --json
 ```
 
-Tests exécutés :
-1. Version REDCap
-2. Informations projet
-3. Liste des instruments
-4. Liste des champs
-5. Export d'un échantillon de records
+Tests performed:
+1. REDCap version
+2. Project information
+3. List of instruments
+4. List of fields
+5. Export of a sample of records
 
 ### crf-server
 
-Test du serveur CRF :
+CRF server test:
 
 ```bash
 crf-server test
 ```
 
-## Génération des types
+## Type generation
 
-Les types TypeScript sont générés depuis la spec OpenAPI :
+TypeScript types are generated from the OpenAPI spec:
 
 ```bash
 pnpm -F @univ-lehavre/atlas-crf generate:types
 ```
 
-Cela génère `src/redcap/generated/types.ts` depuis `specs/redcap.yaml`.
+This generates `src/redcap/generated/types.ts` from `specs/redcap.yaml`.
 
-## Adaptateurs de version
+## Version adapters
 
-Le client supporte différentes versions de REDCap via des adaptateurs :
+The client supports different REDCap versions via adapters:
 
 ```typescript
-// Les adaptateurs gèrent les différences d'API entre versions
+// Adapters handle API differences between versions
 import { createRedcapClient } from '@univ-lehavre/atlas-crf';
 
 const client = createRedcapClient({
   url: RedcapUrl('https://redcap.example.com/api/'),
   token: RedcapToken('...'),
-  version: '14.5.10',  // Optionnel, détecté automatiquement
+  version: '14.5.10',  // Optional, automatically detected
 });
 ```
 
-## Voir aussi
+## See also
 
-- [Outils CLI](./cli.md) - Documentation complète des CLI
-- [Architecture](./architecture.md) - Patterns Effect et ESLint
+- [CLI Tools](./cli.md) - Complete CLI documentation
+- [Architecture](./architecture.md) - Effect patterns and ESLint
