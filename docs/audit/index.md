@@ -19,7 +19,6 @@ Audits transversaux à l'ensemble du projet :
 | Projet | Audit | Description |
 |--------|-------|-------------|
 | ECRIN | [Audit ECRIN](/projects/ecrin/audit/) | Cartes fonctionnelles et architecture |
-| AMARRE | [Audit AMARRE](/projects/amarre/audit/) | Microservices et extraction |
 | Citations | [Audit Citations](/projects/citations/audit/) | Sources bibliographiques |
 | CRF | [Audit CRF](/projects/crf/audit/) | Client REDCap |
 
