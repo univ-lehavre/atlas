@@ -5,3 +5,21 @@
   }
 }
 
+/* API Explorer full-width layout with margins */
+.redcap-api-explorer {
+  max-width: 90vw;
+  margin: 0 auto;
+}
+
+/* Remove VitePress default padding for API Explorer page */
+.VPDoc:has(.redcap-api-explorer) .content-container {
+  max-width: 100% !important;
+}
+
+.VPDoc:has(.redcap-api-explorer) .content {
+  padding: 0 !important;
+}
+
+.VPDoc:has(.redcap-api-explorer) .vp-doc {
+  padding: 0 !important;
+}
