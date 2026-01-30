@@ -1,0 +1,5721 @@
+openapi: '3.1.0'
+info:
+  title: 'REDCap API'
+  version: '14.5.10'
+  description: 'OpenAPI specification for REDCap API, extracted from REDCap v14.5.10 source code.
+
+
+    All API operations use a single POST endpoint with form-urlencoded data.
+
+    The `content` parameter determines the resource type, and `action` determines the operation.'
+  contact:
+    name: 'REDCap'
+    url: 'https://projectredcap.org/'
+  license:
+    name: 'REDCap License'
+    url: 'https://projectredcap.org/partners/termsofuse/'
+servers:
+  - url: '{baseUrl}'
+    description: 'REDCap server'
+    variables:
+      baseUrl:
+        default: 'https://redcap.example.com'
+        description: 'Base URL of your REDCap installation'
+security:
+  - apiToken: []
+tags:
+  - name: 'record'
+    description: 'Records operations'
+  - name: 'metadata'
+    description: 'Metadata operations'
+  - name: 'exportFieldNames'
+    description: 'Metadata operations'
+  - name: 'fieldValidation'
+    description: 'Metadata operations'
+  - name: 'file'
+    description: 'Files operations'
+  - name: 'fileRepository'
+    description: 'Files operations'
+  - name: 'instrument'
+    description: 'Instruments operations'
+  - name: 'pdf'
+    description: 'Instruments operations'
+  - name: 'formEventMapping'
+    description: 'Instruments operations'
+  - name: 'repeatingFormsEvents'
+    description: 'Instruments operations'
+  - name: 'surveyLink'
+    description: 'Surveys operations'
+  - name: 'surveyQueueLink'
+    description: 'Surveys operations'
+  - name: 'surveyReturnCode'
+    description: 'Surveys operations'
+  - name: 'participantList'
+    description: 'Surveys operations'
+  - name: 'event'
+    description: 'Project Structure operations'
+  - name: 'arm'
+    description: 'Project Structure operations'
+  - name: 'project'
+    description: 'Project Structure operations'
+  - name: 'project_settings'
+    description: 'Project Structure operations'
+  - name: 'project_xml'
+    description: 'Project Structure operations'
+  - name: 'user'
+    description: 'Users & Permissions operations'
+  - name: 'userRole'
+    description: 'Users & Permissions operations'
+  - name: 'userRoleMapping'
+    description: 'Users & Permissions operations'
+  - name: 'dag'
+    description: 'Users & Permissions operations'
+  - name: 'userDagMapping'
+    description: 'Users & Permissions operations'
+  - name: 'report'
+    description: 'Reports operations'
+  - name: 'log'
+    description: 'Reports operations'
+  - name: 'version'
+    description: 'Other operations'
+  - name: 'generateNextRecordName'
+    description: 'Other operations'
+  - name: 'authkey'
+    description: 'Other operations'
+  - name: 'appRightsCheck'
+    description: 'Other operations'
+  - name: 'attachment'
+    description: 'Other operations'
+  - name: 'tableau'
+    description: 'Other operations'
+  - name: 'mycap'
+    description: 'Other operations'
+  - name: 'filesize'
+    description: 'filesize operations'
+  - name: 'fileinfo'
+    description: 'fileinfo operations'
+paths:
+  /api/?content=record&action=delete:
+    post:
+      operationId: 'deleteRecord'
+      tags:
+        - 'record'
+      summary: 'Delete record'
+      description: "Delete record data via REDCap API.
+
+
+        **Required permissions:** Delete Record
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/deleteRecordRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=record&action=export:
+    post:
+      operationId: 'exportRecord'
+      tags:
+        - 'record'
+      summary: 'Export record'
+      description: "Export record data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportRecordRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=record&action=import:
+    post:
+      operationId: 'importRecord'
+      tags:
+        - 'record'
+      summary: 'Import record'
+      description: "Import record data via REDCap API.
+
+
+        **Required permissions:** API Import/Update
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importRecordRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=record&action=rename:
+    post:
+      operationId: 'renameRecord'
+      tags:
+        - 'record'
+      summary: 'Rename record'
+      description: "Rename record data via REDCap API.
+
+
+        **Required permissions:** Rename Record
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/renameRecordRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=metadata&action=export:
+    post:
+      operationId: 'exportMetadata'
+      tags:
+        - 'metadata'
+      summary: 'Export metadata'
+      description: "Export metadata data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportMetadataRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=metadata&action=import:
+    post:
+      operationId: 'importMetadata'
+      tags:
+        - 'metadata'
+      summary: 'Import metadata'
+      description: "Import metadata data via REDCap API.
+
+
+        **Required permissions:** Project Design and Setup
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importMetadataRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=file&action=export:
+    post:
+      operationId: 'exportFile'
+      tags:
+        - 'file'
+      summary: 'Export file'
+      description: "Export file data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportFileRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=file&action=delete:
+    post:
+      operationId: 'deleteFile'
+      tags:
+        - 'file'
+      summary: 'Delete file'
+      description: "Delete file data via REDCap API.
+
+
+        **Required permissions:** API Import/Update
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/deleteFileRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=file&action=import:
+    post:
+      operationId: 'importFile'
+      tags:
+        - 'file'
+      summary: 'Import file'
+      description: "Import file data via REDCap API.
+
+
+        **Required permissions:** API Import/Update
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importFileRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=file&action=import_app:
+    post:
+      operationId: 'import_appFile'
+      tags:
+        - 'file'
+      summary: 'Import_app file'
+      description: "Import_app file data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/import_appFileRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=fileRepository&action=export:
+    post:
+      operationId: 'exportFileRepository'
+      tags:
+        - 'fileRepository'
+      summary: 'Export fileRepository'
+      description: "Export fileRepository data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportFileRepositoryRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=fileRepository&action=createFolder:
+    post:
+      operationId: 'createFolderFileRepository'
+      tags:
+        - 'fileRepository'
+      summary: 'CreateFolder fileRepository'
+      description: "CreateFolder fileRepository data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/createFolderFileRepositoryRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=fileRepository&action=delete:
+    post:
+      operationId: 'deleteFileRepository'
+      tags:
+        - 'fileRepository'
+      summary: 'Delete fileRepository'
+      description: "Delete fileRepository data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/deleteFileRepositoryRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=fileRepository&action=import:
+    post:
+      operationId: 'importFileRepository'
+      tags:
+        - 'fileRepository'
+      summary: 'Import fileRepository'
+      description: "Import fileRepository data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importFileRepositoryRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=fileRepository&action=list:
+    post:
+      operationId: 'listFileRepository'
+      tags:
+        - 'fileRepository'
+      summary: 'List fileRepository'
+      description: "List fileRepository data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/listFileRepositoryRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=filesize&action=export:
+    post:
+      operationId: 'exportFilesize'
+      tags:
+        - 'filesize'
+      summary: 'Export filesize'
+      description: "Export filesize data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportFilesizeRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=fileinfo&action=export:
+    post:
+      operationId: 'exportFileinfo'
+      tags:
+        - 'fileinfo'
+      summary: 'Export fileinfo'
+      description: "Export fileinfo data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportFileinfoRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=repeatingFormsEvents&action=export:
+    post:
+      operationId: 'exportRepeatingFormsEvents'
+      tags:
+        - 'repeatingFormsEvents'
+      summary: 'Export repeatingFormsEvents'
+      description: "Export repeatingFormsEvents data via REDCap API.
+
+
+        **Required permissions:** Project Design Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportRepeatingFormsEventsRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=repeatingFormsEvents&action=import:
+    post:
+      operationId: 'importRepeatingFormsEvents'
+      tags:
+        - 'repeatingFormsEvents'
+      summary: 'Import repeatingFormsEvents'
+      description: "Import repeatingFormsEvents data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importRepeatingFormsEventsRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=instrument&action=export:
+    post:
+      operationId: 'exportInstrument'
+      tags:
+        - 'instrument'
+      summary: 'Export instrument'
+      description: "Export instrument data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportInstrumentRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=event&action=export:
+    post:
+      operationId: 'exportEvent'
+      tags:
+        - 'event'
+      summary: 'Export event'
+      description: "Export event data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportEventRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=event&action=delete:
+    post:
+      operationId: 'deleteEvent'
+      tags:
+        - 'event'
+      summary: 'Delete event'
+      description: "Delete event data via REDCap API.
+
+
+        **Required permissions:** Project Design and Setup
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/deleteEventRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=event&action=import:
+    post:
+      operationId: 'importEvent'
+      tags:
+        - 'event'
+      summary: 'Import event'
+      description: "Import event data via REDCap API.
+
+
+        **Required permissions:** Project Design and Setup
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importEventRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=arm&action=export:
+    post:
+      operationId: 'exportArm'
+      tags:
+        - 'arm'
+      summary: 'Export arm'
+      description: "Export arm data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportArmRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=arm&action=delete:
+    post:
+      operationId: 'deleteArm'
+      tags:
+        - 'arm'
+      summary: 'Delete arm'
+      description: "Delete arm data via REDCap API.
+
+
+        **Required permissions:** Project Design and Setup
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/deleteArmRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=arm&action=import:
+    post:
+      operationId: 'importArm'
+      tags:
+        - 'arm'
+      summary: 'Import arm'
+      description: "Import arm data via REDCap API.
+
+
+        **Required permissions:** Project Design and Setup
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importArmRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=user&action=export:
+    post:
+      operationId: 'exportUser'
+      tags:
+        - 'user'
+      summary: 'Export user'
+      description: "Export user data via REDCap API.
+
+
+        **Required permissions:** User Rights
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportUserRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=user&action=delete:
+    post:
+      operationId: 'deleteUser'
+      tags:
+        - 'user'
+      summary: 'Delete user'
+      description: "Delete user data via REDCap API.
+
+
+        **Required permissions:** User Rights
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/deleteUserRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=user&action=import:
+    post:
+      operationId: 'importUser'
+      tags:
+        - 'user'
+      summary: 'Import user'
+      description: "Import user data via REDCap API.
+
+
+        **Required permissions:** User Rights
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importUserRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=project_settings&action=import:
+    post:
+      operationId: 'importProject_settings'
+      tags:
+        - 'project_settings'
+      summary: 'Import project_settings'
+      description: "Import project_settings data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importProject_settingsRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=report&action=export:
+    post:
+      operationId: 'exportReport'
+      tags:
+        - 'report'
+      summary: 'Export report'
+      description: "Export report data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportReportRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=authkey&action=export:
+    post:
+      operationId: 'exportAuthkey'
+      tags:
+        - 'authkey'
+      summary: 'Export authkey'
+      description: "Export authkey data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportAuthkeyRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=version&action=export:
+    post:
+      operationId: 'exportVersion'
+      tags:
+        - 'version'
+      summary: 'Export version'
+      description: "Export version data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportVersionRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=pdf&action=export:
+    post:
+      operationId: 'exportPdf'
+      tags:
+        - 'pdf'
+      summary: 'Export pdf'
+      description: "Export pdf data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportPdfRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=surveyLink&action=export:
+    post:
+      operationId: 'exportSurveyLink'
+      tags:
+        - 'surveyLink'
+      summary: 'Export surveyLink'
+      description: "Export surveyLink data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportSurveyLinkRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=surveyQueueLink&action=export:
+    post:
+      operationId: 'exportSurveyQueueLink'
+      tags:
+        - 'surveyQueueLink'
+      summary: 'Export surveyQueueLink'
+      description: "Export surveyQueueLink data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportSurveyQueueLinkRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=surveyReturnCode&action=export:
+    post:
+      operationId: 'exportSurveyReturnCode'
+      tags:
+        - 'surveyReturnCode'
+      summary: 'Export surveyReturnCode'
+      description: "Export surveyReturnCode data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportSurveyReturnCodeRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=participantList&action=export:
+    post:
+      operationId: 'exportParticipantList'
+      tags:
+        - 'participantList'
+      summary: 'Export participantList'
+      description: "Export participantList data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportParticipantListRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=exportFieldNames&action=export:
+    post:
+      operationId: 'exportExportFieldNames'
+      tags:
+        - 'exportFieldNames'
+      summary: 'Export exportFieldNames'
+      description: "Export exportFieldNames data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportExportFieldNamesRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=appRightsCheck&action=export:
+    post:
+      operationId: 'exportAppRightsCheck'
+      tags:
+        - 'appRightsCheck'
+      summary: 'Export appRightsCheck'
+      description: "Export appRightsCheck data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportAppRightsCheckRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=formEventMapping&action=export:
+    post:
+      operationId: 'exportFormEventMapping'
+      tags:
+        - 'formEventMapping'
+      summary: 'Export formEventMapping'
+      description: "Export formEventMapping data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportFormEventMappingRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=formEventMapping&action=import:
+    post:
+      operationId: 'importFormEventMapping'
+      tags:
+        - 'formEventMapping'
+      summary: 'Import formEventMapping'
+      description: "Import formEventMapping data via REDCap API.
+
+
+        **Required permissions:** Project Design and Setup
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importFormEventMappingRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=fieldValidation&action=export:
+    post:
+      operationId: 'exportFieldValidation'
+      tags:
+        - 'fieldValidation'
+      summary: 'Export fieldValidation'
+      description: "Export fieldValidation data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportFieldValidationRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=attachment&action=export:
+    post:
+      operationId: 'exportAttachment'
+      tags:
+        - 'attachment'
+      summary: 'Export attachment'
+      description: "Export attachment data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportAttachmentRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=project&action=export:
+    post:
+      operationId: 'exportProject'
+      tags:
+        - 'project'
+      summary: 'Export project'
+      description: "Export project data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportProjectRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=project&action=import:
+    post:
+      operationId: 'importProject'
+      tags:
+        - 'project'
+      summary: 'Import project'
+      description: "Import project data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importProjectRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=generateNextRecordName&action=export:
+    post:
+      operationId: 'exportGenerateNextRecordName'
+      tags:
+        - 'generateNextRecordName'
+      summary: 'Export generateNextRecordName'
+      description: "Export generateNextRecordName data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportGenerateNextRecordNameRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=project_xml&action=export:
+    post:
+      operationId: 'exportProject_xml'
+      tags:
+        - 'project_xml'
+      summary: 'Export project_xml'
+      description: "Export project_xml data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportProject_xmlRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=dag&action=export:
+    post:
+      operationId: 'exportDag'
+      tags:
+        - 'dag'
+      summary: 'Export dag'
+      description: "Export dag data via REDCap API.
+
+
+        **Required permissions:** Data Access Groups Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportDagRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=dag&action=delete:
+    post:
+      operationId: 'deleteDag'
+      tags:
+        - 'dag'
+      summary: 'Delete dag'
+      description: "Delete dag data via REDCap API.
+
+
+        **Required permissions:** Data Access Groups Import
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/deleteDagRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=dag&action=import:
+    post:
+      operationId: 'importDag'
+      tags:
+        - 'dag'
+      summary: 'Import dag'
+      description: "Import dag data via REDCap API.
+
+
+        **Required permissions:** Data Access Groups Import
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importDagRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=dag&action=switch:
+    post:
+      operationId: 'switchDag'
+      tags:
+        - 'dag'
+      summary: 'Switch dag'
+      description: "Switch dag data via REDCap API.
+
+
+        **Required permissions:** API Import/Update
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/switchDagRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=userDagMapping&action=export:
+    post:
+      operationId: 'exportUserDagMapping'
+      tags:
+        - 'userDagMapping'
+      summary: 'Export userDagMapping'
+      description: "Export userDagMapping data via REDCap API.
+
+
+        **Required permissions:** Data Access Groups Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportUserDagMappingRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=userDagMapping&action=import:
+    post:
+      operationId: 'importUserDagMapping'
+      tags:
+        - 'userDagMapping'
+      summary: 'Import userDagMapping'
+      description: "Import userDagMapping data via REDCap API.
+
+
+        **Required permissions:** Data Access Groups Import
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importUserDagMappingRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=log&action=export:
+    post:
+      operationId: 'exportLog'
+      tags:
+        - 'log'
+      summary: 'Export log'
+      description: "Export log data via REDCap API.
+
+
+        **Required permissions:** API Export
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportLogRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=tableau&action=display:
+    post:
+      operationId: 'displayTableau'
+      tags:
+        - 'tableau'
+      summary: 'Display tableau'
+      description: "Display tableau data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/displayTableauRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=mycap&action=display:
+    post:
+      operationId: 'displayMycap'
+      tags:
+        - 'mycap'
+      summary: 'Display mycap'
+      description: "Display mycap data via REDCap API.
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/displayMycapRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=userRole&action=export:
+    post:
+      operationId: 'exportUserRole'
+      tags:
+        - 'userRole'
+      summary: 'Export userRole'
+      description: "Export userRole data via REDCap API.
+
+
+        **Required permissions:** User Rights
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportUserRoleRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=userRole&action=delete:
+    post:
+      operationId: 'deleteUserRole'
+      tags:
+        - 'userRole'
+      summary: 'Delete userRole'
+      description: "Delete userRole data via REDCap API.
+
+
+        **Required permissions:** User Rights
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/deleteUserRoleRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content: {}
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=userRole&action=import:
+    post:
+      operationId: 'importUserRole'
+      tags:
+        - 'userRole'
+      summary: 'Import userRole'
+      description: "Import userRole data via REDCap API.
+
+
+        **Required permissions:** User Rights
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importUserRoleRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=userRoleMapping&action=export:
+    post:
+      operationId: 'exportUserRoleMapping'
+      tags:
+        - 'userRoleMapping'
+      summary: 'Export userRoleMapping'
+      description: "Export userRoleMapping data via REDCap API.
+
+
+        **Required permissions:** User Rights
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/exportUserRoleMappingRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'array'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/?content=userRoleMapping&action=import:
+    post:
+      operationId: 'importUserRoleMapping'
+      tags:
+        - 'userRoleMapping'
+      summary: 'Import userRoleMapping'
+      description: "Import userRoleMapping data via REDCap API.
+
+
+        **Required permissions:** User Rights
+
+        \n"
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/importUserRoleMappingRequest'
+      responses:
+        '200':
+          description: 'Successful operation'
+          content:
+            application/json:
+              schema:
+                type: 'object'
+            text/csv:
+              schema:
+                type: 'string'
+            text/xml:
+              schema:
+                type: 'string'
+        '400':
+          description: 'Bad request - invalid parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 'Forbidden - invalid token or insufficient permissions'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  securitySchemes:
+    apiToken:
+      type: 'apiKey'
+      in: 'body'
+      name: 'token'
+      description: 'REDCap API token (32 or 64 character hex string)'
+  schemas:
+    deleteRecordRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'records'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'record'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'delete'
+          description: 'Action to perform'
+        records:
+          description: 'Parameter: records'
+          type: 'array'
+          items:
+            type: 'string'
+        arm:
+          description: 'Parameter: arm'
+          type: 'integer'
+        instrument:
+          description: 'Parameter: instrument'
+          type: 'string'
+        event:
+          description: 'Parameter: event'
+          type: 'string'
+        repeat_instance:
+          description: 'Parameter: repeat_instance'
+          type: 'integer'
+        delete_logging:
+          description: 'Parameter: delete_logging'
+          type: 'string'
+    exportRecordRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'type'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'record'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        type:
+          description: 'Parameter: type'
+          type: 'string'
+        records:
+          description: 'Parameter: records'
+          type: 'array'
+          items:
+            type: 'string'
+        fields:
+          description: 'Parameter: fields'
+          type: 'array'
+          items:
+            type: 'string'
+        forms:
+          description: 'Parameter: forms'
+          type: 'array'
+          items:
+            type: 'string'
+        events:
+          description: 'Parameter: events'
+          type: 'array'
+          items:
+            type: 'string'
+        rawOrLabel:
+          description: 'Parameter: rawOrLabel'
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+        rawOrLabelHeaders:
+          description: 'Parameter: rawOrLabelHeaders'
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+        exportCheckboxLabel:
+          description: 'Parameter: exportCheckboxLabel'
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+        exportSurveyFields:
+          description: 'Parameter: exportSurveyFields'
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+        exportDataAccessGroups:
+          description: 'Parameter: exportDataAccessGroups'
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+        filterLogic:
+          description: 'Parameter: filterLogic'
+          type: 'string'
+        dateRangeBegin:
+          description: 'Parameter: dateRangeBegin'
+          type: 'string'
+        dateRangeEnd:
+          description: 'Parameter: dateRangeEnd'
+          type: 'string'
+        csvDelimiter:
+          description: 'Parameter: csvDelimiter'
+          type: 'string'
+        decimalCharacter:
+          description: 'Parameter: decimalCharacter'
+          type: 'string'
+        exportBlankForGrayFormStatus:
+          description: 'Parameter: exportBlankForGrayFormStatus'
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+    importRecordRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'type'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'record'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        type:
+          description: 'Parameter: type'
+          type: 'string'
+        dateFormat:
+          description: 'Parameter: dateFormat'
+          type: 'string'
+        csvDelimiter:
+          description: 'Parameter: csvDelimiter'
+          type: 'string'
+        returnContent:
+          description: 'Parameter: returnContent'
+          type: 'string'
+        data:
+          type: 'string'
+          description: 'Data to import (JSON, CSV, or XML)'
+        overwriteBehavior:
+          type: 'string'
+          enum:
+            - 'normal'
+            - 'overwrite'
+          default: 'normal'
+          description: 'Overwrite behavior'
+        forceAutoNumber:
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+          default: 'false'
+          description: 'Force auto-numbering'
+    renameRecordRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'record'
+        - 'new_record_name'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'record'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'rename'
+          description: 'Action to perform'
+        record:
+          description: 'Parameter: record'
+          type: 'string'
+        new_record_name:
+          description: 'Parameter: new_record_name'
+          type: 'string'
+        arm:
+          description: 'Parameter: arm'
+          type: 'integer'
+    exportMetadataRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'metadata'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        fields:
+          description: 'Parameter: fields'
+          type: 'array'
+          items:
+            type: 'string'
+        forms:
+          description: 'Parameter: forms'
+          type: 'array'
+          items:
+            type: 'string'
+    importMetadataRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'metadata'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        data:
+          type: 'string'
+          description: 'Data to import (format depends on format parameter)'
+    exportFileRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'field'
+        - 'event'
+        - 'repeat_instance'
+        - 'record'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'file'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        field:
+          description: 'Parameter: field'
+          type: 'string'
+        event:
+          description: 'Parameter: event'
+          type: 'string'
+        repeat_instance:
+          description: 'Parameter: repeat_instance'
+          type: 'integer'
+        record:
+          type: 'string'
+          description: 'Record name'
+    deleteFileRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'field'
+        - 'event'
+        - 'repeat_instance'
+        - 'record'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'file'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'delete'
+          description: 'Action to perform'
+        field:
+          description: 'Parameter: field'
+          type: 'string'
+        event:
+          description: 'Parameter: event'
+          type: 'string'
+        repeat_instance:
+          description: 'Parameter: repeat_instance'
+          type: 'integer'
+        record:
+          type: 'string'
+          description: 'Record name'
+    importFileRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'field'
+        - 'event'
+        - 'repeat_instance'
+        - 'file'
+        - 'record'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'file'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        field:
+          description: 'Parameter: field'
+          type: 'string'
+        event:
+          description: 'Parameter: event'
+          type: 'string'
+        repeat_instance:
+          description: 'Parameter: repeat_instance'
+          type: 'integer'
+        file:
+          description: 'Parameter: file'
+          type: 'string'
+        record:
+          type: 'string'
+          description: 'Record name'
+        data:
+          type: 'string'
+          description: 'Data to import (format depends on format parameter)'
+    import_appFileRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'record'
+        - 'field'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'file'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import_app'
+          description: 'Action to perform'
+        record:
+          type: 'string'
+          description: 'Record name'
+        field:
+          type: 'string'
+          description: 'Field name containing the file'
+        event:
+          type: 'string'
+          description: 'Unique event name (longitudinal only)'
+        repeat_instance:
+          type: 'integer'
+          description: 'Repeat instance number'
+    exportFileRepositoryRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'doc_id'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'fileRepository'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        doc_id:
+          description: 'Parameter: doc_id'
+          type: 'integer'
+    createFolderFileRepositoryRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'name'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'fileRepository'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'createFolder'
+          description: 'Action to perform'
+        name:
+          description: 'Parameter: name'
+          type: 'string'
+        folder_id:
+          description: 'Parameter: folder_id'
+          type: 'integer'
+        dag_id:
+          description: 'Parameter: dag_id'
+          type: 'integer'
+        role_id:
+          description: 'Parameter: role_id'
+          type: 'integer'
+    deleteFileRepositoryRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'doc_id'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'fileRepository'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'delete'
+          description: 'Action to perform'
+        doc_id:
+          description: 'Parameter: doc_id'
+          type: 'integer'
+    importFileRepositoryRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'file'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'fileRepository'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        file:
+          description: 'Parameter: file'
+          type: 'string'
+        folder_id:
+          description: 'Parameter: folder_id'
+          type: 'integer'
+        data:
+          type: 'string'
+          description: 'Data to import (format depends on format parameter)'
+    listFileRepositoryRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'fileRepository'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'list'
+          description: 'Action to perform'
+    exportFilesizeRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'filesize'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    exportFileinfoRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'fileinfo'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    exportRepeatingFormsEventsRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'repeatingFormsEvents'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    importRepeatingFormsEventsRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'repeatingFormsEvents'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        data:
+          description: 'Parameter: data'
+          type: 'string'
+    exportInstrumentRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'instrument'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    exportEventRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'event'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        arms:
+          description: 'Parameter: arms'
+          type: 'array'
+          items:
+            type: 'string'
+    deleteEventRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'events'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'event'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'delete'
+          description: 'Action to perform'
+        events:
+          description: 'Parameter: events'
+          type: 'array'
+          items:
+            type: 'string'
+    importEventRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'override'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'event'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        override:
+          description: 'Parameter: override'
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+        data:
+          description: 'Parameter: data'
+          type: 'string'
+    exportArmRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'arm'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        arms:
+          description: 'Parameter: arms'
+          type: 'array'
+          items:
+            type: 'string'
+    deleteArmRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'arms'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'arm'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'delete'
+          description: 'Action to perform'
+        arms:
+          description: 'Parameter: arms'
+          type: 'array'
+          items:
+            type: 'string'
+    importArmRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'override'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'arm'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        override:
+          description: 'Parameter: override'
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+        data:
+          description: 'Parameter: data'
+          type: 'string'
+    exportUserRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'user'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    deleteUserRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'users'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'user'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'delete'
+          description: 'Action to perform'
+        users:
+          description: 'Parameter: users'
+          type: 'string'
+    importUserRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'user'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        data:
+          description: 'Parameter: data'
+          type: 'string'
+    importProject_settingsRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'project_settings'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        data:
+          type: 'string'
+          description: 'Data to import (format depends on format parameter)'
+    exportReportRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'report_id'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'report'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        report_id:
+          description: 'Parameter: report_id'
+          type: 'integer'
+        rawOrLabel:
+          description: 'Parameter: rawOrLabel'
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+        rawOrLabelHeaders:
+          description: 'Parameter: rawOrLabelHeaders'
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+        exportCheckboxLabel:
+          description: 'Parameter: exportCheckboxLabel'
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+        csvDelimiter:
+          description: 'Parameter: csvDelimiter'
+          type: 'string'
+        decimalCharacter:
+          description: 'Parameter: decimalCharacter'
+          type: 'string'
+    exportAuthkeyRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'authkey'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    exportVersionRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'version'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    exportPdfRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'pdf'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        event:
+          description: 'Parameter: event'
+          type: 'string'
+        instrument:
+          description: 'Parameter: instrument'
+          type: 'string'
+        repeat_instance:
+          description: 'Parameter: repeat_instance'
+          type: 'integer'
+        allRecords:
+          description: 'Parameter: allRecords'
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+        compactDisplay:
+          description: 'Parameter: compactDisplay'
+          type: 'string'
+          enum:
+            - 'true'
+            - 'false'
+            - '0'
+            - '1'
+    exportSurveyLinkRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'instrument'
+        - 'event'
+        - 'repeat_instance'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'surveyLink'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        instrument:
+          description: 'Parameter: instrument'
+          type: 'string'
+        event:
+          description: 'Parameter: event'
+          type: 'string'
+        repeat_instance:
+          description: 'Parameter: repeat_instance'
+          type: 'integer'
+    exportSurveyQueueLinkRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'surveyQueueLink'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    exportSurveyReturnCodeRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'instrument'
+        - 'event'
+        - 'repeat_instance'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'surveyReturnCode'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        instrument:
+          description: 'Parameter: instrument'
+          type: 'string'
+        event:
+          description: 'Parameter: event'
+          type: 'string'
+        repeat_instance:
+          description: 'Parameter: repeat_instance'
+          type: 'integer'
+    exportParticipantListRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'instrument'
+        - 'event'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'participantList'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        instrument:
+          description: 'Parameter: instrument'
+          type: 'string'
+        event:
+          description: 'Parameter: event'
+          type: 'string'
+    exportExportFieldNamesRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'exportFieldNames'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        field:
+          description: 'Parameter: field'
+          type: 'string'
+    exportAppRightsCheckRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'appRightsCheck'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    exportFormEventMappingRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'formEventMapping'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        arms:
+          description: 'Parameter: arms'
+          type: 'array'
+          items:
+            type: 'string'
+    importFormEventMappingRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'formEventMapping'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        data:
+          description: 'Parameter: data'
+          type: 'string'
+    exportFieldValidationRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'fieldValidation'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    exportAttachmentRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'attachment'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    exportProjectRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'project'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    importProjectRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'project'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        data:
+          type: 'string'
+          description: 'Data to import (format depends on format parameter)'
+    exportGenerateNextRecordNameRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'generateNextRecordName'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    exportProject_xmlRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'project_xml'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    exportDagRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'dag'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    deleteDagRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'dags'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'dag'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'delete'
+          description: 'Action to perform'
+        dags:
+          description: 'Parameter: dags'
+          type: 'array'
+          items:
+            type: 'string'
+    importDagRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'dag'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        data:
+          description: 'Parameter: data'
+          type: 'string'
+    switchDagRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'dag'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'dag'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'switch'
+          description: 'Action to perform'
+        dag:
+          description: 'Parameter: dag'
+          type: 'string'
+    exportUserDagMappingRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'userDagMapping'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    importUserDagMappingRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'userDagMapping'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        data:
+          description: 'Parameter: data'
+          type: 'string'
+    exportLogRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'log'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        logtype:
+          description: 'Parameter: logtype'
+          type: 'string'
+        user:
+          description: 'Parameter: user'
+          type: 'string'
+        record:
+          description: 'Parameter: record'
+          type: 'string'
+        dag:
+          description: 'Parameter: dag'
+          type: 'string'
+        beginTime:
+          description: 'Parameter: beginTime'
+          type: 'string'
+        endTime:
+          description: 'Parameter: endTime'
+          type: 'string'
+    displayTableauRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'tableau'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'display'
+          description: 'Action to perform'
+    displayMycapRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'mycap'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'display'
+          description: 'Action to perform'
+    exportUserRoleRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'userRole'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    deleteUserRoleRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'roles'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'userRole'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'delete'
+          description: 'Action to perform'
+        roles:
+          description: 'Parameter: roles'
+          type: 'string'
+    importUserRoleRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'userRole'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        data:
+          description: 'Parameter: data'
+          type: 'string'
+    exportUserRoleMappingRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'userRoleMapping'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+    importUserRoleMappingRequest:
+      type: 'object'
+      required:
+        - 'token'
+        - 'content'
+        - 'action'
+        - 'data'
+      properties:
+        token:
+          type: 'string'
+          pattern: '^[A-Fa-f0-9]{32,64}$'
+          description: 'API token'
+        content:
+          type: 'string'
+          enum:
+            - 'userRoleMapping'
+          description: 'Content type'
+        format:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+            - 'odm'
+          default: 'json'
+          description: 'Response format'
+        returnFormat:
+          type: 'string'
+          enum:
+            - 'json'
+            - 'csv'
+            - 'xml'
+          default: 'json'
+          description: 'Format for error messages'
+        action:
+          type: 'string'
+          enum:
+            - 'import'
+          description: 'Action to perform'
+        data:
+          description: 'Parameter: data'
+          type: 'string'
+    ProjectInfo:
+      type: 'object'
+      description: 'Schema extracted from Project.php'
+      properties:
+        project_id:
+          type: 'integer'
+          description: 'Field: project_id'
+        project_title:
+          type: 'string'
+          description: 'Field: project_title'
+        creation_time:
+          type: 'string'
+          description: 'Field: creation_time'
+        production_time:
+          type: 'string'
+          description: 'Field: production_time'
+        in_production:
+          type: 'string'
+          description: 'Field: in_production'
+        project_language:
+          type: 'string'
+          description: 'Field: project_language'
+        purpose:
+          type: 'integer'
+          description: 'Field: purpose'
+        purpose_other:
+          type: 'string'
+          description: 'Field: purpose_other'
+        project_notes:
+          type: 'string'
+          description: 'Field: project_notes'
+        custom_record_label:
+          type: 'string'
+          description: 'Field: custom_record_label'
+        secondary_unique_field:
+          type: 'string'
+          description: 'Field: secondary_unique_field'
+        is_longitudinal:
+          type: 'boolean'
+          description: 'Field: is_longitudinal'
+        has_repeating_instruments_or_events:
+          type: 'boolean'
+          description: 'Field: has_repeating_instruments_or_events'
+        surveys_enabled:
+          type: 'boolean'
+          description: 'Field: surveys_enabled'
+        scheduling_enabled:
+          type: 'boolean'
+          description: 'Field: scheduling_enabled'
+        record_autonumbering_enabled:
+          type: 'boolean'
+          description: 'Field: record_autonumbering_enabled'
+        randomization_enabled:
+          type: 'boolean'
+          description: 'Field: randomization_enabled'
+        ddp_enabled:
+          type: 'boolean'
+          description: 'Field: ddp_enabled'
+        project_irb_number:
+          type: 'integer'
+          description: 'Field: project_irb_number'
+        project_grant_number:
+          type: 'integer'
+          description: 'Field: project_grant_number'
+        project_pi_firstname:
+          type: 'string'
+          description: 'Field: project_pi_firstname'
+        project_pi_lastname:
+          type: 'string'
+          description: 'Field: project_pi_lastname'
+        display_today_now_button:
+          type: 'string'
+          description: 'Field: display_today_now_button'
+        missing_data_codes:
+          type: 'string'
+          description: 'Field: missing_data_codes'
+        external_modules:
+          type: 'string'
+          description: 'Field: external_modules'
+        bypass_branching_erase_field_prompt:
+          type: 'string'
+          description: 'Field: bypass_branching_erase_field_prompt'
+    ProjectSettingsImport:
+      type: 'object'
+      description: 'Schema extracted from Project.php'
+      properties:
+        project_title:
+          type: 'string'
+          description: 'Field: project_title'
+        project_language:
+          type: 'string'
+          description: 'Field: project_language'
+        purpose:
+          type: 'integer'
+          description: 'Field: purpose'
+        purpose_other:
+          type: 'string'
+          description: 'Field: purpose_other'
+        project_notes:
+          type: 'string'
+          description: 'Field: project_notes'
+        custom_record_label:
+          type: 'string'
+          description: 'Field: custom_record_label'
+        secondary_unique_field:
+          type: 'string'
+          description: 'Field: secondary_unique_field'
+        is_longitudinal:
+          type: 'boolean'
+          description: 'Field: is_longitudinal'
+        surveys_enabled:
+          type: 'boolean'
+          description: 'Field: surveys_enabled'
+        scheduling_enabled:
+          type: 'boolean'
+          description: 'Field: scheduling_enabled'
+        record_autonumbering_enabled:
+          type: 'boolean'
+          description: 'Field: record_autonumbering_enabled'
+        randomization_enabled:
+          type: 'boolean'
+          description: 'Field: randomization_enabled'
+        project_irb_number:
+          type: 'integer'
+          description: 'Field: project_irb_number'
+        project_grant_number:
+          type: 'integer'
+          description: 'Field: project_grant_number'
+        project_pi_firstname:
+          type: 'string'
+          description: 'Field: project_pi_firstname'
+        project_pi_lastname:
+          type: 'string'
+          description: 'Field: project_pi_lastname'
+        display_today_now_button:
+          type: 'string'
+          description: 'Field: display_today_now_button'
+        bypass_branching_erase_field_prompt:
+          type: 'string'
+          description: 'Field: bypass_branching_erase_field_prompt'
+    UserRights:
+      type: 'object'
+      description: 'Schema extracted from UserRights.php'
+      properties:
+        project:
+          type: 'string'
+          description: 'project'
+        label:
+          type: 'string'
+          description: 'label'
+        langkey:
+          type: 'string'
+          description: 'langkey'
+        bottom_44:
+          type: 'string'
+          description: 'bottom_44'
+        path:
+          type: 'string'
+          description: 'path'
+        aer:
+          type: 'string'
+          description: 'aer'
+        bottom_62:
+          type: 'string'
+          description: 'bottom_62'
+        an:
+          type: 'string'
+          description: 'an'
+        global_154:
+          type: 'string'
+          description: 'global_154'
+        route:
+          type: 'string'
+          description: 'route'
+        api:
+          type: 'string'
+          description: 'api'
+        _A_P_I:
+          type: 'string'
+          description: '_A_P_I'
+        setup_77:
+          type: 'string'
+          description: 'setup_77'
+        apg:
+          type: 'string'
+          description: 'apg'
+        setup_143:
+          type: 'string'
+          description: 'setup_143'
+        cal:
+          type: 'string'
+          description: 'cal'
+        _C_a_lendar:
+          type: 'string'
+          description: '_C_a_lendar'
+        app_08:
+          type: 'string'
+          description: 'app_08'
+        cb:
+          type: 'string'
+          description: 'cb'
+        global_116:
+          type: 'string'
+          description: 'global_116'
+        cc:
+          type: 'string'
+          description: 'cc'
+        global_07:
+          type: 'string'
+          description: 'global_07'
+        pid:
+          type: 'string'
+          description: 'pid'
+        dag:
+          type: 'string'
+          description: 'dag'
+        global_22:
+          type: 'string'
+          description: 'global_22'
+        dd:
+          type: 'string'
+          description: 'dd'
+        global_09:
+          type: 'string'
+          description: 'global_09'
+        ders:
+          type: 'string'
+          description: 'ders'
+        app_23:
+          type: 'string'
+          description: 'app_23'
+        dit:
+          type: 'string'
+          description: 'dit'
+        app_01:
+          type: 'string'
+          description: 'app_01'
+        dq:
+          type: 'string'
+          description: 'dq'
+        app_20:
+          type: 'string'
+          description: 'app_20'
+        el:
+          type: 'string'
+          description: 'el'
+        email_users_53:
+          type: 'string'
+          description: 'email_users_53'
+        eml:
+          type: 'string'
+          description: 'eml'
+        em_manage_113:
+          type: 'string'
+          description: 'em_manage_113'
+        emm:
+          type: 'string'
+          description: 'emm'
+        em_manage_8:
+          type: 'string'
+          description: 'em_manage_8'
+        eps:
+          type: 'string'
+          description: 'eps'
+        project_settings_64:
+          type: 'string'
+          description: 'project_settings_64'
+        fcl:
+          type: 'string'
+          description: 'fcl'
+        dataqueries_141:
+          type: 'string'
+          description: 'dataqueries_141'
+        fr:
+          type: 'string'
+          description: 'fr'
+        app_04:
+          type: 'string'
+          description: 'app_04'
+        log:
+          type: 'string'
+          description: 'log'
+        _L_o_gging:
+          type: 'string'
+          description: '_L_o_gging'
+        app_07:
+          type: 'string'
+          description: 'app_07'
+        mlm:
+          type: 'string'
+          description: 'mlm'
+        multilang_01:
+          type: 'string'
+          description: 'multilang_01'
+        od:
+          type: 'string'
+          description: 'od'
+        design_25:
+          type: 'string'
+          description: 'design_25'
+        oeo:
+          type: 'string'
+          description: 'oeo'
+        data_export_tool_213:
+          type: 'string'
+          description: 'data_export_tool_213'
+        additional:
+          type: 'string'
+          description: 'additional'
+        other_export_options:
+          type: 'string'
+          description: 'other_export_options'
+        of:
+          type: 'string'
+          description: 'of'
+        setup_68:
+          type: 'string'
+          description: 'setup_68'
+        pd:
+          type: 'string'
+          description: 'pd'
+        global_182:
+          type: 'string'
+          description: 'global_182'
+        ph:
+          type: 'string'
+          description: 'ph'
+        pl:
+          type: 'string'
+          description: 'pl'
+        survey_37:
+          type: 'string'
+          description: 'survey_37'
+        participant_list:
+          type: 'string'
+          description: 'participant_list'
+        ps:
+          type: 'string'
+          description: 'ps'
+        app_17:
+          type: 'string'
+          description: 'app_17'
+        prh:
+          type: 'string'
+          description: 'prh'
+        app_18:
+          type: 'string'
+          description: 'app_18'
+        psl:
+          type: 'string'
+          description: 'psl'
+        survey_279:
+          type: 'string'
+          description: 'survey_279'
+        rhp:
+          type: 'string'
+          description: 'rhp'
+        grid_42:
+          type: 'string'
+          description: 'grid_42'
+        record:
+          type: 'string'
+          description: 'record'
+        id:
+          type: 'string'
+          description: 'id'
+        arm:
+          type: 'string'
+          description: 'arm'
+        rsd:
+          type: 'string'
+          description: 'rsd'
+        global_91:
+          type: 'string'
+          description: 'global_91'
+        sdt:
+          type: 'string'
+          description: 'sdt'
+        app_24:
+          type: 'string'
+          description: 'app_24'
+        sil:
+          type: 'string'
+          description: 'sil'
+        survey_350:
+          type: 'string'
+          description: 'survey_350'
+        email_log:
+          type: 'string'
+          description: 'email_log'
+        ur:
+          type: 'string'
+          description: 'ur'
+        app_05:
+          type: 'string'
+          description: 'app_05'
+        ap:
+          type: 'string'
+          description: 'ap'
+        control_center_4734:
+          type: 'string'
+          description: 'control_center_4734'
+        apidoc:
+          type: 'string'
+          description: 'apidoc'
+        control_center_445:
+          type: 'string'
+          description: 'control_center_445'
+        bp:
+          type: 'string'
+          description: 'bp'
+        control_center_110:
+          type: 'string'
+          description: 'control_center_110'
+        bu:
+          type: 'string'
+          description: 'bu'
+        control_center_109:
+          type: 'string'
+          description: 'control_center_109'
+        extres_55:
+          type: 'string'
+          description: 'extres_55'
+        cdis:
+          type: 'string'
+          description: 'cdis'
+        ws_262:
+          type: 'string'
+          description: 'ws_262'
+        cron:
+          type: 'string'
+          description: 'cron'
+        control_center_287:
+          type: 'string'
+          description: 'control_center_287'
+        dam:
+          type: 'string'
+          description: 'dam'
+        control_center_4807:
+          type: 'string'
+          description: 'control_center_4807'
+        ddp:
+          type: 'string'
+          description: 'ddp'
+        ws_63:
+          type: 'string'
+          description: 'ws_63'
+        dps:
+          type: 'string'
+          description: 'dps'
+        control_center_136:
+          type: 'string'
+          description: 'control_center_136'
+        dqt:
+          type: 'string'
+          description: 'dqt'
+        control_center_4803:
+          type: 'string'
+          description: 'control_center_4803'
+        emdoc:
+          type: 'string'
+          description: 'emdoc'
+        em_manage_14:
+          type: 'string'
+          description: 'em_manage_14'
+        eu:
+          type: 'string'
+          description: 'eu'
+        email_users_02:
+          type: 'string'
+          description: 'email_users_02'
+        fus:
+          type: 'string'
+          description: 'fus'
+        system_config_214:
+          type: 'string'
+          description: 'system_config_214'
+        fs:
+          type: 'string'
+          description: 'fs'
+        control_center_4398:
+          type: 'string'
+          description: 'control_center_4398'
+        fvt:
+          type: 'string'
+          description: 'fvt'
+        control_center_150:
+          type: 'string'
+          description: 'control_center_150'
+        gc:
+          type: 'string'
+          description: 'gc'
+        control_center_125:
+          type: 'string'
+          description: 'control_center_125'
+        hookdoc:
+          type: 'string'
+          description: 'hookdoc'
+        control_center_4605:
+          type: 'string'
+          description: 'control_center_4605'
+        hps:
+          type: 'string'
+          description: 'hps'
+        control_center_4397:
+          type: 'string'
+          description: 'control_center_4397'
+        info:
+          type: 'string'
+          description: 'info'
+        msc:
+          type: 'string'
+          description: 'msc'
+        control_center_4604:
+          type: 'string'
+          description: 'control_center_4604'
+        pt:
+          type: 'string'
+          description: 'pt'
+        create_project_79:
+          type: 'string'
+          description: 'create_project_79'
+        sa:
+          type: 'string'
+          description: 'sa'
+        control_center_113:
+          type: 'string'
+          description: 'control_center_113'
+        sll:
+          type: 'string'
+          description: 'sll'
+        control_center_4702:
+          type: 'string'
+          description: 'control_center_4702'
+        tokens:
+          type: 'string'
+          description: 'tokens'
+        control_center_245:
+          type: 'string'
+          description: 'control_center_245'
+        ual:
+          type: 'string'
+          description: 'ual'
+        control_center_4809:
+          type: 'string'
+          description: 'control_center_4809'
+        us:
+          type: 'string'
+          description: 'us'
+        control_center_315:
+          type: 'string'
+          description: 'control_center_315'
+        hf:
+          type: 'string'
+          description: 'hf'
+        bottom_27:
+          type: 'string'
+          description: 'bottom_27'
+        home:
+          type: 'string'
+          description: 'home'
+        _H_o_m_e:
+          type: 'string'
+          description: '_H_o_m_e'
+        home_21:
+          type: 'string'
+          description: 'home_21'
+        mp:
+          type: 'string'
+          description: 'mp'
+        bottom_03:
+          type: 'string'
+          description: 'bottom_03'
+        np:
+          type: 'string'
+          description: 'np'
+        home_61:
+          type: 'string'
+          description: 'home_61'
+        sd:
+          type: 'string'
+          description: 'sd'
+        rights_330:
+          type: 'string'
+          description: 'rights_330'
+        send:
+          type: 'string'
+          description: 'send'
+        form_renderer_25:
+          type: 'string'
+          description: 'form_renderer_25'
+        tv:
+          type: 'string'
+          description: 'tv'
+        home_62:
+          type: 'string'
+          description: 'home_62'
+    Error:
+      type: 'object'
+      properties:
+        error:
+          type: 'string'
+          description: 'Error message'
+      required:
+        - 'error'
+    Record:
+      type: 'object'
+      additionalProperties: true
+      description: 'A REDCap record (structure depends on project)'
+    ImportResponse:
+      type: 'object'
+      properties:
+        count:
+          type: 'integer'
+          description: 'Number of records imported'
+  parameters:
+    token:
+      name: 'token'
+      in: 'query'
+      required: true
+      schema:
+        type: 'string'
+        pattern: '^[A-Fa-f0-9]{32,64}$'
+      description: 'REDCap API token'
+    format:
+      name: 'format'
+      in: 'query'
+      required: false
+      schema:
+        type: 'string'
+        enum:
+          - 'json'
+          - 'csv'
+          - 'xml'
+          - 'odm'
+        default: 'json'
+      description: 'Response format'
+    returnFormat:
+      name: 'returnFormat'
+      in: 'query'
+      required: false
+      schema:
+        type: 'string'
+        enum:
+          - 'json'
+          - 'csv'
+          - 'xml'
+        default: 'json'
+      description: 'Format for error messages'
