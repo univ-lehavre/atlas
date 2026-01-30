@@ -1,37 +1,37 @@
-# Diagrammes d'Architecture - AMARRE
+# Architecture Diagrams - AMARRE
 
-::: warning Projet en cours de développement
-Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est pas encore réalisée.
+::: warning Project Under Development
+These diagrams describe the target architecture for AMARRE. The implementation is not yet complete.
 :::
 
-**Date:** 20 décembre 2025
+**Date:** December 20, 2025
 **Version:** 1.0
 
-## Table des matières
+## Table of Contents
 
-1. [Architecture Actuelle](#architecture-actuelle)
-2. [Architecture Proposée - Phase 1](#architecture-proposée---phase-1)
-3. [Architecture Proposée - Phase 2](#architecture-proposée---phase-2)
-4. [Flux de Données](#flux-de-données)
-5. [Déploiement](#déploiement)
+1. [Current Architecture](#current-architecture)
+2. [Proposed Architecture - Phase 1](#proposed-architecture---phase-1)
+3. [Proposed Architecture - Phase 2](#proposed-architecture---phase-2)
+4. [Data Flows](#data-flows)
+5. [Deployment](#deployment)
 
 ---
 
-## Architecture Actuelle
+## Current Architecture
 
-### Vue d'ensemble du système
+### System Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                                                                         │
-│                    Navigateur Client (Browser)                          │
+│                    Client Browser                                       │
 │                                                                         │
 └────────────────────────────────┬────────────────────────────────────────┘
                                  │ HTTPS
                                  │
 ┌────────────────────────────────┴────────────────────────────────────────┐
 │                                                                         │
-│                   Application AMARRE (SvelteKit)                        │
+│                   AMARRE Application (SvelteKit)                        │
 │                          Port 3000 / 5173                               │
 │                                                                         │
 │  ┌──────────────────────────────────────────────────────────────────┐  │
@@ -99,19 +99,19 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
           └───────────────────┘  └────────────────┘  └───────────────────┘
 ```
 
-### Dépendances entre modules
+### Module Dependencies
 
 ```
 ┌─────────────┐
 │   Frontend  │
 │   (Svelte)  │
 └──────┬──────┘
-       │ appelle
+       │ calls
        ↓
 ┌─────────────┐
 │ API Routes  │
 └──────┬──────┘
-       │ utilise
+       │ uses
        ↓
 ┌──────────────────────────────────────────┐
 │          Business Services               │
@@ -135,21 +135,21 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
 
 ---
 
-## Architecture Proposée - Phase 1
+## Proposed Architecture - Phase 1
 
-### Vue d'ensemble avec Survey Microservice
+### Overview with Survey Microservice
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                                                                         │
-│                    Navigateur Client (Browser)                          │
+│                    Client Browser                                       │
 │                                                                         │
 └────────────────────────────────┬────────────────────────────────────────┘
                                  │ HTTPS
                                  │
 ┌────────────────────────────────┴────────────────────────────────────────┐
 │                                                                         │
-│              Application AMARRE (SvelteKit) - API Gateway               │
+│              AMARRE Application (SvelteKit) - API Gateway               │
 │                          Port 3000 / 5173                               │
 │                                                                         │
 │  ┌──────────────────────────────────────────────────────────────────┐  │
@@ -162,9 +162,9 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
 │  │  ┌─────────────────┐  ┌────────────────────────────────────────┐ │  │
 │  │  │   Auth Routes   │  │    Surveys Routes (Proxy/Adapter)      │ │  │
 │  │  │   & Services    │  │                                        │ │  │
-│  │  │                 │  │  • Authentification                    │ │  │
-│  │  │  • login        │  │  • Forwarding vers Survey Service      │ │  │
-│  │  │  • logout       │  │  • Enrichissement (userId)             │ │  │
+│  │  │                 │  │  • Authentication                      │ │  │
+│  │  │  • login        │  │  • Forwarding to Survey Service        │ │  │
+│  │  │  • logout       │  │  • Enrichment (userId)                 │ │  │
 │  │  │  • signup       │  │  • Error handling                      │ │  │
 │  │  │  • profile      │  └────────────────────┬───────────────────┘ │  │
 │  │  └────────┬────────┘                       │                     │  │
@@ -237,7 +237,7 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
                          └─────────────────────┘                        │
 ```
 
-### Flux de communication - Phase 1
+### Communication Flow - Phase 1
 
 ```
 ┌─────────┐                ┌──────────────┐              ┌───────────────┐
@@ -248,7 +248,7 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
      │ GET /api/v1/surveys/list   │                              │
      │────────────────────────────>│                              │
      │                            │                              │
-     │                            │ Vérification auth            │
+     │                            │ Auth verification            │
      │                            │ (cookies, session)           │
      │                            │                              │
      │                            │ GET /api/v1/surveys/requests │
@@ -269,7 +269,7 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
      │                            │                              │
 ```
 
-### Authentification inter-services
+### Inter-service Authentication
 
 ```
 ┌──────────────┐                              ┌───────────────┐
@@ -284,26 +284,26 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
        │ Option 2: JWT Token                          │
        │ ──────────────────────────────────────────> │
        │ Headers: Authorization: Bearer <jwt>        │
-       │ JWT contient: { userId, roles, exp }        │
+       │ JWT contains: { userId, roles, exp }        │
        │                                              │
        │ Option 3: Mutual TLS (mTLS)                  │
        │ ══════════════════════════════════════════> │
-       │ Certificats client/serveur                   │
+       │ Client/server certificates                   │
        │                                              │
 ```
 
-**Recommandation** : API Key pour simplicité initiale, JWT si multi-tenancy nécessaire.
+**Recommendation**: API Key for initial simplicity, JWT if multi-tenancy is needed.
 
 ---
 
-## Architecture Proposée - Phase 2
+## Proposed Architecture - Phase 2
 
-### Architecture Full Microservices (Optionnelle)
+### Full Microservices Architecture (Optional)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                                                                         │
-│                    Navigateur Client (Browser)                          │
+│                    Client Browser                                       │
 │                                                                         │
 └────────────────────────────────┬────────────────────────────────────────┘
                                  │ HTTPS
@@ -354,7 +354,7 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
 └──────────────┘      └──────────────┘
 ```
 
-### Service Mesh (Option avancée)
+### Service Mesh (Advanced Option)
 
 ```
                     ┌──────────────────┐
@@ -384,9 +384,9 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
 
 ---
 
-## Flux de Données
+## Data Flows
 
-### Flux 1 : Création de demande d'enquête
+### Flow 1: Survey Request Creation
 
 ```
 ┌────────┐     ┌──────────┐     ┌────────────┐     ┌────────────┐
@@ -433,7 +433,7 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
     │               │                 │                   │
 ```
 
-### Flux 2 : Liste des enquêtes
+### Flow 2: Survey List
 
 ```
 ┌────────┐     ┌──────────┐     ┌────────────┐     ┌────────────┐
@@ -473,7 +473,7 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
     │               │                 │                   │
 ```
 
-### Flux 3 : Authentification
+### Flow 3: Authentication
 
 ```
 ┌────────┐     ┌──────────┐     ┌────────────┐     ┌────────────┐
@@ -507,15 +507,15 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
     │  { token }    │                 │                   │
     │<──────────────│                 │                   │
     │               │                 │                   │
-    │               │                 │   (Email envoyé)  │
+    │               │                 │   (Email sent)    │
     │               │                 │                   │
 ```
 
 ---
 
-## Déploiement
+## Deployment
 
-### Architecture de déploiement - Docker Compose (Dev/Staging)
+### Deployment Architecture - Docker Compose (Dev/Staging)
 
 ```yaml
 ┌─────────────────────────────────────────────────────────────┐
@@ -554,7 +554,7 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Architecture de déploiement - Kubernetes (Production)
+### Deployment Architecture - Kubernetes (Production)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -609,15 +609,15 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-### Déploiement progressif (Canary / Blue-Green)
+### Progressive Deployment (Canary / Blue-Green)
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                   Load Balancer                         │
-│                                                         │
-│         Traffic Split: 90% / 10%                        │
-│                                                         │
-└───────────────────┬─────────────────┬───────────────────┘
+┌─────────────────────────────────────────────────────┐
+│                   Load Balancer                     │
+│                                                     │
+│         Traffic Split: 90% / 10%                    │
+│                                                     │
+└───────────────────┬─────────────────┬───────────────┘
                     │                 │
          ┌──────────┴────────┐  ┌─────┴──────────┐
          │  90% traffic      │  │  10% traffic   │
@@ -630,15 +630,15 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
     │  3 replicas   │   │  1 replica        │   │
     └───────────────┘   └───────────────────┘   │
                                                  │
-    Si succès: gradual shift 100% → Canary      │
-    Si échec: rollback immédiat → Blue           │
+    If success: gradual shift 100% → Canary      │
+    If failure: immediate rollback → Blue        │
 ```
 
 ---
 
-## Monitoring et Observabilité
+## Monitoring and Observability
 
-### Stack d'observabilité
+### Observability Stack
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -687,15 +687,15 @@ Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est
 
 ## Conclusion
 
-Ces diagrammes illustrent l'évolution progressive de l'architecture AMARRE :
+These diagrams illustrate the progressive evolution of the AMARRE architecture:
 
-1. **Architecture actuelle** : Monolithe SvelteKit bien structuré
-2. **Phase 1** : Extraction du service Surveys (recommandé)
-3. **Phase 2** : Architecture microservices complète (optionnelle)
+1. **Current architecture**: Well-structured SvelteKit monolith
+2. **Phase 1**: Extraction of the Surveys service (recommended)
+3. **Phase 2**: Full microservices architecture (optional)
 
-**Clé du succès** : Migration progressive, observabilité forte, et décision basée sur les métriques réelles.
+**Key to success**: Progressive migration, strong observability, and decision based on real metrics.
 
 ---
 
-_Document généré le 20 décembre 2025_  
-_Lié au document [Audit Microservices](/audit/amarre/)_
+_Document generated on December 20, 2025_
+_Linked to document [Microservices Audit](/audit/amarre/)_
