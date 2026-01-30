@@ -99,14 +99,14 @@ The Campus is a laureate of the "ExcellencES" call for projects of **France 2030
 
 <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2rem; margin: 2rem 0;">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="./public/logos/ulhn.svg" alt="Université Le Havre Normandie" style="height: 80px;">
+    <img src="/logos/ulhn.svg" alt="Université Le Havre Normandie" style="height: 80px;">
   </a>
   <a href="https://www.cptmp.fr/">
-    <img src="./public/logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" style="height: 80px;">
+    <img src="/logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" style="height: 80px;">
   </a>
   <a href="https://eunicoast.eu/">
-    <img src="./public/logos/eunicoast.png" alt="EUNICoast" style="height: 80px;">
+    <img src="/logos/eunicoast.png" alt="EUNICoast" style="height: 80px;">
   </a>
-  <img src="./public/logos/france-2030.png" alt="France 2030" style="height: 80px;">
-  <img src="./public/logos/region-normandie.jpg" alt="Région Normandie" style="height: 80px;">
+  <img src="/logos/france-2030.png" alt="France 2030" style="height: 80px;">
+  <img src="/logos/region-normandie.jpg" alt="Région Normandie" style="height: 80px;">
 </div>
