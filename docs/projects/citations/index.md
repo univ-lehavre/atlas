@@ -1,5 +1,9 @@
 # Atlas Citations
 
+::: warning Projet en cours de développement
+Atlas Citations est actuellement en phase de conception. La documentation ci-dessous décrit l'architecture cible. Les packages ne sont pas encore implémentés.
+:::
+
 Atlas Citations est une suite de packages pour interroger des sources bibliographiques via des clients Effect typés, avec des specs OpenAPI validées contre les APIs réelles.
 
 ## Qu'est-ce qu'Atlas Citations ?

@@ -203,7 +203,6 @@ export default withMermaid(defineConfig({
           text: 'Par projet',
           items: [
             { text: 'ECRIN', link: '/projects/ecrin/audit/' },
-            { text: 'AMARRE', link: '/projects/amarre/audit/' },
             { text: 'Citations', link: '/projects/citations/audit/' },
             { text: 'CRF', link: '/projects/crf/audit/' },
           ],
@@ -217,15 +216,6 @@ export default withMermaid(defineConfig({
             { text: 'Introduction', link: '/projects/amarre/' },
             { text: 'Implémentation', link: '/projects/amarre/IMPLEMENTATION_GUIDE' },
             { text: 'Architecture', link: '/projects/amarre/ARCHITECTURE_DIAGRAMS' },
-          ],
-        },
-        {
-          text: 'Audit',
-          items: [
-            { text: 'Audit Microservices', link: '/projects/amarre/audit/' },
-            { text: 'Audit Sécurité', link: '/projects/amarre/audit/security' },
-            { text: 'Détails Microservices', link: '/projects/amarre/audit/microservices-audit' },
-            { text: 'README Microservices', link: '/projects/amarre/audit/microservices-readme' },
           ],
         },
       ],
