@@ -1,61 +1,61 @@
-# Guide chercheur
+# Researcher Guide
 
-Atlas est une plateforme développée par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+Atlas is a platform developed by **Université Le Havre Normandie** to facilitate research and collaboration between researchers.
 
-## Pourquoi Atlas ?
+## Why Atlas?
 
-| Objectif | Description |
-|----------|-------------|
-| Simplifier l'accès aux données | Accédez à vos données de recherche, publications et profils sans connaissances techniques |
-| Fiabiliser les profils | Corrigez les erreurs d'attribution dans les bases bibliographiques (homonymes, mauvaises affiliations) |
-| Faciliter la collaboration | Trouvez des collaborateurs, constituez des équipes et travaillez ensemble sur des projets |
-| Connecter les systèmes | Atlas relie REDCap, OpenAlex, Crossref, HAL, ORCID et Appwrite |
+| Objective | Description |
+|-----------|-------------|
+| Simplify data access | Access your research data, publications and profiles without technical knowledge |
+| Verify profiles | Correct attribution errors in bibliographic databases (homonyms, wrong affiliations) |
+| Facilitate collaboration | Find collaborators, build teams and work together on projects |
+| Connect systems | Atlas links REDCap, OpenAlex, Crossref, HAL, ORCID and Appwrite |
 
-## Choisissez votre plateforme
+## Choose Your Platform
 
-Atlas propose deux plateformes principales selon vos besoins :
+Atlas offers two main platforms depending on your needs:
 
-### ECRIN - Expertise et Collaboration
+### ECRIN - Expertise and Collaboration
 
-**Pour qui ?** Chercheurs souhaitant valoriser leur expertise et trouver des collaborateurs.
+**For whom?** Researchers wishing to showcase their expertise and find collaborators.
 
-ECRIN est organisé en **6 sections** représentant les étapes de la collaboration scientifique :
+ECRIN is organized into **6 sections** representing the stages of scientific collaboration:
 
-| Section | Cartes | Ce que vous pouvez faire |
-|---------|--------|--------------------------|
-| **Introduce** | Me, My scientific question, My references | Décrivez votre profil, votre question scientifique, référencez vos publications |
-| **Collaborate** | Create my project, Build my team, Find my expert, Fund my project | Déclarez un projet, trouvez des collaborateurs, recherchez des financements |
-| **Explore** | My graph, Community graph | Visualisez votre réseau et explorez les connexions de la communauté |
-| **Ask** | Data, An expert | Recherchez des données ou discutez avec un expert |
-| **Publish** | My data, My news | Partagez vos données de recherche et vos actualités |
-| **Administrate** | My account, My survey | Gérez votre compte et vos réponses aux enquêtes |
+| Section | Cards | What you can do |
+|---------|-------|-----------------|
+| **Introduce** | Me, My scientific question, My references | Describe your profile, your scientific question, reference your publications |
+| **Collaborate** | Create my project, Build my team, Find my expert, Fund my project | Declare a project, find collaborators, search for funding |
+| **Explore** | My graph, Community graph | Visualize your network and explore community connections |
+| **Ask** | Data, An expert | Search for data or discuss with an expert |
+| **Publish** | My data, My news | Share your research data and news |
+| **Administrate** | My account, My survey | Manage your account and survey responses |
 
-👉 [Accéder au guide ECRIN](/projects/ecrin/user/)
+👉 [Access the ECRIN guide](/projects/ecrin/user/)
 
-### AMARRE - Mobilité des Chercheurs
+### AMARRE - Researcher Mobility
 
-**Pour qui ?** Chercheurs en mobilité internationale ou accueillant des chercheurs étrangers.
+**For whom?** Researchers in international mobility or hosting foreign researchers.
 
-| Fonctionnalité | Description |
-|----------------|-------------|
-| Gérer votre mobilité | Déclarez vos périodes de mobilité entrante ou sortante |
-| Suivre les démarches | Accompagnement administratif (visa, hébergement, assurance) |
-| Historique d'affiliations | Maintenez un historique fiable de vos institutions |
+| Feature | Description |
+|---------|-------------|
+| Manage your mobility | Declare your incoming or outgoing mobility periods |
+| Track procedures | Administrative support (visa, accommodation, insurance) |
+| Affiliation history | Maintain a reliable history of your institutions |
 
-👉 [Accéder au guide AMARRE](/projects/amarre/)
+👉 [Access the AMARRE guide](/projects/amarre/)
 
-### Citations - Vérification bibliographique
+### Citations - Bibliographic Verification
 
-**Pour qui ?** Chercheurs souhaitant fiabiliser leurs données bibliographiques.
+**For whom?** Researchers wishing to verify their bibliographic data.
 
-| Fonctionnalité | Description |
-|----------------|-------------|
-| Vérifier vos publications | Identifiez les attributions erronées dans OpenAlex, Crossref, HAL |
-| Gérer votre parcours | Suivez vos changements d'institution et affiliations |
-| Réseau de collaborations | Visualisez vos co-auteurs avec des graphes interactifs |
+| Feature | Description |
+|---------|-------------|
+| Verify your publications | Identify misattributions in OpenAlex, Crossref, HAL |
+| Manage your career | Track your institution changes and affiliations |
+| Collaboration network | Visualize your co-authors with interactive graphs |
 
-👉 [Accéder au guide Citations](/projects/citations/user/)
+👉 [Access the Citations guide](/projects/citations/user/)
 
-## Besoin d'aide ?
+## Need Help?
 
-Contactez l'équipe Atlas via votre service de recherche ou consultez la [documentation technique](/guide/developers/) pour les questions avancées.
+Contact the Atlas team through your research department or check the [technical documentation](/guide/developers/) for advanced questions.
