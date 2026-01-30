@@ -1,72 +1,72 @@
 # atlas-orcid
 
-Client Effect pour l'API [ORCID](https://orcid.org/), registre mondial des identifiants de chercheurs.
+Effect client for the [ORCID](https://orcid.org/) API, the global registry of researcher identifiers.
 
-## Caractéristiques de l'API
+## API Characteristics
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | Base URL | `https://pub.orcid.org/v3.0` |
 | Format | JSON, XML |
-| Auth | Aucune (API publique) ou OAuth 2.0 (API membre) |
-| Rate limit | Variable selon tier |
-| Versioning API | **Oui** - v3.0 actuelle |
-| OpenAPI officielle | **Non** - "Unavailable until further notice" |
+| Auth | None (public API) or OAuth 2.0 (member API) |
+| Rate limit | Variable by tier |
+| API Versioning | **Yes** - v3.0 current |
+| Official OpenAPI | **No** - "Unavailable until further notice" |
 
-## Deux APIs disponibles
+## Two Available APIs
 
-### API Publique (gratuite)
+### Public API (Free)
 
-- Accès aux données publiques uniquement
-- Pas d'authentification requise
-- Rate limit plus restrictif
+- Access to public data only
+- No authentication required
+- More restrictive rate limit
 
 ```bash
 curl -H "Accept: application/json" \
   "https://pub.orcid.org/v3.0/0000-0002-1825-0097/record"
 ```
 
-### API Membre (payante)
+### Member API (Paid)
 
-- Accès aux données selon permissions
-- Authentification OAuth 2.0 requise
-- Rate limit plus élevé
-- Écriture possible
+- Access to data based on permissions
+- OAuth 2.0 authentication required
+- Higher rate limit
+- Write access possible
 
-## Construction de la spec alpha
+## Building the Alpha Spec
 
-### Méthode : Documentation + Inférence
+### Method: Documentation + Inference
 
-L'ancien Swagger ORCID est temporairement indisponible. La spec est construite depuis la documentation.
+The old ORCID Swagger is temporarily unavailable. The spec is built from documentation.
 
 ```bash
-# 1. Créer depuis la documentation
+# 1. Create from documentation
 atlas-openapi-validator scaffold \
   --name orcid \
   --base-url https://pub.orcid.org/v3.0 \
   --from-docs https://info.orcid.org/documentation/api-tutorials/ \
   --output specs/alpha/orcid-v3.0.yaml
 
-# 2. Enrichir par inférence
+# 2. Enrich by inference
 atlas-openapi-validator infer \
   --base-url https://pub.orcid.org/v3.0 \
   --endpoints /{orcid}/record,/{orcid}/works,/{orcid}/employments \
   --sample-size 50 \
   --output specs/alpha/orcid-v3.0.yaml
 
-# 3. Valider
+# 3. Validate
 atlas-openapi-validator validate specs/alpha/orcid-v3.0.yaml \
   --base-url https://pub.orcid.org/v3.0 \
   --output reports/orcid-alpha.json
 ```
 
-### Sources de documentation
+### Documentation Sources
 
 - [ORCID API Documentation](https://info.orcid.org/documentation/api-tutorials/)
 - [ORCID API v3.0 Guide](https://info.orcid.org/documentation/api-tutorials/api-tutorial-read-data-on-a-record/)
 - [ORCID Record Structure](https://info.orcid.org/documentation/integration-guide/orcid-record/)
 
-## Structure de la spec
+## Spec Structure
 
 ```yaml
 openapi: '3.1.0'
@@ -74,8 +74,8 @@ info:
   title: ORCID Public API
   version: '3.0'
   description: |
-    API publique ORCID pour accéder aux données des chercheurs.
-    Retourne les informations publiques des profils ORCID.
+    ORCID public API to access researcher data.
+    Returns public information from ORCID profiles.
   contact:
     url: https://orcid.org/
   x-atlas-metadata:
@@ -87,8 +87,8 @@ info:
         - https://info.orcid.org/documentation/integration-guide/orcid-record/
     createdAt: '2025-01-24T10:00:00Z'
     notes:
-      - Swagger officiel temporairement indisponible
-      - Spec construite depuis documentation
+      - Official Swagger temporarily unavailable
+      - Spec built from documentation
 
 servers:
   - url: https://pub.orcid.org/v3.0
@@ -100,23 +100,23 @@ paths:
   /{orcid}/record:
     get:
       operationId: getRecord
-      summary: Récupérer le profil complet
+      summary: Retrieve the complete profile
       parameters:
         - $ref: '#/components/parameters/orcid'
       responses:
         '200':
-          description: Profil complet
+          description: Complete profile
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Record'
         '404':
-          description: ORCID non trouvé
+          description: ORCID not found
 
   /{orcid}/person:
     get:
       operationId: getPerson
-      summary: Données personnelles (nom, bio)
+      summary: Personal data (name, bio)
       parameters:
         - $ref: '#/components/parameters/orcid'
       responses:
@@ -129,7 +129,7 @@ paths:
   /{orcid}/works:
     get:
       operationId: getWorks
-      summary: Publications du chercheur
+      summary: Researcher publications
       parameters:
         - $ref: '#/components/parameters/orcid'
       responses:
@@ -142,7 +142,7 @@ paths:
   /{orcid}/work/{putCode}:
     get:
       operationId: getWork
-      summary: Détail d'une publication
+      summary: Publication detail
       parameters:
         - $ref: '#/components/parameters/orcid'
         - $ref: '#/components/parameters/putCode'
@@ -156,7 +156,7 @@ paths:
   /{orcid}/employments:
     get:
       operationId: getEmployments
-      summary: Postes/Affiliations
+      summary: Positions/Affiliations
       parameters:
         - $ref: '#/components/parameters/orcid'
       responses:
@@ -169,7 +169,7 @@ paths:
   /{orcid}/educations:
     get:
       operationId: getEducations
-      summary: Formations
+      summary: Education
       parameters:
         - $ref: '#/components/parameters/orcid'
       responses:
@@ -182,7 +182,7 @@ paths:
   /{orcid}/fundings:
     get:
       operationId: getFundings
-      summary: Financements reçus
+      summary: Received funding
       parameters:
         - $ref: '#/components/parameters/orcid'
       responses:
@@ -195,7 +195,7 @@ paths:
   /{orcid}/peer-reviews:
     get:
       operationId: getPeerReviews
-      summary: Activités de review
+      summary: Review activities
       parameters:
         - $ref: '#/components/parameters/orcid'
       responses:
@@ -208,14 +208,14 @@ paths:
   /search:
     get:
       operationId: search
-      summary: Rechercher des profils ORCID
+      summary: Search ORCID profiles
       parameters:
         - name: q
           in: query
           required: true
           description: |
-            Requête de recherche (syntaxe Solr).
-            Champs : given-names, family-name, affiliation-org-name, etc.
+            Search query (Solr syntax).
+            Fields: given-names, family-name, affiliation-org-name, etc.
           schema:
             type: string
           example: 'family-name:curie AND affiliation-org-name:paris'
@@ -253,14 +253,14 @@ components:
       name: putCode
       in: path
       required: true
-      description: Identifiant interne de l'élément
+      description: Internal element identifier
       schema:
         type: integer
 
   schemas:
     Record:
       type: object
-      description: Profil ORCID complet
+      description: Complete ORCID profile
       properties:
         orcid-identifier:
           $ref: '#/components/schemas/OrcidIdentifier'
@@ -706,67 +706,67 @@ components:
                 $ref: '#/components/schemas/OrcidIdentifier'
 ```
 
-## Format ORCID iD
+## ORCID iD Format
 
-L'identifiant ORCID suit un format strict :
+The ORCID identifier follows a strict format:
 
 ```
 XXXX-XXXX-XXXX-XXXY
 
-- X : chiffre 0-9
-- Y : chiffre 0-9 ou X (checksum)
-- 16 caractères + 3 tirets
+- X : digit 0-9
+- Y : digit 0-9 or X (checksum)
+- 16 characters + 3 hyphens
 ```
 
-Exemples valides :
+Valid examples:
 - `0000-0002-1825-0097`
 - `0000-0001-5109-3700`
 - `0000-0002-1694-233X` (checksum X)
 
-## Syntaxe de recherche
+## Search Syntax
 
-L'API de recherche utilise Solr :
+The search API uses Solr:
 
 ```bash
-# Par nom
+# By name
 curl "https://pub.orcid.org/v3.0/search?q=family-name:curie"
 
-# Par affiliation
+# By affiliation
 curl "https://pub.orcid.org/v3.0/search?q=affiliation-org-name:harvard"
 
-# Combinée
+# Combined
 curl "https://pub.orcid.org/v3.0/search?q=given-names:marie+AND+family-name:curie"
 ```
 
-### Champs de recherche
+### Search Fields
 
-| Champ | Description |
+| Field | Description |
 |-------|-------------|
-| `given-names` | Prénom |
-| `family-name` | Nom |
-| `credit-name` | Nom d'usage |
-| `other-names` | Autres noms |
-| `email` | Email public |
-| `keyword` | Mots-clés |
-| `affiliation-org-name` | Nom d'organisation |
-| `ringgold-org-id` | ID Ringgold |
-| `grid-org-id` | ID GRID |
+| `given-names` | First name |
+| `family-name` | Last name |
+| `credit-name` | Credit name |
+| `other-names` | Other names |
+| `email` | Public email |
+| `keyword` | Keywords |
+| `affiliation-org-name` | Organization name |
+| `ringgold-org-id` | Ringgold ID |
+| `grid-org-id` | GRID ID |
 | `orcid` | ORCID iD |
-| `doi` | DOI d'une publication |
+| `doi` | DOI of a publication |
 
-## Client Effect
+## Effect Client
 
 ```typescript
 interface OrcidConfig {
   baseUrl?: string;     // Default: https://pub.orcid.org/v3.0
-  accessToken?: string; // Pour API membre
+  accessToken?: string; // For member API
 }
 
 interface OrcidClient {
-  // Profil complet
+  // Complete profile
   getRecord: (orcid: string) => Effect.Effect<Record, NotFoundError | OrcidError>;
 
-  // Sections spécifiques
+  // Specific sections
   getPerson: (orcid: string) => Effect.Effect<Person, NotFoundError | OrcidError>;
   getWorks: (orcid: string) => Effect.Effect<Works, NotFoundError | OrcidError>;
   getWork: (orcid: string, putCode: number) => Effect.Effect<Work, NotFoundError | OrcidError>;
@@ -775,11 +775,11 @@ interface OrcidClient {
   getFundings: (orcid: string) => Effect.Effect<Fundings, NotFoundError | OrcidError>;
   getPeerReviews: (orcid: string) => Effect.Effect<PeerReviews, NotFoundError | OrcidError>;
 
-  // Recherche
+  // Search
   search: (query: string, options?: SearchOptions) =>
     Effect.Effect<SearchResults, OrcidError>;
 
-  // Raccourcis
+  // Shortcuts
   searchByName: (givenName: string, familyName: string) =>
     Effect.Effect<SearchResults, OrcidError>;
 
@@ -788,7 +788,7 @@ interface OrcidClient {
 
   // Validation
   isValidOrcid: (orcid: string) => boolean;
-  formatOrcid: (orcid: string) => string; // Ajoute tirets si manquants
+  formatOrcid: (orcid: string) => string; // Add hyphens if missing
 }
 
 interface SearchOptions {
@@ -800,13 +800,13 @@ interface SearchOptions {
 ## Validation
 
 ```bash
-# Valider la spec
+# Validate the spec
 atlas-openapi-validator validate specs/alpha/orcid-v3.0.yaml \
   --base-url https://pub.orcid.org/v3.0 \
   --sample-size 20 \
   --output reports/orcid-alpha.json
 
-# Tester avec ORCID de test connus
+# Test with known test ORCIDs
 atlas-openapi-validator validate specs/alpha/orcid-v3.0.yaml \
   --base-url https://pub.orcid.org/v3.0 \
   --test-ids 0000-0002-1825-0097,0000-0001-5109-3700
@@ -814,7 +814,7 @@ atlas-openapi-validator validate specs/alpha/orcid-v3.0.yaml \
 
 ## Versioning
 
-ORCID a un versioning d'API explicite. Les specs suivent ce versioning :
+ORCID has explicit API versioning. Specs follow this versioning:
 
 ```
 specs/
@@ -822,18 +822,18 @@ specs/
 │   └── orcid-v3.0.yaml
 ├── stable/
 │   └── orcid-v3.0.yaml
-└── current.yaml → stable/orcid-v3.0.yaml
+└── current.yaml -> stable/orcid-v3.0.yaml
 ```
 
-Lorsqu'une nouvelle version d'API sort (ex: v4.0) :
-1. Créer `specs/alpha/orcid-v4.0.yaml`
-2. Maintenir `orcid-v3.0.yaml` pour compatibilité
-3. Mettre à jour `current.yaml` quand v4.0 est stable
+When a new API version is released (e.g., v4.0):
+1. Create `specs/alpha/orcid-v4.0.yaml`
+2. Maintain `orcid-v3.0.yaml` for compatibility
+3. Update `current.yaml` when v4.0 is stable
 
-## Notes importantes
+## Important Notes
 
-1. **Données publiques uniquement** : L'API publique ne retourne que les données marquées "public"
-2. **Structure complexe** : Les réponses ORCID sont très imbriquées
-3. **put-code** : Identifiant interne pour chaque élément (work, employment, etc.)
-4. **Rate limiting** : Varie selon usage, surveiller les headers de réponse
-5. **Sandbox** : Utiliser `api.sandbox.orcid.org` pour les tests
+1. **Public data only**: The public API only returns data marked as "public"
+2. **Complex structure**: ORCID responses are highly nested
+3. **put-code**: Internal identifier for each element (work, employment, etc.)
+4. **Rate limiting**: Varies by usage, monitor response headers
+5. **Sandbox**: Use `api.sandbox.orcid.org` for testing

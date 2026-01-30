@@ -1,92 +1,92 @@
-# Profil chercheur et reconstruction de carrière
+# Researcher Profile and Career Reconstruction
 
-Ce document décrit comment reconstruire le parcours d'un chercheur (affiliations, expertises, collaborations) à partir des sources bibliographiques, et comment valider ces informations.
+This document describes how to reconstruct a researcher's career path (affiliations, expertise, collaborations) from bibliographic sources, and how to validate this information.
 
-> **Voir aussi :**
-> - [Fiabilisation auteur](./author-verification.md) - Validation des publications
-> - [Schéma unifié](./unified-schema.md) - Entités Work, Author, Institution
-> - [Catalogue des sources](./sources/catalog.md) - Détail des données disponibles par source
+> **See also:**
+> - [Author Verification](./author-verification.md) - Publication validation
+> - [Unified Schema](./unified-schema.md) - Work, Author, Institution entities
+> - [Source Catalog](./sources/catalog.md) - Detail of available data by source
 >
-> **Documentation utilisateur :**
-> - [Gérer votre parcours](../user/manage-career.md) - Guide pour chercheurs
-> - [Profil d'expertise](../user/expertise-profile.md) - Vos domaines de recherche
-> - [Réseau de collaborations](../user/collaboration-network.md) - Vos co-auteurs
+> **User documentation:**
+> - [Manage Your Career](../user/manage-career.md) - Guide for researchers
+> - [Expertise Profile](../user/expertise-profile.md) - Your research domains
+> - [Collaboration Network](../user/collaboration-network.md) - Your co-authors
 
 ---
 
-## Problématique
+## Problem Statement
 
-La reconstruction du parcours d'un chercheur est complexe car :
+Reconstructing a researcher's career path is complex because:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    DÉFIS DE LA RECONSTRUCTION DE CARRIÈRE                    │
+│                    CAREER RECONSTRUCTION CHALLENGES                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  DONNÉES FRAGMENTÉES                    INCOHÉRENCES TEMPORELLES            │
-│  ──────────────────                     ────────────────────────            │
-│  • Affiliations dans chaque source      • Dates de début/fin manquantes    │
-│  • Formats différents                   • Chevauchements incohérents       │
-│  • Granularité variable                 • Années approximatives            │
-│  • Identifiants incompatibles           • Mobilité non tracée              │
+│  FRAGMENTED DATA                       TEMPORAL INCONSISTENCIES             │
+│  ──────────────────                    ────────────────────────             │
+│  • Affiliations in each source         • Missing start/end dates           │
+│  • Different formats                   • Inconsistent overlaps             │
+│  • Variable granularity                • Approximate years                 │
+│  • Incompatible identifiers            • Untracked mobility                │
 │                                                                              │
-│  AMBIGUÏTÉ DES ORGANISATIONS            ÉVOLUTION DES EXPERTISES           │
-│  ────────────────────────────           ─────────────────────────           │
-│  • Renommages d'universités             • Topics évoluent dans le temps    │
-│  • Fusions de laboratoires              • Nouvelles disciplines            │
-│  • Rattachements multiples              • Interdisciplinarité croissante   │
-│  • Hiérarchies complexes                • Spécialisation vs généralisation │
+│  ORGANIZATION AMBIGUITY                EXPERTISE EVOLUTION                  │
+│  ────────────────────────              ─────────────────────                │
+│  • University renamings                • Topics evolve over time           │
+│  • Laboratory mergers                  • New disciplines                   │
+│  • Multiple affiliations               • Growing interdisciplinarity       │
+│  • Complex hierarchies                 • Specialization vs generalization  │
 │                                                                              │
-│  EXEMPLE : Dr. Marie Dupont                                                 │
+│  EXAMPLE: Dr. Marie Dupont                                                  │
 │  ─────────────────────────────────────────────────────────────────          │
-│  OpenAlex: "Université Paris-Saclay" (2020-présent)                        │
-│  Crossref: "CEA Saclay" (position = 1 sur article 2021)                    │
-│  HAL:      "LSCE, CEA/CNRS/UVSQ" (structure de recherche)                  │
-│  ORCID:    "CEA" (employment 2018-présent)                                 │
-│            "Université Paris-Sud" (education 2014-2017)                     │
-│  → 4 représentations différentes de la même réalité                        │
+│  OpenAlex: "Universite Paris-Saclay" (2020-present)                         │
+│  Crossref: "CEA Saclay" (position = 1 on 2021 article)                      │
+│  HAL:      "LSCE, CEA/CNRS/UVSQ" (research structure)                       │
+│  ORCID:    "CEA" (employment 2018-present)                                  │
+│            "Universite Paris-Sud" (education 2014-2017)                     │
+│  -> 4 different representations of the same reality                         │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Données d'affiliation par source
+## Affiliation Data by Source
 
-### Matrice de disponibilité
+### Availability Matrix
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────┐
-│                     AFFILIATIONS - DISPONIBILITÉ PAR SOURCE                                 │
+│                     AFFILIATIONS - AVAILABILITY BY SOURCE                                   │
 ├────────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                             │
-│  CHAMP                    │ OA  │ CR  │ HAL │ ORC │ S2  │ PM  │ DBL │ SCOPUS │             │
-│  ─────────────────────────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼────────┼             │
-│  Nom institution          │ ✅  │ ✅  │ ✅  │ ✅  │ ✅  │ ✅  │ ⚠️  │ ✅     │             │
-│  ROR ID                   │ ✅  │ ⚠️  │ ❌  │ ⚠️  │ ❌  │ ❌  │ ❌  │ ❌     │             │
-│  Identifiant interne      │ ✅  │ ❌  │ ✅  │ ❌  │ ❌  │ ❌  │ ❌  │ ✅     │             │
-│  Pays                     │ ✅  │ ⚠️  │ ✅  │ ✅  │ ⚠️  │ ✅  │ ⚠️  │ ✅     │             │
-│  Ville                    │ ⚠️  │ ⚠️  │ ⚠️  │ ⚠️  │ ❌  │ ⚠️  │ ❌  │ ⚠️     │             │
-│  Coordonnées GPS          │ ⚠️  │ ❌  │ ❌  │ ❌  │ ❌  │ ❌  │ ❌  │ ❌     │             │
-│  Type (univ/labo/etc)     │ ✅  │ ❌  │ ✅  │ ✅  │ ❌  │ ❌  │ ❌  │ ✅     │             │
-│  Hiérarchie               │ ⚠️  │ ❌  │ ✅  │ ❌  │ ❌  │ ❌  │ ❌  │ ⚠️     │             │
-│  Date début               │ ⚠️  │ ❌  │ ❌  │ ✅  │ ❌  │ ❌  │ ❌  │ ❌     │             │
-│  Date fin                 │ ⚠️  │ ❌  │ ❌  │ ✅  │ ❌  │ ❌  │ ❌  │ ❌     │             │
-│  Rôle/Titre               │ ❌  │ ❌  │ ❌  │ ✅  │ ❌  │ ❌  │ ❌  │ ❌     │             │
-│  Département              │ ⚠️  │ ⚠️  │ ✅  │ ⚠️  │ ❌  │ ❌  │ ❌  │ ⚠️     │             │
+│  FIELD                     │ OA  │ CR  │ HAL │ ORC │ S2  │ PM  │ DBL │ SCOPUS │             │
+│  ──────────────────────────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼────────┼             │
+│  Institution name          │ ✅  │ ✅  │ ✅  │ ✅  │ ✅  │ ✅  │ ⚠️  │ ✅     │             │
+│  ROR ID                    │ ✅  │ ⚠️  │ ❌  │ ⚠️  │ ❌  │ ❌  │ ❌  │ ❌     │             │
+│  Internal identifier       │ ✅  │ ❌  │ ✅  │ ❌  │ ❌  │ ❌  │ ❌  │ ✅     │             │
+│  Country                   │ ✅  │ ⚠️  │ ✅  │ ✅  │ ⚠️  │ ✅  │ ⚠️  │ ✅     │             │
+│  City                      │ ⚠️  │ ⚠️  │ ⚠️  │ ⚠️  │ ❌  │ ⚠️  │ ❌  │ ⚠️     │             │
+│  GPS coordinates           │ ⚠️  │ ❌  │ ❌  │ ❌  │ ❌  │ ❌  │ ❌  │ ❌     │             │
+│  Type (univ/lab/etc)       │ ✅  │ ❌  │ ✅  │ ✅  │ ❌  │ ❌  │ ❌  │ ✅     │             │
+│  Hierarchy                 │ ⚠️  │ ❌  │ ✅  │ ❌  │ ❌  │ ❌  │ ❌  │ ⚠️     │             │
+│  Start date                │ ⚠️  │ ❌  │ ❌  │ ✅  │ ❌  │ ❌  │ ❌  │ ❌     │             │
+│  End date                  │ ⚠️  │ ❌  │ ❌  │ ✅  │ ❌  │ ❌  │ ❌  │ ❌     │             │
+│  Role/Title                │ ❌  │ ❌  │ ❌  │ ✅  │ ❌  │ ❌  │ ❌  │ ❌     │             │
+│  Department                │ ⚠️  │ ⚠️  │ ✅  │ ⚠️  │ ❌  │ ❌  │ ❌  │ ⚠️     │             │
 │                                                                                             │
-│  LÉGENDE: ✅ Disponible  ⚠️ Partiel  ❌ Non disponible                                     │
+│  LEGEND: ✅ Available  ⚠️ Partial  ❌ Not available                                        │
 │                                                                                             │
 │  OA=OpenAlex, CR=Crossref, HAL, ORC=ORCID, S2=SemanticScholar, PM=PubMed, DBL=DBLP        │
 └────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Détail par source
+### Detail by Source
 
 #### OpenAlex
 
 ```typescript
-// Structure affiliations OpenAlex (Author entity)
+// OpenAlex affiliations structure (Author entity)
 interface OpenAlexAuthorAffiliation {
   institution: {
     id: string;                    // "I27837315"
@@ -94,12 +94,12 @@ interface OpenAlexAuthorAffiliation {
     display_name: string;          // "Stanford University"
     country_code: string;          // "US"
     type: string;                  // "education" | "facility" | "company" | ...
-    lineage: string[];             // Hiérarchie ["I27837315", "I154495582"]
+    lineage: string[];             // Hierarchy ["I27837315", "I154495582"]
   };
   years: number[];                 // [2018, 2019, 2020, 2021]
 }
 
-// Sur les Works (authorships)
+// On Works (authorships)
 interface OpenAlexAuthorship {
   author: { id: string; display_name: string; orcid?: string };
   institutions: Array<{
@@ -109,25 +109,25 @@ interface OpenAlexAuthorship {
     country_code: string;
     type: string;
   }>;
-  raw_affiliation_strings: string[];  // Texte brut original
+  raw_affiliation_strings: string[];  // Original raw text
 }
 ```
 
-**Points forts OpenAlex :**
-- ROR systématique (90%+ des institutions)
-- Années de présence déduites des publications
-- Géolocalisation via ROR
-- Hiérarchie institutionnelle (lineage)
+**OpenAlex strengths:**
+- Systematic ROR (90%+ of institutions)
+- Years of presence deduced from publications
+- Geolocation via ROR
+- Institutional hierarchy (lineage)
 
-**Limitations :**
-- Pas de dates précises (début/fin)
-- Pas de rôle/titre
-- Déduction algorithmique (peut contenir des erreurs)
+**Limitations:**
+- No precise dates (start/end)
+- No role/title
+- Algorithmic deduction (may contain errors)
 
 #### ORCID
 
 ```typescript
-// Structure ORCID - Employments
+// ORCID structure - Employments
 interface OrcidEmployment {
   organization: {
     name: string;                           // "Stanford University"
@@ -146,12 +146,12 @@ interface OrcidEmployment {
   start_date: { year: number; month?: number; day?: number };
   end_date?: { year: number; month?: number; day?: number };
   source: {
-    source_name: string;                    // "Stanford University" ou auteur
+    source_name: string;                    // "Stanford University" or author
     assertion_origin_name?: string;
   };
 }
 
-// Structure ORCID - Education
+// ORCID structure - Education
 interface OrcidEducation {
   organization: { /* same as employment */ };
   department_name?: string;
@@ -161,39 +161,39 @@ interface OrcidEducation {
 }
 ```
 
-**Points forts ORCID :**
-- Dates précises (mois, jour parfois)
-- Rôle et titre explicites
-- Distinction employment/education
-- Données déclaratives (source de vérité pour l'auteur)
-- Source de l'assertion (auto-déclaré vs institution)
+**ORCID strengths:**
+- Precise dates (month, sometimes day)
+- Explicit role and title
+- Employment/education distinction
+- Declarative data (source of truth for the author)
+- Assertion source (self-declared vs institution)
 
-**Limitations :**
-- Pas de ROR systématique (RINGGOLD, GRID parfois)
-- Complétude variable (dépend de l'auteur)
-- Pas de validation systématique
+**Limitations:**
+- No systematic ROR (RINGGOLD, GRID sometimes)
+- Variable completeness (depends on author)
+- No systematic validation
 
 #### HAL
 
 ```typescript
-// Structure HAL - Affiliations sur documents
+// HAL structure - Affiliations on documents
 interface HalAffiliation {
-  structId_i: number;                       // ID structure HAL
+  structId_i: number;                       // HAL structure ID
   structName_s: string;                     // "Laboratoire des Sciences du Climat"
   structAcronym_s?: string;                 // "LSCE"
   structType_s: string;                     // "laboratory", "institution", "department"
   structCountry_s: string;                  // "fr"
   structAddress_s?: string;
 
-  // Hiérarchie
-  structParent_i?: number[];                // IDs des structures parentes
+  // Hierarchy
+  structParent_i?: number[];                // Parent structure IDs
   structParentName_s?: string[];            // ["CEA", "CNRS", "UVSQ"]
 
-  // Tutelles
+  // Supervising bodies
   structTutelles_s?: string[];              // ["CEA", "CNRS", "UVSQ"]
 }
 
-// Référentiel AuréHAL (structures)
+// AureHAL referential (structures)
 interface HalStructure {
   docid: number;
   label_s: string;
@@ -203,54 +203,54 @@ interface HalStructure {
   address_s?: string;
   country_s: string;
   url_s?: string;
-  rnsr_s?: string;                          // Code RNSR (répertoire national)
+  rnsr_s?: string;                          // RNSR code (national directory)
   idRef_s?: string;                         // IdRef ABES
   isni_s?: string;                          // ISNI
 }
 ```
 
-**Points forts HAL :**
-- Hiérarchie détaillée (labo → département → université)
-- Tutelles multiples (CNRS + Université)
-- Référentiel structuré (AuréHAL)
-- Codes nationaux (RNSR, IdRef)
-- Spécifique recherche française
+**HAL strengths:**
+- Detailed hierarchy (lab -> department -> university)
+- Multiple supervising bodies (CNRS + University)
+- Structured referential (AureHAL)
+- National codes (RNSR, IdRef)
+- Specific to French research
 
-**Limitations :**
-- Pas de ROR natif
-- Pas de dates de présence
-- Principalement France
+**Limitations:**
+- No native ROR
+- No presence dates
+- Mainly France
 
 #### Crossref
 
 ```typescript
-// Structure Crossref - Affiliations sur Works
+// Crossref structure - Affiliations on Works
 interface CrossrefAuthor {
   given?: string;
   family: string;
   sequence: string;                         // "first", "additional"
   affiliation: Array<{
-    name: string;                           // Texte brut uniquement
+    name: string;                           // Raw text only
   }>;
   ORCID?: string;
 }
 ```
 
-**Points forts Crossref :**
-- Couverture mondiale massive
-- Affiliation au moment de publication
-- Texte brut original de l'éditeur
+**Crossref strengths:**
+- Massive worldwide coverage
+- Affiliation at publication time
+- Original raw text from publisher
 
-**Limitations :**
-- Texte brut non structuré
-- Pas d'identifiants (ROR en cours d'adoption)
-- Qualité variable selon éditeurs
+**Limitations:**
+- Unstructured raw text
+- No identifiers (ROR adoption in progress)
+- Variable quality depending on publishers
 
 ---
 
-## Reconstruction du parcours d'affiliation
+## Affiliation Path Reconstruction
 
-### Algorithme de fusion
+### Merging Algorithm
 
 ```typescript
 interface AffiliationTimeline {
@@ -290,23 +290,23 @@ interface AffiliationConflict {
 }
 ```
 
-### Processus de reconstruction
+### Reconstruction Process
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    RECONSTRUCTION PARCOURS AFFILIATION                       │
+│                    AFFILIATION PATH RECONSTRUCTION                           │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  1. COLLECTE                                                                 │
-│  ───────────                                                                 │
+│  1. COLLECTION                                                               │
+│  ─────────────                                                               │
 │  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐          │
 │  │ ORCID   │  │OpenAlex │  │   HAL   │  │Crossref │  │ Scopus  │          │
-│  │ (decl.) │  │(infer.) │  │(struct.)│  │ (brut)  │  │(struct.)│          │
+│  │ (decl.) │  │(infer.) │  │(struct.)│  │ (raw)   │  │(struct.)│          │
 │  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘          │
 │       │            │            │            │            │                 │
 │       └────────────┴────────────┴────────────┴────────────┘                 │
 │                                  │                                           │
-│  2. NORMALISATION                ▼                                           │
+│  2. NORMALIZATION                ▼                                           │
 │  ─────────────────  ┌───────────────────────┐                               │
 │                     │  Institution Resolver │                               │
 │                     │  - ROR matching       │                               │
@@ -314,7 +314,7 @@ interface AffiliationConflict {
 │                     │  - Hierarchy mapping  │                               │
 │                     └───────────┬───────────┘                               │
 │                                 │                                            │
-│  3. ALIGNEMENT                  ▼                                            │
+│  3. ALIGNMENT                   ▼                                            │
 │  ──────────────    ┌────────────────────────┐                               │
 │                    │   Timeline Builder     │                               │
 │                    │   - Date alignment     │                               │
@@ -322,7 +322,7 @@ interface AffiliationConflict {
 │                    │   - Overlap resolution │                               │
 │                    └───────────┬────────────┘                               │
 │                                │                                             │
-│  4. RÉSOLUTION                 ▼                                             │
+│  4. RESOLUTION                 ▼                                             │
 │  ──────────────   ┌─────────────────────────┐                               │
 │                   │   Conflict Resolver     │                               │
 │                   │   - Priority rules      │                               │
@@ -341,39 +341,39 @@ interface AffiliationConflict {
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Règles de priorité
+### Priority Rules
 
 ```typescript
 const affiliationPriorityRules: PriorityRule[] = [
-  // 1. ORCID déclaré par l'auteur = source de vérité
+  // 1. ORCID declared by author = source of truth
   {
     condition: (s) => s.source === 'orcid' && s.evidence === 'declaration',
     priority: 100,
     confidence: 0.95,
   },
 
-  // 2. ORCID ajouté par l'institution
+  // 2. ORCID added by institution
   {
     condition: (s) => s.source === 'orcid' && s.sourceAssertion === 'institution',
     priority: 90,
     confidence: 0.90,
   },
 
-  // 3. HAL avec structure validée
+  // 3. HAL with validated structure
   {
     condition: (s) => s.source === 'hal' && s.structureValidated,
     priority: 80,
     confidence: 0.85,
   },
 
-  // 4. OpenAlex avec ROR résolu
+  // 4. OpenAlex with resolved ROR
   {
     condition: (s) => s.source === 'openalex' && s.rorId,
     priority: 70,
     confidence: 0.80,
   },
 
-  // 5. Crossref/autres avec texte brut
+  // 5. Crossref/others with raw text
   {
     condition: (s) => !s.resolvedInstitutionId,
     priority: 30,
@@ -381,17 +381,17 @@ const affiliationPriorityRules: PriorityRule[] = [
   },
 ];
 
-// Résolution des conflits de dates
+// Date conflict resolution
 const resolveDateConflict = (
   segment1: AffiliationSegment,
   segment2: AffiliationSegment
 ): AffiliationSegment => {
-  // ORCID a la priorité sur les dates
+  // ORCID has priority on dates
   if (segment1.sources.some(s => s.source === 'orcid')) {
     return { ...segment1, sources: [...segment1.sources, ...segment2.sources] };
   }
 
-  // Sinon, utiliser la précision la plus fine
+  // Otherwise, use finest precision
   if (segment1.startDate.precision < segment2.startDate.precision) {
     return { ...segment1, startDate: segment2.startDate };
   }
@@ -402,49 +402,49 @@ const resolveDateConflict = (
 
 ---
 
-## Construction du profil d'expert
+## Expert Profile Construction
 
-### Sources de données pour l'expertise
+### Data Sources for Expertise
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    SOURCES DE DONNÉES POUR EXPERTISE                         │
+│                    DATA SOURCES FOR EXPERTISE                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  SOURCE              DONNÉES                    QUALITÉ    GRANULARITÉ      │
+│  SOURCE              DATA                       QUALITY    GRANULARITY      │
 │  ────────────────────────────────────────────────────────────────────       │
 │                                                                              │
-│  OpenAlex Topics     • Concepts hiérarchiques   ⭐⭐⭐⭐⭐  Très fine        │
-│                      • 65k+ topics              (ML-based)  (4 niveaux)     │
-│                      • Score par publication                                 │
-│                      • Évolution temporelle                                  │
+│  OpenAlex Topics     • Hierarchical concepts    *****      Very fine        │
+│                      • 65k+ topics              (ML-based)  (4 levels)      │
+│                      • Score per publication                                 │
+│                      • Temporal evolution                                    │
 │                                                                              │
-│  Keywords (sources)  • Mots-clés auteur         ⭐⭐⭐     Variable         │
-│                      • Mots-clés éditeur                   (libre)           │
+│  Keywords (sources)  • Author keywords          ***        Variable         │
+│                      • Publisher keywords                  (free-form)       │
 │                      • Subject headings                                      │
 │                                                                              │
-│  Abstract analysis   • NLP sur résumés          ⭐⭐⭐⭐   Fine             │
-│                      • Extraction d'entités               (custom)          │
-│                      • Clustering thématique                                 │
+│  Abstract analysis   • NLP on abstracts         ****       Fine             │
+│                      • Entity extraction                   (custom)          │
+│                      • Thematic clustering                                   │
 │                                                                              │
-│  Full-text analysis  • NLP sur texte complet    ⭐⭐⭐⭐⭐  Très fine        │
-│                      • Méthodologies                       (si dispo)        │
-│                      • Techniques utilisées                                  │
+│  Full-text analysis  • NLP on full text         *****      Very fine        │
+│                      • Methodologies                       (if available)    │
+│                      • Techniques used                                       │
 │                                                                              │
-│  Citations reçues    • Qui cite l'auteur ?      ⭐⭐⭐⭐   Indirecte         │
-│                      • Dans quel contexte ?               (influence)       │
+│  Received citations  • Who cites the author?    ****       Indirect         │
+│                      • In what context?                    (influence)       │
 │                                                                              │
-│  Classifications     • CCS (Computer Science)   ⭐⭐⭐⭐   Standardisée      │
-│  externes            • MeSH (Médecine)                    (domaine)         │
-│                      • JEL (Économie)                                        │
-│                      • PACS (Physique)                                       │
+│  External            • CCS (Computer Science)   ****       Standardized     │
+│  classifications     • MeSH (Medicine)                     (domain)          │
+│                      • JEL (Economics)                                       │
+│                      • PACS (Physics)                                        │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Approches de construction
+### Construction Approaches
 
-#### 1. OpenAlex Topics (recommandée)
+#### 1. OpenAlex Topics (recommended)
 
 ```typescript
 interface OpenAlexTopic {
@@ -460,7 +460,7 @@ interface WorkTopic {
   score: number;                            // 0.0 - 1.0
 }
 
-// Profil d'expertise à partir des topics OpenAlex
+// Expertise profile from OpenAlex topics
 const buildExpertiseFromTopics = (
   works: Work[],
   options: { minScore?: number; minWorks?: number }
@@ -488,7 +488,7 @@ const buildExpertiseFromTopics = (
     }
   }
 
-  // Filtrer et scorer
+  // Filter and score
   return Array.from(topicStats.values())
     .filter(s => s.works.length >= (options.minWorks ?? 2))
     .map(s => ({
@@ -515,12 +515,12 @@ const calculateExpertiseLevel = (stats: TopicStats): ExpertiseLevel => {
 };
 ```
 
-#### 2. Analyse de texte (Abstract/Full-text)
+#### 2. Text Analysis (Abstract/Full-text)
 
 ```typescript
 interface TextAnalysisConfig {
   useAbstract: boolean;
-  useFullText: boolean;                     // Si disponible (HAL, ArXiv, etc.)
+  useFullText: boolean;                     // If available (HAL, ArXiv, etc.)
   extractionMethods: ExtractionMethod[];
 }
 
@@ -529,19 +529,19 @@ type ExtractionMethod =
   | 'named_entity_recognition'              // SpaCy, Stanza
   | 'topic_modeling'                        // LDA, BERTopic
   | 'embedding_clustering'                  // SPECTER, SciBERT
-  | 'methodology_detection';                // Patterns spécifiques
+  | 'methodology_detection';                // Specific patterns
 
-// Exemple avec BERTopic
+// Example with BERTopic
 const analyzeTextsWithBERTopic = async (
   texts: string[]
 ): Promise<TopicCluster[]> => {
-  // Embeddings avec SPECTER (spécialisé publications scientifiques)
+  // Embeddings with SPECTER (specialized for scientific publications)
   const embeddings = await generateEmbeddings(texts, 'allenai/specter2');
 
-  // Clustering et extraction de topics
+  // Clustering and topic extraction
   const clusters = await clusterWithHDBSCAN(embeddings);
 
-  // Représentation des topics
+  // Topic representation
   return clusters.map(cluster => ({
     id: cluster.id,
     keywords: extractKeywordsFromCluster(cluster, texts),
@@ -551,7 +551,7 @@ const analyzeTextsWithBERTopic = async (
   }));
 };
 
-// Extraction de méthodologies
+// Methodology extraction
 const extractMethodologies = (fullText: string): Methodology[] => {
   const patterns = [
     { type: 'statistical', regex: /(?:regression|ANOVA|t-test|chi-square)/gi },
@@ -566,24 +566,24 @@ const extractMethodologies = (fullText: string): Methodology[] => {
 };
 ```
 
-#### 3. Analyse des citations reçues
+#### 3. Received Citation Analysis
 
 ```typescript
 interface CitationContext {
   citingWork: Work;
-  context: string;                          // Phrase/paragraphe de citation
+  context: string;                          // Citation sentence/paragraph
   sentiment: 'positive' | 'neutral' | 'negative' | 'critical';
   purpose: CitationPurpose;
 }
 
 type CitationPurpose =
-  | 'background'                            // Contexte général
-  | 'method_use'                            // Utilise la méthode
-  | 'comparison'                            // Compare les résultats
-  | 'extension'                             // Étend les travaux
-  | 'critique';                             // Critique/réfute
+  | 'background'                            // General context
+  | 'method_use'                            // Uses the method
+  | 'comparison'                            // Compares results
+  | 'extension'                             // Extends the work
+  | 'critique';                             // Critiques/refutes
 
-// Impact par domaine
+// Impact by domain
 const analyzeInfluenceByDomain = (
   authorWorks: Work[],
   citations: CitationContext[]
@@ -591,7 +591,7 @@ const analyzeInfluenceByDomain = (
   const influenceByDomain = new Map<string, DomainStats>();
 
   for (const citation of citations) {
-    // Domain du travail citant
+    // Domain of citing work
     const citingDomain = citation.citingWork.topics[0]?.topic.domain;
     if (!citingDomain) continue;
 
@@ -613,27 +613,27 @@ const analyzeInfluenceByDomain = (
 };
 ```
 
-### Combinaison multi-sources
+### Multi-source Combination
 
 ```typescript
 interface ExpertProfile {
-  // Identité
+  // Identity
   authorId: string;
   displayName: string;
 
-  // Domaines d'expertise (agrégés)
+  // Expertise domains (aggregated)
   domains: ExpertiseDomain[];
 
-  // Timeline d'expertise
+  // Expertise timeline
   expertiseTimeline: ExpertiseTimepoint[];
 
-  // Métriques
+  // Metrics
   metrics: ExpertiseMetrics;
 
   // Collaborations
   collaborationNetwork: CollaborationStats;
 
-  // Confidence et sources
+  // Confidence and sources
   confidence: number;
   dataCompleteness: DataCompleteness;
 }
@@ -644,11 +644,11 @@ interface ExpertiseDomain {
   name: string;
   hierarchy: string[];                      // ["Computer Science", "AI", "NLP"]
 
-  // Niveau d'expertise
+  // Expertise level
   level: ExpertiseLevel;
   score: number;                            // 0.0 - 1.0
 
-  // Preuves
+  // Evidence
   evidence: {
     publications: number;
     citations: number;
@@ -657,7 +657,7 @@ interface ExpertiseDomain {
     lastPublicationYear: number;
   };
 
-  // Sources de l'évaluation
+  // Evaluation sources
   sources: {
     openalex_topics?: { count: number; avgScore: number };
     keywords?: { count: number; sources: string[] };
@@ -666,7 +666,7 @@ interface ExpertiseDomain {
   };
 }
 
-// Fusion des expertises de différentes sources
+// Merging expertise from different sources
 const fuseExpertiseSources = (
   openalexTopics: TopicStats[],
   extractedKeywords: KeywordStats[],
@@ -675,7 +675,7 @@ const fuseExpertiseSources = (
 ): ExpertiseDomain[] => {
   const unified = new Map<string, ExpertiseDomain>();
 
-  // 1. Base : OpenAlex Topics (plus fiable)
+  // 1. Base: OpenAlex Topics (most reliable)
   for (const topic of openalexTopics) {
     const domain = createDomainFromTopic(topic);
     domain.sources.openalex_topics = {
@@ -685,7 +685,7 @@ const fuseExpertiseSources = (
     unified.set(domain.id, domain);
   }
 
-  // 2. Enrichir avec keywords
+  // 2. Enrich with keywords
   for (const kw of extractedKeywords) {
     const matchedDomain = findMatchingDomain(kw.keyword, unified);
     if (matchedDomain) {
@@ -700,7 +700,7 @@ const fuseExpertiseSources = (
     }
   }
 
-  // 3. Enrichir avec analyse de texte
+  // 3. Enrich with text analysis
   for (const cluster of textAnalysis) {
     const matchedDomain = findMatchingDomainByKeywords(cluster.keywords, unified);
     if (matchedDomain) {
@@ -711,7 +711,7 @@ const fuseExpertiseSources = (
     }
   }
 
-  // 4. Enrichir avec citations
+  // 4. Enrich with citations
   for (const influence of citationAnalysis) {
     const matchedDomain = findMatchingDomainByName(influence.domain.display_name, unified);
     if (matchedDomain) {
@@ -730,9 +730,9 @@ const fuseExpertiseSources = (
 
 ---
 
-## Analyse temporelle des expertises
+## Temporal Expertise Analysis
 
-### Timeline d'expertise
+### Expertise Timeline
 
 ```typescript
 interface ExpertiseTimepoint {
@@ -756,7 +756,7 @@ interface ExpertiseShift {
   confidence: number;
 }
 
-// Construction de la timeline
+// Building the timeline
 const buildExpertiseTimeline = (
   works: Work[],
   minYear: number,
@@ -769,7 +769,7 @@ const buildExpertiseTimeline = (
     const yearWorks = works.filter(w => w.year === year);
     const domainStats = new Map<string, DomainYearStats>();
 
-    // Compter les publications par domaine cette année
+    // Count publications by domain this year
     for (const work of yearWorks) {
       for (const topic of work.topics) {
         const domainId = topic.topic.domain.id;
@@ -784,13 +784,13 @@ const buildExpertiseTimeline = (
       }
     }
 
-    // Mettre à jour les cumulatifs
+    // Update cumulatives
     for (const [domainId, stats] of domainStats) {
       const cumulative = (cumulativeByDomain.get(domainId) ?? 0) + stats.publicationsThisYear;
       cumulativeByDomain.set(domainId, cumulative);
     }
 
-    // Détecter les changements
+    // Detect changes
     const previous = timeline[timeline.length - 1];
     const shifts = detectShifts(previous, domainStats, cumulativeByDomain);
 
@@ -811,7 +811,7 @@ const buildExpertiseTimeline = (
   return timeline;
 };
 
-// Détection des pivots thématiques
+// Thematic pivot detection
 const detectShifts = (
   previous: ExpertiseTimepoint | undefined,
   current: Map<string, DomainYearStats>,
@@ -824,7 +824,7 @@ const detectShifts = (
   const prevDomains = new Set(previous.domains.map(d => d.domain.id));
   const currDomains = new Set(current.keys());
 
-  // Nouveaux domaines (émergence)
+  // New domains (emergence)
   for (const domainId of currDomains) {
     if (!prevDomains.has(domainId) && (current.get(domainId)?.publicationsThisYear ?? 0) >= 2) {
       shifts.push({
@@ -836,7 +836,7 @@ const detectShifts = (
     }
   }
 
-  // Domaines disparus (déclin)
+  // Disappeared domains (decline)
   for (const domainId of prevDomains) {
     const prevCount = previous.domains.find(d => d.domain.id === domainId)?.publicationsThisYear ?? 0;
     const currCount = current.get(domainId)?.publicationsThisYear ?? 0;
@@ -855,18 +855,18 @@ const detectShifts = (
 };
 ```
 
-### Visualisation temporelle
+### Temporal Visualization
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    TIMELINE D'EXPERTISE - Dr. Marie Dupont                   │
+│                    EXPERTISE TIMELINE - Dr. Marie Dupont                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  2015      2016      2017      2018      2019      2020      2021      2022 │
 │    │         │         │         │         │         │         │         │  │
 │    │         │         │         │         │         │         │         │  │
 │  ██████    █████    ██████    ████      ███        ██                      │  │
-│  NLP       NLP      NLP       NLP      NLP       NLP      Emergence →      │
+│  NLP       NLP      NLP       NLP      NLP       NLP      Emergence ->      │
 │                                                            Climate NLP      │
 │            ████     ███████   ████████ █████████ ████████ ███████████████ │
 │            Deep     Deep      Deep     Deep      Deep     Deep Learning    │
@@ -876,25 +876,25 @@ const detectShifts = (
 │                               Climate  Climate   Climate   Climate Science │
 │                               Science  Science   Science                    │
 │                                                                              │
-│  SHIFTS DÉTECTÉS :                                                          │
+│  DETECTED SHIFTS:                                                           │
 │  ─────────────────                                                          │
-│  2017: Émergence "Deep Learning" (pivot méthodologique)                    │
-│  2018: Émergence "Climate Science" (nouveau domaine d'application)         │
-│  2021: Émergence "Climate NLP" (convergence de 2 expertises)               │
+│  2017: Emergence "Deep Learning" (methodological pivot)                     │
+│  2018: Emergence "Climate Science" (new application domain)                 │
+│  2021: Emergence "Climate NLP" (convergence of 2 expertises)                │
 │                                                                              │
-│  INTERPRÉTATION :                                                           │
+│  INTERPRETATION:                                                            │
 │  ────────────────                                                           │
-│  Évolution d'une expertise NLP traditionnelle vers une application         │
-│  interdisciplinaire combinant IA et sciences du climat.                    │
+│  Evolution from traditional NLP expertise towards interdisciplinary         │
+│  application combining AI and climate science.                              │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Analyse des collaborations
+## Collaboration Analysis
 
-### Extraction du réseau de co-auteurs
+### Co-author Network Extraction
 
 ```typescript
 interface CollaborationNetwork {
@@ -910,7 +910,7 @@ interface CollaboratorNode {
   institution?: ResolvedInstitution;
   orcid?: string;
 
-  // Métriques locales
+  // Local metrics
   collaborationCount: number;
   firstCollabYear: number;
   lastCollabYear: number;
@@ -920,17 +920,17 @@ interface CollaboratorNode {
 interface CollaborationEdge {
   source: string;                           // authorId
   target: string;                           // authorId
-  weight: number;                           // Nombre de co-publications
-  years: number[];                          // Années de collaboration
-  works: string[];                          // IDs des publications communes
+  weight: number;                           // Number of co-publications
+  years: number[];                          // Collaboration years
+  works: string[];                          // Common publication IDs
   type: CollaborationType;
 }
 
 type CollaborationType =
-  | 'institutional'                         // Même institution
-  | 'national'                              // Même pays
-  | 'international'                         // Pays différents
-  | 'interdisciplinary';                    // Domaines différents
+  | 'institutional'                         // Same institution
+  | 'national'                              // Same country
+  | 'international'                         // Different countries
+  | 'interdisciplinary';                    // Different domains
 
 interface NetworkMetrics {
   totalCollaborators: number;
@@ -941,7 +941,7 @@ interface NetworkMetrics {
   clusteringCoefficient: number;
 }
 
-// Construction du réseau
+// Building the network
 const buildCollaborationNetwork = (
   authorId: string,
   works: Work[]
@@ -996,7 +996,7 @@ const buildCollaborationNetwork = (
 };
 ```
 
-### Évolution temporelle des collaborations
+### Temporal Collaboration Evolution
 
 ```typescript
 interface CollaborationTimeline {
@@ -1021,40 +1021,40 @@ interface CollaborationTrend {
   evidence: string[];
 }
 
-// Analyse des patterns de collaboration
+// Collaboration pattern analysis
 const analyzeCollaborationPatterns = (
   network: CollaborationNetwork,
   works: Work[]
 ): CollaborationPattern[] => {
   const patterns: CollaborationPattern[] = [];
 
-  // 1. Collaborateurs récurrents (équipe stable)
+  // 1. Recurring collaborators (stable team)
   const recurring = network.nodes.filter(n => n.collaborationCount >= 3);
   if (recurring.length >= 3) {
     patterns.push({
       type: 'stable_team',
-      description: `Équipe stable de ${recurring.length} collaborateurs récurrents`,
+      description: `Stable team of ${recurring.length} recurring collaborators`,
       members: recurring.map(n => n.name),
       period: { start: Math.min(...recurring.map(n => n.firstCollabYear)), end: /* now */ },
     });
   }
 
-  // 2. Hub de collaboration
+  // 2. Collaboration hub
   const highDegreeNodes = network.nodes.filter(n => n.collaborationCount >= 5);
   for (const hub of highDegreeNodes) {
     patterns.push({
       type: 'collaboration_hub',
-      description: `Collaboration intensive avec ${hub.name}`,
-      evidence: `${hub.collaborationCount} publications communes`,
+      description: `Intensive collaboration with ${hub.name}`,
+      evidence: `${hub.collaborationCount} joint publications`,
     });
   }
 
-  // 3. Internationalisation croissante
+  // 3. Growing internationalization
   const intlByYear = calculateInternationalRateByYear(network, works);
   if (isIncreasingTrend(intlByYear)) {
     patterns.push({
       type: 'internationalization',
-      description: 'Internationalisation croissante des collaborations',
+      description: 'Growing internationalization of collaborations',
       trend: intlByYear,
     });
   }
@@ -1065,102 +1065,102 @@ const analyzeCollaborationPatterns = (
 
 ---
 
-## Validation utilisateur
+## User Validation
 
-### Interface de révision du parcours
+### Career Review Interface
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    VALIDATION DU PARCOURS - Dr. Marie Dupont                 │
+│                    CAREER VALIDATION - Dr. Marie Dupont                      │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  ╔═══════════════════════════════════════════════════════════════════════╗  │
-│  ║  AFFILIATIONS RECONSTITUÉES                                            ║  │
+│  ║  RECONSTRUCTED AFFILIATIONS                                            ║  │
 │  ╠═══════════════════════════════════════════════════════════════════════╣  │
 │  ║                                                                         ║  │
-│  ║  2018-présent   CEA Saclay - LSCE                           [✓] [✗]   ║  │
+│  ║  2018-present   CEA Saclay - LSCE                           [✓] [✗]   ║  │
 │  ║                 Sources: ORCID ✓, HAL ✓, OpenAlex ✓                    ║  │
-│  ║                 Confiance: 95%                                          ║  │
+│  ║                 Confidence: 95%                                          ║  │
 │  ║                                                                         ║  │
-│  ║  2014-2017      Université Paris-Sud                        [✓] [✗]   ║  │
-│  ║                 Doctorat en Physique                                   ║  │
+│  ║  2014-2017      Universite Paris-Sud                        [✓] [✗]   ║  │
+│  ║                 PhD in Physics                                          ║  │
 │  ║                 Sources: ORCID ✓                                        ║  │
-│  ║                 Confiance: 90%                                          ║  │
+│  ║                 Confidence: 90%                                          ║  │
 │  ║                                                                         ║  │
-│  ║  ⚠️ GAP DÉTECTÉ: 2017-2018 (post-doc ?)                     [Compléter]║  │
+│  ║  ⚠️ GAP DETECTED: 2017-2018 (postdoc?)                      [Complete] ║  │
 │  ║                                                                         ║  │
-│  ║  [+ Ajouter une affiliation manquante]                                 ║  │
+│  ║  [+ Add missing affiliation]                                           ║  │
 │  ╚═══════════════════════════════════════════════════════════════════════╝  │
 │                                                                              │
 │  ╔═══════════════════════════════════════════════════════════════════════╗  │
-│  ║  EXPERTISES DÉTECTÉES                                                  ║  │
+│  ║  DETECTED EXPERTISE                                                    ║  │
 │  ╠═══════════════════════════════════════════════════════════════════════╣  │
 │  ║                                                                         ║  │
-│  ║  ⭐⭐⭐⭐⭐  Climate Modeling (Leading)                     [✓] [✗]   ║  │
+│  ║  *****  Climate Modeling (Leading)                          [✓] [✗]   ║  │
 │  ║              15 publications, 2015-2023                                ║  │
 │  ║              Sources: OpenAlex Topics, HAL Keywords                     ║  │
 │  ║                                                                         ║  │
-│  ║  ⭐⭐⭐⭐    Machine Learning (Established)                [✓] [✗]   ║  │
+│  ║  ****   Machine Learning (Established)                      [✓] [✗]   ║  │
 │  ║              8 publications, 2019-2023                                 ║  │
 │  ║              Sources: OpenAlex Topics, Abstract NLP                     ║  │
 │  ║                                                                         ║  │
-│  ║  ⭐⭐⭐      Carbon Cycle (Developing)                     [✓] [✗]   ║  │
+│  ║  ***    Carbon Cycle (Developing)                           [✓] [✗]   ║  │
 │  ║              4 publications, 2021-2023                                 ║  │
-│  ║              ⚠️ Confiance moyenne - Voulez-vous confirmer ?            ║  │
+│  ║              ⚠️ Medium confidence - Do you want to confirm?            ║  │
 │  ║                                                                         ║  │
-│  ║  ⭐⭐        Remote Sensing (Emerging)                     [✓] [✗]   ║  │
+│  ║  **     Remote Sensing (Emerging)                           [✓] [✗]   ║  │
 │  ║              2 publications, 2022-2023                                 ║  │
 │  ║                                                                         ║  │
-│  ║  [+ Ajouter une expertise non détectée]                                ║  │
-│  ║  [↻ Recalculer à partir de nouveaux critères]                          ║  │
+│  ║  [+ Add undetected expertise]                                          ║  │
+│  ║  [↻ Recalculate with new criteria]                                     ║  │
 │  ╚═══════════════════════════════════════════════════════════════════════╝  │
 │                                                                              │
 │  ╔═══════════════════════════════════════════════════════════════════════╗  │
-│  ║  COLLABORATIONS CLÉS                                                   ║  │
+│  ║  KEY COLLABORATIONS                                                    ║  │
 │  ╠═══════════════════════════════════════════════════════════════════════╣  │
 │  ║                                                                         ║  │
 │  ║  Dr. Jean Martin (CNRS)          12 pubs, 2016-2023         [✓] [✗]   ║  │
 │  ║  Prof. Anna Schmidt (ETH)         8 pubs, 2019-2023         [✓] [✗]   ║  │
 │  ║  Dr. Li Wei (Tsinghua)            5 pubs, 2021-2023         [✓] [✗]   ║  │
 │  ║                                                                         ║  │
-│  ║  ⚠️ "M. Dupont" dans 3 articles - Est-ce vous ?            [Vérifier] ║  │
+│  ║  ⚠️ "M. Dupont" in 3 articles - Is this you?                [Verify]  ║  │
 │  ║                                                                         ║  │
 │  ╚═══════════════════════════════════════════════════════════════════════╝  │
 │                                                                              │
-│                        [Enregistrer les validations]                        │
+│                        [Save validations]                                   │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Modèle de données pour la validation
+### Data Model for Validation
 
 ```typescript
-// Extension du modèle author-verification.md
+// Extension of author-verification.md model
 
 interface ProfileValidation {
   profileId: string;
 
-  // Validations d'affiliations
+  // Affiliation validations
   affiliationValidations: AffiliationValidation[];
 
-  // Validations d'expertises
+  // Expertise validations
   expertiseValidations: ExpertiseValidation[];
 
-  // Validations de collaborations
+  // Collaboration validations
   collaborationValidations: CollaborationValidation[];
 
-  // Métadonnées
+  // Metadata
   lastValidatedAt: Date;
   completenessScore: number;
 }
 
 interface AffiliationValidation {
   id: string;
-  segmentId: string;                        // Référence au AffiliationSegment
+  segmentId: string;                        // Reference to AffiliationSegment
 
   decision: 'confirmed' | 'rejected' | 'modified' | 'pending';
 
-  // Si modifié
+  // If modified
   corrections?: {
     institution?: string;
     startDate?: PartialDate;
@@ -1175,18 +1175,18 @@ interface AffiliationValidation {
 
 interface ExpertiseValidation {
   id: string;
-  domainId: string;                         // Référence à ExpertiseDomain
+  domainId: string;                         // Reference to ExpertiseDomain
 
   decision: 'confirmed' | 'rejected' | 'adjusted' | 'pending';
 
-  // Si ajusté
+  // If adjusted
   adjustments?: {
     level?: ExpertiseLevel;
-    customName?: string;                    // Renommage du domaine
-    subdomains?: string[];                  // Précisions
+    customName?: string;                    // Domain renaming
+    subdomains?: string[];                  // Clarifications
   };
 
-  // Expertise auto-déclarée (non détectée)
+  // Self-declared expertise (not detected)
   selfDeclared?: boolean;
 
   notes?: string;
@@ -1195,21 +1195,21 @@ interface ExpertiseValidation {
 
 interface CollaborationValidation {
   id: string;
-  collaboratorId: string;                   // AuthorId du co-auteur
+  collaboratorId: string;                   // Co-author AuthorId
 
   decision: 'confirmed' | 'rejected' | 'merged' | 'pending';
 
-  // Si merged (homonyme résolu)
-  mergedWith?: string;                      // Autre collaboratorId
+  // If merged (homonym resolved)
+  mergedWith?: string;                      // Other collaboratorId
 
-  // Relation qualifiée
+  // Qualified relationship
   relationship?: 'supervisor' | 'student' | 'colleague' | 'external' | 'unknown';
 
   notes?: string;
   validatedAt: Date;
 }
 
-// API pour la validation
+// API for validation
 interface ProfileValidationAPI {
   // Affiliations
   validateAffiliation: (
@@ -1223,7 +1223,7 @@ interface ProfileValidationAPI {
     affiliation: NewAffiliation
   ) => Effect<AffiliationSegment, ValidationError>;
 
-  // Expertises
+  // Expertise
   validateExpertise: (
     profileId: string,
     domainId: string,
@@ -1252,17 +1252,17 @@ interface ProfileValidationAPI {
 
 ---
 
-## Intégration dans Atlas Verify
+## Integration in Atlas Verify
 
-### Architecture mise à jour
+### Updated Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    ATLAS VERIFY - ARCHITECTURE ÉTENDUE                       │
+│                    ATLAS VERIFY - EXTENDED ARCHITECTURE                      │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  ┌─────────────────────────────────────────────────────────────────────────┐│
-│  │                      MODULE PROFIL CHERCHEUR                             ││
+│  │                      RESEARCHER PROFILE MODULE                           ││
 │  │  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐                ││
 │  │  │  Affiliation  │  │   Expertise   │  │ Collaboration │                ││
 │  │  │  Reconstructor│  │   Builder     │  │   Analyzer    │                ││
@@ -1284,7 +1284,7 @@ interface ProfileValidationAPI {
 │  │  │  ORCID...)  │   │ (publications)  │   │             │                ││
 │  │  └─────────────┘   └─────────────────┘   └─────────────┘                ││
 │  │                                                                          ││
-│  │                      MODULE VÉRIFICATION                                 ││
+│  │                      VERIFICATION MODULE                                 ││
 │  └──────────────────────────────────────────────────────────────────────────┘│
 │                                                                              │
 │  ┌──────────────────────────────────────────────────────────────────────────┐│
@@ -1298,10 +1298,10 @@ interface ProfileValidationAPI {
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Endpoints API additionnels
+### Additional API Endpoints
 
 ```yaml
-# Extension de l'API Atlas Verify
+# Atlas Verify API extension
 
 paths:
   # ═══════════════════════════════════════════════════════════════════════
@@ -1310,7 +1310,7 @@ paths:
 
   /profile/career:
     get:
-      summary: Parcours de carrière reconstruit
+      summary: Reconstructed career path
       responses:
         '200':
           content:
@@ -1320,13 +1320,13 @@ paths:
 
   /profile/career/affiliations:
     get:
-      summary: Timeline des affiliations
+      summary: Affiliation timeline
     post:
-      summary: Ajouter une affiliation manquante
+      summary: Add missing affiliation
 
   /profile/career/affiliations/{id}/validate:
     post:
-      summary: Valider ou corriger une affiliation
+      summary: Validate or correct an affiliation
 
   # ═══════════════════════════════════════════════════════════════════════
   # EXPERTISE
@@ -1334,7 +1334,7 @@ paths:
 
   /profile/expertise:
     get:
-      summary: Profil d'expertise complet
+      summary: Complete expertise profile
       parameters:
         - name: includeTimeline
           in: query
@@ -1347,21 +1347,21 @@ paths:
 
   /profile/expertise/domains:
     get:
-      summary: Domaines d'expertise détectés
+      summary: Detected expertise domains
     post:
-      summary: Ajouter une expertise auto-déclarée
+      summary: Add self-declared expertise
 
   /profile/expertise/domains/{id}/validate:
     post:
-      summary: Valider ou ajuster un domaine d'expertise
+      summary: Validate or adjust an expertise domain
 
   /profile/expertise/timeline:
     get:
-      summary: Évolution temporelle des expertises
+      summary: Temporal expertise evolution
 
   /profile/expertise/recalculate:
     post:
-      summary: Recalculer les expertises avec nouveaux paramètres
+      summary: Recalculate expertise with new parameters
       requestBody:
         content:
           application/json:
@@ -1383,7 +1383,7 @@ paths:
 
   /profile/collaborations:
     get:
-      summary: Réseau de collaboration
+      summary: Collaboration network
       parameters:
         - name: format
           in: query
@@ -1392,7 +1392,7 @@ paths:
 
   /profile/collaborations/network:
     get:
-      summary: Graphe de co-auteurs (format réseau)
+      summary: Co-author graph (network format)
       responses:
         '200':
           content:
@@ -1402,11 +1402,11 @@ paths:
 
   /profile/collaborations/{id}/validate:
     post:
-      summary: Valider un collaborateur
+      summary: Validate a collaborator
 
   /profile/collaborations/merge:
     post:
-      summary: Fusionner des homonymes
+      summary: Merge homonyms
       requestBody:
         content:
           application/json:
@@ -1440,7 +1440,7 @@ components:
             $ref: '#/components/schemas/AffiliationConflict'
         completeness:
           type: number
-          description: Score de complétude 0-1
+          description: Completeness score 0-1
 
     ExpertiseLevel:
       type: string
@@ -1463,40 +1463,40 @@ components:
 
 ---
 
-## Recommandations d'implémentation
+## Implementation Recommendations
 
-### Priorité des sources pour chaque dimension
+### Source Priority for Each Dimension
 
-| Dimension | Source prioritaire | Sources secondaires | Raison |
-|-----------|-------------------|---------------------|--------|
-| **Dates d'affiliation** | ORCID | OpenAlex (années) | Seul ORCID a des dates explicites |
-| **Institution** | ROR (via OpenAlex) | HAL structures, ORCID | Identifiant universel désambiguïsé |
-| **Rôle/Titre** | ORCID | - | Seul ORCID l'a |
-| **Hiérarchie** | HAL | OpenAlex lineage | HAL très détaillé pour France |
-| **Expertises** | OpenAlex Topics | Keywords, NLP | Topics ML-based très fiables |
-| **Collaborations** | Toutes sources | - | Agrégation maximale |
+| Dimension | Primary Source | Secondary Sources | Reason |
+|-----------|----------------|-------------------|--------|
+| **Affiliation dates** | ORCID | OpenAlex (years) | Only ORCID has explicit dates |
+| **Institution** | ROR (via OpenAlex) | HAL structures, ORCID | Universal disambiguated identifier |
+| **Role/Title** | ORCID | - | Only ORCID has it |
+| **Hierarchy** | HAL | OpenAlex lineage | HAL very detailed for France |
+| **Expertise** | OpenAlex Topics | Keywords, NLP | ML-based topics are very reliable |
+| **Collaborations** | All sources | - | Maximum aggregation |
 
-### Stack technique recommandée
+### Recommended Technical Stack
 
 ```typescript
-// Services pour la reconstruction de profil
+// Services for profile reconstruction
 
 interface ProfileReconstructionServices {
-  // Résolution d'institutions
+  // Institution resolution
   institutionResolver: {
     resolveByRor: (rorId: string) => Effect<Institution, NotFoundError>;
     resolveByName: (name: string) => Effect<Institution[], AmbiguousError>;
     matchAffiliationString: (raw: string) => Effect<InstitutionMatch, NoMatchError>;
   };
 
-  // Reconstruction de carrière
+  // Career reconstruction
   careerReconstructor: {
     buildTimeline: (authorId: string) => Effect<CareerTimeline, ReconstructionError>;
     detectGaps: (timeline: CareerTimeline) => TimeGap[];
     resolveConflicts: (conflicts: AffiliationConflict[]) => AffiliationSegment[];
   };
 
-  // Construction d'expertise
+  // Expertise building
   expertiseBuilder: {
     fromOpenAlexTopics: (works: Work[]) => ExpertiseDomain[];
     fromKeywords: (works: Work[]) => ExpertiseDomain[];
@@ -1504,7 +1504,7 @@ interface ProfileReconstructionServices {
     merge: (sources: ExpertiseDomain[][]) => ExpertiseDomain[];
   };
 
-  // Analyse de collaborations
+  // Collaboration analysis
   collaborationAnalyzer: {
     buildNetwork: (works: Work[]) => CollaborationNetwork;
     detectPatterns: (network: CollaborationNetwork) => CollaborationPattern[];

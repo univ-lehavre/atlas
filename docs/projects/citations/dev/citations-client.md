@@ -1,8 +1,8 @@
-# Client unifié (atlas-citations)
+# Unified Client (atlas-citations)
 
-`@univ-lehavre/atlas-citations` fournit une API unifiée pour interroger toutes les sources bibliographiques de manière transparente.
+`@univ-lehavre/atlas-citations` provides a unified API to query all bibliographic sources transparently.
 
-> **Voir aussi :** [Schéma unifié](./unified-schema.md) pour la spécification OpenAPI complète, l'analyse du dénominateur commun entre sources, et le mapping détaillé.
+> **See also:** [Unified Schema](./unified-schema.md) for the complete OpenAPI specification, common denominator analysis between sources, and detailed mapping.
 
 ## Installation
 
@@ -15,32 +15,32 @@ pnpm add @univ-lehavre/atlas-citations
 ```
 packages/citations/
 ├── specs/
-│   └── citations.yaml              # OpenAPI unifiée par entités
+│   └── citations.yaml              # Unified OpenAPI by entities
 ├── src/
-│   ├── entities/                   # Schémas unifiés par entité
+│   ├── entities/                   # Unified schemas by entity
 │   │   ├── work.ts                 # Publication/Article
-│   │   ├── author.ts               # Auteur/Chercheur
-│   │   ├── institution.ts          # Institution/Organisation
-│   │   ├── source.ts               # Journal/Revue/Dépôt
-│   │   └── funder.ts               # Financeur
-│   ├── adapters/                   # Transformation source → unifié
+│   │   ├── author.ts               # Author/Researcher
+│   │   ├── institution.ts          # Institution/Organization
+│   │   ├── source.ts               # Journal/Repository
+│   │   └── funder.ts               # Funder
+│   ├── adapters/                   # Source → unified transformation
 │   │   ├── openalex-adapter.ts
 │   │   ├── crossref-adapter.ts
 │   │   ├── hal-adapter.ts
 │   │   ├── arxiv-adapter.ts
 │   │   └── orcid-adapter.ts
-│   ├── resolver/                   # Résolution d'identifiants
+│   ├── resolver/                   # Identifier resolution
 │   │   ├── doi-resolver.ts
 │   │   ├── orcid-resolver.ts
 │   │   └── multi-resolver.ts
 │   ├── client/
-│   │   ├── client.ts               # Client unifié
-│   │   └── source-selector.ts      # Sélection automatique/manuelle
+│   │   ├── client.ts               # Unified client
+│   │   └── source-selector.ts      # Automatic/manual selection
 │   └── server/
-│       └── routes/                 # API HTTP optionnelle
+│       └── routes/                 # Optional HTTP API
 ```
 
-## Entités unifiées
+## Unified Entities
 
 ### Work (Publication)
 
@@ -56,11 +56,11 @@ interface Work {
   abstract?: string;
   citationCount?: number;
   openAccess?: OpenAccessInfo;
-  _raw: unknown;                     // Données brutes de la source
+  _raw: unknown;                     // Raw data from source
 }
 ```
 
-### Author (Auteur)
+### Author
 
 ```typescript
 interface Author {
@@ -99,105 +99,105 @@ const client = createCitationsClient({
   sources: {
     openalex: { apiKey: process.env.OPENALEX_API_KEY },
     crossref: { mailto: 'your-email@example.com' },
-    // hal, arxiv, orcid: configuration optionnelle
+    // hal, arxiv, orcid: optional configuration
   },
-  defaultSources: ['openalex', 'crossref'],  // Sources par défaut
-  parallelRequests: true,                     // Interroger en parallèle
+  defaultSources: ['openalex', 'crossref'],  // Default sources
+  parallelRequests: true,                     // Query in parallel
   mergeStrategy: 'enrich',                    // 'first' | 'enrich'
 });
 ```
 
 ## API
 
-### Recherche de publications
+### Publication Search
 
 ```typescript
-// Recherche automatique (sélection intelligente des sources)
+// Automatic search (intelligent source selection)
 const works = yield* client.searchWorks('machine learning');
 
-// Forcer des sources spécifiques
+// Force specific sources
 const halWorks = yield* client.searchWorks('deep learning', {
   sources: ['hal'],
 });
 
-// Avec pagination
+// With pagination
 const page2 = yield* client.searchWorks('neural networks', {
   page: 2,
   perPage: 50,
 });
 ```
 
-### Récupération d'une publication
+### Get a Publication
 
 ```typescript
-// Par DOI (résolu automatiquement via Crossref/OpenAlex)
+// By DOI (automatically resolved via Crossref/OpenAlex)
 const work = yield* client.getWork('10.1234/example');
 
-// Par ID spécifique
+// By specific ID
 const openalexWork = yield* client.getWork('W2741809807');
 const halWork = yield* client.getWork('hal-01234567', ['hal']);
 ```
 
-### Recherche d'auteurs
+### Author Search
 
 ```typescript
-// Recherche par nom
+// Search by name
 const authors = yield* client.searchAuthors('Marie Curie');
 
-// Par ORCID
+// By ORCID
 const author = yield* client.getAuthor('0000-0002-1825-0097');
 
-// Publications d'un auteur
+// Author's publications
 const authorWorks = yield* client.getAuthorWorks('0000-0002-1825-0097');
 ```
 
-### Recherche d'institutions
+### Institution Search
 
 ```typescript
-const institutions = yield* client.searchInstitutions('Université Le Havre');
+const institutions = yield* client.searchInstitutions('Universite Le Havre');
 ```
 
-### Résolution universelle
+### Universal Resolution
 
 ```typescript
-// Détecte automatiquement le type d'identifiant
+// Automatically detects identifier type
 const entity = yield* client.resolve('10.1234/example');      // DOI → Work
 const entity = yield* client.resolve('0000-0002-1825-0097');  // ORCID → Author
 const entity = yield* client.resolve('W2741809807');          // OpenAlex → Work
 ```
 
-## Sélection de source
+## Source Selection
 
-### Automatique (par défaut)
+### Automatic (default)
 
-Le client sélectionne automatiquement les sources les plus pertinentes :
+The client automatically selects the most relevant sources:
 
 ```typescript
-// DOI → Crossref en priorité, puis OpenAlex
+// DOI → Crossref priority, then OpenAlex
 client.getWork('10.1234/example');
 
-// ORCID → ORCID puis OpenAlex
+// ORCID → ORCID then OpenAlex
 client.getAuthor('0000-0002-1825-0097');
 
-// HAL ID → HAL uniquement
+// HAL ID → HAL only
 client.getWork('hal-01234567');
 
-// ArXiv ID → ArXiv uniquement
+// ArXiv ID → ArXiv only
 client.getWork('2301.12345');
 
-// Recherche textuelle → toutes les sources pertinentes
+// Text search → all relevant sources
 client.searchWorks('machine learning');
 ```
 
-### Forcée par l'utilisateur
+### Forced by User
 
 ```typescript
-// Forcer une seule source
+// Force a single source
 const halWorks = yield* client.searchWorks('machine learning', {
   sources: ['hal'],
 });
 
-// Forcer plusieurs sources
+// Force multiple sources
 const works = yield* client.searchWorks('machine learning', {
   sources: ['openalex', 'crossref'],
 });
@@ -218,7 +218,7 @@ const limits = yield* client.getRateLimits();
 // }
 ```
 
-### Santé des sources
+### Source Health
 
 ```typescript
 const health = yield* client.getSourceHealth();
@@ -231,9 +231,9 @@ const health = yield* client.getSourceHealth();
 // }
 ```
 
-## OpenAPI unifiée
+## Unified OpenAPI
 
-Le package expose sa propre spec OpenAPI pour le serveur HTTP optionnel :
+The package exposes its own OpenAPI spec for the optional HTTP server:
 
 ```yaml
 openapi: '3.1.0'
@@ -248,10 +248,10 @@ paths:
       parameters:
         - name: q
           in: query
-          description: Terme de recherche
+          description: Search term
         - name: sources
           in: query
-          description: Sources à interroger
+          description: Sources to query
           schema:
             type: array
             items:
@@ -276,10 +276,10 @@ paths:
   /resolve/{id}:
     get:
       operationId: resolveId
-      description: Résoudre un identifiant vers l'entité correspondante
+      description: Resolve an identifier to the corresponding entity
 ```
 
-## Serveur HTTP (optionnel)
+## HTTP Server (optional)
 
 ```typescript
 import { createCitationsServer } from '@univ-lehavre/atlas-citations/server';
@@ -290,10 +290,10 @@ const server = createCitationsServer({
 });
 
 await server.listen();
-// API disponible sur http://localhost:3000
+// API available at http://localhost:3000
 ```
 
-Endpoints :
+Endpoints:
 - `GET /works?q=...&sources=...`
 - `GET /works/:id`
 - `GET /authors?q=...`

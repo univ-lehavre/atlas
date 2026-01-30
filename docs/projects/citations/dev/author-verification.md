@@ -1,49 +1,49 @@
-# Système de fiabilisation auteur (Atlas Verify)
+# Author Verification System (Atlas Verify)
 
-Ce document décrit le système permettant aux auteurs de fiabiliser leurs données bibliographiques agrégées depuis les différentes sources.
+This document describes the system that allows authors to verify their aggregated bibliographic data from different sources.
 
-> **Voir aussi :**
-> - [Profil chercheur](./researcher-profile.md) - Reconstruction carrière, expertises, collaborations
-> - [Bases de données](./database-analysis.md) - Analyse PostgreSQL, MongoDB et choix de stockage
-> - [Bases avancées & Recherche](./advanced-databases.md) - ArangoDB, vector search, fédération multi-bases
-> - [Schéma unifié](./unified-schema.md) - Spécification des entités Work, Author, etc.
+> **See also:**
+> - [Researcher Profile](./researcher-profile.md) - Career reconstruction, expertise, collaborations
+> - [Databases](./database-analysis.md) - PostgreSQL, MongoDB analysis and storage choices
+> - [Advanced Databases & Search](./advanced-databases.md) - ArangoDB, vector search, multi-database federation
+> - [Unified Schema](./unified-schema.md) - Work, Author entity specification, etc.
 >
-> **Documentation utilisateur :** [Vérifier vos publications](../user/verify-publications.md) - Guide pour chercheurs
+> **User documentation:** [Verify Your Publications](../user/verify-publications.md) - Guide for researchers
 
-## Problématique
+## Problem Statement
 
-Les sources bibliographiques présentent des problèmes de qualité récurrents :
+Bibliographic sources present recurring quality issues:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    PROBLÈMES DE QUALITÉ DES DONNÉES                          │
+│                         DATA QUALITY ISSUES                                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  HOMONYMIE                         FRAGMENTATION                            │
-│  ───────────                       ─────────────                            │
-│  "Jean Martin" = 15k+ auteurs      Même auteur avec :                       │
-│  différents dans OpenAlex          - 3 ORCID différents                     │
-│                                    - "J. Martin", "Jean Martin", "J-P Martin"│
-│                                    - Affiliations incohérentes              │
+│  HOMONYMY                            FRAGMENTATION                           │
+│  ─────────                           ─────────────                           │
+│  "Jean Martin" = 15k+ different      Same author with:                       │
+│  authors in OpenAlex                 - 3 different ORCIDs                    │
+│                                      - "J. Martin", "Jean Martin", "J-P Martin"│
+│                                      - Inconsistent affiliations             │
 │                                                                              │
-│  ATTRIBUTION ERRONÉE               DONNÉES MANQUANTES                       │
-│  ──────────────────                ─────────────────                        │
-│  Article attribué au mauvais       - DOI absent                             │
-│  "Jean Martin" par l'algorithme    - ORCID non lié                          │
-│  de désambiguïsation               - Affiliation inconnue                   │
-│                                    - Date approximative                     │
+│  INCORRECT ATTRIBUTION               MISSING DATA                            │
+│  ─────────────────────               ─────────────                           │
+│  Article attributed to the wrong     - DOI absent                            │
+│  "Jean Martin" by the                - ORCID not linked                      │
+│  disambiguation algorithm            - Unknown affiliation                   │
+│                                      - Approximate date                      │
 │                                                                              │
-│  DOUBLONS                          VERSIONS MULTIPLES                       │
-│  ────────                          ─────────────────                        │
-│  Même article avec 3 DOI :         - Preprint ArXiv                         │
-│  - DOI éditeur                     - Version acceptée                       │
-│  - DOI Crossref                    - Version publiée                        │
-│  - DOI DataCite (données)          - Erratum                                │
+│  DUPLICATES                          MULTIPLE VERSIONS                       │
+│  ──────────                          ─────────────────                       │
+│  Same article with 3 DOIs:           - ArXiv preprint                        │
+│  - Publisher DOI                     - Accepted version                      │
+│  - Crossref DOI                      - Published version                     │
+│  - DataCite DOI (data)               - Erratum                               │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Vue d'ensemble du système
+## System Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -87,20 +87,20 @@ Les sources bibliographiques présentent des problèmes de qualité récurrents 
 
 ---
 
-## Modèle de données
+## Data Model
 
-### Principes fondamentaux
+### Fundamental Principles
 
-1. **Immutabilité des données brutes** : Les données importées ne sont jamais modifiées
-2. **Traçabilité complète** : Chaque décision est horodatée et attribuée
-3. **Versioning** : Historique complet des états
-4. **Séparation données/décisions** : Les assertions utilisateur sont stockées séparément
+1. **Raw data immutability**: Imported data is never modified
+2. **Complete traceability**: Each decision is timestamped and attributed
+3. **Versioning**: Complete state history
+4. **Data/decision separation**: User assertions are stored separately
 
-### Schéma conceptuel
+### Conceptual Schema
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           MODÈLE DE DONNÉES                                  │
+│                              DATA MODEL                                      │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  ┌─────────────────┐         ┌─────────────────┐                           │
@@ -160,73 +160,73 @@ Les sources bibliographiques présentent des problèmes de qualité récurrents 
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Définitions TypeScript
+### TypeScript Definitions
 
 ```typescript
 // ═══════════════════════════════════════════════════════════════════════════
-// DONNÉES BRUTES (IMMUTABLES)
+// RAW DATA (IMMUTABLE)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Enregistrement brut importé d'une source.
- * JAMAIS modifié après création.
+ * Raw record imported from a source.
+ * NEVER modified after creation.
  */
 interface RawRecord {
   /** UUID v7 (time-sortable) */
   id: string;
 
-  /** Source d'origine */
+  /** Origin source */
   source: SourceType;
 
-  /** Identifiant dans la source (DOI, OpenAlex ID, etc.) */
+  /** Identifier in source (DOI, OpenAlex ID, etc.) */
   sourceId: string;
 
-  /** Type d'entité */
+  /** Entity type */
   entityType: 'work' | 'author' | 'institution';
 
-  /** Données brutes complètes (JSONB) */
+  /** Complete raw data (JSONB) */
   data: unknown;
 
-  /** Timestamp d'import */
+  /** Import timestamp */
   fetchedAt: Date;
 
-  /** SHA-256 des données pour déduplication */
+  /** SHA-256 of data for deduplication */
   checksum: string;
 
-  /** Version de l'API source au moment du fetch */
+  /** Source API version at fetch time */
   sourceApiVersion?: string;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// PROFILS AUTEUR (VÉRIFIÉS)
+// AUTHOR PROFILES (VERIFIED)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Profil auteur vérifié et géré par l'utilisateur.
+ * Verified author profile managed by the user.
  */
 interface AuthorProfile {
   /** UUID v7 */
   id: string;
 
-  /** ORCID principal (source de vérité pour l'identité) */
+  /** Primary ORCID (source of truth for identity) */
   primaryOrcid?: string;
 
-  /** Nom affiché préféré */
+  /** Preferred display name */
   displayName: string;
 
-  /** Email institutionnel (pour authentification) */
+  /** Institutional email (for authentication) */
   email?: string;
 
-  /** Institution principale actuelle */
+  /** Current primary institution */
   institutionId?: string;
 
-  /** URL avatar */
+  /** Avatar URL */
   avatarUrl?: string;
 
-  /** Biographie courte */
+  /** Short bio */
   bio?: string;
 
-  /** Paramètres utilisateur */
+  /** User settings */
   settings: AuthorSettings;
 
   /** Timestamps */
@@ -236,30 +236,30 @@ interface AuthorProfile {
 }
 
 interface AuthorSettings {
-  /** Notifications email */
+  /** Email notifications */
   emailNotifications: boolean;
 
-  /** Fréquence de notification */
+  /** Notification frequency */
   notificationFrequency: 'immediate' | 'daily' | 'weekly';
 
-  /** Sources à surveiller */
+  /** Sources to monitor */
   watchedSources: SourceType[];
 
-  /** Auto-confirmer les matches haute confiance */
-  autoConfirmThreshold?: number;  // 0.0 - 1.0, null = désactivé
+  /** Auto-confirm high-confidence matches */
+  autoConfirmThreshold?: number;  // 0.0 - 1.0, null = disabled
 
-  /** Visibilité du profil */
+  /** Profile visibility */
   visibility: 'public' | 'institution' | 'private';
 }
 
 /**
- * Identité associée au profil (ORCID, email, OpenAlex ID, etc.)
+ * Identity associated with the profile (ORCID, email, OpenAlex ID, etc.)
  */
 interface ProfileIdentity {
   id: string;
   profileId: string;
 
-  /** Type d'identifiant */
+  /** Identifier type */
   identifierType:
     | 'orcid'
     | 'email'
@@ -271,130 +271,130 @@ interface ProfileIdentity {
     | 'researcher_id'
     | 'name_variant';
 
-  /** Valeur de l'identifiant */
+  /** Identifier value */
   identifierValue: string;
 
-  /** Est l'identifiant principal de ce type ? */
+  /** Is primary identifier of this type? */
   isPrimary: boolean;
 
-  /** Date de vérification */
+  /** Verification date */
   verifiedAt?: Date;
 
-  /** Méthode de vérification */
+  /** Verification method */
   verificationMethod?: 'orcid_oauth' | 'email' | 'manual' | 'imported';
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MATCHING ET CANDIDATS
+// MATCHING AND CANDIDATES
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Correspondance candidate entre un RawRecord et un AuthorProfile.
+ * Candidate match between a RawRecord and an AuthorProfile.
  */
 interface CandidateMatch {
   id: string;
 
-  /** Référence vers le record brut */
+  /** Reference to raw record */
   rawRecordId: string;
 
-  /** Profil auteur potentiel */
+  /** Potential author profile */
   profileId: string;
 
-  /** Type d'entité concernée */
+  /** Concerned entity type */
   entityType: 'work_authorship' | 'author_identity';
 
-  /** Score de confiance [0.0, 1.0] */
+  /** Confidence score [0.0, 1.0] */
   matchScore: number;
 
-  /** Raisons du match */
+  /** Match reasons */
   matchReasons: MatchReason[];
 
-  /** Statut du candidat */
+  /** Candidate status */
   status: CandidateStatus;
 
   /** Timestamps */
   createdAt: Date;
   processedAt?: Date;
 
-  /** Détails supplémentaires */
+  /** Additional details */
   metadata?: {
-    /** Autres profils potentiels pour ce record */
+    /** Other potential profiles for this record */
     alternativeProfiles?: string[];
 
-    /** Conflits détectés */
+    /** Detected conflicts */
     conflicts?: string[];
 
-    /** Suggestions de l'algorithme */
+    /** Algorithm suggestions */
     suggestions?: string[];
   };
 }
 
 type CandidateStatus =
-  | 'pending'        // En attente de décision
-  | 'confirmed'      // Confirmé par l'auteur
-  | 'rejected'       // Rejeté par l'auteur
-  | 'uncertain'      // Auteur incertain
-  | 'auto_confirmed' // Confirmé automatiquement (haute confiance)
-  | 'auto_rejected'  // Rejeté automatiquement (faible confiance)
-  | 'merged'         // Fusionné avec un autre candidat
-  | 'expired';       // Expiré (source mise à jour)
+  | 'pending'        // Awaiting decision
+  | 'confirmed'      // Confirmed by author
+  | 'rejected'       // Rejected by author
+  | 'uncertain'      // Author uncertain
+  | 'auto_confirmed' // Automatically confirmed (high confidence)
+  | 'auto_rejected'  // Automatically rejected (low confidence)
+  | 'merged'         // Merged with another candidate
+  | 'expired';       // Expired (source updated)
 
 interface MatchReason {
   type: MatchReasonType;
-  weight: number;      // Contribution au score [0.0, 1.0]
+  weight: number;      // Contribution to score [0.0, 1.0]
   details?: string;
 }
 
 type MatchReasonType =
-  | 'orcid_exact'           // ORCID identique
-  | 'orcid_claimed'         // ORCID revendiqué dans la source
-  | 'email_match'           // Email correspondant
-  | 'name_exact'            // Nom exact
-  | 'name_similar'          // Nom similaire (Levenshtein, phonétique)
-  | 'affiliation_match'     // Affiliation correspondante
-  | 'affiliation_similar'   // Affiliation similaire
-  | 'coauthor_network'      // Réseau de co-auteurs commun
-  | 'topic_similarity'      // Similarité thématique
-  | 'temporal_consistency'  // Cohérence temporelle
-  | 'doi_claimed'           // DOI revendiqué par l'auteur
-  | 'previous_decision'     // Décision antérieure similaire
-  | 'institutional_link';   // Lien institutionnel
+  | 'orcid_exact'           // Identical ORCID
+  | 'orcid_claimed'         // ORCID claimed in source
+  | 'email_match'           // Matching email
+  | 'name_exact'            // Exact name
+  | 'name_similar'          // Similar name (Levenshtein, phonetic)
+  | 'affiliation_match'     // Matching affiliation
+  | 'affiliation_similar'   // Similar affiliation
+  | 'coauthor_network'      // Common co-author network
+  | 'topic_similarity'      // Thematic similarity
+  | 'temporal_consistency'  // Temporal consistency
+  | 'doi_claimed'           // DOI claimed by author
+  | 'previous_decision'     // Similar previous decision
+  | 'institutional_link';   // Institutional link
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DÉCISIONS DE VÉRIFICATION (AUDIT TRAIL)
+// VERIFICATION DECISIONS (AUDIT TRAIL)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Acte de vérification - décision de l'auteur sur un candidat.
- * Immutable, jamais modifié (on crée un nouvel acte pour changer).
+ * Verification act - author's decision on a candidate.
+ * Immutable, never modified (a new act is created to change).
  */
 interface VerificationAct {
   id: string;
 
-  /** Candidat concerné */
+  /** Concerned candidate */
   candidateMatchId: string;
 
-  /** Profil qui a pris la décision */
+  /** Profile that made the decision */
   profileId: string;
 
-  /** Décision prise */
+  /** Decision made */
   decision: VerificationDecision;
 
-  /** Niveau de confiance de l'auteur */
+  /** Author's confidence level */
   confidence: AuthorConfidence;
 
-  /** Notes de l'auteur */
+  /** Author notes */
   notes?: string;
 
-  /** Preuves fournies */
+  /** Provided evidence */
   evidence: Evidence[];
 
   /** Metadata */
   decidedAt: Date;
-  decidedBy: string;           // userId ou 'system'
+  decidedBy: string;           // userId or 'system'
   decidedVia: 'web' | 'api' | 'import' | 'auto';
 
-  /** IP et user agent (pour audit) */
+  /** IP and user agent (for audit) */
   clientInfo?: {
     ip: string;
     userAgent: string;
@@ -402,19 +402,19 @@ interface VerificationAct {
 }
 
 type VerificationDecision =
-  | 'confirm'           // "Oui, c'est bien moi"
-  | 'reject'            // "Non, ce n'est pas moi"
-  | 'uncertain'         // "Je ne sais plus"
-  | 'claim_duplicate'   // "C'est le même article qu'un autre"
-  | 'claim_version'     // "C'est une version de mon article X"
-  | 'claim_error'       // "Il y a une erreur dans les données"
-  | 'delegate';         // "Demander à un co-auteur"
+  | 'confirm'           // "Yes, this is me"
+  | 'reject'            // "No, this is not me"
+  | 'uncertain'         // "I don't remember"
+  | 'claim_duplicate'   // "This is the same article as another"
+  | 'claim_version'     // "This is a version of my article X"
+  | 'claim_error'       // "There is an error in the data"
+  | 'delegate';         // "Ask a co-author"
 
 type AuthorConfidence =
-  | 'certain'           // 100% sûr
-  | 'probable'          // Très probable
-  | 'possible'          // Possible mais pas sûr
-  | 'uncertain';        // Ne sait vraiment pas
+  | 'certain'           // 100% sure
+  | 'probable'          // Very likely
+  | 'possible'          // Possible but not sure
+  | 'uncertain';        // Really doesn't know
 
 interface Evidence {
   type: EvidenceType;
@@ -423,43 +423,43 @@ interface Evidence {
 }
 
 type EvidenceType =
-  | 'orcid_link'        // Lien ORCID vers cette publication
-  | 'doi_screenshot'    // Capture d'écran
-  | 'email_thread'      // Échange email avec éditeur
-  | 'coauthor_confirm'  // Confirmation d'un co-auteur
-  | 'institutional_cv'  // CV institutionnel
-  | 'note';             // Note libre
+  | 'orcid_link'        // ORCID link to this publication
+  | 'doi_screenshot'    // Screenshot
+  | 'email_thread'      // Email exchange with publisher
+  | 'coauthor_confirm'  // Co-author confirmation
+  | 'institutional_cv'  // Institutional CV
+  | 'note';             // Free note
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ŒUVRES CANONIQUES
+// CANONICAL WORKS
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Publication canonique après réconciliation.
- * Représente une œuvre unique, potentiellement issue de plusieurs DOI/sources.
+ * Canonical publication after reconciliation.
+ * Represents a unique work, potentially from multiple DOIs/sources.
  */
 interface CanonicalWork {
   id: string;
 
-  /** DOI principal (préféré) */
+  /** Primary DOI (preferred) */
   primaryDoi?: string;
 
-  /** Titre canonique */
+  /** Canonical title */
   title: string;
 
-  /** Date de publication */
+  /** Publication date */
   publicationDate?: Date;
 
-  /** Type de publication */
+  /** Publication type */
   type: WorkType;
 
-  /** Venue canonique */
+  /** Canonical venue */
   venueId?: string;
 
-  /** Records bruts fusionnés */
+  /** Merged raw records */
   mergedFrom: MergedSource[];
 
-  /** Statut de la fusion */
+  /** Merge status */
   mergeStatus: 'auto' | 'manual' | 'conflict';
 
   /** Timestamps */
@@ -477,30 +477,30 @@ interface MergedSource {
 }
 
 /**
- * Lien auteur-œuvre vérifié.
+ * Verified author-work link.
  */
 interface WorkAuthorship {
   id: string;
 
-  /** Œuvre canonique */
+  /** Canonical work */
   workId: string;
 
-  /** Profil auteur vérifié */
+  /** Verified author profile */
   profileId: string;
 
-  /** Position dans la liste d'auteurs */
+  /** Position in author list */
   position: number;
 
-  /** Est auteur correspondant */
+  /** Is corresponding author */
   isCorresponding: boolean;
 
-  /** Affiliation au moment de la publication */
+  /** Affiliation at publication time */
   affiliationAtTime?: string;
 
-  /** Acte de vérification qui a créé ce lien */
+  /** Verification act that created this link */
   verificationActId: string;
 
-  /** Contributions brutes (avant fusion) */
+  /** Raw contributions (before merge) */
   rawContributions: RawContribution[];
 
   /** Timestamps */
@@ -520,34 +520,34 @@ interface RawContribution {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Tâche de vérification en attente.
+ * Pending verification task.
  */
 interface VerificationTask {
   id: string;
   profileId: string;
   candidateMatchId: string;
 
-  /** Priorité calculée */
+  /** Calculated priority */
   priority: number;
 
-  /** Raison de la priorité */
+  /** Priority reasons */
   priorityReasons: string[];
 
-  /** Date d'expiration */
+  /** Expiration date */
   expiresAt?: Date;
 
-  /** Rappels envoyés */
+  /** Reminders sent */
   remindersSent: number;
   lastReminderAt?: Date;
 
-  /** Statut */
+  /** Status */
   status: 'pending' | 'snoozed' | 'completed' | 'expired';
 
   createdAt: Date;
 }
 
 /**
- * Notification utilisateur.
+ * User notification.
  */
 interface Notification {
   id: string;
@@ -557,11 +557,11 @@ interface Notification {
   title: string;
   body: string;
 
-  /** Lien vers la ressource */
+  /** Link to resource */
   resourceType?: 'candidate' | 'work' | 'profile';
   resourceId?: string;
 
-  /** Statut */
+  /** Status */
   read: boolean;
   readAt?: Date;
 
@@ -569,24 +569,24 @@ interface Notification {
 }
 
 type NotificationType =
-  | 'new_candidate'           // Nouveau candidat détecté
-  | 'new_work_version'        // Nouvelle version d'un article
-  | 'coauthor_verified'       // Un co-auteur a vérifié
-  | 'conflict_detected'       // Conflit avec autre auteur
-  | 'reminder'                // Rappel de vérification
-  | 'profile_update'          // Mise à jour du profil
-  | 'source_sync';            // Synchronisation source terminée
+  | 'new_candidate'           // New candidate detected
+  | 'new_work_version'        // New version of an article
+  | 'coauthor_verified'       // A co-author verified
+  | 'conflict_detected'       // Conflict with another author
+  | 'reminder'                // Verification reminder
+  | 'profile_update'          // Profile update
+  | 'source_sync';            // Source synchronization completed
 ```
 
 ---
 
-## États et transitions
+## States and Transitions
 
-### Machine à états des candidats
+### Candidate State Machine
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    MACHINE À ÉTATS - CANDIDATE MATCH                         │
+│                      STATE MACHINE - CANDIDATE MATCH                         │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │                           ┌──────────┐                                      │
@@ -615,8 +615,8 @@ type NotificationType =
 │                │ (duplicate) │           │(source upd) │                    │
 │                └─────────────┘           └─────────────┘                    │
 │                                                                              │
-│  TRANSITIONS :                                                               │
-│  ─────────────                                                               │
+│  TRANSITIONS:                                                                │
+│  ────────────                                                                │
 │  pending → auto_confirmed : score >= autoConfirmThreshold                   │
 │  pending → confirmed : user decision = confirm                              │
 │  pending → rejected : user decision = reject                                │
@@ -631,13 +631,13 @@ type NotificationType =
 
 ---
 
-## Interface utilisateur
+## User Interface
 
-### Écrans principaux
+### Main Screens
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         ATLAS VERIFY - ÉCRANS                                │
+│                          ATLAS VERIFY - SCREENS                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  1. DASHBOARD                                                                │
@@ -664,8 +664,8 @@ type NotificationType =
 │  │ │    Vaswani et al. · NeurIPS 2017 · DOI: 10.48550/arXiv.1706.03762││   │
 │  │ │    Match: 92% (ORCID claimed, affiliation match)                 ││   │
 │  │ │                                                                   ││   │
-│  │ │    [✓ C'est moi] [✗ Ce n'est pas moi] [? Je ne sais pas]        ││   │
-│  │ │    [⋯ Plus d'options]                                            ││   │
+│  │ │    [✓ This is me] [✗ Not me] [? I'm not sure]                   ││   │
+│  │ │    [⋯ More options]                                              ││   │
 │  │ └──────────────────────────────────────────────────────────────────┘│   │
 │  │                                                                      │   │
 │  │ ┌──────────────────────────────────────────────────────────────────┐│   │
@@ -693,23 +693,23 @@ type NotificationType =
 │  │                                                                      │   │
 │  │ ┌─ Decision ────────────────────────────────────────────────────────┐│   │
 │  │ │                                                                   ││   │
-│  │ │ ○ Oui, c'est bien mon article                                    ││   │
-│  │ │   ○ Je suis certain                                              ││   │
-│  │ │   ○ Je pense que oui                                             ││   │
+│  │ │ ○ Yes, this is my article                                        ││   │
+│  │ │   ○ I am certain                                                  ││   │
+│  │ │   ○ I think so                                                    ││   │
 │  │ │                                                                   ││   │
-│  │ │ ○ Non, ce n'est pas mon article                                  ││   │
-│  │ │   └─ Il y a un homonyme ? [Suggérer un autre auteur]             ││   │
+│  │ │ ○ No, this is not my article                                     ││   │
+│  │ │   └─ Is there a homonym? [Suggest another author]                ││   │
 │  │ │                                                                   ││   │
-│  │ │ ○ Je ne suis pas sûr(e)                                          ││   │
-│  │ │   └─ Pourquoi ? [_______________________________]                ││   │
+│  │ │ ○ I'm not sure                                                   ││   │
+│  │ │   └─ Why? [_______________________________]                      ││   │
 │  │ │                                                                   ││   │
-│  │ │ ○ C'est un doublon de... [Sélectionner l'original]               ││   │
+│  │ │ ○ This is a duplicate of... [Select original]                    ││   │
 │  │ │                                                                   ││   │
-│  │ │ ○ C'est une version de... [preprint → publié]                    ││   │
+│  │ │ ○ This is a version of... [preprint → published]                 ││   │
 │  │ │                                                                   ││   │
-│  │ │ Notes (optionnel): [________________________________]            ││   │
+│  │ │ Notes (optional): [________________________________]              ││   │
 │  │ │                                                                   ││   │
-│  │ │                              [Annuler] [Enregistrer ma décision]  ││   │
+│  │ │                                   [Cancel] [Save my decision]    ││   │
 │  │ └───────────────────────────────────────────────────────────────────┘│   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                              │
@@ -721,7 +721,7 @@ type NotificationType =
 │  │ │ OpenAlex    A5012345678          Linked     [Unlink]             ││   │
 │  │ │ HAL         marie-curie          Linked     [Unlink]             ││   │
 │  │ │                                                                   ││   │
-│  │ │ [+ Ajouter une identité]                                         ││   │
+│  │ │ [+ Add an identity]                                              ││   │
 │  │ └───────────────────────────────────────────────────────────────────┘│   │
 │  │                                                                      │   │
 │  │ ┌─ Name variants ───────────────────────────────────────────────────┐│   │
@@ -730,7 +730,7 @@ type NotificationType =
 │  │ │ Marie Sklodowska      Maiden name                                ││   │
 │  │ │ Maria Sklodowska      Polish spelling                            ││   │
 │  │ │                                                                   ││   │
-│  │ │ [+ Ajouter une variante]                                         ││   │
+│  │ │ [+ Add a variant]                                                ││   │
 │  │ └───────────────────────────────────────────────────────────────────┘│   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                              │
@@ -739,24 +739,24 @@ type NotificationType =
 
 ---
 
-## Architecture technique
+## Technical Architecture
 
-### Stack applicative
+### Application Stack
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                      ATLAS VERIFY - STACK TECHNIQUE                          │
+│                      ATLAS VERIFY - TECHNICAL STACK                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  FRONTEND                                                                    │
-│  ─────────                                                                   │
+│  ────────                                                                    │
 │  Framework     : SvelteKit 2 (Svelte 5 runes)                               │
 │  UI            : Tailwind CSS + shadcn-svelte                               │
 │  State         : Svelte stores + TanStack Query                             │
 │  Auth          : ORCID OAuth 2.0 + session cookies                          │
 │                                                                              │
 │  BACKEND                                                                     │
-│  ─────────                                                                   │
+│  ───────                                                                     │
 │  Runtime       : Node.js 20+ / Bun                                          │
 │  Framework     : Hono + Effect                                              │
 │  API           : REST + Server-Sent Events (real-time)                      │
@@ -766,7 +766,7 @@ type NotificationType =
 │  DATA LAYER                                                                  │
 │  ──────────                                                                  │
 │  Primary DB    : PostgreSQL 16 (JSONB, GIN indexes)                         │
-│  Search        : Meilisearch ou Elasticsearch                               │
+│  Search        : Meilisearch or Elasticsearch                               │
 │  Cache         : Redis (sessions, rate limits, job queue)                   │
 │  Object Store  : S3/MinIO (evidence files)                                  │
 │                                                                              │
@@ -780,30 +780,30 @@ type NotificationType =
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Services Kubernetes
+### Kubernetes Services
 
 ```yaml
-# Namespace et services
+# Namespace and services
 apiVersion: v1
 kind: Namespace
 metadata:
   name: atlas-verify
 
 ---
-# Déploiements principaux
+# Main deployments
 # 1. Frontend (SvelteKit SSR)
 # 2. API Backend (Hono)
-# 3. Worker (jobs asynchrones)
-# 4. Ingestion (sync sources)
+# 3. Worker (async jobs)
+# 4. Ingestion (source sync)
 
-# Voir section "Infrastructure Kubernetes" pour les manifests complets
+# See "Kubernetes Infrastructure" section for complete manifests
 ```
 
 ---
 
-## API REST
+## REST API
 
-### Endpoints principaux
+### Main Endpoints
 
 ```yaml
 openapi: '3.1.0'
@@ -818,17 +818,17 @@ paths:
 
   /auth/orcid:
     get:
-      summary: Initier OAuth ORCID
-      description: Redirige vers ORCID pour authentification
+      summary: Initiate ORCID OAuth
+      description: Redirects to ORCID for authentication
 
   /auth/orcid/callback:
     get:
-      summary: Callback OAuth ORCID
-      description: Reçoit le code OAuth et crée la session
+      summary: ORCID OAuth callback
+      description: Receives OAuth code and creates session
 
   /auth/logout:
     post:
-      summary: Déconnexion
+      summary: Logout
 
   # ═══════════════════════════════════════════════════════════════════════
   # PROFILE
@@ -836,23 +836,23 @@ paths:
 
   /profile:
     get:
-      summary: Profil de l'utilisateur connecté
+      summary: Current user's profile
     patch:
-      summary: Mettre à jour le profil
+      summary: Update profile
 
   /profile/identities:
     get:
-      summary: Lister les identités liées
+      summary: List linked identities
     post:
-      summary: Ajouter une identité
+      summary: Add an identity
     delete:
-      summary: Supprimer une identité
+      summary: Remove an identity
 
   /profile/settings:
     get:
-      summary: Paramètres utilisateur
+      summary: User settings
     patch:
-      summary: Mettre à jour les paramètres
+      summary: Update settings
 
   # ═══════════════════════════════════════════════════════════════════════
   # CANDIDATES (VERIFICATION QUEUE)
@@ -860,7 +860,7 @@ paths:
 
   /candidates:
     get:
-      summary: Liste des candidats à vérifier
+      summary: List candidates to verify
       parameters:
         - name: status
           in: query
@@ -891,11 +891,11 @@ paths:
 
   /candidates/{id}:
     get:
-      summary: Détail d'un candidat
+      summary: Candidate detail
 
   /candidates/{id}/verify:
     post:
-      summary: Enregistrer une décision de vérification
+      summary: Record a verification decision
       requestBody:
         content:
           application/json:
@@ -915,11 +915,11 @@ paths:
                     $ref: '#/components/schemas/Evidence'
                 relatedWorkId:
                   type: string
-                  description: Pour claim_duplicate ou claim_version
+                  description: For claim_duplicate or claim_version
 
   /candidates/{id}/snooze:
     post:
-      summary: Reporter la vérification
+      summary: Postpone verification
       requestBody:
         content:
           application/json:
@@ -936,7 +936,7 @@ paths:
 
   /works:
     get:
-      summary: Publications vérifiées de l'utilisateur
+      summary: User's verified publications
       parameters:
         - name: year
           in: query
@@ -953,15 +953,15 @@ paths:
 
   /works/{id}:
     get:
-      summary: Détail d'une publication vérifiée
+      summary: Verified publication detail
 
   /works/{id}/sources:
     get:
-      summary: Sources brutes liées à cette publication
+      summary: Raw sources linked to this publication
 
   /works/{id}/merge:
     post:
-      summary: Fusionner avec une autre publication (doublons)
+      summary: Merge with another publication (duplicates)
       requestBody:
         content:
           application/json:
@@ -976,7 +976,7 @@ paths:
 
   /works/{id}/unlink:
     post:
-      summary: Retirer la publication de son profil
+      summary: Remove publication from profile
 
   # ═══════════════════════════════════════════════════════════════════════
   # STATS & EXPORT
@@ -984,7 +984,7 @@ paths:
 
   /stats:
     get:
-      summary: Statistiques du profil
+      summary: Profile statistics
       responses:
         '200':
           content:
@@ -1007,7 +1007,7 @@ paths:
 
   /export:
     get:
-      summary: Exporter les publications
+      summary: Export publications
       parameters:
         - name: format
           in: query
@@ -1020,15 +1020,15 @@ paths:
 
   /notifications:
     get:
-      summary: Liste des notifications
+      summary: List notifications
 
   /notifications/{id}/read:
     post:
-      summary: Marquer comme lue
+      summary: Mark as read
 
   /notifications/read-all:
     post:
-      summary: Marquer toutes comme lues
+      summary: Mark all as read
 
 components:
   schemas:
@@ -1054,29 +1054,29 @@ components:
 
 ---
 
-## Algorithme de matching
+## Matching Algorithm
 
-### Score de confiance
+### Confidence Score
 
 ```typescript
 interface MatchingConfig {
   weights: {
-    orcid_exact: 1.0;        // ORCID identique = match certain
-    orcid_claimed: 0.95;     // ORCID revendiqué dans la source
-    email_match: 0.9;        // Email correspondant
-    name_exact: 0.6;         // Nom exact
-    name_similar: 0.3;       // Nom similaire (Levenshtein > 0.8)
-    affiliation_match: 0.4;  // Affiliation exacte
-    affiliation_similar: 0.2;// Affiliation similaire
-    coauthor_network: 0.3;   // Co-auteurs communs
-    topic_similarity: 0.2;   // Sujets similaires
-    temporal_consistency: 0.1;// Dates cohérentes
+    orcid_exact: 1.0;        // Identical ORCID = certain match
+    orcid_claimed: 0.95;     // ORCID claimed in source
+    email_match: 0.9;        // Matching email
+    name_exact: 0.6;         // Exact name
+    name_similar: 0.3;       // Similar name (Levenshtein > 0.8)
+    affiliation_match: 0.4;  // Exact affiliation
+    affiliation_similar: 0.2;// Similar affiliation
+    coauthor_network: 0.3;   // Common co-authors
+    topic_similarity: 0.2;   // Similar topics
+    temporal_consistency: 0.1;// Consistent dates
   };
 
   thresholds: {
     autoConfirm: 0.95;       // Auto-confirmation
-    suggest: 0.5;            // Suggestion à l'utilisateur
-    autoReject: 0.1;         // Rejet automatique
+    suggest: 0.5;            // Suggest to user
+    autoReject: 0.1;         // Auto-rejection
   };
 }
 
@@ -1089,12 +1089,12 @@ const calculateMatchScore = (
   let totalWeight = 0;
   let weightedScore = 0;
 
-  // 1. ORCID (déterminant)
+  // 1. ORCID (determinant)
   const recordOrcid = extractOrcid(rawRecord);
   if (recordOrcid) {
     const profileOrcids = getProfileOrcids(profile);
     if (profileOrcids.includes(recordOrcid)) {
-      // ORCID exact = match quasi-certain
+      // Exact ORCID = quasi-certain match
       if (rawRecord.data.orcidClaimedInSource) {
         reasons.push({ type: 'orcid_claimed', weight: config.weights.orcid_claimed });
         return { score: config.weights.orcid_claimed, reasons };
@@ -1114,7 +1114,7 @@ const calculateMatchScore = (
     totalWeight += 1;
   }
 
-  // 3. Nom
+  // 3. Name
   const recordNames = extractAuthorNames(rawRecord);
   const profileNames = getProfileNameVariants(profile);
   for (const recordName of recordNames) {
@@ -1150,7 +1150,7 @@ const calculateMatchScore = (
     totalWeight += 1;
   }
 
-  // 5. Réseau de co-auteurs
+  // 5. Co-author network
   const coauthorScore = calculateCoauthorNetworkScore(rawRecord, profile);
   if (coauthorScore > 0) {
     reasons.push({
@@ -1162,7 +1162,7 @@ const calculateMatchScore = (
     totalWeight += 1;
   }
 
-  // 6. Similarité thématique
+  // 6. Topic similarity
   const topicScore = calculateTopicSimilarity(rawRecord, profile);
   if (topicScore > 0.5) {
     reasons.push({
@@ -1173,7 +1173,7 @@ const calculateMatchScore = (
     totalWeight += 1;
   }
 
-  // Score final normalisé
+  // Final normalized score
   const finalScore = totalWeight > 0 ? weightedScore / totalWeight : 0;
 
   return { score: Math.min(finalScore, 1.0), reasons };
@@ -1182,18 +1182,18 @@ const calculateMatchScore = (
 
 ---
 
-## Workflows de synchronisation
+## Synchronization Workflows
 
-### Import initial
+### Initial Import
 
 ```typescript
 const initialImportWorkflow = Effect.gen(function* () {
   const profile = yield* getCurrentProfile();
 
-  // 1. Collecter les identités du profil
+  // 1. Collect profile identities
   const identities = yield* getProfileIdentities(profile.id);
 
-  // 2. Interroger chaque source avec les identités
+  // 2. Query each source with identities
   const sourceQueries = identities.flatMap(identity =>
     SOURCES.map(source => ({
       source,
@@ -1201,23 +1201,23 @@ const initialImportWorkflow = Effect.gen(function* () {
     }))
   );
 
-  // 3. Fetch parallèle avec rate limiting
+  // 3. Parallel fetch with rate limiting
   const rawRecords = yield* Effect.forEach(
     sourceQueries,
     ({ source, query }) => fetchFromSource(source, query),
     { concurrency: 5 }
   ).pipe(Effect.map(results => results.flat()));
 
-  // 4. Déduplication par checksum
+  // 4. Deduplication by checksum
   const uniqueRecords = deduplicateByChecksum(rawRecords);
 
-  // 5. Stocker les records bruts
+  // 5. Store raw records
   yield* storeRawRecords(uniqueRecords);
 
-  // 6. Générer les candidats
+  // 6. Generate candidates
   const candidates = yield* generateCandidates(uniqueRecords, profile);
 
-  // 7. Auto-confirmer les hautes confiances
+  // 7. Auto-confirm high confidence
   const { autoConfirmed, pending } = partitionByConfidence(
     candidates,
     profile.settings.autoConfirmThreshold
@@ -1226,47 +1226,47 @@ const initialImportWorkflow = Effect.gen(function* () {
   yield* autoConfirmCandidates(autoConfirmed);
   yield* createVerificationTasks(pending);
 
-  // 8. Notifier l'utilisateur
+  // 8. Notify user
   yield* sendNotification(profile.id, {
     type: 'source_sync',
-    title: 'Import terminé',
-    body: `${uniqueRecords.length} publications trouvées, ${pending.length} à vérifier`
+    title: 'Import completed',
+    body: `${uniqueRecords.length} publications found, ${pending.length} to verify`
   });
 });
 ```
 
-### Synchronisation périodique
+### Periodic Synchronization
 
 ```typescript
-// Job BullMQ exécuté quotidiennement
+// BullMQ job executed daily
 const periodicSyncJob = Effect.gen(function* () {
   const activeProfiles = yield* getActiveProfiles();
 
   for (const profile of activeProfiles) {
-    // 1. Dernière sync
+    // 1. Last sync
     const lastSync = yield* getLastSyncTime(profile.id);
 
-    // 2. Fetch incrémental depuis lastSync
+    // 2. Incremental fetch since lastSync
     const newRecords = yield* fetchIncrementalUpdates(profile, lastSync);
 
     if (newRecords.length === 0) continue;
 
-    // 3. Stocker et générer candidats
+    // 3. Store and generate candidates
     yield* storeRawRecords(newRecords);
     const candidates = yield* generateCandidates(newRecords, profile);
 
-    // 4. Vérifier si des records existants ont changé
+    // 4. Check if existing records have changed
     const updates = yield* detectRecordUpdates(profile.id, newRecords);
 
-    // 5. Marquer les candidats expirés
+    // 5. Mark expired candidates
     yield* expireUpdatedCandidates(updates);
 
-    // 6. Notification si nouvelles publications
+    // 6. Notification if new publications
     if (candidates.length > 0) {
       yield* sendNotification(profile.id, {
         type: 'new_candidate',
-        title: `${candidates.length} nouvelles publications détectées`,
-        body: 'Cliquez pour vérifier'
+        title: `${candidates.length} new publications detected`,
+        body: 'Click to verify'
       });
     }
   }

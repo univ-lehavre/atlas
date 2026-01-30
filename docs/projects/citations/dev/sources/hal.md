@@ -1,66 +1,66 @@
 # atlas-hal
 
-Client Effect pour l'API [HAL](https://hal.science/), l'archive ouverte française des publications scientifiques.
+Effect client for the [HAL](https://hal.science/) API, the French open archive for scientific publications.
 
-## Caractéristiques de l'API
+## API Characteristics
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | Base URL | `https://api.archives-ouvertes.fr` |
 | Format | JSON, XML, BibTeX, CSV |
-| Auth | Aucune |
-| Rate limit | Non documenté officiellement |
-| Versioning API | Non versionné |
-| OpenAPI officielle | **Non** - API basée sur Apache Solr |
+| Auth | None |
+| Rate limit | Not officially documented |
+| API Versioning | Not versioned |
+| Official OpenAPI | **No** - API based on Apache Solr |
 
-## Particularité : API Solr
+## Specificity: Solr API
 
-HAL utilise Apache Solr comme moteur de recherche. L'API expose directement la syntaxe Solr :
+HAL uses Apache Solr as its search engine. The API directly exposes Solr query syntax:
 
 ```bash
-# Recherche simple
+# Simple search
 curl "https://api.archives-ouvertes.fr/search/?q=machine+learning&wt=json"
 
-# Avec filtres Solr
+# With Solr filters
 curl "https://api.archives-ouvertes.fr/search/?q=*:*&fq=docType_s:ART&wt=json"
 
-# Sélection de champs
+# Field selection
 curl "https://api.archives-ouvertes.fr/search/?q=*:*&fl=halId_s,title_s,authFullName_s&wt=json"
 ```
 
-## Construction de la spec alpha
+## Building the Alpha Spec
 
-### Méthode : Documentation + Inférence
+### Method: Documentation + Inference
 
-HAL n'a pas de spec OpenAPI, mais dispose d'une documentation détaillée et d'une API prévisible.
+HAL has no OpenAPI spec, but has detailed documentation and a predictable API.
 
 ```bash
-# 1. Créer le squelette depuis la documentation
+# 1. Create skeleton from documentation
 atlas-openapi-validator scaffold \
   --name hal \
   --base-url https://api.archives-ouvertes.fr \
   --output specs/alpha/hal-2025-01.yaml
 
-# 2. Enrichir par inférence des réponses réelles
+# 2. Enrich by inferring from real responses
 atlas-openapi-validator infer \
   --base-url https://api.archives-ouvertes.fr \
   --endpoints /search \
   --sample-size 50 \
   --output specs/alpha/hal-2025-01.yaml
 
-# 3. Valider et corriger
+# 3. Validate and correct
 atlas-openapi-validator validate specs/alpha/hal-2025-01.yaml \
   --base-url https://api.archives-ouvertes.fr \
   --output reports/hal-alpha.json
 ```
 
-### Sources de documentation
+### Documentation Sources
 
-- [Documentation API HAL](https://api.archives-ouvertes.fr/docs)
-- [Référentiel des champs](https://api.archives-ouvertes.fr/docs/search)
-- [Types de documents](https://api.archives-ouvertes.fr/docs/ref/doctype)
+- [HAL API Documentation](https://api.archives-ouvertes.fr/docs)
+- [Field Reference](https://api.archives-ouvertes.fr/docs/search)
+- [Document Types](https://api.archives-ouvertes.fr/docs/ref/doctype)
 
-## Structure de la spec
+## Spec Structure
 
 ```yaml
 openapi: '3.1.0'
@@ -68,8 +68,8 @@ info:
   title: HAL Open Archive API
   version: '2025-01'
   description: |
-    API de l'archive ouverte HAL.
-    Basée sur Apache Solr, expose une syntaxe de requête Solr.
+    HAL open archive API.
+    Based on Apache Solr, exposes Solr query syntax.
   contact:
     url: https://hal.science/
   x-atlas-metadata:
@@ -89,10 +89,10 @@ paths:
   /search:
     get:
       operationId: search
-      summary: Rechercher des documents
+      summary: Search for documents
       description: |
-        Endpoint principal de recherche.
-        Utilise la syntaxe Apache Solr pour les requêtes.
+        Main search endpoint.
+        Uses Apache Solr syntax for queries.
       parameters:
         - $ref: '#/components/parameters/q'
         - $ref: '#/components/parameters/fq'
@@ -105,7 +105,7 @@ paths:
         - $ref: '#/components/parameters/facetField'
       responses:
         '200':
-          description: Résultats de recherche
+          description: Search results
           content:
             application/json:
               schema:
@@ -114,10 +114,10 @@ paths:
   /ref/doctype:
     get:
       operationId: listDocTypes
-      summary: Liste des types de documents
+      summary: List document types
       responses:
         '200':
-          description: Types de documents disponibles
+          description: Available document types
           content:
             application/json:
               schema:
@@ -126,14 +126,14 @@ paths:
   /ref/structure:
     get:
       operationId: searchStructures
-      summary: Rechercher des structures/laboratoires
+      summary: Search for structures/laboratories
       parameters:
         - $ref: '#/components/parameters/q'
         - $ref: '#/components/parameters/rows'
         - $ref: '#/components/parameters/start'
       responses:
         '200':
-          description: Liste des structures
+          description: Structure list
           content:
             application/json:
               schema:
@@ -142,14 +142,14 @@ paths:
   /ref/author:
     get:
       operationId: searchAuthors
-      summary: Rechercher des auteurs
+      summary: Search for authors
       parameters:
         - $ref: '#/components/parameters/q'
         - $ref: '#/components/parameters/rows'
         - $ref: '#/components/parameters/start'
       responses:
         '200':
-          description: Liste des auteurs
+          description: Author list
           content:
             application/json:
               schema:
@@ -158,10 +158,10 @@ paths:
   /ref/domain:
     get:
       operationId: listDomains
-      summary: Liste des domaines scientifiques
+      summary: List scientific domains
       responses:
         '200':
-          description: Arborescence des domaines
+          description: Domain tree
           content:
             application/json:
               schema:
@@ -174,10 +174,10 @@ components:
       in: query
       required: true
       description: |
-        Requête Solr. Exemples :
-        - `machine learning` : recherche textuelle
-        - `title_t:neural` : recherche dans le titre
-        - `*:*` : tous les documents
+        Solr query. Examples:
+        - `machine learning` : text search
+        - `title_t:neural` : search in title
+        - `*:*` : all documents
       schema:
         type: string
       example: 'machine learning'
@@ -186,10 +186,10 @@ components:
       name: fq
       in: query
       description: |
-        Filtre Solr (filter query). Exemples :
-        - `docType_s:ART` : articles uniquement
-        - `publicationDateY_i:[2020 TO 2024]` : années 2020-2024
-        - `authIdHal_s:pierre-dupont` : auteur spécifique
+        Solr filter (filter query). Examples:
+        - `docType_s:ART` : articles only
+        - `publicationDateY_i:[2020 TO 2024]` : years 2020-2024
+        - `authIdHal_s:pierre-dupont` : specific author
       schema:
         type: string
       example: 'docType_s:ART'
@@ -198,9 +198,9 @@ components:
       name: fl
       in: query
       description: |
-        Champs à retourner (field list). Exemples :
-        - `halId_s,title_s` : ID et titre
-        - `*` : tous les champs
+        Fields to return (field list). Examples:
+        - `halId_s,title_s` : ID and title
+        - `*` : all fields
       schema:
         type: string
       example: 'halId_s,title_s,authFullName_s,abstract_s'
@@ -208,7 +208,7 @@ components:
     sort:
       name: sort
       in: query
-      description: Tri des résultats
+      description: Result sorting
       schema:
         type: string
       example: 'publicationDateY_i desc'
@@ -216,7 +216,7 @@ components:
     rows:
       name: rows
       in: query
-      description: Nombre de résultats par page
+      description: Number of results per page
       schema:
         type: integer
         minimum: 1
@@ -226,7 +226,7 @@ components:
     start:
       name: start
       in: query
-      description: Offset pour pagination
+      description: Offset for pagination
       schema:
         type: integer
         minimum: 0
@@ -235,7 +235,7 @@ components:
     wt:
       name: wt
       in: query
-      description: Format de réponse
+      description: Response format
       schema:
         type: string
         enum: [json, xml, bibtex, csv]
@@ -244,7 +244,7 @@ components:
     facet:
       name: facet
       in: query
-      description: Activer les facettes
+      description: Enable facets
       schema:
         type: boolean
         default: false
@@ -252,7 +252,7 @@ components:
     facetField:
       name: facet.field
       in: query
-      description: Champs pour facettes
+      description: Fields for facets
       schema:
         type: array
         items:
@@ -269,10 +269,10 @@ components:
           properties:
             numFound:
               type: integer
-              description: Nombre total de résultats
+              description: Total number of results
             start:
               type: integer
-              description: Offset actuel
+              description: Current offset
             docs:
               type: array
               items:
@@ -282,96 +282,96 @@ components:
 
     Document:
       type: object
-      description: Document HAL
+      description: HAL document
       properties:
         halId_s:
           type: string
-          description: Identifiant HAL
+          description: HAL identifier
           example: 'hal-01234567'
         docid:
           type: integer
-          description: ID numérique interne
+          description: Internal numeric ID
         uri_s:
           type: string
           format: uri
-          description: URI du document
+          description: Document URI
         title_s:
           type: array
           items:
             type: string
-          description: Titre(s) du document
+          description: Document title(s)
         authFullName_s:
           type: array
           items:
             type: string
-          description: Noms complets des auteurs
+          description: Full author names
         authIdHal_s:
           type: array
           items:
             type: string
-          description: Identifiants HAL des auteurs
+          description: HAL author identifiers
         authOrcid_s:
           type: array
           items:
             type: string
-          description: ORCID des auteurs
+          description: Author ORCIDs
         abstract_s:
           type: array
           items:
             type: string
-          description: Résumé(s)
+          description: Abstract(s)
         docType_s:
           type: string
-          description: Type de document
+          description: Document type
           enum:
             - ART    # Article
             - COMM   # Communication
             - POSTER # Poster
-            - THESE  # Thèse
-            - HDR    # HDR
-            - REPORT # Rapport
-            - BOOK   # Ouvrage
-            - COUV   # Chapitre
-            - OTHER  # Autre
+            - THESE  # Thesis
+            - HDR    # Habilitation
+            - REPORT # Report
+            - BOOK   # Book
+            - COUV   # Chapter
+            - OTHER  # Other
         publicationDateY_i:
           type: integer
-          description: Année de publication
+          description: Publication year
         journalTitle_s:
           type: string
-          description: Titre du journal
+          description: Journal title
         conferenceTitle_s:
           type: string
-          description: Titre de la conférence
+          description: Conference title
         structId_i:
           type: array
           items:
             type: integer
-          description: IDs des structures affiliées
+          description: Affiliated structure IDs
         structName_s:
           type: array
           items:
             type: string
-          description: Noms des structures
+          description: Structure names
         domain_s:
           type: array
           items:
             type: string
-          description: Domaines scientifiques
+          description: Scientific domains
         keyword_s:
           type: array
           items:
             type: string
-          description: Mots-clés
+          description: Keywords
         openAccess_bool:
           type: boolean
-          description: Accès ouvert
+          description: Open access
         fileMain_s:
           type: string
           format: uri
-          description: URL du fichier principal
+          description: Main file URL
         doiId_s:
           type: string
-          description: DOI du document
+          description: Document DOI
 
     FacetCounts:
       type: object
@@ -453,7 +453,7 @@ components:
           type: integer
         idHal_s:
           type: string
-          description: Identifiant HAL de l'auteur
+          description: Author HAL identifier
         fullName_s:
           type: string
         firstName_s:
@@ -491,25 +491,25 @@ components:
           nullable: true
 ```
 
-## Syntaxe Solr : Guide rapide
+## Solr Syntax: Quick Guide
 
-### Opérateurs de recherche
+### Search Operators
 
 ```solr
-# ET (AND implicite)
+# AND (implicit)
 machine learning
 
-# OU
+# OR
 machine OR learning
 
-# Phrase exacte
+# Exact phrase
 "machine learning"
 
 # NOT
 machine -deep
 machine NOT deep
 
-# Champ spécifique
+# Specific field
 title_t:neural
 authFullName_s:"Marie Curie"
 
@@ -521,23 +521,23 @@ publicationDateY_i:[2020 TO *]
 title_t:neur*
 ```
 
-### Champs fréquents
+### Frequent Fields
 
-| Champ | Description | Type |
+| Field | Description | Type |
 |-------|-------------|------|
-| `halId_s` | ID HAL | string |
-| `title_s` | Titre | string[] |
-| `authFullName_s` | Auteurs | string[] |
-| `authIdHal_s` | ID HAL auteurs | string[] |
-| `authOrcid_s` | ORCID auteurs | string[] |
-| `abstract_s` | Résumé | string[] |
-| `docType_s` | Type document | string |
-| `publicationDateY_i` | Année | integer |
-| `domain_s` | Domaines | string[] |
+| `halId_s` | HAL ID | string |
+| `title_s` | Title | string[] |
+| `authFullName_s` | Authors | string[] |
+| `authIdHal_s` | HAL author IDs | string[] |
+| `authOrcid_s` | Author ORCIDs | string[] |
+| `abstract_s` | Abstract | string[] |
+| `docType_s` | Document type | string |
+| `publicationDateY_i` | Year | integer |
+| `domain_s` | Domains | string[] |
 | `structName_s` | Structures | string[] |
 | `doiId_s` | DOI | string |
 
-### Suffixes de champs
+### Field Suffixes
 
 - `_s` : string (exact match)
 - `_t` : text (full-text search)
@@ -550,19 +550,19 @@ title_t:neur*
 ## Validation
 
 ```bash
-# Valider contre l'API réelle
+# Validate against the real API
 atlas-openapi-validator validate specs/alpha/hal-2025-01.yaml \
   --base-url https://api.archives-ouvertes.fr \
   --sample-size 20 \
   --output reports/hal-alpha.json
 
-# Tester différentes requêtes Solr
+# Test different Solr queries
 atlas-openapi-validator validate specs/alpha/hal-2025-01.yaml \
   --base-url https://api.archives-ouvertes.fr \
   --test-cases test/hal-queries.json
 ```
 
-## Client Effect
+## Effect Client
 
 ```typescript
 interface HalConfig {
@@ -570,42 +570,42 @@ interface HalConfig {
 }
 
 interface HalClient {
-  // Recherche principale
+  // Main search
   search: (options: SearchOptions) => Effect.Effect<SearchResponse, HalError>;
 
-  // Raccourcis par type
+  // Type shortcuts
   searchArticles: (query: string, options?: ListOptions) =>
     Effect.Effect<SearchResponse, HalError>;
 
   searchTheses: (query: string, options?: ListOptions) =>
     Effect.Effect<SearchResponse, HalError>;
 
-  // Référentiels
+  // Reference data
   listDocTypes: () => Effect.Effect<DocType[], HalError>;
   searchStructures: (query: string) => Effect.Effect<Structure[], HalError>;
   searchAuthors: (query: string) => Effect.Effect<Author[], HalError>;
   listDomains: () => Effect.Effect<Domain[], HalError>;
 
-  // Par identifiant
+  // By identifier
   getByHalId: (halId: string) => Effect.Effect<Document, NotFoundError | HalError>;
   getByDoi: (doi: string) => Effect.Effect<Document, NotFoundError | HalError>;
 }
 
 interface SearchOptions {
-  q: string;                    // Requête Solr
-  fq?: string | string[];       // Filtres
-  fl?: string[];                // Champs à retourner
-  sort?: string;                // Tri
-  rows?: number;                // Limite
+  q: string;                    // Solr query
+  fq?: string | string[];       // Filters
+  fl?: string[];                // Fields to return
+  sort?: string;                // Sort
+  rows?: number;                // Limit
   start?: number;               // Offset
-  facet?: boolean;              // Activer facettes
-  facetFields?: string[];       // Champs facettes
+  facet?: boolean;              // Enable facets
+  facetFields?: string[];       // Facet fields
 }
 ```
 
 ## Versioning
 
-HAL n'a pas de versioning d'API explicite. Les specs sont versionnées par **date** :
+HAL has no explicit API versioning. Specs are versioned by **date**:
 
 ```
 specs/
@@ -613,5 +613,5 @@ specs/
 │   └── hal-2025-01.yaml
 ├── stable/
 │   └── hal-2025-01.yaml
-└── current.yaml → stable/hal-2025-01.yaml
+└── current.yaml -> stable/hal-2025-01.yaml
 ```

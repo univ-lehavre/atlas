@@ -1,154 +1,154 @@
 # Atlas Citations
 
-::: warning Projet en cours de développement
-Atlas Citations est actuellement en phase de conception. La documentation ci-dessous décrit l'architecture cible. Les packages ne sont pas encore implémentés.
+::: warning Project Under Development
+Atlas Citations is currently in the design phase. The documentation below describes the target architecture. The packages are not yet implemented.
 :::
 
-Atlas Citations est une suite de packages pour interroger des sources bibliographiques via des clients Effect typés, avec des specs OpenAPI validées contre les APIs réelles.
+Atlas Citations is a suite of packages for querying bibliographic sources via typed Effect clients, with OpenAPI specs validated against real APIs.
 
-## Qu'est-ce qu'Atlas Citations ?
+## What is Atlas Citations?
 
-Atlas Citations permet de :
+Atlas Citations allows you to:
 
-- **Interroger** plusieurs sources bibliographiques (OpenAlex, Crossref, HAL, ArXiv, ORCID)
-- **Unifier** les données dans un schéma commun
-- **Fiabiliser** les profils chercheurs avec Atlas Verify
+- **Query** multiple bibliographic sources (OpenAlex, Crossref, HAL, ArXiv, ORCID)
+- **Unify** data into a common schema
+- **Verify** researcher profiles with Atlas Verify
 
 ## Documentation
 
-### Pour les chercheurs (Atlas Verify)
+### For Researchers (Atlas Verify)
 
-Si vous êtes chercheur et souhaitez utiliser Atlas Verify pour gérer votre profil bibliographique :
+If you are a researcher and want to use Atlas Verify to manage your bibliographic profile:
 
 | Guide | Description |
 |-------|-------------|
-| [Introduction](./user/) | Découvrir Atlas Verify |
-| [Vérifier vos publications](./user/verify-publications.md) | Valider les articles qui vous sont attribués |
-| [Gérer votre parcours](./user/manage-career.md) | Vérifier vos affiliations et votre carrière |
-| [Profil d'expertise](./user/expertise-profile.md) | Vos domaines de recherche |
-| [Réseau de collaborations](./user/collaboration-network.md) | Vos co-auteurs et partenariats |
-| [Les sources de données](./user/sources.md) | D'où viennent les données |
+| [Introduction](./user/) | Discover Atlas Verify |
+| [Verify Your Publications](./user/verify-publications.md) | Validate articles attributed to you |
+| [Manage Your Career](./user/manage-career.md) | Verify your affiliations and career |
+| [Expertise Profile](./user/expertise-profile.md) | Your research domains |
+| [Collaboration Network](./user/collaboration-network.md) | Your co-authors and partnerships |
+| [Data Sources](./user/sources.md) | Where the data comes from |
 
-### Pour les développeurs
+### For Developers
 
-Si vous souhaitez intégrer Atlas Citations dans votre projet ou contribuer au développement :
+If you want to integrate Atlas Citations into your project or contribute to development:
 
 | Document | Description |
 |----------|-------------|
-| [Vue d'ensemble technique](./dev/) | Introduction pour développeurs |
-| [Architecture](./dev/architecture.md) | Structure des packages et patterns Effect |
-| [Schéma unifié](./dev/unified-schema.md) | Spécification OpenAPI et mapping des entités |
-| [Client unifié](./dev/citations-client.md) | API d'agrégation multi-sources |
+| [Technical Overview](./dev/) | Introduction for developers |
+| [Architecture](./dev/architecture.md) | Package structure and Effect patterns |
+| [Unified Schema](./dev/unified-schema.md) | OpenAPI specification and entity mapping |
+| [Unified Client](./dev/citations-client.md) | Multi-source aggregation API |
 
 #### OpenAPI & Validation
 
 | Document | Description |
 |----------|-------------|
-| [Cycle de vie OpenAPI](./dev/openapi-lifecycle.md) | Versioning alpha → beta → stable |
-| [Validateur OpenAPI](./dev/openapi-validator.md) | Outil CLI de validation des specs |
-| [Rate Limiting](./dev/rate-limiting.md) | Gestion des quotas par source |
+| [OpenAPI Lifecycle](./dev/openapi-lifecycle.md) | Versioning alpha -> beta -> stable |
+| [OpenAPI Validator](./dev/openapi-validator.md) | CLI spec validation tool |
+| [Rate Limiting](./dev/rate-limiting.md) | Quota management by source |
 
-#### Atlas Verify (système de fiabilisation)
-
-| Document | Description |
-|----------|-------------|
-| [Fiabilisation auteur](./dev/author-verification.md) | Modèle de données et workflows de vérification |
-| [Profil chercheur](./dev/researcher-profile.md) | Reconstruction carrière, expertises, collaborations |
-| [Bases de données](./dev/database-analysis.md) | Analyse PostgreSQL, MongoDB, etc. |
-| [Bases avancées](./dev/advanced-databases.md) | ArangoDB, vector search, fédération multi-bases |
-
-#### Sources bibliographiques
+#### Atlas Verify (Verification System)
 
 | Document | Description |
 |----------|-------------|
-| [Vue d'ensemble](./dev/sources/) | Introduction aux sources |
-| [Catalogue complet](./dev/sources/catalog.md) | Toutes les sources analysées |
-| [Référence entités](./dev/sources/entities-reference.md) | Entités par source |
+| [Author Verification](./dev/author-verification.md) | Data model and verification workflows |
+| [Researcher Profile](./dev/researcher-profile.md) | Career reconstruction, expertise, collaborations |
+| [Databases](./dev/database-analysis.md) | PostgreSQL, MongoDB analysis, etc. |
+| [Advanced Databases](./dev/advanced-databases.md) | ArangoDB, vector search, multi-database federation |
 
-## Architecture globale
+#### Bibliographic Sources
+
+| Document | Description |
+|----------|-------------|
+| [Overview](./dev/sources/) | Introduction to sources |
+| [Complete Catalog](./dev/sources/catalog.md) | All analyzed sources |
+| [Entity Reference](./dev/sources/entities-reference.md) | Entities by source |
+
+## Global Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              ATLAS CITATIONS                                 │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌─────────────────────────────────────────────────────────────────────────┐│
-│  │                      COUCHE PRÉSENTATION                                 ││
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    ││
-│  │  │ Expert Map  │  │  Timeline   │  │  Co-author  │  │   Search    │    ││
-│  │  │   (carte)   │  │  (trends)   │  │   Network   │  │    UI       │    ││
-│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘    ││
-│  └─────────────────────────────────────────────────────────────────────────┘│
-│                                     │                                        │
-│  ┌─────────────────────────────────────────────────────────────────────────┐│
-│  │                      COUCHE FÉDÉRATION                                   ││
-│  │  ┌───────────────────────────────────────────────────────────────────┐  ││
-│  │  │  FederatedQueryService (Effect)                                    │  ││
-│  │  │  • Plan de requête multi-bases                                     │  ││
-│  │  │  • Exécution parallèle                                             │  ││
-│  │  │  • Fusion des résultats                                            │  ││
-│  │  └───────────────────────────────────────────────────────────────────┘  ││
-│  └─────────────────────────────────────────────────────────────────────────┘│
-│                                     │                                        │
-│  ┌─────────────────────────────────────────────────────────────────────────┐│
-│  │                      COUCHE STOCKAGE                                     ││
-│  │  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐            ││
-│  │  │PostgreSQL │  │ OpenSearch│  │  Qdrant   │  │TimescaleDB│            ││
-│  │  │ (données) │  │ (fulltext)│  │ (vectors) │  │ (metrics) │            ││
-│  │  └───────────┘  └───────────┘  └───────────┘  └───────────┘            ││
-│  └─────────────────────────────────────────────────────────────────────────┘│
-│                                     │                                        │
-│  ┌─────────────────────────────────────────────────────────────────────────┐│
-│  │                      COUCHE INGESTION                                    ││
-│  │  ┌───────────────────────────────────────────────────────────────────┐  ││
-│  │  │  atlas-citations (agrégateur)                                      │  ││
-│  │  │  ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐     │  ││
-│  │  │  │OpenAlex │ │Crossref │ │   HAL   │ │  ArXiv  │ │  ORCID  │     │  ││
-│  │  │  └─────────┘ └─────────┘ └─────────┘ └─────────┘ └─────────┘     │  ││
-│  │  └───────────────────────────────────────────────────────────────────┘  ││
-│  └─────────────────────────────────────────────────────────────────────────┘│
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
++-----------------------------------------------------------------------------+
+|                              ATLAS CITATIONS                                 |
++-----------------------------------------------------------------------------+
+|                                                                              |
+|  +-------------------------------------------------------------------------+|
+|  |                      PRESENTATION LAYER                                  ||
+|  |  +-------------+  +-------------+  +-------------+  +-------------+    ||
+|  |  | Expert Map  |  |  Timeline   |  |  Co-author  |  |   Search    |    ||
+|  |  |   (map)     |  |  (trends)   |  |   Network   |  |    UI       |    ||
+|  |  +-------------+  +-------------+  +-------------+  +-------------+    ||
+|  +-------------------------------------------------------------------------+|
+|                                     |                                        |
+|  +-------------------------------------------------------------------------+|
+|  |                      FEDERATION LAYER                                    ||
+|  |  +---------------------------------------------------------------------+  ||
+|  |  |  FederatedQueryService (Effect)                                    |  ||
+|  |  |  * Multi-database query plan                                       |  ||
+|  |  |  * Parallel execution                                              |  ||
+|  |  |  * Result merging                                                  |  ||
+|  |  +---------------------------------------------------------------------+  ||
+|  +-------------------------------------------------------------------------+|
+|                                     |                                        |
+|  +-------------------------------------------------------------------------+|
+|  |                      STORAGE LAYER                                       ||
+|  |  +-----------+  +-----------+  +-----------+  +-----------+            ||
+|  |  |PostgreSQL |  | OpenSearch|  |  Qdrant   |  |TimescaleDB|            ||
+|  |  | (data)    |  | (fulltext)|  | (vectors) |  | (metrics) |            ||
+|  |  +-----------+  +-----------+  +-----------+  +-----------+            ||
+|  +-------------------------------------------------------------------------+|
+|                                     |                                        |
+|  +-------------------------------------------------------------------------+|
+|  |                      INGESTION LAYER                                     ||
+|  |  +---------------------------------------------------------------------+  ||
+|  |  |  atlas-citations (aggregator)                                      |  ||
+|  |  |  +---------+ +---------+ +---------+ +---------+ +---------+     |  ||
+|  |  |  |OpenAlex | |Crossref | |   HAL   | |  ArXiv  | |  ORCID  |     |  ||
+|  |  |  +---------+ +---------+ +---------+ +---------+ +---------+     |  ||
+|  |  +---------------------------------------------------------------------+  ||
+|  +-------------------------------------------------------------------------+|
+|                                                                              |
++-----------------------------------------------------------------------------+
 ```
 
-## Entités unifiées
+## Unified Entities
 
-Le schéma unifié définit 5 entités principales, communes à toutes les sources :
+The unified schema defines 5 main entities, common to all sources:
 
-| Entité | Description | Identifiants |
+| Entity | Description | Identifiers |
 |--------|-------------|--------------|
-| **Work** | Publication (article, preprint, thèse) | DOI, OpenAlex ID, HAL ID, ArXiv ID |
-| **Author** | Chercheur/auteur | ORCID, OpenAlex ID, HAL ID |
-| **Institution** | Université, laboratoire, entreprise | ROR, OpenAlex ID, HAL ID |
-| **Venue** | Journal, conférence, dépôt | ISSN, OpenAlex ID |
-| **Funder** | Organisme financeur | Crossref Funder ID, ROR |
+| **Work** | Publication (article, preprint, thesis) | DOI, OpenAlex ID, HAL ID, ArXiv ID |
+| **Author** | Researcher/author | ORCID, OpenAlex ID, HAL ID |
+| **Institution** | University, laboratory, company | ROR, OpenAlex ID, HAL ID |
+| **Venue** | Journal, conference, repository | ISSN, OpenAlex ID |
+| **Funder** | Funding organization | Crossref Funder ID, ROR |
 
-> Voir [Schéma unifié](./dev/unified-schema.md) pour les spécifications détaillées.
+> See [Unified Schema](./dev/unified-schema.md) for detailed specifications.
 
 ## Packages
 
 ```
 packages/
-├── openapi-validator/  # Outil de validation OpenAPI
-├── openalex/           # Client OpenAlex
-├── crossref/           # Client Crossref
-├── hal/                # Client HAL
-├── arxiv/              # Client ArXiv
-├── orcid/              # Client ORCID
-└── citations/          # Agrégateur unifié
+├── openapi-validator/  # OpenAPI validation tool
+├── openalex/           # OpenAlex client
+├── crossref/           # Crossref client
+├── hal/                # HAL client
+├── arxiv/              # ArXiv client
+├── orcid/              # ORCID client
+└── citations/          # Unified aggregator
 ```
 
 | Package | Source | Description |
 |---------|--------|-------------|
-| `@univ-lehavre/atlas-openapi-validator` | - | Validation des specs OpenAPI |
-| `@univ-lehavre/atlas-openalex` | [OpenAlex](https://openalex.org) | 240M+ publications académiques |
-| `@univ-lehavre/atlas-crossref` | [Crossref](https://crossref.org) | Métadonnées DOI |
-| `@univ-lehavre/atlas-hal` | [HAL](https://hal.science) | Archive ouverte française |
-| `@univ-lehavre/atlas-arxiv` | [ArXiv](https://arxiv.org) | Prépublications scientifiques |
-| `@univ-lehavre/atlas-orcid` | [ORCID](https://orcid.org) | Identifiants chercheurs |
-| `@univ-lehavre/atlas-citations` | - | Agrégateur multi-sources |
+| `@univ-lehavre/atlas-openapi-validator` | - | OpenAPI spec validation |
+| `@univ-lehavre/atlas-openalex` | [OpenAlex](https://openalex.org) | 240M+ academic publications |
+| `@univ-lehavre/atlas-crossref` | [Crossref](https://crossref.org) | DOI metadata |
+| `@univ-lehavre/atlas-hal` | [HAL](https://hal.science) | French open archive |
+| `@univ-lehavre/atlas-arxiv` | [ArXiv](https://arxiv.org) | Scientific preprints |
+| `@univ-lehavre/atlas-orcid` | [ORCID](https://orcid.org) | Researcher identifiers |
+| `@univ-lehavre/atlas-citations` | - | Multi-source aggregator |
 
-## Utilisation rapide
+## Quick Start
 
 ```typescript
 import { createCitationsClient } from '@univ-lehavre/atlas-citations';
@@ -156,13 +156,13 @@ import { Effect } from 'effect';
 
 const client = createCitationsClient();
 
-// Recherche automatique (sélection intelligente des sources)
+// Automatic search (intelligent source selection)
 const works = yield* client.searchWorks('machine learning');
 
-// Résolution d'un DOI
+// DOI resolution
 const work = yield* client.getWork('10.1234/example');
 
-// Forcer une source spécifique
+// Force a specific source
 const halWorks = yield* client.searchWorks('deep learning', {
   sources: ['hal'],
 });

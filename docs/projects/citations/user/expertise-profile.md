@@ -1,29 +1,29 @@
-# Votre profil d'expertise
+# Your Expertise Profile
 
-Ce guide vous explique comment Atlas Verify analyse vos publications pour identifier vos domaines d'expertise.
+This guide explains how Atlas Verify analyzes your publications to identify your areas of expertise.
 
-## Comment fonctionne l'analyse ?
+## How Does the Analysis Work?
 
-Atlas Verify analyse l'ensemble de vos publications confirmées pour identifier :
+Atlas Verify analyzes all of your confirmed publications to identify:
 
-- **Vos domaines de recherche** : Les thématiques sur lesquelles vous publiez
-- **Votre niveau d'expertise** : Basé sur le volume, l'impact et la régularité
-- **L'évolution temporelle** : Comment vos intérêts ont évolué
+- **Your research areas**: The topics on which you publish
+- **Your expertise level**: Based on volume, impact, and regularity
+- **Temporal evolution**: How your interests have evolved
 
-### Sources d'analyse
+### Analysis Sources
 
-| Méthode | Description | Fiabilité |
-|---------|-------------|-----------|
-| **Topics OpenAlex** | Classification automatique par IA de 65 000+ sujets | ⭐⭐⭐⭐⭐ |
-| **Mots-clés auteur** | Les mots-clés que vous avez choisis | ⭐⭐⭐⭐ |
-| **Domaines HAL** | Classification disciplinaire française | ⭐⭐⭐⭐ |
-| **Analyse de texte** | Extraction automatique des concepts clés | ⭐⭐⭐ |
+| Method | Description | Reliability |
+|--------|-------------|-------------|
+| **OpenAlex Topics** | Automatic AI classification of 65,000+ subjects | ⭐⭐⭐⭐⭐ |
+| **Author keywords** | The keywords you have chosen | ⭐⭐⭐⭐ |
+| **HAL domains** | French disciplinary classification | ⭐⭐⭐⭐ |
+| **Text analysis** | Automatic extraction of key concepts | ⭐⭐⭐ |
 
-## Votre carte d'expertise
+## Your Expertise Map
 
-### Vue d'ensemble
+### Overview
 
-Votre profil affiche une **carte thématique** montrant vos domaines :
+Your profile displays a **thematic map** showing your domains:
 
 ```
                     Machine Learning
@@ -37,126 +37,126 @@ Votre profil affiche une **carte thématique** montrant vos domaines :
                   ██████
 ```
 
-- **Taille des bulles** : Nombre de publications
-- **Proximité** : Domaines souvent associés dans vos travaux
-- **Couleur** : Période (plus récent = plus foncé)
+- **Bubble size**: Number of publications
+- **Proximity**: Domains often associated in your work
+- **Color**: Period (more recent = darker)
 
-### Détail d'un domaine
+### Domain Details
 
-En cliquant sur un domaine, vous voyez :
+By clicking on a domain, you see:
 
-| Information | Exemple |
+| Information | Example |
 |-------------|---------|
-| **Nom du domaine** | Machine Learning |
+| **Domain name** | Machine Learning |
 | **Publications** | 15 articles |
-| **Période active** | 2018 - présent |
-| **Sous-domaines** | Deep Learning, Neural Networks, Optimization |
-| **Collaborateurs fréquents** | Dr. Martin, Prof. Dubois |
-| **Revues principales** | JMLR, NeurIPS, ICML |
+| **Active period** | 2018 - present |
+| **Subdomains** | Deep Learning, Neural Networks, Optimization |
+| **Frequent collaborators** | Dr. Martin, Prof. Dubois |
+| **Main journals** | JMLR, NeurIPS, ICML |
 
-## Niveaux d'expertise
+## Expertise Levels
 
-Le système évalue votre niveau dans chaque domaine :
+The system evaluates your level in each domain:
 
-| Niveau | Critères | Signification |
-|--------|----------|---------------|
-| **Expert reconnu** | 10+ publications, citations élevées, > 5 ans | Référence dans le domaine |
-| **Spécialiste** | 5-10 publications, activité régulière | Expertise établie |
-| **Contributeur** | 2-5 publications | Contributions significatives |
-| **Explorateur** | 1-2 publications | Intérêt naissant ou ponctuel |
+| Level | Criteria | Meaning |
+|-------|----------|---------|
+| **Recognized expert** | 10+ publications, high citations, > 5 years | Reference in the field |
+| **Specialist** | 5-10 publications, regular activity | Established expertise |
+| **Contributor** | 2-5 publications | Significant contributions |
+| **Explorer** | 1-2 publications | Emerging or occasional interest |
 
-> 💡 Ces niveaux sont indicatifs et basés uniquement sur les données bibliographiques. Ils ne remplacent pas une évaluation par les pairs.
+> These levels are indicative and based solely on bibliographic data. They do not replace peer evaluation.
 
-## Évolution temporelle
+## Temporal Evolution
 
-### Frise d'expertise
+### Expertise Timeline
 
-Visualisez comment vos intérêts ont évolué :
+Visualize how your interests have evolved:
 
 ```
 2010    2012    2014    2016    2018    2020    2022    2024
 
-Statistiques    ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
+Statistics      ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 Machine Learning          ░░░░████████████████████████████
 NLP                             ░░░░░░░░████████████░░░░░░
 Deep Learning                         ░░░░░░████████████████
 ```
 
-### Détection des transitions
+### Transition Detection
 
-Le système identifie les **moments clés** de votre parcours :
+The system identifies **key moments** in your career:
 
-- **2016** : Transition vers le Machine Learning
-- **2019** : Spécialisation en Deep Learning
-- **2021** : Nouvelle orientation NLP
+- **2016**: Transition to Machine Learning
+- **2019**: Specialization in Deep Learning
+- **2021**: New orientation toward NLP
 
-Ces transitions peuvent correspondre à :
-- Un changement de laboratoire
-- Une nouvelle collaboration
-- Un projet de recherche spécifique
+These transitions may correspond to:
+- A change of laboratory
+- A new collaboration
+- A specific research project
 
-## Valider votre profil
+## Validate Your Profile
 
-### Confirmer un domaine
+### Confirm a Domain
 
-Si un domaine identifié est correct, confirmez-le. Cela améliore la précision du système.
+If an identified domain is correct, confirm it. This improves the system's accuracy.
 
-### Ajuster l'importance
+### Adjust Importance
 
-Vous pouvez indiquer si un domaine est :
-- **Central** : C'est votre cœur de métier
-- **Secondaire** : Vous y contribuez régulièrement
-- **Ponctuel** : Contribution occasionnelle
-- **Historique** : Vous n'y travaillez plus
+You can indicate whether a domain is:
+- **Central**: This is your core expertise
+- **Secondary**: You contribute to it regularly
+- **Occasional**: Occasional contribution
+- **Historical**: You no longer work in this area
 
-### Ajouter un domaine manquant
+### Add a Missing Domain
 
-Si un domaine important n'apparaît pas :
+If an important domain doesn't appear:
 
-1. Cliquez sur **Ajouter un domaine**
-2. Recherchez le domaine (par mot-clé ou classification)
-3. Associez-le à vos publications pertinentes
+1. Click on **Add a domain**
+2. Search for the domain (by keyword or classification)
+3. Associate it with your relevant publications
 
-### Retirer un domaine erroné
+### Remove an Erroneous Domain
 
-Si un domaine ne correspond pas à votre expertise :
+If a domain doesn't correspond to your expertise:
 
-1. Cliquez sur **Signaler comme erroné**
-2. Le domaine sera retiré de votre profil public
+1. Click on **Report as erroneous**
+2. The domain will be removed from your public profile
 
-## Utilisations du profil
+## Profile Uses
 
-### Recherche de collaborateurs
+### Finding Collaborators
 
-Votre profil d'expertise permet aux autres chercheurs de vous trouver pour des collaborations sur des thématiques communes.
+Your expertise profile allows other researchers to find you for collaborations on common themes.
 
-### Évaluation de projets
+### Project Evaluation
 
-Les organismes de financement peuvent identifier les experts pertinents pour évaluer les projets de recherche.
+Funding agencies can identify relevant experts to evaluate research projects.
 
-### Recommandations
+### Recommendations
 
-Le système peut vous recommander :
-- Des articles pertinents pour vos recherches
-- Des conférences dans vos domaines
-- Des appels à projets correspondant à vos expertises
+The system can recommend:
+- Relevant articles for your research
+- Conferences in your domains
+- Calls for projects matching your expertise
 
-## Confidentialité
+## Privacy
 
-Vous contrôlez ce qui est visible :
+You control what is visible:
 
-| Élément | Visibilité par défaut | Modifiable |
-|---------|----------------------|------------|
-| Domaines principaux | Public | ✓ |
-| Niveau d'expertise | Public | ✓ |
-| Publications associées | Public | ✓ |
-| Évolution temporelle | Chercheurs vérifiés | ✓ |
-| Collaborateurs | Chercheurs vérifiés | ✓ |
+| Element | Default visibility | Modifiable |
+|---------|-------------------|------------|
+| Main domains | Public | ✓ |
+| Expertise level | Public | ✓ |
+| Associated publications | Public | ✓ |
+| Temporal evolution | Verified researchers | ✓ |
+| Collaborators | Verified researchers | ✓ |
 
-## Voir aussi
+## See Also
 
-- [Vérifier vos publications](./verify-publications.md) - La base de votre profil
-- [Gérer votre parcours](./manage-career.md) - Contexte institutionnel
-- [Réseau de collaborations](./collaboration-network.md) - Vos co-auteurs
+- [Verify your publications](./verify-publications.md) - The basis of your profile
+- [Manage your career](./manage-career.md) - Institutional context
+- [Collaboration network](./collaboration-network.md) - Your co-authors
 
-**Documentation technique :** [Profil chercheur](../dev/researcher-profile.md) - Pour les développeurs
+**Technical documentation:** [Researcher profile](../dev/researcher-profile.md) - For developers

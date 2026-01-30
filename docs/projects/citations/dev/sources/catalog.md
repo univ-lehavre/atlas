@@ -1,130 +1,130 @@
-# Catalogue des sources bibliographiques
+# Bibliographic Sources Catalog
 
-Ce document recense toutes les sources académiques potentielles pour atlas-citations, avec leur état actuel et la stratégie de construction de leur spec OpenAPI.
+This document lists all potential academic sources for atlas-citations, with their current status and the strategy for building their OpenAPI spec.
 
-> **Voir aussi :** [Référence des entités et champs](./entities-reference.md) pour le détail complet des objets et attributs récupérables par source.
+> **See also:** [Entities and Fields Reference](./entities-reference.md) for complete details on objects and attributes retrievable per source.
 
-## Vue d'ensemble
+## Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                      SOURCES BIBLIOGRAPHIQUES                                │
+│                      BIBLIOGRAPHIC SOURCES                                   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  PRIORITÉ 1 (Implémentées)          PRIORITÉ 2 (Planifiées)                 │
-│  ─────────────────────────          ────────────────────────                │
-│  ✅ OpenAlex                        📋 Semantic Scholar                     │
-│  ✅ Crossref                        📋 PubMed/NCBI                          │
-│  ✅ HAL                             📋 Unpaywall                            │
-│  ✅ ArXiv                           📋 OpenCitations                        │
+│  PRIORITY 1 (Implemented)              PRIORITY 2 (Planned)                 │
+│  ─────────────────────────             ────────────────────────             │
+│  ✅ OpenAlex                           📋 Semantic Scholar                  │
+│  ✅ Crossref                           📋 PubMed/NCBI                       │
+│  ✅ HAL                                📋 Unpaywall                         │
+│  ✅ ArXiv                              📋 OpenCitations                     │
 │  ✅ ORCID                                                                    │
 │                                                                              │
-│  PRIORITÉ 3 (Extensions)            PRIORITÉ 4 (Spécialisées)               │
-│  ───────────────────────            ─────────────────────────               │
-│  📋 Europe PMC                      📋 DBLP                                 │
-│  📋 DataCite                        📋 RePEc                                │
-│  📋 DOAJ                            📋 SSRN                                 │
-│  📋 Zenodo                          📋 bioRxiv/medRxiv                      │
+│  PRIORITY 3 (Extensions)               PRIORITY 4 (Specialized)             │
+│  ───────────────────────               ─────────────────────────            │
+│  📋 Europe PMC                         📋 DBLP                              │
+│  📋 DataCite                           📋 RePEc                             │
+│  📋 DOAJ                               📋 SSRN                              │
+│  📋 Zenodo                             📋 bioRxiv/medRxiv                   │
 │                                                                              │
-│  SOURCES PAYANTES                   SOURCES RÉGIONALES                      │
-│  ────────────────                   ──────────────────                      │
-│  💰 Scopus                          🌍 CNKI (Chine)                         │
-│  💰 Web of Science                  🌍 CiNii (Japon)                        │
-│  💰 IEEE Xplore                     🌍 SciELO (Amérique latine)             │
-│  💰 Dimensions                      🌍 CORE (UK)                            │
+│  PAID SOURCES                          REGIONAL SOURCES                     │
+│  ────────────────                      ──────────────────                   │
+│  💰 Scopus                             🌍 CNKI (China)                      │
+│  💰 Web of Science                     🌍 CiNii (Japan)                     │
+│  💰 IEEE Xplore                        🌍 SciELO (Latin America)            │
+│  💰 Dimensions                         🌍 CORE (UK)                         │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Légende
+## Legend
 
-| Symbole | Signification |
+| Symbol | Meaning |
 |---------|---------------|
-| ✅ | Implémentée (Priorité 1) |
-| 📋 | Planifiée |
-| 💰 | API payante |
-| 🌍 | Source régionale |
-| ✅ OpenAPI | Spec OpenAPI officielle disponible |
-| ⚠️ OpenAPI | Spec partielle ou non maintenue |
-| ❌ OpenAPI | Pas de spec OpenAPI |
+| ✅ | Implemented (Priority 1) |
+| 📋 | Planned |
+| 💰 | Paid API |
+| 🌍 | Regional source |
+| ✅ OpenAPI | Official OpenAPI spec available |
+| ⚠️ OpenAPI | Partial or unmaintained spec |
+| ❌ OpenAPI | No OpenAPI spec |
 
 ---
 
-## Sources académiques majeures (gratuites)
+## Major Academic Sources (Free)
 
 ### Semantic Scholar
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://api.semanticscholar.org` |
-| **Opérateur** | Allen Institute for AI |
-| **Couverture** | 200M+ articles, toutes disciplines |
-| **OpenAPI** | ✅ [Oui](https://api.semanticscholar.org/api-docs/) |
-| **Auth** | API key recommandée (gratuite) |
-| **Rate limit** | 100 req/5min (sans clé), 1 req/sec (avec clé) |
+| **Operator** | Allen Institute for AI |
+| **Coverage** | 200M+ articles, all disciplines |
+| **OpenAPI** | ✅ [Yes](https://api.semanticscholar.org/api-docs/) |
+| **Auth** | API key recommended (free) |
+| **Rate limit** | 100 req/5min (without key), 1 req/sec (with key) |
 | **Format** | JSON |
-| **Priorité** | ⭐⭐⭐ Haute |
+| **Priority** | ⭐⭐⭐ High |
 
-**Points forts :**
-- Graphe de citations très riche
-- Embeddings SPECTER pour similarité sémantique
-- Dataset S2ORC accessible
-- Excellente couverture IA/ML
+**Strengths:**
+- Very rich citation graph
+- SPECTER embeddings for semantic similarity
+- S2ORC dataset accessible
+- Excellent AI/ML coverage
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# Récupérer la spec OpenAPI officielle
+# Retrieve the official OpenAPI spec
 atlas-openapi-validator fetch \
   https://api.semanticscholar.org/api-docs/openapi.json \
   --output specs/alpha/semantic-scholar-2025-01.yaml \
   --format yaml \
   --set-stage alpha
 
-# Valider et adapter
+# Validate and adapt
 atlas-openapi-validator validate specs/alpha/semantic-scholar-2025-01.yaml \
   --base-url https://api.semanticscholar.org/graph/v1 \
   --headers "x-api-key=${S2_API_KEY}" \
   --output reports/semantic-scholar-alpha.json
 ```
 
-**Spec existante :** https://api.semanticscholar.org/api-docs/
+**Existing spec:** https://api.semanticscholar.org/api-docs/
 
 ---
 
 ### PubMed / NCBI E-utilities
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/` |
-| **Opérateur** | NIH / NLM |
-| **Couverture** | 35M+ citations biomédicales |
-| **OpenAPI** | ⚠️ [Partielle](https://www.ncbi.nlm.nih.gov/books/NBK25501/) |
-| **Auth** | API key recommandée (gratuite) |
-| **Rate limit** | 3 req/sec (sans clé), 10 req/sec (avec clé) |
-| **Format** | XML, JSON (partiel) |
-| **Priorité** | ⭐⭐⭐ Haute |
+| **Operator** | NIH / NLM |
+| **Coverage** | 35M+ biomedical citations |
+| **OpenAPI** | ⚠️ [Partial](https://www.ncbi.nlm.nih.gov/books/NBK25501/) |
+| **Auth** | API key recommended (free) |
+| **Rate limit** | 3 req/sec (without key), 10 req/sec (with key) |
+| **Format** | XML, JSON (partial) |
+| **Priority** | ⭐⭐⭐ High |
 
-**Points forts :**
-- Référence absolue en biomédecine
-- MeSH terms pour classification
-- Liens vers texte intégral (PMC)
-- Données cliniques (ClinicalTrials.gov)
+**Strengths:**
+- Absolute reference in biomedicine
+- MeSH terms for classification
+- Links to full text (PMC)
+- Clinical data (ClinicalTrials.gov)
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# Pas de spec OpenAPI complète, construction depuis documentation
+# No complete OpenAPI spec, build from documentation
 atlas-openapi-validator scaffold \
   --name pubmed \
   --base-url https://eutils.ncbi.nlm.nih.gov/entrez/eutils \
   --output specs/alpha/pubmed-2025-01.yaml
 
-# Endpoints principaux à documenter
-# - esearch.fcgi : Recherche
-# - efetch.fcgi : Récupération
-# - einfo.fcgi : Métadonnées bases
-# - elink.fcgi : Liens entre bases
+# Main endpoints to document
+# - esearch.fcgi : Search
+# - efetch.fcgi : Retrieval
+# - einfo.fcgi : Database metadata
+# - elink.fcgi : Links between databases
 
-# Inférer les schémas depuis réponses
+# Infer schemas from responses
 atlas-openapi-validator infer \
   --base-url https://eutils.ncbi.nlm.nih.gov/entrez/eutils \
   --endpoints esearch.fcgi,efetch.fcgi \
@@ -133,32 +133,32 @@ atlas-openapi-validator infer \
   --merge-into specs/alpha/pubmed-2025-01.yaml
 ```
 
-**Documentation :** https://www.ncbi.nlm.nih.gov/books/NBK25500/
+**Documentation:** https://www.ncbi.nlm.nih.gov/books/NBK25500/
 
 ---
 
 ### Europe PMC
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://www.ebi.ac.uk/europepmc/webservices/rest/` |
-| **Opérateur** | EMBL-EBI |
-| **Couverture** | 40M+ articles, focus Europe |
-| **OpenAPI** | ✅ [Oui](https://europepmc.org/RestfulWebService) |
-| **Auth** | Aucune |
-| **Rate limit** | Non documenté officiellement |
+| **Operator** | EMBL-EBI |
+| **Coverage** | 40M+ articles, European focus |
+| **OpenAPI** | ✅ [Yes](https://europepmc.org/RestfulWebService) |
+| **Auth** | None |
+| **Rate limit** | Not officially documented |
 | **Format** | JSON, XML |
-| **Priorité** | ⭐⭐ Moyenne |
+| **Priority** | ⭐⭐ Medium |
 
-**Points forts :**
-- Agrège PubMed + sources européennes
-- Texte intégral Open Access
-- Annotations text-mining
+**Strengths:**
+- Aggregates PubMed + European sources
+- Open Access full text
+- Text-mining annotations
 - Grant information
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# Spec disponible mais nécessite adaptation
+# Spec available but needs adaptation
 curl -o specs/alpha/europepmc-raw.json \
   "https://www.ebi.ac.uk/europepmc/webservices/rest/swagger.json"
 
@@ -168,38 +168,38 @@ atlas-openapi-validator transform specs/alpha/europepmc-raw.json \
   --set-stage alpha
 ```
 
-**Documentation :** https://europepmc.org/RestfulWebService
+**Documentation:** https://europepmc.org/RestfulWebService
 
 ---
 
 ### Unpaywall
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://api.unpaywall.org/v2/` |
-| **Opérateur** | OurResearch |
-| **Couverture** | 30M+ DOIs avec statut OA |
-| **OpenAPI** | ❌ Non |
-| **Auth** | Email requis (paramètre) |
-| **Rate limit** | 100k req/jour |
+| **Operator** | OurResearch |
+| **Coverage** | 30M+ DOIs with OA status |
+| **OpenAPI** | ❌ No |
+| **Auth** | Email required (parameter) |
+| **Rate limit** | 100k req/day |
 | **Format** | JSON |
-| **Priorité** | ⭐⭐⭐ Haute |
+| **Priority** | ⭐⭐⭐ High |
 
-**Points forts :**
-- Trouve les versions Open Access
-- Intégration facile (par DOI)
-- Données de licence
-- URLs PDF directs
+**Strengths:**
+- Finds Open Access versions
+- Easy integration (by DOI)
+- License data
+- Direct PDF URLs
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# Construction depuis documentation + inférence
+# Build from documentation + inference
 atlas-openapi-validator scaffold \
   --name unpaywall \
   --base-url https://api.unpaywall.org/v2 \
   --output specs/alpha/unpaywall-2025-01.yaml
 
-# Endpoint unique simple
+# Single simple endpoint
 # GET /{doi}?email=your@email.com
 
 atlas-openapi-validator infer \
@@ -210,9 +210,9 @@ atlas-openapi-validator infer \
   --merge-into specs/alpha/unpaywall-2025-01.yaml
 ```
 
-**Documentation :** https://unpaywall.org/products/api
+**Documentation:** https://unpaywall.org/products/api
 
-**Exemple de spec :**
+**Example spec:**
 ```yaml
 openapi: '3.1.0'
 info:
@@ -296,173 +296,173 @@ components:
 
 ### OpenCitations
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://opencitations.net/` |
-| **Opérateur** | University of Bologna |
-| **Couverture** | 1.4B+ citations |
-| **OpenAPI** | ✅ [Oui](https://opencitations.net/index/api/v2) |
-| **Auth** | Aucune |
-| **Rate limit** | Non documenté |
+| **Operator** | University of Bologna |
+| **Coverage** | 1.4B+ citations |
+| **OpenAPI** | ✅ [Yes](https://opencitations.net/index/api/v2) |
+| **Auth** | None |
+| **Rate limit** | Not documented |
 | **Format** | JSON, CSV |
-| **Priorité** | ⭐⭐⭐ Haute |
+| **Priority** | ⭐⭐⭐ High |
 
-**Points forts :**
-- Graphe de citations ouvert
-- Données COCI (Crossref), POCI (PubMed)
-- API REST simple
-- Téléchargement bulk disponible
+**Strengths:**
+- Open citation graph
+- COCI (Crossref), POCI (PubMed) data
+- Simple REST API
+- Bulk download available
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# Documentation API disponible
+# API documentation available
 atlas-openapi-validator scaffold \
   --name opencitations \
   --base-url https://opencitations.net/index/api/v2 \
   --from-docs https://opencitations.net/index/api/v2 \
   --output specs/alpha/opencitations-2025-01.yaml
 
-# Endpoints principaux
-# - /references/{doi} : Citations sortantes
-# - /citations/{doi} : Citations entrantes
-# - /metadata/{doi} : Métadonnées
+# Main endpoints
+# - /references/{doi} : Outgoing citations
+# - /citations/{doi} : Incoming citations
+# - /metadata/{doi} : Metadata
 ```
 
-**Documentation :** https://opencitations.net/index/api/v2
+**Documentation:** https://opencitations.net/index/api/v2
 
 ---
 
 ### DataCite
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://api.datacite.org/` |
-| **Opérateur** | DataCite |
-| **Couverture** | 50M+ DOIs (datasets, logiciels) |
-| **OpenAPI** | ✅ [Oui](https://api.datacite.org/) |
-| **Auth** | Aucune (lecture) |
-| **Rate limit** | Non documenté |
+| **Operator** | DataCite |
+| **Coverage** | 50M+ DOIs (datasets, software) |
+| **OpenAPI** | ✅ [Yes](https://api.datacite.org/) |
+| **Auth** | None (read) |
+| **Rate limit** | Not documented |
 | **Format** | JSON:API |
-| **Priorité** | ⭐⭐ Moyenne |
+| **Priority** | ⭐⭐ Medium |
 
-**Points forts :**
-- DOIs pour données de recherche
-- Métadonnées DataCite Schema
-- Liens données-publications
-- Statistiques d'usage
+**Strengths:**
+- DOIs for research data
+- DataCite Schema metadata
+- Data-publications links
+- Usage statistics
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# Spec OpenAPI disponible
+# OpenAPI spec available
 atlas-openapi-validator fetch \
   https://api.datacite.org/openapi \
   --output specs/alpha/datacite-2025-01.yaml \
   --set-stage alpha
 
-# Attention : format JSON:API, nécessite adaptation
+# Note: JSON:API format, requires adaptation
 ```
 
-**Documentation :** https://support.datacite.org/docs/api
+**Documentation:** https://support.datacite.org/docs/api
 
 ---
 
 ### DOAJ (Directory of Open Access Journals)
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://doaj.org/api/` |
-| **Opérateur** | DOAJ |
-| **Couverture** | 20k+ revues OA, 9M+ articles |
-| **OpenAPI** | ✅ [Oui](https://doaj.org/api/docs) |
-| **Auth** | API key pour écriture |
-| **Rate limit** | Non documenté |
+| **Operator** | DOAJ |
+| **Coverage** | 20k+ OA journals, 9M+ articles |
+| **OpenAPI** | ✅ [Yes](https://doaj.org/api/docs) |
+| **Auth** | API key for write |
+| **Rate limit** | Not documented |
 | **Format** | JSON |
-| **Priorité** | ⭐⭐ Moyenne |
+| **Priority** | ⭐⭐ Medium |
 
-**Points forts :**
-- Référence pour revues Open Access
-- Critères qualité DOAJ
-- Métadonnées revues détaillées
-- Statut APC (frais publication)
+**Strengths:**
+- Reference for Open Access journals
+- DOAJ quality criteria
+- Detailed journal metadata
+- APC status (publication fees)
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# Swagger disponible
+# Swagger available
 atlas-openapi-validator fetch \
   https://doaj.org/api/docs/swagger.json \
   --output specs/alpha/doaj-2025-01.yaml \
   --set-stage alpha
 ```
 
-**Documentation :** https://doaj.org/api/docs
+**Documentation:** https://doaj.org/api/docs
 
 ---
 
 ### Zenodo
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://zenodo.org/api/` |
-| **Opérateur** | CERN |
-| **Couverture** | 3M+ records (données, logiciels, publications) |
-| **OpenAPI** | ✅ [Oui](https://developers.zenodo.org/) |
-| **Auth** | Token pour écriture |
-| **Rate limit** | 60 req/min (anonyme), 100 req/min (auth) |
+| **Operator** | CERN |
+| **Coverage** | 3M+ records (data, software, publications) |
+| **OpenAPI** | ✅ [Yes](https://developers.zenodo.org/) |
+| **Auth** | Token for write |
+| **Rate limit** | 60 req/min (anonymous), 100 req/min (auth) |
 | **Format** | JSON |
-| **Priorité** | ⭐⭐ Moyenne |
+| **Priority** | ⭐⭐ Medium |
 
-**Points forts :**
-- Dépôt généraliste européen
-- Versioning automatique
-- Intégration GitHub
-- DOIs automatiques
+**Strengths:**
+- General European repository
+- Automatic versioning
+- GitHub integration
+- Automatic DOIs
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# Spec disponible
+# Spec available
 atlas-openapi-validator fetch \
   https://zenodo.org/api/swagger.json \
   --output specs/alpha/zenodo-2025-01.yaml \
   --set-stage alpha
 ```
 
-**Documentation :** https://developers.zenodo.org/
+**Documentation:** https://developers.zenodo.org/
 
 ---
 
-## Sources spécialisées (gratuites)
+## Specialized Sources (Free)
 
 ### DBLP (Computer Science)
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://dblp.org/` |
-| **Opérateur** | Schloss Dagstuhl |
-| **Couverture** | 6M+ publications CS |
-| **OpenAPI** | ❌ Non |
-| **Auth** | Aucune |
-| **Rate limit** | Non documenté |
+| **Operator** | Schloss Dagstuhl |
+| **Coverage** | 6M+ CS publications |
+| **OpenAPI** | ❌ No |
+| **Auth** | None |
+| **Rate limit** | Not documented |
 | **Format** | XML, JSON |
-| **Priorité** | ⭐⭐ Moyenne (CS) |
+| **Priority** | ⭐⭐ Medium (CS) |
 
-**Points forts :**
-- Référence en informatique
-- Données conférences très complètes
-- Désambiguïsation auteurs excellente
-- API simple
+**Strengths:**
+- Reference in computer science
+- Very complete conference data
+- Excellent author disambiguation
+- Simple API
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# Construction depuis documentation
+# Build from documentation
 atlas-openapi-validator scaffold \
   --name dblp \
   --base-url https://dblp.org \
   --output specs/alpha/dblp-2025-01.yaml
 
 # Endpoints
-# - /search/publ/api : Recherche publications
-# - /search/author/api : Recherche auteurs
-# - /pid/{pid}.xml : Publication par ID
+# - /search/publ/api : Publication search
+# - /search/author/api : Author search
+# - /pid/{pid}.xml : Publication by ID
 
 atlas-openapi-validator infer \
   --base-url https://dblp.org \
@@ -472,103 +472,103 @@ atlas-openapi-validator infer \
   --merge-into specs/alpha/dblp-2025-01.yaml
 ```
 
-**Documentation :** https://dblp.org/faq/How+to+use+the+dblp+search+API.html
+**Documentation:** https://dblp.org/faq/How+to+use+the+dblp+search+API.html
 
 ---
 
 ### RePEc (Economics)
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://ideas.repec.org/api.html` |
-| **Opérateur** | RePEc |
-| **Couverture** | 4M+ working papers économie |
-| **OpenAPI** | ❌ Non |
-| **Auth** | Aucune |
-| **Rate limit** | Non documenté |
+| **Operator** | RePEc |
+| **Coverage** | 4M+ economics working papers |
+| **OpenAPI** | ❌ No |
+| **Auth** | None |
+| **Rate limit** | Not documented |
 | **Format** | JSON, XML |
-| **Priorité** | ⭐ Basse (spécialisée) |
+| **Priority** | ⭐ Low (specialized) |
 
-**Points forts :**
-- Référence en économie
-- Working papers et preprints
-- Rankings auteurs/institutions
+**Strengths:**
+- Reference in economics
+- Working papers and preprints
+- Author/institution rankings
 - Citations
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# API limitée, principalement scraping structuré
+# Limited API, mainly structured scraping
 atlas-openapi-validator scaffold \
   --name repec \
   --base-url https://api.repec.org \
   --output specs/alpha/repec-2025-01.yaml
 
-# Documentation très limitée
+# Very limited documentation
 ```
 
-**Documentation :** https://ideas.repec.org/api.html
+**Documentation:** https://ideas.repec.org/api.html
 
 ---
 
 ### SSRN (Social Sciences)
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://www.ssrn.com/` |
-| **Opérateur** | Elsevier |
-| **Couverture** | 1M+ preprints sciences sociales |
-| **OpenAPI** | ❌ Non |
-| **Auth** | Compte requis |
+| **Operator** | Elsevier |
+| **Coverage** | 1M+ social sciences preprints |
+| **OpenAPI** | ❌ No |
+| **Auth** | Account required |
 | **Rate limit** | Strict (anti-scraping) |
-| **Format** | HTML (pas d'API publique) |
-| **Priorité** | ⭐ Basse |
+| **Format** | HTML (no public API) |
+| **Priority** | ⭐ Low |
 
-**Points forts :**
-- Preprints sciences sociales/droit/économie
-- Téléchargements élevés
+**Strengths:**
+- Social sciences/law/economics preprints
+- High downloads
 
-**Construction alpha :**
+**Alpha construction:**
 ```
-⚠️ Pas d'API publique officielle
-Options :
-1. Accès via OpenAlex/Crossref (métadonnées)
-2. Négociation accès institutionnel
-3. Non recommandé pour atlas-citations
+⚠️ No official public API
+Options:
+1. Access via OpenAlex/Crossref (metadata)
+2. Negotiate institutional access
+3. Not recommended for atlas-citations
 ```
 
 ---
 
 ### bioRxiv / medRxiv
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://api.biorxiv.org/` |
-| **Opérateur** | Cold Spring Harbor Laboratory |
-| **Couverture** | 250k+ preprints bio/médecine |
-| **OpenAPI** | ❌ Non |
-| **Auth** | Aucune |
-| **Rate limit** | Non documenté |
+| **Operator** | Cold Spring Harbor Laboratory |
+| **Coverage** | 250k+ biology/medicine preprints |
+| **OpenAPI** | ❌ No |
+| **Auth** | None |
+| **Rate limit** | Not documented |
 | **Format** | JSON |
-| **Priorité** | ⭐⭐ Moyenne |
+| **Priority** | ⭐⭐ Medium |
 
-**Points forts :**
-- Preprints biologie/médecine
-- Données COVID-19 exhaustives
-- Liens vers publications finales
-- API simple et documentée
+**Strengths:**
+- Biology/medicine preprints
+- Exhaustive COVID-19 data
+- Links to final publications
+- Simple and documented API
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# API documentée mais pas de spec
+# Documented API but no spec
 atlas-openapi-validator scaffold \
   --name biorxiv \
   --base-url https://api.biorxiv.org \
   --output specs/alpha/biorxiv-2025-01.yaml
 
 # Endpoints
-# - /details/{server}/{interval} : Détails par période
+# - /details/{server}/{interval} : Details by period
 # - /pubs/{server}/{interval} : Publications
-# - /publisher/{prefix}/{interval} : Par éditeur
+# - /publisher/{prefix}/{interval} : By publisher
 
 atlas-openapi-validator infer \
   --base-url https://api.biorxiv.org \
@@ -577,9 +577,9 @@ atlas-openapi-validator infer \
   --merge-into specs/alpha/biorxiv-2025-01.yaml
 ```
 
-**Documentation :** https://api.biorxiv.org/
+**Documentation:** https://api.biorxiv.org/
 
-**Exemple de spec :**
+**Example spec:**
 ```yaml
 openapi: '3.1.0'
 info:
@@ -674,74 +674,74 @@ components:
 
 ---
 
-## Sources régionales
+## Regional Sources
 
 ### CNKI (China National Knowledge Infrastructure)
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://www.cnki.net/` |
-| **Opérateur** | Tsinghua University |
-| **Couverture** | Publications chinoises |
-| **OpenAPI** | ❌ Non |
-| **Auth** | Abonnement institutionnel |
+| **Operator** | Tsinghua University |
+| **Coverage** | Chinese publications |
+| **OpenAPI** | ❌ No |
+| **Auth** | Institutional subscription |
 | **Rate limit** | Strict |
-| **Format** | Propriétaire |
-| **Priorité** | ⭐ Basse |
+| **Format** | Proprietary |
+| **Priority** | ⭐ Low |
 
-**Construction alpha :**
+**Alpha construction:**
 ```
-⚠️ Pas d'API publique
-Accès uniquement via abonnement institutionnel
-Non recommandé pour atlas-citations open source
+⚠️ No public API
+Access only via institutional subscription
+Not recommended for atlas-citations open source
 ```
 
 ---
 
 ### CiNii (Japan)
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://cir.nii.ac.jp/` |
-| **Opérateur** | NII (Japan) |
-| **Couverture** | Publications japonaises |
-| **OpenAPI** | ⚠️ [Partielle](https://cir.nii.ac.jp/articles) |
-| **Auth** | API key gratuite |
-| **Rate limit** | Non documenté |
+| **Operator** | NII (Japan) |
+| **Coverage** | Japanese publications |
+| **OpenAPI** | ⚠️ [Partial](https://cir.nii.ac.jp/articles) |
+| **Auth** | Free API key |
+| **Rate limit** | Not documented |
 | **Format** | JSON, RDF |
-| **Priorité** | ⭐ Basse |
+| **Priority** | ⭐ Low |
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# API documentée
+# Documented API
 atlas-openapi-validator scaffold \
   --name cinii \
   --base-url https://cir.nii.ac.jp \
   --output specs/alpha/cinii-2025-01.yaml
 
-# Nécessite inscription pour API key
+# Requires registration for API key
 ```
 
-**Documentation :** https://support.nii.ac.jp/en/cir/api/a_opensearch
+**Documentation:** https://support.nii.ac.jp/en/cir/api/a_opensearch
 
 ---
 
 ### SciELO (Latin America)
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://search.scielo.org/` |
-| **Opérateur** | FAPESP (Brazil) |
-| **Couverture** | Publications Amérique latine |
-| **OpenAPI** | ❌ Non |
-| **Auth** | Aucune |
-| **Rate limit** | Non documenté |
+| **Operator** | FAPESP (Brazil) |
+| **Coverage** | Latin American publications |
+| **OpenAPI** | ❌ No |
+| **Auth** | None |
+| **Rate limit** | Not documented |
 | **Format** | JSON |
-| **Priorité** | ⭐ Basse |
+| **Priority** | ⭐ Low |
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# API basée sur Solr
+# Solr-based API
 atlas-openapi-validator scaffold \
   --name scielo \
   --base-url https://search.scielo.org/api/v1 \
@@ -757,61 +757,61 @@ atlas-openapi-validator infer \
 
 ### CORE (UK Aggregator)
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://api.core.ac.uk/v3/` |
-| **Opérateur** | Open University (UK) |
-| **Couverture** | 300M+ articles Open Access |
-| **OpenAPI** | ✅ [Oui](https://api.core.ac.uk/docs/v3) |
-| **Auth** | API key gratuite |
+| **Operator** | Open University (UK) |
+| **Coverage** | 300M+ Open Access articles |
+| **OpenAPI** | ✅ [Yes](https://api.core.ac.uk/docs/v3) |
+| **Auth** | Free API key |
 | **Rate limit** | 10 req/sec |
 | **Format** | JSON |
-| **Priorité** | ⭐⭐ Moyenne |
+| **Priority** | ⭐⭐ Medium |
 
-**Points forts :**
-- Agrégateur OA massif
-- Texte intégral disponible
-- Métadonnées enrichies
-- API bien documentée
+**Strengths:**
+- Massive OA aggregator
+- Full text available
+- Enriched metadata
+- Well-documented API
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# Spec OpenAPI disponible
+# OpenAPI spec available
 atlas-openapi-validator fetch \
   https://api.core.ac.uk/docs/v3/openapi.json \
   --output specs/alpha/core-2025-01.yaml \
   --set-stage alpha
 ```
 
-**Documentation :** https://api.core.ac.uk/docs/v3
+**Documentation:** https://api.core.ac.uk/docs/v3
 
 ---
 
-## Sources payantes
+## Paid Sources
 
 ### Scopus (Elsevier)
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://api.elsevier.com/` |
-| **Opérateur** | Elsevier |
-| **Couverture** | 90M+ records, citations |
-| **OpenAPI** | ✅ [Oui](https://dev.elsevier.com/) |
-| **Auth** | API key (abonnement) |
-| **Rate limit** | Variable selon tier |
+| **Operator** | Elsevier |
+| **Coverage** | 90M+ records, citations |
+| **OpenAPI** | ✅ [Yes](https://dev.elsevier.com/) |
+| **Auth** | API key (subscription) |
+| **Rate limit** | Variable by tier |
 | **Format** | JSON, XML |
-| **Priorité** | 💰 Payante |
+| **Priority** | 💰 Paid |
 
-**Points forts :**
-- Citations très complètes
-- h-index, métriques
-- Couverture exhaustive
-- Affiliations vérifiées
+**Strengths:**
+- Very complete citations
+- h-index, metrics
+- Exhaustive coverage
+- Verified affiliations
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# Nécessite abonnement institutionnel
-# Spec disponible via dev portal
+# Requires institutional subscription
+# Spec available via dev portal
 
 atlas-openapi-validator fetch \
   https://dev.elsevier.com/api-docs \
@@ -819,35 +819,35 @@ atlas-openapi-validator fetch \
   --set-stage alpha \
   --requires-auth
 
-# Tests uniquement avec credentials valides
+# Tests only with valid credentials
 ```
 
-**Documentation :** https://dev.elsevier.com/documentation/
+**Documentation:** https://dev.elsevier.com/documentation/
 
 ---
 
 ### Web of Science (Clarivate)
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://api.clarivate.com/apis/wos-starter/` |
-| **Opérateur** | Clarivate |
-| **Couverture** | 90M+ records, Impact Factor |
-| **OpenAPI** | ✅ [Oui](https://developer.clarivate.com/) |
-| **Auth** | API key (abonnement) |
-| **Rate limit** | Variable selon tier |
+| **Operator** | Clarivate |
+| **Coverage** | 90M+ records, Impact Factor |
+| **OpenAPI** | ✅ [Yes](https://developer.clarivate.com/) |
+| **Auth** | API key (subscription) |
+| **Rate limit** | Variable by tier |
 | **Format** | JSON |
-| **Priorité** | 💰 Payante |
+| **Priority** | 💰 Paid |
 
-**Points forts :**
-- Impact Factor officiel
-- Citations très fiables
-- Couverture historique
+**Strengths:**
+- Official Impact Factor
+- Very reliable citations
+- Historical coverage
 - Journal rankings
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# Nécessite abonnement
+# Requires subscription
 atlas-openapi-validator fetch \
   https://developer.clarivate.com/apis/wos/swagger \
   --output specs/alpha/wos-2025-01.yaml \
@@ -855,64 +855,64 @@ atlas-openapi-validator fetch \
   --requires-auth
 ```
 
-**Documentation :** https://developer.clarivate.com/apis/wos
+**Documentation:** https://developer.clarivate.com/apis/wos
 
 ---
 
 ### IEEE Xplore
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://ieeexploreapi.ieee.org/` |
-| **Opérateur** | IEEE |
-| **Couverture** | 6M+ articles ingénierie |
-| **OpenAPI** | ✅ [Oui](https://developer.ieee.org/) |
-| **Auth** | API key (abonnement) |
-| **Rate limit** | 200 req/jour (gratuit), plus avec abonnement |
+| **Operator** | IEEE |
+| **Coverage** | 6M+ engineering articles |
+| **OpenAPI** | ✅ [Yes](https://developer.ieee.org/) |
+| **Auth** | API key (subscription) |
+| **Rate limit** | 200 req/day (free), more with subscription |
 | **Format** | JSON, XML |
-| **Priorité** | 💰 Payante (tier gratuit limité) |
+| **Priority** | 💰 Paid (limited free tier) |
 
-**Points forts :**
-- Référence ingénierie/électronique
-- Standards IEEE
-- Conférences majeures (CVPR, etc.)
+**Strengths:**
+- Reference in engineering/electronics
+- IEEE standards
+- Major conferences (CVPR, etc.)
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# Tier gratuit disponible (limité)
+# Free tier available (limited)
 atlas-openapi-validator fetch \
   https://developer.ieee.org/docs/api \
   --output specs/alpha/ieee-2025-01.yaml \
   --set-stage alpha
 ```
 
-**Documentation :** https://developer.ieee.org/
+**Documentation:** https://developer.ieee.org/
 
 ---
 
 ### Dimensions (Digital Science)
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | **URL** | `https://app.dimensions.ai/api/` |
-| **Opérateur** | Digital Science |
-| **Couverture** | 130M+ publications, grants, patents |
+| **Operator** | Digital Science |
+| **Coverage** | 130M+ publications, grants, patents |
 | **OpenAPI** | ⚠️ [DSL API](https://docs.dimensions.ai/dsl/) |
-| **Auth** | API key (abonnement) |
+| **Auth** | API key (subscription) |
 | **Rate limit** | Variable |
 | **Format** | JSON |
-| **Priorité** | 💰 Payante |
+| **Priority** | 💰 Paid |
 
-**Points forts :**
-- Liens publications-grants-patents
-- Altmetrics intégrés
-- Données de financement
+**Strengths:**
+- Publications-grants-patents links
+- Integrated Altmetrics
+- Funding data
 - Clinical trials
 
-**Construction alpha :**
+**Alpha construction:**
 ```bash
-# API DSL (Domain Specific Language), pas REST standard
-# Nécessite adaptation spécifique
+# DSL (Domain Specific Language) API, not standard REST
+# Requires specific adaptation
 
 atlas-openapi-validator scaffold \
   --name dimensions \
@@ -921,58 +921,58 @@ atlas-openapi-validator scaffold \
   --notes "DSL-based API, requires special handling"
 ```
 
-**Documentation :** https://docs.dimensions.ai/dsl/
+**Documentation:** https://docs.dimensions.ai/dsl/
 
 ---
 
-## Tableau récapitulatif
+## Summary Table
 
-| Source | OpenAPI | Gratuite | Priorité | Méthode construction |
+| Source | OpenAPI | Free | Priority | Build Method |
 |--------|---------|----------|----------|---------------------|
-| **Semantic Scholar** | ✅ | ✅ | ⭐⭐⭐ | Fetch officiel |
-| **PubMed** | ⚠️ | ✅ | ⭐⭐⭐ | Doc + inférence |
+| **Semantic Scholar** | ✅ | ✅ | ⭐⭐⭐ | Fetch official |
+| **PubMed** | ⚠️ | ✅ | ⭐⭐⭐ | Doc + inference |
 | **Europe PMC** | ✅ | ✅ | ⭐⭐ | Fetch + adaptation |
-| **Unpaywall** | ❌ | ✅ | ⭐⭐⭐ | Doc + inférence |
-| **OpenCitations** | ✅ | ✅ | ⭐⭐⭐ | Fetch officiel |
+| **Unpaywall** | ❌ | ✅ | ⭐⭐⭐ | Doc + inference |
+| **OpenCitations** | ✅ | ✅ | ⭐⭐⭐ | Fetch official |
 | **DataCite** | ✅ | ✅ | ⭐⭐ | Fetch (JSON:API) |
-| **DOAJ** | ✅ | ✅ | ⭐⭐ | Fetch officiel |
-| **Zenodo** | ✅ | ✅ | ⭐⭐ | Fetch officiel |
-| **DBLP** | ❌ | ✅ | ⭐⭐ | Doc + inférence |
-| **RePEc** | ❌ | ✅ | ⭐ | Manuelle |
-| **bioRxiv** | ❌ | ✅ | ⭐⭐ | Doc + inférence |
-| **CORE** | ✅ | ✅ | ⭐⭐ | Fetch officiel |
-| **CiNii** | ⚠️ | ✅ | ⭐ | Doc + inférence |
-| **SciELO** | ❌ | ✅ | ⭐ | Inférence Solr |
+| **DOAJ** | ✅ | ✅ | ⭐⭐ | Fetch official |
+| **Zenodo** | ✅ | ✅ | ⭐⭐ | Fetch official |
+| **DBLP** | ❌ | ✅ | ⭐⭐ | Doc + inference |
+| **RePEc** | ❌ | ✅ | ⭐ | Manual |
+| **bioRxiv** | ❌ | ✅ | ⭐⭐ | Doc + inference |
+| **CORE** | ✅ | ✅ | ⭐⭐ | Fetch official |
+| **CiNii** | ⚠️ | ✅ | ⭐ | Doc + inference |
+| **SciELO** | ❌ | ✅ | ⭐ | Solr inference |
 | **Scopus** | ✅ | 💰 | 💰 | Fetch (auth) |
 | **Web of Science** | ✅ | 💰 | 💰 | Fetch (auth) |
 | **IEEE Xplore** | ✅ | 💰 | 💰 | Fetch (auth) |
-| **Dimensions** | ⚠️ | 💰 | 💰 | DSL spécifique |
-| **SSRN** | ❌ | 💰 | ❌ | Non recommandé |
-| **CNKI** | ❌ | 💰 | ❌ | Non recommandé |
+| **Dimensions** | ⚠️ | 💰 | 💰 | DSL specific |
+| **SSRN** | ❌ | 💰 | ❌ | Not recommended |
+| **CNKI** | ❌ | 💰 | ❌ | Not recommended |
 
-## Recommandation d'implémentation
+## Implementation Recommendation
 
-### Phase 1 (Core - déjà planifié)
+### Phase 1 (Core - already planned)
 1. OpenAlex
 2. Crossref
 3. HAL
 4. ArXiv
 5. ORCID
 
-### Phase 2 (Extensions prioritaires)
-6. **Semantic Scholar** - Spec disponible, riche en données
-7. **Unpaywall** - Simple, enrichit OA
-8. **OpenCitations** - Graphe citations ouvert
+### Phase 2 (Priority extensions)
+6. **Semantic Scholar** - Spec available, data-rich
+7. **Unpaywall** - Simple, enriches OA
+8. **OpenCitations** - Open citation graph
 
-### Phase 3 (Domaines spécifiques)
-9. **PubMed** - Incontournable biomédecine
-10. **bioRxiv/medRxiv** - Preprints bio
-11. **DBLP** - Référence CS
+### Phase 3 (Specific domains)
+9. **PubMed** - Essential for biomedicine
+10. **bioRxiv/medRxiv** - Bio preprints
+11. **DBLP** - CS reference
 
-### Phase 4 (Agrégateurs)
-12. **Europe PMC** - Complément PubMed EU
-13. **CORE** - Texte intégral OA
-14. **DataCite** - Données de recherche
+### Phase 4 (Aggregators)
+12. **Europe PMC** - PubMed EU complement
+13. **CORE** - OA full text
+14. **DataCite** - Research data
 
-### Sources payantes (optionnelles)
-- Scopus, WoS, IEEE : selon besoins institutionnels
+### Paid sources (optional)
+- Scopus, WoS, IEEE: according to institutional needs
