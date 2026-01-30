@@ -32,10 +32,9 @@ features:
   - title: SARtraces
     details: Spatio-temporal analysis of maritime rescue operations - AIS traces, PREMAR data and weather conditions
   - title: RENOMMÉE
-    details: Institutional reputation analysis via bibliographic data - publications, citations, weighted impact and benchmarking with comparable universities
+    details: Analysis of institutional RENOMMÉE using bibliographic data — publications, citations, weighted impact, and comparison with similar universities
   - title: ICO
     details: Measuring the impact of international cooperation on scientific output - bibliometric analysis of publications within the EUNICoast alliance
-
 ---
 
 ## About Atlas
@@ -71,11 +70,13 @@ The [Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.c
 The Campus is a laureate of the "ExcellencES" call for projects of **France 2030**, with funding of **€7.3M** over 7 years (2023-2030).
 
 **Strategic axes:**
+
 - Cities of tomorrow
 - Maritime and port issues
 - Transitions, risks and uncertainties
 
 **Five operational hubs:**
+
 - Expertise and Qualifications Hub
 - Creations and Innovations Hub
 - International Hub
@@ -89,6 +90,7 @@ The Campus is a laureate of the "ExcellencES" call for projects of **France 2030
 **Partner universities:** Åland (Finland), Bourgas (Bulgaria), Stralsund (Germany), EMUNI (Slovenia), Azores (Portugal), Balearic Islands (Spain), Patras (Greece), Sassari (Italy), Faroe Islands, Antilles (France), Le Havre (France), Dubrovnik (Croatia), Szczecin (Poland).
 
 **Research hubs:**
+
 - Identities and heritage of coastal and island communities
 - Circular blue economy, port logistics and sustainable tourism
 - Governance and planning of coastal territories
@@ -99,14 +101,14 @@ The Campus is a laureate of the "ExcellencES" call for projects of **France 2030
 
 <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2rem; margin: 2rem 0;">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="./public/logos/ulhn.svg" alt="Université Le Havre Normandie" style="height: 80px;">
+    <img src="/logos/ulhn.svg" alt="Université Le Havre Normandie" style="height: 80px;">
   </a>
   <a href="https://www.cptmp.fr/">
-    <img src="./public/logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" style="height: 80px;">
+    <img src="/logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" style="height: 80px;">
   </a>
   <a href="https://eunicoast.eu/">
-    <img src="./public/logos/eunicoast.png" alt="EUNICoast" style="height: 80px;">
+    <img src="/logos/eunicoast.png" alt="EUNICoast" style="height: 80px;">
   </a>
-  <img src="./public/logos/france-2030.png" alt="France 2030" style="height: 80px;">
-  <img src="./public/logos/region-normandie.jpg" alt="Région Normandie" style="height: 80px;">
+  <img src="/logos/france-2030.png" alt="France 2030" style="height: 80px;">
+  <img src="/logos/region-normandie.jpg" alt="Région Normandie" style="height: 80px;">
 </div>

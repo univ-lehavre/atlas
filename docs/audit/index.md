@@ -1,32 +1,32 @@
 # Audits
 
-Cette section contient les audits techniques du monorepo Atlas.
+This section contains the technical audits for the Atlas monorepo.
 
-## Audits communs
+## Common audits
 
-Audits transversaux à l'ensemble du projet :
+Cross-cutting audits across the project:
 
-| Document | Description |
-|----------|-------------|
-| [Outils d'audit](./common/audit-tools) | Scripts et outils pour auditer le code |
-| [Audit de la documentation](./common/documentation-audit) | État des lieux de la documentation |
-| [Audit des dépendances](./common/dependencies-audit) | Inventaire des versions et roadmap |
-| [Dette technique](./common/technical-debt) | Identification de la dette technique |
-| [Audit qualité du code](./common/code-audit) | Métriques de qualité |
+| Document                                            | Description                             |
+| --------------------------------------------------- | --------------------------------------- |
+| [Audit tools](./common/audit-tools)                 | Scripts and tools for auditing the code |
+| [Documentation audit](./common/documentation-audit) | Inventory of the documentation          |
+| [Dependencies audit](./common/dependencies-audit)   | Version inventory and roadmap           |
+| [Technical debt](./common/technical-debt)           | Identification of technical debt        |
+| [Code quality audit](./common/code-audit)           | Quality metrics                         |
 
-## Audits par projet
+## Audits by project
 
-| Projet | Audit | Description |
-|--------|-------|-------------|
-| ECRIN | [Audit ECRIN](/projects/ecrin/audit/) | Cartes fonctionnelles et architecture |
-| Citations | [Audit Citations](/projects/citations/audit/) | Sources bibliographiques |
-| CRF | [Audit CRF](/projects/crf/audit/) | Client REDCap |
+| Project   | Audit                                         | Description                      |
+| --------- | --------------------------------------------- | -------------------------------- |
+| ECRIN     | [ECRIN Audit](/projects/ecrin/audit/)         | Functional maps and architecture |
+| Citations | [Citations Audit](/projects/citations/audit/) | Bibliographic sources            |
+| CRF       | [CRF Audit](/projects/crf/audit/)             | REDCap client                    |
 
-## Objectif
+## Purpose
 
-Les audits permettent de :
+Audits help to:
 
-- Maintenir une vue d'ensemble de l'état technique du projet
-- Identifier les incohérences et les dettes techniques
-- Planifier les mises à jour et améliorations
-- Documenter les décisions d'architecture
+- Maintain an overview of the project's technical state
+- Identify inconsistencies and technical debt
+- Plan updates and improvements
+- Document architectural decisions

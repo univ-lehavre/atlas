@@ -28,7 +28,6 @@ ECRIN is organized into **6 sections** representing the stages of scientific col
 | **Explore** | My graph, Community graph | Visualize your network and explore community connections |
 | **Ask** | Data, An expert | Search for data or discuss with an expert |
 | **Publish** | My data, My news | Share your research data and news |
-| **Administrate** | My account, My survey | Manage your account and survey responses |
 
 👉 [Access the ECRIN guide](/projects/ecrin/user/)
 
@@ -39,8 +38,6 @@ ECRIN is organized into **6 sections** representing the stages of scientific col
 | Feature | Description |
 |---------|-------------|
 | Manage your mobility | Declare your incoming or outgoing mobility periods |
-| Track procedures | Administrative support (visa, accommodation, insurance) |
-| Affiliation history | Maintain a reliable history of your institutions |
 
 👉 [Access the AMARRE guide](/projects/amarre/)
 

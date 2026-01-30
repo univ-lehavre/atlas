@@ -1,4 +1,4 @@
-# Procédure d'installation du cluster ATLAS sur un Kubernetes sur une seule machine
+# ATLAS Cluster Installation Procedure on Single-Server Kubernetes
 
 ## Architecture cible
 
@@ -23,10 +23,13 @@
                     │  │       :80 / :443          │  │
                     │  └─────────────┬─────────────┘  │
                     │               │                 │
-                    │  ┌────┬────┬──┴──┬────┬────┬────┐│
-                    │  ▼    ▼    ▼     ▼    ▼    ▼    ▼│
-                    │ auth chat office ecrin redcap git│
+                    │  ┌───┬───┬───┬┴──┬───┬───┬───┐  │
+                    │  ▼   ▼   ▼   ▼   ▼   ▼   ▼   ▼  │
+                    │ auth chat office ecrin redcap   │
+                    │              git  argo          │
                     └─────────────────────────────────┘
+
+    Services internes (non exposés) : SeaweedFS
 ```
 
 ### 2. Composants K3s et Cilium
@@ -75,7 +78,7 @@
 │  │ authelia  │ │ mattermost│ │ onlyoffice│ │  redcap   │ │   ecrin   ││
 │  │           │ │           │ │           │ │           │ │           ││
 │  │ Authelia  │ │Mattermost │ │ OnlyOffice│ │ REDCap 16 │ │  SvelteKit││
-│  │ Redis     │ │PostgreSQL │ │           │ │ MySQL     │ │           ││
+│  │ Redis     │ │PostgreSQL │ │           │ │ MariaDB     │ │           ││
 │  └───────────┘ └───────────┘ └───────────┘ └───────────┘ └───────────┘│
 │                                                                       │
 │  ┌───────────┐                                                        │
@@ -145,15 +148,15 @@
 │   (demande)        (allocation)            (répliqué + snapshots)  │
 │                                                                    │
 │  ┌──────────┐     ┌──────────┐     ┌────────────────────────┐     │
-│  │ MongoDB  │ ──▶ │  20 Gi   │ ──▶ │  /var/lib/longhorn/    │     │
+│  │PostgreSQL│ ──▶ │  20 Gi   │ ──▶ │  /var/lib/longhorn/    │     │
 │  └──────────┘     └──────────┘     │  replicas/             │     │
-│                                    │  pvc-xxx-mongodb/      │     │
+│                                    │  pvc-xxx-postgres/     │     │
 │  ┌──────────┐     ┌──────────┐     ├────────────────────────┤     │
-│  │ Redis    │ ──▶ │   1 Gi   │ ──▶ │  pvc-xxx-redis/        │     │
+│  │ MariaDB    │ ──▶ │  10 Gi   │ ──▶ │  pvc-xxx-mariadb/        │     │
 │  └──────────┘     └──────────┘     ├────────────────────────┤     │
-│                                    │  pvc-xxx-seaweed/      │     │
-│  ┌──────────┐     ┌──────────┐     │        ...             │     │
-│  │SeaweedFS │ ──▶ │  65 Gi   │ ──▶ │                        │     │
+│                                    │  pvc-xxx-redis/        │     │
+│  ┌──────────┐     ┌──────────┐     ├────────────────────────┤     │
+│  │SeaweedFS │ ──▶ │  65 Gi   │ ──▶ │  pvc-xxx-seaweed/      │     │
 │  └──────────┘     └──────────┘     └────────────────────────┘     │
 │                                                                    │
 │   StorageClass: longhorn (CNCF incubating)                        │
@@ -167,7 +170,7 @@
 | ----------------- | ---------------------- | ---------------------------- |
 | **Namespace**     | Isolation logique      | `mattermost`, `authelia`     |
 | **Deployment**    | Gestion pods sans état | Authelia, OnlyOffice, ECRIN  |
-| **StatefulSet**   | Pods avec état         | PostgreSQL, MySQL, Redis     |
+| **StatefulSet**   | Pods avec état         | PostgreSQL, MariaDB, Redis     |
 | **Service**       | Réseau interne         | `mattermost:8065`            |
 | **Ingress**       | Routing HTTP externe   | `chat.example.com → :8065`   |
 | **PVC**           | Demande stockage       | `20Gi` pour PostgreSQL       |
@@ -187,7 +190,7 @@
 | Longhorn               | Stockage distribué + Backups S3     | ~300-500MB RAM      |
 | cert-manager           | Certificats TLS Let's Encrypt       | ~100MB RAM          |
 | PostgreSQL             | Base de données Mattermost + REDCap | ~300-500MB RAM      |
-| MySQL                  | Base de données REDCap              | ~200-300MB RAM      |
+| MariaDB                  | Base de données REDCap              | ~200-300MB RAM      |
 | Redis                  | Sessions Authelia                   | ~20-50MB RAM        |
 | SeaweedFS              | Stockage S3-compatible              | ~200MB RAM          |
 | OnlyOffice             | Édition collaborative               | ~1.5-2GB RAM        |
@@ -199,6 +202,26 @@
 | ArgoCD                 | GitOps CD (déploiement continu)     | ~300-500MB RAM      |
 
 **Total estimé** : 12-14GB RAM, 4 CPU cores
+
+### Résumé des accès
+
+| Service | URL | Authentification | Qui a accès | Notes |
+|---------|-----|------------------|-------------|-------|
+| **Authelia** | `auth.example.com` | - | Tous | Portail SSO |
+| **Mattermost** | `chat.example.com` | Authelia (1FA) | Chercheurs, Techniciens | Messagerie d'équipe |
+| **OnlyOffice** | `office.example.com` | Authelia (1FA) | Chercheurs, Techniciens | Édition collaborative |
+| **ECRIN** | `ecrin.example.com` | Authelia (1FA) | Chercheurs | Plateforme collaboration |
+| **REDCap Surveys** | `redcap.example.com/surveys/*` | **Aucune** | Public | Formulaires enquêtés |
+| **REDCap Projets** | `redcap.example.com` | Authelia (1FA) | Chercheurs, Admins REDCap | Saisie de données |
+| **REDCap Admin** | `redcap.example.com/ControlCenter/*` | Authelia (2FA) | Admins REDCap | Administration |
+| **REDCap API** | Interne uniquement | - | ECRIN | Non exposé sur internet |
+| **Gitea** | `git.example.com` | Authelia (1FA) | Admins, Chercheurs, Développeurs | Forge Git |
+| **ArgoCD** | `argocd.example.com` | Authelia (2FA) | Admins | GitOps CD |
+| **Hubble UI** | `hubble.example.com` | Authelia (2FA) | Admins | Observabilité réseau |
+| **Longhorn UI** | `longhorn.example.com` | Authelia (2FA) | Admins | Gestion stockage |
+| **SeaweedFS** | Interne uniquement | - | Longhorn, REDCap | Stockage S3 |
+
+**Légende** : 1FA = mot de passe, 2FA = mot de passe + TOTP
 
 ### Composants K3s et réseau
 
@@ -235,10 +258,15 @@ K3s inclut par défaut plusieurs composants essentiels. Flannel (CNI par défaut
   - `redcap.votre-domaine.com` → IP serveur
   - `ecrin.votre-domaine.com` → IP serveur
   - `git.votre-domaine.com` → IP serveur
-- Ressources minimales :
-  - RAM libre : >12GB
-  - Disque libre : >100GB (pour `/var/lib/longhorn`)
-  - CPU : 4+ cores
+  - `argocd.votre-domaine.com` → IP serveur
+  - `registry.votre-domaine.com` → IP serveur (Harbor)
+  - `ldap.votre-domaine.com` → IP serveur (LLDAP)
+  - `grafana.votre-domaine.com` → IP serveur (Monitoring)
+- Ressources minimales (haute disponibilité avec 3 replicas) :
+  - RAM libre : >32GB
+  - Disque libre : >200GB (pour `/var/lib/longhorn`)
+  - CPU : 8+ cores
+- IP d'administration autorisée (pour kubectl) : `ADMIN_IP` (ex: `203.0.113.50/32`)
 
 ---
 
@@ -260,13 +288,22 @@ apt install -y curl wget git vim ufw open-iscsi
 systemctl enable iscsid
 systemctl start iscsid
 
-# Configuration firewall
-ufw allow 22/tcp    # SSH
-ufw allow 80/tcp    # HTTP (Let's Encrypt)
-ufw allow 443/tcp   # HTTPS
-ufw allow 6443/tcp  # K8s API
+# Configuration firewall SÉCURISÉE
+# IMPORTANT: Ne PAS exposer le port 6443 publiquement
+export ADMIN_IP="203.0.113.50"  # Remplacer par votre IP d'administration
+
+ufw default deny incoming
+ufw default allow outgoing
+ufw allow 22/tcp                           # SSH
+ufw allow 80/tcp                           # HTTP (Let's Encrypt ACME)
+ufw allow 443/tcp                          # HTTPS
+ufw allow from ${ADMIN_IP} to any port 6443 proto tcp  # K8s API - ADMIN UNIQUEMENT
 ufw enable
 ```
+
+> **⚠️ SÉCURITÉ** : Le port 6443 (API Kubernetes) ne doit JAMAIS être exposé publiquement.
+> L'accès est restreint à l'IP d'administration uniquement.
+> Pour administrer le cluster à distance, utilisez un VPN ou un bastion SSH.
 
 ### Tests de validation
 
@@ -293,22 +330,61 @@ systemctl status iscsid
 
 ## PHASE 2 : Installation K3s et Helm
 
+### Configuration du chiffrement des secrets etcd
+
+> **⚠️ SÉCURITÉ** : Les secrets Kubernetes sont stockés en clair dans etcd par défaut.
+> Cette configuration active le chiffrement at-rest avec AES-CBC.
+
+```bash
+# Générer une clé de chiffrement pour etcd
+ENCRYPTION_KEY=$(head -c 32 /dev/urandom | base64)
+
+# Créer le fichier de configuration du chiffrement
+mkdir -p /etc/rancher/k3s
+cat > /etc/rancher/k3s/encryption-config.yaml <<EOF
+apiVersion: apiserver.config.k8s.io/v1
+kind: EncryptionConfiguration
+resources:
+  - resources:
+      - secrets
+    providers:
+      - aescbc:
+          keys:
+            - name: key1
+              secret: ${ENCRYPTION_KEY}
+      - identity: {}
+EOF
+
+chmod 600 /etc/rancher/k3s/encryption-config.yaml
+
+# Sauvegarder la clé de chiffrement (CRITIQUE - à stocker hors du serveur)
+echo "ETCD_ENCRYPTION_KEY=${ENCRYPTION_KEY}" >> ~/k3s-secrets.env
+```
+
 ### Actions
 
 ```bash
-# Installation K3s SANS Flannel, Traefik ni local-storage
+# Installation K3s avec chiffrement des secrets
 # Cilium = CNI + Ingress, Longhorn = stockage
 curl -sfL https://get.k3s.io | sh -s - \
-  --write-kubeconfig-mode 644 \
+  --write-kubeconfig-mode 600 \
   --flannel-backend=none \
   --disable-network-policy \
   --disable=traefik \
-  --disable=local-storage
+  --disable=local-storage \
+  --kube-apiserver-arg="encryption-provider-config=/etc/rancher/k3s/encryption-config.yaml" \
+  --kube-apiserver-arg="audit-log-path=/var/log/kubernetes/audit.log" \
+  --kube-apiserver-arg="audit-log-maxage=30" \
+  --kube-apiserver-arg="audit-log-maxbackup=10" \
+  --kube-apiserver-arg="audit-log-maxsize=100"
+
+# Créer le répertoire pour les logs d'audit
+mkdir -p /var/log/kubernetes
 
 # Attendre démarrage (30-60s)
 sleep 60
 
-# Configuration kubectl
+# Configuration kubectl (permissions restreintes)
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 echo 'export KUBECONFIG=/etc/rancher/k3s/k3s.yaml' >> ~/.bashrc
 
@@ -324,12 +400,15 @@ helm repo add cilium https://helm.cilium.io/
 helm repo add longhorn https://charts.longhorn.io
 helm repo add gitea https://dl.gitea.io/charts/
 helm repo add argo https://argoproj.github.io/argo-helm
+helm repo add harbor https://helm.goharbor.io
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo add grafana https://grafana.github.io/helm-charts
 helm repo update
 ```
 
 > **Note** : À ce stade, le node est NotReady car aucun CNI n'est installé. C'est normal.
 
-### Installation Cilium (CNI + Ingress Controller)
+### Installation Cilium (CNI + Ingress Controller + mTLS)
 
 ```bash
 # Installer Cilium CLI (optionnel mais recommandé)
@@ -339,8 +418,9 @@ curl -L --fail --remote-name-all \
 tar xzvfC cilium-linux-amd64.tar.gz /usr/local/bin
 rm cilium-linux-amd64.tar.gz
 
-# Installer Cilium via Helm avec Ingress Controller activé
+# Installer Cilium via Helm avec Ingress Controller + mTLS WireGuard activé
 helm install cilium cilium/cilium \
+  --version 1.16.5 \
   --namespace kube-system \
   --set operator.replicas=1 \
   --set hubble.relay.enabled=true \
@@ -348,15 +428,22 @@ helm install cilium cilium/cilium \
   --set ingressController.enabled=true \
   --set ingressController.default=true \
   --set ingressController.loadbalancerMode=shared \
-  --set kubeProxyReplacement=true
+  --set kubeProxyReplacement=true \
+  --set encryption.enabled=true \
+  --set encryption.type=wireguard \
+  --set encryption.wireguard.userspaceFallback=true
 
 # Attendre que Cilium soit prêt (2-3 minutes)
 kubectl wait --for=condition=ready pod \
   -l k8s-app=cilium -n kube-system --timeout=300s
+
+# Vérifier que WireGuard est actif
+cilium status | grep Encryption
+# Attendu: Encryption: Wireguard [NodeEncryption: Disabled, cilium_wg0 (Pubkey: xxx, Port: 51871, Peers: 0)]
 ```
 
-> **Note** : `ingressController.default=true` fait de Cilium l'Ingress Controller par défaut.
-> `kubeProxyReplacement=true` permet à Cilium de remplacer kube-proxy pour de meilleures performances.
+> **Note** : `encryption.type=wireguard` active le chiffrement mTLS entre tous les pods.
+> Tout le trafic intra-cluster est maintenant chiffré automatiquement.
 
 ### Installation Longhorn (stockage distribué)
 
@@ -450,12 +537,16 @@ kubectl wait --for=condition=ready pod \
 
 ### Configuration DNS
 
-Créer 3 enregistrements A dans votre DNS :
+Créer les enregistrements A dans votre DNS :
 
 ```
 auth.votre-domaine.com    → IP-du-serveur
-office.votre-domaine.com  → IP-du-serveur
 chat.votre-domaine.com    → IP-du-serveur
+office.votre-domaine.com  → IP-du-serveur
+redcap.votre-domaine.com  → IP-du-serveur
+ecrin.votre-domaine.com   → IP-du-serveur
+git.votre-domaine.com     → IP-du-serveur
+argocd.votre-domaine.com  → IP-du-serveur
 ```
 
 ### ClusterIssuers Let's Encrypt
@@ -504,9 +595,13 @@ kubectl get pods -n cert-manager
 
 # Test DNS
 dig auth.votre-domaine.com +short
-dig office.votre-domaine.com +short
 dig chat.votre-domaine.com +short
-# Attendu : votre IP serveur pour les 3
+dig office.votre-domaine.com +short
+dig redcap.votre-domaine.com +short
+dig ecrin.votre-domaine.com +short
+dig git.votre-domaine.com +short
+dig argocd.votre-domaine.com +short
+# Attendu : votre IP serveur pour tous les domaines
 
 # Vérifier ClusterIssuers
 kubectl get clusterissuer
@@ -526,33 +621,48 @@ kubectl get clusterissuer
 ### Actions
 
 ```bash
-# Créer namespace
+# Créer namespace avec Pod Security Standards
 kubectl create namespace mattermost
+kubectl label namespace mattermost pod-security.kubernetes.io/enforce=baseline
+kubectl label namespace mattermost pod-security.kubernetes.io/warn=restricted
 
-# Générer les mots de passe
+# Générer les mots de passe et les stocker dans des Secrets Kubernetes
 export POSTGRES_PASSWORD=$(openssl rand -base64 24)
 export MATTERMOST_DB_PASSWORD=$(openssl rand -base64 24)
 
-# Créer fichier secrets (à sauvegarder en lieu sûr)
-cat > ~/k3s-secrets.env <<EOF
-POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-MATTERMOST_DB_PASSWORD=${MATTERMOST_DB_PASSWORD}
-EOF
-chmod 600 ~/k3s-secrets.env
-
-# Installer PostgreSQL
-helm install postgresql bitnami/postgresql \
+# Créer les Secrets Kubernetes (pas de fichier texte en clair)
+kubectl create secret generic postgresql-credentials \
   --namespace mattermost \
-  --set auth.postgresPassword="${POSTGRES_PASSWORD}" \
+  --from-literal=postgres-password="${POSTGRES_PASSWORD}" \
+  --from-literal=password="${MATTERMOST_DB_PASSWORD}"
+
+# Sauvegarder une copie chiffrée hors du serveur (optionnel)
+# echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" | gpg -c > ~/k3s-secrets.gpg
+
+# Installer PostgreSQL avec TLS activé et 3 replicas
+helm install postgresql bitnami/postgresql \
+  --version 16.4.1 \
+  --namespace mattermost \
+  --set auth.existingSecret=postgresql-credentials \
   --set auth.username=mattermost \
-  --set auth.password="${MATTERMOST_DB_PASSWORD}" \
   --set auth.database=mattermost \
-  --set primary.persistence.size=20Gi
+  --set primary.persistence.size=20Gi \
+  --set primary.resources.requests.memory=256Mi \
+  --set primary.resources.requests.cpu=250m \
+  --set primary.resources.limits.memory=512Mi \
+  --set primary.resources.limits.cpu=500m \
+  --set tls.enabled=true \
+  --set tls.autoGenerated=true \
+  --set architecture=replication \
+  --set readReplicas.replicaCount=2
 
 # Attendre déploiement
 kubectl wait --for=condition=ready pod postgresql-0 \
   -n mattermost --timeout=300s
 ```
+
+> **⚠️ SÉCURITÉ** : Les secrets sont stockés dans Kubernetes Secrets (chiffrés via etcd encryption).
+> Ne JAMAIS stocker de mots de passe dans des fichiers texte ou des ConfigMaps.
 
 ### Tests de validation
 
@@ -590,23 +700,37 @@ kubectl exec -it postgresql-0 -n mattermost -- \
 ### Actions
 
 ```bash
-# Créer namespace
+# Créer namespace avec Pod Security Standards
 kubectl create namespace authelia
+kubectl label namespace authelia pod-security.kubernetes.io/enforce=baseline
+kubectl label namespace authelia pod-security.kubernetes.io/warn=restricted
 
-# Générer le mot de passe
+# Générer le mot de passe et le stocker dans un Secret Kubernetes
 export REDIS_PASSWORD=$(openssl rand -base64 24)
-echo "REDIS_PASSWORD=${REDIS_PASSWORD}" >> ~/k3s-secrets.env
 
-# Installer Redis (standalone suffit)
-helm install redis bitnami/redis \
+kubectl create secret generic redis-credentials \
   --namespace authelia \
-  --set architecture=standalone \
-  --set auth.password="${REDIS_PASSWORD}" \
+  --from-literal=redis-password="${REDIS_PASSWORD}"
+
+# Installer Redis avec TLS et 3 replicas (Sentinel pour HA)
+helm install redis bitnami/redis \
+  --version 20.6.0 \
+  --namespace authelia \
+  --set auth.existingSecret=redis-credentials \
+  --set auth.existingSecretPasswordKey=redis-password \
+  --set architecture=replication \
+  --set sentinel.enabled=true \
+  --set sentinel.quorum=2 \
+  --set replica.replicaCount=3 \
   --set master.persistence.size=1Gi \
-  --set replica.replicaCount=0
+  --set replica.persistence.size=1Gi \
+  --set tls.enabled=true \
+  --set tls.autoGenerated=true \
+  --set master.resources.requests.memory=64Mi \
+  --set master.resources.limits.memory=128Mi
 
 # Attendre déploiement
-kubectl wait --for=condition=ready pod redis-master-0 \
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=redis \
   -n authelia --timeout=120s
 ```
 
@@ -645,17 +769,37 @@ kubectl exec -it redis-master-0 -n authelia -- \
 ### Actions
 
 ```bash
-# Créer namespace
+# Créer namespace avec Pod Security Standards
 kubectl create namespace seaweedfs
+kubectl label namespace seaweedfs pod-security.kubernetes.io/enforce=baseline
 
-# Installer SeaweedFS (images officielles)
-helm install seaweedfs seaweedfs/seaweedfs \
+# Générer des credentials S3 uniques (pas admin/admin !)
+export SEAWEEDFS_ACCESS_KEY=$(openssl rand -hex 16)
+export SEAWEEDFS_SECRET_KEY=$(openssl rand -base64 32)
+
+# Créer le Secret pour les credentials S3
+kubectl create secret generic seaweedfs-s3-credentials \
   --namespace seaweedfs \
-  --set master.replicas=1 \
-  --set volume.replicas=1 \
-  --set filer.replicas=1 \
+  --from-literal=admin_access_key_id="${SEAWEEDFS_ACCESS_KEY}" \
+  --from-literal=admin_secret_access_key="${SEAWEEDFS_SECRET_KEY}"
+
+# Sauvegarder les credentials pour les autres services
+kubectl create secret generic seaweedfs-client-credentials \
+  --namespace longhorn-system \
+  --from-literal=AWS_ACCESS_KEY_ID="${SEAWEEDFS_ACCESS_KEY}" \
+  --from-literal=AWS_SECRET_ACCESS_KEY="${SEAWEEDFS_SECRET_KEY}" \
+  --from-literal=AWS_ENDPOINTS="http://seaweedfs-s3.seaweedfs.svc.cluster.local:8333"
+
+# Installer SeaweedFS avec 3 replicas et credentials sécurisés
+helm install seaweedfs seaweedfs/seaweedfs \
+  --version 3.72.0 \
+  --namespace seaweedfs \
+  --set master.replicas=3 \
+  --set volume.replicas=3 \
+  --set filer.replicas=3 \
   --set filer.s3.enabled=true \
   --set filer.s3.port=8333 \
+  --set filer.s3.existingConfigSecret=seaweedfs-s3-credentials \
   --set master.persistence.size=5Gi \
   --set filer.persistence.size=10Gi \
   --set volume.persistence.size=50Gi
@@ -664,6 +808,9 @@ helm install seaweedfs seaweedfs/seaweedfs \
 kubectl wait --for=condition=ready pod seaweedfs-master-0 \
   -n seaweedfs --timeout=180s
 ```
+
+> **⚠️ SÉCURITÉ** : Les credentials S3 sont générés aléatoirement et stockés dans des Secrets Kubernetes.
+> Ne JAMAIS utiliser `admin/admin` comme credentials.
 
 ### Tests de validation
 
@@ -676,16 +823,24 @@ kubectl get pods -n seaweedfs
 kubectl get svc -n seaweedfs
 # Attendu : seaweedfs-s3 sur port 8333
 
-# Test S3 API (optionnel, nécessite aws-cli)
+# Test S3 API avec les credentials sécurisés
 apt install -y awscli
 kubectl port-forward -n seaweedfs svc/seaweedfs-s3 8333:8333 &
 sleep 5
-aws configure set aws_access_key_id admin
-aws configure set aws_secret_access_key admin
-aws configure set default.region us-east-1
-aws --endpoint-url http://localhost:8333 s3 mb s3://rocketchat-uploads
+
+# Récupérer les credentials depuis le Secret
+export AWS_ACCESS_KEY_ID=$(kubectl get secret seaweedfs-s3-credentials -n seaweedfs -o jsonpath='{.data.admin_access_key_id}' | base64 -d)
+export AWS_SECRET_ACCESS_KEY=$(kubectl get secret seaweedfs-s3-credentials -n seaweedfs -o jsonpath='{.data.admin_secret_access_key}' | base64 -d)
+export AWS_DEFAULT_REGION=us-east-1
+
+aws --endpoint-url http://localhost:8333 s3 mb s3://mattermost-uploads
+aws --endpoint-url http://localhost:8333 s3 mb s3://longhorn-backups
+aws --endpoint-url http://localhost:8333 s3 mb s3://redcap-files
 aws --endpoint-url http://localhost:8333 s3 ls
 pkill -f "port-forward.*8333"
+
+# Nettoyer les variables d'environnement
+unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
 ```
 
 **Métriques attendues** :
@@ -703,14 +858,18 @@ pkill -f "port-forward.*8333"
 ### Actions
 
 ```bash
-# Créer namespace
+# Créer namespace avec Pod Security Standards
 kubectl create namespace onlyoffice
+kubectl label namespace onlyoffice pod-security.kubernetes.io/enforce=baseline
 
-# Générer le secret JWT
+# Générer le secret JWT et le stocker dans un Secret Kubernetes
 export ONLYOFFICE_JWT_SECRET=$(openssl rand -base64 32)
-echo "ONLYOFFICE_JWT_SECRET=${ONLYOFFICE_JWT_SECRET}" >> ~/k3s-secrets.env
 
-# Déploiement OnlyOffice all-in-one
+kubectl create secret generic onlyoffice-jwt \
+  --namespace onlyoffice \
+  --from-literal=JWT_SECRET="${ONLYOFFICE_JWT_SECRET}"
+
+# Déploiement OnlyOffice all-in-one avec version pinned
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -731,7 +890,7 @@ metadata:
   name: onlyoffice
   namespace: onlyoffice
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: onlyoffice
@@ -742,14 +901,17 @@ spec:
     spec:
       containers:
       - name: onlyoffice
-        image: onlyoffice/documentserver:latest
+        image: onlyoffice/documentserver:8.2.2
         ports:
         - containerPort: 80
         env:
         - name: JWT_ENABLED
           value: "true"
         - name: JWT_SECRET
-          value: "${ONLYOFFICE_JWT_SECRET}"
+          valueFrom:
+            secretKeyRef:
+              name: onlyoffice-jwt
+              key: JWT_SECRET
         volumeMounts:
         - name: data
           mountPath: /var/www/onlyoffice/Data
@@ -1110,7 +1272,7 @@ echo "MATTERMOST_SECRET=${MATTERMOST_SECRET}" >> ~/k3s-secrets.env
 # Installer Mattermost avec authentification OIDC via Authelia
 helm install mattermost mattermost/mattermost-team-edition \
   --namespace mattermost \
-  --set mysql.enabled=false \
+  --set mariadb.enabled=false \
   --set externalDB.enabled=true \
   --set externalDB.externalDriverType=postgres \
   --set externalDB.externalConnectionString="postgres://mattermost:${MATTERMOST_DB_PASSWORD}@postgresql.mattermost.svc.cluster.local:5432/mattermost?sslmode=disable" \
@@ -1221,7 +1383,7 @@ curl -k https://chat.${DOMAIN}/api/v4/system/ping
 - Licence REDCap (gratuite pour institutions académiques) : https://projectredcap.org/
 - Télécharger le package d'installation depuis le consortium REDCap
 
-### Installation MySQL pour REDCap
+### Installation MariaDB pour REDCap
 
 ```bash
 # Créer namespace
@@ -1235,8 +1397,8 @@ MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
 REDCAP_DB_PASSWORD=${REDCAP_DB_PASSWORD}
 EOF
 
-# Installer MySQL
-helm install mysql bitnami/mysql \
+# Installer MariaDB
+helm install mariadb bitnami/mariadb \
   --namespace redcap \
   --set auth.rootPassword="${MYSQL_ROOT_PASSWORD}" \
   --set auth.username=redcap \
@@ -1245,7 +1407,7 @@ helm install mysql bitnami/mysql \
   --set primary.persistence.size=20Gi
 
 # Attendre déploiement
-kubectl wait --for=condition=ready pod mysql-0 \
+kubectl wait --for=condition=ready pod mariadb-0 \
   -n redcap --timeout=300s
 ```
 
@@ -1277,7 +1439,7 @@ metadata:
 data:
   database.php: |
     <?php
-    \$hostname = 'mysql.redcap.svc.cluster.local';
+    \$hostname = 'mariadb.redcap.svc.cluster.local';
     \$db = 'redcap';
     \$username = 'redcap';
     \$password = '${REDCAP_DB_PASSWORD}';
@@ -1436,7 +1598,7 @@ EOF
 ```bash
 # Vérifier pods
 kubectl get pods -n redcap
-# Attendu : redcap et mysql-0 Running
+# Attendu : redcap et mariadb-0 Running
 
 # Test accès public (surveys)
 curl -k https://redcap.${DOMAIN}/surveys/
@@ -1453,14 +1615,92 @@ curl -k -I https://redcap.${DOMAIN}/ControlCenter/
 2. Copier les fichiers dans le PVC : `kubectl cp redcap16.zip redcap/<pod>:/var/www/html/`
 3. Extraire et configurer via l'interface web
 4. Configurer les politiques d'accès Authelia (voir PHASE 16)
+5. Configurer SMTP et stockage S3 (voir ci-dessous)
+
+### Configuration SMTP pour REDCap
+
+REDCap peut envoyer des emails pour les notifications, invitations aux enquêtes, et alertes.
+
+```bash
+# Dans l'interface REDCap : Control Center > General Configuration
+# Ou via le fichier de configuration :
+
+kubectl exec -it deploy/redcap -n redcap -- bash -c 'cat >> /var/www/html/redcap/database.php << "EOF"
+
+// SMTP Configuration
+\$smtp_server = getenv("SMTP_HOST") ?: "smtp.example.com";
+\$smtp_port = getenv("SMTP_PORT") ?: 587;
+\$smtp_protocol = "STARTTLS";
+\$smtp_username = getenv("SMTP_USER");
+\$smtp_password = getenv("SMTP_PASSWORD");
+\$from_email = getenv("SMTP_FROM") ?: "noreply@example.com";
+EOF'
+```
+
+Configuration via **Control Center > General Configuration** :
+
+| Paramètre | Valeur |
+|-----------|--------|
+| **SMTP Server** | `smtp.example.com` |
+| **SMTP Port** | `587` |
+| **SMTP Protocol** | `STARTTLS` |
+| **SMTP Username** | `username` |
+| **SMTP Password** | `(mot de passe)` |
+| **From Email** | `noreply@example.com` |
+
+### Configuration S3 pour le stockage des fichiers REDCap
+
+REDCap v16 supporte le stockage S3 pour les fichiers uploadés (pièces jointes, signatures, etc.).
+
+```bash
+# Configuration S3 via SeaweedFS interne
+source ~/k3s-secrets.env
+
+# Créer un bucket dédié pour REDCap dans SeaweedFS
+kubectl exec -it deploy/seaweedfs-filer -n seaweedfs -- \
+  /usr/bin/weed shell -master=seaweedfs-master:9333 \
+  -filer=seaweedfs-filer:8888 << EOF
+s3.bucket.create -name redcap-files
+EOF
+```
+
+Configuration via **Control Center > File Repository Settings** :
+
+| Paramètre | Valeur |
+|-----------|--------|
+| **Storage Type** | `Amazon S3` |
+| **S3 Endpoint** | `http://seaweedfs-s3.seaweedfs.svc.cluster.local:8333` |
+| **S3 Bucket** | `redcap-files` |
+| **S3 Access Key** | `${SEAWEEDFS_ACCESS_KEY}` |
+| **S3 Secret Key** | `${SEAWEEDFS_SECRET_KEY}` |
+| **S3 Region** | `us-east-1` (ou laisser vide) |
+| **Use Path Style** | `Yes` (requis pour SeaweedFS) |
+
+> **Note** : L'endpoint S3 utilise le service Kubernetes interne. Le trafic reste dans le cluster.
+
+### Test de la configuration S3
+
+```bash
+# Vérifier que le bucket existe
+kubectl exec -it deploy/seaweedfs-filer -n seaweedfs -- \
+  curl -s http://seaweedfs-s3:8333/redcap-files/ | head -20
+# Attendu : XML listing (peut être vide initialement)
+
+# Test upload depuis REDCap (via l'interface web)
+# 1. Aller dans un projet REDCap
+# 2. Uploader un fichier dans un champ "File Upload"
+# 3. Vérifier que le fichier est stocké dans S3
+```
 
 **Métriques attendues** :
 
 - Pod status : Running
 - RAM REDCap : ~500MB
-- MySQL connexion : OK
+- MariaDB connexion : OK
 - Surveys : Accès public OK
 - Admin : Protégé par Authelia
+- SMTP : Emails fonctionnels
+- S3 : Fichiers stockés dans SeaweedFS
 
 ---
 
@@ -2072,6 +2312,8 @@ done
 ### Configuration OnlyOffice pour Mattermost (édition collaborative)
 
 > **OnlyOffice** permet l'édition collaborative de documents directement depuis Mattermost via un plugin.
+>
+> **Note** : OnlyOffice n'est pas exposé sur internet. Le plugin Mattermost utilise l'URL interne du cluster Kubernetes.
 
 #### Installation du plugin OnlyOffice
 
@@ -2397,11 +2639,12 @@ access_control:
         - "group:researchers"
         - "group:technicians"
 
-    # OnlyOffice - accès depuis Mattermost (referer check)
+    # OnlyOffice - accessible aux chercheurs (édition collaborative)
     - domain: office.example.com
       policy: one_factor
       subject:
         - "group:researchers"
+        - "group:technicians"
 
     # Hubble UI - admins uniquement avec 2FA
     - domain: hubble.example.com
@@ -2716,6 +2959,28 @@ spec:
       - port: "5432"
         protocol: TCP
 ---
+# Mattermost → OnlyOffice (édition collaborative interne)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: mattermost-to-onlyoffice
+  namespace: onlyoffice
+spec:
+  endpointSelector:
+    matchLabels:
+      app: onlyoffice
+  ingress:
+  - fromEndpoints:
+    - matchExpressions:
+      - key: k8s:io.kubernetes.pod.namespace
+        operator: In
+        values:
+        - mattermost
+    toPorts:
+    - ports:
+      - port: "80"
+        protocol: TCP
+---
 # Authelia → Redis
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -2735,16 +3000,16 @@ spec:
       - port: "6379"
         protocol: TCP
 ---
-# REDCap → MySQL
+# REDCap → MariaDB
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: redcap-to-mysql
+  name: redcap-to-mariadb
   namespace: redcap
 spec:
   endpointSelector:
     matchLabels:
-      app.kubernetes.io/name: mysql
+      app.kubernetes.io/name: mariadb
   ingress:
   - fromEndpoints:
     - matchLabels:
@@ -2958,8 +3223,9 @@ Une fois les NetworkPolicies appliquées, vous devriez voir dans Hubble :
 | Ingress → Gitea             | FORWARDED | Autorisé par CNP         |
 | Ingress → ArgoCD            | FORWARDED | Autorisé par CNP         |
 | Mattermost → PostgreSQL     | FORWARDED | Autorisé par CNP         |
+| Mattermost → OnlyOffice     | FORWARDED | Autorisé par CNP (interne) |
 | Authelia → Redis            | FORWARDED | Autorisé par CNP         |
-| REDCap → MySQL              | FORWARDED | Autorisé par CNP         |
+| REDCap → MariaDB              | FORWARDED | Autorisé par CNP         |
 | ECRIN → REDCap              | FORWARDED | Autorisé par CNP         |
 | Gitea → PostgreSQL          | FORWARDED | Autorisé par CNP         |
 | ArgoCD → Gitea              | FORWARDED | Autorisé par CNP         |
@@ -2977,7 +3243,8 @@ Une fois les NetworkPolicies appliquées, vous devriez voir dans Hubble :
 | **Backups**      | Longhorn (pas Velero)                  | Intégré au stockage, moins de composants à gérer                        |
 | **Messagerie**   | Mattermost (pas Rocket.Chat)           | OIDC natif, PostgreSQL (plus simple), meilleure intégration Authelia    |
 | **Formulaires**  | REDCap v16                             | Standard recherche, utilisé par ECRIN pour les enquêtes                 |
-| **OnlyOffice**   | Image all-in-one                       | Chart Helm nécessite NFS                                                |
+| **OnlyOffice**   | Image all-in-one, accès public         | Chart Helm nécessite NFS, accessible via Authelia                       |
+| **Base données** | MariaDB (pas MySQL)                    | Fork communautaire, licence GPL, meilleure compatibilité                |
 | **Authelia**     | Déploiement manuel nommé `auth-server` | Chart incompatible + conflit variables env                              |
 | **SeaweedFS**    | Chart officiel                         | Images Bitnami nécessitent subscription                                 |
 | **Certificats**  | Staging d'abord                        | Éviter les rate limits Let's Encrypt                                    |
@@ -2993,7 +3260,7 @@ Une fois les NetworkPolicies appliquées, vous devriez voir dans Hubble :
 | -------------------------------- | ---------------------------------------- |
 | `~/k3s-secrets.env`              | Tous les mots de passe générés           |
 | `/etc/rancher/k3s/k3s.yaml`      | Kubeconfig                               |
-| `INSTALLATION-K3S-ROCKETCHAT.md` | Documentation complète post-installation |
+| `INSTALLATION-K3S-ATLAS.md`      | Documentation complète post-installation |
 | `k3s-install.log`                | Log complet de l'installation initiale   |
 
 ---
@@ -3022,13 +3289,13 @@ kubectl get certificates -A
 helm repo update
 
 # Lister versions disponibles
-helm search repo rocketchat
-helm search repo bitnami/mongodb
+helm search repo mattermost/mattermost-team-edition
+helm search repo bitnami/postgresql
 
 # Créer un snapshot avant mise à jour (via Longhorn UI ou CLI)
 # Puis upgrade
-helm upgrade rocketchat rocketchat/rocketchat \
-  --namespace rocketchat \
+helm upgrade mattermost mattermost/mattermost-team-edition \
+  --namespace mattermost \
   --reuse-values
 ```
 
@@ -3050,6 +3317,706 @@ kubectl describe pod -n <namespace> <pod-name>
 
 ---
 
+## PHASE 19 : LLDAP (Annuaire LDAP léger)
+
+> **LLDAP** est un serveur LDAP léger écrit en Rust, idéal pour la gestion centralisée des utilisateurs.
+> Il remplace le fichier `users_database.yml` statique d'Authelia.
+
+### Installation LLDAP
+
+```bash
+# Créer namespace avec Pod Security Standards
+kubectl create namespace lldap
+kubectl label namespace lldap pod-security.kubernetes.io/enforce=restricted
+
+# Générer les secrets
+export LLDAP_JWT_SECRET=$(openssl rand -base64 32)
+export LLDAP_ADMIN_PASSWORD=$(openssl rand -base64 24)
+
+kubectl create secret generic lldap-secrets \
+  --namespace lldap \
+  --from-literal=LLDAP_JWT_SECRET="${LLDAP_JWT_SECRET}" \
+  --from-literal=LLDAP_LDAP_USER_PASS="${LLDAP_ADMIN_PASSWORD}"
+
+# Déployer LLDAP
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: lldap-data
+  namespace: lldap
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lldap
+  namespace: lldap
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lldap
+  template:
+    metadata:
+      labels:
+        app: lldap
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      containers:
+      - name: lldap
+        image: lldap/lldap:v0.5.0
+        ports:
+        - containerPort: 3890  # LDAP
+        - containerPort: 17170 # Web UI
+        env:
+        - name: LLDAP_LDAP_BASE_DN
+          value: "dc=atlas,dc=local"
+        - name: LLDAP_LDAP_USER_DN
+          value: "admin"
+        - name: LLDAP_HTTP_URL
+          value: "https://ldap.\${DOMAIN}"
+        envFrom:
+        - secretRef:
+            name: lldap-secrets
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: lldap-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lldap
+  namespace: lldap
+spec:
+  selector:
+    app: lldap
+  ports:
+  - name: ldap
+    port: 3890
+    targetPort: 3890
+  - name: web
+    port: 17170
+    targetPort: 17170
+EOF
+
+# Attendre le démarrage
+kubectl wait --for=condition=ready pod -l app=lldap \
+  -n lldap --timeout=120s
+```
+
+### Ingress LLDAP (interface web d'administration)
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lldap
+  namespace: lldap
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: cilium
+  tls:
+  - hosts:
+    - ldap.\${DOMAIN}
+    secretName: lldap-tls
+  rules:
+  - host: ldap.\${DOMAIN}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: lldap
+            port:
+              number: 17170
+EOF
+```
+
+### Configurer Authelia pour utiliser LLDAP
+
+Mettre à jour la ConfigMap Authelia :
+
+```yaml
+authentication_backend:
+  ldap:
+    address: ldap://lldap.lldap.svc.cluster.local:3890
+    implementation: custom
+    timeout: 5s
+    start_tls: false
+    base_dn: dc=atlas,dc=local
+    additional_users_dn: ou=people
+    users_filter: (&(|({username_attribute}={input})({mail_attribute}={input}))(objectClass=person))
+    additional_groups_dn: ou=groups
+    groups_filter: (member={dn})
+    user: uid=admin,ou=people,dc=atlas,dc=local
+    password: ${LLDAP_ADMIN_PASSWORD}
+    attributes:
+      display_name: displayName
+      mail: mail
+      username: uid
+      group_name: cn
+```
+
+### Créer les groupes dans LLDAP
+
+Via l'interface web `https://ldap.votre-domaine.com` :
+
+1. Se connecter avec `admin` / `${LLDAP_ADMIN_PASSWORD}`
+2. Créer les groupes :
+   - `admins` - Administrateurs système
+   - `researchers` - Chercheurs
+   - `developers` - Développeurs
+   - `technicians` - Support technique
+   - `redcap-admins` - Administrateurs REDCap
+3. Créer les utilisateurs et les assigner aux groupes
+
+---
+
+## PHASE 20 : Rate Limiting Authelia
+
+### Configurer la régulation des tentatives de connexion
+
+Mettre à jour la ConfigMap Authelia :
+
+```yaml
+# Anti brute-force
+regulation:
+  max_retries: 3
+  find_time: 2m
+  ban_time: 5m
+
+# Session avec timeout
+session:
+  name: authelia_session
+  same_site: lax
+  inactivity: 5m
+  expiration: 1h
+  remember_me: 1M
+  cookies:
+    - domain: '${DOMAIN}'
+      authelia_url: 'https://auth.${DOMAIN}'
+      default_redirection_url: 'https://ecrin.${DOMAIN}'
+```
+
+---
+
+## PHASE 21 : Network Policies Egress
+
+### Ajouter les règles de sortie explicites
+
+```bash
+# Politique egress pour permettre DNS et services essentiels
+cat <<EOF | kubectl apply -f -
+# DNS pour tous les namespaces applicatifs
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: mattermost
+spec:
+  endpointSelector: {}
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+      - port: "53"
+        protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: authelia
+spec:
+  endpointSelector: {}
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: ecrin
+spec:
+  endpointSelector: {}
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: redcap
+spec:
+  endpointSelector: {}
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: kube-system
+        k8s-app: kube-dns
+    toPorts:
+    - ports:
+      - port: "53"
+        protocol: UDP
+---
+# Egress HTTPS pour cert-manager (ACME)
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-acme-egress
+  namespace: cert-manager
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: cert-manager
+  egress:
+  - toFQDNs:
+    - matchPattern: "*.api.letsencrypt.org"
+    toPorts:
+    - ports:
+      - port: "443"
+        protocol: TCP
+---
+# Egress pour Longhorn backups vers SeaweedFS
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-s3-backup-egress
+  namespace: longhorn-system
+spec:
+  endpointSelector:
+    matchLabels:
+      app: longhorn-manager
+  egress:
+  - toEndpoints:
+    - matchLabels:
+        k8s:io.kubernetes.pod.namespace: seaweedfs
+    toPorts:
+    - ports:
+      - port: "8333"
+        protocol: TCP
+EOF
+```
+
+---
+
+## PHASE 22 : Observabilité (Prometheus, Loki, Grafana)
+
+### Installation du stack d'observabilité
+
+```bash
+# Créer namespace
+kubectl create namespace monitoring
+kubectl label namespace monitoring pod-security.kubernetes.io/enforce=baseline
+
+# Installer kube-prometheus-stack (Prometheus + Grafana + AlertManager)
+helm install prometheus prometheus-community/kube-prometheus-stack \
+  --version 67.4.0 \
+  --namespace monitoring \
+  --set prometheus.prometheusSpec.replicas=2 \
+  --set alertmanager.alertmanagerSpec.replicas=2 \
+  --set grafana.replicas=2 \
+  --set grafana.adminPassword="$(openssl rand -base64 16)" \
+  --set grafana.persistence.enabled=true \
+  --set grafana.persistence.size=5Gi \
+  --set prometheus.prometheusSpec.retention=30d \
+  --set prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.storageClassName=longhorn \
+  --set prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=50Gi
+
+# Installer Loki pour les logs
+helm install loki grafana/loki-stack \
+  --version 2.10.2 \
+  --namespace monitoring \
+  --set loki.persistence.enabled=true \
+  --set loki.persistence.size=50Gi \
+  --set promtail.enabled=true \
+  --set grafana.enabled=false  # On utilise celui de kube-prometheus-stack
+
+# Attendre le démarrage
+kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=grafana \
+  -n monitoring --timeout=300s
+```
+
+### Ingress Grafana
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: monitoring
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: cilium
+  tls:
+  - hosts:
+    - grafana.\${DOMAIN}
+    secretName: grafana-tls
+  rules:
+  - host: grafana.\${DOMAIN}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-grafana
+            port:
+              number: 80
+EOF
+```
+
+### Configuration AlertManager (optionnel)
+
+```yaml
+# Exemple de configuration pour alertes Slack/Email
+alertmanager:
+  config:
+    global:
+      smtp_smarthost: 'smtp.example.com:587'
+      smtp_from: 'alertmanager@example.com'
+    route:
+      receiver: 'team-alerts'
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+    receivers:
+    - name: 'team-alerts'
+      email_configs:
+      - to: 'team@example.com'
+```
+
+### Récupérer le mot de passe Grafana
+
+```bash
+kubectl get secret prometheus-grafana -n monitoring \
+  -o jsonpath="{.data.admin-password}" | base64 -d
+```
+
+---
+
+## PHASE 23 : Harbor (Registre d'images privé)
+
+### Installation Harbor
+
+```bash
+# Créer namespace
+kubectl create namespace harbor
+kubectl label namespace harbor pod-security.kubernetes.io/enforce=baseline
+
+# Générer les secrets
+export HARBOR_ADMIN_PASSWORD=$(openssl rand -base64 16)
+export HARBOR_SECRET_KEY=$(openssl rand -hex 16)
+
+kubectl create secret generic harbor-credentials \
+  --namespace harbor \
+  --from-literal=HARBOR_ADMIN_PASSWORD="${HARBOR_ADMIN_PASSWORD}" \
+  --from-literal=secretKey="${HARBOR_SECRET_KEY}"
+
+# Installer Harbor
+helm install harbor harbor/harbor \
+  --version 1.16.0 \
+  --namespace harbor \
+  --set expose.type=ingress \
+  --set expose.ingress.className=cilium \
+  --set expose.ingress.hosts.core="registry.\${DOMAIN}" \
+  --set expose.tls.certSource=secret \
+  --set expose.tls.secret.secretName=harbor-tls \
+  --set externalURL="https://registry.\${DOMAIN}" \
+  --set harborAdminPassword="${HARBOR_ADMIN_PASSWORD}" \
+  --set secretKey="${HARBOR_SECRET_KEY}" \
+  --set persistence.enabled=true \
+  --set persistence.persistentVolumeClaim.registry.size=100Gi \
+  --set persistence.persistentVolumeClaim.database.size=5Gi \
+  --set persistence.persistentVolumeClaim.redis.size=1Gi \
+  --set trivy.enabled=true \
+  --set notary.enabled=false
+
+# Créer le certificat
+cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: harbor-tls
+  namespace: harbor
+spec:
+  secretName: harbor-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  dnsNames:
+  - registry.\${DOMAIN}
+EOF
+
+# Attendre le démarrage
+kubectl wait --for=condition=ready pod -l app=harbor \
+  -n harbor --timeout=600s
+```
+
+### Configurer les pods pour utiliser Harbor
+
+```bash
+# Créer un secret pour les credentials du registre dans chaque namespace
+for ns in mattermost authelia onlyoffice redcap ecrin gitea argocd; do
+  kubectl create secret docker-registry harbor-registry \
+    --namespace ${ns} \
+    --docker-server="registry.\${DOMAIN}" \
+    --docker-username=admin \
+    --docker-password="${HARBOR_ADMIN_PASSWORD}"
+done
+
+# Patcher les ServiceAccounts pour utiliser le registre
+for ns in mattermost authelia onlyoffice redcap ecrin gitea argocd; do
+  kubectl patch serviceaccount default -n ${ns} \
+    -p '{"imagePullSecrets": [{"name": "harbor-registry"}]}'
+done
+```
+
+---
+
+## PHASE 24 : Gitea Actions (CI/CD)
+
+### Activer Gitea Actions
+
+```bash
+# Patcher la configuration Gitea pour activer Actions
+kubectl patch configmap gitea-inline-config -n gitea --type merge -p '
+data:
+  actions.ENABLED: "true"
+  actions.DEFAULT_ACTIONS_URL: "https://github.com"
+'
+
+# Redémarrer Gitea
+kubectl rollout restart deployment gitea -n gitea
+```
+
+### Déployer un runner Gitea Actions
+
+```bash
+# Générer le token de registration dans Gitea UI
+# Site Administration > Actions > Runners > Create new Runner
+
+cat <<EOF | kubectl apply -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea-runner
+  namespace: gitea
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gitea-runner
+  template:
+    metadata:
+      labels:
+        app: gitea-runner
+    spec:
+      containers:
+      - name: runner
+        image: gitea/act_runner:0.2.11
+        env:
+        - name: GITEA_INSTANCE_URL
+          value: "https://git.\${DOMAIN}"
+        - name: GITEA_RUNNER_REGISTRATION_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: gitea-runner-token
+              key: token
+        - name: GITEA_RUNNER_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        volumeMounts:
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
+      volumes:
+      - name: docker-socket
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+EOF
+```
+
+### Exemple de workflow CI/CD
+
+Créer un fichier `.gitea/workflows/ci.yaml` dans votre repo :
+
+```yaml
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t registry.\${{ secrets.DOMAIN }}/atlas/\${{ github.repository }}:\${{ github.sha }} .
+
+      - name: Login to Harbor
+        run: |
+          echo "\${{ secrets.HARBOR_PASSWORD }}" | docker login registry.\${{ secrets.DOMAIN }} -u admin --password-stdin
+
+      - name: Push image
+        run: |
+          docker push registry.\${{ secrets.DOMAIN }}/atlas/\${{ github.repository }}:\${{ github.sha }}
+
+      - name: Scan image with Trivy
+        run: |
+          trivy image registry.\${{ secrets.DOMAIN }}/atlas/\${{ github.repository }}:\${{ github.sha }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Trigger ArgoCD sync
+        run: |
+          curl -X POST https://argocd.\${{ secrets.DOMAIN }}/api/v1/applications/\${{ github.repository }}/sync \
+            -H "Authorization: Bearer \${{ secrets.ARGOCD_TOKEN }}"
+```
+
+---
+
+## PHASE 25 : Structure du repo ArgoCD
+
+### Créer le repository de configuration
+
+Dans Gitea, créer un repo `atlas/infrastructure` avec la structure suivante :
+
+```
+infrastructure/
+├── apps/
+│   ├── ecrin/
+│   │   ├── kustomization.yaml
+│   │   ├── deployment.yaml
+│   │   └── service.yaml
+│   ├── mattermost/
+│   │   └── values.yaml
+│   └── redcap/
+│       ├── deployment.yaml
+│       └── configmap.yaml
+├── base/
+│   ├── namespaces.yaml
+│   ├── network-policies/
+│   │   ├── deny-all.yaml
+│   │   └── allow-ingress.yaml
+│   └── pod-security/
+│       └── labels.yaml
+├── overlays/
+│   ├── production/
+│   │   └── kustomization.yaml
+│   └── staging/
+│       └── kustomization.yaml
+└── argocd/
+    ├── app-of-apps.yaml
+    └── projects/
+        └── atlas.yaml
+```
+
+### App of Apps pattern
+
+```yaml
+# argocd/app-of-apps.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: atlas-apps
+  namespace: argocd
+spec:
+  project: atlas
+  source:
+    repoURL: https://git.${DOMAIN}/atlas/infrastructure.git
+    targetRevision: HEAD
+    path: apps
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+```
+
+### Configurer ArgoCD pour synchroniser
+
+```bash
+# Ajouter le repo infrastructure
+argocd repo add https://git.${DOMAIN}/atlas/infrastructure.git \
+  --username gitea_admin \
+  --password "${GITEA_SECRET}"
+
+# Appliquer l'App of Apps
+kubectl apply -f argocd/app-of-apps.yaml
+```
+
+---
+
 ## Ressources utiles
 
 - K3s docs : https://docs.k3s.io
@@ -3063,6 +4030,11 @@ kubectl describe pod -n <namespace> <pod-name>
 - cert-manager docs : https://cert-manager.io/docs
 - Gitea docs : https://docs.gitea.com
 - ArgoCD docs : https://argo-cd.readthedocs.io
+- LLDAP docs : https://github.com/lldap/lldap
+- Harbor docs : https://goharbor.io/docs
+- Prometheus docs : https://prometheus.io/docs
+- Grafana docs : https://grafana.com/docs
+- Loki docs : https://grafana.com/docs/loki
 
 ---
 
