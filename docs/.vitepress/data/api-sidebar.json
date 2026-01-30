@@ -9,24 +9,6 @@
     ]
   },
   {
-    "text": "Applications",
-    "collapsed": false,
-    "items": [
-      {
-        "text": "@univ-lehavre/atlas-ecrin",
-        "link": "/api/@univ-lehavre/atlas-ecrin/"
-      },
-      {
-        "text": "@univ-lehavre/atlas-find-an-expert",
-        "link": "/api/@univ-lehavre/atlas-find-an-expert/"
-      },
-      {
-        "text": "@univ-lehavre/atlas-amarre",
-        "link": "/api/@univ-lehavre/atlas-amarre/"
-      }
-    ]
-  },
-  {
     "text": "REDCap",
     "collapsed": false,
     "items": [
@@ -907,10 +889,6 @@
             ]
           }
         ]
-      },
-      {
-        "text": "@univ-lehavre/atlas-redcap-sandbox",
-        "link": "/api/@univ-lehavre/atlas-redcap-sandbox/"
       }
     ]
   },
@@ -1079,14 +1057,6 @@
             ]
           }
         ]
-      },
-      {
-        "text": "@univ-lehavre/atlas-shared-config",
-        "link": "/api/@univ-lehavre/atlas-shared-config/"
-      },
-      {
-        "text": "@univ-lehavre/atlas-logos",
-        "link": "/api/@univ-lehavre/atlas-logos/"
       }
     ]
   },
