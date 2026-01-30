@@ -1,17 +1,17 @@
 # @univ-lehavre/atlas-appwrite
 
-Utilitaires client Appwrite partagés pour les applications Atlas.
+Shared Appwrite client utilities for Atlas applications.
 
-## À propos
+## About
 
-Ce package fournit des clients Appwrite préconfigurés et des utilitaires pour les applications SvelteKit Atlas. Il simplifie la création de clients admin et session, et fournit un repository utilisateur standardisé.
+This package provides pre-configured Appwrite clients and utilities for Atlas SvelteKit applications. It simplifies the creation of admin and session clients, and provides a standardized user repository.
 
-## Fonctionnalités
+## Features
 
-- **Client Admin** : Client avec accès complet à l'API Appwrite
-- **Client Session** : Client configuré avec la session utilisateur
-- **Repository utilisateur** : Abstraction pour la récupération des utilisateurs
-- **Gestion des cookies** : Utilitaires pour la gestion des sessions via cookies
+- **Admin Client**: Client with full access to the Appwrite API
+- **Session Client**: Client configured with the user session
+- **User Repository**: Abstraction for user retrieval
+- **Cookie Management**: Utilities for session management via cookies
 
 ## Installation
 
@@ -21,7 +21,7 @@ pnpm add @univ-lehavre/atlas-appwrite
 
 ## Usage
 
-### Client Admin
+### Admin Client
 
 ```typescript
 import { createAdminClient } from '@univ-lehavre/atlas-appwrite';
@@ -34,16 +34,16 @@ const config = {
 
 const { account, users, databases } = createAdminClient(config);
 
-// Récupérer un utilisateur
+// Retrieve a user
 const user = await users.get({ userId: 'user123' });
 ```
 
-### Client Session
+### Session Client
 
 ```typescript
 import { createSessionClient, SESSION_COOKIE } from '@univ-lehavre/atlas-appwrite';
 
-// Dans un endpoint SvelteKit
+// In a SvelteKit endpoint
 export const GET = async ({ cookies }) => {
   const config = {
     endpoint: process.env.APPWRITE_ENDPOINT,
@@ -57,7 +57,7 @@ export const GET = async ({ cookies }) => {
 };
 ```
 
-### Repository utilisateur
+### User Repository
 
 ```typescript
 import { createUserRepository } from '@univ-lehavre/atlas-appwrite';
@@ -73,29 +73,29 @@ const user = await userRepo.getById('user123');
 
 ## API
 
-### Fonctions
+### Functions
 
-| Fonction | Description |
+| Function | Description |
 |----------|-------------|
-| `createAdminClient(config)` | Crée un client admin Appwrite |
-| `createSessionClient(config, cookies)` | Crée un client session Appwrite |
-| `createUserRepository(config)` | Crée un repository utilisateur |
+| `createAdminClient(config)` | Creates an Appwrite admin client |
+| `createSessionClient(config, cookies)` | Creates an Appwrite session client |
+| `createUserRepository(config)` | Creates a user repository |
 
-### Constantes
+### Constants
 
-| Constante | Description |
-|-----------|-------------|
-| `SESSION_COOKIE` | Nom du cookie de session ('session') |
-| `ADMIN_LABEL` | Label Appwrite pour les administrateurs ('admin') |
+| Constant | Description |
+|----------|-------------|
+| `SESSION_COOKIE` | Session cookie name ('session') |
+| `ADMIN_LABEL` | Appwrite label for administrators ('admin') |
 
-### Types exportés
+### Exported Types
 
-Types Appwrite réexportés : `Models`, `Account`, `Users`, `Databases`, `Client`, `ID`
+Re-exported Appwrite types: `Models`, `Account`, `Users`, `Databases`, `Client`, `ID`
 
 ## Scripts
 
 ```bash
-pnpm -F @univ-lehavre/atlas-appwrite dev      # Développement
+pnpm -F @univ-lehavre/atlas-appwrite dev      # Development
 pnpm -F @univ-lehavre/atlas-appwrite build    # Build
 pnpm -F @univ-lehavre/atlas-appwrite test     # Tests
 pnpm -F @univ-lehavre/atlas-appwrite lint     # ESLint
@@ -103,22 +103,22 @@ pnpm -F @univ-lehavre/atlas-appwrite lint     # ESLint
 
 ## Documentation
 
-- [Documentation API](../../docs/api/@univ-lehavre/atlas-appwrite/)
+- [API Documentation](../../docs/api/@univ-lehavre/atlas-appwrite/)
 
-## Organisation
+## Organization
 
-Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.
 
-Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+Atlas is developed as part of two projects led by Le Havre Normandie University:
 
-- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
-- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)**: research and training program focused on maritime and port issues
+- **[EUNICoast](https://eunicoast.eu/)**: European university alliance bringing together institutions located in European coastal areas
 
 ---
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="20">
+    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
@@ -130,6 +130,6 @@ Atlas est développé dans le cadre de deux projets portés par l'Université Le
   </a>
 </p>
 
-## Licence
+## License
 
 MIT

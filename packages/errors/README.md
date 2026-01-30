@@ -1,17 +1,17 @@
 # @univ-lehavre/atlas-errors
 
-Classes d'erreurs partagées pour les applications Atlas.
+Shared error classes for Atlas applications.
 
-## À propos
+## About
 
-Ce package fournit des classes d'erreurs standardisées pour les applications Atlas, avec des codes d'erreur, des statuts HTTP et une conversion vers des réponses API structurées.
+This package provides standardized error classes for Atlas applications, with error codes, HTTP statuses, and conversion to structured API responses.
 
-## Fonctionnalités
+## Features
 
-- **Erreurs typées** : Classes d'erreurs avec codes et statuts HTTP
-- **Erreurs d'authentification** : SessionError, MagicUrlLoginValidationError
-- **Erreurs de validation** : InvalidJsonBodyError, InvalidContentTypeError, NotAnEmailError
-- **Mapping API** : Conversion automatique vers des réponses JSON standardisées
+- **Typed errors**: Error classes with codes and HTTP statuses
+- **Authentication errors**: SessionError, MagicUrlLoginValidationError
+- **Validation errors**: InvalidJsonBodyError, InvalidContentTypeError, NotAnEmailError
+- **API mapping**: Automatic conversion to standardized JSON responses
 
 ## Installation
 
@@ -30,14 +30,14 @@ import {
   mapErrorToApiResponse,
 } from '@univ-lehavre/atlas-errors';
 
-// Lancer une erreur typée
+// Throw a typed error
 if (!session) {
   throw new SessionError('No active session', { cause: 'Cookie expired' });
 }
 
-// Convertir une erreur en réponse API
+// Convert an error to API response
 try {
-  // ... opération
+  // ... operation
 } catch (error) {
   const { body, status } = mapErrorToApiResponse(error);
   return json(body, { status });
@@ -46,29 +46,29 @@ try {
 
 ## API
 
-### Classes d'erreurs
+### Error Classes
 
-| Classe | Code HTTP | Description |
-|--------|-----------|-------------|
-| `SessionError` | 401 | Session manquante ou invalide |
-| `InvalidJsonBodyError` | 400 | Corps de requête JSON invalide |
-| `InvalidContentTypeError` | 400 | Content-Type non application/json |
-| `NotAnEmailError` | 400 | Email invalide ou non autorisé |
-| `NotPartOfAllianceError` | 400 | Domaine email non autorisé |
-| `MagicUrlLoginValidationError` | 400 | Paramètres magic URL invalides |
-| `UserIdValidationError` | 400 | User ID invalide |
-| `RequestBodyValidationError` | 400 | Corps de requête invalide |
+| Class | HTTP Code | Description |
+|-------|-----------|-------------|
+| `SessionError` | 401 | Missing or invalid session |
+| `InvalidJsonBodyError` | 400 | Invalid JSON request body |
+| `InvalidContentTypeError` | 400 | Content-Type not application/json |
+| `NotAnEmailError` | 400 | Invalid or unauthorized email |
+| `NotPartOfAllianceError` | 400 | Unauthorized email domain |
+| `MagicUrlLoginValidationError` | 400 | Invalid magic URL parameters |
+| `UserIdValidationError` | 400 | Invalid user ID |
+| `RequestBodyValidationError` | 400 | Invalid request body |
 
-### Fonctions
+### Functions
 
-| Fonction | Description |
+| Function | Description |
 |----------|-------------|
-| `mapErrorToApiResponse(error)` | Convertit une erreur en réponse API structurée |
+| `mapErrorToApiResponse(error)` | Converts an error to a structured API response |
 
 ## Scripts
 
 ```bash
-pnpm -F @univ-lehavre/atlas-errors dev      # Développement
+pnpm -F @univ-lehavre/atlas-errors dev      # Development
 pnpm -F @univ-lehavre/atlas-errors build    # Build
 pnpm -F @univ-lehavre/atlas-errors test     # Tests
 pnpm -F @univ-lehavre/atlas-errors lint     # ESLint
@@ -76,22 +76,22 @@ pnpm -F @univ-lehavre/atlas-errors lint     # ESLint
 
 ## Documentation
 
-- [Documentation API](../../docs/api/@univ-lehavre/atlas-errors/)
+- [API Documentation](../../docs/api/@univ-lehavre/atlas-errors/)
 
-## Organisation
+## Organization
 
-Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.
 
-Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+Atlas is developed as part of two projects led by Le Havre Normandie University:
 
-- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
-- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)**: research and training program focused on maritime and port issues
+- **[EUNICoast](https://eunicoast.eu/)**: European university alliance bringing together institutions located in European coastal areas
 
 ---
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="20">
+    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
@@ -103,6 +103,6 @@ Atlas est développé dans le cadre de deux projets portés par l'Université Le
   </a>
 </p>
 
-## Licence
+## License
 
 MIT

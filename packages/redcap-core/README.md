@@ -1,19 +1,19 @@
 # @univ-lehavre/atlas-redcap-core
 
-Logique métier REDCap pure et fonctionnelle avec Effect.
+Pure and functional REDCap business logic with Effect.
 
-## À propos
+## About
 
-Ce package fournit les types, utilitaires et fonctions pures partagés pour l'intégration REDCap. Il est conçu pour être importé par d'autres packages nécessitant des fonctionnalités REDCap.
+This package provides shared types, utilities, and pure functions for REDCap integration. It is designed to be imported by other packages requiring REDCap functionality.
 
-## Fonctionnalités
+## Features
 
-- **Branded types** : Identifiants typés (RecordId, ProjectId, etc.)
-- **Gestion d'erreurs** : Types d'erreurs REDCap avec Effect
-- **Détection de version** : Parsing et comparaison de versions REDCap
-- **Types de contenu** : Définitions des types de contenu API REDCap
-- **Validation** : Utilitaires de validation des entrées
-- **Adaptateurs** : Adaptateurs API spécifiques aux versions
+- **Branded types**: Typed identifiers (RecordId, ProjectId, etc.)
+- **Error handling**: REDCap error types with Effect
+- **Version detection**: REDCap version parsing and comparison
+- **Content types**: REDCap API content type definitions
+- **Validation**: Input validation utilities
+- **Adapters**: Version-specific API adapters
 
 ## Installation
 
@@ -33,44 +33,44 @@ import { parseVersion } from '@univ-lehavre/atlas-redcap-core/version';
 
 | Export | Description |
 |--------|-------------|
-| `/brands` | Branded types pour identifiants typés |
-| `/errors` | Types d'erreurs REDCap |
-| `/version` | Parsing et comparaison de versions |
-| `/content-types` | Définitions des types de contenu API |
-| `/params` | Types de paramètres de requête |
-| `/adapters` | Adaptateurs spécifiques aux versions |
-| `/validation` | Utilitaires de validation |
-| `/utils` | Utilitaires généraux |
-| `/types` | Définitions de types partagés |
+| `/brands` | Branded types for typed identifiers |
+| `/errors` | REDCap error types |
+| `/version` | Version parsing and comparison |
+| `/content-types` | API content type definitions |
+| `/params` | Request parameter types |
+| `/adapters` | Version-specific adapters |
+| `/validation` | Validation utilities |
+| `/utils` | General utilities |
+| `/types` | Shared type definitions |
 
 ## Scripts
 
 ```bash
-pnpm -F @univ-lehavre/atlas-redcap-core dev        # Développement
+pnpm -F @univ-lehavre/atlas-redcap-core dev        # Development
 pnpm -F @univ-lehavre/atlas-redcap-core build      # Build
 pnpm -F @univ-lehavre/atlas-redcap-core test       # Tests
-pnpm -F @univ-lehavre/atlas-redcap-core typecheck  # Vérification types
+pnpm -F @univ-lehavre/atlas-redcap-core typecheck  # Type checking
 pnpm -F @univ-lehavre/atlas-redcap-core lint       # ESLint
 ```
 
 ## Documentation
 
-- [Documentation API](../../docs/api/@univ-lehavre/atlas-redcap-core/)
+- [API Documentation](../../docs/api/@univ-lehavre/atlas-redcap-core/)
 
-## Organisation
+## Organization
 
-Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.
 
-Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+Atlas is developed as part of two projects led by Le Havre Normandie University:
 
-- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
-- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)**: research and training program focused on maritime and port issues
+- **[EUNICoast](https://eunicoast.eu/)**: European university alliance bringing together institutions located in European coastal areas
 
 ---
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="20">
+    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
@@ -82,6 +82,6 @@ Atlas est développé dans le cadre de deux projets portés par l'Université Le
   </a>
 </p>
 
-## Licence
+## License
 
 MIT

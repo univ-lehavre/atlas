@@ -1,18 +1,18 @@
 # @univ-lehavre/atlas-auth
 
-Service d'authentification partagé pour les applications SvelteKit Atlas.
+Shared authentication service for Atlas SvelteKit applications.
 
-## À propos
+## About
 
-Ce package fournit un service d'authentification complet basé sur Appwrite avec support des magic links. Il gère l'inscription, la connexion, la déconnexion et la suppression de compte.
+This package provides a complete authentication service based on Appwrite with magic link support. It handles signup, login, logout, and account deletion.
 
-## Fonctionnalités
+## Features
 
-- **Magic links** : Authentification sans mot de passe via lien email
-- **Validation de domaines** : Restriction des inscriptions par domaine email
-- **Gestion de session** : Création et gestion des sessions via cookies
-- **Intégration REDCap** : Support pour la résolution d'ID utilisateur depuis REDCap
-- **Hooks SvelteKit** : Middleware d'authentification prêt à l'emploi
+- **Magic links**: Passwordless authentication via email link
+- **Domain validation**: Restrict signups by email domain
+- **Session management**: Session creation and management via cookies
+- **REDCap integration**: Support for user ID resolution from REDCap
+- **SvelteKit hooks**: Ready-to-use authentication middleware
 
 ## Installation
 
@@ -22,7 +22,7 @@ pnpm add @univ-lehavre/atlas-auth
 
 ## Usage
 
-### Configuration du service
+### Service Configuration
 
 ```typescript
 import { createAuthService } from '@univ-lehavre/atlas-auth';
@@ -40,7 +40,7 @@ const authService = createAuthService({
 });
 ```
 
-### Inscription avec magic link
+### Signup with Magic Link
 
 ```typescript
 // POST /api/v1/auth/signup
@@ -51,7 +51,7 @@ export const POST = async ({ request }) => {
 };
 ```
 
-### Connexion via magic link
+### Login via Magic Link
 
 ```typescript
 // GET /login?userId=xxx&secret=yyy
@@ -64,7 +64,7 @@ export const load = async ({ url, cookies }) => {
 };
 ```
 
-### Déconnexion
+### Logout
 
 ```typescript
 // POST /api/v1/auth/logout
@@ -76,28 +76,28 @@ export const POST = async ({ locals, cookies }) => {
 
 ## API
 
-### Fonctions
+### Functions
 
-| Fonction | Description |
+| Function | Description |
 |----------|-------------|
-| `createAuthService(config)` | Crée une instance du service d'authentification |
-| `validateMagicUrlLogin(userId, secret)` | Valide les paramètres de magic URL |
-| `validateSignupEmail(email, config)` | Valide et normalise un email pour l'inscription |
-| `validateUserId(userId)` | Valide un ID utilisateur |
-| `checkRequestBody(body)` | Vérifie la présence des champs requis |
+| `createAuthService(config)` | Creates an authentication service instance |
+| `validateMagicUrlLogin(userId, secret)` | Validates magic URL parameters |
+| `validateSignupEmail(email, config)` | Validates and normalizes an email for signup |
+| `validateUserId(userId)` | Validates a user ID |
+| `checkRequestBody(body)` | Checks for required fields presence |
 
 ### Exports
 
 | Export | Description |
 |--------|-------------|
-| `.` | Service d'authentification principal |
-| `./validators` | Fonctions de validation |
-| `./hooks` | Middleware SvelteKit |
+| `.` | Main authentication service |
+| `./validators` | Validation functions |
+| `./hooks` | SvelteKit middleware |
 
 ## Scripts
 
 ```bash
-pnpm -F @univ-lehavre/atlas-auth dev      # Développement
+pnpm -F @univ-lehavre/atlas-auth dev      # Development
 pnpm -F @univ-lehavre/atlas-auth build    # Build
 pnpm -F @univ-lehavre/atlas-auth test     # Tests
 pnpm -F @univ-lehavre/atlas-auth lint     # ESLint
@@ -105,22 +105,22 @@ pnpm -F @univ-lehavre/atlas-auth lint     # ESLint
 
 ## Documentation
 
-- [Documentation API](../../docs/api/@univ-lehavre/atlas-auth/)
+- [API Documentation](../../docs/api/@univ-lehavre/atlas-auth/)
 
-## Organisation
+## Organization
 
-Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.
 
-Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+Atlas is developed as part of two projects led by Le Havre Normandie University:
 
-- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
-- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)**: research and training program focused on maritime and port issues
+- **[EUNICoast](https://eunicoast.eu/)**: European university alliance bringing together institutions located in European coastal areas
 
 ---
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="20">
+    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
@@ -132,6 +132,6 @@ Atlas est développé dans le cadre de deux projets portés par l'Université Le
   </a>
 </p>
 
-## Licence
+## License
 
 MIT
