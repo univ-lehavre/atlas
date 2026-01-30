@@ -1,27 +1,27 @@
 # ECRIN
 
-ECRIN est une plateforme de collaboration pour chercheurs développée par l'Université Le Havre Normandie.
+ECRIN is a collaboration platform for researchers developed by Le Havre Normandie University.
 
-## Présentation
+## Overview
 
-ECRIN permet aux chercheurs de :
+ECRIN enables researchers to:
 
-- Présenter leurs travaux de recherche
-- Trouver des collaborateurs et constituer des équipes
-- Visualiser les réseaux de recherche
-- Rechercher des experts et des données
+- Present their research work
+- Find collaborators and build teams
+- Visualize research networks
+- Search for experts and data
 
-## Pour les chercheurs
+## For Researchers
 
-- [Guide chercheur ECRIN](/projects/ecrin/user/) - Découvrez les fonctionnalités d'ECRIN
+- [ECRIN Researcher Guide](/projects/ecrin/user/) - Discover ECRIN features
 
-## Pour les développeurs
+## For Developers
 
-- [Documentation technique](/projects/ecrin/dev/) - État du développement, architecture, composants
-- [Configuration technique](/projects/ecrin/find-an-expert/technical-setup) - Installation et développement
-- [Configuration Appwrite](/projects/ecrin/find-an-expert/appwrite-setup) - Backend et collections
-- [Design System](/projects/ecrin/find-an-expert/design-system) - Composants et thèmes
-- [Architecture CSS](/projects/ecrin/find-an-expert/css-architecture) - Tailwind et styles
-- [Audit technique](/audit/ecrin/) - Architecture et cartes fonctionnelles
-- [Roadmap](/roadmaps/ecrin/) - Feuille de route T1-T3 2026
-- [API Reference](/api/@univ-lehavre/atlas-find-an-expert/) - Documentation TypeDoc
+- [Technical Documentation](/projects/ecrin/dev/) - Development status, architecture, components
+- [Technical Setup](/projects/ecrin/find-an-expert/technical-setup) - Installation and development
+- [Appwrite Setup](/projects/ecrin/find-an-expert/appwrite-setup) - Backend and collections
+- [Design System](/projects/ecrin/find-an-expert/design-system) - Components and themes
+- [CSS Architecture](/projects/ecrin/find-an-expert/css-architecture) - Tailwind and styles
+- [Technical Audit](/audit/ecrin/) - Architecture and functional cards
+- [Roadmap](/roadmaps/ecrin/) - Q1-Q3 2026 roadmap
+- [API Reference](/api/@univ-lehavre/atlas-find-an-expert/) - TypeDoc documentation

@@ -1,58 +1,58 @@
 # CSS Architecture
 
-> Guide de l'architecture CSS pour Talent Finder
+> CSS architecture guide for Talent Finder
 
-## Table des matières
+## Table of Contents
 
-- [Vue d'ensemble](#vue-densemble)
+- [Overview](#overview)
 - [Design tokens](#design-tokens)
-- [Approche hybride](#approche-hybride)
-- [Système de thèmes](#système-de-thèmes)
+- [Hybrid approach](#hybrid-approach)
+- [Theme system](#theme-system)
 - [Dark mode](#dark-mode)
-- [Composants](#composants)
-- [Bonnes pratiques](#bonnes-pratiques)
-- [Checklist PR](#checklist-pr)
+- [Components](#components)
+- [Best practices](#best-practices)
+- [PR checklist](#pr-checklist)
 
-## Vue d'ensemble
+## Overview
 
-Le projet utilise une architecture CSS moderne combinant :
+The project uses a modern CSS architecture combining:
 
-| Technologie               | Usage                                         | Proportion |
-| ------------------------- | --------------------------------------------- | ---------- |
-| **Tailwind CSS 4.1**      | Utilitaires (layout, spacing)                 | ~70%       |
-| **CSS Custom Properties** | Design tokens centralisés                     | Global     |
-| **Scoped Styles**         | Composants complexes avec variants            | ~30%       |
-| **OKLCH Color Space**     | Système de couleurs perceptuellement uniforme | 100%       |
+| Technology                | Usage                                    | Proportion |
+| ------------------------- | ---------------------------------------- | ---------- |
+| **Tailwind CSS 4.1**      | Utilities (layout, spacing)              | ~70%       |
+| **CSS Custom Properties** | Centralized design tokens                | Global     |
+| **Scoped Styles**         | Complex components with variants         | ~30%       |
+| **OKLCH Color Space**     | Perceptually uniform color system        | 100%       |
 
-### Fichiers clés
+### Key Files
 
 ```
 src/
-├── app.css              # Design system global (~775 lignes)
+├── app.css              # Global design system (~775 lines)
 └── lib/
     └── ui/
-        └── *.svelte     # Composants avec styles scoped
+        └── *.svelte     # Components with scoped styles
 ```
 
-## Design tokens
+## Design Tokens
 
-Tous les tokens sont définis dans `src/app.css` et accessibles via CSS custom properties.
+All tokens are defined in `src/app.css` and accessible via CSS custom properties.
 
-### Couleurs (OKLCH)
+### Colors (OKLCH)
 
-Le système utilise l'espace colorimétrique OKLCH pour générer des nuances cohérentes :
+The system uses the OKLCH color space to generate consistent shades:
 
 ```css
-/* Paramètres de base */
+/* Base parameters */
 :root {
-  --hue-primary: 250;    /* Teinte principale (0-360°) */
-  --hue-accent: 180;     /* Teinte d'accent */
-  --hue-neutral: 260;    /* Teinte neutre */
+  --hue-primary: 250;    /* Primary hue (0-360) */
+  --hue-accent: 180;     /* Accent hue */
+  --hue-neutral: 260;    /* Neutral hue */
   --chroma: 0.15;        /* Saturation (0-0.3) */
 }
 
-/* Nuances générées automatiquement */
---color-primary-50   /* Plus clair */
+/* Automatically generated shades */
+--color-primary-50   /* Lightest */
 --color-primary-100
 --color-primary-200
 --color-primary-300
@@ -62,29 +62,29 @@ Le système utilise l'espace colorimétrique OKLCH pour générer des nuances co
 --color-primary-700
 --color-primary-800
 --color-primary-900
---color-primary-950  /* Plus foncé */
+--color-primary-950  /* Darkest */
 ```
 
-**Catégories de couleurs :**
+**Color categories:**
 
-| Catégorie   | Usage                           | Tokens              |
+| Category    | Usage                           | Tokens              |
 | ----------- | ------------------------------- | ------------------- |
-| `primary`   | Actions principales, liens, CTA | 50-950 (11 nuances) |
-| `accent`    | Mise en évidence secondaire     | 50-950 (11 nuances) |
-| `secondary` | Texte, arrière-plans neutres    | 50-950 (11 nuances) |
-| `success`   | Feedback positif                | 50, 500, 600, 700   |
-| `warning`   | Alertes, avertissements         | 50, 500, 600, 700   |
-| `error`     | Erreurs, états critiques        | 50, 500, 600, 700   |
+| `primary`   | Main actions, links, CTA        | 50-950 (11 shades)  |
+| `accent`    | Secondary highlighting          | 50-950 (11 shades)  |
+| `secondary` | Text, neutral backgrounds       | 50-950 (11 shades)  |
+| `success`   | Positive feedback               | 50, 500, 600, 700   |
+| `warning`   | Alerts, warnings                | 50, 500, 600, 700   |
+| `error`     | Errors, critical states         | 50, 500, 600, 700   |
 
-### Typographie
+### Typography
 
 ```css
-/* Familles de polices */
+/* Font families */
 --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
 --font-heading: var(--font-heading-family), ui-sans-serif, system-ui, sans-serif;
 --font-mono: var(--font-mono-family), ui-monospace, monospace;
 
-/* Tailles */
+/* Sizes */
 --text-xs: 0.75rem; /* 12px */
 --text-sm: 0.875rem; /* 14px */
 --text-base: 1rem; /* 16px */
@@ -95,7 +95,7 @@ Le système utilise l'espace colorimétrique OKLCH pour générer des nuances co
 --text-4xl: 2.25rem; /* 36px */
 ```
 
-### Espacement
+### Spacing
 
 ```css
 --spacing-xs: 0.25rem; /* 4px */
@@ -106,7 +106,7 @@ Le système utilise l'espace colorimétrique OKLCH pour générer des nuances co
 --spacing-2xl: 3rem; /* 48px */
 ```
 
-### Autres tokens
+### Other Tokens
 
 ```css
 /* Border Radius */
@@ -127,35 +127,35 @@ Le système utilise l'espace colorimétrique OKLCH pour générer des nuances co
 --transition-slow: 300ms ease;
 ```
 
-## Approche hybride
+## Hybrid Approach
 
-### Quand utiliser Tailwind
+### When to Use Tailwind
 
-Utiliser Tailwind (classes utilitaires) pour :
+Use Tailwind (utility classes) for:
 
 - Layout (flex, grid, positioning)
 - Spacing (margin, padding)
 - Responsive design (breakpoints)
-- Styles simples et directs
+- Simple and direct styles
 
 ```svelte
-<!-- ✅ Bon : Tailwind pour layout et spacing -->
+<!-- Good: Tailwind for layout and spacing -->
 <div class="flex items-center gap-4 p-6 md:p-8">
-	<h2 class="text-2xl font-semibold">Titre</h2>
+	<h2 class="text-2xl font-semibold">Title</h2>
 </div>
 ```
 
-### Quand utiliser les styles scoped
+### When to Use Scoped Styles
 
-Utiliser les styles scoped (`<style>`) pour :
+Use scoped styles (`<style>`) for:
 
-- Composants avec plusieurs variants (`data-variant`)
-- Animations complexes
-- États dynamiques multiples
-- Intégration avec CSS custom properties
+- Components with multiple variants (`data-variant`)
+- Complex animations
+- Multiple dynamic states
+- Integration with CSS custom properties
 
 ```svelte
-<!-- ✅ Bon : Styles scoped pour variants complexes -->
+<!-- Good: Scoped styles for complex variants -->
 <div class="alert" data-variant={variant}>
 	<slot />
 </div>
@@ -180,13 +180,13 @@ Utiliser les styles scoped (`<style>`) pour :
 </style>
 ```
 
-## Système de thèmes
+## Theme System
 
-### Palettes de couleurs (18)
+### Color Palettes (18)
 
-Le système propose 18 palettes prédéfinies via l'attribut `data-palette` :
+The system offers 18 predefined palettes via the `data-palette` attribute:
 
-| Catégorie    | Palettes                       |
+| Category     | Palettes                       |
 | ------------ | ------------------------------ |
 | Professional | `corporate`, `executive`       |
 | Nature       | `forest`, `ocean`, `earth`     |
@@ -196,15 +196,15 @@ Le système propose 18 palettes prédéfinies via l'attribut `data-palette` :
 | Cool         | `arctic`, `indigo`, `mint`     |
 
 ```html
-<!-- Appliquer une palette -->
+<!-- Apply a palette -->
 <body data-palette="ocean"></body>
 ```
 
-### Pairings typographiques (30)
+### Typography Pairings (30)
 
-30 combinaisons de polices via l'attribut `data-font` :
+30 font combinations via the `data-font` attribute:
 
-| Catégorie  | Fonts                                                            |
+| Category   | Fonts                                                            |
 | ---------- | ---------------------------------------------------------------- |
 | Sans-serif | `modern`, `humanist`, `geometric`, `minimal`, `startup`, etc.    |
 | Serif      | `editorial`, `classic`, `literary`, `magazine`, `academic`, etc. |
@@ -212,21 +212,21 @@ Le système propose 18 palettes prédéfinies via l'attribut `data-palette` :
 | Technical  | `technical`, `developer`, `terminal`, `data`, `science`, etc.    |
 
 ```html
-<!-- Appliquer un pairing -->
+<!-- Apply a pairing -->
 <body data-font="editorial"></body>
 ```
 
-## Dark mode
+## Dark Mode
 
-### Implémentation
+### Implementation
 
-Le dark mode utilise la classe `.dark` sur l'élément `<html>` :
+Dark mode uses the `.dark` class on the `<html>` element:
 
 ```css
 /* Tailwind custom variant */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Schéma de couleur */
+/* Color scheme */
 html {
 	color-scheme: light;
 }
@@ -235,10 +235,10 @@ html.dark {
 }
 ```
 
-### Pattern pour styles scoped
+### Pattern for Scoped Styles
 
 ```css
-/* Styles light (défaut) */
+/* Light styles (default) */
 .component {
 	--bg: var(--color-secondary-50);
 	--text: var(--color-secondary-900);
@@ -246,16 +246,16 @@ html.dark {
 	color: var(--text);
 }
 
-/* Styles dark */
+/* Dark styles */
 :global(.dark) .component {
 	--bg: var(--color-secondary-800);
 	--text: var(--color-secondary-100);
 }
 ```
 
-### Pattern OKLCH pour dark mode
+### OKLCH Pattern for Dark Mode
 
-Pour les couleurs avec teinte préservée :
+For colors with preserved hue:
 
 ```css
 :global(.dark) .alert[data-variant='success'] {
@@ -263,64 +263,64 @@ Pour les couleurs avec teinte préservée :
 }
 ```
 
-### Couleurs dark mode standards
+### Standard Dark Mode Colors
 
-| Élément         | Light           | Dark            |
-| --------------- | --------------- | --------------- |
-| Background      | `secondary-50`  | `secondary-900` |
-| Surface/Cards   | `white`         | `secondary-800` |
-| Text principal  | `secondary-900` | `secondary-100` |
-| Text secondaire | `secondary-600` | `secondary-400` |
-| Borders         | `secondary-200` | `secondary-700` |
-| Primary actions | `primary-600`   | `primary-400`   |
+| Element        | Light           | Dark            |
+| -------------- | --------------- | --------------- |
+| Background     | `secondary-50`  | `secondary-900` |
+| Surface/Cards  | `white`         | `secondary-800` |
+| Primary text   | `secondary-900` | `secondary-100` |
+| Secondary text | `secondary-600` | `secondary-400` |
+| Borders        | `secondary-200` | `secondary-700` |
+| Primary actions| `primary-600`   | `primary-400`   |
 
-## Composants
+## Components
 
-### Classes utilitaires globales
+### Global Utility Classes
 
-Définies dans `app.css` via `@layer components` :
+Defined in `app.css` via `@layer components`:
 
-**Boutons :**
+**Buttons:**
 
-- `.btn-primary` - Action principale
-- `.btn-secondary` - Action secondaire
-- `.btn-accent` - Action d'accent
-- `.btn-outline` - Bouton bordure
-- `.btn-ghost` - Bouton transparent
-- `.btn-sm`, `.btn-lg` - Tailles
+- `.btn-primary` - Primary action
+- `.btn-secondary` - Secondary action
+- `.btn-accent` - Accent action
+- `.btn-outline` - Outline button
+- `.btn-ghost` - Transparent button
+- `.btn-sm`, `.btn-lg` - Sizes
 
-**Cards :**
+**Cards:**
 
-- `.card` - Card avec ombre
-- `.card-bordered` - Card avec bordure
+- `.card` - Card with shadow
+- `.card-bordered` - Card with border
 
-**Formulaires :**
+**Forms:**
 
-- `.input` - Champ de saisie
-- `.input-error` - État erreur
-- `.label` - Label de formulaire
+- `.input` - Input field
+- `.input-error` - Error state
+- `.label` - Form label
 
-**Badges :**
+**Badges:**
 
 - `.badge-primary`, `.badge-accent`
 - `.badge-success`, `.badge-warning`, `.badge-error`
 
-**Alertes :**
+**Alerts:**
 
 - `.alert-info`, `.alert-success`
 - `.alert-warning`, `.alert-error`
 
-### Système de variants (data-attributes)
+### Variant System (data-attributes)
 
-Les composants complexes utilisent des attributs `data-*` pour les variants :
+Complex components use `data-*` attributes for variants:
 
 ```svelte
-<!-- Variants de style -->
+<!-- Style variants -->
 <Section data-variant="surface" />
 <Section data-variant="card" />
 <Section data-variant="transparent" />
 
-<!-- Tailles -->
+<!-- Sizes -->
 <Badge data-size="sm" />
 <Badge data-size="md" />
 <Badge data-size="lg" />
@@ -331,51 +331,51 @@ Les composants complexes utilisent des attributs `data-*` pour les variants :
 <Section data-spacing="lg" />
 ```
 
-## Bonnes pratiques
+## Best Practices
 
-### 1. Source unique de vérité
+### 1. Single Source of Truth
 
-Toujours utiliser les design tokens :
+Always use design tokens:
 
 ```css
-/* ✅ Bon */
+/* Good */
 color: var(--color-primary-600);
 padding: var(--spacing-md);
 border-radius: var(--radius-lg);
 
-/* ❌ Mauvais */
+/* Bad */
 color: #4f46e5;
 padding: 16px;
 border-radius: 8px;
 ```
 
-### 2. Couleurs sémantiques
+### 2. Semantic Colors
 
-Ne jamais utiliser de couleurs descriptives :
+Never use descriptive colors:
 
 ```css
-/* ✅ Bon */
+/* Good */
 @apply bg-primary-600 text-success-500;
 
-/* ❌ Mauvais */
+/* Bad */
 @apply bg-blue-600 text-green-500;
 ```
 
-### 3. Mobile-first responsive
+### 3. Mobile-First Responsive
 
-Toujours partir du mobile :
+Always start from mobile:
 
 ```svelte
-<!-- ✅ Bon : mobile-first -->
+<!-- Good: mobile-first -->
 <div class="flex-col md:flex-row lg:gap-8">
 
-<!-- ❌ Mauvais : desktop-first -->
+<!-- Bad: desktop-first -->
 <div class="flex-row max-md:flex-col">
 ```
 
-### 4. Accessibilité
+### 4. Accessibility
 
-Toujours inclure :
+Always include:
 
 ```css
 /* Focus visible */
@@ -392,60 +392,60 @@ Toujours inclure :
 }
 ```
 
-### 5. Pas de magic numbers
+### 5. No Magic Numbers
 
 ```css
-/* ✅ Bon */
+/* Good */
 gap: var(--spacing-md);
 font-size: var(--text-lg);
 
-/* ❌ Mauvais */
+/* Bad */
 gap: 16px;
 font-size: 18px;
 ```
 
-### 6. Scoped styles minimaux
+### 6. Minimal Scoped Styles
 
-Les styles scoped ne doivent contenir que ce qui ne peut pas être fait avec Tailwind :
+Scoped styles should only contain what cannot be done with Tailwind:
 
 ```svelte
-<!-- ✅ Bon : Tailwind pour layout, scoped pour variants -->
+<!-- Good: Tailwind for layout, scoped for variants -->
 <div class="flex items-center gap-4 p-4" data-variant={variant}>
 
 <style>
-  /* Seulement les variants complexes */
+  /* Only complex variants */
   [data-variant='success'] { --icon-color: var(--color-success-500); }
   [data-variant='error'] { --icon-color: var(--color-error-500); }
 </style>
 ```
 
-## Checklist PR
+## PR Checklist
 
-### Avant de soumettre du CSS
+### Before Submitting CSS
 
-- [ ] **Tokens** : Utilise les design tokens (pas de valeurs hardcodées)
-- [ ] **Dark mode** : Le composant supporte le dark mode
-- [ ] **Responsive** : Mobile-first avec breakpoints appropriés
-- [ ] **Accessibilité** : Focus states visibles, contrastes suffisants
-- [ ] **Sémantique** : Couleurs sémantiques (primary, success, error)
-- [ ] **Scoped minimal** : Pas de duplication avec Tailwind
-- [ ] **Variants** : Utilise `data-*` attributes si plusieurs variants
+- [ ] **Tokens**: Uses design tokens (no hardcoded values)
+- [ ] **Dark mode**: Component supports dark mode
+- [ ] **Responsive**: Mobile-first with appropriate breakpoints
+- [ ] **Accessibility**: Visible focus states, sufficient contrasts
+- [ ] **Semantic**: Semantic colors (primary, success, error)
+- [ ] **Minimal scoped**: No duplication with Tailwind
+- [ ] **Variants**: Uses `data-*` attributes if multiple variants
 
-### Vérifications automatiques
+### Automated Checks
 
 ```bash
-# Linting CSS (si Stylelint configuré)
+# CSS Linting (if Stylelint configured)
 pnpm lint
 
-# Build pour vérifier le purge CSS
+# Build to verify CSS purge
 pnpm build
 ```
 
-## Audit et qualité
+## Audit and Quality
 
-- [CSS Audit Report](/audit/ecrin/css-audit-report) - Rapport d'audit détaillé (Issue #41)
+- [CSS Audit Report](/audit/ecrin/css-audit-report) - Detailed audit report (Issue #41)
 
-## Ressources
+## Resources
 
 - [Tailwind CSS Documentation](https://tailwindcss.com/docs)
 - [OKLCH Color Space](https://oklch.com/)

@@ -1,95 +1,95 @@
-# Guide chercheur ECRIN
+# ECRIN Researcher Guide
 
-ECRIN est une plateforme de collaboration pour chercheurs développée par l'Université Le Havre Normandie.
+ECRIN is a collaboration platform for researchers developed by Le Havre Normandie University.
 
-## Ce que vous pouvez faire avec ECRIN
+## What You Can Do with ECRIN
 
-ECRIN vous permet de :
+ECRIN allows you to:
 
-- **Présenter vos travaux** : décrivez vos questions scientifiques et référencez vos publications
-- **Trouver des collaborateurs** : constituez des équipes et trouvez des experts
-- **Visualiser les réseaux** : explorez les graphes de collaboration de la communauté
-- **Rechercher des données** : trouvez des données et des experts pour enrichir vos recherches
-- **Publier vos contenus** : partagez vos données et actualités avec la communauté
+- **Present your work**: describe your scientific questions and reference your publications
+- **Find collaborators**: build teams and find experts
+- **Visualize networks**: explore the community's collaboration graphs
+- **Search for data**: find data and experts to enrich your research
+- **Publish your content**: share your data and news with the community
 
-## Les cartes ECRIN
+## ECRIN Cards
 
-L'application est organisée en **6 sections** représentant les différentes étapes de la collaboration scientifique.
+The application is organized into **6 sections** representing the different stages of scientific collaboration.
 
-### Introduce - Présenter vos travaux
+### Introduce - Present Your Work
 
-| Carte | Ce que vous pouvez faire |
-|-------|--------------------------|
-| **Me** | Décrivez votre profil |
-| **My scientific question** | Décrivez votre question scientifique pour obtenir des retours de la communauté |
-| **My references** | Référencez vos publications scientifiques récentes en un seul endroit |
+| Card | What You Can Do |
+|------|-----------------|
+| **Me** | Describe your profile |
+| **My scientific question** | Describe your scientific question to get feedback from the community |
+| **My references** | Reference your recent scientific publications in one place |
 
-### Collaborate - Constituer votre équipe
+### Collaborate - Build Your Team
 
-| Carte | Ce que vous pouvez faire |
-|-------|--------------------------|
-| **Create my project** | Déclarez votre projet pour trouver des collaborateurs |
-| **Build my team** | Trouvez des collaborateurs en partageant vos besoins |
-| **Find my expert** | Connectez-vous avec des experts pour enrichir votre projet |
-| **Fund my project** | Recherchez des opportunités de financement |
+| Card | What You Can Do |
+|------|-----------------|
+| **Create my project** | Declare your project to find collaborators |
+| **Build my team** | Find collaborators by sharing your needs |
+| **Find my expert** | Connect with experts to enrich your project |
+| **Fund my project** | Search for funding opportunities |
 
-### Explore - Visualiser les réseaux
+### Explore - Visualize Networks
 
-| Carte | Ce que vous pouvez faire |
-|-------|--------------------------|
-| **My graph** | Visualisez votre question scientifique et votre projet sous forme de graphe |
-| **Community graph** | Explorez les connexions de la communauté pour découvrir des projets intéressants |
+| Card | What You Can Do |
+|------|-----------------|
+| **My graph** | Visualize your scientific question and project as a graph |
+| **Community graph** | Explore the community's connections to discover interesting projects |
 
-### Ask - Rechercher des ressources
+### Ask - Search for Resources
 
-| Carte | Ce que vous pouvez faire |
-|-------|--------------------------|
-| **Data** | Recherchez des données pour soutenir votre recherche |
-| **An expert** | Discutez avec un expert selon sa localisation, sa thématique ou ses données |
+| Card | What You Can Do |
+|------|-----------------|
+| **Data** | Search for data to support your research |
+| **An expert** | Chat with an expert based on their location, topic, or data |
 
-### Publish - Partager vos contenus
+### Publish - Share Your Content
 
-| Carte | Ce que vous pouvez faire |
-|-------|--------------------------|
-| **My data** | Publiez vos données de recherche pour les partager avec la communauté |
-| **My news** | Rédigez un article pour partager vos travaux et actualités |
+| Card | What You Can Do |
+|------|-----------------|
+| **My data** | Publish your research data to share with the community |
+| **My news** | Write an article to share your work and news |
 
-### Administrate - Gérer votre compte
+### Administrate - Manage Your Account
 
-| Carte | Ce que vous pouvez faire |
-|-------|--------------------------|
-| **My account** | Gérez votre compte : inscription, déconnexion, suppression |
-| **My survey** | Gérez vos réponses aux enquêtes et votre politique de données |
+| Card | What You Can Do |
+|------|-----------------|
+| **My account** | Manage your account: registration, logout, deletion |
+| **My survey** | Manage your survey responses and data policy |
 
-## Fonctionnalités disponibles
+## Available Features
 
-### Disponibles maintenant
+### Available Now
 
-- ✅ **Inscription et authentification** par lien magique (email)
-- ✅ **Création de projet** avec enquête REDCap
-- ✅ **Visualisation de graphes** de collaboration
-- ✅ **Gestion de compte** (inscription, déconnexion, suppression)
-- ✅ **Gestion des enquêtes** (téléchargement, suppression)
+- **Registration and authentication** via magic link (email)
+- **Project creation** with REDCap survey
+- **Collaboration graph visualization**
+- **Account management** (registration, logout, deletion)
+- **Survey management** (download, deletion)
 
-### En cours de développement
+### Under Development
 
-- 🚧 Présentation des questions scientifiques
-- 🚧 Référencement des publications
-- 🚧 Recherche d'experts par domaine
-- 🚧 Constitution d'équipes
-- 🚧 Publication de données et actualités
+- Presentation of scientific questions
+- Publication referencing
+- Expert search by domain
+- Team building
+- Data and news publishing
 
 ## Find an Expert
 
-**Find an Expert** est une application complémentaire permettant de découvrir et analyser l'expertise des chercheurs.
+**Find an Expert** is a companion application for discovering and analyzing researcher expertise.
 
-### Ce que vous pouvez faire
+### What You Can Do
 
-- **Rechercher des institutions** via OpenAlex
-- **Gérer votre consentement** pour le partage de données
-- **Consulter les statistiques** de publications
+- **Search for institutions** via OpenAlex
+- **Manage your consent** for data sharing
+- **View publication statistics**
 
-## Besoin d'aide ?
+## Need Help?
 
-- [Roadmap ECRIN](/roadmaps/ecrin/) - Fonctionnalités à venir
-- [Documentation technique](/projects/ecrin/dev/) - Pour les développeurs
+- [ECRIN Roadmap](/roadmaps/ecrin/) - Upcoming features
+- [Technical Documentation](/projects/ecrin/dev/) - For developers

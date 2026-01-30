@@ -1,56 +1,56 @@
-# Documentation technique ECRIN
+# ECRIN Technical Documentation
 
-Documentation technique pour les développeurs travaillant sur le projet ECRIN.
+Technical documentation for developers working on the ECRIN project.
 
-> **Vous êtes chercheur ?** Consultez plutôt le [Guide chercheur ECRIN](/projects/ecrin/user/).
+> **Are you a researcher?** Please refer to the [ECRIN Researcher Guide](/projects/ecrin/user/) instead.
 
 ## Applications
 
-Le projet ECRIN comprend deux applications SvelteKit :
+The ECRIN project includes two SvelteKit applications:
 
 | Application | Version | Description |
 |-------------|---------|-------------|
-| **Find an Expert** | 0.5.1 | Découverte et analyse de l'expertise des chercheurs via OpenAlex et GitHub |
-| **ECRIN** | 2.0.0 | Plateforme de collaboration avec enquêtes REDCap et visualisation de graphes |
+| **Find an Expert** | 0.5.1 | Researcher expertise discovery and analysis via OpenAlex and GitHub |
+| **ECRIN** | 2.0.0 | Collaboration platform with REDCap surveys and graph visualization |
 
-## État du développement
+## Development Status
 
-### Authentification
+### Authentication
 
-| Fonctionnalité | Find an Expert | ECRIN |
-|----------------|----------------|-------|
-| Magic Link (email) | ✅ Opérationnel | ✅ Opérationnel |
-| Gestion de sessions | ✅ Opérationnel | ✅ Opérationnel |
-| Routes protégées | ✅ Opérationnel | ✅ Opérationnel |
-| Suppression de compte | - | ✅ Opérationnel |
+| Feature | Find an Expert | ECRIN |
+|---------|----------------|-------|
+| Magic Link (email) | Operational | Operational |
+| Session management | Operational | Operational |
+| Protected routes | Operational | Operational |
+| Account deletion | - | Operational |
 
-### Intégrations API
+### API Integrations
 
-| Source | Statut | Détails |
+| Source | Status | Details |
 |--------|--------|---------|
-| **OpenAlex** | Partiel | Recherche d'institutions opérationnelle, profils chercheurs à développer |
-| **GitHub** | Partiel | Parsing d'URLs et stats git locales, API GitHub non connectée |
-| **REDCap** | ✅ Opérationnel | Export enquêtes, génération de liens, suppression d'enregistrements |
-| **Appwrite** | ✅ Opérationnel | Auth, collections consent-events et current-consents |
+| **OpenAlex** | Partial | Institution search operational, researcher profiles to be developed |
+| **GitHub** | Partial | URL parsing and local git stats, GitHub API not connected |
+| **REDCap** | Operational | Survey export, link generation, record deletion |
+| **Appwrite** | Operational | Auth, consent-events and current-consents collections |
 
-### Fonctionnalités métier
+### Business Features
 
-| Fonctionnalité | Statut | Application |
-|----------------|--------|-------------|
-| Recherche d'institutions | ✅ Opérationnel | Find an Expert |
-| Gestion du consentement | ✅ Opérationnel | Find an Expert |
-| Health monitoring | ✅ Opérationnel | Find an Expert |
-| Génération liens enquête | ✅ Opérationnel | ECRIN |
-| Export enquêtes (JSON) | ✅ Opérationnel | ECRIN |
-| Visualisation graphes | ✅ Opérationnel | ECRIN |
-| Graphes de collaboration | ✅ Opérationnel | ECRIN |
+| Feature | Status | Application |
+|---------|--------|-------------|
+| Institution search | Operational | Find an Expert |
+| Consent management | Operational | Find an Expert |
+| Health monitoring | Operational | Find an Expert |
+| Survey link generation | Operational | ECRIN |
+| Survey export (JSON) | Operational | ECRIN |
+| Graph visualization | Operational | ECRIN |
+| Collaboration graphs | Operational | ECRIN |
 
-## Cartes fonctionnelles
+## Functional Cards
 
-L'application ECRIN est organisée en **6 sections** avec **15 cartes** au total.
+The ECRIN application is organized into **6 sections** with **15 cards** in total.
 
-| Section | Cartes | Opérationnelles | En cours |
-|---------|--------|-----------------|----------|
+| Section | Cards | Operational | In Progress |
+|---------|-------|-------------|-------------|
 | Introduce | 3 | 0 | 3 |
 | Collaborate | 4 | 1 | 3 |
 | Explore | 2 | 1 | 1 |
@@ -59,115 +59,115 @@ L'application ECRIN est organisée en **6 sections** avec **15 cartes** au total
 | Administrate | 2 | 2 | 0 |
 | **Total** | **15** | **4** | **11** |
 
-### Détail par section
+### Detail by Section
 
-#### Section Introduce
+#### Introduce Section
 
-| Carte | État | Composant |
-|-------|------|-----------|
-| Me | 🚧 UI implémentée | `Introduce.svelte` |
-| My scientific question | 🚧 UI implémentée | `Introduce.svelte` |
-| My references | 🚧 UI implémentée | `Introduce.svelte` |
+| Card | Status | Component |
+|------|--------|-----------|
+| Me | UI implemented | `Introduce.svelte` |
+| My scientific question | UI implemented | `Introduce.svelte` |
+| My references | UI implemented | `Introduce.svelte` |
 
-#### Section Collaborate
+#### Collaborate Section
 
-| Carte | État | Composant |
-|-------|------|-----------|
-| Create my project | ✅ Opérationnelle | `Collaborate.svelte` |
-| Build my team | 🚧 UI implémentée | `Collaborate.svelte` |
-| Find my expert | 🚧 UI implémentée | `Collaborate.svelte` |
-| Fund my project | 🚧 UI implémentée | `Collaborate.svelte` |
+| Card | Status | Component |
+|------|--------|-----------|
+| Create my project | Operational | `Collaborate.svelte` |
+| Build my team | UI implemented | `Collaborate.svelte` |
+| Find my expert | UI implemented | `Collaborate.svelte` |
+| Fund my project | UI implemented | `Collaborate.svelte` |
 
-#### Section Explore
+#### Explore Section
 
-| Carte | État | Composant |
-|-------|------|-----------|
-| My graph | ✅ Opérationnelle | `Explore.svelte` |
-| Community graph | 🚧 Actions désactivées | `Explore.svelte` |
+| Card | Status | Component |
+|------|--------|-----------|
+| My graph | Operational | `Explore.svelte` |
+| Community graph | Actions disabled | `Explore.svelte` |
 
-#### Section Ask
+#### Ask Section
 
-| Carte | État | Composant |
-|-------|------|-----------|
-| Data | 🚧 UI implémentée | `Ask.svelte` |
-| An expert | 🚧 Actions désactivées | `Ask.svelte` |
+| Card | Status | Component |
+|------|--------|-----------|
+| Data | UI implemented | `Ask.svelte` |
+| An expert | Actions disabled | `Ask.svelte` |
 
-#### Section Publish
+#### Publish Section
 
-| Carte | État | Composant |
-|-------|------|-----------|
-| My data | 🚧 UI implémentée | `Publish.svelte` |
-| My news | 🚧 UI implémentée | `Publish.svelte` |
+| Card | Status | Component |
+|------|--------|-----------|
+| My data | UI implemented | `Publish.svelte` |
+| My news | UI implemented | `Publish.svelte` |
 
-#### Section Administrate
+#### Administrate Section
 
-| Carte | État | Composant |
-|-------|------|-----------|
-| My account | ✅ Opérationnelle | `Administrate.svelte` |
-| My survey | ✅ Opérationnelle | `Administrate.svelte` |
+| Card | Status | Component |
+|------|--------|-----------|
+| My account | Operational | `Administrate.svelte` |
+| My survey | Operational | `Administrate.svelte` |
 
-## Endpoints API
+## API Endpoints
 
-### Endpoints opérationnels
+### Operational Endpoints
 
 ```
-POST /api/v1/auth/login           # Authentification
-POST /api/v1/auth/logout          # Déconnexion
+POST /api/v1/auth/login           # Authentication
+POST /api/v1/auth/logout          # Logout
 GET  /api/v1/health               # Health check
-GET  /api/v1/institutions/search  # Recherche institutions
+GET  /api/v1/institutions/search  # Institution search
 ```
 
-### Endpoints non implémentés (stubs)
+### Unimplemented Endpoints (stubs)
 
 ```
-GET /api/v1/repositories/[id]/analysis      # En attente
-GET /api/v1/repositories/[id]/contributors  # Non implémenté
-GET /api/v1/repositories/[id]/issues        # Non implémenté
-GET /api/v1/repositories/[id]/pulls         # Non implémenté
-GET /api/v1/repositories/[id]/stats         # Non implémenté
+GET /api/v1/repositories/[id]/analysis      # Pending
+GET /api/v1/repositories/[id]/contributors  # Not implemented
+GET /api/v1/repositories/[id]/issues        # Not implemented
+GET /api/v1/repositories/[id]/pulls         # Not implemented
+GET /api/v1/repositories/[id]/stats         # Not implemented
 ```
 
-## Stack technique
+## Technical Stack
 
-| Domaine | Technologies |
-|---------|-------------|
+| Domain | Technologies |
+|--------|--------------|
 | Frontend | SvelteKit 2, Svelte 5 (runes), Tailwind CSS |
 | Backend | Appwrite, REDCap |
-| Graphes | Graphology, Sigma.js |
-| Tests | Vitest (13 fichiers Find an Expert, 6 fichiers ECRIN) |
+| Graphs | Graphology, Sigma.js |
+| Tests | Vitest (13 files Find an Expert, 6 files ECRIN) |
 | Build | Vite, TypeScript strict |
 
-## Composants UI
+## UI Components
 
-### Find an Expert (70+ composants)
+### Find an Expert (70+ components)
 
-| Catégorie | Composants |
-|-----------|------------|
+| Category | Components |
+|----------|------------|
 | Layout | Section, Grid, PageLayout, Hero, CenteredLayout |
 | Navigation | Navbar, Footer, Drawer, Dropdown, LanguageSelector |
 | Data Display | Card, DataTable, StatCard, InfoCard, KeyValue |
 | Feedback | Alert, Badge, LoadingSpinner, ErrorState |
-| Domaine | ResearchOrganizationSearch, ArticlesCountCard, ConsentStatusCard |
+| Domain | ResearchOrganizationSearch, ArticlesCountCard, ConsentStatusCard |
 
-### ECRIN (18 composants spécialisés)
+### ECRIN (18 specialized components)
 
-| Catégorie | Composants |
-|-----------|------------|
-| Cartes métier | Introduce, Ask, Collaborate, Explore, Publish, Administrate |
-| Graphes | GraphSelector, composants de visualisation Sigma |
+| Category | Components |
+|----------|------------|
+| Business Cards | Introduce, Ask, Collaborate, Explore, Publish, Administrate |
+| Graphs | GraphSelector, Sigma visualization components |
 | UI | CardItem, Button, SectionTile, HorizontalScroller |
 
-## Documentation technique
+## Technical Documentation
 
 ### Find an Expert
 
-- [Configuration technique](/projects/ecrin/find-an-expert/technical-setup) - Installation et développement
-- [Configuration Appwrite](/projects/ecrin/find-an-expert/appwrite-setup) - Backend et collections
-- [Design System](/projects/ecrin/find-an-expert/design-system) - Composants et thèmes
-- [Architecture CSS](/projects/ecrin/find-an-expert/css-architecture) - Tailwind et styles
+- [Technical Setup](/projects/ecrin/find-an-expert/technical-setup) - Installation and development
+- [Appwrite Setup](/projects/ecrin/find-an-expert/appwrite-setup) - Backend and collections
+- [Design System](/projects/ecrin/find-an-expert/design-system) - Components and themes
+- [CSS Architecture](/projects/ecrin/find-an-expert/css-architecture) - Tailwind and styles
 
-### Audits et références
+### Audits and References
 
-- [Audit technique](/projects/ecrin/audit/) - Architecture et cartes fonctionnelles
-- [Audit CSS](/projects/ecrin/audit/css-audit-report) - Rapport d'audit CSS
-- [API Reference](/api/@univ-lehavre/atlas-find-an-expert/) - Documentation TypeDoc
+- [Technical Audit](/projects/ecrin/audit/) - Architecture and functional cards
+- [CSS Audit](/projects/ecrin/audit/css-audit-report) - CSS audit report
+- [API Reference](/api/@univ-lehavre/atlas-find-an-expert/) - TypeDoc documentation
