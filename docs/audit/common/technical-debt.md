@@ -1,145 +1,146 @@
-# Audit de la dette technique
 
-> **Dernière mise à jour :** 29 janvier 2026
+# Technical debt audit
 
-Ce document analyse l'équilibre entre réutilisation de bibliothèques existantes et risque de sur-dépendance dans le monorepo Atlas.
+> **Last updated:** 29 January 2026
 
-## Résumé exécutif
+This document analyses the balance between reusing existing libraries and the risk of over-dependence within the Atlas monorepo.
 
-| Métrique | Valeur |
-|----------|--------|
-| Dépendances de production | 43 packages |
-| Dépendances de développement | 47 packages |
-| Packages internes (workspace) | 14 |
-| Dépendances inutilisées identifiées | 3 |
-| Duplications fonctionnelles | 4 |
+## Executive summary
 
----
-
-## 1. Philosophie : réutiliser vs réinventer
-
-### 1.1 Arguments pour la réutilisation
-
-- **Gain de temps** : Ne pas recoder ce qui existe déjà
-- **Qualité** : Bibliothèques testées par la communauté
-- **Maintenance** : Mises à jour de sécurité externalisées
-- **Documentation** : Ressources existantes
-
-### 1.2 Risques de la sur-dépendance
-
-- **Taille du bundle** : Impact sur les performances
-- **Sécurité** : Surface d'attaque élargie
-- **Maintenance** : Mises à jour en cascade
-- **Obsolescence** : Bibliothèques abandonnées
-- **Complexité** : Conflits de versions
+| Metric | Value |
+|--------|-------|
+| Production dependencies | 43 packages |
+| Development dependencies | 47 packages |
+| Internal packages (workspace) | 14 |
+| Unused dependencies identified | 3 |
+| Functional duplications | 4 |
 
 ---
 
-## 2. Analyse des dépendances critiques
+## 1. Philosophy: reuse vs reinvent
 
-### 2.1 Écosystème Effect (justifié)
+### 1.1 Arguments for reuse
 
-| Package | Utilisé par | Taille | Verdict |
-|---------|-------------|--------|---------|
-| `effect` | 5 packages | ~150KB | **Essentiel** - Architecture du projet |
-| `@effect/platform` | 2 packages | ~50KB | **Justifié** - Abstractions plateforme |
-| `@effect/cli` | 2 packages | ~30KB | **Justifié** - CLI typés |
+- **Time saving**: Do not reimplement existing solutions
+- **Quality**: Libraries tested by the community
+- **Maintenance**: Security updates handled upstream
+- **Documentation**: Existing resources available
 
-**Conclusion** : L'écosystème Effect est le cœur architectural d'Atlas. La dette est acceptée.
+### 1.2 Risks of over-dependence
 
-### 2.2 Visualisation graphe (à surveiller)
-
-| Package | Utilisé par | Taille | Verdict |
-|---------|-------------|--------|---------|
-| `graphology` | ecrin | ~100KB | **Justifié** - Pas d'alternative légère |
-| `sigma` | ecrin | ~200KB | **Justifié** - WebGL performant |
-| `graphology-layout-*` | ecrin | ~50KB | **À évaluer** - 3 plugins layout |
-
-**Conclusion** : Ces dépendances sont lourdes mais essentielles pour ECRIN. Envisager l'extraction en package optionnel.
-
-### 2.3 Utilitaires remplaçables
-
-| Package | Utilisé par | Alternative native | Verdict |
-|---------|-------------|-------------------|---------|
-| `uuid` | ecrin | `crypto.randomUUID()` | **Remplaçable** |
-| `lodash` | ecrin | Méthodes Array/Object | **Partiellement remplaçable** |
-| `luxon` | amarre, ecrin | `Intl.DateTimeFormat` | **À évaluer** |
+- **Bundle size**: Impact on performance
+- **Security**: Increased attack surface
+- **Maintenance**: Cascading updates
+- **Obsolescence**: Abandoned libraries
+- **Complexity**: Version conflicts
 
 ---
 
-## 3. Problèmes identifiés
+## 2. Analysis of critical dependencies
 
-### 3.1 Dépendances inutilisées
+### 2.1 Effect ecosystem (justified)
 
-| Package | Emplacement | Action |
-|---------|-------------|--------|
-| `vue-chartjs` | racine | **Supprimer** - Jamais utilisé |
-| `chart.js` | racine | **Supprimer** - Jamais utilisé |
+| Package | Used by | Size | Verdict |
+|---------|---------|------|---------|
+| `effect` | 5 packages | ~150KB | **Essential** - Project architecture |
+| `@effect/platform` | 2 packages | ~50KB | **Justified** - Platform abstractions |
+| `@effect/cli` | 2 packages | ~30KB | **Justified** - Typed CLIs |
 
-### 3.2 Duplication Appwrite
+**Conclusion**: The Effect ecosystem is the architectural core of Atlas. The debt is accepted.
 
-Le package `ecrin` utilise **deux** clients Appwrite :
+### 2.2 Graph visualization (monitor)
+
+| Package | Used by | Size | Verdict |
+|---------|---------|------|---------|
+| `graphology` | ecrin | ~100KB | **Justified** - No lightweight alternative |
+| `sigma` | ecrin | ~200KB | **Justified** - High-performance WebGL |
+| `graphology-layout-*` | ecrin | ~50KB | **To evaluate** - 3 layout plugins |
+
+**Conclusion**: These dependencies are heavy but essential for ECRIN. Consider extracting them into an optional package.
+
+### 2.3 Replaceable utilities
+
+| Package | Used by | Native alternative | Verdict |
+|---------|---------|--------------------|---------|
+| `uuid` | ecrin | `crypto.randomUUID()` | **Replaceable** |
+| `lodash` | ecrin | Array/Object methods | **Partially replaceable** |
+| `luxon` | amarre, ecrin | `Intl.DateTimeFormat` | **To evaluate** |
+
+---
+
+## 3. Issues identified
+
+### 3.1 Unused dependencies
+
+| Package | Location | Action |
+|---------|----------|--------|
+| `vue-chartjs` | root | **Remove** - Never used |
+| `chart.js` | root | **Remove** - Never used |
+
+### 3.2 Appwrite duplication
+
+The `ecrin` package uses **two** Appwrite clients:
 
 ```json
 {
-  "appwrite": "21.5.0",      // Client navigateur
-  "node-appwrite": "17.0.1"  // Client serveur
+  "appwrite": "21.5.0",      // Browser client
+  "node-appwrite": "17.0.1"  // Server client
 }
 ```
 
-**Recommandation** : Utiliser uniquement `node-appwrite` côté serveur via `@univ-lehavre/atlas-appwrite`.
+**Recommendation**: Use `node-appwrite` on the server side via `@univ-lehavre/atlas-appwrite`.
 
-### 3.3 Versions désalignées
+### 3.3 Misaligned versions
 
-| Package | Versions trouvées | Recommandation |
-|---------|-------------------|----------------|
-| `simple-git` | 3.27.0 (root), 3.30.0 (find-an-expert) | Aligner sur 3.30.0 |
+| Package | Found versions | Recommendation |
+|---------|----------------|----------------|
+| `simple-git` | 3.27.0 (root), 3.30.0 (find-an-expert) | Align on 3.30.0 |
 
-### 3.4 Validation fragmentée
+### 3.4 Fragmented validation
 
-- `zod` utilisé dans amarre et find-an-expert
-- `@univ-lehavre/atlas-validators` existe mais n'utilise pas zod
+- `zod` is used in amarre and find-an-expert
+- `@univ-lehavre/atlas-validators` exists but does not use zod
 
-**Recommandation** : Consolider la validation dans le package validators avec zod.
-
----
-
-## 4. Dépendances à usage unique
-
-Ces dépendances ne sont utilisées que dans un seul package :
-
-| Package | Utilisé par | Justification |
-|---------|-------------|---------------|
-| `hono-rate-limiter` | crf | **Justifié** - Fonctionnalité spécifique |
-| `openapi-response-validator` | ecrin | **À évaluer** - Lourd pour un seul usage |
-| `@stoplight/prism-cli` | crf (dev) | **Justifié** - Mock server pour tests |
-| `swagger-ui-dist` | find-an-expert | **Justifié** - Documentation API |
+**Recommendation**: Consolidate validation in the `validators` package using zod.
 
 ---
 
-## 5. Ce qui fonctionne bien
+## 4. Single-use dependencies
 
-### 5.1 Configuration centralisée
+These dependencies are used in a single package:
 
-`@univ-lehavre/atlas-shared-config` centralise :
+| Package | Used by | Justification |
+|---------|---------|---------------|
+| `hono-rate-limiter` | crf | **Justified** - Specific feature |
+| `openapi-response-validator` | ecrin | **To evaluate** - Heavy for a single use |
+| `@stoplight/prism-cli` | crf (dev) | **Justified** - Mock server for tests |
+| `swagger-ui-dist` | find-an-expert | **Justified** - API documentation |
+
+---
+
+## 5. What works well
+
+### 5.1 Centralized configuration
+
+`@univ-lehavre/atlas-shared-config` centralizes:
 - ESLint 9.x
 - Prettier 3.x
 - TypeScript 5.x
 
-**Résultat** : Cohérence garantie, maintenance simplifiée.
+**Result**: Consistency guaranteed, simplified maintenance.
 
-### 5.2 Packages internes
+### 5.2 Internal packages
 
-Les 14 packages workspace évitent la duplication :
-- `atlas-errors` : Gestion d'erreurs unifiée
-- `atlas-validators` : Validation centralisée
-- `atlas-appwrite` : Abstraction Appwrite
-- `atlas-auth` : Authentification partagée
+The 14 workspace packages avoid duplication:
+- `atlas-errors`: unified error handling
+- `atlas-validators`: centralized validation
+- `atlas-appwrite`: Appwrite abstraction
+- `atlas-auth`: shared authentication
 
-### 5.3 Écosystème cohérent
+### 5.3 Coherent ecosystem
 
-| Domaine | Choix | Cohérence |
-|---------|-------|-----------|
+| Domain | Choice | Coverage |
+|--------|--------|----------|
 | Frontend | Svelte 5 + SvelteKit 2 | 3/3 apps |
 | Backend | Effect + Hono | 2/2 services |
 | Tests | Vitest | 100% packages |
@@ -147,45 +148,45 @@ Les 14 packages workspace évitent la duplication :
 
 ---
 
-## 6. Plan d'action
+## 6. Action plan
 
-### Priorité 1 - Nettoyage immédiat
-
-| Action | Impact | Effort |
-|--------|--------|--------|
-| Supprimer vue-chartjs et chart.js | Réduction dépendances | Faible |
-| Aligner version simple-git | Cohérence | Faible |
-
-### Priorité 2 - Optimisation
+### Priority 1 - Immediate cleanup
 
 | Action | Impact | Effort |
 |--------|--------|--------|
-| Remplacer uuid par crypto.randomUUID() | -1 dépendance | Faible |
-| Consolider clients Appwrite dans ecrin | -1 dépendance | Moyen |
-| Évaluer remplacement lodash par natif | -1 dépendance | Moyen |
+| Remove vue-chartjs and chart.js | Dependency reduction | Low |
+| Align simple-git version | Consistency | Low |
 
-### Priorité 3 - Architecture
+### Priority 2 - Optimization
 
 | Action | Impact | Effort |
 |--------|--------|--------|
-| Intégrer zod dans atlas-validators | Cohérence validation | Moyen |
-| Extraire graphologie en package optionnel | Modularité | Élevé |
+| Replace uuid with crypto.randomUUID() | -1 dependency | Low |
+| Consolidate Appwrite clients in ecrin | -1 dependency | Medium |
+| Evaluate replacing lodash with native | -1 dependency | Medium |
+
+### Priority 3 - Architecture
+
+| Action | Impact | Effort |
+|--------|--------|--------|
+| Integrate zod into atlas-validators | Validation consistency | Medium |
+| Extract graphology as optional package | Modularity | High |
 
 ---
 
-## 7. Métriques de suivi
+## 7. Tracking metrics
 
 ```bash
-# Compter les dépendances uniques
+# Count unique dependencies
 pnpm ls --depth 0 | wc -l
 
-# Analyser les dépendances inutilisées
+# Analyze unused dependencies
 pnpm knip
 
-# Vérifier les mises à jour disponibles
+# Check available updates
 pnpm taze
 
-# Auditer les vulnérabilités
+# Audit vulnerabilities
 pnpm audit
 ```
 
@@ -193,12 +194,12 @@ pnpm audit
 
 ## 8. Conclusion
 
-Le monorepo Atlas maintient un **équilibre raisonnable** entre réutilisation et contrôle :
+The Atlas monorepo maintains a **reasonable balance** between reuse and control:
 
-- **Points forts** : Configuration centralisée, packages internes bien structurés, écosystème cohérent
-- **Points d'amélioration** : Quelques dépendances inutilisées, duplication Appwrite, validation fragmentée
+- **Strengths**: Centralized configuration, well-structured internal packages, coherent ecosystem
+- **Areas for improvement**: A few unused dependencies, Appwrite duplication, fragmented validation
 
-La dette technique liée aux dépendances reste **maîtrisée** grâce à :
-1. L'utilisation de pnpm (déduplication efficace)
-2. Les packages workspace (réutilisation interne)
-3. Des choix technologiques cohérents (Effect, Svelte, Vite)
+The dependency-related technical debt remains **manageable** thanks to:
+1. The use of pnpm (effective deduplication)
+2. Workspace packages (internal reuse)
+3. Coherent technology choices (Effect, Svelte, Vite)
