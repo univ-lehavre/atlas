@@ -27,6 +27,17 @@ export default withMermaid(defineConfig({
     // Relative links in CRF docs that reference external docs
     /^\.\/cli$/,
     /^\.\/architecture$/,
+    // Legacy paths from TypeDoc READMEs
+    /\/guide\/amarre/,
+    /\/guide\/audit/,
+    /\/guide\/find-an-expert/,
+    /\/guide\/dev\/crf/,
+    // Old audit paths (moved to projects)
+    /\/audit\/amarre/,
+    /\/audit\/ecrin/,
+    /\/audit\/common\/index/,
+    // Old roadmap paths (removed)
+    /\/roadmaps\//,
   ],
   themeConfig: {
     nav: [
@@ -143,6 +154,7 @@ export default withMermaid(defineConfig({
           text: 'CRF / REDCap',
           items: [
             { text: 'Documentation', link: '/projects/crf/' },
+            { text: 'API Explorer', link: '/projects/crf/api-explorer' },
           ],
         },
         {

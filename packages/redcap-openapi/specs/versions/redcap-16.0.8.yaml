@@ -1,8 +1,8 @@
 openapi: '3.1.0'
 info:
   title: 'REDCap API'
-  version: '14.5.10'
-  description: 'OpenAPI specification for REDCap API, extracted from REDCap v14.5.10 source code.
+  version: '16.0.8'
+  description: 'OpenAPI specification for REDCap API, extracted from REDCap v16.0.8 source code.
 
 
     All API operations use a single POST endpoint with form-urlencoded data.
