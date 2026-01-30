@@ -38,6 +38,8 @@ export default withMermaid(defineConfig({
     /\/audit\/common\/index/,
     // Old roadmap paths (removed)
     /\/roadmaps\//,
+    // API package index links (TypeDoc generates without /index suffix)
+    /\/api\/@univ-lehavre\/[^/]+\/index$/,
   ],
   themeConfig: {
     nav: [
