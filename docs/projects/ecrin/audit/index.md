@@ -1,328 +1,328 @@
-# Audit de l'application ECRIN
+# ECRIN Application Audit
 
-> **Dernière mise à jour :** 28 janvier 2026
+> **Last updated:** January 28, 2026
 
-Ce document présente un audit complet de l'application ECRIN, analysant son architecture, ses 6 cartes fonctionnelles et leur potentiel d'évolution en applications autonomes.
+This document presents a complete audit of the ECRIN application, analyzing its architecture, its 6 functional cards and their potential to evolve into standalone applications.
 
-## Résumé exécutif
+## Executive Summary
 
-ECRIN est une plateforme de collaboration pour chercheurs développée par l'Université Le Havre Normandie dans le cadre des projets Campus Polytechnique des Territoires Maritimes et Portuaires et EUNICoast.
+ECRIN is a collaboration platform for researchers developed by Le Havre Normandie University as part of the Campus Polytechnique des Territoires Maritimes et Portuaires and EUNICoast projects.
 
-| Métrique | Valeur |
-|----------|--------|
-| Cartes fonctionnelles | 6 |
-| Cartes implémentées | 3 (50%) |
-| Applications candidates à extraction | 3 |
-| Technologies principales | SvelteKit 2, Svelte 5, Sigma.js, Appwrite |
+| Metric | Value |
+|--------|-------|
+| Functional cards | 6 |
+| Implemented cards | 3 (50%) |
+| Candidate applications for extraction | 3 |
+| Main technologies | SvelteKit 2, Svelte 5, Sigma.js, Appwrite |
 
-### Sous-projets
+### Subprojects
 
-| Sous-projet | État |
-|-------------|------|
-| introduce-my-scientific-questions | 🚧 En cours |
-| introduce-my-references | 🚧 En cours |
-| collaborate-create-my-project | 🚧 En cours |
-| collaborate-build-my-team | 📋 Prévu |
-| collaborate-find-my-expert | 📋 Prévu |
-| collaborate-fund-my-project | 📋 Prévu |
-| explore-my-graph | 📋 Prévu |
-| explore-community-graph | 📋 Prévu |
-| ask-data | 📋 Prévu |
-| ask-an-expert | 🚧 En cours |
-| publish-my-data | 📋 Prévu |
-| publish-my-news | 📋 Prévu |
+| Subproject | Status |
+|------------|--------|
+| introduce-my-scientific-questions | In progress |
+| introduce-my-references | In progress |
+| collaborate-create-my-project | In progress |
+| collaborate-build-my-team | Planned |
+| collaborate-find-my-expert | Planned |
+| collaborate-fund-my-project | Planned |
+| explore-my-graph | Planned |
+| explore-community-graph | Planned |
+| ask-data | Planned |
+| ask-an-expert | In progress |
+| publish-my-data | Planned |
+| publish-my-news | Planned |
 
 ---
 
-## 1. Architecture générale
+## 1. General Architecture
 
-### 1.1 Vue d'ensemble
+### 1.1 Overview
 
-ECRIN est organisée autour de **6 cartes fonctionnelles**, chacune représentant un domaine métier distinct pouvant potentiellement évoluer en application autonome.
+ECRIN is organized around **6 functional cards**, each representing a distinct business domain that could potentially evolve into a standalone application.
 
 ```
 packages/ecrin/
 ├── src/
-│   ├── routes/                    # Routes SvelteKit
-│   │   ├── +page.svelte          # Page principale (6 cartes)
-│   │   ├── api/v1/               # Points d'API REST
-│   │   ├── global/               # Visualisation graphe
-│   │   └── login/                # Authentification
+│   ├── routes/                    # SvelteKit routes
+│   │   ├── +page.svelte          # Main page (6 cards)
+│   │   ├── api/v1/               # REST API endpoints
+│   │   ├── global/               # Graph visualization
+│   │   └── login/                # Authentication
 │   └── lib/
-│       ├── ui/                   # Composants des 6 cartes
-│       ├── server/services/      # Logique métier
-│       ├── appwrite/             # Intégration Appwrite
-│       ├── redcap/               # Intégration REDCap
-│       └── graph/                # Génération de graphes
+│       ├── ui/                   # Components for the 6 cards
+│       ├── server/services/      # Business logic
+│       ├── appwrite/             # Appwrite integration
+│       ├── redcap/               # REDCap integration
+│       └── graph/                # Graph generation
 ```
 
-### 1.2 Intégrations techniques
+### 1.2 Technical Integrations
 
-| Système | Rôle | Usage |
-|---------|------|-------|
-| **REDCap** | Source de données | Enquêtes, enregistrements utilisateurs, projets |
-| **Appwrite** | Backend | Authentification, sessions, base de données |
-| **Sigma.js + Graphology** | Visualisation | Graphes de réseaux de recherche |
-
----
-
-## 2. Les 6 cartes fonctionnelles
-
-### Vue d'ensemble
-
-| Carte | Composant | Description | Statut backend |
-|-------|-----------|-------------|:--------------:|
-| **Introduce** | `Introduce.svelte` | Présenter ses travaux de recherche | ❌ Interface seulement |
-| **Collaborate** | `Collaborate.svelte` | Trouver des collaborateurs et créer des projets | ✅ Fonctionnel |
-| **Explore** | `Explore.svelte` | Visualiser les réseaux de recherche | ✅ Fonctionnel |
-| **Ask** | `Ask.svelte` | Rechercher des données et des experts | ❌ Interface seulement |
-| **Publish** | `Publish.svelte` | Partager ses données et actualités | ❌ Interface seulement |
-| **Administrate** | `Administrate.svelte` | Gérer son compte et ses enquêtes | ✅ Fonctionnel |
+| System | Role | Usage |
+|--------|------|-------|
+| **REDCap** | Data source | Surveys, user records, projects |
+| **Appwrite** | Backend | Authentication, sessions, database |
+| **Sigma.js + Graphology** | Visualization | Research network graphs |
 
 ---
 
-## 3. Détail des cartes
+## 2. The 6 Functional Cards
 
-### 3.1 Carte "Introduce" (Présenter)
+### Overview
 
-**Fichier :** `packages/ecrin/src/lib/ui/Introduce.svelte`
-
-**Objectif :** Permettre aux chercheurs de présenter leurs travaux de recherche pour obtenir des retours de la communauté.
-
-#### Sous-cartes
-
-| Sous-carte | Description | Implémentation |
-|------------|-------------|:--------------:|
-| Ma question scientifique | Décrire sa recherche pour obtenir des retours | ❌ Interface seulement |
-| Mes références | Référencer ses publications récentes | ❌ Interface seulement |
-
-#### État d'implémentation
-
-- **Frontend :** Structure de l'interface présente
-- **Backend :** Aucune intégration
-
-#### Recommandation
-
-Intégrer avec **find-an-expert** pour :
-- Récupérer automatiquement les publications via OpenAlex
-- Construire le profil chercheur à partir des données bibliographiques
+| Card | Component | Description | Backend status |
+|------|-----------|-------------|:--------------:|
+| **Introduce** | `Introduce.svelte` | Present research work | Interface only |
+| **Collaborate** | `Collaborate.svelte` | Find collaborators and create projects | Functional |
+| **Explore** | `Explore.svelte` | Visualize research networks | Functional |
+| **Ask** | `Ask.svelte` | Search for data and experts | Interface only |
+| **Publish** | `Publish.svelte` | Share data and news | Interface only |
+| **Administrate** | `Administrate.svelte` | Manage account and surveys | Functional |
 
 ---
 
-### 3.2 Carte "Collaborate" (Collaborer)
+## 3. Card Details
 
-**Fichier :** `packages/ecrin/src/lib/ui/Collaborate.svelte`
+### 3.1 "Introduce" Card (Present)
 
-**Objectif :** Faciliter la création de projets collaboratifs et la constitution d'équipes de recherche.
+**File:** `packages/ecrin/src/lib/ui/Introduce.svelte`
 
-#### Sous-cartes
+**Objective:** Allow researchers to present their research work to get feedback from the community.
 
-| Sous-carte | Description | Implémentation |
-|------------|-------------|:--------------:|
-| Créer mon projet | Déclarer un projet pour trouver des collaborateurs | ✅ Lien enquête REDCap |
-| Constituer mon équipe | Rechercher des collaborateurs avec compétences spécifiques | ⚠️ Partiel |
-| Trouver un expert | Se connecter avec des experts | ❌ Renvoie vers find-an-expert |
-| Financer mon projet | Rechercher des opportunités de financement | ❌ Interface seulement |
+#### Sub-cards
 
-#### Services utilisés
+| Sub-card | Description | Implementation |
+|----------|-------------|:--------------:|
+| My scientific question | Describe research to get feedback | Interface only |
+| My references | Reference recent publications | Interface only |
+
+#### Implementation Status
+
+- **Frontend:** Interface structure present
+- **Backend:** No integration
+
+#### Recommendation
+
+Integrate with **find-an-expert** to:
+- Automatically retrieve publications via OpenAlex
+- Build researcher profile from bibliographic data
+
+---
+
+### 3.2 "Collaborate" Card (Collaborate)
+
+**File:** `packages/ecrin/src/lib/ui/Collaborate.svelte`
+
+**Objective:** Facilitate the creation of collaborative projects and the building of research teams.
+
+#### Sub-cards
+
+| Sub-card | Description | Implementation |
+|----------|-------------|:--------------:|
+| Create my project | Declare a project to find collaborators | REDCap survey link |
+| Build my team | Search for collaborators with specific skills | Partial |
+| Find my expert | Connect with experts | Redirects to find-an-expert |
+| Fund my project | Search for funding opportunities | Interface only |
+
+#### Services Used
 
 ```typescript
-// Services backend
-surveysService.getSurveyUrl()      // Génère lien vers enquête REDCap
-accountService.pushAccountToRedcap() // Synchronise compte avec REDCap
-authService.signupWithEmail()       // Inscription par email
+// Backend services
+surveysService.getSurveyUrl()      // Generates link to REDCap survey
+accountService.pushAccountToRedcap() // Syncs account with REDCap
+authService.signupWithEmail()       // Email registration
 ```
 
-#### Points d'API
+#### API Endpoints
 
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| GET | `/api/v1/surveys/url` | Obtenir l'URL de l'enquête REDCap |
-| GET | `/api/v1/account/push` | Synchroniser le compte avec REDCap |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/surveys/url` | Get REDCap survey URL |
+| GET | `/api/v1/account/push` | Sync account with REDCap |
 
-#### Potentiel d'extraction
+#### Extraction Potential
 
-**Élevé** - Cette carte pourrait devenir un package `@univ-lehavre/ecrin-collaborator` avec :
-- Gestion des projets de recherche
-- Recherche de collaborateurs
-- Intégration enquêtes REDCap
+**High** - This card could become a `@univ-lehavre/ecrin-collaborator` package with:
+- Research project management
+- Collaborator search
+- REDCap survey integration
 
 ---
 
-### 3.3 Carte "Explore" (Explorer)
+### 3.3 "Explore" Card (Explore)
 
-**Fichier :** `packages/ecrin/src/lib/ui/Explore.svelte`
+**File:** `packages/ecrin/src/lib/ui/Explore.svelte`
 
-**Objectif :** Visualiser les réseaux de recherche à travers des graphes interactifs.
+**Objective:** Visualize research networks through interactive graphs.
 
-#### Sous-cartes
+#### Sub-cards
 
-| Sous-carte | Description | Implémentation |
-|------------|-------------|:--------------:|
-| Mon graphe | Visualiser son réseau personnel | ✅ Fonctionnel |
-| Graphe communautaire | Voir les connexions de la communauté | ✅ Fonctionnel |
+| Sub-card | Description | Implementation |
+|----------|-------------|:--------------:|
+| My graph | Visualize personal network | Functional |
+| Community graph | View community connections | Functional |
 
 #### Technologies
 
-| Bibliothèque | Version | Usage |
-|--------------|---------|-------|
-| Sigma.js | Dernière | Rendu des graphes |
-| Graphology | Dernière | Structure de données graphe |
-| ForceAtlas2 | Intégré | Algorithme de positionnement |
+| Library | Version | Usage |
+|---------|---------|-------|
+| Sigma.js | Latest | Graph rendering |
+| Graphology | Latest | Graph data structure |
+| ForceAtlas2 | Integrated | Layout algorithm |
 
-#### Points d'API
+#### API Endpoints
 
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| GET | `/api/v1/graphs?record={id}` | Graphe personnel d'un utilisateur |
-| GET | `/api/v1/graphs/global` | Graphe de la communauté |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/graphs?record={id}` | User's personal graph |
+| GET | `/api/v1/graphs/global` | Community graph |
 
-#### Types de nœuds
+#### Node Types
 
-| Type | Couleur | Description |
-|------|---------|-------------|
-| Chercheur | Jaune | Utilisateurs de la plateforme |
-| Projet | Vert | Projets de recherche |
-| Thématique | Bleu | Domaines de recherche |
-| Mot-clé | Violet | Mots-clés associés |
-| Méthode | Magenta | Méthodes de recherche |
-| Zone géographique | Cyan | Localisation géographique |
+| Type | Color | Description |
+|------|-------|-------------|
+| Researcher | Yellow | Platform users |
+| Project | Green | Research projects |
+| Topic | Blue | Research domains |
+| Keyword | Purple | Associated keywords |
+| Method | Magenta | Research methods |
+| Geographic area | Cyan | Geographic location |
 
-#### Potentiel d'extraction
+#### Extraction Potential
 
-**Très élevé** - Cette carte est un excellent candidat pour un package `@univ-lehavre/ecrin-graph-explorer` car :
-- Composant autonome et réutilisable
-- Logique de génération de graphe indépendante
-- Peut fonctionner avec différentes sources de données
-
----
-
-### 3.4 Carte "Ask" (Demander)
-
-**Fichier :** `packages/ecrin/src/lib/ui/Ask.svelte`
-
-**Objectif :** Permettre aux chercheurs de trouver des données et des experts.
-
-#### Sous-cartes
-
-| Sous-carte | Description | Implémentation |
-|------------|-------------|:--------------:|
-| Données | Rechercher des données pour sa recherche | ❌ Interface seulement |
-| Un expert par localisation | Trouver un expert dans une zone géographique | ❌ Interface seulement |
-| Un expert par thématique | Trouver un expert sur un sujet | ❌ Interface seulement |
-| Un expert possédant des données | Trouver un expert ayant des données pertinentes | ❌ Interface seulement |
-
-#### État d'implémentation
-
-- **Frontend :** Interface désactivée (boutons inactifs)
-- **Backend :** Non implémenté
-
-#### Recommandation
-
-**Fusionner avec find-an-expert** :
-- find-an-expert fournit déjà la recherche d'experts via OpenAlex et GitHub
-- Évite la duplication de fonctionnalités
-- Capitalise sur les données bibliographiques existantes
+**Very high** - This card is an excellent candidate for a `@univ-lehavre/ecrin-graph-explorer` package because:
+- Standalone and reusable component
+- Independent graph generation logic
+- Can work with different data sources
 
 ---
 
-### 3.5 Carte "Publish" (Publier)
+### 3.4 "Ask" Card (Ask)
 
-**Fichier :** `packages/ecrin/src/lib/ui/Publish.svelte`
+**File:** `packages/ecrin/src/lib/ui/Ask.svelte`
 
-**Objectif :** Permettre aux chercheurs de partager leurs productions avec la communauté.
+**Objective:** Allow researchers to find data and experts.
 
-#### Sous-cartes
+#### Sub-cards
 
-| Sous-carte | Description | Implémentation |
-|------------|-------------|:--------------:|
-| Mes données | Publier des jeux de données | ❌ Interface seulement |
-| Mes actualités | Écrire des articles de blog | ❌ Interface seulement |
+| Sub-card | Description | Implementation |
+|----------|-------------|:--------------:|
+| Data | Search for data for research | Interface only |
+| Expert by location | Find an expert in a geographic area | Interface only |
+| Expert by topic | Find an expert on a subject | Interface only |
+| Expert with data | Find an expert with relevant data | Interface only |
 
-#### État d'implémentation
+#### Implementation Status
 
-- **Frontend :** Structure de l'interface présente
-- **Backend :** Non implémenté
+- **Frontend:** Interface disabled (inactive buttons)
+- **Backend:** Not implemented
 
-#### Prérequis pour implémentation
+#### Recommendation
 
-1. **Système de stockage de fichiers** pour les jeux de données
-2. **Système de gestion de contenu** pour les articles
-3. **Politique de modération** pour les publications
-
-#### Potentiel d'extraction
-
-**Moyen** - Nécessite une infrastructure significative avant d'être un package autonome.
+**Merge with find-an-expert**:
+- find-an-expert already provides expert search via OpenAlex and GitHub
+- Avoids feature duplication
+- Capitalizes on existing bibliographic data
 
 ---
 
-### 3.6 Carte "Administrate" (Administrer)
+### 3.5 "Publish" Card (Publish)
 
-**Fichier :** `packages/ecrin/src/lib/ui/Administrate.svelte`
+**File:** `packages/ecrin/src/lib/ui/Publish.svelte`
 
-**Objectif :** Permettre aux utilisateurs de gérer leur compte et leurs données.
+**Objective:** Allow researchers to share their work with the community.
 
-#### Sous-cartes
+#### Sub-cards
 
-| Sous-carte | Description | Implémentation |
-|------------|-------------|:--------------:|
-| Mon compte - S'inscrire | Créer un compte | ✅ Fonctionnel |
-| Mon compte - Se déconnecter | Terminer la session | ✅ Fonctionnel |
-| Mon compte - Supprimer | Supprimer son compte | ✅ Fonctionnel |
-| Mon enquête - S'abonner | Accepter la politique de données | ✅ Fonctionnel |
-| Mon enquête - Télécharger | Exporter ses données (CSV/JSON) | ✅ Fonctionnel |
-| Mon enquête - Supprimer | Supprimer ses données REDCap | ✅ Fonctionnel |
+| Sub-card | Description | Implementation |
+|----------|-------------|:--------------:|
+| My data | Publish datasets | Interface only |
+| My news | Write blog posts | Interface only |
 
-#### Services utilisés
+#### Implementation Status
+
+- **Frontend:** Interface structure present
+- **Backend:** Not implemented
+
+#### Prerequisites for Implementation
+
+1. **File storage system** for datasets
+2. **Content management system** for articles
+3. **Moderation policy** for publications
+
+#### Extraction Potential
+
+**Medium** - Requires significant infrastructure before becoming a standalone package.
+
+---
+
+### 3.6 "Administrate" Card (Administer)
+
+**File:** `packages/ecrin/src/lib/ui/Administrate.svelte`
+
+**Objective:** Allow users to manage their account and data.
+
+#### Sub-cards
+
+| Sub-card | Description | Implementation |
+|----------|-------------|:--------------:|
+| My account - Register | Create an account | Functional |
+| My account - Logout | End session | Functional |
+| My account - Delete | Delete account | Functional |
+| My survey - Subscribe | Accept data policy | Functional |
+| My survey - Download | Export data (CSV/JSON) | Functional |
+| My survey - Delete | Delete REDCap data | Functional |
+
+#### Services Used
 
 ```typescript
-// Services d'authentification
-authService.signupWithEmail()    // Inscription par URL magique
-authService.login()              // Création de session
-authService.logout()             // Destruction de session
-authService.deleteUser()         // Suppression de compte
+// Authentication services
+authService.signupWithEmail()    // Magic URL registration
+authService.login()              // Session creation
+authService.logout()             // Session destruction
+authService.deleteUser()         // Account deletion
 
-// Services d'enquête
-surveysService.getSurveyUrl()    // Lien vers enquête
-surveysService.downloadSurvey()  // Export des données
-surveysService.deleteSurveyRecord() // Suppression REDCap
+// Survey services
+surveysService.getSurveyUrl()    // Survey link
+surveysService.downloadSurvey()  // Data export
+surveysService.deleteSurveyRecord() // REDCap deletion
 
-// Services de compte
-accountService.checkAccountPushed() // Vérification statut
+// Account services
+accountService.checkAccountPushed() // Status verification
 ```
 
-#### Points d'API
+#### API Endpoints
 
-| Méthode | Endpoint | Description |
-|---------|----------|-------------|
-| POST | `/api/v1/auth/signup` | Inscription par email |
-| POST | `/api/v1/auth/login` | Connexion |
-| POST | `/api/v1/auth/logout` | Déconnexion |
-| DELETE | `/api/v1/auth/delete` | Suppression compte |
-| GET | `/api/v1/surveys/download` | Téléchargement données |
-| DELETE | `/api/v1/surveys/delete` | Suppression enquête |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/auth/signup` | Email registration |
+| POST | `/api/v1/auth/login` | Login |
+| POST | `/api/v1/auth/logout` | Logout |
+| DELETE | `/api/v1/auth/delete` | Account deletion |
+| GET | `/api/v1/surveys/download` | Data download |
+| DELETE | `/api/v1/surveys/delete` | Survey deletion |
 
-#### Potentiel d'extraction
+#### Extraction Potential
 
-**Élevé** - La logique d'authentification est déjà partiellement extraite dans `@univ-lehavre/atlas-auth`. Cette carte pourrait être généralisée en :
-- `@univ-lehavre/ecrin-account-manager` pour la gestion de compte
-- Intégration avec le package `auth` existant
+**High** - Authentication logic is already partially extracted into `@univ-lehavre/atlas-auth`. This card could be generalized into:
+- `@univ-lehavre/ecrin-account-manager` for account management
+- Integration with the existing `auth` package
 
 ---
 
-## 4. Relation avec find-an-expert
+## 4. Relationship with find-an-expert
 
-### 4.1 Comparaison fonctionnelle
+### 4.1 Functional Comparison
 
 | Aspect | ECRIN | find-an-expert |
 |--------|-------|----------------|
-| **Objectif principal** | Collaboration et projets | Découverte d'expertise |
-| **Sources de données** | REDCap (enquêtes déclaratives) | OpenAlex, GitHub (données publiques) |
-| **Recherche d'experts** | Carte "Ask" (non implémentée) | Fonctionnalité principale |
-| **Profil chercheur** | Basé sur enquêtes | Basé sur publications |
-| **Statut** | Application principale | Sous-projet spécialisé |
+| **Main objective** | Collaboration and projects | Expertise discovery |
+| **Data sources** | REDCap (declarative surveys) | OpenAlex, GitHub (public data) |
+| **Expert search** | "Ask" card (not implemented) | Main feature |
+| **Researcher profile** | Survey-based | Publication-based |
+| **Status** | Main application | Specialized subproject |
 
-### 4.2 Complémentarité
+### 4.2 Complementarity
 
 ```mermaid
 graph LR
@@ -333,68 +333,68 @@ graph LR
     end
 
     subgraph "find-an-expert"
-        SEARCH[Recherche experts]
-        PROFILE[Profils OpenAlex]
-        GITHUB[Contributions GitHub]
+        SEARCH[Expert search]
+        PROFILE[OpenAlex profiles]
+        GITHUB[GitHub contributions]
     end
 
-    ASK -.->|"alimente"| SEARCH
-    PROFILE -.->|"enrichit"| COLLAB
-    SEARCH -.->|"résultats"| ASK
+    ASK -.->|"feeds"| SEARCH
+    PROFILE -.->|"enriches"| COLLAB
+    SEARCH -.->|"results"| ASK
 ```
 
-### 4.3 Recommandation d'intégration
+### 4.3 Integration Recommendation
 
-Positionner **find-an-expert comme le moteur de découverte d'expertise d'ECRIN** :
+Position **find-an-expert as ECRIN's expertise discovery engine**:
 
-1. La carte "Ask" d'ECRIN redirige vers find-an-expert
-2. find-an-expert fournit les résultats de recherche
-3. Les profils find-an-expert enrichissent les données ECRIN
-
----
-
-## 5. Synthèse des recommandations
-
-### 5.1 Court terme
-
-| Action | Priorité | Effort |
-|--------|:--------:|:------:|
-| Intégrer find-an-expert avec la carte "Ask" | 🔴 Haute | Moyen |
-| Documenter les 6 cartes dans le README ECRIN | 🔴 Haute | Faible |
-| Extraire le composant Graph en package réutilisable | 🟡 Moyenne | Moyen |
-
-### 5.2 Moyen terme
-
-| Action | Priorité | Effort |
-|--------|:--------:|:------:|
-| Implémenter la carte "Introduce" avec OpenAlex | 🟡 Moyenne | Élevé |
-| Extraire la logique Collaborate en package | 🟢 Basse | Moyen |
-| Définir l'architecture pour la carte "Publish" | 🟢 Basse | Élevé |
-
-### 5.3 Packages candidats à extraction
-
-| Package proposé | Source | Dépendances |
-|-----------------|--------|-------------|
-| `@univ-lehavre/ecrin-graph-explorer` | Carte Explore | graphology, sigma |
-| `@univ-lehavre/ecrin-collaborator` | Carte Collaborate | REDCap, Appwrite |
-| `@univ-lehavre/ecrin-account-manager` | Carte Administrate | Appwrite, atlas-auth |
+1. ECRIN's "Ask" card redirects to find-an-expert
+2. find-an-expert provides search results
+3. find-an-expert profiles enrich ECRIN data
 
 ---
 
-## 6. Annexe : Structure des fichiers analysés
+## 5. Recommendation Summary
+
+### 5.1 Short Term
+
+| Action | Priority | Effort |
+|--------|:--------:|:------:|
+| Integrate find-an-expert with "Ask" card | High | Medium |
+| Document the 6 cards in ECRIN README | High | Low |
+| Extract Graph component as reusable package | Medium | Medium |
+
+### 5.2 Medium Term
+
+| Action | Priority | Effort |
+|--------|:--------:|:------:|
+| Implement "Introduce" card with OpenAlex | Medium | High |
+| Extract Collaborate logic as package | Low | Medium |
+| Define architecture for "Publish" card | Low | High |
+
+### 5.3 Candidate Packages for Extraction
+
+| Proposed package | Source | Dependencies |
+|------------------|--------|--------------|
+| `@univ-lehavre/ecrin-graph-explorer` | Explore card | graphology, sigma |
+| `@univ-lehavre/ecrin-collaborator` | Collaborate card | REDCap, Appwrite |
+| `@univ-lehavre/ecrin-account-manager` | Administrate card | Appwrite, atlas-auth |
+
+---
+
+## 6. Appendix: Analyzed File Structure
 
 ```
 packages/ecrin/src/lib/ui/
-├── Introduce.svelte       # Carte Présenter
-├── Collaborate.svelte     # Carte Collaborer
-├── Explore.svelte         # Carte Explorer
-├── Ask.svelte             # Carte Demander
-├── Publish.svelte         # Carte Publier
-├── Administrate.svelte    # Carte Administrer
-├── Options.svelte         # Options administrateur
-├── Graph.svelte           # Composant de visualisation
-├── GraphSelector.svelte   # Sélecteur vue graphe
-├── CardItem.svelte        # Composant carte générique
-├── HorizontalScroller.svelte # Défilement horizontal
-└── TopNavbar.svelte       # Barre de navigation
+├── Introduce.svelte       # Introduce card
+├── Collaborate.svelte     # Collaborate card
+├── Explore.svelte         # Explore card
+├── Ask.svelte             # Ask card
+├── Publish.svelte         # Publish card
+├── Administrate.svelte    # Administrate card
+├── Options.svelte         # Admin options
+├── Graph.svelte           # Visualization component
+├── GraphSelector.svelte   # Graph view selector
+├── CardItem.svelte        # Generic card component
+├── HorizontalScroller.svelte # Horizontal scrolling
+└── TopNavbar.svelte       # Navigation bar
 ```
