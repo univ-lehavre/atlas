@@ -35,58 +35,58 @@ pnpm -F ecrin lint     # ESLint
 
 ### "Introduce" Card
 
-| Sub-card | Description | Status |
-| -------- | ----------- | ------ |
-| My scientific question | Describe your research | Interface |
-| My references | Reference your publications | Interface |
+| Sub-card               | Description                 | Status    |
+| ---------------------- | --------------------------- | --------- |
+| My scientific question | Describe your research      | Interface |
+| My references          | Reference your publications | Interface |
 
 ### "Collaborate" Card
 
-| Sub-card | Description | Status |
-| -------- | ----------- | ------ |
-| Create my project | Declare a project | Functional |
-| Build my team | Search for collaborators | Partial |
-| Find an expert | Connect with experts | -> find-an-expert |
-| Fund my project | Search for funding | Interface |
+| Sub-card          | Description              | Status            |
+| ----------------- | ------------------------ | ----------------- |
+| Create my project | Declare a project        | Functional        |
+| Build my team     | Search for collaborators | Partial           |
+| Find an expert    | Connect with experts     | -> find-an-expert |
+| Fund my project   | Search for funding       | Interface         |
 
 ### "Explore" Card
 
-| Sub-card | Description | Status |
-| -------- | ----------- | ------ |
-| My graph | Visualize your personal network | Functional |
-| Community graph | See community connections | Functional |
+| Sub-card        | Description                     | Status     |
+| --------------- | ------------------------------- | ---------- |
+| My graph        | Visualize your personal network | Functional |
+| Community graph | See community connections       | Functional |
 
 ### "Ask" Card
 
-| Sub-card | Description | Status |
-| -------- | ----------- | ------ |
-| Data | Search for data | Interface |
-| Expert by location | Find an expert by area | Interface |
-| Expert by topic | Find an expert by subject | Interface |
+| Sub-card           | Description               | Status    |
+| ------------------ | ------------------------- | --------- |
+| Data               | Search for data           | Interface |
+| Expert by location | Find an expert by area    | Interface |
+| Expert by topic    | Find an expert by subject | Interface |
 
 ### "Publish" Card
 
-| Sub-card | Description | Status |
-| -------- | ----------- | ------ |
-| My data | Publish datasets | Interface |
-| My news | Write articles | Interface |
+| Sub-card | Description      | Status    |
+| -------- | ---------------- | --------- |
+| My data  | Publish datasets | Interface |
+| My news  | Write articles   | Interface |
 
 ### "Administrate" Card
 
-| Sub-card | Description | Status |
-| -------- | ----------- | ------ |
-| Sign up | Create an account | Functional |
-| Log out | End the session | Functional |
-| Delete account | Delete your data | Functional |
-| Download survey | Export your data | Functional |
-| Delete survey | Remove from REDCap | Functional |
+| Sub-card        | Description        | Status     |
+| --------------- | ------------------ | ---------- |
+| Sign up         | Create an account  | Functional |
+| Log out         | End the session    | Functional |
+| Delete account  | Delete your data   | Functional |
+| Download survey | Export your data   | Functional |
+| Delete survey   | Remove from REDCap | Functional |
 
 ## Sub-projects
 
-| Application | Description |
-| ----------- | ----------- |
+| Application                          | Description                                     |
+| ------------------------------------ | ----------------------------------------------- |
 | [find-an-expert](../find-an-expert/) | Expertise discovery via publications and GitHub |
-| [amarre](../amarre/) | Research network visualization |
+| [amarre](../amarre/)                 | Research network visualization                  |
 
 ## Documentation
 
