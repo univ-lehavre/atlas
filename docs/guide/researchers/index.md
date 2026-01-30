@@ -19,12 +19,16 @@ Atlas propose deux plateformes principales selon vos besoins :
 
 **Pour qui ?** Chercheurs souhaitant valoriser leur expertise et trouver des collaborateurs.
 
-| Fonctionnalité | Description |
-|----------------|-------------|
-| Découvrir des experts | Recherchez des collaborateurs par thématique, localisation ou compétences |
-| Profil d'expertise | Présentez vos domaines de recherche et publications |
-| Visualiser vos réseaux | Explorez vos co-auteurs et connexions interdisciplinaires |
-| Déclarer vos projets | Créez des fiches projet pour recruter des collaborateurs |
+ECRIN est organisé en **6 sections** représentant les étapes de la collaboration scientifique :
+
+| Section | Cartes | Ce que vous pouvez faire |
+|---------|--------|--------------------------|
+| **Introduce** | Me, My scientific question, My references | Décrivez votre profil, votre question scientifique, référencez vos publications |
+| **Collaborate** | Create my project, Build my team, Find my expert, Fund my project | Déclarez un projet, trouvez des collaborateurs, recherchez des financements |
+| **Explore** | My graph, Community graph | Visualisez votre réseau et explorez les connexions de la communauté |
+| **Ask** | Data, An expert | Recherchez des données ou discutez avec un expert |
+| **Publish** | My data, My news | Partagez vos données de recherche et vos actualités |
+| **Administrate** | My account, My survey | Gérez votre compte et vos réponses aux enquêtes |
 
 👉 [Accéder au guide ECRIN](/projects/ecrin/user/)
 

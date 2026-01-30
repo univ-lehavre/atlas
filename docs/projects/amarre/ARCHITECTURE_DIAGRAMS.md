@@ -1,8 +1,11 @@
 # Diagrammes d'Architecture - AMARRE
 
-**Date:** 20 décembre 2025  
-**Version:** 1.0  
-**Lié à:** [Audit Microservices](/audit/amarre/)
+::: warning Projet en cours de développement
+Ces diagrammes décrivent l'architecture cible d'AMARRE. L'implémentation n'est pas encore réalisée.
+:::
+
+**Date:** 20 décembre 2025
+**Version:** 1.0
 
 ## Table des matières
 

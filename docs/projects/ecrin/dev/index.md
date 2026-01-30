@@ -47,17 +47,17 @@ Le projet ECRIN comprend deux applications SvelteKit :
 
 ## Cartes fonctionnelles
 
-L'application ECRIN est organisée en **6 sections** avec **14 cartes** au total.
+L'application ECRIN est organisée en **6 sections** avec **15 cartes** au total.
 
 | Section | Cartes | Opérationnelles | En cours |
 |---------|--------|-----------------|----------|
-| Introduce | 2 | 0 | 2 |
+| Introduce | 3 | 0 | 3 |
 | Collaborate | 4 | 1 | 3 |
 | Explore | 2 | 1 | 1 |
 | Ask | 2 | 0 | 2 |
 | Publish | 2 | 0 | 2 |
 | Administrate | 2 | 2 | 0 |
-| **Total** | **14** | **4** | **10** |
+| **Total** | **15** | **4** | **11** |
 
 ### Détail par section
 
@@ -65,6 +65,7 @@ L'application ECRIN est organisée en **6 sections** avec **14 cartes** au total
 
 | Carte | État | Composant |
 |-------|------|-----------|
+| Me | 🚧 UI implémentée | `Introduce.svelte` |
 | My scientific question | 🚧 UI implémentée | `Introduce.svelte` |
 | My references | 🚧 UI implémentée | `Introduce.svelte` |
 

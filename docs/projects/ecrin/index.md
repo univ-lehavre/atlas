@@ -11,15 +11,6 @@ ECRIN permet aux chercheurs de :
 - Visualiser les réseaux de recherche
 - Rechercher des experts et des données
 
-## Applications
-
-Le projet ECRIN comprend deux applications SvelteKit :
-
-| Application | Version | Description |
-|-------------|---------|-------------|
-| **Find an Expert** | 0.5.1 | Découverte et analyse de l'expertise des chercheurs via OpenAlex et GitHub |
-| **ECRIN** | 2.0.0 | Plateforme de collaboration avec enquêtes REDCap et visualisation de graphes |
-
 ## Pour les chercheurs
 
 - [Guide chercheur ECRIN](/projects/ecrin/user/) - Découvrez les fonctionnalités d'ECRIN
