@@ -2,58 +2,58 @@
 
 [![DOI](https://zenodo.org/badge/1137569222.svg)](https://doi.org/10.5281/zenodo.18310357)
 
-**Atlas** est un monorepo TypeScript développé par l'**Université Le Havre Normandie** pour soutenir la recherche et faciliter la collaboration entre chercheurs.
+**Atlas** is a TypeScript monorepo developed by **Université Le Havre Normandie** to support research and facilitate collaboration between researchers.
 
-## Modules principaux
+## Main Modules
 
-Atlas est composé de **trois modules majeurs** :
+Atlas is composed of **three major modules**:
 
-| Module | Description | Sous-projets |
+| Module | Description | Sub-projects |
 |--------|-------------|--------------|
-| **ECRIN** | Plateforme de collaboration pour chercheurs | find-an-expert |
-| **AMARRE** | Visualisation et analyse de réseaux de recherche | - |
-| **CRF** | Outils pour interagir avec REDCap | redcap-core, redcap-openapi |
+| **ECRIN** | Collaboration platform for researchers | find-an-expert |
+| **AMARRE** | Research network visualization and analysis | - |
+| **CRF** | Tools for interacting with REDCap | redcap-core, redcap-openapi |
 
 ### ECRIN
 
-ECRIN est une plateforme de collaboration pour chercheurs permettant de présenter ses travaux, trouver des collaborateurs et visualiser les réseaux de recherche. Elle est organisée autour de 6 cartes fonctionnelles : Introduce, Collaborate, Explore, Ask, Publish, Administrate.
+ECRIN is a collaboration platform for researchers that allows them to present their work, find collaborators, and visualize research networks. It is organized around 6 functional cards: Introduce, Collaborate, Explore, Ask, Publish, Administrate.
 
-**Sous-projet :**
-- **find-an-expert** : découverte d'expertise via les publications (OpenAlex) et contributions (GitHub)
+**Sub-project:**
+- **find-an-expert**: expertise discovery through publications (OpenAlex) and contributions (GitHub)
 
 ### AMARRE
 
-AMARRE est une application de visualisation et d'analyse de réseaux de recherche utilisant des graphes interactifs (Sigma.js, Graphology).
+AMARRE is a research network visualization and analysis application using interactive graphs (Sigma.js, Graphology).
 
 ### CRF (Case Report Form)
 
-CRF fournit des outils TypeScript pour interagir avec l'API REDCap de manière sécurisée et typée.
+CRF provides TypeScript tools for interacting with the REDCap API in a secure and typed manner.
 
-**Sous-projets :**
-- **redcap-core** : logique métier REDCap pure avec Effect
-- **redcap-openapi** : extraction et analyse de spécifications OpenAPI depuis le code source REDCap
+**Sub-projects:**
+- **redcap-core**: pure REDCap business logic with Effect
+- **redcap-openapi**: extraction and analysis of OpenAPI specifications from REDCap source code
 
 ## Architecture
 
 ```mermaid
 graph TB
     subgraph "Atlas - Université Le Havre Normandie"
-        subgraph "Module ECRIN"
-            ECRIN_APP["ecrin<br/>(module principal)"]
-            FAE["find-an-expert<br/>(sous-projet)"]
+        subgraph "ECRIN Module"
+            ECRIN_APP["ecrin<br/>(main module)"]
+            FAE["find-an-expert<br/>(sub-project)"]
         end
 
-        subgraph "Module AMARRE"
-            AMARRE["amarre<br/>(module principal)"]
+        subgraph "AMARRE Module"
+            AMARRE["amarre<br/>(main module)"]
         end
 
-        subgraph "Module CRF"
-            CRF["crf<br/>(module principal)"]
-            CORE["redcap-core<br/>(sous-projet)"]
-            OPENAPI["redcap-openapi<br/>(sous-projet)"]
+        subgraph "CRF Module"
+            CRF["crf<br/>(main module)"]
+            CORE["redcap-core<br/>(sub-project)"]
+            OPENAPI["redcap-openapi<br/>(sub-project)"]
         end
 
-        subgraph "Sous-modules utilitaires"
+        subgraph "Utility Sub-modules"
             NET["atlas-net"]
             CONFIG["atlas-shared-config"]
             APPWRITE["atlas-appwrite"]
@@ -70,101 +70,101 @@ graph TB
     AMARRE --> APPWRITE
     CRF --> CORE
     CRF --> NET
-    ECRIN_APP -.->|"intègre"| FAE
-    CRF -.->|"utilise"| CORE
-    CRF -.->|"utilise"| OPENAPI
+    ECRIN_APP -.->|"integrates"| FAE
+    CRF -.->|"uses"| CORE
+    CRF -.->|"uses"| OPENAPI
 ```
 
 ## Packages
 
-### Modules principaux
+### Main Modules
 
 | Package | Description |
 | ------- | ----------- |
-| [ecrin](packages/ecrin) | Module ECRIN - plateforme de collaboration chercheurs |
-| [amarre](packages/amarre) | Module AMARRE - visualisation de réseaux de recherche |
-| [@univ-lehavre/crf](packages/crf) | Module CRF - client, serveur et CLI REDCap |
+| [ecrin](packages/ecrin) | ECRIN module - researcher collaboration platform |
+| [amarre](packages/amarre) | AMARRE module - research network visualization |
+| [@univ-lehavre/crf](packages/crf) | CRF module - REDCap client, server and CLI |
 
-### Sous-projets
+### Sub-projects
 
-| Package | Module parent | Description |
+| Package | Parent Module | Description |
 | ------- | ------------- | ----------- |
-| [find-an-expert](packages/find-an-expert) | ECRIN | Découverte d'expertise via publications et GitHub |
-| [@univ-lehavre/atlas-redcap-core](packages/redcap-core) | CRF | Logique métier REDCap avec Effect |
-| [@univ-lehavre/atlas-redcap-openapi](packages/redcap-openapi) | CRF | Extraction OpenAPI depuis REDCap |
+| [find-an-expert](packages/find-an-expert) | ECRIN | Expertise discovery via publications and GitHub |
+| [@univ-lehavre/atlas-redcap-core](packages/redcap-core) | CRF | REDCap business logic with Effect |
+| [@univ-lehavre/atlas-redcap-openapi](packages/redcap-openapi) | CRF | OpenAPI extraction from REDCap |
 
-### Sous-modules utilitaires
+### Utility Sub-modules
 
 | Package | Description |
 | ------- | ----------- |
-| [@univ-lehavre/atlas-net](packages/net) | Utilitaires de diagnostic réseau |
-| [@univ-lehavre/atlas-appwrite](packages/appwrite) | Client Appwrite partagé |
-| [@univ-lehavre/atlas-auth](packages/auth) | Service d'authentification |
-| [@univ-lehavre/atlas-errors](packages/errors) | Classes d'erreurs partagées |
-| [@univ-lehavre/atlas-validators](packages/validators) | Utilitaires de validation |
-| [@univ-lehavre/atlas-shared-config](packages/shared-config) | Configuration ESLint, TypeScript, Prettier |
+| [@univ-lehavre/atlas-net](packages/net) | Network diagnostic utilities |
+| [@univ-lehavre/atlas-appwrite](packages/appwrite) | Shared Appwrite client |
+| [@univ-lehavre/atlas-auth](packages/auth) | Authentication service |
+| [@univ-lehavre/atlas-errors](packages/errors) | Shared error classes |
+| [@univ-lehavre/atlas-validators](packages/validators) | Validation utilities |
+| [@univ-lehavre/atlas-shared-config](packages/shared-config) | ESLint, TypeScript, Prettier configuration |
 
-## Plateformes tierces
+## Third-party Platforms
 
-Atlas s'appuie sur deux plateformes tierces :
+Atlas relies on two third-party platforms:
 
 ### REDCap (Research Electronic Data Capture)
 
-[REDCap](https://project-redcap.org/) est une application web sécurisée développée par l'Université Vanderbilt pour la création et la gestion d'enquêtes en ligne et de bases de données de recherche. REDCap est utilisé par plus de **8 000 institutions** dans **164 pays** et a été cité dans plus de **51 000 articles scientifiques**.
+[REDCap](https://project-redcap.org/) is a secure web application developed by Vanderbilt University for creating and managing online surveys and research databases. REDCap is used by more than **8,000 institutions** in **164 countries** and has been cited in more than **51,000 scientific articles**.
 
-REDCap permet la collecte de données sur le web et sur mobile (y compris hors connexion) tout en respectant les réglementations sur la protection des données (RGPD, HIPAA, 21 CFR Part 11). Il est gratuit pour les organisations à but non lucratif membres du Consortium REDCap.
+REDCap enables web and mobile data collection (including offline) while complying with data protection regulations (GDPR, HIPAA, 21 CFR Part 11). It is free for non-profit organizations that are members of the REDCap Consortium.
 
 ### Appwrite
 
-[Appwrite](https://appwrite.io/) est une plateforme backend open source fournissant les services essentiels pour le développement d'applications web et mobiles : authentification, base de données, stockage et fonctions serverless.
+[Appwrite](https://appwrite.io/) is an open-source backend platform providing essential services for web and mobile application development: authentication, database, storage, and serverless functions.
 
-Appwrite est conforme aux normes SOC-2, RGPD et HIPAA. Les modules ECRIN et AMARRE utilisent Appwrite pour l'authentification et la gestion des données utilisateurs.
+Appwrite is compliant with SOC-2, GDPR, and HIPAA standards. The ECRIN and AMARRE modules use Appwrite for authentication and user data management.
 
-## Projets institutionnels
+## Institutional Projects
 
-Atlas est développé dans le cadre de projets structurants portés par l'Université Le Havre Normandie.
+Atlas is developed as part of structural projects led by Université Le Havre Normandie.
 
 ### Campus Polytechnique des Territoires Maritimes et Portuaires
 
-Le [Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/) (CPTMP) est un consortium unique en Europe, inauguré le 30 janvier 2025. Il rassemble **12 membres fondateurs** autour de l'Université Le Havre Normandie : CNRS, INSA Rouen Normandie, École Nationale Supérieure Maritime, Sciences Po, EM Normandie, ENSA Normandie, ESADHaR, IFEN, Le Havre Seine Métropole, Synerzip LH, UMEP et la Région Normandie.
+The [Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/) (CPTMP) is a unique consortium in Europe, inaugurated on January 30, 2025. It brings together **12 founding members** around Université Le Havre Normandie: CNRS, INSA Rouen Normandie, École Nationale Supérieure Maritime, Sciences Po, EM Normandie, ENSA Normandie, ESADHaR, IFEN, Le Havre Seine Métropole, Synerzip LH, UMEP, and Région Normandie.
 
-Le Campus est lauréat de l'appel à projets « ExcellencES » de **France 2030**, avec un financement de **7,3 M€** sur 7 ans (2023-2030).
+The Campus is a laureate of the "ExcellencES" call for projects of **France 2030**, with funding of **€7.3M** over 7 years (2023-2030).
 
-**Axes stratégiques :**
-- Villes de demain
-- Enjeux maritimes et portuaires
-- Transitions, risques et incertitudes
+**Strategic axes:**
+- Cities of tomorrow
+- Maritime and port issues
+- Transitions, risks, and uncertainties
 
-**Cinq hubs opérationnels :**
-- Hub Expertise et Qualifications
-- Hub Créations et Innovations
-- Hub International
-- Hub Digital et Plateformes Technologiques
-- Hub Sports Academy
+**Five operational hubs:**
+- Expertise and Qualifications Hub
+- Creations and Innovations Hub
+- International Hub
+- Digital and Technological Platforms Hub
+- Sports Academy Hub
 
 ### EUNICoast
 
-[EUNICoast](https://eunicoast.eu/) (European University of Islands, Ports & Coastal Territories) est une alliance de **13 universités européennes** coordonnée par l'Université Le Havre Normandie, financée à hauteur de **14,4 M€** par la Commission européenne (2024-2028).
+[EUNICoast](https://eunicoast.eu/) (European University of Islands, Ports & Coastal Territories) is an alliance of **13 European universities** coordinated by Université Le Havre Normandie, funded at **€14.4M** by the European Commission (2024-2028).
 
-**Universités partenaires :** Åland (Finlande), Bourgas (Bulgarie), Stralsund (Allemagne), EMUNI (Slovénie), Açores (Portugal), Baléares (Espagne), Patras (Grèce), Sassari (Italie), Féroé, Antilles (France), Le Havre (France), Dubrovnik (Croatie), Szczecin (Pologne).
+**Partner universities:** Åland (Finland), Bourgas (Bulgaria), Stralsund (Germany), EMUNI (Slovenia), Azores (Portugal), Balearic Islands (Spain), Patras (Greece), Sassari (Italy), Faroe Islands, Antilles (France), Le Havre (France), Dubrovnik (Croatia), Szczecin (Poland).
 
-**Hubs de recherche :**
-- Identités et patrimoines des communautés côtières et insulaires
-- Économie bleue circulaire, logistique portuaire et tourisme durable
-- Gouvernance et aménagement des territoires côtiers
-- Santé, biodiversité et solutions fondées sur la nature
-- Solutions d'ingénierie et données pour les infrastructures côtières, énergies marines renouvelables et sécurité maritime
+**Research hubs:**
+- Identities and heritage of coastal and island communities
+- Circular blue economy, port logistics, and sustainable tourism
+- Governance and planning of coastal territories
+- Health, biodiversity, and nature-based solutions
+- Engineering solutions and data for coastal infrastructure, marine renewable energies, and maritime safety
 
 ## Documentation
 
-- [Guide de démarrage](https://univ-lehavre.github.io/atlas/guide/)
-- [Référence API](https://univ-lehavre.github.io/atlas/api/)
-- [Audit de la documentation](https://univ-lehavre.github.io/atlas/guide/audit/documentation-audit)
-- [Audit ECRIN](https://univ-lehavre.github.io/atlas/guide/audit/ecrin-audit)
+- [Getting Started Guide](https://univ-lehavre.github.io/atlas/guide/)
+- [API Reference](https://univ-lehavre.github.io/atlas/api/)
+- [Documentation Audit](https://univ-lehavre.github.io/atlas/guide/audit/documentation-audit)
+- [ECRIN Audit](https://univ-lehavre.github.io/atlas/guide/audit/ecrin-audit)
 
-## Démarrage rapide
+## Quick Start
 
-### Utiliser le client API REDCap
+### Using the REDCap API Client
 
 ```bash
 pnpm add @univ-lehavre/atlas-redcap-api effect
@@ -182,23 +182,23 @@ const client = createRedcapClient({
 const records = await Effect.runPromise(client.exportRecords({ fields: ['record_id', 'name'] }));
 ```
 
-## Développement
+## Development
 
 ```bash
 # Installation
 pnpm install
 
-# Développement
+# Development
 pnpm dev
 
 # Tests
 pnpm test
 
-# Vérifications pré-release
+# Pre-release checks
 pnpm ready
 ```
 
-## Partenaires et financeurs
+## Partners and Funders
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
@@ -218,6 +218,6 @@ pnpm ready
   <img src="packages/logos/region-normandie.png" alt="Région Normandie" height="40">
 </p>
 
-## Licence
+## License
 
 [MIT](LICENSE)

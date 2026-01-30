@@ -1,27 +1,27 @@
-# CLAUDE.md - Instructions pour Claude Code
+# CLAUDE.md - Instructions for Claude Code
 
-Ce fichier fournit le contexte necessaire pour travailler efficacement sur ce projet.
+This file provides the necessary context for working effectively on this project.
 
-## Vue d'ensemble du projet
+## Project Overview
 
-**Atlas** est un monorepo TypeScript pour la recherche, incluant des outils REDCap (Effect) et une application d'analyse d'expertise.
+**Atlas** is a TypeScript monorepo for research, including REDCap tools (Effect) and an expertise analysis application.
 
 ### Architecture
 
 ```
 atlas/
 ├── packages/
-│   ├── find-an-expert/     # App SvelteKit - analyse expertise chercheurs
+│   ├── find-an-expert/     # SvelteKit app - researcher expertise analysis
 │   ├── crf/                # Case Report Form (REDCap client, server, CLI)
-│   ├── redcap-openapi/     # Analyse source REDCap et extraction OpenAPI
-│   ├── net/                # Utilitaires et CLI diagnostic reseau
-│   └── shared-config/      # Config TypeScript et ESLint partagee
-└── docs/                   # Documentation VitePress
+│   ├── redcap-openapi/     # REDCap source analysis and OpenAPI extraction
+│   ├── net/                # Network utilities and diagnostic CLI
+│   └── shared-config/      # Shared TypeScript and ESLint config
+└── docs/                   # VitePress documentation
 ```
 
-### Stack technique
+### Tech Stack
 
-| Domaine         | Technologies                              |
+| Area            | Technologies                              |
 | --------------- | ----------------------------------------- |
 | Runtime         | Node.js 24+, TypeScript 5.x               |
 | Framework       | Effect, SvelteKit 2, Svelte 5             |
@@ -30,46 +30,46 @@ atlas/
 | Test            | Vitest                                    |
 | Lint            | ESLint, Prettier (@univ-lehavre/shared-config) |
 
-## Commandes essentielles
+## Essential Commands
 
 ```bash
 # Installation
 pnpm install
 
-# Developpement
-pnpm dev                       # Tous les packages en watch
+# Development
+pnpm dev                       # All packages in watch mode
 pnpm -F find-an-expert dev     # Find an Expert (SvelteKit)
 pnpm -F @univ-lehavre/crf dev  # CRF
 
 # Build
-pnpm build                     # Tous les packages
+pnpm build                     # All packages
 
 # Tests
-pnpm test                      # Tous les tests
+pnpm test                      # All tests
 
 # Lint
 pnpm lint                      # ESLint
 pnpm format                    # Prettier
 
-# Verifications pre-commit
+# Pre-commit checks
 pnpm ready                     # lint + test + build
 ```
 
-## Conventions de code
+## Code Conventions
 
 ### TypeScript / Effect
 
-- Utiliser Effect pour toute logique asynchrone/erreurs
-- Typage strict (`strict: true`)
-- Pas de `any`, preferer `unknown` si necessaire
-- Documenter avec TSDoc
+- Use Effect for all async/error logic
+- Strict typing (`strict: true`)
+- No `any`, prefer `unknown` if necessary
+- Document with TSDoc
 
 ````typescript
 /**
- * Exporte les records depuis REDCap.
+ * Exports records from REDCap.
  *
- * @param options - Options d'export
- * @returns Effect contenant les records ou une erreur REDCap
+ * @param options - Export options
+ * @returns Effect containing records or a REDCap error
  *
  * @example
  * ```typescript
@@ -83,31 +83,31 @@ export const exportRecords = (options: ExportOptions): Effect.Effect<Record[], R
 
 ### Commits
 
-Format conventionnel :
+Conventional format:
 
 ```
 type(scope): description
 
-- feat: nouvelle fonctionnalite
-- fix: correction de bug
+- feat: new feature
+- fix: bug fix
 - docs: documentation
 - refactor: refactoring
-- test: ajout/modification tests
+- test: add/modify tests
 - chore: maintenance
 ```
 
-Exemples :
+Examples:
 
 ```
 feat(crf): add exportRecords method
 docs: update contributing guide
 ```
 
-## Structure des packages
+## Package Structure
 
 ### packages/find-an-expert
 
-Application SvelteKit pour decouvrir et analyser l'expertise des chercheurs via OpenAlex et GitHub.
+SvelteKit application for discovering and analyzing researcher expertise via OpenAlex and GitHub.
 
 | Stack     | Technologies                        |
 | --------- | ----------------------------------- |
@@ -119,95 +119,95 @@ Application SvelteKit pour decouvrir et analyser l'expertise des chercheurs via 
 packages/find-an-expert/
 ├── src/
 │   ├── lib/
-│   │   ├── components/     # Composants Svelte
+│   │   ├── components/     # Svelte components
 │   │   ├── server/         # Services (auth, openalex, github, git-stats)
-│   │   ├── stores/         # Runes Svelte ($state)
-│   │   └── ui/             # Composants UI reutilisables
+│   │   ├── stores/         # Svelte runes ($state)
+│   │   └── ui/             # Reusable UI components
 │   └── routes/
-│       ├── api/v1/         # API REST (auth, health, repositories, institutions)
-│       ├── dashboard/      # Tableau de bord (protege)
-│       └── login/          # Authentification
-├── static/                 # Assets (logos partenaires)
+│       ├── api/v1/         # REST API (auth, health, repositories, institutions)
+│       ├── dashboard/      # Dashboard (protected)
+│       └── login/          # Authentication
+├── static/                 # Assets (partner logos)
 └── docs/ -> docs/guide/find-an-expert/
 ```
 
-Scripts :
+Scripts:
 
-- `pnpm -F find-an-expert dev` - Developpement
-- `pnpm -F find-an-expert build` - Build production
-- `pnpm -F find-an-expert test` - Tests Vitest
+- `pnpm -F find-an-expert dev` - Development
+- `pnpm -F find-an-expert build` - Production build
+- `pnpm -F find-an-expert test` - Vitest tests
 
-Conventions Svelte 5 :
+Svelte 5 conventions:
 
-- Utiliser les runes (`$state`, `$derived`, `$effect`, `$props`)
-- Pas de stores Svelte 4
-- Ne jamais utiliser `fetch('/api/...')` cote serveur, utiliser les services `$lib/server/*`
+- Use runes (`$state`, `$derived`, `$effect`, `$props`)
+- No Svelte 4 stores
+- Never use `fetch('/api/...')` server-side, use `$lib/server/*` services instead
 
 ### packages/crf (Case Report Form)
 
-Package unifie contenant le client REDCap, le serveur HTTP et les CLI.
-Architecture OpenAPI-first avec types generes depuis `specs/redcap.yaml`.
+Unified package containing the REDCap client, HTTP server, and CLIs.
+OpenAPI-first architecture with types generated from `specs/redcap.yaml`.
 
 ```
 packages/crf/
 ├── specs/
-│   └── redcap.yaml              # OpenAPI 3.1.0 spec REDCap
+│   └── redcap.yaml              # REDCap OpenAPI 3.1.0 spec
 ├── src/
-│   ├── redcap/                  # Client Effect pour REDCap
-│   │   ├── generated/types.ts   # Types generes (openapi-typescript)
+│   ├── redcap/                  # Effect client for REDCap
+│   │   ├── generated/types.ts   # Generated types (openapi-typescript)
 │   │   ├── brands.ts            # Branded types (RecordId, etc.)
-│   │   ├── client.ts            # Client principal
-│   │   ├── errors.ts            # Erreurs typees
+│   │   ├── client.ts            # Main client
+│   │   ├── errors.ts            # Typed errors
 │   │   └── index.ts             # Exports
-│   ├── server/                  # Microservice HTTP (Hono)
+│   ├── server/                  # HTTP microservice (Hono)
 │   │   ├── routes/              # health, project, records, users
 │   │   ├── middleware/          # rate-limit, validation
-│   │   └── index.ts             # App Hono + serve
+│   │   └── index.ts             # Hono app + serve
 │   ├── cli/                     # CLI tools
-│   │   ├── redcap/              # crf-redcap (test connectivite)
-│   │   └── server/              # crf-server (test serveur CRF)
-│   └── bin/                     # Entry points CLI
+│   │   ├── redcap/              # crf-redcap (connectivity test)
+│   │   └── server/              # crf-server (CRF server test)
+│   └── bin/                     # CLI entry points
 ├── test/
 └── package.json
 ```
 
-Scripts CRF :
+CRF Scripts:
 
-- `pnpm -F @univ-lehavre/crf generate:types` - Regenerer les types depuis OpenAPI
-- `pnpm -F @univ-lehavre/crf mock:redcap` - Lancer Prism (mock REDCap)
-- `pnpm -F @univ-lehavre/crf start` - Lancer le serveur CRF
-- `pnpm -F @univ-lehavre/crf test:api` - Tests Schemathesis contre l'API
+- `pnpm -F @univ-lehavre/crf generate:types` - Regenerate types from OpenAPI
+- `pnpm -F @univ-lehavre/crf mock:redcap` - Start Prism (REDCap mock)
+- `pnpm -F @univ-lehavre/crf start` - Start CRF server
+- `pnpm -F @univ-lehavre/crf test:api` - Schemathesis tests against the API
 
 ### packages/redcap-openapi (REDCap Source Analysis)
 
-Outils d'analyse du code source PHP REDCap pour extraire les specifications OpenAPI.
-CLI unifie avec `@clack/prompts` pour une experience interactive.
+Tools for analyzing REDCap PHP source code to extract OpenAPI specifications.
+Unified CLI with `@clack/prompts` for an interactive experience.
 
 ```
 packages/redcap-openapi/
 ├── src/
-│   ├── extractor/          # Extraction OpenAPI depuis PHP
-│   ├── comparator/         # Comparaison de specs
-│   ├── server/             # Serveur docs (Swagger UI, Redoc)
-│   ├── cli/                # CLI unifie
-│   └── index.ts            # Exports publics
-├── specs/versions/         # Specs generees par version
-├── upstream/versions/      # Sources PHP (gitignored)
-├── dev/                    # Environnement de developpement
+│   ├── extractor/          # OpenAPI extraction from PHP
+│   ├── comparator/         # Spec comparison
+│   ├── server/             # Docs server (Swagger UI, Redoc)
+│   ├── cli/                # Unified CLI
+│   └── index.ts            # Public exports
+├── specs/versions/         # Generated specs by version
+├── upstream/versions/      # PHP sources (gitignored)
+├── dev/                    # Development environment
 │   ├── docker/             # Docker compose + config
-│   ├── scripts/            # Scripts d'automatisation
-│   └── tests/              # Tests de contrat
+│   ├── scripts/            # Automation scripts
+│   └── tests/              # Contract tests
 └── package.json
 ```
 
-Scripts REDCap :
+REDCap Scripts:
 
-- `pnpm -F @univ-lehavre/atlas-redcap-openapi cli` - CLI interactif
-- `pnpm -F @univ-lehavre/atlas-redcap-openapi extract` - Extraire spec OpenAPI
-- `pnpm -F @univ-lehavre/atlas-redcap-openapi compare` - Comparer versions
-- `pnpm -F @univ-lehavre/atlas-redcap-openapi docs` - Serveur documentation
+- `pnpm -F @univ-lehavre/atlas-redcap-openapi cli` - Interactive CLI
+- `pnpm -F @univ-lehavre/atlas-redcap-openapi extract` - Extract OpenAPI spec
+- `pnpm -F @univ-lehavre/atlas-redcap-openapi compare` - Compare versions
+- `pnpm -F @univ-lehavre/atlas-redcap-openapi docs` - Documentation server
 
-### Ajouter une methode au client REDCap
+### Adding a method to the REDCap client
 
 ```typescript
 // packages/crf/src/redcap/client.ts
@@ -215,7 +215,7 @@ import { Effect } from 'effect';
 import type { components } from './generated/types.js';
 import { RedcapError } from './errors.js';
 
-// Utiliser les types generes depuis la spec OpenAPI
+// Use types generated from the OpenAPI spec
 type ProjectInfo = components['schemas']['ProjectInfo'];
 
 export const getProjectInfo = (config: RedcapConfig): Effect.Effect<ProjectInfo, RedcapError> => {
@@ -228,7 +228,7 @@ export const getProjectInfo = (config: RedcapConfig): Effect.Effect<ProjectInfo,
 };
 ```
 
-## Ce qu'il ne faut PAS faire
+## What NOT to Do
 
-- Ne pas commiter de secrets reels
-- Ne pas utiliser `any` en TypeScript
+- Do not commit real secrets
+- Do not use `any` in TypeScript
