@@ -153,6 +153,46 @@ jobs:
       - name: Check bundle sizes
         run: pnpm audit:size
 
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Create SvelteKit env files
+        run: |
+          for app in packages/amarre packages/ecrin packages/find-an-expert; do
+            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
+          done
+
+      - name: Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
+      - name: Build packages (for API docs)
+        run: pnpm build
+
+      - name: Generate API documentation
+        run: pnpm docs:api
+
+      - name: Build VitePress site
+        run: pnpm docs:build
+
   audit:
     name: Audit
     runs-on: ubuntu-latest
