@@ -1,97 +1,97 @@
 ---
 title: CSS Audit Report
-description: Rapport d'audit CSS - Issue #41
+description: CSS Audit Report - Issue #41
 tags: [audit, css, quality, documentation]
 date: 2026-01-17
 ---
 
 # CSS Audit Report
 
-> Audit complet de l'architecture CSS du projet Talent Finder (Issue #41)
+> Complete audit of the Talent Finder project CSS architecture (Issue #41)
 
-## Table des matières
+## Table of Contents
 
-- [Sommaire exécutif](#sommaire-exécutif)
-- [Métriques actuelles](#métriques-actuelles)
-- [Analyse de conformité](#analyse-de-conformité)
-- [Problèmes identifiés](#problèmes-identifiés)
-- [Recommandations](#recommandations)
-- [Plan d'action](#plan-daction)
+- [Executive Summary](#executive-summary)
+- [Current Metrics](#current-metrics)
+- [Compliance Analysis](#compliance-analysis)
+- [Identified Issues](#identified-issues)
+- [Recommendations](#recommendations)
+- [Action Plan](#action-plan)
 
-## Sommaire exécutif
+## Executive Summary
 
-| Catégorie        | Score   | Statut  |
+| Category         | Score   | Status  |
 | ---------------- | ------- | ------- |
-| Design Tokens    | 95%     | Bon     |
-| Dark Mode        | 90%     | Bon     |
-| Accessibilité    | 70%     | Moyen   |
-| Performance      | 85%     | Bon     |
-| Maintenabilité   | 80%     | Bon     |
-| **Score Global** | **84%** | **Bon** |
+| Design Tokens    | 95%     | Good    |
+| Dark Mode        | 90%     | Good    |
+| Accessibility    | 70%     | Fair    |
+| Performance      | 85%     | Good    |
+| Maintainability  | 80%     | Good    |
+| **Overall Score** | **84%** | **Good** |
 
-### Points forts
+### Strengths
 
-- Système de design tokens OKLCH cohérent et bien documenté
-- Architecture hybride Tailwind/Scoped styles bien définie
-- Support dark mode complet sur la plupart des composants
-- Utilisation consistante de CSS custom properties
-- Pattern `data-variant`/`data-size` bien implémenté
+- Consistent and well-documented OKLCH design token system
+- Well-defined hybrid Tailwind/Scoped styles architecture
+- Complete dark mode support on most components
+- Consistent use of CSS custom properties
+- Well-implemented `data-variant`/`data-size` pattern
 
-### Points d'amélioration
+### Areas for Improvement
 
-- Absence de support `prefers-reduced-motion` (accessibilité)
-- Quelques valeurs hardcodées (`white` au lieu de tokens)
-- Focus states manquants sur certains composants interactifs
-- Duplication de la classe `.sr-only` dans plusieurs composants
+- Missing `prefers-reduced-motion` support (accessibility)
+- Some hardcoded values (`white` instead of tokens)
+- Missing focus states on some interactive components
+- Duplicate `.sr-only` class across multiple components
 
-## Métriques actuelles
+## Current Metrics
 
-### Distribution des fichiers
+### File Distribution
 
-| Métrique                    | Valeur | Pourcentage |
-| --------------------------- | ------ | ----------- |
-| Fichiers Svelte totaux      | 88     | 100%        |
-| Fichiers avec `<style>`     | 26     | 30%         |
-| Fichiers Tailwind only      | 62     | 70%         |
-| Fichiers avec `:global()`   | 22     | 25%         |
-| Fichiers avec styles inline | 6      | 7%          |
+| Metric                      | Value | Percentage |
+| --------------------------- | ----- | ---------- |
+| Total Svelte files          | 88    | 100%       |
+| Files with `<style>`        | 26    | 30%        |
+| Tailwind-only files         | 62    | 70%        |
+| Files with `:global()`      | 22    | 25%        |
+| Files with inline styles    | 6     | 7%         |
 
 ### Design System
 
-| Métrique             | Valeur |
-| -------------------- | ------ |
-| Variables CSS        | ~70    |
-| Palettes de couleurs | 18     |
-| Pairings de fonts    | 30     |
-| Classes utilitaires  | 15     |
+| Metric             | Value |
+| ------------------ | ----- |
+| CSS variables      | ~70   |
+| Color palettes     | 18    |
+| Font pairings      | 30    |
+| Utility classes    | 15    |
 
 ### CSS Bundle Size (Production)
 
-| Fichier                          | Taille    | Gzip     |
+| File                             | Size      | Gzip     |
 | -------------------------------- | --------- | -------- |
 | `0.CIcGkYdh.css` (layout)        | 59.79 kB  | 9.43 kB  |
 | `3.BJGE_YKl.css` (theme page)    | 175.59 kB | 26.60 kB |
 | `ConsentStatusCard.D4C9130X.css` | 38.39 kB  | 5.47 kB  |
-| **Total estimé**                 | ~274 kB   | ~42 kB   |
+| **Estimated total**              | ~274 kB   | ~42 kB   |
 
-> **Note** : Le fichier theme (175 kB) est volumineux car il contient les 18 palettes et 30 fonts. Ce CSS est chargé uniquement sur `/theme`.
+> **Note**: The theme file (175 kB) is large because it contains all 18 palettes and 30 fonts. This CSS is only loaded on `/theme`.
 
-## Analyse de conformité
+## Compliance Analysis
 
 ### 1. Design Tokens
 
-| Critère                       | Statut | Notes                  |
-| ----------------------------- | ------ | ---------------------- |
-| Couleurs via CSS custom props | ✅     | Bien implémenté        |
-| Spacing via tokens            | ✅     | `--spacing-*` utilisé  |
-| Typography via tokens         | ✅     | `--text-*`, `--font-*` |
-| Border radius via tokens      | ✅     | `--radius-*`           |
-| Transitions via tokens        | ✅     | `--transition-*`       |
-| Shadows via tokens            | ✅     | `--shadow-*`           |
+| Criterion                       | Status | Notes                  |
+| ------------------------------- | ------ | ---------------------- |
+| Colors via CSS custom props     | ✅     | Well implemented       |
+| Spacing via tokens              | ✅     | `--spacing-*` used     |
+| Typography via tokens           | ✅     | `--text-*`, `--font-*` |
+| Border radius via tokens        | ✅     | `--radius-*`           |
+| Transitions via tokens          | ✅     | `--transition-*`       |
+| Shadows via tokens              | ✅     | `--shadow-*`           |
 
-### 2. Patterns data-variant/data-size
+### 2. data-variant/data-size Patterns
 
-**Composants utilisant `data-variant` (12)** :
+**Components using `data-variant` (12)**:
 
 - `Alert.svelte` ✅
 - `Badge.svelte` ✅
@@ -106,7 +106,7 @@ date: 2026-01-17
 - `KeyValue.svelte` ✅
 - `ErrorState.svelte` ✅
 
-**Composants utilisant `data-size` (5)** :
+**Components using `data-size` (5)**:
 
 - `Badge.svelte` ✅
 - `StatCard.svelte` ✅
@@ -116,43 +116,43 @@ date: 2026-01-17
 
 ### 3. Dark Mode
 
-| Critère                          | Statut | Notes                        |
-| -------------------------------- | ------ | ---------------------------- |
-| Pattern `:global(.dark)` utilisé | ✅     | 22 fichiers                  |
-| Couleurs adaptées correctement   | ✅     | Light/Dark cohérent          |
-| Transitions smooth               | ✅     | `transition-colors` appliqué |
-| OKLCH pour teintes préservées    | ✅     | Utilisé dans Badge, Alert    |
+| Criterion                          | Status | Notes                        |
+| ---------------------------------- | ------ | ---------------------------- |
+| `:global(.dark)` pattern used      | ✅     | 22 files                     |
+| Colors adapted correctly           | ✅     | Light/Dark consistent        |
+| Smooth transitions                 | ✅     | `transition-colors` applied  |
+| OKLCH for preserved tints          | ✅     | Used in Badge, Alert         |
 
-### 4. Accessibilité
+### 4. Accessibility
 
-| Critère                          | Statut | Notes                          |
-| -------------------------------- | ------ | ------------------------------ |
-| Focus visible states             | ⚠️     | Présent sur 2/26 composants    |
-| `prefers-reduced-motion`         | ❌     | Non implémenté                 |
-| Screen reader support (.sr-only) | ⚠️     | Dupliqué, à centraliser        |
-| Contrastes WCAG AA               | ✅     | OKLCH garantit bons contrastes |
-| `role` attributes                | ✅     | Présent où nécessaire          |
+| Criterion                          | Status | Notes                          |
+| ---------------------------------- | ------ | ------------------------------ |
+| Visible focus states               | ⚠️     | Present on 2/26 components     |
+| `prefers-reduced-motion`           | ❌     | Not implemented                |
+| Screen reader support (.sr-only)   | ⚠️     | Duplicated, needs centralization |
+| WCAG AA contrasts                  | ✅     | OKLCH ensures good contrasts   |
+| `role` attributes                  | ✅     | Present where needed           |
 
 ### 5. Performance
 
-| Critère                    | Statut | Notes               |
-| -------------------------- | ------ | ------------------- |
-| PurgeCSS actif (Tailwind)  | ✅     | Intégré v4          |
-| Pas de CSS-in-JS runtime   | ✅     | CSS statique        |
-| Code splitting CSS         | ✅     | Par route           |
-| Animations GPU-accelerated | ✅     | `transform` utilisé |
+| Criterion                    | Status | Notes               |
+| ---------------------------- | ------ | ------------------- |
+| PurgeCSS active (Tailwind)   | ✅     | v4 integrated       |
+| No CSS-in-JS runtime         | ✅     | Static CSS          |
+| CSS code splitting           | ✅     | Per route           |
+| GPU-accelerated animations   | ✅     | `transform` used    |
 
-## Problèmes identifiés
+## Identified Issues
 
-### Priorité Haute
+### High Priority
 
-#### P1: Absence de `prefers-reduced-motion`
+#### P1: Missing `prefers-reduced-motion`
 
-**Fichiers concernés** : Tous les composants avec animations
+**Affected files**: All components with animations
 
-**Impact** : Accessibilité - utilisateurs sensibles aux mouvements
+**Impact**: Accessibility - users sensitive to motion
 
-**Recommandation** : Ajouter dans `app.css` :
+**Recommendation**: Add to `app.css`:
 
 ```css
 @media (prefers-reduced-motion: reduce) {
@@ -167,98 +167,98 @@ date: 2026-01-17
 }
 ```
 
-#### P2: Focus states manquants
+#### P2: Missing focus states
 
-**Fichiers concernés** :
+**Affected files**:
 
-- `Button.svelte` - Focus state minimal
-- `DataTable.svelte` - Pas de focus sur rows
-- `Badge.svelte` - Pas de focus (non interactif, OK)
-- Plusieurs composants interactifs
+- `Button.svelte` - Minimal focus state
+- `DataTable.svelte` - No focus on rows
+- `Badge.svelte` - No focus (non-interactive, OK)
+- Several interactive components
 
-**Impact** : Navigation clavier difficile
+**Impact**: Difficult keyboard navigation
 
-**Recommandation** : Ajouter `:focus-visible` sur tous les éléments interactifs
+**Recommendation**: Add `:focus-visible` to all interactive elements
 
-### Priorité Moyenne
+### Medium Priority
 
-#### P3: Valeur `white` hardcodée
+#### P3: Hardcoded `white` value
 
-**Fichiers concernés** :
+**Affected files**:
 
 - `DataTable.svelte:153` - `background-color: white`
 - `DataTable.svelte:208` - `background-color: white`
 - `StatCard.svelte:89` - `--stat-bg: white`
 - `LinkButton.svelte:117` - `--btn-text: white`
 
-**Impact** : Incohérence potentielle avec le design system
+**Impact**: Potential inconsistency with design system
 
-**Recommandation** : Remplacer par `var(--color-secondary-50)` ou créer un token `--color-surface`
+**Recommendation**: Replace with `var(--color-secondary-50)` or create a `--color-surface` token
 
-#### P4: Duplication de `.sr-only`
+#### P4: Duplicate `.sr-only`
 
-**Fichiers concernés** :
+**Affected files**:
 
 - `LoadingSpinner.svelte:98-108`
 - `DataTable.svelte:272-282`
 
-**Impact** : Code dupliqué, maintenance difficile
+**Impact**: Duplicate code, difficult maintenance
 
-**Recommandation** : Ajouter `.sr-only` comme classe utilitaire dans `app.css`
+**Recommendation**: Add `.sr-only` as utility class in `app.css`
 
-### Priorité Basse
+### Low Priority
 
-#### P5: Styles inline dynamiques
+#### P5: Dynamic inline styles
 
-**Fichiers concernés** (6) :
+**Affected files (6)**:
 
-- `ColorSwatch.svelte` - Justifié (couleurs dynamiques)
-- `ColorScaleRow.svelte` - Justifié (couleurs dynamiques)
-- `HealthStatusCard.svelte` - À évaluer
-- `Modal.svelte` - Largeur dynamique
-- `Signup.svelte` - À évaluer
-- `theme/+page.svelte` - Justifié (preview)
+- `ColorSwatch.svelte` - Justified (dynamic colors)
+- `ColorScaleRow.svelte` - Justified (dynamic colors)
+- `HealthStatusCard.svelte` - To evaluate
+- `Modal.svelte` - Dynamic width
+- `Signup.svelte` - To evaluate
+- `theme/+page.svelte` - Justified (preview)
 
-**Impact** : Faible, la plupart sont justifiés
+**Impact**: Low, most are justified
 
-**Recommandation** : Réviser `HealthStatusCard.svelte` et `Signup.svelte`
+**Recommendation**: Review `HealthStatusCard.svelte` and `Signup.svelte`
 
-#### P6: Animation sans `will-change`
+#### P6: Animation without `will-change`
 
-**Fichiers concernés** :
+**Affected files**:
 
 - `Button.svelte` - spinner animation
 - `LoadingSpinner.svelte` - spin animation
 
-**Impact** : Performance potentiellement non optimale
+**Impact**: Potentially non-optimal performance
 
-**Recommandation** : Ajouter `will-change: transform` sur les éléments animés
+**Recommendation**: Add `will-change: transform` to animated elements
 
-## Recommandations
+## Recommendations
 
-### Court terme (Sprint actuel)
+### Short Term (Current Sprint)
 
-1. **Ajouter `prefers-reduced-motion`** dans `app.css`
-2. **Ajouter `.sr-only` global** dans `app.css` @layer utilities
-3. **Auditer les focus states** des composants interactifs
+1. **Add `prefers-reduced-motion`** in `app.css`
+2. **Add global `.sr-only`** in `app.css` @layer utilities
+3. **Audit focus states** of interactive components
 
-### Moyen terme (Prochain sprint)
+### Medium Term (Next Sprint)
 
-4. **Remplacer `white` hardcodé** par tokens
-5. **Créer un token `--color-surface`** pour les backgrounds de cards
-6. **Documenter les conventions de nommage** des CSS custom properties locales
+4. **Replace hardcoded `white`** with tokens
+5. **Create a `--color-surface` token** for card backgrounds
+6. **Document naming conventions** for local CSS custom properties
 
-### Long terme (Backlog)
+### Long Term (Backlog)
 
-7. **Évaluer l'ajout de Stylelint** pour automatiser les vérifications
-8. **Créer des tests visuels** avec Playwright pour les composants UI
-9. **Benchmark de performance CSS** avec Lighthouse
+7. **Evaluate adding Stylelint** to automate checks
+8. **Create visual tests** with Playwright for UI components
+9. **CSS performance benchmark** with Lighthouse
 
-## Plan d'action
+## Action Plan
 
-### Issues à créer
+### Issues to Create
 
-| ID  | Titre                                                        | Priorité | Labels             |
+| ID  | Title                                                        | Priority | Labels             |
 | --- | ------------------------------------------------------------ | -------- | ------------------ |
 | 1   | fix(a11y): add prefers-reduced-motion support                | P1       | a11y, css          |
 | 2   | fix(a11y): audit and improve focus-visible states            | P1       | a11y, css          |
@@ -267,9 +267,9 @@ date: 2026-01-17
 | 5   | feat(css): add --color-surface token                         | P3       | css, design-system |
 | 6   | chore(docs): document CSS custom property naming conventions | P3       | docs, css          |
 
-## Annexes
+## Appendices
 
-### A. Liste complète des fichiers avec styles scoped
+### A. Complete List of Files with Scoped Styles
 
 ```
 src/lib/ui/feedback/Badge.svelte
@@ -300,7 +300,7 @@ src/lib/ui/dashboard/ComingSoonSection.svelte
 src/routes/api/docs/+page.svelte
 ```
 
-### B. Ressources utilisées
+### B. Resources Used
 
 - [WCAG 2.1 Accessibility Guidelines](https://www.w3.org/WAI/WCAG21/quickref/)
 - [Tailwind CSS v4 Documentation](https://tailwindcss.com/docs)
@@ -309,4 +309,4 @@ src/routes/api/docs/+page.svelte
 
 ---
 
-_Rapport généré le 2026-01-17 dans le cadre de l'issue #41_
+_Report generated on 2026-01-17 as part of issue #41_

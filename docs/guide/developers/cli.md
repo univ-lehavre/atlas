@@ -1,10 +1,10 @@
 # CLI Tools
 
-Atlas fournit des outils en ligne de commande pour tester la connectivite et diagnostiquer les problemes.
+Atlas provides command line tools for testing connectivity and diagnosing issues.
 
 ## CRF REDCap CLI
 
-Outil pour tester la connectivite directe avec l'API REDCap.
+Tool for testing direct connectivity with the REDCap API.
 
 ### Installation
 
@@ -15,43 +15,43 @@ pnpm add @univ-lehavre/crf
 ### Usage
 
 ```bash
-# Tester la connectivite REDCap
+# Test REDCap connectivity
 crf-redcap test
 
-# Avec URL et token personnalises
+# With custom URL and token
 REDCAP_API_URL=https://redcap.example.com/api/ \
 REDCAP_API_TOKEN=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA \
 crf-redcap test
 
-# Sortie JSON
+# JSON output
 crf-redcap test --json
 ```
 
-### Tests executes
+### Tests Performed
 
-1. **Version** - Recupere la version REDCap
-2. **Project Info** - Informations du projet
-3. **Instruments** - Liste des formulaires
-4. **Fields** - Liste des champs
-5. **Records** - Export d'un echantillon de records
+1. **Version** - Retrieves the REDCap version
+2. **Project Info** - Project information
+3. **Instruments** - List of forms
+4. **Fields** - List of fields
+5. **Records** - Export of a sample of records
 
 ### Options
 
-| Option       | Description     |
-| ------------ | --------------- |
-| `--json`     | Sortie JSON     |
-| `-h, --help` | Afficher l'aide |
+| Option       | Description    |
+| ------------ | -------------- |
+| `--json`     | JSON output    |
+| `-h, --help` | Display help   |
 
-### Variables d'environnement
+### Environment Variables
 
-| Variable           | Description                     |
-| ------------------ | ------------------------------- |
-| `REDCAP_API_URL`   | URL de l'API REDCap             |
-| `REDCAP_API_TOKEN` | Token API REDCap (32 hex chars) |
+| Variable           | Description                        |
+| ------------------ | ---------------------------------- |
+| `REDCAP_API_URL`   | REDCap API URL                     |
+| `REDCAP_API_TOKEN` | REDCap API token (32 hex chars)    |
 
 ## Network CLI
 
-Outil pour diagnostiquer les problemes de connectivite reseau.
+Tool for diagnosing network connectivity issues.
 
 ### Installation
 
@@ -59,13 +59,13 @@ Outil pour diagnostiquer les problemes de connectivite reseau.
 pnpm add @univ-lehavre/atlas-net-cli
 ```
 
-### Mode interactif
+### Interactive Mode
 
 ```bash
 atlas-net
 ```
 
-Demande une URL et execute les diagnostics :
+Prompts for a URL and runs diagnostics:
 
 ```
 ◆  Atlas Network Diagnostics
@@ -80,19 +80,19 @@ Demande une URL et execute les diagnostics :
 ◆  Done
 ```
 
-### URL directe
+### Direct URL
 
 ```bash
 atlas-net https://example.com
 ```
 
-### Mode CI
+### CI Mode
 
 ```bash
 atlas-net --ci https://example.com
 ```
 
-Sortie :
+Output:
 
 ```
 [OK   ] DNS Resolution 12ms - 93.184.216.34
@@ -102,35 +102,35 @@ Sortie :
 
 ### Options
 
-| Option       | Description                           |
-| ------------ | ------------------------------------- |
-| `-c, --ci`   | Mode CI (sans prompts, sortie simple) |
-| `-h, --help` | Afficher l'aide                       |
+| Option       | Description                          |
+| ------------ | ------------------------------------ |
+| `-c, --ci`   | CI mode (no prompts, simple output)  |
+| `-h, --help` | Display help                         |
 
-### Etapes de diagnostic
+### Diagnostic Steps
 
-1. **DNS Resolution** - Resout le nom d'hote en adresse IP
-2. **TCP Connect** - Verifie que le port est ouvert et accessible
-3. **TLS Handshake** - (HTTPS uniquement) Valide le certificat SSL/TLS
+1. **DNS Resolution** - Resolves hostname to IP address
+2. **TCP Connect** - Verifies that the port is open and accessible
+3. **TLS Handshake** - (HTTPS only) Validates SSL/TLS certificate
 
-Si une etape echoue, un **Internet Check** est automatiquement execute pour determiner si le probleme est local.
+If a step fails, an **Internet Check** is automatically performed to determine if the problem is local.
 
-### Codes de sortie
+### Exit Codes
 
-- `0` : Tous les diagnostics ont reussi
-- `1` : Un ou plusieurs diagnostics ont echoue
+- `0`: All diagnostics succeeded
+- `1`: One or more diagnostics failed
 
-## Integration avec le package CRF
+## Integration with the CRF Package
 
-Les CLI sont inclus dans le package `@univ-lehavre/crf` :
+CLIs are included in the `@univ-lehavre/crf` package:
 
 ```bash
-# Tester REDCap directement
+# Test REDCap directly
 pnpm -F @univ-lehavre/crf crf-redcap test
 
-# Lancer le mock REDCap (Prism)
+# Start REDCap mock (Prism)
 pnpm -F @univ-lehavre/crf mock:redcap
 
-# Lancer le serveur CRF
+# Start CRF server
 pnpm -F @univ-lehavre/crf start
 ```

@@ -1,32 +1,32 @@
 # Rate Limiting
 
-La gestion des quotas est critique pour les APIs bibliographiques. Chaque package implémente une gestion uniforme du rate limiting.
+Quota management is critical for bibliographic APIs. Each package implements uniform rate limiting handling.
 
-## Limites par source
+## Limits by Source
 
-| Source | Limite | Headers |
-|--------|--------|---------|
-| OpenAlex | 100k/jour (avec API key) | `X-Rate-Limit-*` |
-| Crossref | 50 req/s (polite pool avec email) | `X-Rate-Limit-Limit`, `X-Rate-Limit-Interval` |
-| HAL | Non documenté | - |
-| ArXiv | ~1 req/3s recommandé | - |
-| ORCID | Variable selon tier | `X-RateLimit-*` |
+| Source | Limit | Headers |
+|--------|-------|---------|
+| OpenAlex | 100k/day (with API key) | `X-Rate-Limit-*` |
+| Crossref | 50 req/s (polite pool with email) | `X-Rate-Limit-Limit`, `X-Rate-Limit-Interval` |
+| HAL | Undocumented | - |
+| ArXiv | ~1 req/3s recommended | - |
+| ORCID | Variable by tier | `X-RateLimit-*` |
 
-## Erreurs typées
+## Typed Errors
 
 ```typescript
 import { Data } from 'effect';
 
-// Erreur de rate limit (retryable)
+// Rate limit error (retryable)
 export class RateLimitError extends Data.TaggedError('RateLimitError')<{
   readonly source: string;
-  readonly retryAfter?: number;      // Secondes avant retry
-  readonly remaining?: number;        // Requêtes restantes
-  readonly limit?: number;            // Limite totale
-  readonly resetAt?: Date;            // Reset du quota
+  readonly retryAfter?: number;      // Seconds before retry
+  readonly remaining?: number;        // Remaining requests
+  readonly limit?: number;            // Total limit
+  readonly resetAt?: Date;            // Quota reset time
 }> {}
 
-// Quota journalier épuisé (non retryable)
+// Daily quota exhausted (non-retryable)
 export class QuotaExhaustedError extends Data.TaggedError('QuotaExhaustedError')<{
   readonly source: string;
   readonly dailyLimit: number;
@@ -34,9 +34,9 @@ export class QuotaExhaustedError extends Data.TaggedError('QuotaExhaustedError')
 }> {}
 ```
 
-## Interface commune
+## Common Interface
 
-Tous les clients implémentent `RateLimitedClient` :
+All clients implement `RateLimitedClient`:
 
 ```typescript
 interface RateLimitStatus {
@@ -48,17 +48,17 @@ interface RateLimitStatus {
 }
 
 interface RateLimitedClient {
-  // Obtenir le statut actuel des quotas
+  // Get current quota status
   getRateLimitStatus: () => Effect<RateLimitStatus, never>;
 
-  // Attendre que du quota soit disponible
+  // Wait for quota to become available
   waitForQuota: () => Effect<void, QuotaExhaustedError>;
 }
 ```
 
-## Stratégie de retry
+## Retry Strategy
 
-Le retry est automatique avec backoff exponentiel et jitter :
+Retry is automatic with exponential backoff and jitter:
 
 ```typescript
 import { Schedule, pipe } from 'effect';
@@ -71,22 +71,22 @@ const rateLimitRetrySchedule = pipe(
 );
 ```
 
-## Utilisation
+## Usage
 
-### Vérifier les quotas
+### Check quotas
 
 ```typescript
 import { createOpenAlexClient } from '@univ-lehavre/atlas-openalex';
 
 const client = createOpenAlexClient({ apiKey: '...' });
 
-// Obtenir le statut
+// Get status
 const status = yield* client.getRateLimitStatus();
 console.log(`Remaining: ${status.remaining}/${status.limit}`);
 console.log(`Reset at: ${status.resetAt}`);
 ```
 
-### Gérer les erreurs de quota
+### Handle quota errors
 
 ```typescript
 import { Effect, Match } from 'effect';
@@ -106,34 +106,34 @@ const program = pipe(
 );
 ```
 
-### Attendre du quota
+### Wait for quota
 
 ```typescript
-// Attendre que du quota soit disponible
+// Wait for quota to become available
 yield* client.waitForQuota();
 
-// Puis exécuter la requête
+// Then execute the request
 const works = yield* client.listWorks();
 ```
 
 ## Crossref: Polite Pool
 
-Crossref offre un meilleur rate limit si vous incluez un email dans vos requêtes :
+Crossref offers a better rate limit if you include an email in your requests:
 
 ```typescript
 const client = createCrossrefClient({
-  mailto: 'your-email@example.com',  // Active le "polite pool"
+  mailto: 'your-email@example.com',  // Activates the "polite pool"
 });
 ```
 
-Avec le polite pool :
-- Limite augmentée
-- Priorité dans la file d'attente
-- Notifications en cas de problème
+With the polite pool:
+- Increased limit
+- Priority in the queue
+- Notifications in case of issues
 
 ## OpenAlex: API Key
 
-OpenAlex offre 100k requêtes/jour avec une API key gratuite :
+OpenAlex offers 100k requests/day with a free API key:
 
 ```typescript
 const client = createOpenAlexClient({
@@ -141,18 +141,18 @@ const client = createOpenAlexClient({
 });
 ```
 
-Sans API key, la limite est basée sur l'IP et plus restrictive.
+Without an API key, the limit is IP-based and more restrictive.
 
-## Monitoring dans atlas-citations
+## Monitoring in atlas-citations
 
-L'agrégateur permet de monitorer tous les quotas :
+The aggregator allows monitoring all quotas:
 
 ```typescript
 import { createCitationsClient } from '@univ-lehavre/atlas-citations';
 
 const client = createCitationsClient();
 
-// Obtenir les quotas de toutes les sources
+// Get quotas for all sources
 const limits = yield* client.getRateLimits();
 // {
 //   openalex: { remaining: 99500, limit: 100000, resetAt: ... },
@@ -161,7 +161,7 @@ const limits = yield* client.getRateLimits();
 //   ...
 // }
 
-// Vérifier la santé des sources
+// Check source health
 const health = yield* client.getSourceHealth();
 // {
 //   openalex: { status: 'healthy', latency: 120 },

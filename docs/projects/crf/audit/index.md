@@ -1,34 +1,34 @@
-# Audit CRF
+# CRF Audit
 
-> **Dernière mise à jour :** 29 janvier 2026
+> **Last updated:** January 29, 2026
 
-Ce document présente l'audit du module CRF (Case Report Form) pour l'interaction avec REDCap.
+This document presents the audit of the CRF (Case Report Form) module for REDCap interaction.
 
-## État actuel
+## Current status
 
-| Métrique | Valeur |
-|----------|--------|
+| Metric | Value |
+|--------|-------|
 | Packages | 3 (crf, redcap-core, redcap-openapi) |
-| Spec OpenAPI | Complète |
-| Client Effect | Fonctionnel |
-| CLI | Disponible |
+| OpenAPI Spec | Complete |
+| Effect Client | Functional |
+| CLI | Available |
 
-## Points d'attention
+## Points of attention
 
 ### Architecture
 
-- Architecture OpenAPI-first validée
-- Types générés depuis la spec
-- Séparation claire entre core et client
+- OpenAPI-first architecture validated
+- Types generated from the spec
+- Clear separation between core and client
 
-### Qualité
+### Quality
 
-- Tests unitaires présents
-- Tests d'intégration avec Prism (mock)
-- Documentation TSDoc à jour
+- Unit tests present
+- Integration tests with Prism (mock)
+- TSDoc documentation up to date
 
-## Recommandations
+## Recommendations
 
-1. Extraire redcap-openapi en package autonome
-2. Améliorer la couverture des endpoints REDCap
-3. Documenter les cas d'erreur spécifiques
+1. Extract redcap-openapi into a standalone package
+2. Improve REDCap endpoint coverage
+3. Document specific error cases

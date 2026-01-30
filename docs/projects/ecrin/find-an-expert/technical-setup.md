@@ -7,7 +7,7 @@ tags: [installation, development, setup, nodejs, sveltekit]
 
 # Technical Setup
 
-> **Voir aussi** : [Appwrite Setup](appwrite-setup.md) | [Design System](design-system.md)
+> **See also**: [Appwrite Setup](appwrite-setup.md) | [Design System](design-system.md)
 
 ## Tech Stack
 

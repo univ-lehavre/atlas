@@ -1,128 +1,128 @@
-# Vérifier vos publications
+# Verify Your Publications
 
-Ce guide vous explique comment valider les publications qui vous sont attribuées dans Atlas Verify.
+This guide explains how to validate the publications attributed to you in Atlas Verify.
 
-## Pourquoi vérifier ?
+## Why Verify?
 
-Les bases de données bibliographiques peuvent contenir des erreurs :
+Bibliographic databases can contain errors:
 
-- **Homonymes** : Un autre "Jean Dupont" peut avoir des publications attribuées à tort
-- **Variantes de nom** : "J. Dupont", "Jean-Pierre Dupont" peuvent créer de la confusion
-- **Erreurs de saisie** : Les éditeurs font parfois des erreurs
+- **Homonyms**: Another "Jean Dupont" may have publications incorrectly attributed to you
+- **Name variants**: "J. Dupont", "Jean-Pierre Dupont" can create confusion
+- **Data entry errors**: Publishers sometimes make mistakes
 
-Votre validation permet de construire un profil fiable et complet.
+Your validation helps build a reliable and complete profile.
 
-## Types de décisions
+## Types of Decisions
 
-### ✅ Confirmer une publication
+### Confirm a Publication
 
-Utilisez cette option quand vous êtes **certain** que l'article est le vôtre.
+Use this option when you are **certain** that the article is yours.
 
-**Indices utiles** :
-- Vous reconnaissez le titre et les co-auteurs
-- L'affiliation correspond à votre parcours
-- La date est cohérente avec votre carrière
+**Useful clues**:
+- You recognize the title and co-authors
+- The affiliation matches your career
+- The date is consistent with your career
 
-### ❌ Rejeter une publication
+### Reject a Publication
 
-Utilisez cette option quand vous êtes **certain** que l'article n'est pas le vôtre.
+Use this option when you are **certain** that the article is not yours.
 
-**Cas fréquents** :
-- Homonyme (même nom, autre chercheur)
-- Erreur manifeste (domaine totalement différent)
-- Date impossible (avant vos études par exemple)
+**Common cases**:
+- Homonym (same name, different researcher)
+- Obvious error (completely different field)
+- Impossible date (before your studies, for example)
 
-> 💡 **Astuce** : Si vous connaissez le véritable auteur, vous pouvez le suggérer pour aider la base de données.
+> **Tip**: If you know the actual author, you can suggest them to help the database.
 
-### ❓ Marquer comme incertain
+### Mark as Uncertain
 
-Utilisez cette option quand vous **ne savez plus** :
-- Article ancien dont vous n'avez plus le souvenir
-- Co-auteur que vous ne reconnaissez pas
-- Titre qui ne vous dit rien
+Use this option when you **don't know**:
+- Old article you no longer remember
+- Co-author you don't recognize
+- Title that doesn't ring a bell
 
-L'article restera dans votre file d'attente pour révision ultérieure.
+The article will remain in your queue for later review.
 
-### 🔗 Signaler un doublon
+### Report a Duplicate
 
-Plusieurs entrées peuvent correspondre au même article :
-- Preprint ArXiv + version publiée
-- DOI éditeur + DOI dépôt institutionnel
-- Versions successives avec corrections
+Multiple entries may correspond to the same article:
+- ArXiv preprint + published version
+- Publisher DOI + institutional repository DOI
+- Successive versions with corrections
 
-Fusionnez-les pour éviter les doublons dans votre bibliographie.
+Merge them to avoid duplicates in your bibliography.
 
-## Niveaux de confiance
+## Confidence Levels
 
-Pour chaque décision, indiquez votre niveau de certitude :
+For each decision, indicate your level of certainty:
 
-| Niveau | Signification | Usage |
-|--------|---------------|-------|
-| **Certain** | Je n'ai aucun doute | Vous reconnaissez parfaitement l'article |
-| **Probable** | Je pense que oui/non | L'article vous semble familier/étranger |
-| **Possible** | C'est possible | Vous n'êtes pas sûr mais c'est plausible |
-| **Incertain** | Je ne sais vraiment pas | Article ancien ou mémoire défaillante |
+| Level | Meaning | Use |
+|-------|---------|-----|
+| **Certain** | I have no doubt | You perfectly recognize the article |
+| **Probable** | I think yes/no | The article seems familiar/unfamiliar |
+| **Possible** | It's possible | You're not sure but it's plausible |
+| **Uncertain** | I really don't know | Old article or failing memory |
 
-## Score de matching
+## Matching Score
 
-Chaque publication candidate affiche un **score de confiance** calculé automatiquement :
+Each candidate publication displays an automatically calculated **confidence score**:
 
 ```
-Score 95%+ : Très haute confiance (ORCID confirmé)
-Score 80-95% : Haute confiance (nom + affiliation concordants)
-Score 50-80% : Confiance moyenne (nom similaire, contexte plausible)
-Score <50% : Faible confiance (vérification recommandée)
+Score 95%+: Very high confidence (ORCID confirmed)
+Score 80-95%: High confidence (name + affiliation match)
+Score 50-80%: Medium confidence (similar name, plausible context)
+Score <50%: Low confidence (verification recommended)
 ```
 
-### Critères pris en compte
+### Criteria Considered
 
-| Critère | Impact | Explication |
-|---------|--------|-------------|
-| **ORCID présent** | +++++ | Votre ORCID est dans les métadonnées de l'article |
-| **Email correspondant** | ++++ | Votre email institutionnel est mentionné |
-| **Nom exact** | +++ | Nom et prénom identiques |
-| **Affiliation connue** | +++ | Institution dans votre parcours |
-| **Co-auteurs connus** | ++ | Vous avez déjà validé des articles avec eux |
-| **Thématique proche** | + | Domaine de recherche similaire à vos autres publications |
+| Criterion | Impact | Explanation |
+|-----------|--------|-------------|
+| **ORCID present** | +++++ | Your ORCID is in the article's metadata |
+| **Matching email** | ++++ | Your institutional email is mentioned |
+| **Exact name** | +++ | First and last name identical |
+| **Known affiliation** | +++ | Institution in your career history |
+| **Known co-authors** | ++ | You have already validated articles with them |
+| **Related topic** | + | Research domain similar to your other publications |
 
-## Vérification par lot
+## Batch Verification
 
-Pour gagner du temps, vous pouvez :
+To save time, you can:
 
-1. **Filtrer** par score de confiance (ex: afficher uniquement les >90%)
-2. **Sélectionner plusieurs** articles similaires
-3. **Confirmer en lot** tous les articles sélectionnés
+1. **Filter** by confidence score (e.g., show only >90%)
+2. **Select multiple** similar articles
+3. **Confirm in batch** all selected articles
 
-> ⚠️ **Attention** : La vérification par lot est réservée aux articles à haute confiance. En cas de doute, vérifiez individuellement.
+> **Warning**: Batch verification is reserved for high-confidence articles. If in doubt, verify individually.
 
 ## Auto-confirmation
 
-Vous pouvez activer l'auto-confirmation pour les publications à très haute confiance :
+You can enable auto-confirmation for very high confidence publications:
 
-**Paramètres** → **Auto-confirmation** → Seuil : 95%
+**Settings** → **Auto-confirmation** → Threshold: 95%
 
-Les articles avec un score ≥ 95% (généralement ceux avec ORCID confirmé) seront automatiquement ajoutés à votre profil.
+Articles with a score ≥ 95% (generally those with confirmed ORCID) will be automatically added to your profile.
 
-## Historique des décisions
+## Decision History
 
-Toutes vos décisions sont enregistrées avec :
-- Date et heure
-- Niveau de confiance indiqué
-- Notes éventuelles
+All your decisions are recorded with:
+- Date and time
+- Indicated confidence level
+- Any notes
 
-Vous pouvez **revenir sur une décision** à tout moment depuis l'historique.
+You can **reverse a decision** at any time from the history.
 
-## Bonnes pratiques
+## Best Practices
 
-1. **Commencez par les scores élevés** - Plus rapide et moins risqué
-2. **Vérifiez les co-auteurs** - Si vous reconnaissez un co-auteur, c'est bon signe
-3. **Consultez l'affiliation** - Correspond-elle à votre parcours à cette date ?
-4. **En cas de doute, marquez "incertain"** - Vous pourrez y revenir plus tard
-5. **Documentez les rejets** - Notez pourquoi ce n'est pas vous (aide le système)
+1. **Start with high scores** - Faster and less risky
+2. **Check the co-authors** - If you recognize a co-author, that's a good sign
+3. **Check the affiliation** - Does it match your career at that date?
+4. **If in doubt, mark "uncertain"** - You can come back to it later
+5. **Document rejections** - Note why it's not you (helps the system)
 
-## Voir aussi
+## See Also
 
-- [Gérer votre parcours](./manage-career.md) - Vérifier vos affiliations
-- [Profil d'expertise](./expertise-profile.md) - Vos domaines de recherche
+- [Manage your career](./manage-career.md) - Verify your affiliations
+- [Expertise profile](./expertise-profile.md) - Your research domains
 
-**Documentation technique :** [Fiabilisation auteur](../dev/author-verification.md) - Pour les développeurs
+**Technical documentation:** [Author verification](../dev/author-verification.md) - For developers

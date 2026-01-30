@@ -1,126 +1,126 @@
-# Atlas Verify - Guide utilisateur
+# Atlas Verify - User Guide
 
-Bienvenue sur Atlas Verify, la plateforme de gestion de votre profil bibliographique.
+Welcome to Atlas Verify, the platform for managing your bibliographic profile.
 
-## Pourquoi utiliser Atlas Verify ?
+## Why Use Atlas Verify?
 
-En tant que chercheur, vous êtes confronté à plusieurs défis :
+As a researcher, you face several challenges:
 
-- **Dispersion des données** : Vos publications sont réparties sur OpenAlex, Google Scholar, HAL, ORCID, ResearchGate...
-- **Erreurs d'attribution** : Des homonymes peuvent être confondus avec vous
-- **Profil incomplet** : Certaines publications ne sont pas correctement liées à votre profil
-- **Affiliations incohérentes** : Vos parcours institutionnels varient selon les sources
+- **Data dispersion**: Your publications are scattered across OpenAlex, Google Scholar, HAL, ORCID, ResearchGate...
+- **Attribution errors**: Namesakes may be confused with you
+- **Incomplete profile**: Some publications are not correctly linked to your profile
+- **Inconsistent affiliations**: Your institutional history varies across sources
 
-Atlas Verify agrège automatiquement vos données depuis 15+ sources bibliographiques et vous permet de les valider, corriger et enrichir.
+Atlas Verify automatically aggregates your data from 15+ bibliographic sources and allows you to validate, correct, and enrich them.
 
-## Fonctionnalités principales
+## Main Features
 
-### 1. Vérification des publications
+### 1. Publication Verification
 
-Confirmez ou rejetez les publications qui vous sont attribuées :
+Confirm or reject publications attributed to you:
 
-- ✅ **"C'est bien mon article"** - Confirmer l'attribution
-- ❌ **"Ce n'est pas moi"** - Signaler une erreur d'attribution (homonyme)
-- ❓ **"Je ne suis pas sûr(e)"** - Marquer pour révision ultérieure
-- 🔗 **"C'est un doublon"** - Fusionner des versions multiples
+- "This is my article" - Confirm the attribution
+- "This is not me" - Report an attribution error (namesake)
+- "I'm not sure" - Mark for later review
+- "This is a duplicate" - Merge multiple versions
 
-> **Documentation détaillée** : [Fiabilisation des publications](./verify-publications.md)
+> **Detailed documentation**: [Publication Verification](./verify-publications.md)
 
-### 2. Profil de carrière
+### 2. Career Profile
 
-Visualisez et corrigez votre parcours institutionnel :
+Visualize and correct your institutional history:
 
-- Chronologie de vos affiliations (universités, laboratoires)
-- Détection automatique des périodes manquantes
-- Ajout manuel d'affiliations non détectées
+- Timeline of your affiliations (universities, laboratories)
+- Automatic detection of missing periods
+- Manual addition of undetected affiliations
 
-> **Documentation détaillée** : [Gérer votre carrière](./manage-career.md)
+> **Detailed documentation**: [Manage Your Career](./manage-career.md)
 
-### 3. Profil d'expertise
+### 3. Expertise Profile
 
-Découvrez vos domaines d'expertise tels qu'identifiés par vos publications :
+Discover your areas of expertise as identified by your publications:
 
-- Cartographie de vos thématiques de recherche
-- Évolution de vos expertises dans le temps
-- Identification des pivots thématiques
+- Mapping of your research topics
+- Evolution of your expertise over time
+- Identification of thematic pivots
 
-> **Documentation détaillée** : [Votre profil d'expertise](./expertise-profile.md)
+> **Detailed documentation**: [Your Expertise Profile](./expertise-profile.md)
 
-### 4. Réseau de collaboration
+### 4. Collaboration Network
 
-Explorez votre réseau de co-auteurs :
+Explore your co-author network:
 
-- Visualisation de vos collaborations
-- Identification des collaborateurs récurrents
-- Statistiques de collaboration internationale
+- Visualization of your collaborations
+- Identification of recurring collaborators
+- International collaboration statistics
 
-> **Documentation détaillée** : [Réseau de collaboration](./collaboration-network.md)
+> **Detailed documentation**: [Collaboration Network](./collaboration-network.md)
 
-## Premiers pas
+## Getting Started
 
-### Étape 1 : Connexion avec ORCID
+### Step 1: Sign in with ORCID
 
-Atlas Verify utilise ORCID comme identifiant principal. Connectez-vous avec votre ORCID pour :
+Atlas Verify uses ORCID as the primary identifier. Sign in with your ORCID to:
 
-- Authentifier votre identité de manière sécurisée
-- Importer automatiquement vos publications liées à ORCID
-- Synchroniser vos validations vers ORCID
+- Securely authenticate your identity
+- Automatically import your publications linked to ORCID
+- Synchronize your validations to ORCID
 
-### Étape 2 : Import automatique
+### Step 2: Automatic Import
 
-Une fois connecté, Atlas Verify recherche automatiquement vos publications dans :
+Once signed in, Atlas Verify automatically searches for your publications in:
 
 | Source | Description |
 |--------|-------------|
-| **OpenAlex** | Base mondiale de 240M+ publications académiques |
-| **Crossref** | Métadonnées DOI officielles des éditeurs |
-| **HAL** | Archive ouverte française |
-| **ArXiv** | Prépublications en physique, maths, informatique |
-| **ORCID** | Publications liées à votre profil ORCID |
-| **Semantic Scholar** | Publications avec analyse IA |
+| **OpenAlex** | Global database of 240M+ academic publications |
+| **Crossref** | Official DOI metadata from publishers |
+| **HAL** | French open archive |
+| **ArXiv** | Preprints in physics, mathematics, computer science |
+| **ORCID** | Publications linked to your ORCID profile |
+| **Semantic Scholar** | Publications with AI analysis |
 
-### Étape 3 : Vérification
+### Step 3: Verification
 
-Passez en revue les publications trouvées et validez-les une par une ou par lot.
+Review the publications found and validate them one by one or in batches.
 
-## Questions fréquentes
+## Frequently Asked Questions
 
-### Comment fonctionne la détection automatique ?
+### How does automatic detection work?
 
-Atlas Verify utilise plusieurs critères pour vous associer à une publication :
+Atlas Verify uses several criteria to associate you with a publication:
 
-1. **ORCID** : Si votre ORCID est présent dans la publication → très haute confiance
-2. **Email institutionnel** : Correspondance avec votre email → haute confiance
-3. **Nom + Affiliation** : Votre nom associé à votre institution → bonne confiance
-4. **Réseau de co-auteurs** : Co-auteurs que vous avez déjà validés → confiance moyenne
+1. **ORCID**: If your ORCID is present in the publication -> very high confidence
+2. **Institutional email**: Match with your email -> high confidence
+3. **Name + Affiliation**: Your name associated with your institution -> good confidence
+4. **Co-author network**: Co-authors you have already validated -> medium confidence
 
-### Mes données sont-elles sécurisées ?
+### Is my data secure?
 
-- Vos décisions sont stockées de manière sécurisée
-- Vous pouvez exporter vos données à tout moment
-- Aucune donnée n'est partagée sans votre consentement
+- Your decisions are stored securely
+- You can export your data at any time
+- No data is shared without your consent
 
-### Puis-je exporter mes publications ?
+### Can I export my publications?
 
-Oui, vous pouvez exporter vos publications vérifiées en :
+Yes, you can export your verified publications in:
 - BibTeX
 - RIS
 - JSON
 - CSV
 
-## Ce que les développeurs construisent
+## What Developers Are Building
 
-Atlas Verify est développé en open source. Les développeurs travaillent sur :
+Atlas Verify is developed as open source. Developers are working on:
 
-- **Agrégation automatique** : Connexion à 15+ bases de données bibliographiques
-- **Algorithmes de matching** : Intelligence artificielle pour détecter les homonymes
-- **Reconstruction de carrière** : Croisement des sources pour reconstituer votre parcours
-- **Analyse d'expertise** : Détection automatique de vos domaines de recherche
+- **Automatic aggregation**: Connection to 15+ bibliographic databases
+- **Matching algorithms**: Artificial intelligence to detect namesakes
+- **Career reconstruction**: Cross-referencing sources to reconstruct your history
+- **Expertise analysis**: Automatic detection of your research domains
 
-> Voir la [documentation technique](../dev/) pour comprendre comment ça fonctionne.
+> See the [technical documentation](../dev/) to understand how it works.
 
 ## Support
 
-- **Documentation générale Atlas** : [Retour à l'accueil](../../)
-- **Sources de données** : [Catalogue des sources](./sources.md)
-- **Documentation technique** : [Guide développeur](../dev/)
+- **General Atlas documentation**: [Back to home](../../)
+- **Data sources**: [Source catalog](./sources.md)
+- **Technical documentation**: [Developer guide](../dev/)

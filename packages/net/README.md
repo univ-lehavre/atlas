@@ -1,19 +1,19 @@
 # @univ-lehavre/atlas-net
 
-Utilitaires de diagnostic réseau pour Atlas, construits avec [Effect](https://effect.website/).
+Network diagnostic utilities for Atlas, built with [Effect](https://effect.website/).
 
-## À propos
+## About
 
-Ce package fournit des outils de diagnostic réseau typés et fonctionnels pour les applications Atlas. Il est utilisé par les outils CLI pour vérifier la connectivité aux serveurs REDCap et autres services.
+This package provides typed and functional network diagnostic tools for Atlas applications. It is used by CLI tools to verify connectivity to REDCap servers and other services.
 
-## Fonctionnalités
+## Features
 
-- **Résolution DNS** : Vérifier la résolution des noms d'hôtes
-- **Ping TCP** : Tester si un port est ouvert et accessible
-- **Handshake TLS** : Vérifier les certificats SSL/TLS
-- **Vérification Internet** : Test rapide de connectivité
-- **Types Branded** : Valeurs réseau typées avec validation runtime
-- **Constantes** : Timeouts et configuration réseau par défaut
+- **DNS Resolution**: Verify hostname resolution
+- **TCP Ping**: Test if a port is open and accessible
+- **TLS Handshake**: Verify SSL/TLS certificates
+- **Internet Check**: Quick connectivity test
+- **Branded Types**: Typed network values with runtime validation
+- **Constants**: Default timeouts and network configuration
 
 ## Installation
 
@@ -34,26 +34,26 @@ import {
   Port,
 } from '@univ-lehavre/atlas-net';
 
-// Vérifier la connectivité Internet
+// Check Internet connectivity
 const internet = await Effect.runPromise(checkInternet());
 console.log(`Internet: ${internet.status}`);
 
-// Résoudre un nom d'hôte
+// Resolve a hostname
 const hostname = Hostname('example.com');
 const dns = await Effect.runPromise(dnsResolve(hostname));
 console.log(`DNS: ${dns.status} -> ${dns.message}`);
 
-// Tester la connexion TCP
+// Test TCP connection
 const port = Port(443);
 const tcp = await Effect.runPromise(tcpPing(hostname, port));
 console.log(`TCP: ${tcp.status} (${tcp.latencyMs}ms)`);
 
-// Vérifier le certificat TLS
+// Verify TLS certificate
 const tls = await Effect.runPromise(tlsHandshake(hostname, port));
 console.log(`TLS: ${tls.status} - ${tls.message}`);
 ```
 
-### Pipeline de diagnostic complet
+### Complete Diagnostic Pipeline
 
 ```typescript
 import { Effect } from 'effect';
@@ -75,44 +75,44 @@ steps.forEach((step) => {
 });
 ```
 
-## Types Branded
+## Branded Types
 
-Le package fournit des types branded avec validation runtime via le module Brand d'Effect.
+The package provides branded types with runtime validation via Effect's Brand module.
 
 ```typescript
 import { Hostname, IpAddress, Port, TimeoutMs, SafeApiUrl } from '@univ-lehavre/atlas-net';
 
-// Créer des valeurs validées
-const hostname = Hostname('example.com'); // Hostname validé (RFC 1123)
-const ip = IpAddress('192.168.1.1'); // Adresse IPv4 validée
-const port = Port(8080); // Port validé (1-65535)
-const timeout = TimeoutMs(5000); // Timeout validé (0-600000ms)
-const url = SafeApiUrl('https://api.example.com/v1/'); // URL sécurisée
+// Create validated values
+const hostname = Hostname('example.com'); // Validated hostname (RFC 1123)
+const ip = IpAddress('192.168.1.1'); // Validated IPv4 address
+const port = Port(8080); // Validated port (1-65535)
+const timeout = TimeoutMs(5000); // Validated timeout (0-600000ms)
+const url = SafeApiUrl('https://api.example.com/v1/'); // Secure URL
 ```
 
 ## API
 
-### Fonctions
+### Functions
 
-| Fonction | Description |
+| Function | Description |
 |----------|-------------|
-| `dnsResolve(hostname)` | Résout un hostname en adresse IP |
-| `tcpPing(host, port, options?)` | Teste la connectivité TCP |
-| `tlsHandshake(host, port, options?)` | Vérifie le certificat TLS |
-| `checkInternet(options?)` | Vérifie la connectivité Internet |
+| `dnsResolve(hostname)` | Resolves a hostname to an IP address |
+| `tcpPing(host, port, options?)` | Tests TCP connectivity |
+| `tlsHandshake(host, port, options?)` | Verifies TLS certificate |
+| `checkInternet(options?)` | Checks Internet connectivity |
 
 ### Types
 
 | Type | Description |
 |------|-------------|
-| `Hostname` | Hostname validé RFC 1123 ou adresse IP |
-| `IpAddress` | Adresse IPv4 ou IPv6 validée |
-| `Port` | Numéro de port (1-65535) |
-| `TimeoutMs` | Timeout en millisecondes (0-600000) |
-| `SafeApiUrl` | URL sécurisée pour communication API |
-| `DiagnosticStep` | Résultat d'une étape de diagnostic |
+| `Hostname` | RFC 1123 validated hostname or IP address |
+| `IpAddress` | Validated IPv4 or IPv6 address |
+| `Port` | Port number (1-65535) |
+| `TimeoutMs` | Timeout in milliseconds (0-600000) |
+| `SafeApiUrl` | Secure URL for API communication |
+| `DiagnosticStep` | Result of a diagnostic step |
 
-### Constantes
+### Constants
 
 ```typescript
 import {
@@ -125,22 +125,22 @@ import {
 
 ## Documentation
 
-- [Documentation API](../../docs/api/@univ-lehavre/atlas-net/)
+- [API Documentation](../../docs/api/@univ-lehavre/atlas-net/)
 
-## Organisation
+## Organization
 
-Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.
 
-Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+Atlas is developed as part of two projects led by Le Havre Normandie University:
 
-- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
-- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)**: research and training program focused on maritime and port issues
+- **[EUNICoast](https://eunicoast.eu/)**: European university alliance bringing together institutions located in European coastal areas
 
 ---
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="20">
+    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
@@ -152,6 +152,6 @@ Atlas est développé dans le cadre de deux projets portés par l'Université Le
   </a>
 </p>
 
-## Licence
+## License
 
 MIT

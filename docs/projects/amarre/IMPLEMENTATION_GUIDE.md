@@ -1,50 +1,50 @@
-# Guide d'Implémentation - Survey Microservice
+# Implementation Guide - Survey Microservice
 
-::: warning Projet en cours de développement
-Ce guide décrit l'architecture cible du microservice Survey. L'implémentation n'est pas encore réalisée.
+::: warning Project Under Development
+This guide describes the target architecture of the Survey microservice. The implementation is not yet complete.
 :::
 
-**Date:** 20 décembre 2025
+**Date:** December 20, 2025
 **Version:** 1.0
-**Lié à:** [Diagrammes](./ARCHITECTURE_DIAGRAMS)
+**Related to:** [Diagrams](./ARCHITECTURE_DIAGRAMS)
 
-## Table des matières
+## Table of Contents
 
-1. [Vue d'ensemble](#vue-densemble)
-2. [Architecture du service](#architecture-du-service)
-3. [Configuration et Secrets](#configuration-et-secrets)
-4. [Authentification inter-services](#authentification-inter-services)
-5. [Exemples de code](#exemples-de-code)
+1. [Overview](#overview)
+2. [Service Architecture](#service-architecture)
+3. [Configuration and Secrets](#configuration-and-secrets)
+4. [Inter-service Authentication](#inter-service-authentication)
+5. [Code Examples](#code-examples)
 6. [Tests](#tests)
-7. [Déploiement](#déploiement)
+7. [Deployment](#deployment)
 8. [Monitoring](#monitoring)
-9. [Checklist d'implémentation](#checklist-dimplémentation)
+9. [Implementation Checklist](#implementation-checklist)
 
 ---
 
-## Vue d'ensemble
+## Overview
 
-### Objectif
+### Objective
 
-Extraire la logique de gestion des enquêtes (Surveys) de l'application AMARRE monolithique vers un microservice indépendant.
+Extract the survey management logic (Surveys) from the monolithic AMARRE application into an independent microservice.
 
-### Périmètre fonctionnel
+### Functional Scope
 
-Le service Survey gère :
+The Survey service manages:
 
-- Création de nouvelles demandes d'enquête
-- Liste des demandes par utilisateur
-- Génération de liens d'enquête REDCap
-- Téléchargement des données d'enquête
-- Validation des règles métier (limite de demandes incomplètes)
+- Creating new survey requests
+- Listing requests by user
+- Generating REDCap survey links
+- Downloading survey data
+- Validating business rules (incomplete request limit)
 
-### Stack technique recommandée
+### Recommended Tech Stack
 
 ```yaml
 Runtime: Node.js 20+ LTS
-Framework: Fastify (performance) ou Express (simplicité)
-Validation: Zod (réutiliser schémas existants)
-HTTP Client: node-fetch ou axios
+Framework: Fastify (performance) or Express (simplicity)
+Validation: Zod (reuse existing schemas)
+HTTP Client: node-fetch or axios
 Testing: Vitest + Supertest
 Logging: Pino (structured logging)
 Documentation: OpenAPI 3.1 + Swagger UI
@@ -52,9 +52,9 @@ Documentation: OpenAPI 3.1 + Swagger UI
 
 ---
 
-## Architecture du service
+## Service Architecture
 
-### Structure du projet
+### Project Structure
 
 ```
 survey-service/
@@ -95,9 +95,9 @@ survey-service/
 
 ---
 
-## Configuration et Secrets
+## Configuration and Secrets
 
-### Variables d'environnement
+### Environment Variables
 
 ```bash
 # .env.example
@@ -112,7 +112,7 @@ ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
 
 # Authentication
 API_KEY=your_secure_api_key_here
-# OU
+# OR
 JWT_SECRET=your_jwt_secret_here
 JWT_ISSUER=amarre-gateway
 JWT_AUDIENCE=survey-service
@@ -130,7 +130,7 @@ ENABLE_METRICS=true
 METRICS_PORT=9090
 ```
 
-### Configuration TypeScript
+### TypeScript Configuration
 
 ```typescript
 // src/config/index.ts
@@ -194,9 +194,9 @@ export function loadConfig(): Config {
 
 ---
 
-## Authentification inter-services
+## Inter-service Authentication
 
-### Option 1 : API Key (Simple, recommandée pour démarrer)
+### Option 1: API Key (Simple, recommended for starting)
 
 ```typescript
 // src/middleware/auth.ts
@@ -218,7 +218,7 @@ export async function apiKeyAuth(request: FastifyRequest, reply: FastifyReply): 
 }
 ```
 
-### Option 2 : JWT Token (Pour multi-tenancy)
+### Option 2: JWT Token (For multi-tenancy)
 
 ```typescript
 // src/middleware/auth.ts
@@ -266,9 +266,9 @@ export async function jwtAuth(request: FastifyRequest, reply: FastifyReply): Pro
 
 ---
 
-## Exemples de code
+## Code Examples
 
-### 1. Client REDCap
+### 1. REDCap Client
 
 ```typescript
 // src/clients/redcapClient.ts
@@ -366,7 +366,7 @@ export class RedcapClient {
 }
 ```
 
-### 2. Service métier
+### 2. Business Service
 
 ```typescript
 // src/services/surveyService.ts
@@ -441,7 +441,7 @@ export class SurveyService {
   async canCreateNewRequest(userId: string): Promise<boolean> {
     const requests = await this.listRequests(userId);
 
-    // Business rule: pas de demandes incomplètes
+    // Business rule: no incomplete requests
     const hasIncomplete = requests.some(
       (r) =>
         r.form_complete !== '2' ||
@@ -456,7 +456,7 @@ export class SurveyService {
 }
 ```
 
-### 3. Routes API (Fastify)
+### 3. API Routes (Fastify)
 
 ```typescript
 // src/routes/surveys.ts
@@ -662,7 +662,7 @@ main();
 
 ## Tests
 
-### Tests unitaires
+### Unit Tests
 
 ```typescript
 // tests/unit/surveyService.test.ts
@@ -738,7 +738,7 @@ describe('SurveyService', () => {
 });
 ```
 
-### Tests d'intégration
+### Integration Tests
 
 ```typescript
 // tests/integration/api.test.ts
@@ -788,7 +788,7 @@ describe('Survey API', () => {
 
 ---
 
-## Déploiement
+## Deployment
 
 ### Dockerfile
 
@@ -961,7 +961,7 @@ spec:
 
 ## Monitoring
 
-### Métriques Prometheus
+### Prometheus Metrics
 
 ```typescript
 // src/metrics.ts
@@ -999,7 +999,7 @@ export async function metricsHandler() {
 }
 ```
 
-### Dashboard Grafana
+### Grafana Dashboard
 
 ```json
 {
@@ -1031,84 +1031,84 @@ export async function metricsHandler() {
 
 ---
 
-## Checklist d'implémentation
+## Implementation Checklist
 
-### Phase Préparation
+### Preparation Phase
 
-- [ ] Créer repository `survey-service`
-- [ ] Initialiser projet Node.js + TypeScript
-- [ ] Configurer Fastify + dépendances
-- [ ] Définir structure de projet
-- [ ] Configurer linting et formatting
-- [ ] Configurer CI/CD (GitHub Actions)
+- [ ] Create `survey-service` repository
+- [ ] Initialize Node.js + TypeScript project
+- [ ] Configure Fastify + dependencies
+- [ ] Define project structure
+- [ ] Configure linting and formatting
+- [ ] Configure CI/CD (GitHub Actions)
 
-### Phase Développement
+### Development Phase
 
-- [ ] Implémenter configuration (env vars)
-- [ ] Implémenter REDCap client
-- [ ] Migrer logique métier (SurveyService)
-- [ ] Implémenter routes API
-- [ ] Implémenter middleware auth (API Key)
-- [ ] Implémenter error handling
-- [ ] Implémenter logging (Pino)
-- [ ] Documenter API (OpenAPI spec)
+- [ ] Implement configuration (env vars)
+- [ ] Implement REDCap client
+- [ ] Migrate business logic (SurveyService)
+- [ ] Implement API routes
+- [ ] Implement auth middleware (API Key)
+- [ ] Implement error handling
+- [ ] Implement logging (Pino)
+- [ ] Document API (OpenAPI spec)
 
-### Phase Tests
+### Testing Phase
 
-- [ ] Tests unitaires (couverture ≥ 80%)
+- [ ] Unit tests (coverage ≥ 80%)
   - [ ] RedcapClient
   - [ ] SurveyService
   - [ ] Validators
-- [ ] Tests d'intégration
+- [ ] Integration tests
   - [ ] API endpoints
   - [ ] Error handling
   - [ ] Authentication
-- [ ] Tests E2E
-  - [ ] Scénarios complets
-  - [ ] Mock REDCap si nécessaire
+- [ ] E2E tests
+  - [ ] Complete scenarios
+  - [ ] Mock REDCap if necessary
 
-### Phase Infrastructure
+### Infrastructure Phase
 
-- [ ] Créer Dockerfile
-- [ ] Créer docker-compose.yml
-- [ ] Tester build et run local
-- [ ] Créer manifests Kubernetes
-- [ ] Configurer secrets management
+- [ ] Create Dockerfile
+- [ ] Create docker-compose.yml
+- [ ] Test build and run locally
+- [ ] Create Kubernetes manifests
+- [ ] Configure secrets management
 - [ ] Setup monitoring (Prometheus + Grafana)
 
-### Phase Intégration
+### Integration Phase
 
-- [ ] Modifier app SvelteKit
-  - [ ] Implémenter proxy vers survey-service
-  - [ ] Ajouter authentification inter-services
-  - [ ] Gérer timeout et retry
+- [ ] Modify SvelteKit app
+  - [ ] Implement proxy to survey-service
+  - [ ] Add inter-service authentication
+  - [ ] Handle timeout and retry
   - [ ] Error handling
-- [ ] Tests end-to-end complets
+- [ ] Complete end-to-end tests
 - [ ] Load testing
-- [ ] Documentation exploitation
+- [ ] Operations documentation
 
-### Phase Déploiement
+### Deployment Phase
 
-- [ ] Déploiement staging
-- [ ] Tests fonctionnels staging
-- [ ] Validation stakeholders
-- [ ] Déploiement production (canary)
-- [ ] Monitoring actif 24/7 première semaine
-- [ ] Rollback plan prêt
+- [ ] Deploy to staging
+- [ ] Staging functional tests
+- [ ] Stakeholder validation
+- [ ] Production deployment (canary)
+- [ ] Active monitoring 24/7 first week
+- [ ] Rollback plan ready
 
-### Phase Post-Déploiement
+### Post-Deployment Phase
 
-- [ ] Rétrospective équipe
-- [ ] Documentation mise à jour
-- [ ] Validation métriques de succès
-- [ ] Formation équipe ops
-- [ ] Amélioration continue
+- [ ] Team retrospective
+- [ ] Documentation update
+- [ ] Success metrics validation
+- [ ] Ops team training
+- [ ] Continuous improvement
 
 ---
 
-## Ressources
+## Resources
 
-### Liens utiles
+### Useful Links
 
 - [Fastify Documentation](https://www.fastify.io/)
 - [Zod Documentation](https://zod.dev/)
@@ -1117,10 +1117,10 @@ export async function metricsHandler() {
 
 ### Contacts
 
-- Équipe développement : dev@example.com
-- Équipe infrastructure : ops@example.com
+- Development team: dev@example.com
+- Infrastructure team: ops@example.com
 
 ---
 
-_Document généré le 20 décembre 2025_  
-_Dernière mise à jour : 20 décembre 2025_
+_Document generated on December 20, 2025_
+_Last updated: December 20, 2025_

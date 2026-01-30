@@ -1,17 +1,17 @@
 # @univ-lehavre/atlas-validators
 
-Utilitaires de validation partagés pour les applications Atlas.
+Shared validation utilities for Atlas applications.
 
-## À propos
+## About
 
-Ce package fournit des fonctions de validation réutilisables pour les applications Atlas, notamment la validation d'emails, le parsing de corps JSON et la normalisation de données.
+This package provides reusable validation functions for Atlas applications, including email validation, JSON body parsing, and data normalization.
 
-## Fonctionnalités
+## Features
 
-- **Validation d'email** : Validation RFC 5322 avec protection contre les attaques ReDoS
-- **Validation hexadécimale** : Validation des identifiants Appwrite et tokens
-- **Parsing JSON** : Validation du Content-Type et parsing sécurisé du corps de requête
-- **Normalisation d'email** : Conversion en minuscules et suppression du subaddressing
+- **Email validation**: RFC 5322 validation with ReDoS attack protection
+- **Hexadecimal validation**: Appwrite identifiers and token validation
+- **JSON parsing**: Content-Type validation and secure request body parsing
+- **Email normalization**: Lowercase conversion and subaddressing removal
 
 ## Installation
 
@@ -31,34 +31,34 @@ import {
   validateAndParseJsonBody,
 } from '@univ-lehavre/atlas-validators';
 
-// Valider un email
+// Validate an email
 if (isEmail('user@example.com')) {
-  console.log('Email valide');
+  console.log('Valid email');
 }
 
-// Normaliser un email
+// Normalize an email
 const normalized = normalizeEmail('User+tag@Example.COM');
-// → 'user@example.com'
+// -> 'user@example.com'
 
-// Valider et parser le corps d'une requête
+// Validate and parse a request body
 const body = await validateAndParseJsonBody(request);
 ```
 
 ## API
 
-| Fonction | Description |
+| Function | Description |
 |----------|-------------|
-| `isEmail(email)` | Valide si une chaîne est un email valide |
-| `isHexadecimal(str)` | Valide si une chaîne contient uniquement des caractères hexadécimaux |
-| `normalizeEmail(email)` | Normalise un email (minuscules, sans subaddressing) |
-| `ensureJsonContentType(request)` | Vérifie que le Content-Type est application/json |
-| `parseJsonBody(request)` | Parse et valide le corps JSON d'une requête |
-| `validateAndParseJsonBody(request)` | Combine ensureJsonContentType et parseJsonBody |
+| `isEmail(email)` | Validates if a string is a valid email |
+| `isHexadecimal(str)` | Validates if a string contains only hexadecimal characters |
+| `normalizeEmail(email)` | Normalizes an email (lowercase, without subaddressing) |
+| `ensureJsonContentType(request)` | Checks that Content-Type is application/json |
+| `parseJsonBody(request)` | Parses and validates the JSON body of a request |
+| `validateAndParseJsonBody(request)` | Combines ensureJsonContentType and parseJsonBody |
 
 ## Scripts
 
 ```bash
-pnpm -F @univ-lehavre/atlas-validators dev      # Développement
+pnpm -F @univ-lehavre/atlas-validators dev      # Development
 pnpm -F @univ-lehavre/atlas-validators build    # Build
 pnpm -F @univ-lehavre/atlas-validators test     # Tests
 pnpm -F @univ-lehavre/atlas-validators lint     # ESLint
@@ -66,22 +66,22 @@ pnpm -F @univ-lehavre/atlas-validators lint     # ESLint
 
 ## Documentation
 
-- [Documentation API](../../docs/api/@univ-lehavre/atlas-validators/)
+- [API Documentation](../../docs/api/@univ-lehavre/atlas-validators/)
 
-## Organisation
+## Organization
 
-Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.
 
-Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+Atlas is developed as part of two projects led by Le Havre Normandie University:
 
-- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
-- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)**: research and training program focused on maritime and port issues
+- **[EUNICoast](https://eunicoast.eu/)**: European university alliance bringing together institutions located in European coastal areas
 
 ---
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="20">
+    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
@@ -93,6 +93,6 @@ Atlas est développé dans le cadre de deux projets portés par l'Université Le
   </a>
 </p>
 
-## Licence
+## License
 
 MIT

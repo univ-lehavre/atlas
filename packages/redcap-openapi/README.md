@@ -1,17 +1,17 @@
 # @univ-lehavre/atlas-redcap-openapi
 
-Analyse du code source REDCap, extraction de spécifications OpenAPI et outils de documentation API.
+REDCap source code analysis, OpenAPI specification extraction, and API documentation tools.
 
-## À propos
+## About
 
-Ce package permet d'analyser le code source PHP de REDCap pour en extraire automatiquement des spécifications OpenAPI. Il fournit également des outils de comparaison entre versions et un serveur de documentation.
+This package enables analyzing REDCap PHP source code to automatically extract OpenAPI specifications. It also provides version comparison tools and a documentation server.
 
-## Fonctionnalités
+## Features
 
-- **Extracteur** : Génération de specs OpenAPI depuis le code PHP REDCap
-- **Comparateur** : Comparaison de specs entre versions
-- **Serveur** : Documentation API avec Swagger UI et Redoc
-- **CLI** : Interface interactive avec `@clack/prompts`
+- **Extractor**: Generate OpenAPI specs from REDCap PHP code
+- **Comparator**: Compare specs between versions
+- **Server**: API documentation with Swagger UI and Redoc
+- **CLI**: Interactive interface with `@clack/prompts`
 
 ## Installation
 
@@ -21,39 +21,39 @@ pnpm add @univ-lehavre/atlas-redcap-openapi
 
 ## Usage
 
-### CLI interactif
+### Interactive CLI
 
 ```bash
 pnpm -F @univ-lehavre/atlas-redcap-openapi cli
 ```
 
-### Commandes directes
+### Direct Commands
 
 ```bash
-pnpm -F @univ-lehavre/atlas-redcap-openapi extract  # Extraire spec OpenAPI
-pnpm -F @univ-lehavre/atlas-redcap-openapi compare  # Comparer versions
-pnpm -F @univ-lehavre/atlas-redcap-openapi docs     # Serveur documentation
+pnpm -F @univ-lehavre/atlas-redcap-openapi extract  # Extract OpenAPI spec
+pnpm -F @univ-lehavre/atlas-redcap-openapi compare  # Compare versions
+pnpm -F @univ-lehavre/atlas-redcap-openapi docs     # Documentation server
 ```
 
-### Usage programmatique
+### Programmatic Usage
 
 ```typescript
 import { extract, compare, serve } from '@univ-lehavre/atlas-redcap-openapi';
 
-// Extraire une spec OpenAPI depuis le code source REDCap
+// Extract an OpenAPI spec from REDCap source code
 const result = extract({
   version: '14.5.10',
   sourcePath: './upstream/versions',
   outputPath: './specs/versions/redcap-14.5.10.yaml',
 });
 
-// Comparer deux versions
+// Compare two versions
 const diff = compare({
   oldSpecPath: './specs/versions/redcap-14.5.10.yaml',
   newSpecPath: './specs/versions/redcap-14.6.0.yaml',
 });
 
-// Servir la documentation
+// Serve the documentation
 serve({
   specPath: './specs/versions/redcap-14.5.10.yaml',
   port: 3000,
@@ -63,7 +63,7 @@ serve({
 ## Scripts
 
 ```bash
-pnpm -F @univ-lehavre/atlas-redcap-openapi dev      # Développement
+pnpm -F @univ-lehavre/atlas-redcap-openapi dev      # Development
 pnpm -F @univ-lehavre/atlas-redcap-openapi build    # Build
 pnpm -F @univ-lehavre/atlas-redcap-openapi test     # Tests
 pnpm -F @univ-lehavre/atlas-redcap-openapi lint     # ESLint
@@ -73,29 +73,29 @@ pnpm -F @univ-lehavre/atlas-redcap-openapi lint     # ESLint
 
 | Export | Description |
 |--------|-------------|
-| `.` | Tous les modules |
-| `./extractor` | Extraction OpenAPI depuis PHP |
-| `./comparator` | Utilitaires de comparaison |
-| `./server` | Serveur de documentation |
+| `.` | All modules |
+| `./extractor` | OpenAPI extraction from PHP |
+| `./comparator` | Comparison utilities |
+| `./server` | Documentation server |
 
 ## Documentation
 
-- [Documentation API](../../docs/api/@univ-lehavre/atlas-redcap-openapi/)
+- [API Documentation](../../docs/api/@univ-lehavre/atlas-redcap-openapi/)
 
-## Organisation
+## Organization
 
-Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.
 
-Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+Atlas is developed as part of two projects led by Le Havre Normandie University:
 
-- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
-- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)**: research and training program focused on maritime and port issues
+- **[EUNICoast](https://eunicoast.eu/)**: European university alliance bringing together institutions located in European coastal areas
 
 ---
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="20">
+    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
@@ -107,8 +107,8 @@ Atlas est développé dans le cadre de deux projets portés par l'Université Le
   </a>
 </p>
 
-## Licence
+## License
 
 MIT
 
-Le code source REDCap est propriétaire et n'est PAS inclus dans ce dépôt.
+REDCap source code is proprietary and is NOT included in this repository.

@@ -5,18 +5,18 @@ sidebar: false
 
 <RedcapApiExplorer />
 
-::: details A propos de cette specification
+::: details About this specification
 
-Les specifications OpenAPI sont extraites du code source REDCap avec l'autorisation officielle de REDCap.
+The OpenAPI specifications are extracted from the REDCap source code with official permission from REDCap.
 
 | Version | Endpoints | Description |
 |---------|-----------|-------------|
-| 16.0.8  | 64        | Version actuelle |
-| 15.5.32 | 64        | Version stable |
-| 14.5.10 | 62        | Version legacy |
+| 16.0.8  | 64        | Current version |
+| 15.5.32 | 64        | Stable version |
+| 14.5.10 | 62        | Legacy version |
 
-**Authentification** : Token API REDCap (32 ou 64 caracteres hex) transmis dans le body de la requete.
+**Authentication**: REDCap API token (32 or 64 hex characters) transmitted in the request body.
 
-**Pattern API** : `POST /api/?content=<type>&action=<action>`
+**API Pattern**: `POST /api/?content=<type>&action=<action>`
 
 :::
