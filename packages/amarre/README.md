@@ -2,52 +2,52 @@
 
 [![DOI](https://zenodo.org/badge/1107483862.svg)](https://doi.org/10.5281/zenodo.17775106)
 
-Module de visualisation et d'analyse de réseaux de recherche.
+Research network visualization and analysis module.
 
-## À propos
+## About
 
-**AMARRE** est un module majeur d'Atlas permettant de visualiser et d'analyser les réseaux de recherche à travers des graphes interactifs. L'application permet aux chercheurs de découvrir des connexions et de comprendre la structure de leur communauté scientifique.
+**AMARRE** is a major Atlas module for visualizing and analyzing research networks through interactive graphs. The application allows researchers to discover connections and understand the structure of their scientific community.
 
-## Fonctionnalités
+## Features
 
-- **Graphes interactifs** : Visualisation de réseaux avec zoom, pan et sélection
-- **Analyse de réseau** : Métriques de centralité, clustering, détection de communautés
-- **Export** : Export des graphes en différents formats
-- **Filtrage** : Filtrage par attributs, date, type de relation
+- **Interactive graphs**: Network visualization with zoom, pan, and selection
+- **Network analysis**: Centrality metrics, clustering, community detection
+- **Export**: Graph export in various formats
+- **Filtering**: Filter by attributes, date, relationship type
 
-## Stack technique
+## Technical Stack
 
-- **Frontend** : SvelteKit 2, Svelte 5
-- **Visualisation** : Sigma.js, Graphology, ForceAtlas2
-- **Backend** : Appwrite (authentification, base de données)
+- **Frontend**: SvelteKit 2, Svelte 5
+- **Visualization**: Sigma.js, Graphology, ForceAtlas2
+- **Backend**: Appwrite (authentication, database)
 
 ## Scripts
 
 ```bash
-pnpm -F amarre dev      # Développement
-pnpm -F amarre build    # Build production
+pnpm -F amarre dev      # Development
+pnpm -F amarre build    # Production build
 pnpm -F amarre test     # Tests
 pnpm -F amarre lint     # ESLint
 ```
 
 ## Documentation
 
-- [Audit ECRIN](../../docs/guide/audit/ecrin-audit.md) - Analyse des cartes fonctionnelles
+- [ECRIN Audit](../../docs/guide/audit/ecrin-audit.md) - Functional cards analysis
 
-## Organisation
+## Organization
 
-Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.
 
-Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+Atlas is developed as part of two projects led by Le Havre Normandie University:
 
-- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
-- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)**: research and training program focused on maritime and port issues
+- **[EUNICoast](https://eunicoast.eu/)**: European university alliance bringing together institutions located in European coastal areas
 
 ---
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="20">
+    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
@@ -59,8 +59,8 @@ Atlas est développé dans le cadre de deux projets portés par l'Université Le
   </a>
 </p>
 
-## Licence
+## License
 
 MIT
 
-## Développements futurs
+## Future Developments

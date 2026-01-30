@@ -1,111 +1,111 @@
 # ECRIN
 
-Plateforme de collaboration pour chercheurs.
+Collaboration platform for researchers.
 
-## À propos
+## About
 
-**ECRIN** est un module majeur d'Atlas permettant aux chercheurs de présenter leurs travaux, trouver des collaborateurs, visualiser les réseaux de recherche et gérer leurs données. L'application est organisée autour de 6 cartes fonctionnelles.
+**ECRIN** is a major Atlas module that allows researchers to present their work, find collaborators, visualize research networks, and manage their data. The application is organized around 6 functional cards.
 
-## Fonctionnalités
+## Features
 
-- **Présenter** : Partager sa question scientifique et ses références
-- **Collaborer** : Créer des projets, constituer des équipes, trouver des experts
-- **Explorer** : Visualiser son réseau personnel et le graphe communautaire
-- **Demander** : Rechercher des données et des experts
-- **Publier** : Partager ses données et actualités
-- **Administrer** : Gérer son compte et ses enquêtes
+- **Introduce**: Share your scientific question and references
+- **Collaborate**: Create projects, build teams, find experts
+- **Explore**: Visualize your personal network and the community graph
+- **Ask**: Search for data and experts
+- **Publish**: Share your datasets and news
+- **Administrate**: Manage your account and surveys
 
-## Stack technique
+## Technical Stack
 
-- **Frontend** : SvelteKit 2, Svelte 5, Bootstrap 5
-- **Backend** : Appwrite (authentification, base de données)
-- **Données** : REDCap (enquêtes)
-- **Visualisation** : Sigma.js, Graphology, ForceAtlas2
+- **Frontend**: SvelteKit 2, Svelte 5, Bootstrap 5
+- **Backend**: Appwrite (authentication, database)
+- **Data**: REDCap (surveys)
+- **Visualization**: Sigma.js, Graphology, ForceAtlas2
 
 ## Scripts
 
 ```bash
-pnpm -F ecrin dev      # Développement
-pnpm -F ecrin build    # Build production
+pnpm -F ecrin dev      # Development
+pnpm -F ecrin build    # Production build
 pnpm -F ecrin test     # Tests
 pnpm -F ecrin lint     # ESLint
 ```
 
-## Architecture : les 6 cartes
+## Architecture: The 6 Cards
 
-### Carte "Introduce" (Présenter)
+### "Introduce" Card
 
-| Sous-carte               | Description                 | Statut    |
-| ------------------------ | --------------------------- | --------- |
-| Ma question scientifique | Décrire sa recherche        | Interface |
-| Mes références           | Référencer ses publications | Interface |
+| Sub-card | Description | Status |
+| -------- | ----------- | ------ |
+| My scientific question | Describe your research | Interface |
+| My references | Reference your publications | Interface |
 
-### Carte "Collaborate" (Collaborer)
+### "Collaborate" Card
 
-| Sous-carte            | Description                   | Statut           |
-| --------------------- | ----------------------------- | ---------------- |
-| Créer mon projet      | Déclarer un projet            | Fonctionnel      |
-| Constituer mon équipe | Rechercher des collaborateurs | Partiel          |
-| Trouver un expert     | Se connecter avec des experts | → find-an-expert |
-| Financer mon projet   | Rechercher des financements   | Interface        |
+| Sub-card | Description | Status |
+| -------- | ----------- | ------ |
+| Create my project | Declare a project | Functional |
+| Build my team | Search for collaborators | Partial |
+| Find an expert | Connect with experts | -> find-an-expert |
+| Fund my project | Search for funding | Interface |
 
-### Carte "Explore" (Explorer)
+### "Explore" Card
 
-| Sous-carte           | Description                          | Statut      |
-| -------------------- | ------------------------------------ | ----------- |
-| Mon graphe           | Visualiser son réseau personnel      | Fonctionnel |
-| Graphe communautaire | Voir les connexions de la communauté | Fonctionnel |
+| Sub-card | Description | Status |
+| -------- | ----------- | ------ |
+| My graph | Visualize your personal network | Functional |
+| Community graph | See community connections | Functional |
 
-### Carte "Ask" (Demander)
+### "Ask" Card
 
-| Sous-carte              | Description                 | Statut    |
-| ----------------------- | --------------------------- | --------- |
-| Données                 | Rechercher des données      | Interface |
-| Expert par localisation | Trouver un expert par zone  | Interface |
-| Expert par thématique   | Trouver un expert par sujet | Interface |
+| Sub-card | Description | Status |
+| -------- | ----------- | ------ |
+| Data | Search for data | Interface |
+| Expert by location | Find an expert by area | Interface |
+| Expert by topic | Find an expert by subject | Interface |
 
-### Carte "Publish" (Publier)
+### "Publish" Card
 
-| Sous-carte     | Description                 | Statut    |
-| -------------- | --------------------------- | --------- |
-| Mes données    | Publier des jeux de données | Interface |
-| Mes actualités | Écrire des articles         | Interface |
+| Sub-card | Description | Status |
+| -------- | ----------- | ------ |
+| My data | Publish datasets | Interface |
+| My news | Write articles | Interface |
 
-### Carte "Administrate" (Administrer)
+### "Administrate" Card
 
-| Sous-carte              | Description           | Statut      |
-| ----------------------- | --------------------- | ----------- |
-| S'inscrire              | Créer un compte       | Fonctionnel |
-| Se déconnecter          | Terminer la session   | Fonctionnel |
-| Supprimer son compte    | Supprimer ses données | Fonctionnel |
-| Télécharger son enquête | Exporter ses données  | Fonctionnel |
-| Supprimer son enquête   | Supprimer de REDCap   | Fonctionnel |
+| Sub-card | Description | Status |
+| -------- | ----------- | ------ |
+| Sign up | Create an account | Functional |
+| Log out | End the session | Functional |
+| Delete account | Delete your data | Functional |
+| Download survey | Export your data | Functional |
+| Delete survey | Remove from REDCap | Functional |
 
-## Sous-projets
+## Sub-projects
 
-| Application                          | Description                                       |
-| ------------------------------------ | ------------------------------------------------- |
-| [find-an-expert](../find-an-expert/) | Découverte d'expertise via publications et GitHub |
-| [amarre](../amarre/)                 | Visualisation de réseaux de recherche             |
+| Application | Description |
+| ----------- | ----------- |
+| [find-an-expert](../find-an-expert/) | Expertise discovery via publications and GitHub |
+| [amarre](../amarre/) | Research network visualization |
 
 ## Documentation
 
-- [Audit ECRIN](../../docs/guide/audit/ecrin-audit.md) - Analyse complète des 6 cartes
+- [ECRIN Audit](../../docs/guide/audit/ecrin-audit.md) - Complete analysis of the 6 cards
 
-## Organisation
+## Organization
 
-Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.
 
-Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+Atlas is developed as part of two projects led by Le Havre Normandie University:
 
-- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
-- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)**: research and training program focused on maritime and port issues
+- **[EUNICoast](https://eunicoast.eu/)**: European university alliance bringing together institutions located in European coastal areas
 
 ---
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="20">
+    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
@@ -117,6 +117,6 @@ Atlas est développé dans le cadre de deux projets portés par l'Université Le
   </a>
 </p>
 
-## Licence
+## License
 
 MIT
