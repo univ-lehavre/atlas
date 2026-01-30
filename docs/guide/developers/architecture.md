@@ -1,5 +1,47 @@
 # Architecture
 
+## Architecture des packages
+
+```mermaid
+graph TB
+    subgraph "Atlas - Université Le Havre Normandie"
+        subgraph "Projet ECRIN"
+            ECRIN_APP["ecrin<br/>(projet principal)"]
+            FAE["find-an-expert<br/>(sous-projet)"]
+        end
+
+        subgraph "Projet AMARRE"
+            AMARRE["amarre<br/>(projet principal)"]
+        end
+
+        subgraph "Projet CRF"
+            CRF["crf<br/>(projet principal)"]
+            CORE["redcap-core<br/>(sous-projet)"]
+            OPENAPI["redcap-openapi<br/>(sous-projet)"]
+        end
+
+        subgraph "Packages utilitaires"
+            NET["atlas-net"]
+            CONFIG["atlas-shared-config"]
+            APPWRITE["atlas-appwrite"]
+            AUTH["atlas-auth"]
+            ERRORS["atlas-errors"]
+            VALIDATORS["atlas-validators"]
+        end
+    end
+
+    FAE --> APPWRITE
+    FAE --> AUTH
+    ECRIN_APP --> APPWRITE
+    ECRIN_APP --> AUTH
+    AMARRE --> APPWRITE
+    CRF --> CORE
+    CRF --> NET
+    ECRIN_APP -.->|"intègre"| FAE
+    CRF -.->|"utilise"| CORE
+    CRF -.->|"utilise"| OPENAPI
+```
+
 ## Programmation fonctionnelle avec Effect
 
 Ce projet adopte une approche de **programmation fonctionnelle** avec [Effect](https://effect.website/), une bibliotheque TypeScript pour construire des applications robustes et type-safe.

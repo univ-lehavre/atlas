@@ -27,18 +27,3 @@ Creez des fiches projet pour recruter des collaborateurs et obtenir des financem
 ### Publier vos donnees
 
 Partagez vos jeux de donnees et actualites avec la communaute scientifique.
-
-## Les modules Atlas
-
-| Module | Description | Acces |
-|--------|-------------|-------|
-| **ECRIN** | Plateforme de collaboration pour chercheurs | [En savoir plus](/projects/ecrin/) |
-| **AMARRE** | Gestion de la mobilite des chercheurs | [En savoir plus](/projects/amarre/) |
-| **Citations** | Agregation de sources bibliographiques et fiabilisation des profils | [Guide complet](/projects/citations/user/) |
-
-## Premiers pas
-
-1. **Connectez-vous** avec votre adresse email institutionnelle
-2. **Verifiez votre profil** pour corriger les attributions erronees
-3. **Explorez vos reseaux** de collaboration
-4. **Contactez des experts** dans votre domaine
