@@ -1,10 +1,10 @@
-# Infrastructure Zero Trust
+# Zero Trust Infrastructure
 
-::: warning Projet non implémenté
-Cette documentation décrit une architecture cible pour une infrastructure Zero Trust. **Elle n'est pas encore implémentée.** Les scripts et configurations mentionnés n'existent pas actuellement dans le dépôt.
+::: warning Project Not Implemented
+This documentation describes a target architecture for a Zero Trust infrastructure. **It is not yet implemented.** The scripts and configurations mentioned do not currently exist in the repository.
 :::
 
-Atlas inclut une infrastructure Kubernetes locale avec une architecture Zero Trust complete.
+Atlas includes a local Kubernetes infrastructure with a complete Zero Trust architecture.
 
 ## Architecture
 
@@ -18,46 +18,46 @@ Atlas inclut une infrastructure Kubernetes locale avec une architecture Zero Tru
                               │
          ┌────────────────────┼────────────────────┐
          │                    │                    │
-    /authelia/*          /* (protege)        (non expose)
+    /authelia/*          /* (protected)       (not exposed)
          │                    │                    │
 ┌────────▼────────┐  ┌───────▼───────┐  ┌────────▼────────┐
 │    Authelia     │  │     ecrin     │  │  redcap-service │
-│  - Login page   │  │  - Dashboard  │  │  - API REDCap   │
+│  - Login page   │  │  - Dashboard  │  │  - REDCap API   │
 │  - Magic links  │  │  - SvelteKit  │  │  - ClusterIP    │
-│  - Verify API   │  │               │  │  (interne seul) │
+│  - Verify API   │  │               │  │  (internal only)│
 └────────┬────────┘  └───────┬───────┘  └────────▲────────┘
          │                   │                   │
          │                   │   mTLS (SPIRE)    │
          │                   └───────────────────┘
 ┌────────▼────────┐
-│    MailHog      │  localhost:8025 (UI emails dev)
+│    MailHog      │  localhost:8025 (dev email UI)
 └─────────────────┘
 ```
 
-## Composants
+## Components
 
-| Composant        | Role                                              |
+| Component        | Role                                              |
 | ---------------- | ------------------------------------------------- |
-| **k3d**          | Cluster k3s dans Docker                           |
+| **k3d**          | k3s cluster in Docker                             |
 | **Cilium**       | CNI + Ingress + Network Policies + mTLS           |
-| **SPIRE**        | Workload identity + certificats automatiques      |
-| **Authelia**     | Authentification (magic links, domaine restreint) |
-| **OPA**          | Autorisation RBAC/ABAC (Rego policies)            |
-| **Loki/Grafana** | Audit logs + observabilite                        |
-| **Hubble**       | Observabilite reseau                              |
+| **SPIRE**        | Workload identity + automatic certificates        |
+| **Authelia**     | Authentication (magic links, restricted domain)   |
+| **OPA**          | RBAC/ABAC authorization (Rego policies)           |
+| **Loki/Grafana** | Audit logs + observability                        |
+| **Hubble**       | Network observability                             |
 
-## Demarrage rapide
+## Quick Start
 
-### Prerequis
+### Prerequisites
 
 ```bash
 # macOS
 brew install k3d kubectl helm cilium-cli
 ```
 
-Docker Desktop doit etre installe et demarre.
+Docker Desktop must be installed and running.
 
-### Demarrage
+### Startup
 
 ```bash
 ./infra/scripts/setup.sh
@@ -71,49 +71,49 @@ Docker Desktop doit etre installe et demarre.
 | Authelia  | http://localhost:8080/authelia/ |
 | MailHog   | http://localhost:8025           |
 
-### Arret
+### Shutdown
 
 ```bash
 ./infra/scripts/teardown.sh
 ```
 
-## Utilisateurs de test
+## Test Users
 
-| Email                      | Role           | Groupes    |
-| -------------------------- | -------------- | ---------- |
-| admin@univ-lehavre.fr      | Administrateur | admin      |
-| researcher@univ-lehavre.fr | Chercheur      | researcher |
-| viewer@univ-lehavre.fr     | Lecteur        | viewer     |
+| Email                      | Role          | Groups     |
+| -------------------------- | ------------- | ---------- |
+| admin@univ-lehavre.fr      | Administrator | admin      |
+| researcher@univ-lehavre.fr | Researcher    | researcher |
+| viewer@univ-lehavre.fr     | Viewer        | viewer     |
 
-Authentification par **magic link** uniquement. Les emails arrivent dans MailHog.
+Authentication by **magic link** only. Emails arrive in MailHog.
 
-## Principes Zero Trust
+## Zero Trust Principles
 
-### 4 niveaux d'autorisation
+### 4 Authorization Levels
 
 1. **Network** (Cilium Network Policies)
-   - Default deny sur tout le namespace
-   - Seul ecrin peut contacter redcap-service
+   - Default deny on the entire namespace
+   - Only ecrin can contact redcap-service
 
 2. **Authentication** (Authelia)
    - Magic link email
-   - Domaine restreint (@univ-lehavre.fr)
+   - Restricted domain (@univ-lehavre.fr)
 
 3. **Authorization** (OPA/Rego)
    - RBAC: admin, researcher, viewer
-   - ABAC: owner du record
+   - ABAC: record owner
 
 4. **mTLS** (SPIRE + Cilium)
-   - Identites workload automatiques
-   - Certificats auto-rotatifs
+   - Automatic workload identities
+   - Auto-rotating certificates
 
-### Policies OPA
+### OPA Policies
 
 ```rego
-# Admin: acces complet
+# Admin: full access
 allow if { "admin" in input.user.groups }
 
-# Researcher: lecture + ecriture propres records
+# Researcher: read + write own records
 allow if { "researcher" in input.user.groups; input.action == "read" }
 allow if {
   "researcher" in input.user.groups
@@ -121,11 +121,11 @@ allow if {
   input.resource.owner == input.user.email
 }
 
-# Viewer: lecture seule
+# Viewer: read only
 allow if { "viewer" in input.user.groups; input.action == "read" }
 ```
 
-## Observabilite
+## Observability
 
 ### Grafana
 
@@ -133,7 +133,7 @@ allow if { "viewer" in input.user.groups; input.action == "read" }
 kubectl port-forward svc/grafana 3000:3000 -n ecrin
 ```
 
-Puis ouvrir http://localhost:3000 (admin/admin).
+Then open http://localhost:3000 (admin/admin).
 
 ### Hubble
 
@@ -149,19 +149,19 @@ kubectl logs -f deployment/authelia -n ecrin
 kubectl logs -f deployment/opa -n ecrin
 ```
 
-## Evolution vers la production
+## Evolution to Production
 
 | Dev (k3d)        | Production              |
 | ---------------- | ----------------------- |
-| k3d local        | k3s natif ou k8s manage |
-| Secrets commites | Vault / Sealed Secrets  |
-| MailHog          | SMTP reel               |
+| Local k3d        | Native k3s or managed k8s |
+| Committed secrets | Vault / Sealed Secrets  |
+| MailHog          | Real SMTP               |
 | HTTP             | HTTPS (cert-manager)    |
-| localhost        | Domaine reel            |
-| local-path       | Longhorn ou Rook/Ceph   |
+| localhost        | Real domain             |
+| local-path       | Longhorn or Rook/Ceph   |
 
-Les configurations Cilium, SPIRE, OPA et Authelia sont reutilisables avec des ajustements mineurs.
+Cilium, SPIRE, OPA and Authelia configurations are reusable with minor adjustments.
 
-## Documentation complete
+## Complete Documentation
 
-Voir [infra/README.md](https://github.com/univ-lehavre/atlas/blob/main/infra/README.md) pour la documentation detaillee.
+See [infra/README.md](https://github.com/univ-lehavre/atlas/blob/main/infra/README.md) for detailed documentation.

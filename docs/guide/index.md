@@ -10,9 +10,9 @@ onMounted(() => {
 })
 </script>
 
-# Guide Atlas
+# Atlas Guide
 
-Redirection en cours...
+Redirecting...
 
-- [Guide chercheur](/guide/researchers/) - Documentation pour les chercheurs
-- [Documentation technique](/guide/developers/) - Documentation pour les développeurs
+- [Researcher Guide](/guide/researchers/) - Documentation for researchers
+- [Technical Documentation](/guide/developers/) - Documentation for developers
