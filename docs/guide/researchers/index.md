@@ -1,29 +1,61 @@
 # Guide chercheur
 
-Ce guide presente les fonctionnalites d'Atlas destinees aux chercheurs.
+Atlas est une plateforme développée par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
 
-## Que pouvez-vous faire avec Atlas ?
+## Pourquoi Atlas ?
 
-### Verifier vos publications
+| Objectif | Description |
+|----------|-------------|
+| Simplifier l'accès aux données | Accédez à vos données de recherche, publications et profils sans connaissances techniques |
+| Fiabiliser les profils | Corrigez les erreurs d'attribution dans les bases bibliographiques (homonymes, mauvaises affiliations) |
+| Faciliter la collaboration | Trouvez des collaborateurs, constituez des équipes et travaillez ensemble sur des projets |
+| Connecter les systèmes | Atlas relie REDCap, OpenAlex, Crossref, HAL, ORCID et Appwrite |
 
-Identifiez et corrigez les attributions erronees dans les bases bibliographiques (OpenAlex, Crossref, HAL) grace a [Atlas Verify](/projects/citations/user/verify-publications).
+## Choisissez votre plateforme
 
-### Gerer votre parcours
+Atlas propose deux plateformes principales selon vos besoins :
 
-Maintenez un historique fiable de vos affiliations, suivez vos changements d'institution et vos periodes de mobilite. [En savoir plus](/projects/citations/user/manage-career)
+### ECRIN - Expertise et Collaboration
 
-### Decouvrir des experts
+**Pour qui ?** Chercheurs souhaitant valoriser leur expertise et trouver des collaborateurs.
 
-Recherchez des collaborateurs par thematique, localisation ou competences specifiques via la plateforme ECRIN.
+ECRIN est organisé en **6 sections** représentant les étapes de la collaboration scientifique :
 
-### Visualiser vos reseaux
+| Section | Cartes | Ce que vous pouvez faire |
+|---------|--------|--------------------------|
+| **Introduce** | Me, My scientific question, My references | Décrivez votre profil, votre question scientifique, référencez vos publications |
+| **Collaborate** | Create my project, Build my team, Find my expert, Fund my project | Déclarez un projet, trouvez des collaborateurs, recherchez des financements |
+| **Explore** | My graph, Community graph | Visualisez votre réseau et explorez les connexions de la communauté |
+| **Ask** | Data, An expert | Recherchez des données ou discutez avec un expert |
+| **Publish** | My data, My news | Partagez vos données de recherche et vos actualités |
+| **Administrate** | My account, My survey | Gérez votre compte et vos réponses aux enquêtes |
 
-Explorez vos co-auteurs, projets communs et connexions interdisciplinaires avec des graphes interactifs. [En savoir plus](/projects/citations/user/collaboration-network)
+👉 [Accéder au guide ECRIN](/projects/ecrin/user/)
 
-### Declarer vos projets
+### AMARRE - Mobilité des Chercheurs
 
-Creez des fiches projet pour recruter des collaborateurs et obtenir des financements.
+**Pour qui ?** Chercheurs en mobilité internationale ou accueillant des chercheurs étrangers.
 
-### Publier vos donnees
+| Fonctionnalité | Description |
+|----------------|-------------|
+| Gérer votre mobilité | Déclarez vos périodes de mobilité entrante ou sortante |
+| Suivre les démarches | Accompagnement administratif (visa, hébergement, assurance) |
+| Historique d'affiliations | Maintenez un historique fiable de vos institutions |
 
-Partagez vos jeux de donnees et actualites avec la communaute scientifique.
+👉 [Accéder au guide AMARRE](/projects/amarre/)
+
+### Citations - Vérification bibliographique
+
+**Pour qui ?** Chercheurs souhaitant fiabiliser leurs données bibliographiques.
+
+| Fonctionnalité | Description |
+|----------------|-------------|
+| Vérifier vos publications | Identifiez les attributions erronées dans OpenAlex, Crossref, HAL |
+| Gérer votre parcours | Suivez vos changements d'institution et affiliations |
+| Réseau de collaborations | Visualisez vos co-auteurs avec des graphes interactifs |
+
+👉 [Accéder au guide Citations](/projects/citations/user/)
+
+## Besoin d'aide ?
+
+Contactez l'équipe Atlas via votre service de recherche ou consultez la [documentation technique](/guide/developers/) pour les questions avancées.

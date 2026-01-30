@@ -1,5 +1,6 @@
 import { defineConfig } from 'vitepress';
 import { withMermaid } from 'vitepress-plugin-mermaid';
+import apiSidebar from './data/api-sidebar.json';
 
 export default withMermaid(defineConfig({
   title: 'Atlas',
@@ -43,7 +44,13 @@ export default withMermaid(defineConfig({
   ],
   themeConfig: {
     nav: [
-      { text: 'Guide', link: '/guide/' },
+      {
+        text: 'Guide',
+        items: [
+          { text: 'Chercheurs', link: '/guide/researchers/' },
+          { text: 'Développeurs', link: '/guide/developers/' },
+        ],
+      },
       {
         text: 'Projects',
         items: [
@@ -196,7 +203,6 @@ export default withMermaid(defineConfig({
           text: 'Par projet',
           items: [
             { text: 'ECRIN', link: '/projects/ecrin/audit/' },
-            { text: 'AMARRE', link: '/projects/amarre/audit/' },
             { text: 'Citations', link: '/projects/citations/audit/' },
             { text: 'CRF', link: '/projects/crf/audit/' },
           ],
@@ -210,33 +216,30 @@ export default withMermaid(defineConfig({
             { text: 'Introduction', link: '/projects/amarre/' },
             { text: 'Implémentation', link: '/projects/amarre/IMPLEMENTATION_GUIDE' },
             { text: 'Architecture', link: '/projects/amarre/ARCHITECTURE_DIAGRAMS' },
-            { text: 'Sécurité', link: '/projects/amarre/SECURITY' },
-            { text: 'Tests IA', link: '/projects/amarre/AI_TESTING_GUIDE' },
-          ],
-        },
-        {
-          text: 'Audit',
-          items: [
-            { text: 'Audit Microservices', link: '/projects/amarre/audit/' },
-            { text: 'Détails Microservices', link: '/projects/amarre/audit/microservices-audit' },
-            { text: 'README Microservices', link: '/projects/amarre/audit/microservices-readme' },
           ],
         },
       ],
-      // Guide général (fallback pour /guide/ et /guide/researchers/)
-      '/guide/': [
+      // Guide chercheurs
+      '/guide/researchers/': [
         {
-          text: 'Introduction',
-          items: [{ text: 'Présentation', link: '/guide/' }],
-        },
-        {
-          text: 'Pour les chercheurs',
+          text: 'Guide chercheur',
           items: [
-            { text: 'Guide chercheur', link: '/guide/researchers/' },
+            { text: 'Accueil', link: '/guide/researchers/' },
           ],
         },
         {
-          text: 'Pour les développeurs',
+          text: 'Plateformes',
+          items: [
+            { text: 'ECRIN', link: '/projects/ecrin/user/' },
+            { text: 'AMARRE', link: '/projects/amarre/' },
+            { text: 'Citations', link: '/projects/citations/user/' },
+          ],
+        },
+      ],
+      // Guide développeurs
+      '/guide/developers/': [
+        {
+          text: 'Documentation technique',
           items: [
             { text: "Vue d'ensemble", link: '/guide/developers/' },
             { text: 'Architecture', link: '/guide/developers/architecture' },
@@ -244,51 +247,23 @@ export default withMermaid(defineConfig({
             { text: 'Infrastructure', link: '/guide/developers/infrastructure' },
           ],
         },
-      ],
-      '/api/': [
         {
-          text: 'Reference',
-          items: [{ text: "Vue d'ensemble", link: '/api/' }],
-        },
-        {
-          text: 'Applications',
-          collapsed: false,
+          text: 'Par projet',
           items: [
-            { text: '@univ-lehavre/atlas-ecrin', link: '/api/@univ-lehavre/atlas-ecrin/' },
-            { text: '@univ-lehavre/atlas-find-an-expert', link: '/api/@univ-lehavre/atlas-find-an-expert/' },
-            { text: '@univ-lehavre/atlas-amarre', link: '/api/@univ-lehavre/atlas-amarre/' },
+            { text: 'ECRIN', link: '/projects/ecrin/dev/' },
+            { text: 'Citations', link: '/projects/citations/dev/' },
+            { text: 'CRF', link: '/projects/crf/' },
           ],
         },
         {
-          text: 'REDCap',
-          collapsed: false,
+          text: 'Ressources',
           items: [
-            { text: '@univ-lehavre/atlas-crf', link: '/api/@univ-lehavre/atlas-crf/' },
-            { text: '@univ-lehavre/atlas-redcap-core', link: '/api/@univ-lehavre/atlas-redcap-core/' },
-            { text: '@univ-lehavre/atlas-redcap-openapi', link: '/api/@univ-lehavre/atlas-redcap-openapi/' },
-            { text: '@univ-lehavre/atlas-redcap-sandbox', link: '/api/@univ-lehavre/atlas-redcap-sandbox/' },
-          ],
-        },
-        {
-          text: 'Utilitaires',
-          collapsed: false,
-          items: [
-            { text: '@univ-lehavre/atlas-net', link: '/api/@univ-lehavre/atlas-net/' },
-            { text: '@univ-lehavre/atlas-errors', link: '/api/@univ-lehavre/atlas-errors/' },
-            { text: '@univ-lehavre/atlas-validators', link: '/api/@univ-lehavre/atlas-validators/' },
-            { text: '@univ-lehavre/atlas-shared-config', link: '/api/@univ-lehavre/atlas-shared-config/' },
-            { text: '@univ-lehavre/atlas-logos', link: '/api/@univ-lehavre/atlas-logos/' },
-          ],
-        },
-        {
-          text: 'Appwrite',
-          collapsed: false,
-          items: [
-            { text: '@univ-lehavre/atlas-appwrite', link: '/api/@univ-lehavre/atlas-appwrite/' },
-            { text: '@univ-lehavre/atlas-auth', link: '/api/@univ-lehavre/atlas-auth/' },
+            { text: 'API', link: '/api/' },
+            { text: 'Audits', link: '/audit/' },
           ],
         },
       ],
+      '/api/': apiSidebar,
     },
     socialLinks: [{ icon: 'github', link: 'https://github.com/univ-lehavre/atlas' }],
   },

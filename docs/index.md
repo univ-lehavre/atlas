@@ -108,5 +108,5 @@ Le Campus est lauréat de l'appel à projets « ExcellencES » de **France 2030*
     <img src="./public/logos/eunicoast.png" alt="EUNICoast" style="height: 80px;">
   </a>
   <img src="./public/logos/france-2030.png" alt="France 2030" style="height: 80px;">
-  <img src="./public/logos/region-normandie.png" alt="Région Normandie" style="height: 80px;">
+  <img src="./public/logos/region-normandie.jpg" alt="Région Normandie" style="height: 80px;">
 </div>

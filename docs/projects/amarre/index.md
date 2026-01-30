@@ -1,15 +1,15 @@
 # AMARRE
 
-Application SvelteKit pour la gestion des données de recherche clinique.
+::: warning Projet en cours de développement
+AMARRE est actuellement en phase de conception. La documentation ci-dessous décrit l'architecture cible et le guide d'implémentation pour les développeurs.
+:::
+
+Application SvelteKit pour la gestion de la mobilité des chercheurs.
 
 ## Documentation
 
 - [Guide d'implémentation](./IMPLEMENTATION_GUIDE.md) - Guide complet pour le développement
 - [Architecture](./ARCHITECTURE_DIAGRAMS.md) - Diagrammes d'architecture
-- [Sécurité](./SECURITY.md) - Considérations de sécurité
-- [Tests avec IA](./AI_TESTING_GUIDE.md) - Guide pour les tests assistés par IA
-- [Audit Microservices](/audit/amarre/) - Audit de l'architecture microservices
-- [Détails Microservices](/audit/amarre/microservices-audit) - Documentation de l'audit
 
 ## Stack technique
 
