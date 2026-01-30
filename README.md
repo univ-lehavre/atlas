@@ -4,121 +4,34 @@
 
 **Atlas** is a TypeScript monorepo developed by **Université Le Havre Normandie** to support research and facilitate collaboration between researchers.
 
-## Main Modules
-
-Atlas is composed of **three major modules**:
-
-| Module | Description | Sub-projects |
-|--------|-------------|--------------|
-| **ECRIN** | Collaboration platform for researchers | find-an-expert |
-| **AMARRE** | Research network visualization and analysis | - |
-| **CRF** | Tools for interacting with REDCap | redcap-core, redcap-openapi |
-
-### ECRIN
-
-ECRIN is a collaboration platform for researchers that allows them to present their work, find collaborators, and visualize research networks. It is organized around 6 functional cards: Introduce, Collaborate, Explore, Ask, Publish, Administrate.
-
-**Sub-project:**
-- **find-an-expert**: expertise discovery through publications (OpenAlex) and contributions (GitHub)
-
-### AMARRE
-
-AMARRE is a research network visualization and analysis application using interactive graphs (Sigma.js, Graphology).
-
-### CRF (Case Report Form)
-
-CRF provides TypeScript tools for interacting with the REDCap API in a secure and typed manner.
-
-**Sub-projects:**
-- **redcap-core**: pure REDCap business logic with Effect
-- **redcap-openapi**: extraction and analysis of OpenAPI specifications from REDCap source code
-
-## Architecture
-
-```mermaid
-graph TB
-    subgraph "Atlas - Université Le Havre Normandie"
-        subgraph "ECRIN Module"
-            ECRIN_APP["ecrin<br/>(main module)"]
-            FAE["find-an-expert<br/>(sub-project)"]
-        end
-
-        subgraph "AMARRE Module"
-            AMARRE["amarre<br/>(main module)"]
-        end
-
-        subgraph "CRF Module"
-            CRF["crf<br/>(main module)"]
-            CORE["redcap-core<br/>(sub-project)"]
-            OPENAPI["redcap-openapi<br/>(sub-project)"]
-        end
-
-        subgraph "Utility Sub-modules"
-            NET["atlas-net"]
-            CONFIG["atlas-shared-config"]
-            APPWRITE["atlas-appwrite"]
-            AUTH["atlas-auth"]
-            ERRORS["atlas-errors"]
-            VALIDATORS["atlas-validators"]
-        end
-    end
-
-    FAE --> APPWRITE
-    FAE --> AUTH
-    ECRIN_APP --> APPWRITE
-    ECRIN_APP --> AUTH
-    AMARRE --> APPWRITE
-    CRF --> CORE
-    CRF --> NET
-    ECRIN_APP -.->|"integrates"| FAE
-    CRF -.->|"uses"| CORE
-    CRF -.->|"uses"| OPENAPI
-```
-
 ## Packages
 
 ### Main Modules
 
-| Package | Description |
-| ------- | ----------- |
-| [ecrin](packages/ecrin) | ECRIN module - researcher collaboration platform |
-| [amarre](packages/amarre) | AMARRE module - research network visualization |
-| [@univ-lehavre/crf](packages/crf) | CRF module - REDCap client, server and CLI |
+| Package                           | Description                                      |
+| --------------------------------- | ------------------------------------------------ |
+| [ecrin](packages/ecrin)           | ECRIN module - researcher collaboration platform |
+| [amarre](packages/amarre)         | AMARRE module - research network visualization   |
+| [@univ-lehavre/crf](packages/crf) | CRF module - REDCap client, server and CLI       |
 
 ### Sub-projects
 
-| Package | Parent Module | Description |
-| ------- | ------------- | ----------- |
-| [find-an-expert](packages/find-an-expert) | ECRIN | Expertise discovery via publications and GitHub |
-| [@univ-lehavre/atlas-redcap-core](packages/redcap-core) | CRF | REDCap business logic with Effect |
-| [@univ-lehavre/atlas-redcap-openapi](packages/redcap-openapi) | CRF | OpenAPI extraction from REDCap |
+| Package                                                       | Parent Module | Description                                     |
+| ------------------------------------------------------------- | ------------- | ----------------------------------------------- |
+| [find-an-expert](packages/find-an-expert)                     | ECRIN         | Expertise discovery via publications and GitHub |
+| [@univ-lehavre/atlas-redcap-core](packages/redcap-core)       | CRF           | REDCap business logic with Effect               |
+| [@univ-lehavre/atlas-redcap-openapi](packages/redcap-openapi) | CRF           | OpenAPI extraction from REDCap                  |
 
 ### Utility Sub-modules
 
-| Package | Description |
-| ------- | ----------- |
-| [@univ-lehavre/atlas-net](packages/net) | Network diagnostic utilities |
-| [@univ-lehavre/atlas-appwrite](packages/appwrite) | Shared Appwrite client |
-| [@univ-lehavre/atlas-auth](packages/auth) | Authentication service |
-| [@univ-lehavre/atlas-errors](packages/errors) | Shared error classes |
-| [@univ-lehavre/atlas-validators](packages/validators) | Validation utilities |
+| Package                                                     | Description                                |
+| ----------------------------------------------------------- | ------------------------------------------ |
+| [@univ-lehavre/atlas-net](packages/net)                     | Network diagnostic utilities               |
+| [@univ-lehavre/atlas-appwrite](packages/appwrite)           | Shared Appwrite client                     |
+| [@univ-lehavre/atlas-auth](packages/auth)                   | Authentication service                     |
+| [@univ-lehavre/atlas-errors](packages/errors)               | Shared error classes                       |
+| [@univ-lehavre/atlas-validators](packages/validators)       | Validation utilities                       |
 | [@univ-lehavre/atlas-shared-config](packages/shared-config) | ESLint, TypeScript, Prettier configuration |
-
-## Third-party Platforms
-
-Atlas relies on two third-party platforms:
-
-### REDCap (Research Electronic Data Capture)
-
-[REDCap](https://project-redcap.org/) is a secure web application developed by Vanderbilt University for creating and managing online surveys and research databases. REDCap is used by more than **8,000 institutions** in **164 countries** and has been cited in more than **51,000 scientific articles**.
-
-REDCap enables web and mobile data collection (including offline) while complying with data protection regulations (GDPR, HIPAA, 21 CFR Part 11). It is free for non-profit organizations that are members of the REDCap Consortium.
-
-### Appwrite
-
-[Appwrite](https://appwrite.io/) is an open-source backend platform providing essential services for web and mobile application development: authentication, database, storage, and serverless functions.
-
-Appwrite is compliant with SOC-2, GDPR, and HIPAA standards. The ECRIN and AMARRE modules use Appwrite for authentication and user data management.
 
 ## Institutional Projects
 
@@ -131,11 +44,13 @@ The [Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.c
 The Campus is a laureate of the "ExcellencES" call for projects of **France 2030**, with funding of **€7.3M** over 7 years (2023-2030).
 
 **Strategic axes:**
+
 - Cities of tomorrow
 - Maritime and port issues
 - Transitions, risks, and uncertainties
 
 **Five operational hubs:**
+
 - Expertise and Qualifications Hub
 - Creations and Innovations Hub
 - International Hub
@@ -149,6 +64,7 @@ The Campus is a laureate of the "ExcellencES" call for projects of **France 2030
 **Partner universities:** Åland (Finland), Bourgas (Bulgaria), Stralsund (Germany), EMUNI (Slovenia), Azores (Portugal), Balearic Islands (Spain), Patras (Greece), Sassari (Italy), Faroe Islands, Antilles (France), Le Havre (France), Dubrovnik (Croatia), Szczecin (Poland).
 
 **Research hubs:**
+
 - Identities and heritage of coastal and island communities
 - Circular blue economy, port logistics, and sustainable tourism
 - Governance and planning of coastal territories
@@ -172,14 +88,20 @@ pnpm add @univ-lehavre/atlas-redcap-api effect
 
 ```typescript
 import { Effect } from 'effect';
-import { createRedcapClient, RedcapUrl, RedcapToken } from '@univ-lehavre/atlas-redcap-api';
+import {
+  createRedcapClient,
+  RedcapUrl,
+  RedcapToken,
+} from '@univ-lehavre/atlas-redcap-api';
 
 const client = createRedcapClient({
   url: RedcapUrl('https://redcap.example.com/api/'),
   token: RedcapToken('YOUR_32_CHAR_HEXADECIMAL_TOKEN'),
 });
 
-const records = await Effect.runPromise(client.exportRecords({ fields: ['record_id', 'name'] }));
+const records = await Effect.runPromise(
+  client.exportRecords({ fields: ['record_id', 'name'] }),
+);
 ```
 
 ## Development
