@@ -58,6 +58,7 @@ export default withMermaid(defineConfig({
           { text: 'AMARRE', link: '/projects/amarre/' },
           { text: 'Citations', link: '/projects/citations/' },
           { text: 'CRF', link: '/projects/crf/' },
+          { text: 'Microservices', link: '/projects/microservices/' },
         ],
       },
       { text: 'Audit', link: '/audit/' },
@@ -205,6 +206,16 @@ export default withMermaid(defineConfig({
             { text: 'ECRIN', link: '/projects/ecrin/audit/' },
             { text: 'Citations', link: '/projects/citations/audit/' },
             { text: 'CRF', link: '/projects/crf/audit/' },
+          ],
+        },
+      ],
+      // Microservices
+      '/projects/microservices/': [
+        {
+          text: 'Microservices',
+          items: [
+            { text: 'Overview', link: '/projects/microservices/' },
+            { text: 'K3s Installation', link: '/projects/microservices/installation' },
           ],
         },
       ],
