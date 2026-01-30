@@ -1,244 +1,244 @@
 # Contributing to Atlas
 
-Merci de contribuer au projet Atlas ! Ce document explique les conventions et processus de contribution.
+Thank you for contributing to the Atlas project! This document explains the conventions and contribution processes.
 
-## Table des matieres
+## Table of Contents
 
-- [Pre-requis](#pre-requis)
+- [Prerequisites](#prerequisites)
 - [Installation](#installation)
-- [Workflow de developpement](#workflow-de-developpement)
+- [Development Workflow](#development-workflow)
 - [Git Hooks](#git-hooks)
-- [Scripts disponibles](#scripts-disponibles)
-- [Conventions de commit](#conventions-de-commit)
-- [Structure du projet](#structure-du-projet)
+- [Available Scripts](#available-scripts)
+- [Commit Conventions](#commit-conventions)
+- [Project Structure](#project-structure)
 
-## Pre-requis
+## Prerequisites
 
-- Node.js >= 24.0.0 (voir `.nvmrc`)
+- Node.js >= 24.0.0 (see `.nvmrc`)
 - pnpm >= 10.x
 - Git
 
 ```bash
-# Installer la bonne version de Node
+# Install the correct Node version
 nvm use
 
-# Installer pnpm si necessaire
+# Install pnpm if necessary
 corepack enable
 ```
 
 ## Installation
 
 ```bash
-# Cloner le repository
+# Clone the repository
 git clone https://github.com/univ-lehavre/atlas.git
 cd atlas
 
-# Installer les dependances
+# Install dependencies
 pnpm install
 ```
 
-Les hooks Git (lefthook) sont installes automatiquement via le script `prepare`.
+Git hooks (lefthook) are automatically installed via the `prepare` script.
 
-## Workflow de developpement
+## Development Workflow
 
-### 1. Creer une branche
+### 1. Create a Branch
 
 ```bash
-git checkout -b feat/ma-nouvelle-fonctionnalite
-# ou
-git checkout -b fix/correction-bug
+git checkout -b feat/my-new-feature
+# or
+git checkout -b fix/bug-fix
 ```
 
-### 2. Developper
+### 2. Develop
 
 ```bash
-# Mode watch (tous les packages)
+# Watch mode (all packages)
 pnpm dev
 
-# Un package specifique
+# A specific package
 pnpm -F @univ-lehavre/crf dev
 ```
 
-### 3. Verifier avant de commiter
+### 3. Check Before Committing
 
 ```bash
-# Verification rapide (format + lint)
+# Quick check (format + lint)
 pnpm check:quick
 
-# Verification complete
+# Full check
 pnpm check:full
 
-# Auto-corriger les problemes de format et lint
+# Auto-fix format and lint issues
 pnpm fix
 ```
 
-### 4. Commiter
+### 4. Commit
 
-Le hook `pre-commit` execute automatiquement :
+The `pre-commit` hook automatically runs:
 
 - Prettier (format)
 - ESLint (lint)
 - TypeScript (typecheck)
 - Vitest (test)
-- Knip (code inutilise)
-- jscpd (code duplique)
+- Knip (unused code)
+- jscpd (duplicate code)
 
-### 5. Pousser
+### 5. Push
 
-Le hook `pre-push` verifie :
+The `pre-push` hook checks:
 
-- Que vous n'etes pas sur `main` (push direct interdit)
-- Que votre branche est synchronisee avec `origin/main`
-- L'audit de securite
-- Les licences des dependances
-- L'integrite du lockfile
+- That you are not on `main` (direct push is forbidden)
+- That your branch is synchronized with `origin/main`
+- Security audit
+- Dependency licenses
+- Lockfile integrity
 
-### 6. Creer une Pull Request
+### 6. Create a Pull Request
 
-Poussez votre branche et creez une PR sur GitHub vers `main`.
+Push your branch and create a PR on GitHub targeting `main`.
 
 ## Git Hooks
 
 ### pre-commit
 
-Executé avant chaque commit. Si un check echoue, le commit est refuse.
+Executed before each commit. If a check fails, the commit is rejected.
 
-| Check     | Description              |
-| --------- | ------------------------ |
-| format    | Prettier auto-fix        |
-| lint      | ESLint auto-fix          |
-| typecheck | Verification TypeScript  |
-| test      | Tests Vitest             |
-| knip      | Detection code inutilise |
-| cpd       | Detection code duplique  |
+| Check     | Description               |
+| --------- | ------------------------- |
+| format    | Prettier auto-fix         |
+| lint      | ESLint auto-fix           |
+| typecheck | TypeScript verification   |
+| test      | Vitest tests              |
+| knip      | Unused code detection     |
+| cpd       | Duplicate code detection  |
 
 ### pre-push
 
-Executé avant chaque push.
+Executed before each push.
 
-| Check          | Description                            |
-| -------------- | -------------------------------------- |
-| check-branch   | Bloque le push direct sur `main`       |
-| check-sync     | Avertit si la branche n'est pas a jour |
-| check-audit    | Audit de securite npm                  |
-| check-licenses | Verification des licences              |
-| check-lockfile | Integrite du lockfile pnpm             |
+| Check          | Description                              |
+| -------------- | ---------------------------------------- |
+| check-branch   | Blocks direct push to `main`             |
+| check-sync     | Warns if branch is not up to date        |
+| check-audit    | npm security audit                       |
+| check-licenses | License verification                     |
+| check-lockfile | pnpm lockfile integrity                  |
 
 ### commit-msg
 
-Verifie le format du message de commit (Conventional Commits).
+Verifies commit message format (Conventional Commits).
 
-### Bypasser temporairement les hooks
+### Temporarily Bypassing Hooks
 
-En cas d'urgence uniquement :
+Only in emergencies:
 
 ```bash
-# Bypasser pre-commit
-git commit --no-verify -m "wip: travail en cours"
+# Bypass pre-commit
+git commit --no-verify -m "wip: work in progress"
 
-# Bypasser pre-push
+# Bypass pre-push
 git push --no-verify
 ```
 
-> **Attention** : N'abusez pas de `--no-verify`. Les hooks existent pour garantir la qualite du code.
+> **Warning**: Do not abuse `--no-verify`. Hooks exist to ensure code quality.
 
-## Scripts disponibles
+## Available Scripts
 
-### Developpement
-
-| Script           | Description              |
-| ---------------- | ------------------------ |
-| `pnpm dev`       | Mode watch tous packages |
-| `pnpm build`     | Build tous les packages  |
-| `pnpm test`      | Lancer les tests         |
-| `pnpm typecheck` | Verification TypeScript  |
-
-### Qualite
-
-| Script             | Description                                               |
-| ------------------ | --------------------------------------------------------- |
-| `pnpm fix`         | Auto-corriger format + lint                               |
-| `pnpm check:quick` | Verification rapide (format + lint)                       |
-| `pnpm check`       | Verification standard (format + lint + knip + cpd)        |
-| `pnpm check:full`  | Verification complete (+ typecheck + test + audit + size) |
-
-### Ready (verification pre-merge/release)
-
-| Script               | Description                      | Quand l'utiliser        |
-| -------------------- | -------------------------------- | ----------------------- |
-| `pnpm ready:quick`   | format + lint + typecheck + test | Avant un commit rapide  |
-| `pnpm ready`         | check:full + build               | Avant de pousser une PR |
-| `pnpm ready:release` | ready + outdated:major           | Avant une release       |
-
-### Audits
-
-| Script                | Description                           |
-| --------------------- | ------------------------------------- |
-| `pnpm audit`          | Audit securite npm                    |
-| `pnpm audit:all`      | Tous les audits (securite + licences) |
-| `pnpm license:audit`  | Verification licences autorisees      |
-| `pnpm knip`           | Detection code inutilise              |
-| `pnpm cpd`            | Detection code duplique               |
-| `pnpm size`           | Verification taille des bundles       |
-| `pnpm outdated`       | Dependances obsoletes                 |
-| `pnpm outdated:major` | Dependances avec majeure en retard    |
-
-### Documentation
-
-| Script            | Description                  |
-| ----------------- | ---------------------------- |
-| `pnpm docs:dev`   | Documentation en mode dev    |
-| `pnpm docs:build` | Build de la documentation    |
-| `pnpm docs:api`   | Generation doc API (TypeDoc) |
-
-### Release
+### Development
 
 | Script           | Description                |
 | ---------------- | -------------------------- |
-| `pnpm changeset` | Creer un changeset         |
-| `pnpm bump`      | Mettre a jour les versions |
-| `pnpm release`   | Publier les packages       |
+| `pnpm dev`       | Watch mode for all packages |
+| `pnpm build`     | Build all packages         |
+| `pnpm test`      | Run tests                  |
+| `pnpm typecheck` | TypeScript verification    |
 
-## Conventions de commit
+### Quality
 
-Format [Conventional Commits](https://www.conventionalcommits.org/) :
+| Script             | Description                                          |
+| ------------------ | ---------------------------------------------------- |
+| `pnpm fix`         | Auto-fix format + lint                               |
+| `pnpm check:quick` | Quick check (format + lint)                          |
+| `pnpm check`       | Standard check (format + lint + knip + cpd)          |
+| `pnpm check:full`  | Full check (+ typecheck + test + audit + size)       |
+
+### Ready (Pre-merge/release Verification)
+
+| Script               | Description                        | When to Use             |
+| -------------------- | ---------------------------------- | ----------------------- |
+| `pnpm ready:quick`   | format + lint + typecheck + test   | Before a quick commit   |
+| `pnpm ready`         | check:full + build                 | Before pushing a PR     |
+| `pnpm ready:release` | ready + outdated:major             | Before a release        |
+
+### Audits
+
+| Script                | Description                          |
+| --------------------- | ------------------------------------ |
+| `pnpm audit`          | npm security audit                   |
+| `pnpm audit:all`      | All audits (security + licenses)     |
+| `pnpm license:audit`  | Allowed licenses verification        |
+| `pnpm knip`           | Unused code detection                |
+| `pnpm cpd`            | Duplicate code detection             |
+| `pnpm size`           | Bundle size verification             |
+| `pnpm outdated`       | Outdated dependencies                |
+| `pnpm outdated:major` | Dependencies with outdated major     |
+
+### Documentation
+
+| Script            | Description                    |
+| ----------------- | ------------------------------ |
+| `pnpm docs:dev`   | Documentation in dev mode      |
+| `pnpm docs:build` | Build documentation            |
+| `pnpm docs:api`   | Generate API docs (TypeDoc)    |
+
+### Release
+
+| Script           | Description            |
+| ---------------- | ---------------------- |
+| `pnpm changeset` | Create a changeset     |
+| `pnpm bump`      | Update versions        |
+| `pnpm release`   | Publish packages       |
+
+## Commit Conventions
+
+[Conventional Commits](https://www.conventionalcommits.org/) format:
 
 ```
 type(scope): description
 
-[corps optionnel]
+[optional body]
 
-[footer optionnel]
+[optional footer]
 ```
 
-### Types autorises
+### Allowed Types
 
-| Type       | Description                           |
-| ---------- | ------------------------------------- |
-| `feat`     | Nouvelle fonctionnalite               |
-| `fix`      | Correction de bug                     |
-| `docs`     | Documentation                         |
-| `style`    | Formatage (pas de changement de code) |
-| `refactor` | Refactoring                           |
-| `perf`     | Amelioration performance              |
-| `test`     | Ajout/modification de tests           |
-| `build`    | Systeme de build                      |
-| `ci`       | Configuration CI                      |
-| `chore`    | Maintenance                           |
-| `revert`   | Revert d'un commit                    |
+| Type       | Description                          |
+| ---------- | ------------------------------------ |
+| `feat`     | New feature                          |
+| `fix`      | Bug fix                              |
+| `docs`     | Documentation                        |
+| `style`    | Formatting (no code change)          |
+| `refactor` | Refactoring                          |
+| `perf`     | Performance improvement              |
+| `test`     | Add/modify tests                     |
+| `build`    | Build system                         |
+| `ci`       | CI configuration                     |
+| `chore`    | Maintenance                          |
+| `revert`   | Revert a commit                      |
 
-### Scopes suggeres
+### Suggested Scopes
 
 | Scope    | Package/App   |
 | -------- | ------------- |
 | `crf`    | packages/crf  |
 | `net`    | packages/net  |
 | `docs`   | Documentation |
-| `deps`   | Dependances   |
+| `deps`   | Dependencies  |
 | `config` | Configuration |
 | `ci`     | CI/CD         |
 
-### Exemples
+### Examples
 
 ```bash
 feat(crf): add exportRecords method
@@ -247,19 +247,19 @@ chore(deps): update effect to v3.20
 ci: add size-limit check
 ```
 
-## Structure du projet
+## Project Structure
 
 ```
 atlas/
 ├── packages/
-│   ├── crf/                # Client REDCap + server + CLI
-│   ├── net/                # Utilitaires reseau
-│   ├── eslint-config/      # Config ESLint partagee
-│   └── typescript-config/  # Config TypeScript partagee
-└── docs/                   # Documentation VitePress
+│   ├── crf/                # REDCap client + server + CLI
+│   ├── net/                # Network utilities
+│   ├── eslint-config/      # Shared ESLint config
+│   └── typescript-config/  # Shared TypeScript config
+└── docs/                   # VitePress documentation
 ```
 
-## Questions ?
+## Questions?
 
-- Ouvrez une [issue](https://github.com/univ-lehavre/atlas/issues) pour signaler un bug
-- Consultez le [CLAUDE.md](./CLAUDE.md) pour plus de details techniques
+- Open an [issue](https://github.com/univ-lehavre/atlas/issues) to report a bug
+- Check [CLAUDE.md](./CLAUDE.md) for more technical details

@@ -1,18 +1,18 @@
 # @univ-lehavre/crf
 
-Case Report Form - Package unifié pour interagir avec l'API REDCap.
+Case Report Form - Unified package for interacting with the REDCap API.
 
-## À propos
+## About
 
-Ce package fournit un client TypeScript typé pour l'API REDCap, un serveur HTTP REST et des outils CLI. Il utilise une architecture OpenAPI-first avec des types générés depuis la spécification `specs/redcap.yaml`.
+This package provides a typed TypeScript client for the REDCap API, an HTTP REST server, and CLI tools. It uses an OpenAPI-first architecture with types generated from the `specs/redcap.yaml` specification.
 
-## Fonctionnalités
+## Features
 
-- **Client REDCap** : Client Effect typé pour l'API REDCap
-- **Serveur HTTP** : Microservice REST avec Hono
-- **CLI** : Outils en ligne de commande pour tester la connectivité
-- **Types générés** : Types TypeScript générés depuis OpenAPI
-- **Branded types** : Validation runtime des identifiants
+- **REDCap Client**: Typed Effect client for the REDCap API
+- **HTTP Server**: REST microservice with Hono
+- **CLI**: Command-line tools for testing connectivity
+- **Generated Types**: TypeScript types generated from OpenAPI
+- **Branded Types**: Runtime validation of identifiers
 
 ## Installation
 
@@ -22,7 +22,7 @@ pnpm add @univ-lehavre/crf effect
 
 ## Usage
 
-### Client REDCap
+### REDCap Client
 
 ```typescript
 import { createRedcapClient, RedcapUrl, RedcapToken, RecordId } from '@univ-lehavre/crf/redcap';
@@ -33,11 +33,11 @@ const client = createRedcapClient({
   token: RedcapToken('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),
 });
 
-// Obtenir la version REDCap
+// Get REDCap version
 const version = await Effect.runPromise(client.getVersion());
 console.log('REDCap version:', version);
 
-// Exporter des records
+// Export records
 const records = await Effect.runPromise(
   client.exportRecords({
     fields: ['record_id', 'first_name', 'last_name'],
@@ -46,46 +46,46 @@ const records = await Effect.runPromise(
 );
 ```
 
-### Serveur CRF
+### CRF Server
 
 ```bash
-# Variables d'environnement requises
+# Required environment variables
 export REDCAP_API_URL=https://redcap.example.com/api/
 export REDCAP_API_TOKEN=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 export PORT=3000
 
-# Lancer le serveur
+# Start the server
 pnpm -F @univ-lehavre/crf start
 ```
 
-## API du serveur
+## Server API
 
 | Endpoint | Description |
 |----------|-------------|
 | `GET /health` | Health check |
-| `GET /api/v1/project/version` | Version REDCap |
-| `GET /api/v1/project/info` | Informations projet |
-| `GET /api/v1/records` | Exporter les records |
-| `POST /api/v1/records` | Importer des records |
-| `GET /api/v1/users/:email` | Trouver un utilisateur |
-| `GET /openapi.json` | Spécification OpenAPI |
-| `GET /docs` | Documentation Scalar |
+| `GET /api/v1/project/version` | REDCap version |
+| `GET /api/v1/project/info` | Project information |
+| `GET /api/v1/records` | Export records |
+| `POST /api/v1/records` | Import records |
+| `GET /api/v1/users/:email` | Find a user |
+| `GET /openapi.json` | OpenAPI specification |
+| `GET /docs` | Scalar documentation |
 
 ## Scripts
 
 ```bash
-pnpm -F @univ-lehavre/crf dev            # Développement
-pnpm -F @univ-lehavre/crf build          # Build production
-pnpm -F @univ-lehavre/crf test           # Tests unitaires
-pnpm -F @univ-lehavre/crf generate:types # Régénérer les types
+pnpm -F @univ-lehavre/crf dev            # Development
+pnpm -F @univ-lehavre/crf build          # Production build
+pnpm -F @univ-lehavre/crf test           # Unit tests
+pnpm -F @univ-lehavre/crf generate:types # Regenerate types
 pnpm -F @univ-lehavre/crf mock:redcap    # Mock REDCap (Prism)
-pnpm -F @univ-lehavre/crf start          # Lancer le serveur
-pnpm -F @univ-lehavre/crf test:api       # Tests API (Schemathesis)
+pnpm -F @univ-lehavre/crf start          # Start the server
+pnpm -F @univ-lehavre/crf test:api       # API tests (Schemathesis)
 ```
 
 ## Branded Types
 
-Le package utilise des branded types pour la validation runtime :
+The package uses branded types for runtime validation:
 
 ```typescript
 import { RedcapToken, RecordId, InstrumentName, Email } from '@univ-lehavre/crf/redcap';
@@ -96,23 +96,23 @@ const recordId = RecordId('abc12345678901234567'); // OK (20+ chars)
 
 ## Documentation
 
-- [Documentation API](../../docs/api/@univ-lehavre/atlas-crf/)
-- [Guide CRF](../../docs/guide/dev/crf.md)
+- [API Documentation](../../docs/api/@univ-lehavre/atlas-crf/)
+- [CRF Guide](../../docs/guide/dev/crf.md)
 
-## Organisation
+## Organization
 
-Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.
 
-Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+Atlas is developed as part of two projects led by Le Havre Normandie University:
 
-- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
-- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)**: research and training program focused on maritime and port issues
+- **[EUNICoast](https://eunicoast.eu/)**: European university alliance bringing together institutions located in European coastal areas
 
 ---
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="20">
+    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
@@ -124,6 +124,6 @@ Atlas est développé dans le cadre de deux projets portés par l'Université Le
   </a>
 </p>
 
-## Licence
+## License
 
 MIT

@@ -1,42 +1,42 @@
 # atlas-openalex
 
-Client Effect pour l'API [OpenAlex](https://openalex.org), catalogue ouvert de 240M+ publications académiques.
+Effect client for the [OpenAlex](https://openalex.org) API, an open catalog of 240M+ academic publications.
 
-## Caractéristiques de l'API
+## API Characteristics
 
-| Aspect | Détail |
+| Aspect | Detail |
 |--------|--------|
 | Base URL | `https://api.openalex.org` |
 | Format | JSON |
-| Auth | API key optionnelle (recommandée) |
-| Rate limit | 100k req/jour (avec API key) |
-| Versioning API | Non versionné (évolutions continues) |
-| OpenAPI officielle | Non |
+| Auth | Optional API key (recommended) |
+| Rate limit | 100k req/day (with API key) |
+| API Versioning | Not versioned (continuous evolution) |
+| Official OpenAPI | No |
 
-## Construction de la spec alpha
+## Building the Alpha Spec
 
-### Source : Documentation officielle
+### Source: Official Documentation
 
-La documentation OpenAlex est complète et structurée :
+The OpenAlex documentation is complete and structured:
 - https://docs.openalex.org/api-entities/works
 - https://docs.openalex.org/api-entities/authors
 - https://docs.openalex.org/how-to-use-the-api
 
-### Processus
+### Process
 
 ```bash
-# 1. Créer le squelette depuis la structure de la doc
+# 1. Create skeleton from documentation structure
 atlas-openapi-validator scaffold \
   --name openalex \
   --version "$(date +%Y-%m-%d)" \
   --base-url https://api.openalex.org \
   --output specs/alpha/openalex-2025-01-24.yaml
 
-# 2. Ajouter les entités une par une
-# Commencer par Works (la plus complexe)
+# 2. Add entities one by one
+# Start with Works (the most complex)
 ```
 
-### Structure de la spec
+### Spec Structure
 
 ```yaml
 openapi: '3.1.0'
@@ -316,7 +316,7 @@ components:
         updated_date:
           type: string
           format: date-time
-        # ... autres champs
+        # ... other fields
 
     Authorship:
       type: object
@@ -337,7 +337,7 @@ components:
           items:
             type: string
 
-    # ... autres schemas
+    # ... other schemas
 
   responses:
     RateLimitError:
@@ -375,36 +375,36 @@ components:
                 type: string
 ```
 
-## Entités à documenter
+## Entities to Document
 
-| Entité | Endpoint | Complexité | Priorité |
+| Entity | Endpoint | Complexity | Priority |
 |--------|----------|------------|----------|
-| Works | `/works` | Haute (50+ champs) | 1 |
-| Authors | `/authors` | Moyenne | 2 |
-| Sources | `/sources` | Moyenne | 3 |
-| Institutions | `/institutions` | Moyenne | 4 |
-| Topics | `/topics` | Basse | 5 |
-| Publishers | `/publishers` | Basse | 6 |
-| Funders | `/funders` | Basse | 7 |
+| Works | `/works` | High (50+ fields) | 1 |
+| Authors | `/authors` | Medium | 2 |
+| Sources | `/sources` | Medium | 3 |
+| Institutions | `/institutions` | Medium | 4 |
+| Topics | `/topics` | Low | 5 |
+| Publishers | `/publishers` | Low | 6 |
+| Funders | `/funders` | Low | 7 |
 
 ## Validation
 
 ```bash
-# Valider contre l'API réelle
+# Validate against the real API
 atlas-openapi-validator validate specs/alpha/openalex-2025-01-24.yaml \
   --base-url https://api.openalex.org \
   --sample-size 10 \
   --respect-rate-limits \
   --output reports/openalex-alpha.json
 
-# Points de vigilance
-# - Champs nullable non documentés
-# - Types réels vs documentés (ex: string vs integer)
-# - Champs dépréciés (x_concepts)
-# - Nouveaux champs non documentés
+# Points of vigilance
+# - Undocumented nullable fields
+# - Actual vs documented types (e.g., string vs integer)
+# - Deprecated fields (x_concepts)
+# - New undocumented fields
 ```
 
-## Client Effect
+## Effect Client
 
 ```typescript
 import { Effect, Context, Data } from 'effect';
@@ -415,7 +415,7 @@ interface OpenAlexConfig {
   userAgent?: string;
 }
 
-// Erreurs
+// Errors
 export class OpenAlexApiError extends Data.TaggedError('OpenAlexApiError')<{
   readonly message: string;
   readonly status?: number;
@@ -427,7 +427,7 @@ export class OpenAlexRateLimitError extends Data.TaggedError('OpenAlexRateLimitE
   readonly limit: number;
 }> {}
 
-// Interface client
+// Client interface
 interface OpenAlexClient {
   // Works
   listWorks: (options?: ListOptions) => Effect.Effect<WorksResponse, OpenAlexError>;
@@ -438,7 +438,7 @@ interface OpenAlexClient {
   listAuthors: (options?: ListOptions) => Effect.Effect<AuthorsResponse, OpenAlexError>;
   getAuthor: (id: string) => Effect.Effect<Author, OpenAlexError>;
 
-  // ... autres entités
+  // ... other entities
 
   // Rate limiting
   getRateLimitStatus: () => Effect.Effect<RateLimitStatus, never>;
@@ -447,7 +447,7 @@ interface OpenAlexClient {
 
 ## Versioning
 
-OpenAlex n'a pas de versioning d'API explicite. Les specs sont versionnées par **date snapshot** :
+OpenAlex has no explicit API versioning. Specs are versioned by **date snapshot**:
 
 ```
 specs/
@@ -458,11 +458,11 @@ specs/
 ├── stable/
 │   ├── openalex-2024-06-15.yaml
 │   └── openalex-2025-01-24.yaml
-└── current.yaml → stable/openalex-2025-01-24.yaml
+└── current.yaml -> stable/openalex-2025-01-24.yaml
 ```
 
-Quand une nouvelle version de l'API introduit des breaking changes :
-1. Créer une nouvelle spec alpha avec la date du jour
-2. Valider et promouvoir
-3. Mettre à jour `current.yaml`
-4. Conserver les anciennes versions pour rétrocompatibilité
+When a new API version introduces breaking changes:
+1. Create a new alpha spec with the current date
+2. Validate and promote
+3. Update `current.yaml`
+4. Keep old versions for backward compatibility

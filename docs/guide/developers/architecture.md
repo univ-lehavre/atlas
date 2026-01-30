@@ -1,26 +1,26 @@
 # Architecture
 
-## Architecture des packages
+## Package Architecture
 
 ```mermaid
 graph TB
     subgraph "Atlas - Université Le Havre Normandie"
-        subgraph "Projet ECRIN"
-            ECRIN_APP["ecrin<br/>(projet principal)"]
-            FAE["find-an-expert<br/>(sous-projet)"]
+        subgraph "ECRIN Project"
+            ECRIN_APP["ecrin<br/>(main project)"]
+            FAE["find-an-expert<br/>(sub-project)"]
         end
 
-        subgraph "Projet AMARRE"
-            AMARRE["amarre<br/>(projet principal)"]
+        subgraph "AMARRE Project"
+            AMARRE["amarre<br/>(main project)"]
         end
 
-        subgraph "Projet CRF"
-            CRF["crf<br/>(projet principal)"]
-            CORE["redcap-core<br/>(sous-projet)"]
-            OPENAPI["redcap-openapi<br/>(sous-projet)"]
+        subgraph "CRF Project"
+            CRF["crf<br/>(main project)"]
+            CORE["redcap-core<br/>(sub-project)"]
+            OPENAPI["redcap-openapi<br/>(sub-project)"]
         end
 
-        subgraph "Packages utilitaires"
+        subgraph "Utility Packages"
             NET["atlas-net"]
             CONFIG["atlas-shared-config"]
             APPWRITE["atlas-appwrite"]
@@ -37,75 +37,75 @@ graph TB
     AMARRE --> APPWRITE
     CRF --> CORE
     CRF --> NET
-    ECRIN_APP -.->|"intègre"| FAE
-    CRF -.->|"utilise"| CORE
-    CRF -.->|"utilise"| OPENAPI
+    ECRIN_APP -.->|"integrates"| FAE
+    CRF -.->|"uses"| CORE
+    CRF -.->|"uses"| OPENAPI
 ```
 
-## Programmation fonctionnelle avec Effect
+## Functional Programming with Effect
 
-Ce projet adopte une approche de **programmation fonctionnelle** avec [Effect](https://effect.website/), une bibliotheque TypeScript pour construire des applications robustes et type-safe.
+This project adopts a **functional programming** approach with [Effect](https://effect.website/), a TypeScript library for building robust and type-safe applications.
 
-### Pourquoi Effect ?
+### Why Effect?
 
-- **Gestion d'erreurs type-safe** : Les erreurs sont traitees comme des valeurs, pas des exceptions
-- **Composabilite** : Code modulaire et reutilisable via `pipe` et les combinateurs
-- **Observabilite integree** : Tracing et metriques compatibles OpenTelemetry
-- **Gestion des ressources** : Acquisition et liberation automatiques (comme `try-with-resources`)
-- **Concurrence structuree** : Interruption propre et gestion des fibres
+- **Type-safe error handling**: Errors are treated as values, not exceptions
+- **Composability**: Modular and reusable code via `pipe` and combinators
+- **Built-in observability**: Tracing and metrics compatible with OpenTelemetry
+- **Resource management**: Automatic acquisition and release (like `try-with-resources`)
+- **Structured concurrency**: Clean interruption and fiber management
 
-## Configuration ESLint
+## ESLint Configuration
 
-Le projet utilise une configuration ESLint stricte combinant plusieurs plugins. Voir [@univ-lehavre/atlas-eslint-config](https://github.com/univ-lehavre/atlas/tree/main/packages/eslint-config) pour les details.
+The project uses a strict ESLint configuration combining multiple plugins. See [@univ-lehavre/atlas-eslint-config](https://github.com/univ-lehavre/atlas/tree/main/packages/eslint-config) for details.
 
 ### TypeScript Strict
 
-Base sur `tseslint.configs.strictTypeChecked` avec des regles additionnelles :
+Based on `tseslint.configs.strictTypeChecked` with additional rules:
 
-| Regle                         | Description                                    |
-| ----------------------------- | ---------------------------------------------- |
-| `strict-boolean-expressions`  | Interdit les coercions implicites en booleen   |
-| `no-floating-promises`        | Oblige a gerer toutes les promesses            |
-| `no-unnecessary-condition`    | Detecte les conditions toujours vraies/fausses |
-| `consistent-type-imports`     | Force `import type` pour les imports de types  |
-| `switch-exhaustiveness-check` | Verifie que tous les cas sont couverts         |
-| `no-explicit-any`             | Interdit `any` (error, pas warn)               |
+| Rule                          | Description                                      |
+| ----------------------------- | ------------------------------------------------ |
+| `strict-boolean-expressions`  | Forbids implicit boolean coercions               |
+| `no-floating-promises`        | Requires handling all promises                   |
+| `no-unnecessary-condition`    | Detects always true/false conditions             |
+| `consistent-type-imports`     | Forces `import type` for type imports            |
+| `switch-exhaustiveness-check` | Verifies all cases are covered                   |
+| `no-explicit-any`             | Forbids `any` (error, not warn)                  |
 
-### Programmation Fonctionnelle
+### Functional Programming
 
-Base sur [eslint-plugin-functional](https://github.com/eslint-functional/eslint-plugin-functional) :
+Based on [eslint-plugin-functional](https://github.com/eslint-functional/eslint-plugin-functional):
 
-| Regle                       | Statut | Description                                       |
-| --------------------------- | ------ | ------------------------------------------------- |
-| `no-expression-statements`  | error  | Interdit les expressions sans retour              |
-| `no-conditional-statements` | error  | Interdit if/switch (force les ternaires/matching) |
-| `no-throw-statements`       | error  | Interdit throw (force Effect)                     |
-| `no-try-statements`         | error  | Interdit try/catch (force Effect)                 |
-| `immutable-data`            | error  | Interdit la mutation des objets/tableaux          |
-| `no-classes`                | off    | Desactive (Effect utilise des classes)            |
+| Rule                        | Status | Description                                          |
+| --------------------------- | ------ | ---------------------------------------------------- |
+| `no-expression-statements`  | error  | Forbids expressions without return                   |
+| `no-conditional-statements` | error  | Forbids if/switch (forces ternaries/matching)        |
+| `no-throw-statements`       | error  | Forbids throw (forces Effect)                        |
+| `no-try-statements`         | error  | Forbids try/catch (forces Effect)                    |
+| `immutable-data`            | error  | Forbids mutation of objects/arrays                   |
+| `no-classes`                | off    | Disabled (Effect uses classes)                       |
 
-### Securite
+### Security
 
-Base sur [eslint-plugin-security](https://github.com/eslint-community/eslint-plugin-security) :
+Based on [eslint-plugin-security](https://github.com/eslint-community/eslint-plugin-security):
 
-| Regle                         | Description                            |
-| ----------------------------- | -------------------------------------- |
-| `detect-unsafe-regex`         | Detecte les regex vulnerables au ReDoS |
-| `detect-eval-with-expression` | Interdit eval() avec des expressions   |
-| `detect-object-injection`     | Avertit sur les acces dynamiques       |
+| Rule                          | Description                              |
+| ----------------------------- | ---------------------------------------- |
+| `detect-unsafe-regex`         | Detects regex vulnerable to ReDoS        |
+| `detect-eval-with-expression` | Forbids eval() with expressions          |
+| `detect-object-injection`     | Warns on dynamic access                  |
 
-### Qualite de Code
+### Code Quality
 
-| Regle                    | Valeur | Description                               |
-| ------------------------ | ------ | ----------------------------------------- |
-| `max-depth`              | 4      | Profondeur max d'imbrication              |
-| `max-lines-per-function` | 60     | Lignes max par fonction                   |
-| `complexity`             | 15     | Complexite cyclomatique max               |
-| `no-console`             | error  | Interdit console.log (allow: warn, error) |
+| Rule                     | Value | Description                              |
+| ------------------------ | ----- | ---------------------------------------- |
+| `max-depth`              | 4     | Max nesting depth                        |
+| `max-lines-per-function` | 60    | Max lines per function                   |
+| `complexity`             | 15    | Max cyclomatic complexity                |
+| `no-console`             | error | Forbids console.log (allow: warn, error) |
 
-### Patterns Effect ignores
+### Ignored Effect Patterns
 
-Certains patterns sont explicitement autorises pour Effect et Hono :
+Certain patterns are explicitly allowed for Effect and Hono:
 
 ```javascript
 // Effect patterns
@@ -113,71 +113,71 @@ Effect.runPromise(...)
 pipe(value, Effect.map(...))
 Layer.succeed(...)
 
-// Hono patterns (configuration des routes)
+// Hono patterns (route configuration)
 app.get('/path', handler)
 records.post('/', handler)
 ```
 
-### Fichiers de test
+### Test Files
 
-Les regles strictes sont desactivees pour les fichiers `*.test.ts` et `*.spec.ts` afin de permettre les patterns de test classiques.
+Strict rules are disabled for `*.test.ts` and `*.spec.ts` files to allow classic test patterns.
 
 ## Scripts
 
-### Script `ready`
+### `ready` Script
 
-Le script `pnpm ready` execute tous les checks avant une release. L'ordre est optimise selon le principe **fail-fast** : les verifications les plus rapides et les plus susceptibles d'echouer sont executees en premier.
+The `pnpm ready` script runs all checks before a release. The order is optimized according to the **fail-fast** principle: the fastest and most likely to fail checks are run first.
 
 ```bash
 pnpm check && pnpm typecheck && pnpm test && pnpm audit:all && pnpm build
 ```
 
-**Ordre d'execution :**
+**Execution order:**
 
-1. **`check`** (format, lint, knip, cpd en parallele) - Tres rapide, echoue souvent sur des erreurs de style ou imports inutilises
-2. **`typecheck`** - Rapide, detecte les erreurs de typage
-3. **`test`** - Duree variable, mais essentiel avant les etapes suivantes
-4. **`audit:all`** (audit + license:audit en parallele) - Verifications de securite et licences
-5. **`build`** - Le plus long, execute en dernier car si les etapes precedentes echouent, inutile de builder
+1. **`check`** (format, lint, knip, cpd in parallel) - Very fast, often fails on style errors or unused imports
+2. **`typecheck`** - Fast, detects typing errors
+3. **`test`** - Variable duration, but essential before the following steps
+4. **`audit:all`** (audit + license:audit in parallel) - Security and license checks
+5. **`build`** - The longest, run last because if previous steps fail, no need to build
 
-### Audit des licences
+### License Audit
 
-Le script `license:audit` verifie que toutes les dependances utilisent des licences autorisees :
+The `license:audit` script verifies that all dependencies use allowed licenses:
 
 ```bash
 pnpm license:audit
 ```
 
-**Licences autorisees :**
+**Allowed licenses:**
 
-| Licence          | Description                                                     |
-| ---------------- | --------------------------------------------------------------- |
-| **MIT**          | Licence tres permissive, la plus courante dans l'ecosysteme npm |
-| **Apache-2.0**   | Permissive avec protection contre les brevets                   |
-| **BSD-2-Clause** | Permissive, version simplifiee (2 clauses)                      |
-| **BSD-3-Clause** | Permissive, version originale (3 clauses)                       |
-| **ISC**          | Equivalente a MIT, simplifiee                                   |
-| **0BSD**         | Domaine public, aucune restriction                              |
-| **Unlicense**    | Domaine public explicite                                        |
+| License          | Description                                                        |
+| ---------------- | ------------------------------------------------------------------ |
+| **MIT**          | Very permissive license, most common in the npm ecosystem          |
+| **Apache-2.0**   | Permissive with patent protection                                  |
+| **BSD-2-Clause** | Permissive, simplified version (2 clauses)                         |
+| **BSD-3-Clause** | Permissive, original version (3 clauses)                           |
+| **ISC**          | Equivalent to MIT, simplified                                      |
+| **0BSD**         | Public domain, no restrictions                                     |
+| **Unlicense**    | Explicit public domain                                             |
 
-**Pourquoi ces licences ?**
+**Why these licenses?**
 
-Toutes ces licences sont **permissives** et permettent :
+All these licenses are **permissive** and allow:
 
-- L'utilisation commerciale
-- La modification du code
-- La distribution
-- L'utilisation privee
+- Commercial use
+- Code modification
+- Distribution
+- Private use
 
-Elles n'imposent **pas** de partager le code source (contrairement aux licences copyleft comme GPL), ce qui est important pour un projet pouvant etre utilise dans des contextes varies.
+They **do not** require sharing source code (unlike copyleft licenses like GPL), which is important for a project that may be used in various contexts.
 
 ## MCP Servers
 
-Le projet est configure pour utiliser des serveurs [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) qui fournissent de la documentation et des outils aux assistants IA.
+The project is configured to use [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) servers that provide documentation and tools to AI assistants.
 
 ### Configuration
 
-Les serveurs MCP sont configures dans `.mcp.json` :
+MCP servers are configured in `.mcp.json`:
 
 ```json
 {
@@ -211,58 +211,58 @@ Les serveurs MCP sont configures dans `.mcp.json` :
 }
 ```
 
-### Serveurs disponibles
+### Available Servers
 
-| Serveur         | Description                                                |
-| --------------- | ---------------------------------------------------------- |
-| `effect-mcp`    | Documentation Effect.js                                    |
-| `svelte-mcp`    | Documentation Svelte 5 et SvelteKit                        |
-| `appwrite-docs` | Documentation Appwrite                                     |
-| `appwrite-api`  | API Appwrite (requires env vars)                           |
-| `openalex`      | API OpenAlex pour la recherche academique (240M+ articles) |
+| Server          | Description                                               |
+| --------------- | --------------------------------------------------------- |
+| `effect-mcp`    | Effect.js documentation                                   |
+| `svelte-mcp`    | Svelte 5 and SvelteKit documentation                      |
+| `appwrite-docs` | Appwrite documentation                                    |
+| `appwrite-api`  | Appwrite API (requires env vars)                          |
+| `openalex`      | OpenAlex API for academic research (240M+ articles)       |
 
-### Pre-requis
+### Prerequisites
 
-- **Node.js/npm** : Pour `effect-mcp`, `svelte-mcp`, `appwrite-docs`, `openalex`
-- **uv (Python)** : Pour `appwrite-api` (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- **Node.js/npm**: For `effect-mcp`, `svelte-mcp`, `appwrite-docs`, `openalex`
+- **uv (Python)**: For `appwrite-api` (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
-### Variables d'environnement pour Appwrite
+### Environment Variables for Appwrite
 
-Pour utiliser le serveur `appwrite-api`, configurez :
+To use the `appwrite-api` server, configure:
 
 ```bash
-export APPWRITE_PROJECT_ID="votre_project_id"
-export APPWRITE_API_KEY="votre_api_key"
-export APPWRITE_ENDPOINT="https://appwrite.votredomaine.com/v1"
+export APPWRITE_PROJECT_ID="your_project_id"
+export APPWRITE_API_KEY="your_api_key"
+export APPWRITE_ENDPOINT="https://appwrite.yourdomain.com/v1"
 ```
 
-## Plateformes tierces
+## Third-party Platforms
 
-Atlas s'appuie sur deux plateformes tierces pour ses fonctionnalités :
+Atlas relies on two third-party platforms for its features:
 
 ### REDCap (Research Electronic Data Capture)
 
-[REDCap](https://project-redcap.org/) est une application web sécurisée développée par l'Université Vanderbilt pour la création et la gestion d'enquêtes en ligne et de bases de données de recherche.
+[REDCap](https://project-redcap.org/) is a secure web application developed by Vanderbilt University for creating and managing online surveys and research databases.
 
-| Caractéristique | Valeur |
-|-----------------|--------|
-| Institutions partenaires | 8 000+ |
-| Pays | 164 |
-| Citations scientifiques | 51 000+ |
-| Conformité | RGPD, HIPAA, 21 CFR Part 11 |
-| Coût | Gratuit pour les membres du Consortium |
+| Feature | Value |
+|---------|-------|
+| Partner institutions | 8,000+ |
+| Countries | 164 |
+| Scientific citations | 51,000+ |
+| Compliance | GDPR, HIPAA, 21 CFR Part 11 |
+| Cost | Free for Consortium members |
 
-REDCap permet la collecte de données sur le web et sur mobile (y compris hors connexion). Le module CRF fournit des outils TypeScript pour interagir avec l'API REDCap.
+REDCap enables web and mobile data collection (including offline). The CRF module provides TypeScript tools for interacting with the REDCap API.
 
 ### Appwrite
 
-[Appwrite](https://appwrite.io/) est une plateforme backend open source fournissant les services essentiels pour le développement d'applications :
+[Appwrite](https://appwrite.io/) is an open-source backend platform providing essential services for application development:
 
 | Service | Description |
 |---------|-------------|
-| Authentification | Connexion par email, OAuth, liens magiques |
-| Base de données | Stockage et requêtage de données |
-| Stockage | Gestion de fichiers avec chiffrement |
-| Fonctions | Exécution de code serverless |
+| Authentication | Login via email, OAuth, magic links |
+| Database | Data storage and querying |
+| Storage | File management with encryption |
+| Functions | Serverless code execution |
 
-Appwrite est conforme aux normes SOC-2, RGPD et HIPAA. Les projets ECRIN et AMARRE utilisent Appwrite pour l'authentification et la gestion des données utilisateurs.
+Appwrite is compliant with SOC-2, GDPR and HIPAA standards. The ECRIN and AMARRE projects use Appwrite for authentication and user data management.

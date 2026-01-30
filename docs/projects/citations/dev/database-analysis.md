@@ -1,135 +1,135 @@
-# Analyse des bases de données pour Atlas Verify
+# Database Analysis for Atlas Verify
 
-Ce document analyse les bases de données open source adaptées au stockage, requêtage et mise à jour des données de fiabilisation bibliographique sur Kubernetes.
+This document analyzes open source databases suitable for storing, querying, and updating bibliographic verification data on Kubernetes.
 
-> **Voir aussi :**
-> - [Fiabilisation auteur](./author-verification.md) - Modèle de données et workflows de vérification
-> - [Profil chercheur](./researcher-profile.md) - Reconstruction carrière, expertises, collaborations
-> - [Bases avancées & Recherche](./advanced-databases.md) - ArangoDB, vector search, recherche multi-bases
+> **See also:**
+> - [Author Verification](./author-verification.md) - Data model and verification workflows
+> - [Researcher Profile](./researcher-profile.md) - Career reconstruction, expertise, collaborations
+> - [Advanced Databases & Search](./advanced-databases.md) - ArangoDB, vector search, multi-database search
 
-## Exigences
+## Requirements
 
-### Caractéristiques des données
+### Data Characteristics
 
-| Aspect | Exigence |
-|--------|----------|
-| **Volume** | ~10M raw records, ~1M profils, ~100M candidats potentiels |
-| **Vélocité** | Import batch initial, puis ~10k updates/jour |
-| **Variété** | JSONB (données brutes hétérogènes) + relationnel (liens vérifiés) |
-| **Véracité** | Audit trail complet, immutabilité des décisions |
+| Aspect | Requirement |
+|--------|-------------|
+| **Volume** | ~10M raw records, ~1M profiles, ~100M potential candidates |
+| **Velocity** | Initial batch import, then ~10k updates/day |
+| **Variety** | JSONB (heterogeneous raw data) + relational (verified links) |
+| **Veracity** | Complete audit trail, decision immutability |
 
-### Patterns d'accès
+### Access Patterns
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                        PATTERNS D'ACCÈS PRINCIPAUX                           │
+│                          MAIN ACCESS PATTERNS                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  LECTURES (80%)                                                              │
-│  ─────────────                                                               │
-│  1. Candidats pendants par profil (paginated, filtré, trié)                 │
-│  2. Publications vérifiées par profil (paginated, recherche full-text)      │
-│  3. Détail d'un candidat avec sources brutes jointes                        │
-│  4. Statistiques agrégées par profil                                        │
-│  5. Recherche full-text sur titres et auteurs                               │
+│  READS (80%)                                                                 │
+│  ───────────                                                                 │
+│  1. Pending candidates by profile (paginated, filtered, sorted)             │
+│  2. Verified publications by profile (paginated, full-text search)          │
+│  3. Candidate detail with joined raw sources                                │
+│  4. Aggregated statistics by profile                                        │
+│  5. Full-text search on titles and authors                                  │
 │                                                                              │
-│  ÉCRITURES (20%)                                                             │
-│  ──────────────                                                              │
-│  1. Import batch de raw records (INSERT bulk)                               │
-│  2. Création de candidats (INSERT bulk après matching)                      │
-│  3. Décisions de vérification (INSERT + UPDATE status)                      │
-│  4. Mise à jour profil utilisateur (UPDATE ponctuel)                        │
+│  WRITES (20%)                                                                │
+│  ────────────                                                                │
+│  1. Batch import of raw records (bulk INSERT)                               │
+│  2. Candidate creation (bulk INSERT after matching)                         │
+│  3. Verification decisions (INSERT + UPDATE status)                         │
+│  4. User profile update (occasional UPDATE)                                 │
 │                                                                              │
-│  PATTERNS SPÉCIAUX                                                           │
-│  ─────────────────                                                           │
-│  1. Déduplication par checksum (UPSERT)                                     │
-│  2. Requêtes JSONB (extraction champs, GIN indexes)                         │
-│  3. Time-series pour audit trail (append-only)                              │
-│  4. Full-text search multilingue                                            │
+│  SPECIAL PATTERNS                                                            │
+│  ────────────────                                                            │
+│  1. Deduplication by checksum (UPSERT)                                      │
+│  2. JSONB queries (field extraction, GIN indexes)                           │
+│  3. Time-series for audit trail (append-only)                               │
+│  4. Multilingual full-text search                                           │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Exigences Kubernetes
+### Kubernetes Requirements
 
-| Aspect | Exigence |
-|--------|----------|
-| **Haute disponibilité** | Réplication synchrone, failover automatique |
-| **Scalabilité** | Scale horizontale pour les lectures |
-| **Backup** | Point-in-time recovery, backups S3 |
-| **Observabilité** | Métriques Prometheus, logs structurés |
-| **Opérations** | Helm charts matures, operators Kubernetes |
+| Aspect | Requirement |
+|--------|-------------|
+| **High availability** | Synchronous replication, automatic failover |
+| **Scalability** | Horizontal scale for reads |
+| **Backup** | Point-in-time recovery, S3 backups |
+| **Observability** | Prometheus metrics, structured logs |
+| **Operations** | Mature Helm charts, Kubernetes operators |
 
 ---
 
-## Analyse des solutions
+## Solution Analysis
 
 ### 1. PostgreSQL
 
-#### Présentation
+#### Overview
 
-PostgreSQL est la base relationnelle open source la plus complète, avec un excellent support JSONB et des extensions puissantes.
+PostgreSQL is the most complete open source relational database, with excellent JSONB support and powerful extensions.
 
-#### Points forts pour Atlas Verify
+#### Strengths for Atlas Verify
 
-| Aspect | Évaluation |
+| Aspect | Evaluation |
 |--------|------------|
-| **JSONB** | ⭐⭐⭐⭐⭐ Excellent - GIN indexes, opérateurs, fonctions |
-| **Relationnel** | ⭐⭐⭐⭐⭐ ACID complet, FK, triggers |
-| **Full-text** | ⭐⭐⭐⭐ Bon - tsvector, multilangue |
-| **Scalabilité** | ⭐⭐⭐ Moyen - réplication read, pas de sharding natif |
-| **Kubernetes** | ⭐⭐⭐⭐⭐ Operators matures (CloudNativePG, Zalando, CrunchyData) |
+| **JSONB** | Excellent - GIN indexes, operators, functions |
+| **Relational** | Full ACID, FK, triggers |
+| **Full-text** | Good - tsvector, multilingual |
+| **Scalability** | Medium - read replication, no native sharding |
+| **Kubernetes** | Mature operators (CloudNativePG, Zalando, CrunchyData) |
 
-#### Operators Kubernetes
+#### Kubernetes Operators
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    POSTGRESQL OPERATORS KUBERNETES                           │
+│                      POSTGRESQL KUBERNETES OPERATORS                         │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  CLOUDNATIVEPG                                                               │
 │  ─────────────                                                               │
-│  Maintenu par : EDB (EnterpriseDB)                                          │
-│  Maturité     : ⭐⭐⭐⭐⭐ Production-ready, CNCF Sandbox                    │
-│  Features     : HA, backups S3, PITR, rolling updates, connection pooling   │
+│  Maintained by: EDB (EnterpriseDB)                                          │
+│  Maturity     : Production-ready, CNCF Sandbox                              │
+│  Features     : HA, S3 backups, PITR, rolling updates, connection pooling   │
 │  Helm         : cloudnative-pg/cloudnative-pg                               │
 │  Docs         : https://cloudnative-pg.io                                   │
 │                                                                              │
 │  ZALANDO POSTGRES OPERATOR                                                   │
 │  ────────────────────────                                                    │
-│  Maintenu par : Zalando                                                     │
-│  Maturité     : ⭐⭐⭐⭐⭐ Production-ready, utilisé en interne             │
-│  Features     : HA (Patroni), backups WAL-G, connection pooling (PgBouncer) │
+│  Maintained by: Zalando                                                     │
+│  Maturity     : Production-ready, used internally                           │
+│  Features     : HA (Patroni), WAL-G backups, connection pooling (PgBouncer) │
 │  Helm         : postgres-operator-charts/postgres-operator                  │
 │  Docs         : https://github.com/zalando/postgres-operator                │
 │                                                                              │
 │  CRUNCHYDATA PGO                                                             │
 │  ───────────────                                                             │
-│  Maintenu par : Crunchy Data                                                │
-│  Maturité     : ⭐⭐⭐⭐⭐ Enterprise-grade                                  │
-│  Features     : HA, pgBackRest, monitoring intégré, pgBouncer               │
-│  Helm         : Propriétaire (kubectl apply)                                │
+│  Maintained by: Crunchy Data                                                │
+│  Maturity     : Enterprise-grade                                            │
+│  Features     : HA, pgBackRest, built-in monitoring, pgBouncer              │
+│  Helm         : Proprietary (kubectl apply)                                 │
 │  Docs         : https://access.crunchydata.com/documentation/postgres-operator│
 │                                                                              │
-│  RECOMMANDATION : CloudNativePG                                              │
-│  - Conception cloud-native (pas de portage)                                 │
-│  - Meilleure intégration Kubernetes (CRDs propres)                          │
-│  - Communauté active, CNCF backing                                          │
-│  - Documentation excellente                                                  │
+│  RECOMMENDATION: CloudNativePG                                               │
+│  - Cloud-native design (not a port)                                         │
+│  - Best Kubernetes integration (clean CRDs)                                 │
+│  - Active community, CNCF backing                                           │
+│  - Excellent documentation                                                   │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Schéma optimisé
+#### Optimized Schema
 
 ```sql
--- Extensions nécessaires
+-- Required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pg_trgm";     -- Similarité texte
-CREATE EXTENSION IF NOT EXISTS "btree_gin";   -- Index composites
+CREATE EXTENSION IF NOT EXISTS "pg_trgm";     -- Text similarity
+CREATE EXTENSION IF NOT EXISTS "btree_gin";   -- Composite indexes
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- RAW RECORDS (données immutables)
+-- RAW RECORDS (immutable data)
 -- ═══════════════════════════════════════════════════════════════════════════
 
 CREATE TABLE raw_records (
@@ -141,17 +141,17 @@ CREATE TABLE raw_records (
   fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   checksum TEXT NOT NULL,
 
-  -- Contrainte d'unicité pour déduplication
+  -- Uniqueness constraint for deduplication
   CONSTRAINT raw_records_source_unique UNIQUE (source, source_id, checksum)
 );
 
--- Index GIN pour requêtes JSONB
+-- GIN index for JSONB queries
 CREATE INDEX idx_raw_records_data ON raw_records USING GIN (data);
 
--- Index pour recherche par source
+-- Index for search by source
 CREATE INDEX idx_raw_records_source ON raw_records (source, fetched_at DESC);
 
--- Partitionnement par date (optionnel pour gros volumes)
+-- Date-based partitioning (optional for large volumes)
 -- CREATE TABLE raw_records (...) PARTITION BY RANGE (fetched_at);
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -214,15 +214,15 @@ CREATE TABLE candidate_matches (
   CONSTRAINT candidate_unique UNIQUE (raw_record_id, profile_id)
 );
 
--- Index principal pour la queue de vérification
+-- Main index for verification queue
 CREATE INDEX idx_candidates_queue ON candidate_matches (profile_id, status, match_score DESC)
   WHERE status IN ('pending', 'uncertain');
 
--- Index pour les statistiques
+-- Index for statistics
 CREATE INDEX idx_candidates_stats ON candidate_matches (profile_id, status);
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- VERIFICATION ACTS (audit trail immutable)
+-- VERIFICATION ACTS (immutable audit trail)
 -- ═══════════════════════════════════════════════════════════════════════════
 
 CREATE TABLE verification_acts (
@@ -239,10 +239,10 @@ CREATE TABLE verification_acts (
   client_info JSONB
 );
 
--- Index pour l'historique par profil
+-- Index for history by profile
 CREATE INDEX idx_verifications_profile ON verification_acts (profile_id, decided_at DESC);
 
--- Index pour audit par candidat
+-- Index for audit by candidate
 CREATE INDEX idx_verifications_candidate ON verification_acts (candidate_match_id, decided_at DESC);
 
 -- ═══════════════════════════════════════════════════════════════════════════
@@ -262,7 +262,7 @@ CREATE TABLE canonical_works (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Full-text search sur les titres
+-- Full-text search on titles
 CREATE INDEX idx_works_title_fts ON canonical_works
   USING GIN (to_tsvector('english', title));
 
@@ -311,7 +311,7 @@ CREATE INDEX idx_notifications_unread ON notifications (profile_id, created_at D
   WHERE read = FALSE;
 
 -- ═══════════════════════════════════════════════════════════════════════════
--- VUES MATÉRIALISÉES POUR STATISTIQUES
+-- MATERIALIZED VIEWS FOR STATISTICS
 -- ═══════════════════════════════════════════════════════════════════════════
 
 CREATE MATERIALIZED VIEW profile_stats AS
@@ -332,11 +332,11 @@ GROUP BY p.id;
 
 CREATE UNIQUE INDEX idx_profile_stats ON profile_stats (profile_id);
 
--- Refresh automatique via pg_cron ou job applicatif
+-- Automatic refresh via pg_cron or application job
 -- SELECT cron.schedule('refresh-stats', '*/15 * * * *', 'REFRESH MATERIALIZED VIEW CONCURRENTLY profile_stats');
 ```
 
-#### Manifest CloudNativePG
+#### CloudNativePG Manifest
 
 ```yaml
 apiVersion: postgresql.cnpg.io/v1
@@ -361,7 +361,7 @@ spec:
 
   storage:
     size: 50Gi
-    storageClass: local-path  # ou ceph-block, longhorn, etc.
+    storageClass: local-path  # or ceph-block, longhorn, etc.
 
   resources:
     requests:
@@ -396,48 +396,48 @@ spec:
 
 ### 2. CockroachDB
 
-#### Présentation
+#### Overview
 
-CockroachDB est une base distribuée compatible PostgreSQL avec sharding automatique et réplication multi-région.
+CockroachDB is a distributed PostgreSQL-compatible database with automatic sharding and multi-region replication.
 
-#### Points forts
+#### Strengths
 
-| Aspect | Évaluation |
+| Aspect | Evaluation |
 |--------|------------|
-| **JSONB** | ⭐⭐⭐⭐ Bon - compatible PostgreSQL |
-| **Relationnel** | ⭐⭐⭐⭐ Bon - SQL standard, quelques limitations |
-| **Full-text** | ⭐⭐⭐ Moyen - basique, pas de tsvector |
-| **Scalabilité** | ⭐⭐⭐⭐⭐ Excellent - sharding auto, scale horizontal |
-| **Kubernetes** | ⭐⭐⭐⭐ Bon - Operator officiel |
+| **JSONB** | Good - PostgreSQL compatible |
+| **Relational** | Good - standard SQL, some limitations |
+| **Full-text** | Medium - basic, no tsvector |
+| **Scalability** | Excellent - auto sharding, horizontal scale |
+| **Kubernetes** | Good - official operator |
 
-#### Quand choisir CockroachDB
+#### When to Choose CockroachDB
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    COCKROACHDB - CAS D'USAGE                                 │
+│                        COCKROACHDB - USE CASES                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  RECOMMANDÉ SI :                                                             │
-│  ─────────────                                                               │
-│  ✓ Volume > 100M records avec croissance rapide                             │
-│  ✓ Multi-région (Europe, US, Asie)                                          │
-│  ✓ Scale horizontal impératif                                               │
-│  ✓ Équipe familière avec PostgreSQL                                         │
+│  RECOMMENDED IF:                                                             │
+│  ───────────────                                                             │
+│  ✓ Volume > 100M records with rapid growth                                  │
+│  ✓ Multi-region (Europe, US, Asia)                                          │
+│  ✓ Horizontal scale imperative                                              │
+│  ✓ Team familiar with PostgreSQL                                            │
 │                                                                              │
-│  À ÉVITER SI :                                                               │
-│  ────────────                                                                │
-│  ✗ Full-text search avancé requis                                           │
-│  ✗ Extensions PostgreSQL spécifiques (pg_trgm, etc.)                        │
-│  ✗ Contraintes de coûts (plus complexe à opérer)                            │
+│  AVOID IF:                                                                   │
+│  ──────────                                                                  │
+│  ✗ Advanced full-text search required                                       │
+│  ✗ Specific PostgreSQL extensions (pg_trgm, etc.)                           │
+│  ✗ Cost constraints (more complex to operate)                               │
 │  ✗ Volume < 10M records (over-engineering)                                  │
 │                                                                              │
-│  POUR ATLAS VERIFY :                                                         │
-│  ──────────────────                                                          │
-│  Volume estimé : 10M records → PostgreSQL suffisant                         │
-│  Full-text : important → PostgreSQL préférable                              │
-│  Régions : mono-région probable → PostgreSQL suffisant                      │
+│  FOR ATLAS VERIFY:                                                           │
+│  ─────────────────                                                           │
+│  Estimated volume: 10M records → PostgreSQL sufficient                      │
+│  Full-text: important → PostgreSQL preferred                                │
+│  Regions: single-region likely → PostgreSQL sufficient                      │
 │                                                                              │
-│  VERDICT : Non recommandé pour la v1, à reconsidérer si scale massif       │
+│  VERDICT: Not recommended for v1, reconsider if massive scale needed        │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -446,21 +446,21 @@ CockroachDB est une base distribuée compatible PostgreSQL avec sharding automat
 
 ### 3. MongoDB
 
-#### Présentation
+#### Overview
 
-MongoDB est la base documentaire la plus populaire, avec un modèle flexible et une excellente scalabilité horizontale.
+MongoDB is the most popular document database, with a flexible model and excellent horizontal scalability.
 
-#### Points forts
+#### Strengths
 
-| Aspect | Évaluation |
+| Aspect | Evaluation |
 |--------|------------|
-| **Documents** | ⭐⭐⭐⭐⭐ Excellent - modèle natif, schemaless |
-| **Relationnel** | ⭐⭐ Faible - pas de FK, joins limités |
-| **Full-text** | ⭐⭐⭐⭐ Bon - Atlas Search / lucene-based |
-| **Scalabilité** | ⭐⭐⭐⭐⭐ Excellent - sharding natif |
-| **Kubernetes** | ⭐⭐⭐⭐ Bon - Community Operator, MongoDB Ops Manager |
+| **Documents** | Excellent - native model, schemaless |
+| **Relational** | Weak - no FK, limited joins |
+| **Full-text** | Good - Atlas Search / lucene-based |
+| **Scalability** | Excellent - native sharding |
+| **Kubernetes** | Good - Community Operator, MongoDB Ops Manager |
 
-#### Modèle documentaire pour Atlas Verify
+#### Document Model for Atlas Verify
 
 ```javascript
 // Collection: raw_records
@@ -470,7 +470,7 @@ MongoDB est la base documentaire la plus populaire, avec un modèle flexible et 
   sourceId: "W2741809807",
   entityType: "work",
   data: {
-    // Données brutes complètes de la source
+    // Complete raw data from source
   },
   fetchedAt: ISODate("2025-01-24T10:00:00Z"),
   checksum: "sha256:..."
@@ -504,7 +504,7 @@ MongoDB est la base documentaire la plus populaire, avec un modèle flexible et 
     { type: "affiliation_match", weight: 0.4 }
   ],
   status: "pending",
-  // Dénormalisation pour éviter les lookups
+  // Denormalization to avoid lookups
   rawRecordSummary: {
     title: "Attention Is All You Need",
     source: "openalex",
@@ -520,7 +520,7 @@ MongoDB est la base documentaire la plus populaire, avec un modèle flexible et 
   profileId: ObjectId("..."),
   decision: "confirm",
   confidence: "certain",
-  notes: "C'est bien mon article",
+  notes: "This is indeed my article",
   evidence: [],
   decidedAt: ISODate("..."),
   decidedBy: "user:123",
@@ -528,38 +528,38 @@ MongoDB est la base documentaire la plus populaire, avec un modèle flexible et 
 }
 ```
 
-#### Analyse
+#### Analysis
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                      MONGODB - ANALYSE ATLAS VERIFY                          │
+│                      MONGODB - ATLAS VERIFY ANALYSIS                         │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  AVANTAGES :                                                                 │
-│  ──────────                                                                  │
-│  ✓ Modèle naturel pour raw_records (documents hétérogènes)                  │
-│  ✓ Dénormalisation performante (embarquer les résumés)                      │
-│  ✓ Change streams pour temps réel                                           │
-│  ✓ Atlas Search excellent pour full-text                                    │
+│  ADVANTAGES:                                                                 │
+│  ───────────                                                                 │
+│  ✓ Natural model for raw_records (heterogeneous documents)                  │
+│  ✓ Performant denormalization (embed summaries)                             │
+│  ✓ Change streams for real-time                                             │
+│  ✓ Excellent Atlas Search for full-text                                     │
 │                                                                              │
-│  INCONVÉNIENTS :                                                             │
-│  ───────────────                                                             │
-│  ✗ Pas de vraies transactions multi-documents (v4.0+ limité)                │
-│  ✗ Intégrité référentielle manuelle                                         │
-│  ✗ Opérateur Kubernetes moins mature que PostgreSQL                         │
-│  ✗ Coût licence pour fonctionnalités avancées (Atlas)                       │
-│  ✗ Audit trail plus complexe à garantir                                     │
+│  DISADVANTAGES:                                                              │
+│  ──────────────                                                              │
+│  ✗ No true multi-document transactions (v4.0+ limited)                      │
+│  ✗ Manual referential integrity                                             │
+│  ✗ Less mature Kubernetes operator than PostgreSQL                          │
+│  ✗ License cost for advanced features (Atlas)                               │
+│  ✗ More complex to guarantee audit trail                                    │
 │                                                                              │
-│  VERDICT :                                                                   │
+│  VERDICT:                                                                    │
 │  ────────                                                                    │
-│  MongoDB serait adapté pour le stockage des raw_records uniquement,         │
-│  mais le besoin d'intégrité forte pour les décisions de vérification        │
-│  favorise PostgreSQL.                                                        │
+│  MongoDB would be suitable for raw_records storage only,                    │
+│  but the need for strong integrity for verification decisions               │
+│  favors PostgreSQL.                                                          │
 │                                                                              │
-│  OPTION HYBRIDE POSSIBLE :                                                   │
-│  - MongoDB pour raw_records (volume, flexibilité)                           │
-│  - PostgreSQL pour profils, candidats, vérifications (intégrité)            │
-│  → Complexité opérationnelle accrue, à éviter sauf besoin prouvé            │
+│  HYBRID OPTION POSSIBLE:                                                     │
+│  - MongoDB for raw_records (volume, flexibility)                            │
+│  - PostgreSQL for profiles, candidates, verifications (integrity)           │
+│  → Increased operational complexity, avoid unless proven need               │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -568,91 +568,91 @@ MongoDB est la base documentaire la plus populaire, avec un modèle flexible et 
 
 ### 4. ScyllaDB
 
-#### Présentation
+#### Overview
 
-ScyllaDB est une réécriture C++ de Cassandra, optimisée pour les performances et la scalabilité massive.
+ScyllaDB is a C++ rewrite of Cassandra, optimized for performance and massive scalability.
 
-#### Points forts
+#### Strengths
 
-| Aspect | Évaluation |
+| Aspect | Evaluation |
 |--------|------------|
-| **Colonnes larges** | ⭐⭐⭐⭐⭐ Excellent - modèle Cassandra |
-| **Scalabilité** | ⭐⭐⭐⭐⭐ Excellent - scale linéaire |
-| **Performances** | ⭐⭐⭐⭐⭐ Excellent - très faible latence |
-| **Flexibilité** | ⭐⭐ Faible - modèle de requêtes rigide |
-| **Kubernetes** | ⭐⭐⭐⭐ Bon - Scylla Operator |
+| **Wide columns** | Excellent - Cassandra model |
+| **Scalability** | Excellent - linear scale |
+| **Performance** | Excellent - very low latency |
+| **Flexibility** | Weak - rigid query model |
+| **Kubernetes** | Good - Scylla Operator |
 
-#### Analyse
+#### Analysis
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                      SCYLLADB - ANALYSE ATLAS VERIFY                         │
+│                      SCYLLADB - ATLAS VERIFY ANALYSIS                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  CAS D'USAGE IDÉAL :                                                         │
-│  ──────────────────                                                          │
-│  - Time-series à très haut débit                                            │
-│  - Logs / événements                                                         │
-│  - Cache distribué persistant                                               │
+│  IDEAL USE CASES:                                                            │
+│  ─────────────────                                                           │
+│  - Very high-throughput time-series                                         │
+│  - Logs / events                                                             │
+│  - Persistent distributed cache                                             │
 │                                                                              │
-│  POUR ATLAS VERIFY :                                                         │
-│  ──────────────────                                                          │
-│  ✗ Modèle de requêtes trop rigide pour notre cas                            │
-│  ✗ Pas adapté aux requêtes ad-hoc (filtres dynamiques)                      │
-│  ✗ Joins impossibles                                                         │
-│  ✗ Over-engineering pour le volume attendu                                  │
+│  FOR ATLAS VERIFY:                                                           │
+│  ─────────────────                                                           │
+│  ✗ Query model too rigid for our case                                       │
+│  ✗ Not suitable for ad-hoc queries (dynamic filters)                        │
+│  ✗ No joins                                                                  │
+│  ✗ Over-engineering for expected volume                                     │
 │                                                                              │
-│  ÉVENTUELLEMENT UTILE POUR :                                                 │
-│  ──────────────────────────                                                  │
-│  - Stockage des métriques (si volume énorme)                                │
-│  - Audit logs (si rétention très longue)                                    │
+│  POTENTIALLY USEFUL FOR:                                                     │
+│  ─────────────────────────                                                   │
+│  - Metrics storage (if huge volume)                                         │
+│  - Audit logs (if very long retention)                                      │
 │                                                                              │
-│  VERDICT : Non recommandé                                                    │
+│  VERDICT: Not recommended                                                    │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### 5. Solutions de recherche
+### 5. Search Solutions
 
 #### Meilisearch vs Elasticsearch vs Typesense
 
-Pour le full-text search sur les titres et noms d'auteurs, une solution dédiée peut compléter PostgreSQL.
+For full-text search on titles and author names, a dedicated solution can complement PostgreSQL.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                      MOTEURS DE RECHERCHE COMPARÉS                           │
+│                        SEARCH ENGINES COMPARED                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │                   │ Meilisearch │ Elasticsearch │ Typesense │               │
 │  ─────────────────┼─────────────┼───────────────┼───────────┤               │
-│  Facilité         │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐         │ ⭐⭐⭐⭐    │               │
+│  Ease of use      │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐         │ ⭐⭐⭐⭐    │               │
 │  Performance      │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐       │ ⭐⭐⭐⭐⭐  │               │
 │  Features         │ ⭐⭐⭐⭐      │ ⭐⭐⭐⭐⭐     │ ⭐⭐⭐⭐    │               │
 │  Kubernetes       │ ⭐⭐⭐⭐      │ ⭐⭐⭐⭐⭐     │ ⭐⭐⭐      │               │
-│  Ressources       │ ⭐⭐⭐⭐⭐    │ ⭐⭐          │ ⭐⭐⭐⭐    │               │
+│  Resources        │ ⭐⭐⭐⭐⭐    │ ⭐⭐          │ ⭐⭐⭐⭐    │               │
 │  Typo-tolerance   │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐        │ ⭐⭐⭐⭐⭐  │               │
 │  Multi-tenant     │ ⭐⭐⭐⭐      │ ⭐⭐⭐⭐⭐     │ ⭐⭐⭐⭐    │               │
-│  Licence          │ MIT          │ Dual (SSPL)   │ GPL-3      │               │
+│  License          │ MIT          │ Dual (SSPL)   │ GPL-3      │               │
 │  ─────────────────┴─────────────┴───────────────┴───────────┘               │
 │                                                                              │
-│  RECOMMANDATION : Meilisearch                                                │
-│  ─────────────────────────────                                               │
-│  - Très facile à configurer et opérer                                       │
-│  - Excellent pour la recherche de titres/noms                               │
-│  - Faible empreinte mémoire                                                  │
-│  - Typo-tolerance native (important pour noms d'auteurs)                    │
-│  - Helm chart officiel disponible                                            │
+│  RECOMMENDATION: Meilisearch                                                 │
+│  ────────────────────────────                                                │
+│  - Very easy to configure and operate                                       │
+│  - Excellent for title/name search                                          │
+│  - Low memory footprint                                                      │
+│  - Native typo-tolerance (important for author names)                       │
+│  - Official Helm chart available                                             │
 │                                                                              │
-│  ALTERNATIVE : PostgreSQL full-text suffisant pour v1                       │
-│  - pg_trgm + tsvector couvrent 80% des besoins                              │
-│  - Ajouter Meilisearch si UX recherche insuffisante                         │
+│  ALTERNATIVE: PostgreSQL full-text sufficient for v1                        │
+│  - pg_trgm + tsvector cover 80% of needs                                    │
+│  - Add Meilisearch if search UX insufficient                                │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Manifest Meilisearch
+#### Meilisearch Manifest
 
 ```yaml
 apiVersion: apps/v1
@@ -721,19 +721,19 @@ spec:
 
 ### 6. Redis
 
-Redis est essentiel comme cache et queue de jobs, pas comme base principale.
+Redis is essential as a cache and job queue, not as a primary database.
 
-#### Usages dans Atlas Verify
+#### Uses in Atlas Verify
 
-| Usage | Justification |
-|-------|---------------|
-| **Sessions** | Stockage JWT/cookies de session |
-| **Cache** | Résultats de matching, profils fréquents |
-| **Rate limiting** | Compteurs par utilisateur/source |
-| **Job queue** | BullMQ pour imports et notifications |
-| **Pub/Sub** | Notifications temps réel (SSE backend) |
+| Use | Justification |
+|-----|---------------|
+| **Sessions** | JWT/session cookie storage |
+| **Cache** | Matching results, frequent profiles |
+| **Rate limiting** | Counters per user/source |
+| **Job queue** | BullMQ for imports and notifications |
+| **Pub/Sub** | Real-time notifications (SSE backend) |
 
-#### Manifest Redis (Bitnami)
+#### Redis Manifest (Bitnami)
 
 ```yaml
 apiVersion: v1
@@ -746,7 +746,7 @@ metadata:
 # helm install redis bitnami/redis -n atlas-verify -f values.yaml
 
 # values.yaml
-architecture: standalone  # ou 'replication' pour HA
+architecture: standalone  # or 'replication' for HA
 
 auth:
   enabled: true
@@ -774,13 +774,13 @@ metrics:
 
 ---
 
-## Recommandation finale
+## Final Recommendation
 
-### Architecture recommandée pour Atlas Verify v1
+### Recommended Architecture for Atlas Verify v1
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                  ARCHITECTURE DONNÉES RECOMMANDÉE                            │
+│                    RECOMMENDED DATA ARCHITECTURE                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  ┌─────────────────────────────────────────────────────────────────────┐   │
@@ -819,30 +819,30 @@ metrics:
 │  │                                                                      │   │
 │  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                              │
-│  COMPOSANTS OPTIONNELS (v2+) :                                              │
-│  ─────────────────────────────                                               │
-│  • Meilisearch : si recherche full-text PostgreSQL insuffisante            │
-│  • TimescaleDB : si métriques temps-series importantes                     │
-│  • Kafka/NATS : si event-driven architecture nécessaire                    │
+│  OPTIONAL COMPONENTS (v2+):                                                 │
+│  ──────────────────────────                                                  │
+│  • Meilisearch: if PostgreSQL full-text search insufficient                │
+│  • TimescaleDB: if time-series metrics important                           │
+│  • Kafka/NATS: if event-driven architecture needed                         │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Justification
 
-| Choix | Raison |
-|-------|--------|
-| **PostgreSQL** | JSONB + relationnel + full-text dans une seule base, operators matures |
-| **CloudNativePG** | Operator cloud-native, excellente documentation, CNCF backing |
-| **Redis** | Standard pour cache/sessions, BullMQ mature |
-| **Pas MongoDB** | Intégrité transactionnelle importante, PostgreSQL JSONB suffisant |
-| **Pas CockroachDB** | Volume trop faible pour justifier la complexité |
-| **Pas Meilisearch v1** | PostgreSQL pg_trgm + tsvector suffisent initialement |
+| Choice | Reason |
+|--------|--------|
+| **PostgreSQL** | JSONB + relational + full-text in single database, mature operators |
+| **CloudNativePG** | Cloud-native operator, excellent documentation, CNCF backing |
+| **Redis** | Standard for cache/sessions, mature BullMQ |
+| **Not MongoDB** | Transactional integrity important, PostgreSQL JSONB sufficient |
+| **Not CockroachDB** | Volume too low to justify complexity |
+| **Not Meilisearch v1** | PostgreSQL pg_trgm + tsvector sufficient initially |
 
-### Estimation des ressources
+### Resource Estimation
 
-| Composant | Instances | CPU | Mémoire | Stockage |
-|-----------|-----------|-----|---------|----------|
+| Component | Instances | CPU | Memory | Storage |
+|-----------|-----------|-----|--------|---------|
 | PostgreSQL | 3 | 2 cores | 4 Gi | 50 Gi |
 | Redis | 1-3 | 0.5 core | 512 Mi | 8 Gi |
 | API Backend | 2-4 | 0.5 core | 512 Mi | - |
@@ -850,23 +850,23 @@ metrics:
 | Frontend | 2 | 0.25 core | 256 Mi | - |
 | **Total** | ~10 pods | ~6 cores | ~8 Gi | ~60 Gi |
 
-### Évolution future
+### Future Evolution
 
 ```
-v1 (lancement)          v2 (scale)              v3 (enterprise)
-─────────────           ──────────              ────────────────
-PostgreSQL              PostgreSQL              CockroachDB
-Redis                   Redis Cluster           Redis Cluster
--                       Meilisearch             Meilisearch
--                       -                       Kafka
--                       -                       Grafana Loki
+v1 (launch)          v2 (scale)              v3 (enterprise)
+─────────────        ──────────              ────────────────
+PostgreSQL           PostgreSQL              CockroachDB
+Redis                Redis Cluster           Redis Cluster
+-                    Meilisearch             Meilisearch
+-                    -                       Kafka
+-                    -                       Grafana Loki
 ```
 
 ---
 
-## Infrastructure Kubernetes complète
+## Complete Kubernetes Infrastructure
 
-### Namespace et secrets
+### Namespace and Secrets
 
 ```yaml
 apiVersion: v1
@@ -902,7 +902,7 @@ stringData:
   SECRET_ACCESS_KEY: "minio-secret-key"
 ```
 
-### Déploiement API
+### API Deployment
 
 ```yaml
 apiVersion: apps/v1
@@ -993,7 +993,7 @@ spec:
                   number: 3000
 ```
 
-### Déploiement Worker
+### Worker Deployment
 
 ```yaml
 apiVersion: apps/v1
@@ -1035,20 +1035,20 @@ spec:
 
 ## Conclusion
 
-Pour Atlas Verify, la recommandation est :
+For Atlas Verify, the recommendation is:
 
-1. **PostgreSQL 16 avec CloudNativePG** comme base principale
-   - JSONB pour les données brutes hétérogènes
-   - Relationnel strict pour l'intégrité des vérifications
-   - Full-text search intégré
+1. **PostgreSQL 16 with CloudNativePG** as primary database
+   - JSONB for heterogeneous raw data
+   - Strict relational for verification integrity
+   - Built-in full-text search
 
-2. **Redis** pour cache, sessions et jobs
+2. **Redis** for cache, sessions, and jobs
 
-3. **Architecture monolithique modulaire** plutôt que microservices
-   - Plus simple à opérer
-   - Transactions faciles
-   - Évolutive vers microservices si besoin
+3. **Modular monolithic architecture** rather than microservices
+   - Simpler to operate
+   - Easy transactions
+   - Evolvable to microservices if needed
 
-4. **Meilisearch en option** si la recherche full-text PostgreSQL s'avère insuffisante
+4. **Meilisearch as option** if PostgreSQL full-text search proves insufficient
 
-Cette architecture supporte confortablement 10M+ records et 100k+ utilisateurs avec des ressources modestes (~6 cores, 8 Gi RAM).
+This architecture comfortably supports 10M+ records and 100k+ users with modest resources (~6 cores, 8 Gi RAM).

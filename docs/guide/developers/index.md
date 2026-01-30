@@ -1,35 +1,35 @@
-# Documentation technique
+# Technical Documentation
 
-Cette section contient la documentation technique d'Atlas destinée aux développeurs.
+This section contains the technical documentation for Atlas intended for developers.
 
-> **Vous êtes chercheur ?** Consultez plutôt :
-> - [Accueil Atlas](../) - Présentation générale
-> - [Guide Atlas Verify](/projects/citations/user/) - Documentation utilisateur pour les chercheurs
+> **Are you a researcher?** Check out instead:
+> - [Atlas Home](../) - General overview
+> - [Atlas Verify Guide](/projects/citations/user/) - User documentation for researchers
 
-## Vue d'ensemble
+## Overview
 
-Atlas est un monorepo TypeScript utilisant [Effect](https://effect.website/) pour la programmation fonctionnelle et la gestion des erreurs.
+Atlas is a TypeScript monorepo using [Effect](https://effect.website/) for functional programming and error handling.
 
-### Structure du projet
+### Project Structure
 
 ```
 atlas/
 ├── apps/
-│   └── ecrin/              # Dashboard SvelteKit (Zero Trust)
+│   └── ecrin/              # SvelteKit Dashboard (Zero Trust)
 ├── packages/
 │   ├── crf/                # REDCap client, server, CLI
-│   ├── net/                # Utilitaires réseau
-│   └── typescript-config/  # Config TypeScript partagée
-├── infra/                  # Infrastructure Kubernetes
-└── docs/                   # Documentation (ce site)
+│   ├── net/                # Network utilities
+│   └── typescript-config/  # Shared TypeScript config
+├── infra/                  # Kubernetes infrastructure
+└── docs/                   # Documentation (this site)
 ```
 
-### Stack technique
+### Tech Stack
 
-| Domaine | Technologies |
-|---------|--------------|
+| Area | Technologies |
+|------|--------------|
 | Runtime | Node.js 20+, TypeScript 5.x |
-| Framework | Effect (programmation fonctionnelle) |
+| Framework | Effect (functional programming) |
 | Frontend | SvelteKit 2, Svelte 5 (runes) |
 | Package manager | pnpm (workspaces) |
 | Build | Vite, tsup |
@@ -37,80 +37,80 @@ atlas/
 | Lint | ESLint, Prettier |
 | Kubernetes | k3d (dev), k3s (prod), Cilium, SPIRE, OPA |
 
-## Documentation par domaine
+## Documentation by Domain
 
 ### Atlas CRF (REDCap)
 
 | Document | Description |
 |----------|-------------|
-| [Client et serveur](/projects/crf/) | Intégration REDCap avec Effect |
-| [Outils CLI](./cli.md) | Commandes en ligne |
+| [Client and server](/projects/crf/) | REDCap integration with Effect |
+| [CLI Tools](./cli.md) | Command line tools |
 
 ### Atlas Citations
 
 | Document | Description |
 |----------|-------------|
-| [Vue d'ensemble](/projects/citations/dev/) | Architecture des packages |
-| [Sources bibliographiques](/projects/citations/dev/sources/) | Clients par source |
-| [Atlas Verify](/projects/citations/dev/author-verification) | Système de fiabilisation |
+| [Overview](/projects/citations/dev/) | Package architecture |
+| [Bibliographic sources](/projects/citations/dev/sources/) | Clients by source |
+| [Atlas Verify](/projects/citations/dev/author-verification) | Verification system |
 
 ### Infrastructure
 
 | Document | Description |
 |----------|-------------|
-| [Architecture générale](./architecture.md) | Patterns Effect, ESLint, scripts |
-| [Infrastructure Zero Trust](./infrastructure.md) | Kubernetes, sécurité |
+| [General architecture](./architecture.md) | Effect patterns, ESLint, scripts |
+| [Zero Trust infrastructure](./infrastructure.md) | Kubernetes, security |
 
 ### Audits
 
 | Document | Description |
 |----------|-------------|
-| [Audit des dépendances](/audit/common/dependencies-audit) | Inventaire et roadmap de mise à jour |
+| [Dependencies audit](/audit/common/dependencies-audit) | Inventory and update roadmap |
 
-## Démarrage rapide
+## Quick Start
 
 ### Installation
 
 ```bash
-# Cloner le repo
+# Clone the repo
 git clone https://github.com/univ-lehavre/atlas.git
 cd atlas
 
-# Installer les dépendances
+# Install dependencies
 pnpm install
 
-# Lancer en développement
+# Start development
 pnpm dev
 ```
 
-### Commandes principales
+### Main Commands
 
 ```bash
-pnpm dev          # Développement avec hot-reload
-pnpm build        # Build tous les packages
-pnpm test         # Tests unitaires
-pnpm lint         # Vérification du code
-pnpm ready        # Vérifications pré-commit complètes
+pnpm dev          # Development with hot-reload
+pnpm build        # Build all packages
+pnpm test         # Unit tests
+pnpm lint         # Code verification
+pnpm ready        # Complete pre-commit checks
 ```
 
-### Configuration REDCap
+### REDCap Configuration
 
 ```bash
-# Variables d'environnement
+# Environment variables
 export REDCAP_API_URL=https://redcap.example.com/api/
 export REDCAP_API_TOKEN=YOUR_32_CHAR_HEXADECIMAL_TOKEN
 
-# Tester la connexion
+# Test the connection
 pnpm -F @univ-lehavre/crf crf-redcap test
 ```
 
 <RepoDynamics />
 
-## Contribuer
+## Contributing
 
-1. Créer une branche depuis `main`
-2. Faire vos modifications
-3. Lancer `pnpm ready` pour vérifier
-4. Créer une Pull Request
+1. Create a branch from `main`
+2. Make your changes
+3. Run `pnpm ready` to verify
+4. Create a Pull Request
 
-Voir le [CONTRIBUTING.md](https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md) pour plus de détails.
+See [CONTRIBUTING.md](https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md) for more details.

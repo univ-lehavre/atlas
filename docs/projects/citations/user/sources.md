@@ -1,97 +1,97 @@
-# Les sources de données
+# Data Sources
 
-Ce guide vous explique d'où proviennent les données utilisées par Atlas Verify et comment elles sont combinées.
+This guide explains where the data used by Atlas Verify comes from and how it is combined.
 
-## Pourquoi plusieurs sources ?
+## Why Multiple Sources?
 
-Aucune base de données bibliographique n'est complète. Chaque source a ses forces et ses limites :
+No bibliographic database is complete. Each source has its strengths and limitations:
 
-| Source | Points forts | Limites |
-|--------|--------------|---------|
-| **OpenAlex** | Très complète (240M+ publications), gratuite | Affiliations parfois imprécises |
-| **ORCID** | Données saisies par les chercheurs eux-mêmes | Dépend de ce que vous avez renseigné |
-| **HAL** | Référence pour la recherche française | Principalement France |
-| **Crossref** | DOI officiels, métadonnées éditeurs | Pas d'identifiants auteurs |
-| **ArXiv** | Prépublications récentes | Sciences exactes uniquement |
+| Source | Strengths | Limitations |
+|--------|-----------|-------------|
+| **OpenAlex** | Very comprehensive (240M+ publications), free | Sometimes imprecise affiliations |
+| **ORCID** | Data entered by researchers themselves | Depends on what you have provided |
+| **HAL** | Reference for French research | Primarily France |
+| **Crossref** | Official DOIs, publisher metadata | No author identifiers |
+| **ArXiv** | Recent preprints | Exact sciences only |
 
-En combinant ces sources, Atlas Verify construit un profil plus complet et fiable.
+By combining these sources, Atlas Verify builds a more complete and reliable profile.
 
-## Les sources en détail
+## Sources in Detail
 
 ### OpenAlex
 
-**Ce que c'est** : Base de données ouverte de Microsoft Research contenant plus de 240 millions de publications scientifiques.
+**What it is**: An open database from Microsoft Research containing over 240 million scientific publications.
 
-**Ce qu'elle apporte** :
-- Vos publications avec leurs métadonnées
-- Vos affiliations détectées automatiquement
-- Vos domaines de recherche (Topics)
-- Vos métriques de citations
+**What it provides**:
+- Your publications with their metadata
+- Your automatically detected affiliations
+- Your research domains (Topics)
+- Your citation metrics
 
-**Fiabilité** : ⭐⭐⭐⭐ (très bonne pour les publications, variable pour les affiliations)
+**Reliability**: ⭐⭐⭐⭐ (very good for publications, variable for affiliations)
 
-> 💡 OpenAlex attribue automatiquement un identifiant à chaque chercheur détecté. Si vous avez un ORCID, il est lié à cet identifiant.
+> OpenAlex automatically assigns an identifier to each detected researcher. If you have an ORCID, it is linked to this identifier.
 
 ### ORCID
 
-**Ce que c'est** : Registre international d'identifiants uniques pour chercheurs, géré par une organisation à but non lucratif.
+**What it is**: An international registry of unique identifiers for researchers, managed by a non-profit organization.
 
-**Ce qu'elle apporte** :
-- Vos publications que vous avez déclarées
-- Votre parcours professionnel
-- Vos formations
-- Vos financements
+**What it provides**:
+- Your publications that you have declared
+- Your professional career
+- Your education
+- Your funding
 
-**Fiabilité** : ⭐⭐⭐⭐⭐ (données que vous avez vous-même validées)
+**Reliability**: ⭐⭐⭐⭐⭐ (data you have validated yourself)
 
-> 💡 **Conseil** : Créez et maintenez votre profil ORCID à jour. C'est gratuit et améliore considérablement la fiabilité de votre profil Atlas Verify.
+> **Tip**: Create and maintain your ORCID profile. It's free and significantly improves the reliability of your Atlas Verify profile.
 
 ### HAL (Hyper Articles en Ligne)
 
-**Ce que c'est** : Archive ouverte française gérée par le CNRS, l'Inria et d'autres institutions.
+**What it is**: A French open archive managed by CNRS, Inria, and other institutions.
 
-**Ce qu'elle apporte** :
-- Vos publications déposées en France
-- Structures de recherche françaises normalisées
-- Texte intégral souvent disponible
+**What it provides**:
+- Your publications deposited in France
+- Standardized French research structures
+- Full text often available
 
-**Fiabilité** : ⭐⭐⭐⭐ (excellente pour les auteurs français)
+**Reliability**: ⭐⭐⭐⭐ (excellent for French authors)
 
-> 💡 Si vous êtes chercheur en France, déposer vos articles sur HAL améliore votre visibilité et la qualité de votre profil.
+> If you are a researcher in France, depositing your articles on HAL improves your visibility and the quality of your profile.
 
 ### Crossref
 
-**Ce que c'est** : Registre officiel des DOI (Digital Object Identifiers), géré par les éditeurs scientifiques.
+**What it is**: The official registry of DOIs (Digital Object Identifiers), managed by scientific publishers.
 
-**Ce qu'elle apporte** :
-- Métadonnées officielles des publications
-- Liens de citation entre articles
-- Informations sur les financements
+**What it provides**:
+- Official publication metadata
+- Citation links between articles
+- Funding information
 
-**Fiabilité** : ⭐⭐⭐⭐⭐ (données officielles des éditeurs)
+**Reliability**: ⭐⭐⭐⭐⭐ (official data from publishers)
 
-> ⚠️ Crossref ne contient pas d'identifiants auteurs (pas d'ORCID systématique), ce qui rend l'attribution plus difficile.
+> Crossref does not contain author identifiers (no systematic ORCID), which makes attribution more difficult.
 
 ### ArXiv
 
-**Ce que c'est** : Serveur de prépublications pour les sciences exactes (physique, mathématiques, informatique...).
+**What it is**: A preprint server for exact sciences (physics, mathematics, computer science...).
 
-**Ce qu'elle apporte** :
-- Vos prépublications avant publication officielle
-- Versions successives de vos travaux
-- Texte intégral
+**What it provides**:
+- Your preprints before official publication
+- Successive versions of your work
+- Full text
 
-**Fiabilité** : ⭐⭐⭐ (bonne mais limitée aux sciences exactes)
+**Reliability**: ⭐⭐⭐ (good but limited to exact sciences)
 
-## Comment les sources sont combinées
+## How Sources Are Combined
 
-### Principe de fusion
+### Fusion Principle
 
-Atlas Verify ne se contente pas d'additionner les sources. Il les croise intelligemment :
+Atlas Verify doesn't just add up sources. It intelligently cross-references them:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                    VOTRE PROFIL                         │
+│                    YOUR PROFILE                         │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
 │   OpenAlex    ORCID     HAL      Crossref    ArXiv     │
@@ -100,88 +100,88 @@ Atlas Verify ne se contente pas d'additionner les sources. Il les croise intelli
 │                 │        │          │                   │
 │                 ▼        ▼          ▼                   │
 │           ┌─────────────────────────────┐               │
-│           │   Algorithme de fusion      │               │
-│           │   - Dédoublonnage           │               │
-│           │   - Résolution conflits     │               │
-│           │   - Score de confiance      │               │
+│           │   Fusion algorithm          │               │
+│           │   - Deduplication           │               │
+│           │   - Conflict resolution     │               │
+│           │   - Confidence score        │               │
 │           └─────────────────────────────┘               │
 │                         │                               │
 │                         ▼                               │
-│              Profil unifié et fiable                    │
+│              Unified and reliable profile               │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Dédoublonnage
+### Deduplication
 
-Le même article peut apparaître dans plusieurs sources :
-- Version ArXiv (prépublication)
-- Version éditeur (via Crossref)
-- Dépôt HAL (archive ouverte)
-- Déclaration ORCID (par vous)
-- Indexation OpenAlex (automatique)
+The same article may appear in multiple sources:
+- ArXiv version (preprint)
+- Publisher version (via Crossref)
+- HAL deposit (open archive)
+- ORCID declaration (by you)
+- OpenAlex indexing (automatic)
 
-Atlas Verify identifie qu'il s'agit du même article grâce au DOI et les fusionne en une seule entrée.
+Atlas Verify identifies that it's the same article using the DOI and merges them into a single entry.
 
-### Résolution des conflits
+### Conflict Resolution
 
-Quand les sources se contredisent, le système applique des règles de priorité :
+When sources contradict each other, the system applies priority rules:
 
-| Information | Source prioritaire | Raison |
-|-------------|-------------------|--------|
-| **Vos données personnelles** | ORCID | Vous les avez saisies |
-| **Date de publication** | Crossref/DOI | Donnée officielle |
-| **Affiliation au moment de la publication** | HAL > OpenAlex | Plus fiable |
-| **Domaines de recherche** | OpenAlex | Meilleure couverture |
-| **Texte intégral** | HAL > ArXiv | Accès ouvert |
+| Information | Priority source | Reason |
+|-------------|-----------------|--------|
+| **Your personal data** | ORCID | You entered it |
+| **Publication date** | Crossref/DOI | Official data |
+| **Affiliation at time of publication** | HAL > OpenAlex | More reliable |
+| **Research domains** | OpenAlex | Better coverage |
+| **Full text** | HAL > ArXiv | Open access |
 
-### Score de confiance
+### Confidence Score
 
-Chaque information reçoit un score basé sur :
-- Nombre de sources concordantes
-- Fiabilité de chaque source pour ce type d'information
-- Cohérence avec vos autres données
+Each piece of information receives a score based on:
+- Number of concordant sources
+- Reliability of each source for this type of information
+- Consistency with your other data
 
-## Que faire si une source est incorrecte ?
+## What to Do If a Source Is Incorrect?
 
-### Publication mal attribuée
+### Misattributed Publication
 
-Si une publication d'une source n'est pas la vôtre :
-1. Allez dans **Vérifier vos publications**
-2. Trouvez la publication concernée
-3. Cliquez sur **Rejeter**
-4. Indiquez la raison (homonyme, erreur de base...)
+If a publication from a source isn't yours:
+1. Go to **Verify your publications**
+2. Find the concerned publication
+3. Click on **Reject**
+4. Indicate the reason (homonym, database error...)
 
-### Affiliation incorrecte
+### Incorrect Affiliation
 
-Si une source indique une mauvaise affiliation :
-1. Allez dans **Gérer votre parcours**
-2. Corrigez ou supprimez l'affiliation erronée
-3. Votre correction sera prioritaire
+If a source indicates a wrong affiliation:
+1. Go to **Manage your career**
+2. Correct or delete the erroneous affiliation
+3. Your correction will take priority
 
-### Information manquante
+### Missing Information
 
-Si une publication ou affiliation n'apparaît pas :
-- Vérifiez qu'elle est bien dans les bases sources
-- Ajoutez-la manuellement si nécessaire
-- Ou mettez à jour votre profil ORCID (recommandé)
+If a publication or affiliation doesn't appear:
+- Check that it is indeed in the source databases
+- Add it manually if necessary
+- Or update your ORCID profile (recommended)
 
-## Fraîcheur des données
+## Data Freshness
 
-| Source | Fréquence de mise à jour | Délai de propagation |
-|--------|--------------------------|---------------------|
-| OpenAlex | Quotidienne | 1-7 jours |
-| ORCID | Temps réel | Immédiat |
-| HAL | Quotidienne | 1-2 jours |
-| Crossref | Continue | 1-30 jours |
-| ArXiv | Quotidienne | 1-2 jours |
+| Source | Update frequency | Propagation delay |
+|--------|------------------|-------------------|
+| OpenAlex | Daily | 1-7 days |
+| ORCID | Real-time | Immediate |
+| HAL | Daily | 1-2 days |
+| Crossref | Continuous | 1-30 days |
+| ArXiv | Daily | 1-2 days |
 
-> 📅 Après une nouvelle publication, comptez environ **1 à 2 semaines** avant qu'elle n'apparaisse automatiquement dans votre profil.
+> After a new publication, expect approximately **1 to 2 weeks** before it automatically appears in your profile.
 
-## Voir aussi
+## See Also
 
-- [Vérifier vos publications](./verify-publications.md) - Valider les données
-- [Gérer votre parcours](./manage-career.md) - Corriger les affiliations
-- [Profil d'expertise](./expertise-profile.md) - Basé sur ces sources
+- [Verify your publications](./verify-publications.md) - Validate the data
+- [Manage your career](./manage-career.md) - Correct affiliations
+- [Expertise profile](./expertise-profile.md) - Based on these sources
 
-**Documentation technique :** [Catalogue des sources](../dev/sources/catalog.md) - Pour les développeurs
+**Technical documentation:** [Source catalog](../dev/sources/catalog.md) - For developers

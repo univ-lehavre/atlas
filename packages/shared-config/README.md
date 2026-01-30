@@ -1,16 +1,16 @@
 # @univ-lehavre/atlas-shared-config
 
-Configuration partagée TypeScript, ESLint et Prettier pour les projets Atlas.
+Shared TypeScript, ESLint, and Prettier configuration for Atlas projects.
 
-## À propos
+## About
 
-Ce package centralise toutes les configurations de développement pour assurer la cohérence entre les packages du monorepo Atlas.
+This package centralizes all development configurations to ensure consistency across packages in the Atlas monorepo.
 
-## Fonctionnalités
+## Features
 
-- **TypeScript** : Configurations strictes pour Node.js et bibliothèques
-- **ESLint** : Presets pour TypeScript, Svelte et scripts internes
-- **Prettier** : Formatage cohérent avec support Svelte
+- **TypeScript**: Strict configurations for Node.js and libraries
+- **ESLint**: Presets for TypeScript, Svelte, and internal scripts
+- **Prettier**: Consistent formatting with Svelte support
 
 ## Installation
 
@@ -53,25 +53,25 @@ export default typescript({
 import { base } from '@univ-lehavre/atlas-shared-config/prettier';
 export default base;
 
-// Pour SvelteKit
+// For SvelteKit
 import { svelte } from '@univ-lehavre/atlas-shared-config/prettier';
 export default svelte;
 ```
 
-## Presets ESLint
+## ESLint Presets
 
-| Preset | Usage | Niveau |
-|--------|-------|--------|
-| `typescript` | Bibliothèques TypeScript | Strict |
-| `svelte` | Applications SvelteKit | Strict |
-| `scripts` | Tooling interne | Relaxé |
+| Preset | Usage | Level |
+|--------|-------|-------|
+| `typescript` | TypeScript libraries | Strict |
+| `svelte` | SvelteKit applications | Strict |
+| `scripts` | Internal tooling | Relaxed |
 
-## Configuration TypeScript
+## TypeScript Configuration
 
 | Config | Description |
 |--------|-------------|
-| `base.json` | Configuration stricte de base |
-| `node.json` | Spécifique Node.js (extends base) |
+| `base.json` | Strict base configuration |
+| `node.json` | Node.js specific (extends base) |
 
 ## Scripts
 
@@ -82,22 +82,22 @@ pnpm -F @univ-lehavre/atlas-shared-config lint    # ESLint
 
 ## Documentation
 
-- [Documentation API](../../docs/api/@univ-lehavre/atlas-shared-config/)
+- [API Documentation](../../docs/api/@univ-lehavre/atlas-shared-config/)
 
-## Organisation
+## Organization
 
-Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.
 
-Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+Atlas is developed as part of two projects led by Le Havre Normandie University:
 
-- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
-- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)**: research and training program focused on maritime and port issues
+- **[EUNICoast](https://eunicoast.eu/)**: European university alliance bringing together institutions located in European coastal areas
 
 ---
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="20">
+    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
@@ -109,6 +109,6 @@ Atlas est développé dans le cadre de deux projets portés par l'Université Le
   </a>
 </p>
 
-## Licence
+## License
 
 MIT

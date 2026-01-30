@@ -1,10 +1,10 @@
-# Validateur OpenAPI
+# OpenAPI Validator
 
-`@univ-lehavre/atlas-openapi-validator` est un outil CLI et une bibliothèque pour valider qu'une spec OpenAPI correspond à l'API réelle.
+`@univ-lehavre/atlas-openapi-validator` is a CLI tool and library for validating that an OpenAPI spec matches the real API.
 
-## Objectif
+## Purpose
 
-Produire un **rapport formel et structuré** des variations entre une spec et l'API réelle, consommable programmatiquement par les packages sources pour corriger leurs specs.
+Produce a **formal and structured report** of variations between a spec and the real API, consumable programmatically by source packages to fix their specs.
 
 ## Installation
 
@@ -18,56 +18,56 @@ pnpm add -D @univ-lehavre/atlas-openapi-validator
 packages/openapi-validator/
 ├── src/
 │   ├── types/
-│   │   ├── report.ts              # Types du rapport de validation
-│   │   ├── deviation.ts           # Types des déviations détectées
+│   │   ├── report.ts              # Validation report types
+│   │   ├── deviation.ts           # Detected deviation types
 │   │   └── index.ts
 │   ├── validator/
-│   │   ├── endpoint-validator.ts  # Validation endpoints
-│   │   ├── parameter-validator.ts # Validation paramètres
-│   │   ├── schema-validator.ts    # Validation schémas réponse
-│   │   ├── type-validator.ts      # Validation types de champs
+│   │   ├── endpoint-validator.ts  # Endpoint validation
+│   │   ├── parameter-validator.ts # Parameter validation
+│   │   ├── schema-validator.ts    # Response schema validation
+│   │   ├── type-validator.ts      # Field type validation
 │   │   └── index.ts
 │   ├── reporter/
-│   │   ├── json-reporter.ts       # Export JSON structuré
-│   │   ├── console-reporter.ts    # Affichage console
+│   │   ├── json-reporter.ts       # Structured JSON export
+│   │   ├── console-reporter.ts    # Console output
 │   │   └── index.ts
 │   ├── cli/
 │   │   └── index.ts
 │   └── index.ts
 ```
 
-## Types de déviations
+## Deviation Types
 
-Les déviations sont classées par niveau :
+Deviations are classified by level:
 
-### Niveaux
+### Levels
 
 ```typescript
 type DeviationLevel = 'endpoint' | 'parameter' | 'field' | 'type';
 ```
 
-### Sévérités
+### Severities
 
 ```typescript
 type DeviationSeverity = 'error' | 'warning' | 'info';
 ```
 
-### Types de déviation
+### Deviation Types
 
 ```typescript
 type DeviationType =
-  | 'missing_in_spec'      // Présent dans API, absent de spec
-  | 'missing_in_api'       // Présent dans spec, absent d'API
-  | 'type_mismatch'        // Type différent
-  | 'format_mismatch'      // Format différent (date, uri, etc.)
-  | 'nullable_mismatch'    // Nullabilité différente
-  | 'enum_mismatch'        // Valeurs enum différentes
-  | 'required_mismatch'    // Champ requis/optionnel différent
-  | 'deprecated_missing'   // Champ déprécié non marqué
-  | 'array_item_mismatch'; // Type d'éléments array différent
+  | 'missing_in_spec'      // Present in API, absent from spec
+  | 'missing_in_api'       // Present in spec, absent from API
+  | 'type_mismatch'        // Different type
+  | 'format_mismatch'      // Different format (date, uri, etc.)
+  | 'nullable_mismatch'    // Different nullability
+  | 'enum_mismatch'        // Different enum values
+  | 'required_mismatch'    // Different required/optional status
+  | 'deprecated_missing'   // Deprecated field not marked
+  | 'array_item_mismatch'; // Different array item type
 ```
 
-## Structure du rapport
+## Report Structure
 
 ```typescript
 interface ValidationReport {
@@ -96,7 +96,7 @@ interface SpecSuggestion {
   deviation: Deviation;
   action: 'add' | 'remove' | 'modify';
   target: 'endpoint' | 'parameter' | 'schema' | 'property';
-  yamlPath: string;          // Chemin dans le fichier YAML
+  yamlPath: string;          // Path in the YAML file
   currentValue?: unknown;
   suggestedValue?: unknown;
   confidence: number;        // 0-1
@@ -105,73 +105,73 @@ interface SpecSuggestion {
 
 ## CLI
 
-### Valider une spec
+### Validate a spec
 
 ```bash
-# Validation complète avec rapport JSON
+# Complete validation with JSON report
 atlas-openapi-validator validate specs/openalex.yaml \
   --base-url https://api.openalex.org \
   --output report.json \
   --format json
 
-# Filtrer par niveau de déviation
+# Filter by deviation level
 atlas-openapi-validator validate specs/openalex.yaml \
   --base-url https://api.openalex.org \
   --level field,type \
   --severity error,warning
 ```
 
-### Appliquer des corrections
+### Apply fixes
 
 ```bash
-# Appliquer les suggestions automatiquement
+# Apply suggestions automatically
 atlas-openapi-validator fix specs/openalex.yaml \
   --report report.json \
   --confidence 0.9 \
   --dry-run
 
-# Sans dry-run pour appliquer réellement
+# Without dry-run to actually apply
 atlas-openapi-validator fix specs/openalex.yaml \
   --report report.json \
   --confidence 0.9
 ```
 
-### Comparer des specs
+### Compare specs
 
 ```bash
-# Détecter les régressions entre versions
+# Detect regressions between versions
 atlas-openapi-validator diff specs/v1.yaml specs/v2.yaml \
   --output diff-report.json
 ```
 
-### Récupérer une spec existante
+### Fetch an existing spec
 
 ```bash
-# Depuis Swagger officiel
+# From official Swagger
 atlas-openapi-validator fetch https://api.crossref.org/swagger.json \
   --output specs/alpha/crossref-v1-2025-01.yaml \
   --set-stage alpha
 ```
 
-### Promouvoir une spec
+### Promote a spec
 
 ```bash
-# De beta vers stable
+# From beta to stable
 atlas-openapi-validator promote specs/beta/openalex-2025-01-24.yaml \
   --to stable \
   --set-current
 ```
 
-## API programmatique
+## Programmatic API
 
-### Valider et obtenir le rapport
+### Validate and get the report
 
 ```typescript
 import { validate, applySuggestions } from '@univ-lehavre/atlas-openapi-validator';
 import { Effect } from 'effect';
 
 const program = Effect.gen(function* () {
-  // Valider
+  // Validate
   const report = yield* validate({
     specPath: 'specs/openalex.yaml',
     baseUrl: 'https://api.openalex.org',
@@ -179,11 +179,11 @@ const program = Effect.gen(function* () {
     respectRateLimits: true,
   });
 
-  // Filtrer les déviations
+  // Filter deviations
   const errors = report.deviations.filter(d => d.severity === 'error');
   const fieldDeviations = report.deviations.filter(d => d.level === 'field');
 
-  // Appliquer les suggestions haute confiance
+  // Apply high confidence suggestions
   if (report.suggestions.length > 0) {
     yield* applySuggestions(
       'specs/openalex.yaml',
@@ -195,7 +195,7 @@ const program = Effect.gen(function* () {
 });
 ```
 
-### Intégration dans un package source
+### Integration in a source package
 
 ```typescript
 // packages/openalex/scripts/validate-spec.ts
@@ -212,7 +212,7 @@ const program = Effect.gen(function* () {
 
   const errors = report.deviations.filter(d => d.severity === 'error');
   if (errors.length > 0) {
-    console.error(`${errors.length} erreurs détectées:`);
+    console.error(`${errors.length} errors detected:`);
     errors.forEach(e =>
       console.error(`  - [${e.level}] ${e.path}: ${e.message}`)
     );
@@ -221,21 +221,21 @@ const program = Effect.gen(function* () {
 
   const warnings = report.deviations.filter(d => d.severity === 'warning');
   if (warnings.length > 0) {
-    console.warn(`${warnings.length} avertissements:`);
+    console.warn(`${warnings.length} warnings:`);
     warnings.forEach(w =>
       console.warn(`  - [${w.level}] ${w.path}: ${w.message}`)
     );
   }
 
-  console.log('✓ Spec validée');
+  console.log('✓ Spec validated');
 });
 
 Effect.runPromise(program);
 ```
 
-## Exemples de déviations
+## Deviation Examples
 
-### Endpoint manquant dans la spec
+### Endpoint missing in spec
 
 ```json
 {
@@ -248,7 +248,7 @@ Effect.runPromise(program);
 }
 ```
 
-### Type de champ incorrect
+### Incorrect field type
 
 ```json
 {
@@ -265,7 +265,7 @@ Effect.runPromise(program);
 }
 ```
 
-### Champ nullable non marqué
+### Field nullable not marked
 
 ```json
 {

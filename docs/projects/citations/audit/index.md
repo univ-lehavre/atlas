@@ -1,33 +1,33 @@
-# Audit Citations
+# Citations Audit
 
-> **Dernière mise à jour :** 29 janvier 2026
+> **Last updated:** January 29, 2026
 
-Ce document présente l'audit du module Citations.
+This document presents the audit of the Citations module.
 
-## État actuel
+## Current Status
 
-| Métrique | Valeur |
-|----------|--------|
-| Clients implémentés | 2 (OpenAlex, Crossref) |
-| Clients planifiés | 3 (HAL, ArXiv, ORCID) |
-| Schéma unifié | En cours |
-| Tests | À définir |
+| Metric | Value |
+|--------|-------|
+| Implemented clients | 2 (OpenAlex, Crossref) |
+| Planned clients | 3 (HAL, ArXiv, ORCID) |
+| Unified schema | In progress |
+| Tests | To be defined |
 
-## Points d'attention
+## Areas of Attention
 
 ### Architecture
 
-- Validation de la stratégie OpenAPI-first
-- Cohérence des adaptateurs entre sources
-- Gestion du rate limiting
+- Validation of the OpenAPI-first strategy
+- Consistency of adapters between sources
+- Rate limiting management
 
-### Qualité
+### Quality
 
-- Couverture de tests à améliorer
-- Documentation TSDoc à compléter
+- Test coverage to be improved
+- TSDoc documentation to be completed
 
-## Recommandations
+## Recommendations
 
-1. Finaliser les clients OpenAlex et Crossref avant d'ajouter de nouvelles sources
-2. Implémenter des tests d'intégration avec les APIs réelles
-3. Documenter les différences de comportement entre sources
+1. Finalize the OpenAlex and Crossref clients before adding new sources
+2. Implement integration tests with real APIs
+3. Document behavioral differences between sources

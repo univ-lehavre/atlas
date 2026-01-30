@@ -1,57 +1,57 @@
 # Find an Expert
 
-Application web pour découvrir l'expertise des chercheurs via leurs publications et contributions.
+Web application to discover researcher expertise through their publications and contributions.
 
-## À propos
+## About
 
-**Find an Expert** est un sous-projet d'ECRIN permettant de découvrir et analyser l'expertise des chercheurs à travers leurs publications (OpenAlex) et contributions GitHub. L'application facilite les connexions entre chercheurs, institutions et partenaires en identifiant les compétences et domaines d'expertise.
+**Find an Expert** is an ECRIN sub-project that enables discovering and analyzing researcher expertise through their publications (OpenAlex) and GitHub contributions. The application facilitates connections between researchers, institutions, and partners by identifying skills and areas of expertise.
 
-## Fonctionnalités
+## Features
 
-- **Recherche d'expertise** : Trouver des chercheurs par domaine, compétence ou mot-clé
-- **Profils enrichis** : Publications (OpenAlex) et contributions (GitHub)
-- **Analyse bibliographique** : Métriques de publications et collaborations
-- **Visualisation** : Graphes de co-autorat et réseaux d'expertise
+- **Expertise search**: Find researchers by field, skill, or keyword
+- **Enriched profiles**: Publications (OpenAlex) and contributions (GitHub)
+- **Bibliographic analysis**: Publication metrics and collaborations
+- **Visualization**: Co-authorship graphs and expertise networks
 
-## Stack technique
+## Tech Stack
 
-- **Frontend** : SvelteKit 2, Svelte 5, Tailwind CSS 4
-- **Backend** : Appwrite (authentification, base de données)
-- **APIs** : OpenAlex, GitHub
-- **Build** : Vite 7, TypeScript 5.9
+- **Frontend**: SvelteKit 2, Svelte 5, Tailwind CSS 4
+- **Backend**: Appwrite (authentication, database)
+- **APIs**: OpenAlex, GitHub
+- **Build**: Vite 7, TypeScript 5.9
 
 ## Scripts
 
 ```bash
-pnpm -F find-an-expert dev      # Développement
-pnpm -F find-an-expert build    # Build production
+pnpm -F find-an-expert dev      # Development
+pnpm -F find-an-expert build    # Production build
 pnpm -F find-an-expert test     # Tests
 pnpm -F find-an-expert lint     # ESLint
 ```
 
 ## Documentation
 
-- [Configuration technique](../../docs/guide/find-an-expert/technical-setup.md)
-- [Configuration Appwrite](../../docs/guide/find-an-expert/appwrite-setup.md)
+- [Technical Setup](../../docs/guide/find-an-expert/technical-setup.md)
+- [Appwrite Setup](../../docs/guide/find-an-expert/appwrite-setup.md)
 - [Design System](../../docs/guide/find-an-expert/design-system.md)
-- [Architecture CSS](../../docs/guide/find-an-expert/css-architecture.md)
+- [CSS Architecture](../../docs/guide/find-an-expert/css-architecture.md)
 
-## Organisation
+## Organization
 
-Ce package fait partie d'**Atlas**, un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter la recherche et la collaboration entre chercheurs.
+This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.
 
-Find an Expert est un sous-projet d'**ECRIN**, la plateforme de collaboration pour chercheurs.
+Find an Expert is a sub-project of **ECRIN**, the collaboration platform for researchers.
 
-Atlas est développé dans le cadre de deux projets portés par l'Université Le Havre Normandie :
+Atlas is developed as part of two projects led by Le Havre Normandie University:
 
-- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)** : programme de recherche et de formation centré sur les enjeux maritimes et portuaires
-- **[EUNICoast](https://eunicoast.eu/)** : alliance universitaire européenne regroupant des établissements situés sur les zones côtières européennes
+- **[Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/)**: research and training program focused on maritime and port issues
+- **[EUNICoast](https://eunicoast.eu/)**: European university alliance bringing together institutions located in European coastal areas
 
 ---
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Université Le Havre Normandie" height="20">
+    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
@@ -63,6 +63,6 @@ Atlas est développé dans le cadre de deux projets portés par l'Université Le
   </a>
 </p>
 
-## Licence
+## License
 
 MIT

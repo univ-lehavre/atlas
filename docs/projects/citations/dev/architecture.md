@@ -1,92 +1,92 @@
 # Architecture
 
-Ce document décrit la structure des packages atlas-* et les patterns d'implémentation.
+This document describes the structure of atlas-* packages and implementation patterns.
 
-> **Voir aussi :**
-> - [Vue d'ensemble](./index.md) - Introduction technique à Atlas Citations
-> - [Cycle de vie OpenAPI](./openapi-lifecycle.md) - Processus alpha → beta → stable
-> - [Schéma unifié](./unified-schema.md) - Entités et spécification OpenAPI
+> **See also:**
+> - [Overview](./index.md) - Technical introduction to Atlas Citations
+> - [OpenAPI Lifecycle](./openapi-lifecycle.md) - Alpha to beta to stable process
+> - [Unified Schema](./unified-schema.md) - Entities and OpenAPI specification
 >
-> **Documentation utilisateur :** [Guide utilisateur Atlas Verify](../user/) - Documentation pour les chercheurs
+> **User documentation:** [Atlas Verify User Guide](../user/) - Documentation for researchers
 
-## Structure d'un package atlas-*
+## Structure of an atlas-* package
 
-Chaque package source suit la même structure :
+Each source package follows the same structure:
 
 ```
 packages/{source}/
 ├── specs/
-│   ├── alpha/                      # Specs en cours de création
-│   ├── beta/                       # Specs en validation
-│   ├── stable/                     # Specs validées
+│   ├── alpha/                      # Specs in progress
+│   ├── beta/                       # Specs under validation
+│   ├── stable/                     # Validated specs
 │   │   └── {source}-{version}.yaml
 │   └── current.yaml                # Symlink → stable/{latest}
 ├── src/
 │   ├── client/
-│   │   ├── generated/types.ts      # Types générés (openapi-typescript)
-│   │   ├── brands.ts               # Branded types spécifiques
-│   │   ├── client.ts               # Client Effect
-│   │   ├── errors.ts               # Erreurs typées + RateLimitError
-│   │   ├── rate-limit.ts           # Gestion quotas et retry
+│   │   ├── generated/types.ts      # Generated types (openapi-typescript)
+│   │   ├── brands.ts               # Specific branded types
+│   │   ├── client.ts               # Effect client
+│   │   ├── errors.ts               # Typed errors + RateLimitError
+│   │   ├── rate-limit.ts           # Quota management and retry
 │   │   ├── types.ts                # Interfaces
 │   │   └── index.ts
 │   ├── cli/
-│   │   └── index.ts                # CLI test connectivité
+│   │   └── index.ts                # Connectivity test CLI
 │   ├── bin/
 │   │   └── atlas-{source}.ts       # Entry point
 │   └── index.ts
 ├── test/
-│   ├── client.test.ts              # Tests unitaires
-│   └── api.test.ts                 # Tests contre API réelle
+│   ├── client.test.ts              # Unit tests
+│   └── api.test.ts                 # Tests against real API
 ├── package.json
 └── tsconfig.json
 ```
 
-## État des specs OpenAPI par source
+## OpenAPI Specs Status by Source
 
-| Source | OpenAPI officielle | Action |
-|--------|-------------------|--------|
-| **OpenAlex** | Non | Créer from scratch |
-| **Crossref** | [Swagger UI](https://api.crossref.org/swagger-ui) | Récupérer et adapter |
-| **HAL** | Non (API Solr) | Créer from scratch |
-| **ArXiv** | Non (API Atom/XML) | Créer from scratch |
-| **ORCID** | Indisponible temporairement | Créer from scratch |
+| Source | Official OpenAPI | Action |
+|--------|-----------------|--------|
+| **OpenAlex** | No | Create from scratch |
+| **Crossref** | [Swagger UI](https://api.crossref.org/swagger-ui) | Retrieve and adapt |
+| **HAL** | No (Solr API) | Create from scratch |
+| **ArXiv** | No (Atom/XML API) | Create from scratch |
+| **ORCID** | Temporarily unavailable | Create from scratch |
 
-## Packages détaillés
+## Detailed Packages
 
 ### @univ-lehavre/atlas-openalex
 
 **API:** `https://api.openalex.org`
 
-**Entités:**
+**Entities:**
 - Works, Authors, Sources, Institutions, Topics, Publishers, Funders
 
-**Opérations par entité:**
-- `GET /{entity}` - Liste paginée avec filtres
-- `GET /{entity}/{id}` - Entité par ID
-- `GET /{entity}/random` - Aléatoire
+**Operations per entity:**
+- `GET /{entity}` - Paginated list with filters
+- `GET /{entity}/{id}` - Entity by ID
+- `GET /{entity}/random` - Random
 
 ### @univ-lehavre/atlas-crossref
 
 **API:** `https://api.crossref.org`
 
-**Entités:**
+**Entities:**
 - Works, Funders, Members, Prefixes, Journals, Types, Licenses
 
-**Spécificité:**
-- Spec OpenAPI existante à récupérer depuis Swagger UI
-- "Polite pool" avec header `mailto:` pour meilleur rate limit
+**Specificity:**
+- Existing OpenAPI spec to retrieve from Swagger UI
+- "Polite pool" with `mailto:` header for better rate limit
 
 ### @univ-lehavre/atlas-hal
 
 **API:** `https://api.archives-ouvertes.fr`
 
 **Endpoints:**
-- `/search/` - Recherche Solr
-- `/ref/` - Référentiels (structures, auteurs, domaines)
+- `/search/` - Solr search
+- `/ref/` - Reference data (structures, authors, domains)
 
-**Spécificité:**
-- API basée sur Apache Solr
+**Specificity:**
+- Apache Solr-based API
 - Formats: JSON, XML, BibTeX, CSV
 
 ### @univ-lehavre/atlas-arxiv
@@ -94,41 +94,41 @@ packages/{source}/
 **API:** `http://export.arxiv.org/api`
 
 **Endpoints:**
-- `/query` - Recherche (retourne Atom/XML)
+- `/query` - Search (returns Atom/XML)
 
-**Spécificité:**
-- Réponses en Atom 1.0 (XML)
-- Pas de JSON natif → transformation nécessaire
-- Rate limit non documenté (~1 req/3s recommandé)
+**Specificity:**
+- Responses in Atom 1.0 (XML)
+- No native JSON → transformation required
+- Undocumented rate limit (~1 req/3s recommended)
 
 ### @univ-lehavre/atlas-orcid
 
 **API:** `https://pub.orcid.org/v3.0`
 
 **Endpoints:**
-- `/{orcid}` - Profil complet
+- `/{orcid}` - Complete profile
 - `/{orcid}/works` - Publications
 - `/{orcid}/employments` - Affiliations
-- `/search` - Recherche
+- `/search` - Search
 
-**Spécificité:**
-- Swagger temporairement indisponible
+**Specificity:**
+- Swagger temporarily unavailable
 - Formats: JSON, XML
 
-## Génération des types
+## Type Generation
 
-Les types TypeScript sont générés depuis les specs OpenAPI avec `openapi-typescript` :
+TypeScript types are generated from OpenAPI specs with `openapi-typescript`:
 
 ```bash
-# Générer les types pour un package
+# Generate types for a package
 pnpm -F @univ-lehavre/atlas-openalex generate:types
 ```
 
-Le script génère `src/client/generated/types.ts` depuis `specs/current.yaml`.
+The script generates `src/client/generated/types.ts` from `specs/current.yaml`.
 
-## Pattern client Effect
+## Effect Client Pattern
 
-Tous les clients suivent le même pattern :
+All clients follow the same pattern:
 
 ```typescript
 import { Effect, Context, Layer, Data } from 'effect';
@@ -139,13 +139,13 @@ export class OpenAlexClientService extends Context.Tag('OpenAlexClientService')<
   OpenAlexClient
 >() {}
 
-// Erreurs typées
+// Typed errors
 export class OpenAlexApiError extends Data.TaggedError('OpenAlexApiError')<{
   readonly message: string;
   readonly status?: number;
 }> {}
 
-// Interface client
+// Client interface
 interface OpenAlexClient {
   getWork: (id: string) => Effect.Effect<Work, OpenAlexError>;
   listWorks: (options?: ListOptions) => Effect.Effect<ListResponse<Work>, OpenAlexError>;
@@ -157,21 +157,21 @@ export const createOpenAlexClient = (config: OpenAlexConfig): OpenAlexClient => 
   // Implementation
 };
 
-// Layer pour injection de dépendances
+// Layer for dependency injection
 export const makeOpenAlexClientLayer = (
   config: OpenAlexConfig
 ): Layer.Layer<OpenAlexClientService> =>
   Layer.succeed(OpenAlexClientService, createOpenAlexClient(config));
 ```
 
-## Branded types
+## Branded Types
 
-Chaque package définit ses branded types pour la validation à la compilation :
+Each package defines its branded types for compile-time validation:
 
 ```typescript
 import { Brand } from 'effect';
 
-// OpenAlex ID (ex: W1234567890)
+// OpenAlex ID (e.g., W1234567890)
 export type OpenAlexId = string & Brand.Brand<'OpenAlexId'>;
 export const OpenAlexId = Brand.refined<OpenAlexId>(
   (id) => /^[WASITP]\d+$/.test(id),

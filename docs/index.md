@@ -3,99 +3,99 @@ layout: home
 
 hero:
   name: Atlas
-  text: Des outils dédiés à la recherche
-  tagline: Développés par l'Université Le Havre Normandie
+  text: Dedicated tools for research
+  tagline: Developed by Université Le Havre Normandie
   actions:
     - theme: brand
-      text: Guide chercheur
+      text: Researcher Guide
       link: /guide/researchers/
     - theme: alt
-      text: Documentation technique
+      text: Technical Documentation
       link: /guide/developers/
     - theme: alt
-      text: Référence API
+      text: API Reference
       link: /api/
 
 features:
   - title: ECRIN
-    details: Plateforme de collaboration pour chercheurs - présentez vos travaux, trouvez des collaborateurs, visualisez les réseaux de recherche
+    details: Collaboration platform for researchers - present your work, find collaborators, visualize research networks
     link: /projects/ecrin/
   - title: AMARRE
-    details: Gestion de la mobilité des chercheurs
+    details: Researcher mobility management
     link: /projects/amarre/
   - title: Citations
-    details: Agrégation de sources bibliographiques (OpenAlex, Crossref, HAL, ORCID) et fiabilisation des profils chercheurs avec Atlas Verify
+    details: Aggregation of bibliographic sources (OpenAlex, Crossref, HAL, ORCID) and researcher profile verification with Atlas Verify
     link: /projects/citations/
   - title: CRF
-    details: Outils TypeScript pour interagir avec REDCap, utilisé par 8 000+ institutions pour la collecte de données de recherche
+    details: TypeScript tools for interacting with REDCap, used by 8,000+ institutions for research data collection
     link: /projects/crf/
   - title: SARtraces
-    details: Analyse spatio-temporelle des opérations de sauvetage en mer - traces AIS, données PREMAR et conditions météorologiques
+    details: Spatio-temporal analysis of maritime rescue operations - AIS traces, PREMAR data and weather conditions
   - title: RENOMMÉE
-    details: Analyse de la réputation institutionnelle via les données bibliographiques - publications, citations, impact pondéré et benchmarking avec les universités comparables
+    details: Institutional reputation analysis via bibliographic data - publications, citations, weighted impact and benchmarking with comparable universities
   - title: ICO
-    details: Mesure de l'impact de la coopération internationale sur la production scientifique - analyse bibliométrique des publications au sein de l'alliance EUNICoast
+    details: Measuring the impact of international cooperation on scientific output - bibliometric analysis of publications within the EUNICoast alliance
 
 ---
 
-## À propos d'Atlas
+## About Atlas
 
-Atlas est un ensemble d'outils développés par l'**Université Le Havre Normandie** pour faciliter le travail des chercheurs et des équipes de recherche.
+Atlas is a set of tools developed by **Université Le Havre Normandie** to facilitate the work of researchers and research teams.
 
-### Pour les chercheurs
+### For Researchers
 
-- **Vérifiez vos publications** : identifiez et corrigez les attributions erronées dans OpenAlex, Crossref et HAL grâce à Atlas Verify
-- **Gérez votre parcours** : maintenez un historique fiable de vos affiliations, suivez vos changements d'institution et vos périodes de mobilité
-- **Découvrez des experts** : recherchez des collaborateurs par thématique, localisation ou compétences spécifiques via ECRIN
-- **Visualisez vos réseaux** : explorez vos co-auteurs, projets communs et connexions interdisciplinaires avec des graphes interactifs
-- **Déclarez vos projets** : créez des fiches projet pour recruter des collaborateurs et obtenir des financements
-- **Publiez vos données** : partagez vos jeux de données et actualités avec la communauté scientifique
+- **Verify your publications**: identify and correct misattributions in OpenAlex, Crossref and HAL with Atlas Verify
+- **Manage your career**: maintain a reliable history of your affiliations, track your institution changes and mobility periods
+- **Discover experts**: search for collaborators by topic, location or specific skills via ECRIN
+- **Visualize your networks**: explore your co-authors, joint projects and interdisciplinary connections with interactive graphs
+- **Declare your projects**: create project sheets to recruit collaborators and obtain funding
+- **Publish your data**: share your datasets and news with the scientific community
 
-### Pour les développeurs
+### For Developers
 
-- **Client REDCap** : bibliothèque TypeScript avec Effect pour interroger l'API REDCap de manière typée et sécurisée
-- **Extraction OpenAPI** : génération automatique de spécifications OpenAPI depuis le code source PHP de REDCap
-- **Clients bibliographiques** : packages Effect pour OpenAlex, Crossref, HAL, ArXiv et ORCID avec rate limiting intégré
-- **Outils CLI** : diagnostics réseau, tests de connectivité et validation de configurations
-- **Configuration partagée** : ESLint, TypeScript et Prettier standardisés pour tout le monorepo
-- **Intégration Appwrite** : authentification, gestion des sessions et stockage de données utilisateurs
+- **REDCap client**: TypeScript library with Effect for querying the REDCap API in a typed and secure manner
+- **OpenAPI extraction**: automatic generation of OpenAPI specifications from REDCap PHP source code
+- **Bibliographic clients**: Effect packages for OpenAlex, Crossref, HAL, ArXiv and ORCID with built-in rate limiting
+- **CLI tools**: network diagnostics, connectivity testing and configuration validation
+- **Shared configuration**: standardized ESLint, TypeScript and Prettier for the entire monorepo
+- **Appwrite integration**: authentication, session management and user data storage
 
-## Projets institutionnels
+## Institutional Projects
 
-Atlas est développé dans le cadre de projets structurants portés par l'Université Le Havre Normandie.
+Atlas is developed as part of structural projects led by Université Le Havre Normandie.
 
 ### Campus Polytechnique des Territoires Maritimes et Portuaires
 
-Le [Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/) (CPTMP) est un consortium unique en Europe, inauguré le 30 janvier 2025. Il rassemble **12 membres fondateurs** autour de l'Université Le Havre Normandie : CNRS, INSA Rouen Normandie, École Nationale Supérieure Maritime, Sciences Po, EM Normandie, ENSA Normandie, ESADHaR, IFEN, Le Havre Seine Métropole, Synerzip LH, UMEP et la Région Normandie.
+The [Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/) (CPTMP) is a unique consortium in Europe, inaugurated on January 30, 2025. It brings together **12 founding members** around Université Le Havre Normandie: CNRS, INSA Rouen Normandie, École Nationale Supérieure Maritime, Sciences Po, EM Normandie, ENSA Normandie, ESADHaR, IFEN, Le Havre Seine Métropole, Synerzip LH, UMEP and Région Normandie.
 
-Le Campus est lauréat de l'appel à projets « ExcellencES » de **France 2030**, avec un financement de **7,3 M€** sur 7 ans (2023-2030).
+The Campus is a laureate of the "ExcellencES" call for projects of **France 2030**, with funding of **€7.3M** over 7 years (2023-2030).
 
-**Axes stratégiques :**
-- Villes de demain
-- Enjeux maritimes et portuaires
-- Transitions, risques et incertitudes
+**Strategic axes:**
+- Cities of tomorrow
+- Maritime and port issues
+- Transitions, risks and uncertainties
 
-**Cinq hubs opérationnels :**
-- Hub Expertise et Qualifications
-- Hub Créations et Innovations
-- Hub International
-- Hub Digital et Plateformes Technologiques
-- Hub Sports Academy
+**Five operational hubs:**
+- Expertise and Qualifications Hub
+- Creations and Innovations Hub
+- International Hub
+- Digital and Technological Platforms Hub
+- Sports Academy Hub
 
 ### EUNICoast
 
-[EUNICoast](https://eunicoast.eu/) (European University of Islands, Ports & Coastal Territories) est une alliance de **13 universités européennes** coordonnée par l'Université Le Havre Normandie, financée à hauteur de **14,4 M€** par la Commission européenne (2024-2028).
+[EUNICoast](https://eunicoast.eu/) (European University of Islands, Ports & Coastal Territories) is an alliance of **13 European universities** coordinated by Université Le Havre Normandie, funded at **€14.4M** by the European Commission (2024-2028).
 
-**Universités partenaires :** Åland (Finlande), Bourgas (Bulgarie), Stralsund (Allemagne), EMUNI (Slovénie), Açores (Portugal), Baléares (Espagne), Patras (Grèce), Sassari (Italie), Féroé, Antilles (France), Le Havre (France), Dubrovnik (Croatie), Szczecin (Pologne).
+**Partner universities:** Åland (Finland), Bourgas (Bulgaria), Stralsund (Germany), EMUNI (Slovenia), Azores (Portugal), Balearic Islands (Spain), Patras (Greece), Sassari (Italy), Faroe Islands, Antilles (France), Le Havre (France), Dubrovnik (Croatia), Szczecin (Poland).
 
-**Hubs de recherche :**
-- Identités et patrimoines des communautés côtières et insulaires
-- Économie bleue circulaire, logistique portuaire et tourisme durable
-- Gouvernance et aménagement des territoires côtiers
-- Santé, biodiversité et solutions fondées sur la nature
-- Solutions d'ingénierie et données pour les infrastructures côtières, énergies marines renouvelables et sécurité maritime
+**Research hubs:**
+- Identities and heritage of coastal and island communities
+- Circular blue economy, port logistics and sustainable tourism
+- Governance and planning of coastal territories
+- Health, biodiversity and nature-based solutions
+- Engineering solutions and data for coastal infrastructure, marine renewable energies and maritime safety
 
-## Partenaires et financeurs
+## Partners and Funders
 
 <div style="display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2rem; margin: 2rem 0;">
   <a href="https://www.univ-lehavre.fr/">

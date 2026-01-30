@@ -1,96 +1,96 @@
-# Bases de données avancées et recherche multi-sources
+# Advanced Databases and Multi-source Search
 
-Ce document analyse les bases de données spécialisées, les moteurs de recherche, et les architectures de fédération pour répondre aux besoins complexes de recherche bibliographique.
+This document analyzes specialized databases, search engines, and federation architectures to meet the complex needs of bibliographic search.
 
-> **Voir aussi :**
-> - [Bases de données](./database-analysis.md) - Analyse PostgreSQL/MongoDB pour le stockage principal
-> - [Fiabilisation auteur](./author-verification.md) - Modèle de données et workflows de vérification
-> - [Profil chercheur](./researcher-profile.md) - Reconstruction carrière, expertises, collaborations
-> - [Schéma unifié](./unified-schema.md) - Spécification OpenAPI et entités
+> **See also:**
+> - [Databases](./database-analysis.md) - PostgreSQL/MongoDB analysis for primary storage
+> - [Author Verification](./author-verification.md) - Data model and verification workflows
+> - [Researcher Profile](./researcher-profile.md) - Career reconstruction, expertise, collaborations
+> - [Unified Schema](./unified-schema.md) - OpenAPI specification and entities
 
-## Cas d'usage des chercheurs
+## Researcher Use Cases
 
-### Besoins identifiés
+### Identified Needs
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    BESOINS DES CHERCHEURS                                    │
+│                           RESEARCHER NEEDS                                   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  DÉCOUVERTE                                                                  │
-│  ──────────                                                                  │
-│  "Qui sont les experts en machine learning éthique à Paris ?"               │
-│  "Quels articles citent mes travaux et travaillent sur des sujets proches ?"│
-│  "Quelles sont les tendances émergentes dans mon domaine ?"                 │
-│  "Qui collabore avec qui dans mon réseau thématique ?"                      │
+│  DISCOVERY                                                                   │
+│  ─────────                                                                   │
+│  "Who are the experts in ethical machine learning in Paris?"                │
+│  "Which articles cite my work and work on similar topics?"                  │
+│  "What are the emerging trends in my field?"                                │
+│  "Who collaborates with whom in my thematic network?"                       │
 │                                                                              │
 │  EXPLORATION                                                                 │
 │  ───────────                                                                 │
-│  "Montre-moi l'évolution des publications sur CRISPR depuis 2012"           │
-│  "Quels labos européens travaillent sur les batteries solides ?"            │
-│  "Visualise le graphe de co-auteurs de ce chercheur"                        │
-│  "Quels financeurs soutiennent ce domaine ?"                                │
+│  "Show me the evolution of CRISPR publications since 2012"                  │
+│  "Which European labs work on solid-state batteries?"                       │
+│  "Visualize this researcher's co-author graph"                              │
+│  "Which funders support this field?"                                        │
 │                                                                              │
-│  VEILLE                                                                      │
-│  ─────                                                                       │
-│  "Alerte-moi quand quelqu'un cite mon article"                              │
-│  "Nouveaux preprints dans ma thématique cette semaine"                      │
-│  "Évolution du h-index de mes concurrents"                                  │
+│  MONITORING                                                                  │
+│  ──────────                                                                  │
+│  "Alert me when someone cites my article"                                   │
+│  "New preprints in my field this week"                                      │
+│  "Evolution of my competitors' h-index"                                     │
 │                                                                              │
-│  ANALYSE                                                                     │
-│  ───────                                                                     │
-│  "Similarité sémantique entre deux corpus d'articles"                       │
-│  "Clustering des thématiques de mon laboratoire"                            │
-│  "Prédiction d'impact d'un preprint"                                        │
+│  ANALYSIS                                                                    │
+│  ────────                                                                    │
+│  "Semantic similarity between two article corpora"                          │
+│  "Clustering of my laboratory's research topics"                            │
+│  "Impact prediction for a preprint"                                         │
 │                                                                              │
 │  REPORTING                                                                   │
 │  ─────────                                                                   │
-│  "Export bibliométrique pour évaluation HCERES"                             │
-│  "Statistiques de publication par équipe"                                   │
-│  "Cartographie des collaborations internationales"                          │
+│  "Bibliometric export for HCERES evaluation"                                │
+│  "Publication statistics by team"                                           │
+│  "Mapping of international collaborations"                                  │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Requêtes types traduites
+### Translated Query Types
 
-| Besoin utilisateur | Dimensions de données | Index requis |
-|--------------------|----------------------|--------------|
-| Expert sur un sujet dans une ville | Texte + Géo + Graphe | Full-text, Spatial, Graph |
-| Évolution temporelle d'un domaine | Time-series + Texte | Temporal, Full-text |
-| Articles similaires | Vecteurs sémantiques | Vector (ANN) |
-| Réseau de collaboration | Graphe | Graph traversal |
-| Tendances émergentes | Time-series + NLP | Temporal, Vector |
+| User Need | Data Dimensions | Required Indexes |
+|-----------|-----------------|------------------|
+| Expert on a topic in a city | Text + Geo + Graph | Full-text, Spatial, Graph |
+| Temporal evolution of a field | Time-series + Text | Temporal, Full-text |
+| Similar articles | Semantic vectors | Vector (ANN) |
+| Collaboration network | Graph | Graph traversal |
+| Emerging trends | Time-series + NLP | Temporal, Vector |
 | Impact prediction | ML features | Vector, Aggregations |
 
 ---
 
-## Bases de données multi-modèles
+## Multi-model Databases
 
 ### ArangoDB
 
-#### Présentation
+#### Overview
 
-ArangoDB est une base multi-modèles native combinant documents, graphes et recherche dans un seul système.
+ArangoDB is a native multi-model database combining documents, graphs, and search in a single system.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           ARANGODB                                           │
+│                              ARANGODB                                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  MODÈLES SUPPORTÉS                                                           │
-│  ─────────────────                                                           │
-│  ✓ Documents (JSON) - Comme MongoDB                                         │
-│  ✓ Graphes - Traversées natives, plus rapide que Neo4j sur certains cas    │
-│  ✓ Key-Value - Cache intégré                                                │
-│  ✓ Search (ArangoSearch) - Full-text avec scoring BM25                      │
-│  ✓ GeoJSON - Index spatiaux                                                 │
+│  SUPPORTED MODELS                                                            │
+│  ────────────────                                                            │
+│  ✓ Documents (JSON) - Like MongoDB                                          │
+│  ✓ Graphs - Native traversals, faster than Neo4j in some cases             │
+│  ✓ Key-Value - Built-in cache                                               │
+│  ✓ Search (ArangoSearch) - Full-text with BM25 scoring                      │
+│  ✓ GeoJSON - Spatial indexes                                                │
 │                                                                              │
-│  LANGAGE DE REQUÊTE : AQL                                                    │
-│  ────────────────────────                                                    │
-│  Unifié pour tous les modèles, similaire à SQL avec extensions graphe       │
+│  QUERY LANGUAGE: AQL                                                         │
+│  ───────────────────                                                         │
+│  Unified for all models, similar to SQL with graph extensions               │
 │                                                                              │
-│  EXEMPLE - Experts sur un sujet dans une région :                           │
+│  EXAMPLE - Experts on a topic in a region:                                  │
 │  ──────────────────────────────────────────────────────────────────────     │
 │  FOR author IN authors                                                       │
 │    FILTER GEO_DISTANCE(author.location, @parisCenter) < 50000               │
@@ -106,14 +106,14 @@ ArangoDB est une base multi-modèles native combinant documents, graphes et rech
 │                                                                              │
 │  KUBERNETES                                                                  │
 │  ──────────                                                                  │
-│  • ArangoDB Kubernetes Operator (officiel)                                  │
+│  • ArangoDB Kubernetes Operator (official)                                  │
 │  • Helm chart: arangodb/kube-arangodb                                       │
 │  • Modes: Single, ActiveFailover, Cluster (sharding)                        │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Modèle pour Atlas
+#### Model for Atlas
 
 ```javascript
 // Collection: works (documents)
@@ -126,7 +126,7 @@ ArangoDB est une base multi-modèles native combinant documents, graphes et rech
   venue: "NeurIPS",
   citationCount: 89000,
   embedding: [0.12, -0.34, ...],  // SPECTER vector 768d
-  location: null,  // Pour les works avec localisation (conférences)
+  location: null,  // For works with location (conferences)
   keywords: ["transformer", "attention", "NLP"],
   _source: "openalex"
 }
@@ -161,7 +161,7 @@ ArangoDB est une base multi-modèles native combinant documents, graphes et rech
   country: "US"
 }
 
-// Edge collection: authored (graphe)
+// Edge collection: authored (graph)
 {
   _from: "authors/A123456",
   _to: "works/W2741809807",
@@ -170,14 +170,14 @@ ArangoDB est une base multi-modèles native combinant documents, graphes et rech
   affiliationAtTime: "Google Brain"
 }
 
-// Edge collection: cites (graphe)
+// Edge collection: cites (graph)
 {
   _from: "works/W2741809807",
   _to: "works/W1234567890",
   context: "building upon the work of..."
 }
 
-// Edge collection: affiliated (graphe)
+// Edge collection: affiliated (graph)
 {
   _from: "authors/A123456",
   _to: "institutions/I27837315",
@@ -186,7 +186,7 @@ ArangoDB est une base multi-modèles native combinant documents, graphes et rech
   role: "Research Scientist"
 }
 
-// Edge collection: collaborated (graphe, computed)
+// Edge collection: collaborated (graph, computed)
 {
   _from: "authors/A123456",
   _to: "authors/A789012",
@@ -196,12 +196,12 @@ ArangoDB est une base multi-modèles native combinant documents, graphes et rech
 }
 ```
 
-#### Requêtes avancées AQL
+#### Advanced AQL Queries
 
 ```aql
-// 1. Trouver des experts sur un sujet dans une zone géographique
+// 1. Find experts on a topic in a geographic area
 FOR author IN authors
-  // Filtre géographique : auteurs dans un rayon de 50km de Paris
+  // Geographic filter: authors within 50km radius of Paris
   FILTER author.affiliations[*].location != null
   LET currentAffiliation = FIRST(
     FOR aff IN author.affiliations
@@ -214,7 +214,7 @@ FOR author IN authors
     GEO_POINT(2.3522, 48.8566)  // Paris
   ) < 50000
 
-  // Comptage des publications sur le sujet
+  // Count publications on the topic
   LET relevantWorks = (
     FOR v IN 1..1 OUTBOUND author authored
       SEARCH ANALYZER(v.title IN TOKENS("machine learning ethics", "text_en"), "text_en")
@@ -224,7 +224,7 @@ FOR author IN authors
 
   FILTER LENGTH(relevantWorks) >= 3
 
-  // Score d'expertise
+  // Expertise score
   LET expertiseScore = SUM(relevantWorks[*].citationCount) / LENGTH(relevantWorks)
 
   SORT expertiseScore DESC
@@ -239,11 +239,11 @@ FOR author IN authors
     hIndex: author.hIndex
   }
 
-// 2. Graphe de co-auteurs avec profondeur
+// 2. Co-author graph with depth
 FOR author IN authors
   FILTER author._key == "A123456"
 
-  // Traversée du graphe de co-auteurs jusqu'à profondeur 2
+  // Traverse co-author graph up to depth 2
   FOR v, e, p IN 1..2 OUTBOUND author collaborated
     OPTIONS { bfs: true, uniqueVertices: "global" }
 
@@ -256,7 +256,7 @@ FOR author IN authors
       path: p.vertices[*].displayName
     }
 
-// 3. Évolution temporelle d'un domaine
+// 3. Temporal evolution of a field
 FOR work IN works
   SEARCH ANALYZER(work.title IN TOKENS("CRISPR gene editing", "text_en"), "text_en")
      OR ANALYZER(work.abstract IN TOKENS("CRISPR gene editing", "text_en"), "text_en")
@@ -277,13 +277,13 @@ FOR work IN works
     )
   }
 
-// 4. Articles similaires (nearest neighbors sur embeddings)
+// 4. Similar articles (nearest neighbors on embeddings)
 LET targetWork = DOCUMENT("works/W2741809807")
 
 FOR work IN works
   FILTER work._key != targetWork._key
 
-  // Distance cosinus sur les embeddings
+  // Cosine distance on embeddings
   LET similarity = (
     LET dotProduct = SUM(
       FOR i IN 0..LENGTH(targetWork.embedding)-1
@@ -306,7 +306,7 @@ FOR work IN works
     doi: work.doi
   }
 
-// 5. Chemin de citation entre deux articles
+// 5. Citation path between two articles
 FOR path IN OUTBOUND K_SHORTEST_PATHS
   "works/W2741809807" TO "works/W9999999"
   cites
@@ -319,106 +319,106 @@ FOR path IN OUTBOUND K_SHORTEST_PATHS
   }
 ```
 
-#### Évaluation ArangoDB
+#### ArangoDB Evaluation
 
 | Aspect | Score | Notes |
 |--------|-------|-------|
-| Multi-modèle natif | ⭐⭐⭐⭐⭐ | Documents + Graphe + Search unifié |
-| Graphe | ⭐⭐⭐⭐ | Très bon, mais Neo4j plus mature |
-| Full-text | ⭐⭐⭐⭐ | ArangoSearch basé sur IResearch |
-| Géospatial | ⭐⭐⭐⭐ | GeoJSON natif |
-| Vector search | ⭐⭐⭐ | Possible mais pas optimisé (pas d'ANN) |
-| Kubernetes | ⭐⭐⭐⭐ | Operator officiel mature |
-| Scalabilité | ⭐⭐⭐⭐ | Sharding, mais complexe |
-| Communauté | ⭐⭐⭐ | Plus petite que Postgres/Mongo |
+| Native multi-model | ⭐⭐⭐⭐⭐ | Unified Documents + Graph + Search |
+| Graph | ⭐⭐⭐⭐ | Very good, but Neo4j more mature |
+| Full-text | ⭐⭐⭐⭐ | ArangoSearch based on IResearch |
+| Geospatial | ⭐⭐⭐⭐ | Native GeoJSON |
+| Vector search | ⭐⭐⭐ | Possible but not optimized (no ANN) |
+| Kubernetes | ⭐⭐⭐⭐ | Mature official operator |
+| Scalability | ⭐⭐⭐⭐ | Sharding, but complex |
+| Community | ⭐⭐⭐ | Smaller than Postgres/Mongo |
 
 ---
 
 ### SurrealDB
 
-#### Présentation
+#### Overview
 
-SurrealDB est une base multi-modèle nouvelle génération avec SQL-like queries et features modernes.
+SurrealDB is a next-generation multi-model database with SQL-like queries and modern features.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           SURREALDB                                          │
+│                             SURREALDB                                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  CARACTÉRISTIQUES                                                            │
-│  ────────────────                                                            │
-│  • Documents, Graphes, Relations, Time-series                               │
-│  • SurrealQL (SQL-like avec extensions)                                     │
-│  • Permissions granulaires row-level                                        │
+│  CHARACTERISTICS                                                             │
+│  ───────────────                                                             │
+│  • Documents, Graphs, Relations, Time-series                                │
+│  • SurrealQL (SQL-like with extensions)                                     │
+│  • Granular row-level permissions                                           │
 │  • Real-time subscriptions (WebSocket)                                      │
-│  • Embeddable ou server                                                      │
+│  • Embeddable or server                                                      │
 │                                                                              │
-│  POINTS FORTS                                                                │
-│  ────────────                                                                │
-│  ✓ Record links (relations natives)                                         │
+│  STRENGTHS                                                                   │
+│  ─────────                                                                   │
+│  ✓ Record links (native relations)                                          │
 │  ✓ Computed fields                                                           │
-│  ✓ Events et triggers                                                        │
-│  ✓ Full-text search intégré                                                 │
-│  ✓ Géospatial                                                                │
+│  ✓ Events and triggers                                                       │
+│  ✓ Built-in full-text search                                                │
+│  ✓ Geospatial                                                                │
 │                                                                              │
-│  POINTS FAIBLES                                                              │
-│  ─────────────                                                               │
-│  ✗ Très jeune (v1.0 fin 2023)                                               │
-│  ✗ Pas encore production-ready pour gros volumes                            │
-│  ✗ Operator Kubernetes non officiel                                         │
-│  ✗ Vector search basique                                                     │
+│  WEAKNESSES                                                                  │
+│  ──────────                                                                  │
+│  ✗ Very young (v1.0 end of 2023)                                            │
+│  ✗ Not yet production-ready for large volumes                               │
+│  ✗ No official Kubernetes operator                                          │
+│  ✗ Basic vector search                                                       │
 │                                                                              │
-│  VERDICT : À surveiller, pas recommandé pour production immédiate           │
+│  VERDICT: Worth watching, not recommended for immediate production          │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Bases de données spécialisées
+## Specialized Databases
 
-### Bases vectorielles (Embeddings / Semantic Search)
+### Vector Databases (Embeddings / Semantic Search)
 
-#### Comparatif
+#### Comparison
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    BASES VECTORIELLES COMPARÉES                              │
+│                       VECTOR DATABASES COMPARED                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │                 │ Milvus  │ Qdrant  │ Weaviate │ Pinecone │ pgvector │     │
 │  ───────────────┼─────────┼─────────┼──────────┼──────────┼──────────┤     │
 │  Performance    │ ⭐⭐⭐⭐⭐ │ ⭐⭐⭐⭐⭐│ ⭐⭐⭐⭐   │ ⭐⭐⭐⭐⭐ │ ⭐⭐⭐     │     │
-│  Scalabilité    │ ⭐⭐⭐⭐⭐ │ ⭐⭐⭐⭐  │ ⭐⭐⭐⭐   │ ⭐⭐⭐⭐⭐ │ ⭐⭐⭐     │     │
+│  Scalability    │ ⭐⭐⭐⭐⭐ │ ⭐⭐⭐⭐  │ ⭐⭐⭐⭐   │ ⭐⭐⭐⭐⭐ │ ⭐⭐⭐     │     │
 │  Kubernetes     │ ⭐⭐⭐⭐  │ ⭐⭐⭐⭐  │ ⭐⭐⭐⭐   │ N/A      │ ⭐⭐⭐⭐⭐  │     │
 │  Open Source    │ ✅       │ ✅       │ ✅        │ ❌       │ ✅        │     │
-│  Filtres hybrid │ ⭐⭐⭐⭐  │ ⭐⭐⭐⭐⭐│ ⭐⭐⭐⭐   │ ⭐⭐⭐⭐  │ ⭐⭐⭐⭐   │     │
+│  Hybrid filters │ ⭐⭐⭐⭐  │ ⭐⭐⭐⭐⭐│ ⭐⭐⭐⭐   │ ⭐⭐⭐⭐  │ ⭐⭐⭐⭐   │     │
 │  Multi-tenancy  │ ⭐⭐⭐⭐  │ ⭐⭐⭐⭐⭐│ ⭐⭐⭐⭐   │ ⭐⭐⭐⭐⭐ │ ⭐⭐⭐     │     │
-│  Intégration PG │ ❌       │ ❌       │ ❌        │ ❌       │ ✅        │     │
-│  Simplicité     │ ⭐⭐⭐    │ ⭐⭐⭐⭐  │ ⭐⭐⭐     │ ⭐⭐⭐⭐⭐ │ ⭐⭐⭐⭐⭐  │     │
+│  PG Integration │ ❌       │ ❌       │ ❌        │ ❌       │ ✅        │     │
+│  Simplicity     │ ⭐⭐⭐    │ ⭐⭐⭐⭐  │ ⭐⭐⭐     │ ⭐⭐⭐⭐⭐ │ ⭐⭐⭐⭐⭐  │     │
 │  ───────────────┴─────────┴─────────┴──────────┴──────────┴──────────┘     │
 │                                                                              │
-│  RECOMMANDATION ATLAS                                                        │
+│  ATLAS RECOMMENDATION                                                        │
 │  ────────────────────                                                        │
 │                                                                              │
-│  Option A : pgvector (simplicité)                                           │
-│  ─────────────────────────────────                                           │
-│  • Extension PostgreSQL, pas de nouvelle base                               │
-│  • Suffisant pour < 10M vectors                                             │
-│  • Index HNSW disponible depuis v0.5                                        │
-│  • Filtrage SQL natif                                                        │
+│  Option A: pgvector (simplicity)                                            │
+│  ───────────────────────────────                                             │
+│  • PostgreSQL extension, no new database                                    │
+│  • Sufficient for < 10M vectors                                             │
+│  • HNSW index available since v0.5                                          │
+│  • Native SQL filtering                                                      │
 │                                                                              │
-│  Option B : Qdrant (performance + features)                                 │
-│  ──────────────────────────────────────────                                  │
-│  • Meilleur rapport performance/simplicité                                  │
-│  • Excellent filtrage hybride                                               │
-│  • Rust, très efficace en mémoire                                           │
-│  • Helm chart officiel                                                       │
+│  Option B: Qdrant (performance + features)                                  │
+│  ─────────────────────────────────────────                                   │
+│  • Best performance/simplicity ratio                                        │
+│  • Excellent hybrid filtering                                               │
+│  • Rust, very memory efficient                                              │
+│  • Official Helm chart                                                       │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Qdrant pour Atlas
+#### Qdrant for Atlas
 
 ```yaml
 # Helm install
@@ -442,25 +442,25 @@ resources:
 
 config:
   cluster:
-    enabled: false  # Single node pour commencer
+    enabled: false  # Single node to start
   storage:
     performance:
       optimizers_count: 2
 ```
 
 ```typescript
-// Client Qdrant
+// Qdrant client
 import { QdrantClient } from '@qdrant/js-client-rest';
 
 const qdrant = new QdrantClient({ url: 'http://qdrant:6333' });
 
-// Créer collection pour embeddings d'articles
+// Create collection for article embeddings
 await qdrant.createCollection('work_embeddings', {
   vectors: {
     specter: { size: 768, distance: 'Cosine' },   // SPECTER embeddings
     title: { size: 384, distance: 'Cosine' },     // Title embeddings (MiniLM)
   },
-  // Payload pour filtrage hybride
+  // Payload for hybrid filtering
   payload_schema: {
     year: { data_type: 'Integer', indexed: true },
     source: { data_type: 'Keyword', indexed: true },
@@ -469,7 +469,7 @@ await qdrant.createCollection('work_embeddings', {
   },
 });
 
-// Recherche sémantique avec filtres
+// Semantic search with filters
 const results = await qdrant.search('work_embeddings', {
   vector: {
     name: 'specter',
@@ -486,22 +486,22 @@ const results = await qdrant.search('work_embeddings', {
 });
 ```
 
-#### pgvector (alternative intégrée)
+#### pgvector (integrated alternative)
 
 ```sql
--- Extension pgvector
+-- pgvector extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- Table avec embeddings
+-- Table with embeddings
 ALTER TABLE canonical_works
   ADD COLUMN embedding vector(768);
 
--- Index HNSW pour recherche ANN efficace
+-- HNSW index for efficient ANN search
 CREATE INDEX ON canonical_works
   USING hnsw (embedding vector_cosine_ops)
   WITH (m = 16, ef_construction = 64);
 
--- Recherche similarité avec filtres SQL
+-- Similarity search with SQL filters
 SELECT
   id, title, year,
   1 - (embedding <=> $1::vector) AS similarity
@@ -514,54 +514,54 @@ LIMIT 20;
 
 ---
 
-### Bases time-series
+### Time-series Databases
 
 #### InfluxDB vs TimescaleDB vs QuestDB
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    BASES TIME-SERIES COMPARÉES                               │
+│                      TIME-SERIES DATABASES COMPARED                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │                   │ InfluxDB 3 │ TimescaleDB │ QuestDB │ ClickHouse │       │
 │  ─────────────────┼────────────┼─────────────┼─────────┼────────────┤       │
-│  Langage          │ SQL + Flux │ SQL         │ SQL     │ SQL        │       │
+│  Language         │ SQL + Flux │ SQL         │ SQL     │ SQL        │       │
 │  Compression      │ ⭐⭐⭐⭐⭐   │ ⭐⭐⭐⭐      │ ⭐⭐⭐⭐⭐ │ ⭐⭐⭐⭐⭐   │       │
 │  Ingestion        │ ⭐⭐⭐⭐⭐   │ ⭐⭐⭐⭐      │ ⭐⭐⭐⭐⭐ │ ⭐⭐⭐⭐⭐   │       │
-│  Agrégations      │ ⭐⭐⭐⭐    │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐  │ ⭐⭐⭐⭐⭐   │       │
+│  Aggregations     │ ⭐⭐⭐⭐    │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐  │ ⭐⭐⭐⭐⭐   │       │
 │  PostgreSQL compat│ ❌          │ ✅          │ ✅       │ ❌         │       │
 │  Kubernetes       │ ⭐⭐⭐⭐    │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐    │ ⭐⭐⭐⭐    │       │
 │  Open Source      │ ⚠️ (OSS 2) │ ✅          │ ✅       │ ✅         │       │
 │  ─────────────────┴────────────┴─────────────┴─────────┴────────────┘       │
 │                                                                              │
-│  CAS D'USAGE ATLAS                                                           │
-│  ─────────────────                                                           │
+│  ATLAS USE CASES                                                             │
+│  ───────────────                                                             │
 │                                                                              │
-│  Métriques à stocker :                                                       │
-│  • Évolution citations par article (daily)                                  │
-│  • Publications par domaine (weekly)                                        │
-│  • h-index auteurs (monthly)                                                │
-│  • Tendances thématiques (rolling window)                                   │
-│  • Logs d'audit vérifications                                               │
+│  Metrics to store:                                                           │
+│  • Citation evolution by article (daily)                                    │
+│  • Publications by field (weekly)                                           │
+│  • Author h-index (monthly)                                                 │
+│  • Thematic trends (rolling window)                                         │
+│  • Verification audit logs                                                   │
 │                                                                              │
-│  RECOMMANDATION : TimescaleDB                                                │
-│  ─────────────────────────────                                               │
-│  • Extension PostgreSQL → une seule base à gérer                            │
-│  • SQL standard                                                              │
-│  • Continuous aggregates pour rollups                                       │
-│  • Compression automatique                                                   │
-│  • Helm chart officiel (timescale/timescaledb-single)                       │
+│  RECOMMENDATION: TimescaleDB                                                 │
+│  ────────────────────────────                                                │
+│  • PostgreSQL extension → single database to manage                         │
+│  • Standard SQL                                                              │
+│  • Continuous aggregates for rollups                                        │
+│  • Automatic compression                                                     │
+│  • Official Helm chart (timescale/timescaledb-single)                       │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Schéma TimescaleDB pour métriques
+#### TimescaleDB Schema for Metrics
 
 ```sql
--- Extension TimescaleDB
+-- TimescaleDB extension
 CREATE EXTENSION IF NOT EXISTS timescaledb;
 
--- Métriques de citations par article
+-- Citation metrics by article
 CREATE TABLE citation_metrics (
   time TIMESTAMPTZ NOT NULL,
   work_id UUID NOT NULL,
@@ -573,7 +573,7 @@ CREATE TABLE citation_metrics (
 
 SELECT create_hypertable('citation_metrics', 'time');
 
--- Compression après 7 jours
+-- Compression after 7 days
 ALTER TABLE citation_metrics SET (
   timescaledb.compress,
   timescaledb.compress_segmentby = 'work_id'
@@ -581,7 +581,7 @@ ALTER TABLE citation_metrics SET (
 
 SELECT add_compression_policy('citation_metrics', INTERVAL '7 days');
 
--- Continuous aggregate pour tendances hebdomadaires
+-- Continuous aggregate for weekly trends
 CREATE MATERIALIZED VIEW citation_weekly
 WITH (timescaledb.continuous) AS
 SELECT
@@ -592,7 +592,7 @@ SELECT
 FROM citation_metrics
 GROUP BY week, work_id;
 
--- Métriques par domaine
+-- Metrics by field
 CREATE TABLE domain_metrics (
   time TIMESTAMPTZ NOT NULL,
   domain TEXT NOT NULL,
@@ -604,7 +604,7 @@ CREATE TABLE domain_metrics (
 
 SELECT create_hypertable('domain_metrics', 'time');
 
--- Requête : évolution d'un domaine
+-- Query: field evolution
 SELECT
   time_bucket('1 month', time) AS month,
   domain,
@@ -619,53 +619,53 @@ ORDER BY month;
 
 ---
 
-### Bases géospatiales
+### Geospatial Databases
 
 #### PostGIS vs H3 vs DuckDB Spatial
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    OPTIONS GÉOSPATIALES                                      │
+│                          GEOSPATIAL OPTIONS                                  │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  POSTGIS (Extension PostgreSQL)                                              │
+│  POSTGIS (PostgreSQL Extension)                                              │
 │  ──────────────────────────────                                              │
-│  ✓ Standard de facto                                                         │
-│  ✓ Tous types de géométries                                                 │
-│  ✓ Index GIST très efficaces                                                │
-│  ✓ Fonctions spatiales complètes                                            │
-│  → RECOMMANDÉ pour Atlas (déjà sur PostgreSQL)                              │
+│  ✓ De facto standard                                                         │
+│  ✓ All geometry types                                                       │
+│  ✓ Very efficient GIST indexes                                              │
+│  ✓ Complete spatial functions                                               │
+│  → RECOMMENDED for Atlas (already on PostgreSQL)                            │
 │                                                                              │
 │  H3 (Uber Hexagonal Grid)                                                    │
 │  ────────────────────────                                                    │
-│  ✓ Indexation hexagonale hiérarchique                                       │
-│  ✓ Excellente pour agrégations géo                                          │
-│  ✓ Extension PostgreSQL disponible                                          │
-│  → Utile pour heatmaps et clustering géographique                           │
+│  ✓ Hierarchical hexagonal indexing                                          │
+│  ✓ Excellent for geo aggregations                                           │
+│  ✓ PostgreSQL extension available                                           │
+│  → Useful for heatmaps and geographic clustering                            │
 │                                                                              │
-│  REQUÊTES ATLAS                                                              │
-│  ──────────────                                                              │
-│  • Institutions dans un rayon                                               │
-│  • Collaborations géographiques                                             │
-│  • Heatmap des publications par région                                      │
-│  • Clustering de labos par proximité                                        │
+│  ATLAS QUERIES                                                               │
+│  ─────────────                                                               │
+│  • Institutions within a radius                                             │
+│  • Geographic collaborations                                                 │
+│  • Publications heatmap by region                                           │
+│  • Lab clustering by proximity                                              │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Schéma PostGIS pour Atlas
+#### PostGIS Schema for Atlas
 
 ```sql
 CREATE EXTENSION IF NOT EXISTS postgis;
-CREATE EXTENSION IF NOT EXISTS h3;  -- Optionnel pour agrégations
+CREATE EXTENSION IF NOT EXISTS h3;  -- Optional for aggregations
 
--- Institutions avec localisation
+-- Institutions with location
 ALTER TABLE institutions
   ADD COLUMN location GEOMETRY(Point, 4326);
 
 CREATE INDEX idx_institutions_geo ON institutions USING GIST (location);
 
--- Requête : labos dans un rayon de 100km autour de Paris
+-- Query: labs within 100km radius of Paris
 SELECT
   i.name,
   i.country,
@@ -679,17 +679,17 @@ JOIN work_authorships wa ON wa.affiliation_institution_id = i.id
 WHERE ST_DWithin(
   i.location::geography,
   ST_MakePoint(2.3522, 48.8566)::geography,
-  100000  -- 100km en mètres
+  100000  -- 100km in meters
 )
 GROUP BY i.id
 ORDER BY distance_km;
 
--- Agrégation H3 pour heatmap
+-- H3 aggregation for heatmap
 SELECT
   h3_lat_lng_to_cell(
     ST_Y(i.location),
     ST_X(i.location),
-    5  -- Résolution H3
+    5  -- H3 resolution
   ) AS h3_cell,
   COUNT(*) AS institution_count,
   SUM(i.works_count) AS total_works
@@ -700,51 +700,51 @@ GROUP BY h3_cell;
 
 ---
 
-## Moteurs de recherche
+## Search Engines
 
 ### Elasticsearch vs OpenSearch vs Meilisearch
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    MOTEURS DE RECHERCHE COMPARÉS                             │
+│                       SEARCH ENGINES COMPARED                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │                   │ OpenSearch  │ Elasticsearch │ Meilisearch │ Typesense │ │
 │  ─────────────────┼─────────────┼───────────────┼─────────────┼───────────┤ │
-│  Licence          │ Apache 2.0  │ SSPL/Elastic  │ MIT         │ GPL-3     │ │
+│  License          │ Apache 2.0  │ SSPL/Elastic  │ MIT         │ GPL-3     │ │
 │  Full-text        │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐⭐      │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐⭐  │ │
-│  Agrégations      │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐⭐      │ ⭐⭐⭐        │ ⭐⭐⭐     │ │
+│  Aggregations     │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐⭐      │ ⭐⭐⭐        │ ⭐⭐⭐     │ │
 │  Vector search    │ ⭐⭐⭐⭐     │ ⭐⭐⭐⭐⭐      │ ⭐⭐⭐        │ ⭐⭐⭐     │ │
 │  Multitenancy     │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐⭐      │ ⭐⭐⭐⭐      │ ⭐⭐⭐⭐   │ │
 │  Kubernetes       │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐⭐      │ ⭐⭐⭐⭐      │ ⭐⭐⭐     │ │
-│  Ressources       │ ⭐⭐         │ ⭐⭐           │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐   │ │
-│  Simplicité       │ ⭐⭐⭐       │ ⭐⭐⭐         │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐   │ │
-│  Scoring avancé   │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐⭐      │ ⭐⭐⭐        │ ⭐⭐⭐     │ │
-│  ML intégré       │ ⭐⭐⭐⭐     │ ⭐⭐⭐⭐⭐      │ ❌           │ ❌        │ │
+│  Resources        │ ⭐⭐         │ ⭐⭐           │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐   │ │
+│  Simplicity       │ ⭐⭐⭐       │ ⭐⭐⭐         │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐   │ │
+│  Advanced scoring │ ⭐⭐⭐⭐⭐    │ ⭐⭐⭐⭐⭐      │ ⭐⭐⭐        │ ⭐⭐⭐     │ │
+│  Built-in ML      │ ⭐⭐⭐⭐     │ ⭐⭐⭐⭐⭐      │ ❌           │ ❌        │ │
 │  ─────────────────┴─────────────┴───────────────┴─────────────┴───────────┘ │
 │                                                                              │
-│  RECOMMANDATION ATLAS                                                        │
+│  ATLAS RECOMMENDATION                                                        │
 │  ────────────────────                                                        │
 │                                                                              │
-│  OpenSearch pour la recherche avancée                                        │
-│  ─────────────────────────────────────                                       │
-│  • Fork Apache 2.0 d'Elasticsearch                                          │
-│  • Fonctionnalités équivalentes                                             │
-│  • Pas de risque licence                                                     │
-│  • Excellent support AWS (si cloud)                                          │
-│  • Helm chart : opensearch-project/opensearch                               │
-│  • Operator : opensearch-project/opensearch-k8s-operator                    │
+│  OpenSearch for advanced search                                              │
+│  ────────────────────────────────                                            │
+│  • Apache 2.0 fork of Elasticsearch                                         │
+│  • Equivalent features                                                       │
+│  • No license risk                                                           │
+│  • Excellent AWS support (if cloud)                                          │
+│  • Helm chart: opensearch-project/opensearch                                │
+│  • Operator: opensearch-project/opensearch-k8s-operator                     │
 │                                                                              │
-│  Meilisearch en complément pour UX instantanée                              │
-│  ─────────────────────────────────────────────                               │
-│  • Autocomplete ultra-rapide                                                │
+│  Meilisearch as complement for instant UX                                   │
+│  ────────────────────────────────────────────                                │
+│  • Ultra-fast autocomplete                                                  │
 │  • Typo-tolerance                                                           │
-│  • Très faible footprint                                                    │
+│  • Very low footprint                                                       │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Architecture OpenSearch pour Atlas
+### OpenSearch Architecture for Atlas
 
 ```yaml
 # OpenSearch cluster manifest
@@ -760,8 +760,8 @@ spec:
     httpPort: 9200
     pluginsList:
       - analysis-icu
-      - analysis-kuromoji  # Japonais
-      - analysis-smartcn   # Chinois
+      - analysis-kuromoji  # Japanese
+      - analysis-smartcn   # Chinese
 
   dashboards:
     enable: true
@@ -797,7 +797,7 @@ spec:
               storage: 50Gi
 ```
 
-### Mapping OpenSearch multi-entités
+### OpenSearch Multi-entity Mapping
 
 ```json
 {
@@ -828,8 +828,8 @@ spec:
         "name_synonym_filter": {
           "type": "synonym",
           "synonyms": [
-            "université, university, univ",
-            "laboratoire, laboratory, lab"
+            "university, univ",
+            "laboratory, lab"
           ]
         }
       }
@@ -870,7 +870,7 @@ spec:
       "keywords": { "type": "keyword" },
       "source": { "type": "keyword" },
 
-      // Embeddings pour vector search
+      // Embeddings for vector search
       "embedding": {
         "type": "knn_vector",
         "dimension": 768,
@@ -928,16 +928,16 @@ spec:
 }
 ```
 
-### Requêtes OpenSearch avancées
+### Advanced OpenSearch Queries
 
 ```typescript
-// Client OpenSearch
+// OpenSearch client
 import { Client } from '@opensearch-project/opensearch';
 
 const client = new Client({ node: 'http://atlas-search:9200' });
 
 // ══════════════════════════════════════════════════════════════════════════
-// 1. RECHERCHE MULTI-ENTITÉS
+// 1. MULTI-ENTITY SEARCH
 // ══════════════════════════════════════════════════════════════════════════
 
 const multiEntitySearch = async (query: string) => {
@@ -947,21 +947,21 @@ const multiEntitySearch = async (query: string) => {
       query: {
         bool: {
           should: [
-            // Recherche sur works (titre, abstract)
+            // Search on works (title, abstract)
             {
               bool: {
                 must: { multi_match: { query, fields: ['title^3', 'abstract', 'keywords^2'] } },
                 filter: { term: { _entity_type: 'work' } }
               }
             },
-            // Recherche sur authors
+            // Search on authors
             {
               bool: {
                 must: { match: { display_name: { query, fuzziness: 'AUTO' } } },
                 filter: { term: { _entity_type: 'author' } }
               }
             },
-            // Recherche sur institutions
+            // Search on institutions
             {
               bool: {
                 must: { match: { institution_name: { query, fuzziness: 'AUTO' } } },
@@ -971,7 +971,7 @@ const multiEntitySearch = async (query: string) => {
           ]
         }
       },
-      // Agrégations par type d'entité
+      // Aggregations by entity type
       aggs: {
         by_entity_type: {
           terms: { field: '_entity_type' },
@@ -995,7 +995,7 @@ const multiEntitySearch = async (query: string) => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// 2. EXPERT SUR UN SUJET DANS UNE ZONE
+// 2. EXPERT ON A TOPIC IN AN AREA
 // ══════════════════════════════════════════════════════════════════════════
 
 const findExperts = async (topic: string, location: { lat: number; lon: number }, radiusKm: number) => {
@@ -1035,7 +1035,7 @@ const findExperts = async (topic: string, location: { lat: number; lon: number }
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// 3. RECHERCHE SÉMANTIQUE (VECTOR + KEYWORDS)
+// 3. SEMANTIC SEARCH (VECTOR + KEYWORDS)
 // ══════════════════════════════════════════════════════════════════════════
 
 const semanticSearch = async (queryEmbedding: number[], keywords: string[], filters: any) => {
@@ -1057,13 +1057,13 @@ const semanticSearch = async (queryEmbedding: number[], keywords: string[], filt
             }
           ],
           should: [
-            // Boost si keywords match
+            // Boost if keywords match
             { terms: { keywords: keywords, boost: 2 } }
           ],
           filter: filters
         }
       },
-      // Rescoring pour combiner BM25 et vector
+      // Rescoring to combine BM25 and vector
       rescore: {
         window_size: 100,
         query: {
@@ -1084,7 +1084,7 @@ const semanticSearch = async (queryEmbedding: number[], keywords: string[], filt
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// 4. AUTOCOMPLETE MULTI-ENTITÉS
+// 4. MULTI-ENTITY AUTOCOMPLETE
 // ══════════════════════════════════════════════════════════════════════════
 
 const autocomplete = async (prefix: string) => {
@@ -1118,7 +1118,7 @@ const autocomplete = async (prefix: string) => {
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// 5. FACETTES ET AGRÉGATIONS
+// 5. FACETS AND AGGREGATIONS
 // ══════════════════════════════════════════════════════════════════════════
 
 const searchWithFacets = async (query: string) => {
@@ -1134,7 +1134,7 @@ const searchWithFacets = async (query: string) => {
         }
       },
       aggs: {
-        // Facette par année
+        // Facet by year
         by_year: {
           histogram: {
             field: 'year',
@@ -1142,23 +1142,23 @@ const searchWithFacets = async (query: string) => {
             min_doc_count: 1
           }
         },
-        // Facette par type
+        // Facet by type
         by_type: {
           terms: { field: 'work_type', size: 10 }
         },
-        // Facette par source
+        // Facet by source
         by_source: {
           terms: { field: 'source', size: 10 }
         },
-        // Facette par venue (top 20)
+        // Facet by venue (top 20)
         by_venue: {
           terms: { field: 'venue.exact', size: 20 }
         },
-        // Stats citations
+        // Citation stats
         citation_stats: {
           stats: { field: 'citation_count' }
         },
-        // Répartition citations
+        // Citation distribution
         citation_ranges: {
           range: {
             field: 'citation_count',
@@ -1185,42 +1185,42 @@ const searchWithFacets = async (query: string) => {
 
 ---
 
-## Architecture de fédération multi-bases
+## Multi-database Federation Architecture
 
-### Problématique
+### Problem Statement
 
-Comment exécuter une seule requête sur plusieurs bases de données (PostgreSQL, OpenSearch, Qdrant, TimescaleDB) ?
+How to execute a single query across multiple databases (PostgreSQL, OpenSearch, Qdrant, TimescaleDB)?
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    FÉDÉRATION DE REQUÊTES                                    │
+│                           QUERY FEDERATION                                   │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  REQUÊTE UTILISATEUR                                                         │
-│  ───────────────────                                                         │
-│  "Experts en machine learning éthique, à Paris, avec publications récentes  │
-│   très citées, et articles similaires à mon draft"                          │
+│  USER QUERY                                                                  │
+│  ──────────                                                                  │
+│  "Experts in ethical machine learning, in Paris, with recent highly         │
+│   cited publications, and articles similar to my draft"                     │
 │                                                                              │
-│  DÉCOMPOSITION                                                               │
+│  DECOMPOSITION                                                               │
 │  ─────────────                                                               │
 │  1. Full-text "machine learning ethics" → OpenSearch                        │
-│  2. Géo "Paris 50km" → PostgreSQL/PostGIS                                   │
-│  3. Time-series "publications récentes" → TimescaleDB                       │
-│  4. Vector "similaires à draft" → Qdrant                                    │
-│  5. Graphe "réseau co-auteurs" → PostgreSQL ou ArangoDB                     │
-│  6. Agrégation finale → Application layer                                   │
+│  2. Geo "Paris 50km" → PostgreSQL/PostGIS                                   │
+│  3. Time-series "recent publications" → TimescaleDB                         │
+│  4. Vector "similar to draft" → Qdrant                                      │
+│  5. Graph "co-author network" → PostgreSQL or ArangoDB                      │
+│  6. Final aggregation → Application layer                                   │
 │                                                                              │
-│  APPROCHES                                                                   │
-│  ─────────                                                                   │
+│  APPROACHES                                                                  │
+│  ──────────                                                                  │
 │  A. Query Federation (application layer)                                    │
 │  B. Data Virtualization (Trino/Presto)                                      │
-│  C. Polyglot Persistence avec Event Sourcing                                │
+│  C. Polyglot Persistence with Event Sourcing                                │
 │  D. GraphQL Federation                                                       │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Approche A : Query Federation (Application Layer)
+### Approach A: Query Federation (Application Layer)
 
 ```typescript
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1267,24 +1267,24 @@ class FederatedQueryService {
   ) {}
 
   /**
-   * Exécute une requête fédérée sur toutes les sources pertinentes
+   * Executes a federated query across all relevant sources
    */
   execute = (query: FederatedQuery): Effect.Effect<FederatedResult, QueryError> => {
     return Effect.gen(this, function* () {
-      // 1. Planification de la requête
+      // 1. Query planning
       const plan = this.planQuery(query);
 
-      // 2. Exécution parallèle des requêtes indépendantes
+      // 2. Parallel execution of independent queries
       const independentSteps = plan.steps.filter(s => !s.dependsOn?.length);
       const dependentSteps = plan.steps.filter(s => s.dependsOn?.length);
 
-      // Exécution parallèle
+      // Parallel execution
       const independentResults = yield* Effect.all(
         independentSteps.map(step => this.executeStep(step)),
         { concurrency: 'unbounded' }
       );
 
-      // 3. Exécution séquentielle des étapes dépendantes
+      // 3. Sequential execution of dependent steps
       let allResults = new Map<string, StepResult>();
       independentResults.forEach((result, i) => {
         allResults.set(independentSteps[i].source, result);
@@ -1295,7 +1295,7 @@ class FederatedQueryService {
         allResults.set(step.source, result);
       }
 
-      // 4. Fusion des résultats
+      // 4. Results merging
       return this.mergeResults(allResults, plan.mergeStrategy, query);
     });
   };
@@ -1457,7 +1457,7 @@ class FederatedQueryService {
   }
 
   private getSourceWeight(source: string, query: FederatedQuery): number {
-    // Poids dynamiques selon le type de requête
+    // Dynamic weights based on query type
     if (query.embedding && source === 'qdrant') return 0.5;
     if (query.text && source === 'opensearch') return 0.4;
     if (query.geo && source === 'postgres') return 0.3;
@@ -1466,17 +1466,17 @@ class FederatedQueryService {
 }
 ```
 
-### Approche B : Trino (Data Virtualization)
+### Approach B: Trino (Data Virtualization)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                           TRINO (PRESTO FORK)                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  PRINCIPE                                                                    │
-│  ────────                                                                    │
-│  Moteur SQL distribué qui fédère plusieurs sources de données               │
-│  via des connecteurs (catalog).                                             │
+│  PRINCIPLE                                                                   │
+│  ─────────                                                                   │
+│  Distributed SQL engine that federates multiple data sources                │
+│  via connectors (catalog).                                                  │
 │                                                                              │
 │  ARCHITECTURE                                                                │
 │  ────────────                                                                │
@@ -1506,16 +1506,16 @@ class FederatedQueryService {
 │  │ Catalog │         │ Catalog │         │ Catalog │                       │
 │  └─────────┘         └─────────┘         └─────────┘                       │
 │                                                                              │
-│  CONNECTEURS DISPONIBLES                                                     │
-│  ───────────────────────                                                     │
+│  AVAILABLE CONNECTORS                                                        │
+│  ────────────────────                                                        │
 │  ✓ PostgreSQL                                                                │
 │  ✓ MongoDB                                                                   │
 │  ✓ Elasticsearch/OpenSearch                                                 │
 │  ✓ Redis                                                                     │
 │  ✓ S3 (Parquet, ORC, Avro)                                                  │
 │  ✓ ClickHouse                                                                │
-│  ✗ Qdrant (pas de connecteur natif)                                         │
-│  ✗ InfluxDB/TimescaleDB (limité)                                            │
+│  ✗ Qdrant (no native connector)                                             │
+│  ✗ InfluxDB/TimescaleDB (limited)                                           │
 │                                                                              │
 │  KUBERNETES                                                                  │
 │  ──────────                                                                  │
@@ -1524,7 +1524,7 @@ class FederatedQueryService {
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-#### Configuration Trino pour Atlas
+#### Trino Configuration for Atlas
 
 ```yaml
 # catalogs/postgres.properties
@@ -1538,14 +1538,14 @@ connector.name=opensearch
 opensearch.host=atlas-search
 opensearch.port=9200
 
-# catalogs/mongodb.properties (si utilisé pour raw records)
+# catalogs/mongodb.properties (if used for raw records)
 connector.name=mongodb
 mongodb.connection-url=mongodb://mongodb:27017
 mongodb.schema-collection=_schema
 ```
 
 ```sql
--- Requête Trino fédérée
+-- Federated Trino query
 SELECT
   p.display_name,
   p.h_index,
@@ -1559,17 +1559,17 @@ ORDER BY os.citation_count DESC
 LIMIT 50;
 ```
 
-### Approche C : GraphQL Federation
+### Approach C: GraphQL Federation
 
 ```typescript
 // ═══════════════════════════════════════════════════════════════════════════
 // GRAPHQL SCHEMA FEDERATION
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Schéma GraphQL unifié
+// Unified GraphQL schema
 const typeDefs = `#graphql
   type Query {
-    # Recherche multi-entités
+    # Multi-entity search
     search(
       query: String!
       types: [EntityType!]
@@ -1577,20 +1577,20 @@ const typeDefs = `#graphql
       limit: Int = 20
     ): SearchResult!
 
-    # Recherche d'experts
+    # Expert search
     findExperts(
       topic: String!
       location: GeoInput
       minHIndex: Int
     ): [Author!]!
 
-    # Articles similaires
+    # Similar articles
     similarWorks(
       workId: ID!
       limit: Int = 10
     ): [Work!]!
 
-    # Évolution temporelle
+    # Temporal evolution
     domainTrends(
       domain: String!
       fromYear: Int!
@@ -1614,13 +1614,13 @@ const typeDefs = `#graphql
     doi: String
     citationCount: Int
 
-    # Relations (résolues depuis GraphDB ou SQL)
+    # Relations (resolved from GraphDB or SQL)
     authors: [Author!]!
     venue: Venue
     references: [Work!]!
     citations: [Work!]!
 
-    # Données enrichies
+    # Enriched data
     similarity(to: ID!): Float @resolver(source: "qdrant")
     citationTrend: [CitationPoint!]! @resolver(source: "timescale")
   }
@@ -1636,7 +1636,7 @@ const typeDefs = `#graphql
     works(limit: Int = 10): [Work!]!
     coauthors(depth: Int = 1): [Author!]! @resolver(source: "graph")
 
-    # Données enrichies
+    # Enriched data
     expertiseTopics: [String!]! @resolver(source: "ml")
     location: GeoPoint @resolver(source: "postgis")
   }
@@ -1652,7 +1652,7 @@ const typeDefs = `#graphql
     authors: [Author!]!
     works: [Work!]!
 
-    # Données enrichies
+    # Enriched data
     publicationTrend: [YearlyStats!]! @resolver(source: "timescale")
   }
 
@@ -1678,11 +1678,11 @@ const typeDefs = `#graphql
   }
 `;
 
-// Resolvers avec fédération
+// Resolvers with federation
 const resolvers = {
   Query: {
     search: async (_, args, context) => {
-      // Exécution parallèle sur OpenSearch
+      // Parallel execution on OpenSearch
       const [works, authors, institutions] = await Promise.all([
         context.dataSources.opensearch.searchWorks(args),
         context.dataSources.opensearch.searchAuthors(args),
@@ -1699,7 +1699,7 @@ const resolvers = {
     },
 
     findExperts: async (_, { topic, location, minHIndex }, context) => {
-      // 1. Full-text search pour le topic
+      // 1. Full-text search for the topic
       const candidates = await context.dataSources.opensearch.searchAuthors({
         query: topic,
         minHIndex
@@ -1707,7 +1707,7 @@ const resolvers = {
 
       if (!location) return candidates;
 
-      // 2. Filtre géographique
+      // 2. Geographic filter
       const authorIds = candidates.map(a => a.id);
       const geoFiltered = await context.dataSources.postgres.filterByLocation(
         authorIds,
@@ -1718,17 +1718,17 @@ const resolvers = {
     },
 
     similarWorks: async (_, { workId, limit }, context) => {
-      // 1. Récupérer l'embedding du work
+      // 1. Get work embedding
       const embedding = await context.dataSources.postgres.getWorkEmbedding(workId);
 
-      // 2. Recherche ANN dans Qdrant
+      // 2. ANN search in Qdrant
       const similarIds = await context.dataSources.qdrant.searchSimilar(
         embedding,
         limit,
         { excludeIds: [workId] }
       );
 
-      // 3. Récupérer les détails depuis PostgreSQL
+      // 3. Get details from PostgreSQL
       return context.dataSources.postgres.getWorksByIds(similarIds);
     }
   },
@@ -1753,7 +1753,7 @@ const resolvers = {
 
   Author: {
     coauthors: async (author, { depth }, context) => {
-      // Traversée de graphe
+      // Graph traversal
       return context.dataSources.graph.getCoauthorNetwork(author.id, depth);
     },
 
@@ -1769,13 +1769,13 @@ const resolvers = {
 
 ---
 
-## Architecture recommandée multi-bases
+## Recommended Multi-database Architecture
 
-### Vue d'ensemble
+### Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    ARCHITECTURE MULTI-BASES ATLAS                            │
+│                      ATLAS MULTI-DATABASE ARCHITECTURE                       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │                              ┌─────────────────┐                            │
@@ -1797,10 +1797,10 @@ const resolvers = {
 │  │  + TimescaleDB│          │               │          │               │   │
 │  │  + pgvector   │          │               │          │               │   │
 │  ├───────────────┤          ├───────────────┤          ├───────────────┤   │
-│  │ • Entités     │          │ • Full-text   │          │ • Semantic    │   │
-│  │ • Relations   │          │ • Facettes    │          │   search      │   │
-│  │ • Géo         │          │ • Autocomplete│          │ • Similarity  │   │
-│  │ • Time-series │          │ • Agrégations │          │ • Clustering  │   │
+│  │ • Entities    │          │ • Full-text   │          │ • Semantic    │   │
+│  │ • Relations   │          │ • Facets      │          │   search      │   │
+│  │ • Geo         │          │ • Autocomplete│          │ • Similarity  │   │
+│  │ • Time-series │          │ • Aggregations│          │ • Clustering  │   │
 │  │ • Audit trail │          │               │          │               │   │
 │  └───────────────┘          └───────────────┘          └───────────────┘   │
 │          │                            │                            │        │
@@ -1811,8 +1811,8 @@ const resolvers = {
 │                              │  (cache, queue) │                            │
 │                              └─────────────────┘                            │
 │                                                                              │
-│  FLUX DE DONNÉES                                                             │
-│  ───────────────                                                             │
+│  DATA FLOW                                                                   │
+│  ─────────                                                                   │
 │  1. Ingestion → PostgreSQL (source of truth)                                │
 │  2. CDC/Sync → OpenSearch (full-text index)                                 │
 │  3. CDC/Sync → Qdrant (embeddings index)                                    │
@@ -1821,14 +1821,14 @@ const resolvers = {
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Synchronisation des données (CDC)
+### Data Synchronization (CDC)
 
 ```typescript
 // ═══════════════════════════════════════════════════════════════════════════
-// CHANGE DATA CAPTURE avec Debezium
+// CHANGE DATA CAPTURE with Debezium
 // ═══════════════════════════════════════════════════════════════════════════
 
-// docker-compose.yml (ou Kubernetes)
+// docker-compose.yml (or Kubernetes)
 /*
 version: '3'
 services:
@@ -1841,7 +1841,7 @@ services:
       OFFSET_STORAGE_TOPIC: connect-offsets
       STATUS_STORAGE_TOPIC: connect-status
 
-  # Ou utiliser Debezium Server (sans Kafka)
+  # Or use Debezium Server (without Kafka)
   debezium-server:
     image: debezium/server:2.4
     environment:
@@ -1855,7 +1855,7 @@ services:
       DEBEZIUM_SINK_HTTP_URL: http://sync-service:3000/cdc
 */
 
-// Service de synchronisation
+// Synchronization service
 import { Effect, Queue, Stream } from 'effect';
 
 interface CDCEvent {
@@ -1951,7 +1951,7 @@ class SyncService {
 }
 ```
 
-### Kubernetes manifests complets
+### Complete Kubernetes Manifests
 
 ```yaml
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1966,7 +1966,7 @@ metadata:
 
 ---
 # ═══════════════════════════════════════════════════════════════════════════
-# POSTGRESQL (CloudNativePG avec extensions)
+# POSTGRESQL (CloudNativePG with extensions)
 # ═══════════════════════════════════════════════════════════════════════════
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
@@ -1991,7 +1991,7 @@ spec:
       min_wal_size: "1GB"
       max_wal_size: "4GB"
 
-    # Extensions activées
+    # Enabled extensions
     shared_preload_libraries:
       - timescaledb
       - pg_stat_statements
@@ -2128,7 +2128,7 @@ metadata:
   namespace: atlas-data
 spec:
   serviceName: qdrant
-  replicas: 1  # Single node pour commencer, scale later
+  replicas: 1  # Single node to start, scale later
   selector:
     matchLabels:
       app: qdrant
@@ -2268,13 +2268,13 @@ spec:
 
 ---
 
-## Patterns d'interface utilisateur
+## User Interface Patterns
 
-### Recherche facettée multi-entités
+### Faceted Multi-entity Search
 
 ```typescript
 // ═══════════════════════════════════════════════════════════════════════════
-// COMPOSANT SVELTE - RECHERCHE MULTI-ENTITÉS
+// SVELTE COMPONENT - MULTI-ENTITY SEARCH
 // ═══════════════════════════════════════════════════════════════════════════
 
 // src/lib/components/Search.svelte
@@ -2336,16 +2336,16 @@ spec:
 </script>
 
 <div class="search-container">
-  <!-- Barre de recherche -->
+  <!-- Search bar -->
   <div class="search-bar">
     <input
       type="text"
       value={state.query}
       oninput={onInput}
-      placeholder="Rechercher des articles, auteurs, institutions..."
+      placeholder="Search articles, authors, institutions..."
     />
 
-    <!-- Suggestions autocomplete -->
+    <!-- Autocomplete suggestions -->
     {#if suggestions.length > 0}
       <div class="suggestions">
         {#each suggestions as suggestion}
@@ -2358,7 +2358,7 @@ spec:
     {/if}
   </div>
 
-  <!-- Filtres entités -->
+  <!-- Entity filters -->
   <div class="entity-filters">
     {#each ['work', 'author', 'institution'] as type}
       <label>
@@ -2373,18 +2373,18 @@ spec:
             }
           }}
         />
-        {type === 'work' ? 'Publications' : type === 'author' ? 'Auteurs' : 'Institutions'}
+        {type === 'work' ? 'Publications' : type === 'author' ? 'Authors' : 'Institutions'}
       </label>
     {/each}
   </div>
 
-  <!-- Résultats avec facettes -->
+  <!-- Results with facets -->
   <div class="results-layout">
-    <!-- Facettes (gauche) -->
+    <!-- Facets (left) -->
     <aside class="facets">
       {#if $searchQuery.data?.facets}
         <FacetGroup
-          title="Année"
+          title="Year"
           facet={$searchQuery.data.facets.by_year}
           onSelect={(year) => { state.filters.yearFrom = year; state.filters.yearTo = year; }}
         />
@@ -2406,19 +2406,19 @@ spec:
       {/if}
     </aside>
 
-    <!-- Résultats (centre) -->
+    <!-- Results (center) -->
     <main class="results">
       {#if $searchQuery.isLoading}
         <LoadingSpinner />
       {:else if $searchQuery.data}
-        <!-- Onglets par type d'entité -->
+        <!-- Tabs by entity type -->
         <Tabs>
           <Tab label="Publications ({$searchQuery.data.works.length})">
             {#each $searchQuery.data.works as work}
               <WorkCard {work} highlights={work._highlights} />
             {/each}
           </Tab>
-          <Tab label="Auteurs ({$searchQuery.data.authors.length})">
+          <Tab label="Authors ({$searchQuery.data.authors.length})">
             {#each $searchQuery.data.authors as author}
               <AuthorCard {author} />
             {/each}
@@ -2435,7 +2435,7 @@ spec:
 </div>
 ```
 
-### Carte des experts
+### Expert Map
 
 ```typescript
 // src/lib/components/ExpertMap.svelte
@@ -2492,7 +2492,7 @@ spec:
             <h3>${expert.displayName}</h3>
             <p>${expert.institution}</p>
             <p>h-index: ${expert.hIndex}</p>
-            <p>${expert.worksOnTopic} publications sur "${topic}"</p>
+            <p>${expert.worksOnTopic} publications on "${topic}"</p>
           </div>
         `))
         .addTo(map);
@@ -2505,7 +2505,7 @@ spec:
     <input
       type="text"
       bind:value={topic}
-      placeholder="Sujet de recherche..."
+      placeholder="Research topic..."
     />
     <input
       type="number"
@@ -2518,7 +2518,7 @@ spec:
   <div bind:this={mapContainer} class="map"></div>
 
   <div class="legend">
-    <p>Taille des marqueurs proportionnelle au h-index</p>
+    <p>Marker size proportional to h-index</p>
   </div>
 </div>
 
@@ -2541,7 +2541,7 @@ spec:
 </style>
 ```
 
-### Visualisation du réseau de co-auteurs
+### Co-author Network Visualization
 
 ```typescript
 // src/lib/components/CoauthorNetwork.svelte
@@ -2601,7 +2601,7 @@ spec:
 <div class="network-container">
   <div class="controls">
     <label>
-      Profondeur:
+      Depth:
       <input type="range" min="1" max="3" bind:value={depth} />
       {depth}
     </label>
@@ -2611,7 +2611,7 @@ spec:
 
   <div class="stats">
     {#if $networkQuery.data}
-      <p>{$networkQuery.data.nodes.length} auteurs</p>
+      <p>{$networkQuery.data.nodes.length} authors</p>
       <p>{$networkQuery.data.edges.length} collaborations</p>
     {/if}
   </div>
@@ -2626,7 +2626,7 @@ spec:
 </style>
 ```
 
-### Tendances temporelles
+### Temporal Trends
 
 ```typescript
 // src/lib/components/DomainTrends.svelte
@@ -2668,7 +2668,7 @@ spec:
             yAxisID: 'y'
           },
           {
-            label: 'Citations moyennes',
+            label: 'Average citations',
             data: $trendsQuery.data.map(d => d.avgCitations),
             borderColor: '#10b981',
             yAxisID: 'y1'
@@ -2686,7 +2686,7 @@ spec:
           y1: {
             type: 'linear',
             position: 'right',
-            title: { display: true, text: 'Citations moyennes' },
+            title: { display: true, text: 'Average citations' },
             grid: { drawOnChartArea: false }
           }
         }
@@ -2699,7 +2699,7 @@ spec:
 
 <div class="trends-container">
   <div class="controls">
-    <input type="text" bind:value={domain} placeholder="Domaine..." />
+    <input type="text" bind:value={domain} placeholder="Domain..." />
     <input type="number" bind:value={fromYear} min="1990" max="2024" />
     <input type="number" bind:value={toYear} min="1990" max="2024" />
   </div>
@@ -2718,7 +2718,7 @@ spec:
             $trendsQuery.data[0]?.publicationCount) /
             $trendsQuery.data[0]?.publicationCount * 100).toFixed(1)}%
         </span>
-        <span class="label">Croissance</span>
+        <span class="label">Growth</span>
       </div>
     </div>
   {/if}
@@ -2727,80 +2727,80 @@ spec:
 
 ---
 
-## Synthèse et recommandations
+## Summary and Recommendations
 
-### Architecture finale recommandée
+### Final Recommended Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    ARCHITECTURE ATLAS - SYNTHÈSE                             │
+│                        ATLAS ARCHITECTURE - SUMMARY                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  TIER 1 - ESSENTIEL (v1)                                                    │
+│  TIER 1 - ESSENTIAL (v1)                                                    │
 │  ───────────────────────                                                     │
 │  • PostgreSQL 16 + PostGIS + TimescaleDB + pgvector                         │
-│    → Base principale, source de vérité                                      │
+│    → Primary database, source of truth                                      │
 │  • OpenSearch                                                                │
-│    → Full-text, facettes, autocomplete                                      │
+│    → Full-text, facets, autocomplete                                        │
 │  • Redis                                                                     │
 │    → Cache, sessions, jobs                                                   │
 │                                                                              │
-│  TIER 2 - ENRICHISSEMENT (v2)                                               │
-│  ────────────────────────────                                                │
+│  TIER 2 - ENRICHMENT (v2)                                                   │
+│  ────────────────────────                                                    │
 │  • Qdrant                                                                    │
-│    → Recherche sémantique, similarité (si pgvector insuffisant)            │
+│    → Semantic search, similarity (if pgvector insufficient)                 │
 │  • Meilisearch                                                               │
-│    → Autocomplete ultra-rapide (si OpenSearch trop lent)                    │
+│    → Ultra-fast autocomplete (if OpenSearch too slow)                       │
 │                                                                              │
-│  TIER 3 - AVANCÉ (v3)                                                       │
+│  TIER 3 - ADVANCED (v3)                                                     │
 │  ─────────────────────                                                       │
-│  • ArangoDB ou Neo4j                                                         │
-│    → Graphe de co-auteurs, citations (si traversées complexes)             │
+│  • ArangoDB or Neo4j                                                         │
+│    → Co-author graph, citations (if complex traversals needed)              │
 │  • ClickHouse                                                                │
-│    → Analytics lourdes, reporting (si TimescaleDB insuffisant)             │
+│    → Heavy analytics, reporting (if TimescaleDB insufficient)               │
 │                                                                              │
-│  DÉCISIONS CLÉS                                                              │
-│  ──────────────                                                              │
+│  KEY DECISIONS                                                               │
+│  ─────────────                                                               │
 │                                                                              │
-│  PostgreSQL comme pivot :                                                    │
-│  • Une seule base à opérer initialement                                     │
-│  • Extensions couvrent 80% des besoins                                      │
-│  • pgvector pour vecteurs (suffisant < 10M)                                 │
-│  • PostGIS pour géo                                                          │
-│  • TimescaleDB pour time-series                                             │
+│  PostgreSQL as pivot:                                                        │
+│  • Single database to operate initially                                     │
+│  • Extensions cover 80% of needs                                            │
+│  • pgvector for vectors (sufficient < 10M)                                  │
+│  • PostGIS for geo                                                           │
+│  • TimescaleDB for time-series                                              │
 │                                                                              │
-│  OpenSearch pour recherche :                                                 │
-│  • Full-text avancé, multilingue                                            │
-│  • Facettes et agrégations                                                   │
-│  • Vector search intégré (k-NN)                                             │
+│  OpenSearch for search:                                                      │
+│  • Advanced full-text, multilingual                                         │
+│  • Facets and aggregations                                                   │
+│  • Built-in vector search (k-NN)                                            │
 │  • Open source (Apache 2.0)                                                  │
 │                                                                              │
-│  Fédération au niveau application :                                         │
-│  • GraphQL comme interface unifiée                                          │
-│  • Query planner intelligent                                                │
-│  • CDC pour synchronisation                                                  │
-│  • Pas de Trino (trop complexe pour v1)                                     │
+│  Federation at application level:                                           │
+│  • GraphQL as unified interface                                             │
+│  • Intelligent query planner                                                │
+│  • CDC for synchronization                                                   │
+│  • No Trino (too complex for v1)                                            │
 │                                                                              │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Estimation des ressources
+### Resource Estimation
 
-| Composant | v1 (basique) | v2 (production) | v3 (scale) |
-|-----------|--------------|-----------------|------------|
-| PostgreSQL | 3×2Gi, 100Gi | 3×4Gi, 200Gi | 5×8Gi, 500Gi |
-| OpenSearch | 2×4Gi, 50Gi | 3×8Gi, 200Gi | 6×16Gi, 1Ti |
-| Qdrant | - | 1×2Gi, 50Gi | 3×4Gi, 200Gi |
-| Redis | 1×512Mi | 3×1Gi | 3×2Gi |
-| API/Workers | 4×512Mi | 8×1Gi | 16×2Gi |
+| Component | v1 (basic) | v2 (production) | v3 (scale) |
+|-----------|------------|-----------------|------------|
+| PostgreSQL | 3x2Gi, 100Gi | 3x4Gi, 200Gi | 5x8Gi, 500Gi |
+| OpenSearch | 2x4Gi, 50Gi | 3x8Gi, 200Gi | 6x16Gi, 1Ti |
+| Qdrant | - | 1x2Gi, 50Gi | 3x4Gi, 200Gi |
+| Redis | 1x512Mi | 3x1Gi | 3x2Gi |
+| API/Workers | 4x512Mi | 8x1Gi | 16x2Gi |
 | **Total** | ~20Gi RAM | ~50Gi RAM | ~150Gi RAM |
 
-### Roadmap d'implémentation
+### Implementation Roadmap
 
-| Phase | Durée | Composants | Fonctionnalités |
-|-------|-------|------------|-----------------|
-| **v1.0** | 2 mois | PG+OS+Redis | Recherche basique, vérification |
-| **v1.5** | 1 mois | + pgvector | Similarité sémantique |
-| **v2.0** | 2 mois | + Qdrant, Meili | Recherche avancée, autocomplete |
-| **v2.5** | 1 mois | + TimescaleDB | Tendances, métriques |
-| **v3.0** | 3 mois | + ArangoDB | Graphe co-auteurs, traversées |
+| Phase | Duration | Components | Features |
+|-------|----------|------------|----------|
+| **v1.0** | 2 months | PG+OS+Redis | Basic search, verification |
+| **v1.5** | 1 month | + pgvector | Semantic similarity |
+| **v2.0** | 2 months | + Qdrant, Meili | Advanced search, autocomplete |
+| **v2.5** | 1 month | + TimescaleDB | Trends, metrics |
+| **v3.0** | 3 months | + ArangoDB | Co-author graph, traversals |

@@ -1,53 +1,53 @@
 ---
-title: Configuration Appwrite
-description: Guide de configuration de la base de données Appwrite pour Talent Finder
+title: Appwrite Configuration
+description: Guide for configuring the Appwrite database for Talent Finder
 scope: infrastructure
 tags: [appwrite, database, setup, configuration]
 ---
 
-# Configuration Appwrite
+# Appwrite Configuration
 
-Ce guide explique comment configurer Appwrite pour Talent Finder.
+This guide explains how to configure Appwrite for Talent Finder.
 
-## Prérequis
+## Prerequisites
 
-- Une instance Appwrite accessible (auto-hébergée ou Cloud)
-- Un compte administrateur sur cette instance
+- An accessible Appwrite instance (self-hosted or Cloud)
+- An administrator account on this instance
 
-## Variables d'environnement
+## Environment Variables
 
-Copier `.env.example` vers `.env` et configurer les valeurs :
+Copy `.env.example` to `.env` and configure the values:
 
 ```bash
-# URL de redirection après authentification
+# Redirect URL after authentication
 PUBLIC_LOGIN_URL="http://localhost:5173"
 
 # Appwrite
-APPWRITE_ENDPOINT="https://votre-instance.appwrite.io/v1"
-APPWRITE_PROJECT="votre-project-id"
-APPWRITE_KEY="votre-api-key"
-APPWRITE_DATABASE_ID="votre-database-id"
+APPWRITE_ENDPOINT="https://your-instance.appwrite.io/v1"
+APPWRITE_PROJECT="your-project-id"
+APPWRITE_KEY="your-api-key"
+APPWRITE_DATABASE_ID="your-database-id"
 APPWRITE_CONSENT_EVENTS_COLLECTION_ID="consent-events"
 APPWRITE_CURRENT_CONSENTS_COLLECTION_ID="current-consents"
 
-# Domaines email autorisés (regex)
-ALLOWED_DOMAINS_REGEXP="@votre-domaine\.fr"
+# Allowed email domains (regex)
+ALLOWED_DOMAINS_REGEXP="@your-domain\.com"
 ```
 
-## Configuration pas à pas
+## Step-by-Step Configuration
 
-### 1. Créer un projet
+### 1. Create a Project
 
-1. Connectez-vous à la console Appwrite
-2. Cliquez sur **Create project**
-3. Notez le **Project ID** → `APPWRITE_PROJECT`
+1. Log in to the Appwrite console
+2. Click on **Create project**
+3. Note the **Project ID** → `APPWRITE_PROJECT`
 
-### 2. Créer une clé API
+### 2. Create an API Key
 
-1. Dans le projet, allez dans **Settings** > **API Keys**
-2. Cliquez sur **Create API Key**
-3. Nom : `talent-finder-server`
-4. Scopes requis :
+1. In the project, go to **Settings** > **API Keys**
+2. Click on **Create API Key**
+3. Name: `talent-finder-server`
+4. Required scopes:
    - `users.read`
    - `users.write`
    - `databases.read`
@@ -57,78 +57,78 @@ ALLOWED_DOMAINS_REGEXP="@votre-domaine\.fr"
    - `documents.read`
    - `documents.write`
    - `attributes.read`
-5. Copiez la clé → `APPWRITE_KEY`
+5. Copy the key → `APPWRITE_KEY`
 
-### 3. Créer la base de données
+### 3. Create the Database
 
-1. Allez dans **Databases**
-2. Cliquez sur **Create database**
-3. Nom : `talent-finder` (ou autre)
-4. Notez le **Database ID** → `APPWRITE_DATABASE_ID`
+1. Go to **Databases**
+2. Click on **Create database**
+3. Name: `talent-finder` (or another name)
+4. Note the **Database ID** → `APPWRITE_DATABASE_ID`
 
-### 4. Créer les collections
+### 4. Create the Collections
 
 #### Collection `consent-events`
 
-Cette collection stocke l'historique immutable des consentements (audit log).
+This collection stores the immutable history of consents (audit log).
 
-1. Dans la base de données, cliquez sur **Create collection**
-2. **Collection ID** : `consent-events`
-3. **Name** : `Consent Events`
-4. **Permissions** : Aucune (accès API uniquement)
+1. In the database, click on **Create collection**
+2. **Collection ID**: `consent-events`
+3. **Name**: `Consent Events`
+4. **Permissions**: None (API access only)
 
-**Attributs à créer** :
+**Attributes to create**:
 
-| Attribut      | Type   | Taille | Requis | Description                  |
-| ------------- | ------ | ------ | ------ | ---------------------------- |
-| `userId`      | String | 36     | ✅     | ID de l'utilisateur Appwrite |
-| `consentType` | Enum   | -      | ✅     | Type de consentement         |
-| `action`      | Enum   | -      | ✅     | Action effectuée             |
+| Attribute     | Type   | Size | Required | Description               |
+| ------------- | ------ | ---- | -------- | ------------------------- |
+| `userId`      | String | 36   | Yes      | Appwrite user ID          |
+| `consentType` | Enum   | -    | Yes      | Type of consent           |
+| `action`      | Enum   | -    | Yes      | Action performed          |
 
-**Valeurs Enum** :
+**Enum values**:
 
-- `consentType` : `openalex_email`
-- `action` : `grant`, `revoke`
+- `consentType`: `openalex_email`
+- `action`: `grant`, `revoke`
 
-**Index à créer** :
+**Indexes to create**:
 
-| Nom               | Type | Attributs               |
+| Name              | Type | Attributes              |
 | ----------------- | ---- | ----------------------- |
 | `userId_idx`      | Key  | `userId`                |
 | `userId_type_idx` | Key  | `userId`, `consentType` |
 
 #### Collection `current-consents`
 
-Cette collection stocke l'état actuel des consentements (une entrée par utilisateur/type).
+This collection stores the current state of consents (one entry per user/type).
 
-1. Cliquez sur **Create collection**
-2. **Collection ID** : `current-consents`
-3. **Name** : `Current Consents`
-4. **Permissions** : Aucune (accès API uniquement)
+1. Click on **Create collection**
+2. **Collection ID**: `current-consents`
+3. **Name**: `Current Consents`
+4. **Permissions**: None (API access only)
 
-**Attributs à créer** :
+**Attributes to create**:
 
-| Attribut      | Type    | Taille | Requis | Description                  |
-| ------------- | ------- | ------ | ------ | ---------------------------- |
-| `userId`      | String  | 36     | ✅     | ID de l'utilisateur Appwrite |
-| `consentType` | Enum    | -      | ✅     | Type de consentement         |
-| `granted`     | Boolean | -      | ✅     | Consentement accordé ou non  |
+| Attribute     | Type    | Size | Required | Description               |
+| ------------- | ------- | ---- | -------- | ------------------------- |
+| `userId`      | String  | 36   | Yes      | Appwrite user ID          |
+| `consentType` | Enum    | -    | Yes      | Type of consent           |
+| `granted`     | Boolean | -    | Yes      | Whether consent is granted |
 
-**Valeurs Enum** :
+**Enum values**:
 
-- `consentType` : `openalex_email`
+- `consentType`: `openalex_email`
 
-**Index à créer** :
+**Indexes to create**:
 
-| Nom               | Type   | Attributs               |
+| Name              | Type   | Attributes              |
 | ----------------- | ------ | ----------------------- |
 | `userId_type_idx` | Unique | `userId`, `consentType` |
 
-## Vérification
+## Verification
 
-Une fois configuré, le dashboard affiche l'état de santé du système dans la carte **System Health** (visible pour les admins).
+Once configured, the dashboard displays the system health status in the **System Health** card (visible for admins).
 
-L'API `/api/v1/health` retourne :
+The `/api/v1/health` API returns:
 
 ```json
 {
@@ -140,7 +140,7 @@ L'API `/api/v1/health` retourne :
 			"status": "healthy",
 			"responseTimeMs": 150,
 			"database": {
-				"id": "votre-database-id",
+				"id": "your-database-id",
 				"name": "talent-finder",
 				"exists": true,
 				"apiKeyValid": true,
@@ -172,23 +172,23 @@ L'API `/api/v1/health` retourne :
 }
 ```
 
-## Dépannage
+## Troubleshooting
 
 ### Status "unhealthy"
 
-| Erreur               | Cause                         | Solution                        |
-| -------------------- | ----------------------------- | ------------------------------- |
-| `Invalid API key`    | Clé API incorrecte ou expirée | Régénérer la clé dans Appwrite  |
-| `Project not found`  | Project ID incorrect          | Vérifier `APPWRITE_PROJECT`     |
-| `Database not found` | Database ID incorrect         | Vérifier `APPWRITE_DATABASE_ID` |
-| `Connection timeout` | Appwrite inaccessible         | Vérifier l'URL et le réseau     |
+| Error                | Cause                          | Solution                        |
+| -------------------- | ------------------------------ | ------------------------------- |
+| `Invalid API key`    | API key incorrect or expired   | Regenerate the key in Appwrite  |
+| `Project not found`  | Incorrect Project ID           | Check `APPWRITE_PROJECT`        |
+| `Database not found` | Incorrect Database ID          | Check `APPWRITE_DATABASE_ID`    |
+| `Connection timeout` | Appwrite unreachable           | Check the URL and network       |
 
 ### Status "degraded"
 
-| Erreur                    | Cause                | Solution                      |
-| ------------------------- | -------------------- | ----------------------------- |
-| `Missing collections: X`  | Collection non créée | Créer la collection manquante |
-| `Missing attributes: X.Y` | Attribut non créé    | Ajouter l'attribut manquant   |
+| Error                     | Cause                  | Solution                        |
+| ------------------------- | ---------------------- | ------------------------------- |
+| `Missing collections: X`  | Collection not created | Create the missing collection   |
+| `Missing attributes: X.Y` | Attribute not created  | Add the missing attribute       |
 
 ## Architecture
 
@@ -199,13 +199,13 @@ Appwrite
     │   ├── userId (string)
     │   ├── consentType (enum)
     │   ├── action (enum)
-    │   └── $createdAt (système)
+    │   └── $createdAt (system)
     │
-    └── current-consents (état actuel)
+    └── current-consents (current state)
         ├── userId (string)
         ├── consentType (enum)
         ├── granted (boolean)
-        └── $updatedAt (système)
+        └── $updatedAt (system)
 ```
 
-Les champs préfixés par `$` sont gérés automatiquement par Appwrite.
+Fields prefixed with `$` are automatically managed by Appwrite.

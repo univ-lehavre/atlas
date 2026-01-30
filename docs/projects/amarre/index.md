@@ -1,20 +1,20 @@
 # AMARRE
 
-::: warning Projet en cours de développement
-AMARRE est actuellement en phase de conception. La documentation ci-dessous décrit l'architecture cible et le guide d'implémentation pour les développeurs.
+::: warning Project Under Development
+AMARRE is currently in the design phase. The documentation below describes the target architecture and implementation guide for developers.
 :::
 
-Application SvelteKit pour la gestion de la mobilité des chercheurs.
+SvelteKit application for researcher mobility management.
 
 ## Documentation
 
-- [Guide d'implémentation](./IMPLEMENTATION_GUIDE.md) - Guide complet pour le développement
-- [Architecture](./ARCHITECTURE_DIAGRAMS.md) - Diagrammes d'architecture
+- [Implementation Guide](./IMPLEMENTATION_GUIDE.md) - Complete development guide
+- [Architecture](./ARCHITECTURE_DIAGRAMS.md) - Architecture diagrams
 
-## Stack technique
+## Tech Stack
 
-| Domaine | Technologies |
-|---------|-------------|
+| Area | Technologies |
+|------|-------------|
 | Frontend | SvelteKit 2, Svelte 5 (runes) |
 | Backend | Appwrite, REDCap |
 | Validation | Zod, OpenAPI |
