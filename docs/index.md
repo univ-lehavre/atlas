@@ -22,6 +22,7 @@ features:
     link: /projects/ecrin/
   - title: AMARRE
     details: Gestion de la mobilité des chercheurs
+    link: /projects/amarre/
   - title: Citations
     details: Agrégation de sources bibliographiques (OpenAlex, Crossref, HAL, ORCID) et fiabilisation des profils chercheurs avec Atlas Verify
     link: /projects/citations/
