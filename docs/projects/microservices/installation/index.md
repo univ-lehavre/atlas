@@ -131,6 +131,7 @@ Centralized feature flag management:
 
 ## Installation Phases
 
+0. [**Ubuntu Hardening**](./00-hardening.md) - SSH, auditd, fail2ban, auto-updates (production only)
 1. [**System Preparation**](./01-preparation.md) - OS setup, firewall, prerequisites
 2. [**K3s Core**](./02-k3s-core.md) - K3s, Cilium, Longhorn with encryption
 3. [**Vault**](./03-vault.md) - Secrets management setup

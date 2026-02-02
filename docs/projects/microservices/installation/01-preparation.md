@@ -1,5 +1,9 @@
 # Phase 1: System Preparation
 
+::: tip Security First
+If you haven't already, complete [Phase 0: Ubuntu Hardening](./00-hardening.md) to secure your server before installing Kubernetes.
+:::
+
 ## Prerequisites Check
 
 Before starting, ensure you have:
