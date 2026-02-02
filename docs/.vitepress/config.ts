@@ -396,7 +396,7 @@ export default withMermaid(
             text: 'Resources',
             items: [
               { text: 'API', link: '/api/' },
-              { text: 'Audits', link: '/audit/' },
+              { text: 'Audits', link: '/projects/atlas/audit-tools' },
             ],
           },
         ],

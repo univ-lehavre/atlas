@@ -170,7 +170,7 @@ spec:
     targetPort: 22
     nodePort: 30022
   selector:
-    app: gitea
+    app.kubernetes.io/name: gitea
 EOF
 ```
 

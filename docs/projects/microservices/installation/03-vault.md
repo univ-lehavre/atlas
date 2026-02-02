@@ -356,6 +356,18 @@ For production, configure auto-unseal to avoid manual intervention after restart
 
 ### Option 1: Kubernetes Secret Auto-Unseal
 
+::: warning Security Consideration
+Storing Vault unseal keys in a Kubernetes Secret places the keys required to decrypt all Vault data inside the same cluster. An attacker who gains cluster-admin or etcd access can read this secret and automatically unseal Vault.
+
+**For production environments**, consider:
+- **Cloud KMS auto-unseal** (AWS KMS, GCP Cloud KMS, Azure Key Vault)
+- **HSM auto-unseal** for on-premises deployments
+- **Transit auto-unseal** using a separate Vault instance in a different trust domain
+- **Keeping unseal keys strictly offline** and manually unsealing after restarts
+
+The Kubernetes Secret approach below is suitable for development/testing or when you accept the shared trust boundary.
+:::
+
 ```bash
 # Store unseal keys in a Kubernetes secret (encrypted by etcd encryption)
 kubectl create secret generic vault-unseal-keys \

@@ -117,6 +117,15 @@ kubectl wait --for=condition=ready pod \
 PGPASSWORD=$(kubectl get secret postgresql-credentials -n databases \
   -o jsonpath='{.data.postgres-password}' | base64 -d)
 
+# Retrieve passwords from Vault (execute these first)
+VAULT_DB_PASSWORD=$(kubectl get secret -n vault vault-db-password -o jsonpath='{.data.password}' 2>/dev/null | base64 -d || openssl rand -base64 24)
+MATTERMOST_DB_PASSWORD=$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/mattermost)
+GITEA_DB_PASSWORD=$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/gitea)
+REDCAP_DB_PASSWORD=$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/redcap)
+AUTHENTIK_DB_PASSWORD=$(kubectl exec -n vault vault-0 -- vault kv get -field=admin-password secret/services/authentik)
+NEXTCLOUD_DB_PASSWORD=$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/nextcloud)
+FLIPT_DB_PASSWORD=$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/flipt)
+
 # Create databases for each service
 kubectl run psql-client --rm -it --restart=Never \
   --namespace databases \
@@ -126,31 +135,35 @@ kubectl run psql-client --rm -it --restart=Never \
 
 -- Vault database
 CREATE DATABASE vault;
-CREATE USER vault_user WITH ENCRYPTED PASSWORD '$(kubectl get secret -n vault vault-db-password -o jsonpath='{.data.password}' 2>/dev/null | base64 -d || openssl rand -base64 24)';
+CREATE USER vault_user WITH ENCRYPTED PASSWORD '${VAULT_DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON DATABASE vault TO vault_user;
 
 -- Mattermost database
 CREATE DATABASE mattermost;
-CREATE USER mattermost_user WITH ENCRYPTED PASSWORD '$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/mattermost)';
+CREATE USER mattermost_user WITH ENCRYPTED PASSWORD '${MATTERMOST_DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON DATABASE mattermost TO mattermost_user;
 
 -- Gitea database
 CREATE DATABASE gitea;
-CREATE USER gitea_user WITH ENCRYPTED PASSWORD '$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/gitea)';
+CREATE USER gitea_user WITH ENCRYPTED PASSWORD '${GITEA_DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON DATABASE gitea TO gitea_user;
 
 -- REDCap database
 CREATE DATABASE redcap;
-CREATE USER redcap_user WITH ENCRYPTED PASSWORD '$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/redcap)';
+CREATE USER redcap_user WITH ENCRYPTED PASSWORD '${REDCAP_DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON DATABASE redcap TO redcap_user;
 
 -- Authentik database
 CREATE DATABASE authentik;
-GRANT ALL PRIVILEGES ON DATABASE authentik TO postgres;
+CREATE USER authentik_user WITH ENCRYPTED PASSWORD '${AUTHENTIK_DB_PASSWORD}';
+GRANT ALL PRIVILEGES ON DATABASE authentik TO authentik_user;
+\c authentik
+GRANT ALL ON SCHEMA public TO authentik_user;
+\c postgres
 
 -- Nextcloud database
 CREATE DATABASE nextcloud;
-CREATE USER nextcloud_user WITH ENCRYPTED PASSWORD '$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/nextcloud)';
+CREATE USER nextcloud_user WITH ENCRYPTED PASSWORD '${NEXTCLOUD_DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON DATABASE nextcloud TO nextcloud_user;
 \c nextcloud
 GRANT ALL ON SCHEMA public TO nextcloud_user;
@@ -158,7 +171,7 @@ GRANT ALL ON SCHEMA public TO nextcloud_user;
 
 -- Flipt database
 CREATE DATABASE flipt;
-CREATE USER flipt_user WITH ENCRYPTED PASSWORD '$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/flipt)';
+CREATE USER flipt_user WITH ENCRYPTED PASSWORD '${FLIPT_DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON DATABASE flipt TO flipt_user;
 \c flipt
 GRANT ALL ON SCHEMA public TO flipt_user;
