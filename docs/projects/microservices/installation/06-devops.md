@@ -73,6 +73,10 @@ kubectl wait --for=condition=Ready externalsecret/gitea-secrets \
 ```bash
 export DOMAIN="example.com"
 
+# Get secrets from Kubernetes for Helm values
+DB_PASSWORD=$(kubectl get secret gitea-secrets -n gitea -o jsonpath='{.data.db-password}' | base64 -d)
+REDIS_PASSWORD=$(kubectl get secret gitea-secrets -n gitea -o jsonpath='{.data.redis-password}' | base64 -d)
+
 helm install gitea gitea/gitea \
   --namespace gitea \
   --set gitea.admin.username=gitea_admin \
@@ -82,14 +86,14 @@ helm install gitea gitea/gitea \
   --set gitea.config.database.HOST=postgresql-postgresql-ha-pgpool.databases.svc:5432 \
   --set gitea.config.database.NAME=gitea \
   --set gitea.config.database.USER=gitea_user \
-  --set gitea.config.database.PASSWD=\${DB_PASSWORD} \
+  --set gitea.config.database.PASSWD="${DB_PASSWORD}" \
   --set gitea.config.cache.ENABLED=true \
   --set gitea.config.cache.ADAPTER=redis \
-  --set gitea.config.cache.HOST="redis+sentinel://redis.databases.svc:26379/mymaster/0?password=\${REDIS_PASSWORD}" \
+  --set gitea.config.cache.HOST="redis+sentinel://redis.databases.svc:26379/mymaster/0?password=${REDIS_PASSWORD}" \
   --set gitea.config.session.PROVIDER=redis \
-  --set gitea.config.session.PROVIDER_CONFIG="redis+sentinel://redis.databases.svc:26379/mymaster/1?password=\${REDIS_PASSWORD}" \
+  --set gitea.config.session.PROVIDER_CONFIG="redis+sentinel://redis.databases.svc:26379/mymaster/1?password=${REDIS_PASSWORD}" \
   --set gitea.config.queue.TYPE=redis \
-  --set gitea.config.queue.CONN_STR="redis+sentinel://redis.databases.svc:26379/mymaster/2?password=\${REDIS_PASSWORD}" \
+  --set gitea.config.queue.CONN_STR="redis+sentinel://redis.databases.svc:26379/mymaster/2?password=${REDIS_PASSWORD}" \
   --set gitea.config.server.DOMAIN=git.${DOMAIN} \
   --set gitea.config.server.ROOT_URL=https://git.${DOMAIN} \
   --set gitea.config.server.SSH_DOMAIN=git.${DOMAIN} \
@@ -114,13 +118,7 @@ helm install gitea gitea/gitea \
   --set ingress.tls[0].secretName=gitea-tls \
   --set resources.requests.memory=256Mi \
   --set resources.requests.cpu=100m \
-  --set resources.limits.memory=512Mi \
-  --set extraEnvVars[0].name=DB_PASSWORD \
-  --set extraEnvVars[0].valueFrom.secretKeyRef.name=gitea-secrets \
-  --set extraEnvVars[0].valueFrom.secretKeyRef.key=db-password \
-  --set extraEnvVars[1].name=REDIS_PASSWORD \
-  --set extraEnvVars[1].valueFrom.secretKeyRef.name=gitea-secrets \
-  --set extraEnvVars[1].valueFrom.secretKeyRef.key=redis-password
+  --set resources.limits.memory=512Mi
 
 kubectl wait --for=condition=ready pod \
   -l app.kubernetes.io/name=gitea -n gitea --timeout=300s

@@ -43,18 +43,18 @@ spec:
             - -c
             - |
               TIMESTAMP=\$(date +%Y%m%d_%H%M%S)
-              BACKUP_FILE=/backup/etcd_\${TIMESTAMP}.db
+              mkdir -p /backup/etcd
 
               # Create etcd snapshot
               k3s etcd-snapshot save --name etcd_\${TIMESTAMP}
 
-              # Copy to backup volume
-              cp /var/lib/rancher/k3s/server/db/snapshots/etcd_\${TIMESTAMP}* /backup/
+              # Copy to backup volume (k3s creates .zip snapshots)
+              cp /var/lib/rancher/k3s/server/db/snapshots/etcd_\${TIMESTAMP}* /backup/etcd/
 
               # Keep only last 30 days
-              find /backup -name "etcd_*.db" -mtime +30 -delete
+              find /backup/etcd -name "etcd_*" -mtime +30 -delete
 
-              echo "Backup completed: \${BACKUP_FILE}"
+              echo "Backup completed: etcd_\${TIMESTAMP}"
             volumeMounts:
             - name: backup
               mountPath: /backup
@@ -207,9 +207,9 @@ spec:
               echo "Date: \$(date)"
               echo ""
 
-              # Check etcd backups
+              # Check etcd backups (snapshots have timestamp prefix, not .db extension)
               echo "etcd backups:"
-              ls -lh /backup/etcd/*.db 2>/dev/null | tail -5
+              ls -lh /backup/etcd/etcd_* 2>/dev/null | tail -5
 
               # Check PostgreSQL backups
               echo ""
@@ -400,10 +400,28 @@ kubectl scale deployment --all -n mattermost --replicas=0
 kubectl scale deployment --all -n gitea --replicas=0
 kubectl scale deployment --all -n authentik --replicas=0
 
-# Restore from backup
-kubectl exec -n databases postgresql-postgresql-ha-0 -- \
-  gunzip -c /backup/all_databases_YYYYMMDD_HHMMSS.sql.gz | \
-  psql -U postgres
+# Get admin password
+PGPASSWORD=$(kubectl get secret postgresql-credentials -n databases \
+  -o jsonpath='{.data.postgres-password}' | base64 -d)
+
+# Restore from backup using a temporary pod with access to backup PVC
+kubectl run pg-restore --rm -it --restart=Never \
+  --namespace databases \
+  --image=bitnami/postgresql:16 \
+  --env="PGPASSWORD=${PGPASSWORD}" \
+  --overrides='
+{
+  "spec": {
+    "containers": [{
+      "name": "pg-restore",
+      "image": "bitnami/postgresql:16",
+      "command": ["bash", "-c", "gunzip -c /backup/all_databases_YYYYMMDD_HHMMSS.sql.gz | psql -h postgresql-postgresql-ha-pgpool -U postgres"],
+      "env": [{"name": "PGPASSWORD", "valueFrom": {"secretKeyRef": {"name": "postgresql-credentials", "key": "postgres-password"}}}],
+      "volumeMounts": [{"name": "backup", "mountPath": "/backup"}]
+    }],
+    "volumes": [{"name": "backup", "persistentVolumeClaim": {"claimName": "postgresql-backup-pvc"}}]
+  }
+}'
 
 # Scale services back up
 kubectl scale deployment --all -n mattermost --replicas=1
