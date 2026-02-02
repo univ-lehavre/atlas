@@ -40,6 +40,16 @@ This phase installs mutualized PostgreSQL HA and Redis Sentinel clusters, elimin
 | Maintenance | Multiple upgrades | Single upgrade |
 | Monitoring | Multiple dashboards | Unified metrics |
 
+::: tip K3D/macOS (Single-node)
+For local development, reduce replicas to save resources:
+- PostgreSQL: 1 replica instead of 3
+- Redis: 0 replicas instead of 2 (master only)
+- Skip backup CronJobs (not needed in dev)
+- Replace `storageClass: longhorn-encrypted` with `storageClass: local-path`
+
+See the K3D-specific Helm values below in each section.
+:::
+
 ## Create Database Namespace
 
 ```bash
@@ -82,6 +92,14 @@ kubectl wait --for=condition=Ready externalsecret/postgresql-credentials \
 ```
 
 ### Install PostgreSQL HA
+
+::: tip K3D/macOS
+Use single-node configuration:
+```bash
+--set postgresql.replicaCount=1 \
+--set persistence.storageClass=local-path \
+```
+:::
 
 ```bash
 # Install Bitnami PostgreSQL HA
@@ -226,6 +244,16 @@ kubectl wait --for=condition=Ready externalsecret/redis-credentials \
 ```
 
 ### Install Redis Sentinel
+
+::: tip K3D/macOS
+Use standalone mode (no replicas):
+```bash
+--set replica.replicaCount=0 \
+--set sentinel.enabled=false \
+--set architecture=standalone \
+--set master.persistence.storageClass=local-path \
+```
+:::
 
 ```bash
 # Install Bitnami Redis with Sentinel
@@ -486,6 +514,15 @@ kubectl get servicemonitor -n databases
 | Redis Replicas (x2) | 100m | 128Mi | 4Gi |
 | Backup PVCs | - | - | 55Gi |
 | **Total** | **500m** | **~1.1Gi** | **~121Gi** |
+
+::: info K3D/macOS Resources
+| Component | CPU | Memory | Storage |
+|-----------|-----|--------|---------|
+| PostgreSQL (x1) | 100m | 256Mi | 20Gi |
+| PgPool | 50m | 128Mi | - |
+| Redis Master | 50m | 64Mi | 2Gi |
+| **Total K3D** | **200m** | **~450Mi** | **22Gi** |
+:::
 
 ## Next Step
 

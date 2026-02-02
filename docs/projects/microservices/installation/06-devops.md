@@ -181,6 +181,15 @@ ufw allow 30022/tcp comment 'Gitea SSH'
 ```
 :::
 
+::: tip K3D/macOS
+To expose SSH port in K3D, recreate the cluster with the port mapping:
+```bash
+k3d cluster create atlas-dev \
+  --port "30022:30022@loadbalancer" \
+  # ... other options from Phase 2 ...
+```
+:::
+
 ## ArgoCD (GitOps)
 
 ### Create Namespace

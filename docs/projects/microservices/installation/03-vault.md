@@ -46,6 +46,13 @@ kubectl create namespace vault
 
 ## Install Vault via Helm
 
+::: tip K3D/macOS
+Replace `longhorn-encrypted` with `local-path`:
+```bash
+--set server.dataStorage.storageClass=local-path
+```
+:::
+
 ```bash
 # Install Vault in standalone mode with Raft storage
 helm install vault hashicorp/vault \

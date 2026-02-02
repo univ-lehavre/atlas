@@ -76,6 +76,17 @@ kubectl wait --for=condition=Ready externalsecret/grafana-secrets \
 
 ### Install kube-prometheus-stack
 
+::: tip K3D/macOS (Reduced resources)
+For a laptop, reduce retention and storage:
+```bash
+--set prometheus.prometheusSpec.retention=3d \
+--set prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.storageClassName=local-path \
+--set prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=10Gi \
+--set alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.storageClassName=local-path \
+--set grafana.persistence.storageClassName=local-path \
+```
+:::
+
 ```bash
 export DOMAIN="example.com"
 
