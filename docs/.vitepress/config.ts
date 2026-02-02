@@ -63,7 +63,6 @@ export default withMermaid(
             { text: 'Microservices', link: '/projects/microservices/' },
           ],
         },
-        { text: 'Audit', link: '/projects/atlas/' },
         { text: 'API', link: '/api/' },
       ],
       sidebar: {
