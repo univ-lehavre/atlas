@@ -67,6 +67,18 @@ This phase installs the core application services: Authentik (IAM), Mattermost (
 | ECRIN | Researcher Platform | OIDC | - | - |
 | Flipt | Feature Flags | OIDC | PostgreSQL | - |
 
+::: tip K3D/macOS
+For all services in this phase, the only adaptations needed are:
+- Replace `storageClass: longhorn-encrypted` with `storageClass: local-path`
+- Domains like `*.example.com` work via `/etc/hosts` pointing to `127.0.0.1`
+
+Add to your `/etc/hosts`:
+```
+127.0.0.1 auth.example.com cloud.example.com chat.example.com
+127.0.0.1 redcap.example.com ecrin.example.com flags.example.com
+```
+:::
+
 ## Authentik (Identity & Access Management)
 
 Authentik provides centralized identity management, SSO, MFA, and access control for all services.

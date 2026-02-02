@@ -2,6 +2,27 @@
 
 This phase installs the core Kubernetes infrastructure with encryption enabled at all layers.
 
+::: tip Local Development (K3D/macOS)
+For local development on macOS, use K3D instead of installing K3s directly:
+```bash
+# Install K3D: https://k3d.io
+brew install k3d
+
+# Create cluster (replaces etcd encryption + K3s installation sections)
+k3d cluster create atlas-dev \
+  --api-port 6550 \
+  --servers 1 \
+  --agents 0 \
+  --port "80:80@loadbalancer" \
+  --port "443:443@loadbalancer" \
+  --k3s-arg "--disable=traefik@server:0" \
+  --k3s-arg "--disable=local-storage@server:0"
+
+export KUBECONFIG=$(k3d kubeconfig write atlas-dev)
+```
+Skip the "etcd Encryption Configuration" and "K3s Installation" sections below.
+:::
+
 ## etcd Encryption Configuration
 
 ::: warning Security
@@ -132,9 +153,28 @@ cilium status | grep Encryption
 # Expected: Encryption: Wireguard [NodeEncryption: Disabled, ...]
 ```
 
+::: warning K3D/macOS
+WireGuard encryption is unstable on Docker Desktop. Disable it:
+```bash
+helm install cilium cilium/cilium \
+  # ... same options as above ...
+  --set encryption.enabled=false
+```
+:::
+
 ## Longhorn Installation (Encrypted Storage)
 
 Longhorn provides distributed block storage with LUKS encryption support.
+
+::: warning K3D/macOS
+Longhorn with LUKS encryption does not work inside Docker containers. Use the built-in `local-path` StorageClass instead:
+```bash
+# Skip all Longhorn installation steps
+# Set local-path as default StorageClass
+kubectl patch storageclass local-path -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
+```
+For the rest of this guide, replace `storageClass: longhorn-encrypted` with `storageClass: local-path`.
+:::
 
 ### Create Encryption Key
 
