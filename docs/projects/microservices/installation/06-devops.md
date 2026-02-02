@@ -24,7 +24,7 @@ This phase installs Gitea (Git forge) and ArgoCD (GitOps continuous deployment).
 │                          │ (GitOps)│              │  (K3s)   │ │
 │                          └─────────┘              └──────────┘ │
 │                                                                 │
-│  Both authenticated via Authelia (2FA for ArgoCD)              │
+│  Both authenticated via Authentik (2FA for ArgoCD)              │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -126,9 +126,9 @@ kubectl wait --for=condition=ready pod \
   -l app.kubernetes.io/name=gitea -n gitea --timeout=300s
 ```
 
-### Configure Gitea OIDC (Authelia)
+### Configure Gitea OIDC (Authentik)
 
-After Gitea is running, add Authelia as OAuth2 provider:
+After Gitea is running, add Authentik as OAuth2 provider:
 
 ```bash
 # Get Gitea admin credentials (generated during install)
@@ -144,7 +144,7 @@ kubectl exec -n vault vault-0 -- vault kv patch secret/services/gitea \
 # Add OAuth2 provider via Gitea API
 kubectl exec -n gitea deploy/gitea -- \
   gitea admin auth add-oauth \
-  --name "Authelia" \
+  --name "Authentik" \
   --provider "openidConnect" \
   --key "gitea" \
   --secret "${GITEA_OIDC_SECRET}" \
@@ -251,7 +251,7 @@ kubectl wait --for=condition=ready pod \
   -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
 ```
 
-### Configure ArgoCD OIDC (Authelia)
+### Configure ArgoCD OIDC (Authentik)
 
 ```bash
 # Generate OIDC client secret
@@ -261,7 +261,7 @@ ARGOCD_OIDC_SECRET=$(openssl rand -base64 32)
 kubectl exec -n vault vault-0 -- vault kv patch secret/services/argocd \
   oidc-secret="${ARGOCD_OIDC_SECRET}"
 
-# Update Authelia config with ArgoCD client (already done in Phase 5)
+# Update Authentik config with ArgoCD client (already done in Phase 5)
 
 # Configure ArgoCD OIDC
 cat <<EOF | kubectl apply -f -
@@ -276,7 +276,7 @@ metadata:
 data:
   url: https://argocd.${DOMAIN}
   oidc.config: |
-    name: Authelia
+    name: Authentik
     issuer: https://auth.${DOMAIN}
     clientID: argocd
     clientSecret: \$argocd-oidc-secret:oidc.clientSecret

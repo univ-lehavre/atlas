@@ -22,7 +22,7 @@ This phase installs the observability stack: Prometheus for metrics collection, 
 │  │  │ K3s    │  │Cilium  │  │Longhorn│  │  PostgreSQL   │  │ Redis  │  │ │
 │  │  └────────┘  └────────┘  └────────┘  └────────┘  └────────┘  │ │
 │  │  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐  ┌────────┐  │ │
-│  │  │ Vault  │  │Authelia│  │Mattermost│  │ Gitea │  │ ArgoCD │  │ │
+│  │  │ Vault  │  │Authentik│  │Mattermost│  │ Gitea │  │ ArgoCD │  │ │
 │  │  └────────┘  └────────┘  └────────┘  └────────┘  └────────┘  │ │
 │  └────────────────────────────────────────────────────────────────┘ │
 │                                                                     │
@@ -149,7 +149,7 @@ data:
 
     [auth.generic_oauth]
     enabled = true
-    name = Authelia
+    name = Authentik
     allow_sign_up = true
     client_id = grafana
     client_secret = ${GRAFANA_OIDC_SECRET}
@@ -265,27 +265,53 @@ spec:
 EOF
 ```
 
-### Authelia ServiceMonitor
+### Authentik ServiceMonitor
 
 ```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: authelia
+  name: authentik
   namespace: monitoring
   labels:
     release: prometheus
 spec:
   namespaceSelector:
     matchNames:
-      - authelia
+      - authentik
   selector:
     matchLabels:
-      app.kubernetes.io/name: authelia
+      app.kubernetes.io/name: authentik
   endpoints:
     - port: http
       path: /metrics
+      interval: 30s
+EOF
+```
+
+### Flipt ServiceMonitor
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: flipt
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames:
+      - flipt
+  selector:
+    matchLabels:
+      app: flipt
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
 EOF
 ```
 

@@ -145,13 +145,16 @@ vault kv put secret/infrastructure/longhorn \
   crypto-key="$(head -c 32 /dev/urandom | base64)"
 
 # Service secrets
-vault kv put secret/services/authelia \
-  jwt-secret="$(openssl rand -base64 64)" \
-  session-secret="$(openssl rand -base64 64)" \
-  storage-encryption-key="$(openssl rand -base64 32)" \
-  oidc-hmac-secret="$(openssl rand -base64 32)"
+vault kv put secret/services/authentik \
+  secret-key="$(openssl rand -base64 60)" \
+  admin-password="$(openssl rand -base64 24)" \
+  admin-token="$(openssl rand -hex 32)"
 
 vault kv put secret/services/mattermost \
+  db-password="$(openssl rand -base64 32)"
+
+vault kv put secret/services/nextcloud \
+  admin-password="$(openssl rand -base64 24)" \
   db-password="$(openssl rand -base64 32)"
 
 vault kv put secret/services/gitea \
@@ -167,6 +170,9 @@ vault kv put secret/services/grafana \
 vault kv put secret/services/redcap \
   db-password="$(openssl rand -base64 32)" \
   salt="$(openssl rand -base64 32)"
+
+vault kv put secret/services/flipt \
+  db-password="$(openssl rand -base64 32)"
 
 vault kv put secret/services/onlyoffice \
   jwt-secret="$(openssl rand -base64 32)"
@@ -309,7 +315,7 @@ kubectl delete externalsecret test-vault-secret
 ## Vault Ingress (Optional)
 
 ::: warning Security
-Only expose Vault UI if you have proper 2FA configured via Authelia.
+Only expose Vault UI if you have proper 2FA configured via Authentik.
 :::
 
 ```bash
@@ -465,14 +471,17 @@ secret/
 ├── infrastructure/
 │   ├── postgresql      # admin-password, replication-password
 │   ├── redis           # password
-│   └── longhorn        # crypto-key
+│   ├── longhorn        # crypto-key
+│   └── seaweedfs       # s3-access-key, s3-secret-key
 └── services/
-    ├── authelia        # jwt-secret, session-secret, storage-encryption-key, oidc-hmac-secret
+    ├── authentik       # secret-key, admin-password, admin-token
     ├── mattermost      # db-password
+    ├── nextcloud       # admin-password, db-password
     ├── gitea           # db-password, secret-key
     ├── argocd          # admin-password
     ├── grafana         # admin-password
     ├── redcap          # db-password, salt
+    ├── flipt           # db-password
     └── onlyoffice      # jwt-secret
 ```
 
