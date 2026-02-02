@@ -317,7 +317,7 @@ kubectl get pvc test-encrypted-pvc
 # Expected: Bound
 
 # Verify encryption is enabled on the volume
-kubectl get volume -n longhorn-system -o jsonpath='{.items[0].spec.encrypted}'
+kubectl get volumes.longhorn.io -n longhorn-system -o jsonpath='{.items[0].spec.encrypted}'
 # Expected: true
 
 # Cleanup test

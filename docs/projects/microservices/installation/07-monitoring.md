@@ -151,7 +151,7 @@ spec:
     name: grafana-oidc-secret
     creationPolicy: Owner
   data:
-    - secretKey: client-secret
+    - secretKey: CLIENT_SECRET
       remoteRef:
         key: services/grafana
         property: oidc-secret
@@ -170,7 +170,7 @@ helm upgrade prometheus prometheus-community/kube-prometheus-stack \
   --set grafana."grafana\.ini"."auth\.generic_oauth".name=Authentik \
   --set grafana."grafana\.ini"."auth\.generic_oauth".allow_sign_up=true \
   --set grafana."grafana\.ini"."auth\.generic_oauth".client_id=grafana \
-  --set grafana."grafana\.ini"."auth\.generic_oauth".client_secret=\$__env{client-secret} \
+  --set grafana."grafana\.ini"."auth\.generic_oauth".client_secret=\$__env{CLIENT_SECRET} \
   --set grafana."grafana\.ini"."auth\.generic_oauth".scopes="openid profile email groups" \
   --set grafana."grafana\.ini"."auth\.generic_oauth".auth_url=https://auth.${DOMAIN}/api/oidc/authorization \
   --set grafana."grafana\.ini"."auth\.generic_oauth".token_url=https://auth.${DOMAIN}/api/oidc/token \

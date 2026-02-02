@@ -152,7 +152,7 @@ spec:
         property: admin-token
     - secretKey: AUTHENTIK_POSTGRESQL__PASSWORD
       remoteRef:
-        key: infrastructure/postgresql
+        key: services/authentik
         property: admin-password
     - secretKey: AUTHENTIK_REDIS__PASSWORD
       remoteRef:
@@ -181,7 +181,7 @@ helm install authentik authentik/authentik \
   --set authentik.secret_key="" \
   --set authentik.postgresql.host=postgresql-postgresql-ha-pgpool.databases.svc \
   --set authentik.postgresql.name=authentik \
-  --set authentik.postgresql.user=postgres \
+  --set authentik.postgresql.user=authentik_user \
   --set authentik.redis.host=redis-master.databases.svc \
   --set server.replicas=1 \
   --set server.resources.requests.memory=256Mi \
@@ -1271,12 +1271,17 @@ spec:
   target:
     name: flipt-secrets
     creationPolicy: Owner
+    template:
+      data:
+        db-password: "{{ .dbPassword }}"
+        oidc-secret: "{{ .oidcSecret }}"
+        database-url: "postgres://flipt_user:{{ .dbPassword }}@postgresql-postgresql-ha-pgpool.databases.svc:5432/flipt?sslmode=disable"
   data:
-    - secretKey: db-password
+    - secretKey: dbPassword
       remoteRef:
         key: services/flipt
         property: db-password
-    - secretKey: oidc-secret
+    - secretKey: oidcSecret
       remoteRef:
         key: services/flipt
         property: oidc-secret
@@ -1354,13 +1359,11 @@ spec:
           - --config
           - /etc/flipt/flipt.yaml
         env:
-        - name: FLIPT_DB_PASSWORD
+        - name: FLIPT_DATABASE_URL
           valueFrom:
             secretKeyRef:
               name: flipt-secrets
-              key: db-password
-        - name: FLIPT_DATABASE_URL
-          value: "postgres://flipt_user:\$(FLIPT_DB_PASSWORD)@postgresql-postgresql-ha-pgpool.databases.svc:5432/flipt?sslmode=disable"
+              key: database-url
         - name: FLIPT_OIDC_SECRET
           valueFrom:
             secretKeyRef:
