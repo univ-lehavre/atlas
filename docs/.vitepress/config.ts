@@ -55,6 +55,7 @@ export default withMermaid(
         {
           text: 'Projects',
           items: [
+            { text: 'Atlas', link: '/projects/atlas/' },
             { text: 'ECRIN', link: '/projects/ecrin/' },
             { text: 'AMARRE', link: '/projects/amarre/' },
             { text: 'Citations', link: '/projects/citations/' },
@@ -62,7 +63,6 @@ export default withMermaid(
             { text: 'Microservices', link: '/projects/microservices/' },
           ],
         },
-        { text: 'Audit', link: '/audit/' },
         { text: 'API', link: '/api/' },
       ],
       sidebar: {
@@ -70,10 +70,7 @@ export default withMermaid(
         '/projects/ecrin/': [
           {
             text: 'ECRIN',
-            items: [
-              { text: 'Overview', link: '/projects/ecrin/' },
-              { text: 'Specifications', link: '/projects/ecrin/specifications' },
-            ],
+            items: [{ text: 'Overview', link: '/projects/ecrin/' }],
           },
           {
             text: 'Researcher Guide',
@@ -262,34 +259,25 @@ export default withMermaid(
             items: [{ text: 'Audit CRF', link: '/projects/crf/audit/' }],
           },
         ],
-        // Audits
-        '/audit/': [
+        // Atlas (monorepo)
+        '/projects/atlas/': [
           {
-            text: 'Audits',
-            items: [{ text: 'Introduction', link: '/audit/' }],
+            text: 'Atlas Monorepo',
+            items: [{ text: 'Overview', link: '/projects/atlas/' }],
           },
           {
-            text: 'Common',
+            text: 'Audits',
             items: [
-              { text: 'Audit tools', link: '/audit/common/audit-tools' },
+              { text: 'Audit tools', link: '/projects/atlas/audit-tools' },
               {
                 text: 'Documentation audit',
-                link: '/audit/common/documentation-audit',
+                link: '/projects/atlas/documentation-audit',
               },
               {
                 text: 'Dependency audit',
-                link: '/audit/common/dependencies-audit',
+                link: '/projects/atlas/dependencies-audit',
               },
-              { text: 'Technical debt', link: '/audit/common/technical-debt' },
-              { text: 'Code quality audit', link: '/audit/common/code-audit' },
-            ],
-          },
-          {
-            text: 'By project',
-            items: [
-              { text: 'ECRIN', link: '/projects/ecrin/audit/' },
-              { text: 'Citations', link: '/projects/citations/audit/' },
-              { text: 'CRF', link: '/projects/crf/audit/' },
+              { text: 'Technical debt', link: '/projects/atlas/technical-debt' },
             ],
           },
         ],
@@ -299,9 +287,54 @@ export default withMermaid(
             text: 'Microservices',
             items: [
               { text: 'Overview', link: '/projects/microservices/' },
+            ],
+          },
+          {
+            text: 'Installation Guide',
+            items: [
               {
-                text: 'K3s Installation',
-                link: '/projects/microservices/installation',
+                text: 'Overview',
+                link: '/projects/microservices/installation/',
+              },
+              {
+                text: '0. Ubuntu Hardening',
+                link: '/projects/microservices/installation/00-hardening',
+              },
+              {
+                text: '1. System Preparation',
+                link: '/projects/microservices/installation/01-preparation',
+              },
+              {
+                text: '2. K3s Core',
+                link: '/projects/microservices/installation/02-k3s-core',
+              },
+              {
+                text: '3. Vault',
+                link: '/projects/microservices/installation/03-vault',
+              },
+              {
+                text: '4. Databases',
+                link: '/projects/microservices/installation/04-databases',
+              },
+              {
+                text: '5. Services',
+                link: '/projects/microservices/installation/05-services',
+              },
+              {
+                text: '6. DevOps',
+                link: '/projects/microservices/installation/06-devops',
+              },
+              {
+                text: '7. Monitoring',
+                link: '/projects/microservices/installation/07-monitoring',
+              },
+              {
+                text: '8. Security',
+                link: '/projects/microservices/installation/08-security',
+              },
+              {
+                text: '9. Operations',
+                link: '/projects/microservices/installation/09-operations',
               },
             ],
           },
@@ -364,7 +397,7 @@ export default withMermaid(
             text: 'Resources',
             items: [
               { text: 'API', link: '/api/' },
-              { text: 'Audits', link: '/audit/' },
+              { text: 'Audits', link: '/projects/atlas/audit-tools' },
             ],
           },
         ],
