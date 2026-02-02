@@ -18,6 +18,15 @@ commit-msg:
 pre-commit:
   parallel: true
   commands:
+    check-branch:
+      run: |
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        if [ "$branch" = "main" ]; then
+          echo "❌ Commit direct sur main interdit. Utilisez une branche et une PR."
+          exit 1
+        fi
+      priority: 1
+
     format:
       run: pnpm format:check
       glob: '*.{js,ts,svelte,json,yaml,yml,md,css,html}'
@@ -44,15 +53,6 @@ pre-commit:
 
 pre-push:
   commands:
-    check-branch:
-      run: |
-        branch=$(git rev-parse --abbrev-ref HEAD)
-        if [ "$branch" = "main" ]; then
-          echo "❌ Push direct sur main interdit. Utilisez une branche et une PR."
-          exit 1
-        fi
-      priority: 1
-
     check-sync:
       run: |
         git fetch origin --quiet
