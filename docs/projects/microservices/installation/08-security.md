@@ -49,6 +49,8 @@ This means no pod can communicate with another unless explicitly permitted.
 
 ```bash
 # Create default deny policy for all namespaces
+# This policy selects all endpoints but has no ingress/egress rules,
+# which means all traffic is denied by default
 cat <<EOF | kubectl apply -f -
 apiVersion: cilium.io/v2
 kind: CiliumClusterwideNetworkPolicy
@@ -56,18 +58,18 @@ metadata:
   name: default-deny-all
 spec:
   endpointSelector: {}
-  ingress:
-    - fromEndpoints:
-        - {}
-  egress:
-    - toEndpoints:
-        - {}
+  ingress: []
+  egress: []
 EOF
 ```
 
-::: warning
-The default-deny policy blocks all traffic except intra-namespace communication.
-Apply namespace-specific policies before enabling this in production.
+::: danger Important
+This policy DENIES ALL traffic cluster-wide. Apply namespace-specific allow policies
+BEFORE enabling this, or your cluster will become unreachable.
+Order of operations:
+1. Apply all namespace-specific policies (below)
+2. Verify connectivity for each service
+3. Then apply the default-deny policy
 :::
 
 ## Namespace Network Policies

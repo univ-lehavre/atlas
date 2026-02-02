@@ -286,83 +286,10 @@ REDIS_PORT=6379
 REDIS_PASSWORD=<from-vault>
 ```
 
-## Create Database ExternalSecrets for Services
-
-Create ExternalSecrets that services will use to connect:
-
-```bash
-# Mattermost database secret
-cat <<EOF | kubectl apply -f -
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  name: mattermost-db
-  namespace: default
-spec:
-  refreshInterval: "1h"
-  secretStoreRef:
-    name: vault-backend
-    kind: ClusterSecretStore
-  target:
-    name: mattermost-db
-    creationPolicy: Owner
-    template:
-      data:
-        DB_CONNECTION_STRING: "postgresql://mattermost_user:{{ .password }}@postgresql-postgresql-ha-pgpool.databases.svc:5432/mattermost?sslmode=disable"
-  data:
-    - secretKey: password
-      remoteRef:
-        key: services/mattermost
-        property: db-password
-EOF
-
-# Gitea database secret
-cat <<EOF | kubectl apply -f -
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  name: gitea-db
-  namespace: default
-spec:
-  refreshInterval: "1h"
-  secretStoreRef:
-    name: vault-backend
-    kind: ClusterSecretStore
-  target:
-    name: gitea-db
-    creationPolicy: Owner
-    template:
-      data:
-        DB_CONNECTION_STRING: "postgresql://gitea_user:{{ .password }}@postgresql-postgresql-ha-pgpool.databases.svc:5432/gitea?sslmode=disable"
-  data:
-    - secretKey: password
-      remoteRef:
-        key: services/gitea
-        property: db-password
-EOF
-
-# Redis shared secret (for all services)
-cat <<EOF | kubectl apply -f -
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  name: redis-shared
-  namespace: default
-spec:
-  refreshInterval: "1h"
-  secretStoreRef:
-    name: vault-backend
-    kind: ClusterSecretStore
-  target:
-    name: redis-shared
-    creationPolicy: Owner
-  data:
-    - secretKey: password
-      remoteRef:
-        key: infrastructure/redis
-        property: password
-EOF
-```
+::: info Service Secrets
+Each service creates its own ExternalSecrets in its namespace during [Phase 5: Core Services](./05-services.md).
+This ensures secrets are scoped to the namespaces where they are used.
+:::
 
 ## Backup Configuration
 

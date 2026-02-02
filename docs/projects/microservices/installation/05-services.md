@@ -164,23 +164,9 @@ kubectl wait --for=condition=Ready externalsecret/authentik-secrets \
   -n authentik --timeout=60s
 ```
 
-### Create Authentik Database
-
-```bash
-# Get PostgreSQL admin password
-PGPASSWORD=$(kubectl get secret postgresql-credentials -n databases \
-  -o jsonpath='{.data.postgres-password}' | base64 -d)
-
-# Create database
-kubectl run psql-client --rm -it --restart=Never \
-  --namespace databases \
-  --image=bitnami/postgresql:16 \
-  --env="PGPASSWORD=${PGPASSWORD}" \
-  -- psql -h postgresql-postgresql-ha-pgpool -U postgres <<EOF
-CREATE DATABASE authentik;
-GRANT ALL PRIVILEGES ON DATABASE authentik TO postgres;
-EOF
-```
+::: info Database
+The `authentik` database was created in [Phase 4: Shared Databases](./04-databases.md#create-application-databases).
+:::
 
 ### Install Authentik
 
@@ -684,25 +670,9 @@ kubectl wait --for=condition=Ready externalsecret/nextcloud-secrets \
   -n nextcloud --timeout=60s
 ```
 
-### Create Nextcloud Database
-
-```bash
-PGPASSWORD=$(kubectl get secret postgresql-credentials -n databases \
-  -o jsonpath='{.data.postgres-password}' | base64 -d)
-NC_DB_PASS=$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/nextcloud)
-
-kubectl run psql-client --rm -it --restart=Never \
-  --namespace databases \
-  --image=bitnami/postgresql:16 \
-  --env="PGPASSWORD=${PGPASSWORD}" \
-  -- psql -h postgresql-postgresql-ha-pgpool -U postgres <<EOF
-CREATE DATABASE nextcloud;
-CREATE USER nextcloud_user WITH ENCRYPTED PASSWORD '${NC_DB_PASS}';
-GRANT ALL PRIVILEGES ON DATABASE nextcloud TO nextcloud_user;
-\c nextcloud
-GRANT ALL ON SCHEMA public TO nextcloud_user;
-EOF
-```
+::: info Database
+The `nextcloud` database and `nextcloud_user` were created in [Phase 4: Shared Databases](./04-databases.md#create-application-databases).
+:::
 
 ### Install Nextcloud
 
@@ -1255,25 +1225,9 @@ kubectl wait --for=condition=Ready externalsecret/flipt-secrets \
   -n flipt --timeout=60s
 ```
 
-### Create Flipt Database
-
-```bash
-PGPASSWORD=$(kubectl get secret postgresql-credentials -n databases \
-  -o jsonpath='{.data.postgres-password}' | base64 -d)
-FLIPT_DB_PASS=$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/flipt)
-
-kubectl run psql-client --rm -it --restart=Never \
-  --namespace databases \
-  --image=bitnami/postgresql:16 \
-  --env="PGPASSWORD=${PGPASSWORD}" \
-  -- psql -h postgresql-postgresql-ha-pgpool -U postgres <<EOF
-CREATE DATABASE flipt;
-CREATE USER flipt_user WITH ENCRYPTED PASSWORD '${FLIPT_DB_PASS}';
-GRANT ALL PRIVILEGES ON DATABASE flipt TO flipt_user;
-\c flipt
-GRANT ALL ON SCHEMA public TO flipt_user;
-EOF
-```
+::: info Database
+The `flipt` database and `flipt_user` were created in [Phase 4: Shared Databases](./04-databases.md#create-application-databases).
+:::
 
 ### Create Flipt OIDC Provider in Authentik
 

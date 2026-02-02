@@ -160,56 +160,26 @@ EOF
 kubectl wait --for=condition=Ready externalsecret/grafana-oidc-secret \
   -n monitoring --timeout=60s
 
-# Create ConfigMap for Grafana OAuth (secret referenced via env var)
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: grafana-oauth-config
-  namespace: monitoring
-data:
-  grafana.ini: |
-    [server]
-    root_url = https://grafana.${DOMAIN}
+# Upgrade kube-prometheus-stack with Grafana OIDC configuration
+helm upgrade prometheus prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --reuse-values \
+  --set grafana.envFromSecrets[0].name=grafana-oidc-secret \
+  --set grafana."grafana\.ini".server.root_url=https://grafana.${DOMAIN} \
+  --set grafana."grafana\.ini"."auth\.generic_oauth".enabled=true \
+  --set grafana."grafana\.ini"."auth\.generic_oauth".name=Authentik \
+  --set grafana."grafana\.ini"."auth\.generic_oauth".allow_sign_up=true \
+  --set grafana."grafana\.ini"."auth\.generic_oauth".client_id=grafana \
+  --set grafana."grafana\.ini"."auth\.generic_oauth".client_secret=\$__env{client-secret} \
+  --set grafana."grafana\.ini"."auth\.generic_oauth".scopes="openid profile email groups" \
+  --set grafana."grafana\.ini"."auth\.generic_oauth".auth_url=https://auth.${DOMAIN}/api/oidc/authorization \
+  --set grafana."grafana\.ini"."auth\.generic_oauth".token_url=https://auth.${DOMAIN}/api/oidc/token \
+  --set grafana."grafana\.ini"."auth\.generic_oauth".api_url=https://auth.${DOMAIN}/api/oidc/userinfo \
+  --set grafana."grafana\.ini"."auth\.generic_oauth".role_attribute_path="contains(groups[*]\, 'admins') && 'Admin' || 'Viewer'" \
+  --set grafana."grafana\.ini".auth.disable_login_form=false \
+  --set grafana."grafana\.ini".auth.oauth_auto_login=false
 
-    [auth.generic_oauth]
-    enabled = true
-    name = Authentik
-    allow_sign_up = true
-    client_id = grafana
-    client_secret = \${GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}
-    scopes = openid profile email groups
-    auth_url = https://auth.${DOMAIN}/api/oidc/authorization
-    token_url = https://auth.${DOMAIN}/api/oidc/token
-    api_url = https://auth.${DOMAIN}/api/oidc/userinfo
-    role_attribute_path = contains(groups[*], 'admins') && 'Admin' || 'Viewer'
-    email_attribute_path = email
-    name_attribute_path = name
-
-    [auth]
-    disable_login_form = false
-    oauth_auto_login = false
-EOF
-
-# Patch Grafana deployment to inject OIDC secret via environment variable
-kubectl patch deployment prometheus-grafana -n monitoring --type='json' -p='[
-  {
-    "op": "add",
-    "path": "/spec/template/spec/containers/0/env/-",
-    "value": {
-      "name": "GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET",
-      "valueFrom": {
-        "secretKeyRef": {
-          "name": "grafana-oidc-secret",
-          "key": "client-secret"
-        }
-      }
-    }
-  }
-]'
-
-# Restart Grafana to apply OAuth config
-kubectl rollout restart deployment prometheus-grafana -n monitoring
+kubectl rollout status deployment prometheus-grafana -n monitoring
 ```
 
 ## Install Cilium Hubble UI
