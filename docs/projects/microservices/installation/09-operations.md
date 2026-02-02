@@ -331,7 +331,7 @@ kubectl annotate externalsecret redis-credentials -n databases \
   force-sync=$(date +%s)
 
 # Restart services that use Redis
-kubectl rollout restart deployment/authelia -n authelia
+kubectl rollout restart deployment/authentik -n authentik
 kubectl rollout restart deployment/mattermost-team-edition -n mattermost
 kubectl rollout restart statefulset/gitea -n gitea
 
@@ -398,7 +398,7 @@ kubectl get pods -A
 # Scale down services using PostgreSQL
 kubectl scale deployment --all -n mattermost --replicas=0
 kubectl scale deployment --all -n gitea --replicas=0
-kubectl scale deployment --all -n authelia --replicas=0
+kubectl scale deployment --all -n authentik --replicas=0
 
 # Restore from backup
 kubectl exec -n databases postgresql-postgresql-ha-0 -- \
@@ -408,7 +408,7 @@ kubectl exec -n databases postgresql-postgresql-ha-0 -- \
 # Scale services back up
 kubectl scale deployment --all -n mattermost --replicas=1
 kubectl scale deployment --all -n gitea --replicas=1
-kubectl scale deployment --all -n authelia --replicas=1
+kubectl scale deployment --all -n authentik --replicas=1
 ```
 
 #### Recover Vault

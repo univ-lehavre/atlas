@@ -17,11 +17,13 @@ This phase installs mutualized PostgreSQL HA and Redis Sentinel clusters, elimin
 │  │  └─────────┘  └─────────────┘  │  │  └────────┘  └────────┘  │  │
 │  │                                 │  │                          │  │
 │  │  Databases:                     │  │  Uses:                   │  │
-│  │  - vault                        │  │  - Authelia sessions     │  │
-│  │  - mattermost                   │  │  - Mattermost cache      │  │
-│  │  - gitea                        │  │  - Gitea cache           │  │
-│  │  - redcap                       │  │  - Rate limiting         │  │
-│  │  - authelia                     │  │                          │  │
+│  │  - vault                        │  │  - Authentik sessions    │  │
+│  │  - authentik                    │  │  - Mattermost cache      │  │
+│  │  - mattermost                   │  │  - Nextcloud cache       │  │
+│  │  - nextcloud                    │  │  - Gitea cache           │  │
+│  │  - gitea                        │  │  - Rate limiting         │  │
+│  │  - flipt                        │  │                          │  │
+│  │  - redcap                       │  │                          │  │
 │  └─────────────────────────────────┘  └──────────────────────────┘  │
 │                                                                     │
 │  All credentials managed by Vault + External Secrets Operator       │
@@ -142,10 +144,25 @@ CREATE DATABASE redcap;
 CREATE USER redcap_user WITH ENCRYPTED PASSWORD '$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/redcap)';
 GRANT ALL PRIVILEGES ON DATABASE redcap TO redcap_user;
 
--- Authelia database
-CREATE DATABASE authelia;
-CREATE USER authelia_user WITH ENCRYPTED PASSWORD '$(openssl rand -base64 24)';
-GRANT ALL PRIVILEGES ON DATABASE authelia TO authelia_user;
+-- Authentik database
+CREATE DATABASE authentik;
+GRANT ALL PRIVILEGES ON DATABASE authentik TO postgres;
+
+-- Nextcloud database
+CREATE DATABASE nextcloud;
+CREATE USER nextcloud_user WITH ENCRYPTED PASSWORD '$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/nextcloud)';
+GRANT ALL PRIVILEGES ON DATABASE nextcloud TO nextcloud_user;
+\c nextcloud
+GRANT ALL ON SCHEMA public TO nextcloud_user;
+\c postgres
+
+-- Flipt database
+CREATE DATABASE flipt;
+CREATE USER flipt_user WITH ENCRYPTED PASSWORD '$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/flipt)';
+GRANT ALL PRIVILEGES ON DATABASE flipt TO flipt_user;
+\c flipt
+GRANT ALL ON SCHEMA public TO flipt_user;
+\c postgres
 
 -- List all databases
 \l
@@ -236,10 +253,12 @@ Services will connect using these endpoints:
 | Service | Connection String |
 |---------|------------------|
 | Vault | `postgresql://vault_user:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/vault` |
+| Authentik | `postgresql://postgres:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/authentik` |
 | Mattermost | `postgresql://mattermost_user:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/mattermost` |
+| Nextcloud | `postgresql://nextcloud_user:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/nextcloud` |
 | Gitea | `postgresql://gitea_user:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/gitea` |
 | REDCap | `postgresql://redcap_user:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/redcap` |
-| Authelia | `postgresql://authelia_user:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/authelia` |
+| Flipt | `postgresql://flipt_user:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/flipt` |
 
 ::: info PgPool
 PgPool handles connection pooling and automatic failover to replicas.
@@ -485,7 +504,7 @@ kubectl run psql-test --rm -it --restart=Never \
   --image=bitnami/postgresql:16 \
   --env="PGPASSWORD=$(kubectl get secret postgresql-credentials -n databases -o jsonpath='{.data.postgres-password}' | base64 -d)" \
   -- psql -h postgresql-postgresql-ha-pgpool -U postgres -c "\l"
-# Expected: List of databases (vault, mattermost, gitea, redcap, authelia)
+# Expected: List of databases (vault, authentik, mattermost, nextcloud, gitea, redcap, flipt)
 
 # Test Redis connectivity
 kubectl run redis-test --rm -it --restart=Never \
@@ -530,4 +549,4 @@ kubectl get servicemonitor -n databases
 
 ## Next Step
 
-Proceed to [Phase 5: Core Services](./05-services.md) to install Authelia, Mattermost, OnlyOffice, REDCap, and ECRIN.
+Proceed to [Phase 5: Core Services](./05-services.md) to install Authentik, Mattermost, Nextcloud, REDCap, ECRIN, and Flipt.

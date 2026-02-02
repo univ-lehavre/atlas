@@ -10,7 +10,7 @@ This phase configures Cilium Network Policies, access control, and security best
 │                                                                     │
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │                    Layer 7: Application                      │   │
-│  │  • Authelia (SSO/2FA)                                       │   │
+│  │  • Authentik (IAM/SSO/2FA)                                  │   │
 │  │  • OIDC authentication                                      │   │
 │  │  • Role-based access control                                │   │
 │  └─────────────────────────────────────────────────────────────┘   │
@@ -193,9 +193,13 @@ spec:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: gitea
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: authelia
+            k8s:io.kubernetes.pod.namespace: authentik
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: nextcloud
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: redcap
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: flipt
       toPorts:
         - ports:
             - port: "5432"
@@ -248,11 +252,13 @@ spec:
     # Allow from services that need Redis
     - fromEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: authelia
+            k8s:io.kubernetes.pod.namespace: authentik
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: mattermost
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: gitea
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: nextcloud
       toPorts:
         - ports:
             - port: "6379"
@@ -300,19 +306,19 @@ spec:
 EOF
 ```
 
-### Authelia Namespace
+### Authentik Namespace
 
 ```bash
 cat <<EOF | kubectl apply -f -
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
-  name: authelia-policy
-  namespace: authelia
+  name: authentik-server-policy
+  namespace: authentik
 spec:
   endpointSelector:
     matchLabels:
-      app.kubernetes.io/name: authelia
+      app.kubernetes.io/component: server
   ingress:
     # Allow from Cilium Ingress
     - fromEndpoints:
@@ -321,15 +327,43 @@ spec:
             io.cilium.k8s.policy.serviceaccount: cilium-envoy
       toPorts:
         - ports:
-            - port: "9091"
+            - port: "9000"
               protocol: TCP
-    # Allow from monitoring
+    # Allow from all services for OIDC authentication
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: mattermost
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: gitea
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: nextcloud
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: argocd
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: ecrin
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: flipt
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+    # Allow from Authentik Worker
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/component: worker
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+    # Allow from monitoring (Prometheus)
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
       toPorts:
         - ports:
-            - port: "9091"
+            - port: "9300"
               protocol: TCP
   egress:
     # DNS
@@ -358,6 +392,280 @@ spec:
       toPorts:
         - ports:
             - port: "6379"
+              protocol: TCP
+    # External (email, webhooks)
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "587"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: authentik-worker-policy
+  namespace: authentik
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/component: worker
+  ingress:
+    # No direct ingress needed
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/component: server
+  egress:
+    # DNS
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+    # PostgreSQL
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: databases
+            app.kubernetes.io/name: postgresql-ha
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    # Redis
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: databases
+            app.kubernetes.io/name: redis
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+    # Authentik Server
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/component: server
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+    # External (email)
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "587"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: authentik-outpost-policy
+  namespace: authentik
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/component: outpost
+  ingress:
+    # Allow from Cilium Ingress (Forward Auth)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            io.cilium.k8s.policy.serviceaccount: cilium-envoy
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+            - port: "9443"
+              protocol: TCP
+  egress:
+    # DNS
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+    # Authentik Server (API calls)
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/component: server
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+    # Redis (session cache)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: databases
+            app.kubernetes.io/name: redis
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+EOF
+```
+
+### Nextcloud Namespace
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: nextcloud-policy
+  namespace: nextcloud
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: nextcloud
+  ingress:
+    # Allow from Cilium Ingress
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            io.cilium.k8s.policy.serviceaccount: cilium-envoy
+      toPorts:
+        - ports:
+            - port: "80"
+              protocol: TCP
+  egress:
+    # DNS
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+    # PostgreSQL
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: databases
+            app.kubernetes.io/name: postgresql-ha
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    # Redis
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: databases
+            app.kubernetes.io/name: redis
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+    # Authentik (OIDC)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: authentik
+            app.kubernetes.io/component: server
+      toPorts:
+        - ports:
+            - port: "9000"
+              protocol: TCP
+    # SeaweedFS (S3 storage)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: seaweedfs
+      toPorts:
+        - ports:
+            - port: "8333"
+              protocol: TCP
+    # External (apps, updates)
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+EOF
+```
+
+### Flipt Namespace
+
+```bash
+cat <<EOF | kubectl apply -f -
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: flipt-policy
+  namespace: flipt
+spec:
+  endpointSelector:
+    matchLabels:
+      app: flipt
+  ingress:
+    # Allow from Cilium Ingress (UI)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            io.cilium.k8s.policy.serviceaccount: cilium-envoy
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    # Allow from services that need feature flags (gRPC)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: ecrin
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: nextcloud
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: mattermost
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+            - port: "9000"
+              protocol: TCP
+    # Allow from monitoring (Prometheus)
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+  egress:
+    # DNS
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+    # PostgreSQL
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: databases
+            app.kubernetes.io/name: postgresql-ha
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    # Authentik (OIDC)
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: authentik
+            app.kubernetes.io/component: server
+      toPorts:
+        - ports:
+            - port: "9000"
               protocol: TCP
 EOF
 ```
@@ -413,13 +721,14 @@ spec:
         - ports:
             - port: "6379"
               protocol: TCP
-    # Authelia (OIDC)
+    # Authentik (OIDC)
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: authelia
+            k8s:io.kubernetes.pod.namespace: authentik
+            app.kubernetes.io/component: server
       toPorts:
         - ports:
-            - port: "9091"
+            - port: "9000"
               protocol: TCP
     # External (push notifications, integrations)
     - toEntities:
@@ -501,13 +810,14 @@ spec:
               protocol: TCP
             - port: "26379"
               protocol: TCP
-    # Authelia (OIDC)
+    # Authentik (OIDC)
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: authelia
+            k8s:io.kubernetes.pod.namespace: authentik
+            app.kubernetes.io/component: server
       toPorts:
         - ports:
-            - port: "9091"
+            - port: "9000"
               protocol: TCP
     # External (webhooks, LFS, avatars)
     - toEntities:
@@ -571,13 +881,14 @@ spec:
               protocol: TCP
             - port: "22"
               protocol: TCP
-    # Authelia (OIDC)
+    # Authentik (OIDC)
     - toEndpoints:
         - matchLabels:
-            k8s:io.kubernetes.pod.namespace: authelia
+            k8s:io.kubernetes.pod.namespace: authentik
+            app.kubernetes.io/component: server
       toPorts:
         - ports:
-            - port: "9091"
+            - port: "9000"
               protocol: TCP
     # External repos (GitHub, etc.)
     - toEntities:
@@ -741,7 +1052,7 @@ grep '"resource":"secrets"' /var/log/kubernetes/audit.log | jq
 
 | Item | Status | Notes |
 |------|--------|-------|
-| SSO/OIDC | ✅ | Authelia |
+| SSO/OIDC | ✅ | Authentik |
 | 2FA for admin services | ✅ | TOTP |
 | Role-based access | ✅ | Per-service RBAC |
 | Audit logging | ✅ | Kubernetes + Vault |
