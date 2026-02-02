@@ -144,6 +144,10 @@ vault kv put secret/infrastructure/redis \
 vault kv put secret/infrastructure/longhorn \
   crypto-key="$(head -c 32 /dev/urandom | base64)"
 
+# Vault's own database password (for PostgreSQL storage)
+vault kv put secret/services/vault \
+  db-password="$(openssl rand -base64 32)"
+
 # Service secrets
 vault kv put secret/services/authentik \
   secret-key="$(openssl rand -base64 60)" \
@@ -486,6 +490,7 @@ secret/
 │   ├── longhorn        # crypto-key
 │   └── seaweedfs       # s3-access-key, s3-secret-key
 └── services/
+    ├── vault           # db-password
     ├── authentik       # secret-key, admin-password, admin-token
     ├── mattermost      # db-password
     ├── nextcloud       # admin-password, db-password
