@@ -63,7 +63,7 @@ export default withMermaid(
             { text: 'Microservices', link: '/projects/microservices/' },
           ],
         },
-        { text: 'Audit', link: '/audit/' },
+        { text: 'Audit', link: '/projects/atlas/' },
         { text: 'API', link: '/api/' },
       ],
       sidebar: {
@@ -283,22 +283,6 @@ export default withMermaid(
               },
               { text: 'Technical debt', link: '/projects/atlas/technical-debt' },
               { text: 'Code quality audit', link: '/projects/atlas/code-audit' },
-            ],
-          },
-        ],
-        // Audits (redirect to Atlas)
-        '/audit/': [
-          {
-            text: 'Audits',
-            items: [{ text: 'Introduction', link: '/audit/' }],
-          },
-          {
-            text: 'By project',
-            items: [
-              { text: 'Atlas', link: '/projects/atlas/' },
-              { text: 'ECRIN', link: '/projects/ecrin/audit/' },
-              { text: 'Citations', link: '/projects/citations/audit/' },
-              { text: 'CRF', link: '/projects/crf/audit/' },
             ],
           },
         ],
