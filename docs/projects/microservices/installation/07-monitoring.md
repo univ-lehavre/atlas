@@ -197,6 +197,10 @@ kubectl rollout status deployment prometheus-grafana -n monitoring
 
 Hubble provides network flow observability.
 
+::: warning Authentication Required
+The Hubble UI has no built-in authentication. Before exposing it publicly, protect it with Authentik forward-auth (see [Phase 5: Authentik Outpost](./05-services.md#deploy-authentik-outpost-forward-auth)) or restrict access to trusted IP ranges only.
+:::
+
 ```bash
 # Hubble UI is already enabled via Cilium installation
 # Create ingress for Hubble UI
@@ -230,6 +234,10 @@ EOF
 ```
 
 ## Create Longhorn Ingress
+
+::: warning Authentication Required
+The Longhorn UI has no built-in authentication. Before exposing it publicly, protect it with Authentik forward-auth (see [Phase 5: Authentik Outpost](./05-services.md#deploy-authentik-outpost-forward-auth)) or restrict access to trusted IP ranges only. An unauthenticated Longhorn UI allows volume management and deletion.
+:::
 
 ```bash
 cat <<EOF | kubectl apply -f -

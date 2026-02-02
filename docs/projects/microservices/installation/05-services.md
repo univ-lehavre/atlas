@@ -274,7 +274,7 @@ curl -X POST "${AUTHENTIK_URL}/providers/oauth2/" \
     "client_type": "confidential",
     "client_id": "nextcloud",
     "client_secret": "'$(openssl rand -base64 32)'",
-    "redirect_uris": "https://cloud.'${DOMAIN}'/apps/oidc_login/oidc",
+    "redirect_uris": "https://cloud.${DOMAIN}/apps/oidc_login/oidc",
     "property_mappings": ["goauthentik.io/providers/oauth2/scope-email", "goauthentik.io/providers/oauth2/scope-openid", "goauthentik.io/providers/oauth2/scope-profile"],
     "sub_mode": "user_email"
   }'
@@ -289,7 +289,7 @@ curl -X POST "${AUTHENTIK_URL}/providers/oauth2/" \
     "client_type": "confidential",
     "client_id": "mattermost",
     "client_secret": "'$(openssl rand -base64 32)'",
-    "redirect_uris": "https://chat.'${DOMAIN}'/signup/gitlab/complete\nhttps://chat.'${DOMAIN}'/login/gitlab/complete",
+    "redirect_uris": "https://chat.${DOMAIN}/signup/gitlab/complete\nhttps://chat.${DOMAIN}/login/gitlab/complete",
     "property_mappings": ["goauthentik.io/providers/oauth2/scope-email", "goauthentik.io/providers/oauth2/scope-openid", "goauthentik.io/providers/oauth2/scope-profile"],
     "sub_mode": "user_email"
   }'
@@ -304,7 +304,7 @@ curl -X POST "${AUTHENTIK_URL}/providers/oauth2/" \
     "client_type": "confidential",
     "client_id": "gitea",
     "client_secret": "'$(openssl rand -base64 32)'",
-    "redirect_uris": "https://git.'${DOMAIN}'/user/oauth2/authentik/callback",
+    "redirect_uris": "https://git.${DOMAIN}/user/oauth2/authentik/callback",
     "property_mappings": ["goauthentik.io/providers/oauth2/scope-email", "goauthentik.io/providers/oauth2/scope-openid", "goauthentik.io/providers/oauth2/scope-profile"],
     "sub_mode": "user_email"
   }'
@@ -319,7 +319,7 @@ curl -X POST "${AUTHENTIK_URL}/providers/oauth2/" \
     "client_type": "confidential",
     "client_id": "grafana",
     "client_secret": "'$(openssl rand -base64 32)'",
-    "redirect_uris": "https://grafana.'${DOMAIN}'/login/generic_oauth",
+    "redirect_uris": "https://grafana.${DOMAIN}/login/generic_oauth",
     "property_mappings": ["goauthentik.io/providers/oauth2/scope-email", "goauthentik.io/providers/oauth2/scope-openid", "goauthentik.io/providers/oauth2/scope-profile"],
     "sub_mode": "user_email"
   }'
@@ -334,7 +334,7 @@ curl -X POST "${AUTHENTIK_URL}/providers/oauth2/" \
     "client_type": "confidential",
     "client_id": "argocd",
     "client_secret": "'$(openssl rand -base64 32)'",
-    "redirect_uris": "https://argocd.'${DOMAIN}'/auth/callback",
+    "redirect_uris": "https://argocd.${DOMAIN}/auth/callback",
     "property_mappings": ["goauthentik.io/providers/oauth2/scope-email", "goauthentik.io/providers/oauth2/scope-openid", "goauthentik.io/providers/oauth2/scope-profile"],
     "sub_mode": "user_email"
   }'
@@ -349,7 +349,7 @@ curl -X POST "${AUTHENTIK_URL}/providers/oauth2/" \
     "client_type": "confidential",
     "client_id": "ecrin",
     "client_secret": "'$(openssl rand -base64 32)'",
-    "redirect_uris": "https://ecrin.'${DOMAIN}'/auth/callback",
+    "redirect_uris": "https://ecrin.${DOMAIN}/auth/callback",
     "property_mappings": ["goauthentik.io/providers/oauth2/scope-email", "goauthentik.io/providers/oauth2/scope-openid", "goauthentik.io/providers/oauth2/scope-profile"],
     "sub_mode": "user_email"
   }'
@@ -368,7 +368,7 @@ curl -X POST "${AUTHENTIK_URL}/providers/proxy/" \
     "name": "Forward Auth",
     "authorization_flow": "default-provider-authorization-implicit-consent",
     "mode": "forward_single",
-    "external_host": "https://auth.'${DOMAIN}'"
+    "external_host": "https://auth.${DOMAIN}"
   }'
 ```
 
@@ -698,7 +698,6 @@ helm install nextcloud nextcloud/nextcloud \
   --set nextcloud.username=admin \
   --set nextcloud.existingSecret.enabled=true \
   --set nextcloud.existingSecret.secretName=nextcloud-secrets \
-  --set nextcloud.existingSecret.usernameKey=nextcloud-admin-user \
   --set nextcloud.existingSecret.passwordKey=nextcloud-admin-password \
   --set nextcloud.extraEnv[0].name=POSTGRES_HOST \
   --set nextcloud.extraEnv[0].value=postgresql-postgresql-ha-pgpool.databases.svc \
@@ -858,11 +857,15 @@ EOF
 kubectl wait --for=condition=ready pod \
   -l app=onlyoffice-ds -n nextcloud --timeout=300s
 
+# Retrieve OnlyOffice JWT secret on the admin node
+JWT_SECRET=$(kubectl get secret onlyoffice-jwt -n nextcloud -o jsonpath='{.data.secret}' | base64 -d)
+
 # Configure OnlyOffice in Nextcloud
-kubectl exec -n nextcloud deploy/nextcloud -- su -s /bin/bash www-data -c "
-  php occ config:app:set onlyoffice DocumentServerUrl --value='http://onlyoffice-ds.nextcloud.svc/'
-  php occ config:app:set onlyoffice jwt_secret --value='\$(kubectl get secret onlyoffice-jwt -n nextcloud -o jsonpath=\"{.data.secret}\" | base64 -d)'
-"
+kubectl exec -n nextcloud deploy/nextcloud -- \
+  su -s /bin/bash www-data -c "php occ config:app:set onlyoffice DocumentServerUrl --value='http://onlyoffice-ds.nextcloud.svc/'"
+
+kubectl exec -n nextcloud deploy/nextcloud -- \
+  su -s /bin/bash www-data -c "php occ config:app:set onlyoffice jwt_secret --value='${JWT_SECRET}'"
 ```
 
 ## REDCap (Research Data Capture)
