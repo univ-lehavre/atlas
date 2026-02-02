@@ -106,7 +106,7 @@ Centralized feature flag management:
 | Grafana | Dashboards | ~200MB | 1 |
 | Loki | Log aggregation | ~256MB | 1 |
 
-**Total estimated**: ~8GB RAM minimum, 16GB recommended
+**Total estimated**: ~8GB RAM for applications (+ ~4-8GB for OS/K3s/buffers = 16GB system minimum)
 
 ## Service Access Matrix
 

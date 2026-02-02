@@ -617,8 +617,11 @@ kubectl get cronjobs -A
 # Check recent backup jobs
 kubectl get jobs -A -l app=backup --sort-by=.status.completionTime | tail -10
 
-# Verify backup files exist
-kubectl exec -n kube-system deploy/etcd-backup-verify -- ls -la /backup/
+# Verify backup files exist (run a temporary pod to check)
+kubectl run backup-check --rm -it --restart=Never \
+  --namespace kube-system \
+  --image=busybox \
+  --overrides='{"spec":{"volumes":[{"name":"backup","persistentVolumeClaim":{"claimName":"etcd-backup-pvc"}}],"containers":[{"name":"backup-check","image":"busybox","command":["ls","-la","/backup/etcd"],"volumeMounts":[{"name":"backup","mountPath":"/backup"}]}]}}'
 
 # Check Longhorn backup status
 kubectl get backups -n longhorn-system
