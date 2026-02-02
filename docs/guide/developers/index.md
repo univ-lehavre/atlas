@@ -65,7 +65,7 @@ atlas/
 
 | Document | Description |
 |----------|-------------|
-| [Dependencies audit](/audit/common/dependencies-audit) | Inventory and update roadmap |
+| [Dependencies audit](/projects/atlas/dependencies-audit) | Inventory and update roadmap |
 
 ## Quick Start
 
