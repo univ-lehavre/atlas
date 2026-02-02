@@ -58,7 +58,6 @@ pnpm ci
 ## Audits
 
 - [Dependency Audit](./dependencies-audit) - Security, licenses, versions, SPOF
-- [Code Quality](./code-audit) - Linting, complexity, best practices
 - [Documentation](./documentation-audit) - Coverage, quality, updates
 - [Technical Debt](./technical-debt) - Known issues and improvements
-- [Audit Tools](./audit-tools) - Available audit commands
+- [Audit Tools](./audit-tools) - Code quality, linting, and available audit commands
