@@ -1068,8 +1068,35 @@ EOF
 ```bash
 kubectl create namespace ecrin
 
-# Get OIDC secret from Authentik
+# Store OIDC secret in Vault (get from Authentik after creating provider)
 ECRIN_OIDC_SECRET="<from-authentik>"
+kubectl exec -n vault vault-0 -- vault kv put secret/services/ecrin \
+  oidc-secret="${ECRIN_OIDC_SECRET}"
+
+# Create ExternalSecret for ECRIN OIDC
+cat <<EOF | kubectl apply -f -
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: ecrin-oidc-secret
+  namespace: ecrin
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: ecrin-oidc-secret
+    creationPolicy: Owner
+  data:
+    - secretKey: client-secret
+      remoteRef:
+        key: services/ecrin
+        property: oidc-secret
+EOF
+
+kubectl wait --for=condition=Ready externalsecret/ecrin-oidc-secret \
+  -n ecrin --timeout=60s
 
 cat <<EOF | kubectl apply -f -
 apiVersion: apps/v1
@@ -1100,7 +1127,10 @@ spec:
         - name: OIDC_CLIENT_ID
           value: "ecrin"
         - name: OIDC_CLIENT_SECRET
-          value: "${ECRIN_OIDC_SECRET}"
+          valueFrom:
+            secretKeyRef:
+              name: ecrin-oidc-secret
+              key: client-secret
         resources:
           requests:
             memory: 128Mi
@@ -1267,9 +1297,41 @@ curl -X POST "${AUTHENTIK_URL}/providers/oauth2/" \
 ### Install Flipt
 
 ```bash
+# Store OIDC secret in Vault (get from Authentik after creating provider)
 FLIPT_OIDC_SECRET="<from-authentik>"
-FLIPT_DB_PASS=$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/flipt)
+kubectl exec -n vault vault-0 -- vault kv patch secret/services/flipt \
+  oidc-secret="${FLIPT_OIDC_SECRET}"
 
+# Update ExternalSecret to include OIDC secret
+cat <<EOF | kubectl apply -f -
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: flipt-secrets
+  namespace: flipt
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: flipt-secrets
+    creationPolicy: Owner
+  data:
+    - secretKey: db-password
+      remoteRef:
+        key: services/flipt
+        property: db-password
+    - secretKey: oidc-secret
+      remoteRef:
+        key: services/flipt
+        property: oidc-secret
+EOF
+
+kubectl wait --for=condition=Ready externalsecret/flipt-secrets \
+  -n flipt --timeout=60s
+
+# ConfigMap with placeholders for secrets (injected via env vars)
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ConfigMap
@@ -1282,7 +1344,7 @@ data:
       level: info
 
     db:
-      url: postgres://flipt_user:${FLIPT_DB_PASS}@postgresql-postgresql-ha-pgpool.databases.svc:5432/flipt?sslmode=disable
+      url: \${FLIPT_DATABASE_URL}
 
     authentication:
       required: true
@@ -1296,7 +1358,7 @@ data:
             authentik:
               issuer_url: https://auth.${DOMAIN}/application/o/flipt/
               client_id: flipt
-              client_secret: ${FLIPT_OIDC_SECRET}
+              client_secret: \${FLIPT_OIDC_SECRET}
               redirect_address: https://flags.${DOMAIN}
               scopes:
                 - openid
@@ -1328,7 +1390,7 @@ spec:
     spec:
       containers:
       - name: flipt
-        image: flipt/flipt:latest
+        image: flipt/flipt:v1.37.1
         ports:
         - containerPort: 8080
           name: http
@@ -1337,6 +1399,19 @@ spec:
         args:
           - --config
           - /etc/flipt/flipt.yaml
+        env:
+        - name: FLIPT_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: flipt-secrets
+              key: db-password
+        - name: FLIPT_DATABASE_URL
+          value: "postgres://flipt_user:\$(FLIPT_DB_PASSWORD)@postgresql-postgresql-ha-pgpool.databases.svc:5432/flipt?sslmode=disable"
+        - name: FLIPT_OIDC_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: flipt-secrets
+              key: oidc-secret
         resources:
           requests:
             memory: 64Mi

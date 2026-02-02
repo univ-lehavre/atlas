@@ -135,7 +135,32 @@ GRAFANA_OIDC_SECRET=$(openssl rand -base64 32)
 kubectl exec -n vault vault-0 -- vault kv patch secret/services/grafana \
   oidc-secret="${GRAFANA_OIDC_SECRET}"
 
-# Create ConfigMap for Grafana OAuth
+# Create ExternalSecret for Grafana OIDC
+cat <<EOF | kubectl apply -f -
+apiVersion: external-secrets.io/v1beta1
+kind: ExternalSecret
+metadata:
+  name: grafana-oidc-secret
+  namespace: monitoring
+spec:
+  refreshInterval: "1h"
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: grafana-oidc-secret
+    creationPolicy: Owner
+  data:
+    - secretKey: client-secret
+      remoteRef:
+        key: services/grafana
+        property: oidc-secret
+EOF
+
+kubectl wait --for=condition=Ready externalsecret/grafana-oidc-secret \
+  -n monitoring --timeout=60s
+
+# Create ConfigMap for Grafana OAuth (secret referenced via env var)
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: ConfigMap
@@ -152,7 +177,7 @@ data:
     name = Authentik
     allow_sign_up = true
     client_id = grafana
-    client_secret = ${GRAFANA_OIDC_SECRET}
+    client_secret = \${GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}
     scopes = openid profile email groups
     auth_url = https://auth.${DOMAIN}/api/oidc/authorization
     token_url = https://auth.${DOMAIN}/api/oidc/token
@@ -165,6 +190,23 @@ data:
     disable_login_form = false
     oauth_auto_login = false
 EOF
+
+# Patch Grafana deployment to inject OIDC secret via environment variable
+kubectl patch deployment prometheus-grafana -n monitoring --type='json' -p='[
+  {
+    "op": "add",
+    "path": "/spec/template/spec/containers/0/env/-",
+    "value": {
+      "name": "GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET",
+      "valueFrom": {
+        "secretKeyRef": {
+          "name": "grafana-oidc-secret",
+          "key": "client-secret"
+        }
+      }
+    }
+  }
+]'
 
 # Restart Grafana to apply OAuth config
 kubectl rollout restart deployment prometheus-grafana -n monitoring

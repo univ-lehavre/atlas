@@ -962,15 +962,13 @@ kubectl get ciliumclusterwidenetworkpolicy
 # Check policy enforcement status
 cilium status | grep "Policy Enforcement"
 
-# Test connectivity (should work)
+# Test connectivity to PostgreSQL (TCP check; should work)
 kubectl exec -n mattermost deploy/mattermost-team-edition -- \
-  curl -s -o /dev/null -w "%{http_code}" \
-  http://postgresql-postgresql-ha-pgpool.databases.svc:5432
+  sh -c "nc -zv postgresql-postgresql-ha-pgpool.databases.svc 5432"
 
-# Test connectivity (should fail if default-deny is active)
+# Test connectivity to Vault (TCP check; should fail if default-deny is active)
 kubectl exec -n mattermost deploy/mattermost-team-edition -- \
-  curl -s -o /dev/null -w "%{http_code}" \
-  http://vault.vault.svc:8200
+  sh -c "nc -zv vault.vault.svc 8200"
 ```
 
 ## Pod Security Standards
