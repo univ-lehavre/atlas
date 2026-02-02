@@ -11,6 +11,10 @@ ECRIN enables researchers to:
 - Visualize research networks
 - Search for experts and data
 
+## Project Documentation
+
+- [**Specifications**](/projects/ecrin/specifications) - Complete functional and technical specifications (vision, features, architecture, security, GDPR, roadmap)
+
 ## For Researchers
 
 - [ECRIN Researcher Guide](/projects/ecrin/user/) - Discover ECRIN features

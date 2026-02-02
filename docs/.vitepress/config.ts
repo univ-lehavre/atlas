@@ -70,7 +70,10 @@ export default withMermaid(
         '/projects/ecrin/': [
           {
             text: 'ECRIN',
-            items: [{ text: 'Overview', link: '/projects/ecrin/' }],
+            items: [
+              { text: 'Overview', link: '/projects/ecrin/' },
+              { text: 'Specifications', link: '/projects/ecrin/specifications' },
+            ],
           },
           {
             text: 'Researcher Guide',
