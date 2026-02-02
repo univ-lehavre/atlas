@@ -281,7 +281,6 @@ export default withMermaid(
                 link: '/projects/atlas/dependencies-audit',
               },
               { text: 'Technical debt', link: '/projects/atlas/technical-debt' },
-              { text: 'Audit tools', link: '/projects/atlas/audit-tools' },
             ],
           },
         ],

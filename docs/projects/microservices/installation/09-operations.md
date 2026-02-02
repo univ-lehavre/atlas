@@ -182,73 +182,26 @@ EOF
 
 ### Backup Verification
 
+Since PVCs are namespace-scoped, verify backups using temporary pods in each namespace:
+
 ```bash
-# Create backup verification job
-cat <<EOF | kubectl apply -f -
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: backup-verify
-  namespace: kube-system
-spec:
-  schedule: "0 6 * * 0"  # Weekly on Sunday at 6 AM
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          containers:
-          - name: verify
-            image: bitnami/postgresql:16
-            command:
-            - /bin/bash
-            - -c
-            - |
-              echo "=== Backup Verification Report ==="
-              echo "Date: \$(date)"
-              echo ""
+# Verify etcd backups (in kube-system)
+kubectl run etcd-backup-check --rm -it --restart=Never \
+  --namespace kube-system \
+  --image=busybox \
+  --overrides='{"spec":{"volumes":[{"name":"backup","persistentVolumeClaim":{"claimName":"etcd-backup-pvc"}}],"containers":[{"name":"check","image":"busybox","command":["sh","-c","echo \"=== etcd backups ===\"; ls -lh /backup/etcd/etcd_* 2>/dev/null | tail -5"],"volumeMounts":[{"name":"backup","mountPath":"/backup"}]}]}}'
 
-              # Check etcd backups (snapshots have timestamp prefix, not .db extension)
-              echo "etcd backups:"
-              ls -lh /backup/etcd/etcd_* 2>/dev/null | tail -5
+# Verify PostgreSQL backups (in databases namespace)
+kubectl run pg-backup-check --rm -it --restart=Never \
+  --namespace databases \
+  --image=bitnami/postgresql:16 \
+  --overrides='{"spec":{"volumes":[{"name":"backup","persistentVolumeClaim":{"claimName":"postgresql-backup-pvc"}}],"containers":[{"name":"check","image":"bitnami/postgresql:16","command":["bash","-c","echo \"=== PostgreSQL backups ===\"; ls -lh /backup/*.sql.gz 2>/dev/null | tail -5; echo \"\"; LATEST=$(ls -t /backup/*.sql.gz 2>/dev/null | head -1); if [ -n \"$LATEST\" ]; then gunzip -t \"$LATEST\" && echo \"Backup integrity: OK\" || echo \"Backup integrity: FAILED\"; fi"],"volumeMounts":[{"name":"backup","mountPath":"/backup"}]}]}}'
 
-              # Check PostgreSQL backups
-              echo ""
-              echo "PostgreSQL backups:"
-              ls -lh /backup/postgresql/*.sql.gz 2>/dev/null | tail -5
-
-              # Check Vault backups
-              echo ""
-              echo "Vault backups:"
-              ls -lh /backup/vault/*.snap 2>/dev/null | tail -5
-
-              # Verify latest PostgreSQL backup integrity
-              echo ""
-              echo "Verifying latest PostgreSQL backup..."
-              LATEST_PG=\$(ls -t /backup/postgresql/*.sql.gz 2>/dev/null | head -1)
-              if [ -n "\$LATEST_PG" ]; then
-                gunzip -t "\$LATEST_PG" && echo "PostgreSQL backup OK" || echo "PostgreSQL backup CORRUPTED"
-              else
-                echo "No PostgreSQL backup found"
-              fi
-            volumeMounts:
-            - name: etcd-backup
-              mountPath: /backup/etcd
-            - name: postgresql-backup
-              mountPath: /backup/postgresql
-            - name: vault-backup
-              mountPath: /backup/vault
-          restartPolicy: OnFailure
-          volumes:
-          - name: etcd-backup
-            persistentVolumeClaim:
-              claimName: etcd-backup-pvc
-          - name: postgresql-backup
-            persistentVolumeClaim:
-              claimName: postgresql-backup-pvc
-          - name: vault-backup
-            persistentVolumeClaim:
-              claimName: vault-backup-pvc
-EOF
+# Verify Vault backups (in vault namespace)
+kubectl run vault-backup-check --rm -it --restart=Never \
+  --namespace vault \
+  --image=busybox \
+  --overrides='{"spec":{"volumes":[{"name":"backup","persistentVolumeClaim":{"claimName":"vault-backup-pvc"}}],"containers":[{"name":"check","image":"busybox","command":["sh","-c","echo \"=== Vault backups ===\"; ls -lh /backup/*.snap 2>/dev/null | tail -5"],"volumeMounts":[{"name":"backup","mountPath":"/backup"}]}]}}'
 ```
 
 ## Secret Rotation
@@ -380,9 +333,12 @@ kubectl exec -n vault vault-0 -- vault operator rekey \
 # Stop K3s
 systemctl stop k3s
 
-# Restore etcd snapshot
+# List available snapshots to find the correct filename
+ls -la /var/lib/rancher/k3s/server/db/snapshots/
+
+# Restore etcd snapshot (use actual filename from backup, typically etcd_YYYYMMDD_HHMMSS-*)
 k3s server --cluster-reset \
-  --cluster-reset-restore-path=/backup/etcd_YYYYMMDD_HHMMSS.db
+  --cluster-reset-restore-path=/var/lib/rancher/k3s/server/db/snapshots/etcd_YYYYMMDD_HHMMSS
 
 # Start K3s
 systemctl start k3s
@@ -391,6 +347,11 @@ systemctl start k3s
 kubectl get nodes
 kubectl get pods -A
 ```
+
+::: tip Snapshot Format
+K3s etcd snapshots are stored as compressed archives (not `.db` files).
+Check the actual filename in the snapshots directory before restoring.
+:::
 
 #### Recover PostgreSQL
 
