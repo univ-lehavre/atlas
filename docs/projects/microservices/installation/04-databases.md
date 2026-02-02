@@ -118,7 +118,7 @@ PGPASSWORD=$(kubectl get secret postgresql-credentials -n databases \
   -o jsonpath='{.data.postgres-password}' | base64 -d)
 
 # Retrieve passwords from Vault (execute these first)
-VAULT_DB_PASSWORD=$(kubectl get secret -n vault vault-db-password -o jsonpath='{.data.password}' 2>/dev/null | base64 -d || openssl rand -base64 24)
+VAULT_DB_PASSWORD=$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/vault 2>/dev/null || openssl rand -base64 24)
 MATTERMOST_DB_PASSWORD=$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/mattermost)
 GITEA_DB_PASSWORD=$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/gitea)
 REDCAP_DB_PASSWORD=$(kubectl exec -n vault vault-0 -- vault kv get -field=db-password secret/services/redcap)
@@ -266,7 +266,7 @@ Services will connect using these endpoints:
 | Service | Connection String |
 |---------|------------------|
 | Vault | `postgresql://vault_user:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/vault` |
-| Authentik | `postgresql://postgres:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/authentik` |
+| Authentik | `postgresql://authentik_user:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/authentik` |
 | Mattermost | `postgresql://mattermost_user:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/mattermost` |
 | Nextcloud | `postgresql://nextcloud_user:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/nextcloud` |
 | Gitea | `postgresql://gitea_user:***@postgresql-postgresql-ha-pgpool.databases.svc:5432/gitea` |
