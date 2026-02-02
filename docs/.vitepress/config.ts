@@ -297,6 +297,10 @@ export default withMermaid(
                 link: '/projects/microservices/installation/',
               },
               {
+                text: '0. Ubuntu Hardening',
+                link: '/projects/microservices/installation/00-hardening',
+              },
+              {
                 text: '1. System Preparation',
                 link: '/projects/microservices/installation/01-preparation',
               },
