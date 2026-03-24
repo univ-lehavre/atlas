@@ -37,6 +37,10 @@ docs/api/
 # Assets
 assets/source/
 
+# DuckDB (packages/openalex)
+packages/openalex/*.db
+packages/openalex/*.wal
+
 # Logs
 *.log
 INSTALLATION-K3S-ROCKETCHAT.md

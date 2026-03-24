@@ -52,7 +52,7 @@ pnpm build
 pnpm test
 
 # Full CI check
-pnpm ci
+pnpm check:ci
 ```
 
 ## Audits

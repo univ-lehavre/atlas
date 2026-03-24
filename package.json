@@ -26,7 +26,7 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "test:coverage": "turbo test:coverage",
-    "ci": "pnpm format:check && pnpm svelte:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build",
+    "check:ci": "pnpm format:check && pnpm svelte:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build",
     "audit:security": "pnpm audit --audit-level=high",
     "audit:licenses": "license-checker --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;Unlicense\" --excludePrivatePackages",
     "audit:unused": "knip --exclude unresolved,types",
@@ -44,6 +44,7 @@
     "changeset:version": "changeset version && pnpm exec prettier --write '**/CHANGELOG.md'",
     "changeset:publish": "pnpm build && changeset publish",
     "release": "pnpm build && ./scripts/publish-packages.sh",
+    "clean": "find . \\( -name 'node_modules' -o -name 'dist' -o -name '.svelte-kit' -o -name '.turbo' -o -name 'coverage' \\) -not -path '*/.git/*' -prune -exec rm -rf {} +",
     "prepare": "lefthook install"
   },
   "size-limit": [
@@ -81,7 +82,13 @@
       "packages/errors",
       "packages/validators",
       "packages/appwrite",
-      "packages/auth"
+      "packages/auth",
+      "packages/openalex-types",
+      "packages/fetch-one-api-page",
+      "packages/fetch-openalex",
+      "packages/validate-openalex",
+      "packages/biblio-cli",
+      "packages/openalex"
     ],
     "entryPointStrategy": "packages",
     "out": "docs/api",
@@ -117,7 +124,7 @@
     "lefthook": "^2.0.16",
     "license-checker": "^25.0.1",
     "mermaid": "^11.12.2",
-    "simple-git": "^3.27.0",
+    "simple-git": "^3.33.0",
     "size-limit": "^12.0.0",
     "taze": "^19.9.2",
     "tsx": "^4.21.0",
@@ -133,7 +140,26 @@
   "packageManager": "pnpm@10.28.2",
   "pnpm": {
     "overrides": {
-      "fast-xml-parser": ">=5.3.4"
-    }
+      "fast-xml-parser": ">=5.5.6",
+      "flatted": ">=3.4.2",
+      "minimatch": ">=10.2.3",
+      "undici": ">=7.24.0",
+      "@isaacs/brace-expansion": ">=5.0.1",
+      "effect": ">=3.20.0",
+      "rollup": ">=4.59.0"
+    },
+    "onlyBuiltDependencies": [
+      "@duckdb/node-api",
+      "@parcel/watcher",
+      "@scarf/scarf",
+      "core-js",
+      "esbuild",
+      "lefthook",
+      "msgpackr-extract",
+      "protobufjs",
+      "sharp",
+      "unrs-resolver",
+      "vue-demi"
+    ]
   }
 }

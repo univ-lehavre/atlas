@@ -13,11 +13,13 @@ import {
   INSTRUMENT_NAME_PATTERN,
 } from '../schemas.js';
 
-const parseRecordId = (value: string): Effect.Effect<RecordId, RedcapApiError> =>
-  Effect.try({
-    try: () => RecordId(value),
-    catch: () => new RedcapApiError({ error: `Invalid record ID: "${value}"` }),
-  });
+const parseRecordId = (value: string | undefined): Effect.Effect<RecordId, RedcapApiError> =>
+  value === undefined
+    ? Effect.fail(new RedcapApiError({ error: 'Missing record ID' }))
+    : Effect.try({
+        try: () => RecordId(value),
+        catch: () => new RedcapApiError({ error: `Invalid record ID: "${value}"` }),
+      });
 
 const parseInstrumentName = (value: string): Effect.Effect<InstrumentName, RedcapApiError> =>
   Effect.try({
@@ -169,15 +171,19 @@ records.get(
       c,
       pipe(
         Effect.all([parseRecordId(rawRecordId), parseInstrumentName(rawInstrument)]),
-        Effect.flatMap(([recordId, instrument]) => redcap.downloadPdf(recordId, instrument)),
-        Effect.map(
-          (pdfBuffer) =>
-            new Response(pdfBuffer, {
-              headers: {
-                'Content-Type': 'application/pdf',
-                'Content-Disposition': `attachment; filename="record_${rawRecordId}.pdf"`,
-              },
-            })
+        Effect.flatMap(([recordId, instrument]) =>
+          pipe(
+            redcap.downloadPdf(recordId, instrument),
+            Effect.map(
+              (pdfBuffer) =>
+                new Response(pdfBuffer, {
+                  headers: {
+                    'Content-Type': 'application/pdf',
+                    'Content-Disposition': `attachment; filename="record_${recordId}.pdf"`,
+                  },
+                })
+            )
+          )
         )
       )
     );

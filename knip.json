@@ -51,6 +51,27 @@
       "ignore": ["src/lib/ui/Retrieve.svelte", "src/lib/ui/Rule.svelte"],
       "ignoreDependencies": ["@univ-lehavre/atlas-logos"]
     },
+    "packages/openalex-types": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/fetch-one-api-page": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/fetch-openalex": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/validate-openalex": {
+      "project": ["src/**/*.ts"],
+      "ignore": ["src/store/setter.ts", "src/oa/index.ts"]
+    },
+    "packages/biblio-cli": {
+      "project": ["src/**/*.ts"]
+    },
+    "packages/openalex": {
+      "project": ["src/**/*.ts"],
+      "ignore": ["src/errors.ts", "src/prompt.ts", "src/db/index.ts", "src/group/helpers.ts"],
+      "ignoreDependencies": ["@duckdb/node-api", "@effect/experimental", "@effect/platform-node", "@xenova/transformers", "uuid"]
+    },
     "apps/*": {
       "project": ["src/**/*.ts"]
     }
