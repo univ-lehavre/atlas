@@ -81,7 +81,13 @@
       "packages/errors",
       "packages/validators",
       "packages/appwrite",
-      "packages/auth"
+      "packages/auth",
+      "packages/openalex-types",
+      "packages/fetch-one-api-page",
+      "packages/fetch-openalex",
+      "packages/validate-openalex",
+      "packages/biblio-cli",
+      "packages/openalex"
     ],
     "entryPointStrategy": "packages",
     "out": "docs/api",
