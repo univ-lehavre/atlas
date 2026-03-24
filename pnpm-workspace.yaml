@@ -5,6 +5,7 @@ packages:
   - tools/*
 
 onlyBuiltDependencies:
+  - '@duckdb/node-api'
   - '@parcel/watcher'
   - core-js
   - esbuild
