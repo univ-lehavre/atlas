@@ -123,7 +123,7 @@ pnpm audit:versions
 pnpm taze -r -w
 
 # Install and verify
-pnpm install && pnpm ci
+pnpm install && pnpm check:ci
 ```
 
 ---
