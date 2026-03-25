@@ -1,5 +1,21 @@
 # @univ-lehavre/ecrin
 
+## 2.0.1
+
+### Patch Changes
+
+- [#64](https://github.com/univ-lehavre/atlas/pull/64) [`393220c`](https://github.com/univ-lehavre/atlas/commit/393220c64c77a7cc13f4c57eb665555c588522a6) Thanks [@chasset](https://github.com/chasset)! - ## Documentation
+  - Translate all documentation to English for international accessibility
+  - Add Microservices project with K3s installation procedure
+  - Infrastructure: Cilium, Longhorn, Authelia, Mattermost, REDCap, ECRIN, Gitea, ArgoCD
+  - Configure REDCap access control (public surveys, protected admin)
+
+- Updated dependencies [[`393220c`](https://github.com/univ-lehavre/atlas/commit/393220c64c77a7cc13f4c57eb665555c588522a6), [`a67fbc0`](https://github.com/univ-lehavre/atlas/commit/a67fbc038561190cd982873c41cf0ca0030fa4ee)]:
+  - @univ-lehavre/atlas-validators@0.2.1
+  - @univ-lehavre/atlas-appwrite@0.2.1
+  - @univ-lehavre/atlas-errors@0.2.1
+  - @univ-lehavre/atlas-logos@1.1.1
+
 ## 2.0.0
 
 ### Major Changes
