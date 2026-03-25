@@ -1,0 +1,66 @@
+{
+  "name": "@univ-lehavre/atlas-researcher-profiles",
+  "version": "1.0.0",
+  "description": "Researcher profiles CLI: fetch OpenAlex works from CSV or REDCap and write to REDCap",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "packages/researcher-profiles"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "atlas-researcher-profiles": "./dist/bin/atlas-researcher-profiles.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/bin/atlas-researcher-profiles.js",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.11.0",
+    "@univ-lehavre/atlas-crf": "workspace:*",
+    "@univ-lehavre/atlas-fetch-openalex": "workspace:*",
+    "@univ-lehavre/atlas-openalex-types": "workspace:*",
+    "csv-parse": "^5.6.0",
+    "effect": "^3.19.15",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@effect/vitest": "0.26.0",
+    "@types/node": "^25.0.10",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "eslint": "^9.39.2",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
