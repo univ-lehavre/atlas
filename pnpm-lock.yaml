@@ -738,9 +738,6 @@ importers:
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
-      qs:
-        specifier: ^6.14.0
-        version: 6.15.0
       uuid:
         specifier: ^13.0.0
         version: 13.0.0
@@ -754,9 +751,6 @@ importers:
       '@types/node':
         specifier: ^25.0.10
         version: 25.0.10
-      '@types/qs':
-        specifier: ^6.14.0
-        version: 6.15.0
       '@types/yargs':
         specifier: ^17.0.33
         version: 17.0.35
