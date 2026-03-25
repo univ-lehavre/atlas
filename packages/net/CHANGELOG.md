@@ -1,12 +1,20 @@
 # @univ-lehavre/atlas-net
 
+## 0.7.1
+
+### Patch Changes
+
+- [#64](https://github.com/univ-lehavre/atlas/pull/64) [`393220c`](https://github.com/univ-lehavre/atlas/commit/393220c64c77a7cc13f4c57eb665555c588522a6) Thanks [@chasset](https://github.com/chasset)! - ## Documentation
+  - Translate all documentation to English for international accessibility
+  - Add Microservices project with K3s installation procedure
+  - Infrastructure: Cilium, Longhorn, Authelia, Mattermost, REDCap, ECRIN, Gitea, ArgoCD
+  - Configure REDCap access control (public surveys, protected admin)
+
 ## 0.7.0
+
 ### Minor Changes
 
-
-
 - [#38](https://github.com/univ-lehavre/atlas/pull/38) [`445211d`](https://github.com/univ-lehavre/atlas/commit/445211d3bd8c59fdde45a43c3d108740b80c9487) Thanks [@chasset](https://github.com/chasset)! - Harmonize CLI tools with @effect/cli and @clack/prompts
-  
   - Migrate all CLI tools (crf-redcap, crf-server, atlas-net) to @effect/cli
   - Add shared CLI utilities for consistent behavior across tools
   - Implement auto-detection of CI environments
@@ -17,25 +25,19 @@
 
 ### Patch Changes
 
-
-
 - [#39](https://github.com/univ-lehavre/atlas/pull/39) [`1b814ac`](https://github.com/univ-lehavre/atlas/commit/1b814ac0b4bb2999d8271d503e78dd13b9973918) Thanks [@chasset](https://github.com/chasset)! - docs: restructure documentation and add GitHub Pages deployment
-  
   - Separate researcher (user) and developer documentation
   - Add landing page with clear entry points for both audiences
   - Add GitHub Actions workflow for automatic documentation deployment
   - Configure VitePress for GitHub Pages at /atlas/
 
-
 - [#48](https://github.com/univ-lehavre/atlas/pull/48) [`9ad9099`](https://github.com/univ-lehavre/atlas/commit/9ad9099d3861a6595d2acd6ecb10cf29d46a6d63) Thanks [@chasset](https://github.com/chasset)! - Add test:coverage script to packages
 
 ## 0.6.0
+
 ### Minor Changes
 
-
-
 - [#30](https://github.com/univ-lehavre/atlas/pull/30) [`b444a82`](https://github.com/univ-lehavre/atlas/commit/b444a82d74ed76b1a372bdafaa69f96156e2ac65) Thanks [@chasset](https://github.com/chasset)! - Merge CLI into net package
-  
   - Move CLI from `cli/net/` to `packages/net/src/cli/`
   - Add `bin.atlas-net` entry point
   - Export CLI module via `@univ-lehavre/atlas-net/cli`
@@ -44,10 +46,7 @@
 
 ### Patch Changes
 
-
-
 - [#29](https://github.com/univ-lehavre/atlas/pull/29) [`c5a5a55`](https://github.com/univ-lehavre/atlas/commit/c5a5a5536bb40425ee0f8dcc2e1ae5ee9ed2fff2) Thanks [@chasset](https://github.com/chasset)! - Migrate ESLint and Prettier to per-package configuration
-  
   - Move ESLint config from root to each package/app with full rule set
   - Move Prettier config from root to each package/app
   - Update lefthook to use turbo tasks instead of direct eslint/prettier calls

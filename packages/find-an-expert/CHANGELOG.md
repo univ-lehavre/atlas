@@ -1,5 +1,22 @@
 # @univ-lehavre/atlas-find-an-expert
 
+## 0.5.2
+
+### Patch Changes
+
+- [#64](https://github.com/univ-lehavre/atlas/pull/64) [`393220c`](https://github.com/univ-lehavre/atlas/commit/393220c64c77a7cc13f4c57eb665555c588522a6) Thanks [@chasset](https://github.com/chasset)! - ## Documentation
+  - Translate all documentation to English for international accessibility
+  - Add Microservices project with K3s installation procedure
+  - Infrastructure: Cilium, Longhorn, Authelia, Mattermost, REDCap, ECRIN, Gitea, ArgoCD
+  - Configure REDCap access control (public surveys, protected admin)
+
+- Updated dependencies [[`2ed6a4a`](https://github.com/univ-lehavre/atlas/commit/2ed6a4a03c5ceb65932a4eb2f5e8ae5dce1f3b03), [`393220c`](https://github.com/univ-lehavre/atlas/commit/393220c64c77a7cc13f4c57eb665555c588522a6), [`a67fbc0`](https://github.com/univ-lehavre/atlas/commit/a67fbc038561190cd982873c41cf0ca0030fa4ee), [`c772a94`](https://github.com/univ-lehavre/atlas/commit/c772a94eb3c4126834723b926824ee8e4a3afeec)]:
+  - @univ-lehavre/atlas-fetch-openalex@0.4.0
+  - @univ-lehavre/atlas-validators@0.2.1
+  - @univ-lehavre/atlas-appwrite@0.2.1
+  - @univ-lehavre/atlas-errors@0.2.1
+  - @univ-lehavre/atlas-logos@1.1.1
+
 ## 0.5.1
 
 ### Patch Changes
