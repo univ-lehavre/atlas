@@ -83,7 +83,7 @@ The Campus is a laureate of the "ExcellencES" call for projects of **France 2030
 ### Using the REDCap API Client
 
 ```bash
-pnpm add @univ-lehavre/atlas-redcap-api effect
+pnpm add @univ-lehavre/atlas-redcap-core effect
 ```
 
 ```typescript
@@ -92,7 +92,7 @@ import {
   createRedcapClient,
   RedcapUrl,
   RedcapToken,
-} from '@univ-lehavre/atlas-redcap-api';
+} from '@univ-lehavre/atlas-redcap-core';
 
 const client = createRedcapClient({
   url: RedcapUrl('https://redcap.example.com/api/'),
@@ -117,7 +117,7 @@ pnpm dev
 pnpm test
 
 # Pre-release checks
-pnpm ready
+pnpm check:ci
 ```
 
 ## Partners and Funders
