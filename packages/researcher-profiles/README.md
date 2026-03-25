@@ -12,8 +12,8 @@ For each researcher, the CLI:
 
 | Variable | Description |
 |---|---|
-| `REDCAP_URL` | REDCap API URL (e.g. `https://redcap.example.com/api/`) |
-| `REDCAP_TOKEN` | REDCap API token |
+| `REDCAP_API_URL` | REDCap API URL (e.g. `https://redcap.example.com/api/`) |
+| `REDCAP_API_TOKEN` | REDCap API token |
 | `OPENALEX_USER_AGENT` | OpenAlex user agent (e.g. `mailto:contact@example.com`) |
 
 ## Commands
@@ -31,8 +31,8 @@ u002,Martin,Louis,Pierre,
 ```
 
 ```bash
-REDCAP_URL=https://redcap.example.com/api/ \
-REDCAP_TOKEN=XXXX \
+REDCAP_API_URL=https://redcap.example.com/api/ \
+REDCAP_API_TOKEN=XXXX \
 OPENALEX_USER_AGENT="mailto:contact@example.com" \
 atlas-researcher-profiles from-csv researchers.csv
 ```
@@ -42,8 +42,8 @@ atlas-researcher-profiles from-csv researchers.csv
 Fetches researchers directly from the REDCap instrument `references_openalex`, then resolves and writes their works back to the same instrument.
 
 ```bash
-REDCAP_URL=https://redcap.example.com/api/ \
-REDCAP_TOKEN=XXXX \
+REDCAP_API_URL=https://redcap.example.com/api/ \
+REDCAP_API_TOKEN=XXXX \
 OPENALEX_USER_AGENT="mailto:contact@example.com" \
 atlas-researcher-profiles from-redcap
 ```
