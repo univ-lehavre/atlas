@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-openalex",
-  "version": "1.0.0-alpha",
+  "version": "1.0.0",
   "description": "OpenAlex data mining CLI with DuckDB, ML embeddings, and string grouping",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
