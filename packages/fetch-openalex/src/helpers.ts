@@ -53,7 +53,9 @@ export const makeRateLimitedFetcher = <T>(
         p,
         ua,
       ): Effect.Effect<APIResponse<T>, FetchError | ResponseParseError> =>
-        fetchOnePage<APIResponse<T>>(u, p, ua));
+        fetchOnePage<APIResponse<T>>(u, p, ua).pipe(
+          Effect.map((result) => result.data),
+        ));
 
     const ratelimiter: RateLimiter.RateLimiter = yield* makeLimiter(rateLimit);
     return (

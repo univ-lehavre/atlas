@@ -14,7 +14,20 @@ const getEnv = (): Effect.Effect<Env, ConfigError, never> =>
     const per_page = yield* Config.number("PER_PAGE");
     const duckdb_path = yield* Config.string("DUCKDB_PATH");
     const rate_limit = JSON.parse(rate_limit_stringified);
-    return { user_agent, rate_limit, per_page, openalex_api_url, duckdb_path };
+    const openalex_api_key: string | undefined = yield* Config.string(
+      "OPENALEX_API_KEY",
+    ).pipe(
+      Effect.option,
+      Effect.map((opt) => (opt._tag === "Some" ? opt.value : undefined)),
+    );
+    return {
+      user_agent,
+      rate_limit,
+      per_page,
+      openalex_api_url,
+      duckdb_path,
+      openalex_api_key,
+    };
   });
 
 const cmd = (): Effect.Effect<Args, CommandLineError, never> =>

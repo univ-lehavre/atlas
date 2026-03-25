@@ -7,5 +7,6 @@ export type {
   WorksResult,
   IInstitution,
   AuthorshipInstitution,
+  RateLimitInfo,
 } from "./api-results.js";
 export type { FetchOpenAlexAPIOptions } from "./api-parameters.js";
