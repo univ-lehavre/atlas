@@ -56,7 +56,7 @@ This project adopts a **functional programming** approach with [Effect](https://
 
 ## ESLint Configuration
 
-The project uses a strict ESLint configuration combining multiple plugins. See [@univ-lehavre/atlas-eslint-config](https://github.com/univ-lehavre/atlas/tree/main/packages/eslint-config) for details.
+The project uses a strict ESLint configuration combining multiple plugins. See [@univ-lehavre/atlas-shared-config](https://github.com/univ-lehavre/atlas/tree/main/packages/shared-config) for details.
 
 ### TypeScript Strict
 
@@ -126,26 +126,27 @@ Strict rules are disabled for `*.test.ts` and `*.spec.ts` files to allow classic
 
 ### `ready` Script
 
-The `pnpm ready` script runs all checks before a release. The order is optimized according to the **fail-fast** principle: the fastest and most likely to fail checks are run first.
+The `pnpm check:ci` script runs all checks before a release. The order is optimized according to the **fail-fast** principle: the fastest and most likely to fail checks are run first.
 
 ```bash
-pnpm check && pnpm typecheck && pnpm test && pnpm audit:all && pnpm build
+pnpm check:ci
 ```
 
 **Execution order:**
 
-1. **`check`** (format, lint, knip, cpd in parallel) - Very fast, often fails on style errors or unused imports
-2. **`typecheck`** - Fast, detects typing errors
-3. **`test`** - Variable duration, but essential before the following steps
-4. **`audit:all`** (audit + license:audit in parallel) - Security and license checks
-5. **`build`** - The longest, run last because if previous steps fail, no need to build
+1. **`format:check`** - Format verification
+2. **`svelte:check`** - Svelte type checking
+3. **`lint`** - ESLint checks
+4. **`typecheck`** - TypeScript type checking
+5. **`test:coverage`** - Tests with coverage
+6. **`build`** - The longest, run last because if previous steps fail, no need to build
 
 ### License Audit
 
-The `license:audit` script verifies that all dependencies use allowed licenses:
+The `audit:licenses` script verifies that all dependencies use allowed licenses:
 
 ```bash
-pnpm license:audit
+pnpm audit:licenses
 ```
 
 **Allowed licenses:**

@@ -11,10 +11,26 @@ This file provides the necessary context for working effectively on this project
 ```
 atlas/
 ├── packages/
+│   ├── ecrin/              # ECRIN main project
+│   ├── amarre/             # AMARRE main project
 │   ├── find-an-expert/     # SvelteKit app - researcher expertise analysis
 │   ├── crf/                # Case Report Form (REDCap client, server, CLI)
+│   ├── redcap-core/        # REDCap business logic with Effect
 │   ├── redcap-openapi/     # REDCap source analysis and OpenAPI extraction
+│   ├── redcap-sandbox/     # REDCap sandbox environment
 │   ├── net/                # Network utilities and diagnostic CLI
+│   ├── appwrite/           # Shared Appwrite client
+│   ├── auth/               # Authentication service
+│   ├── errors/             # Shared error classes
+│   ├── validators/         # Validation utilities
+│   ├── openalex/           # OpenAlex integration
+│   ├── openalex-types/     # OpenAlex TypeScript types
+│   ├── fetch-openalex/     # OpenAlex data fetching utilities
+│   ├── fetch-one-api-page/ # Generic API pagination utility
+│   ├── validate-openalex/  # OpenAlex data validation
+│   ├── biblio-cli/         # Bibliography CLI tools
+│   ├── oidc/               # OIDC authentication utilities
+│   ├── logos/              # Shared logo assets
 │   └── shared-config/      # Shared TypeScript and ESLint config
 └── docs/                   # VitePress documentation
 ```
@@ -52,7 +68,7 @@ pnpm lint                      # ESLint
 pnpm format                    # Prettier
 
 # Pre-commit checks
-pnpm ready                     # lint + test + build
+pnpm check:ci                  # lint + test + build
 ```
 
 ## Code Conventions
@@ -133,9 +149,9 @@ packages/find-an-expert/
 
 Scripts:
 
-- `pnpm -F find-an-expert dev` - Development
-- `pnpm -F find-an-expert build` - Production build
-- `pnpm -F find-an-expert test` - Vitest tests
+- `pnpm -F @univ-lehavre/atlas-find-an-expert dev` - Development
+- `pnpm -F @univ-lehavre/atlas-find-an-expert build` - Production build
+- `pnpm -F @univ-lehavre/atlas-find-an-expert test` - Vitest tests
 
 Svelte 5 conventions:
 
