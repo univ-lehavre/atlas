@@ -33,7 +33,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node dist/bin/atlas-researcher-profiles.js",
+    "start": "node --env-file=../../.env dist/bin/atlas-researcher-profiles.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",
