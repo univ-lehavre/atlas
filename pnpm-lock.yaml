@@ -575,12 +575,18 @@ importers:
       '@univ-lehavre/atlas-errors':
         specifier: workspace:*
         version: link:../errors
+      '@univ-lehavre/atlas-fetch-openalex':
+        specifier: workspace:*
+        version: link:../fetch-openalex
       '@univ-lehavre/atlas-logos':
         specifier: workspace:*
         version: link:../logos
       '@univ-lehavre/atlas-validators':
         specifier: workspace:*
         version: link:../validators
+      effect:
+        specifier: '>=3.20.0'
+        version: 3.21.0
       node-appwrite:
         specifier: ^21.1.0
         version: 21.1.0
@@ -717,6 +723,9 @@ importers:
       '@effect/platform-node':
         specifier: ^0.104.1
         version: 0.104.1(@effect/cluster@0.56.1(@effect/platform@0.94.2(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.94.2(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.94.2(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.94.2(effect@3.21.0))(effect@3.21.0))(@effect/workflow@0.16.0(@effect/experimental@0.60.0(@effect/platform@0.94.2(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.94.2(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.94.2(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.94.2(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.94.2(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.94.2(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.94.2(effect@3.21.0))(effect@3.21.0))(effect@3.21.0)
+      '@univ-lehavre/atlas-fetch-one-api-page':
+        specifier: workspace:*
+        version: link:../fetch-one-api-page
       '@xenova/transformers':
         specifier: ^2.17.2
         version: 2.17.2
@@ -729,9 +738,6 @@ importers:
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
-      qs:
-        specifier: ^6.14.0
-        version: 6.15.0
       uuid:
         specifier: ^13.0.0
         version: 13.0.0
@@ -745,9 +751,6 @@ importers:
       '@types/node':
         specifier: ^25.0.10
         version: 25.0.10
-      '@types/qs':
-        specifier: ^6.14.0
-        version: 6.15.0
       '@types/yargs':
         specifier: ^17.0.33
         version: 17.0.35

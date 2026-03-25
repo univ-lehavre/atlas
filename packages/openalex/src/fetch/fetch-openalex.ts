@@ -1,6 +1,10 @@
 import { Effect, RateLimiter } from "effect";
 
-import { fetch_one_page } from "./fetch.js";
+import {
+  fetchOnePage,
+  FetchError as FetchOnePageError,
+  ResponseParseError,
+} from "@univ-lehavre/atlas-fetch-one-api-page";
 import { getEnv } from "../config.js";
 import type { ConfigError } from "effect/ConfigError";
 import { FetchError, StatusError } from "../errors.js";
@@ -20,11 +24,17 @@ const fetchAPI = <T>(
 > =>
   Effect.scoped(
     Effect.gen(function* () {
-      const { user_agent, rate_limit } = yield* getEnv();
+      const { user_agent, rate_limit, openalex_api_key } = yield* getEnv();
       const ratelimiter: RateLimiter.RateLimiter =
         yield* RateLimiter.make(rate_limit);
       const spin = spinner();
-      spin.start("Fouille des données d’OpenAlex");
+      spin.start("Fouille des données d'OpenAlex");
+
+      // Inject api_key if available
+      if (openalex_api_key) {
+        (params as Record<string, unknown>)["api_key"] = openalex_api_key;
+      }
+
       const raw = yield* exhaust<T>(
         ratelimiter,
         start_page,
@@ -36,7 +46,7 @@ const fetchAPI = <T>(
         entity_name,
       );
       const results = raw.flat();
-      spin.stop(`${results.length} ${entity_name} téléchargés d’OpenAlex`);
+      spin.stop(`${results.length} ${entity_name} téléchargés d'OpenAlex`);
       const result: OpenalexResponse<T> = {
         meta: {
           count: results.length,
@@ -67,9 +77,17 @@ const exhaust = <T>(
       Effect.gen(function* () {
         params["page"] = state;
         yield* Effect.logInfo(params["page"]);
-        const response = yield* ratelimiter(
-          fetch_one_page<OpenalexResponse<T>>(base_url, params, user_agent),
+        const pageResult = yield* ratelimiter(
+          fetchOnePage<OpenalexResponse<T>>(base_url, params, user_agent),
+        ).pipe(
+          Effect.mapError(
+            (e: FetchOnePageError | ResponseParseError) =>
+              new FetchError(`La fonction fetch a retourné une erreur`, {
+                cause: e.message,
+              }),
+          ),
         );
+        const response = pageResult.data;
         count += response.results.length;
         if (count > 10000) {
           log.error(

@@ -6,89 +6,24 @@ import {
   ResponseParseError,
 } from "@univ-lehavre/atlas-fetch-one-api-page";
 import {
-  fetchAPIResults,
-  type FetchAPIMinimalConfig,
+  searchAuthorsByName,
+  searchAuthorsByORCID,
+  searchWorksByAuthorIDs,
+  searchWorksByORCID,
+  searchWorksByDOI,
+  type OpenAlexConfig,
 } from "@univ-lehavre/atlas-fetch-openalex";
 import type {
   ORCID,
   AuthorsResult,
-  FetchOpenAlexAPIOptions,
   WorksResult,
 } from "@univ-lehavre/atlas-openalex-types";
 
-const searchAuthor = (names: string[]): FetchOpenAlexAPIOptions => ({
-  search: names.join("|"),
+const buildConfig = (env: EnvConfig): OpenAlexConfig => ({
+  userAgent: env.userAgent,
+  apiURL: env.apiURL,
+  apiKey: env.apiKey,
 });
-
-const filterByORCID = (orcid: string[]): FetchOpenAlexAPIOptions => ({
-  filter: `orcid:${orcid.join("|")}`,
-});
-
-const filterAuthorshipByIDs = (ids: string[]): FetchOpenAlexAPIOptions => ({
-  filter: `author.id:${ids.join("|")}`,
-});
-
-const filterWorksByORCID = (orcid: ORCID): FetchOpenAlexAPIOptions => ({
-  filter: `author.orcid:${orcid}`,
-});
-
-const filterWorksByDOI = (doi: string[]): FetchOpenAlexAPIOptions => ({
-  filter: `doi:${doi.join("|")}`,
-});
-
-const buildFetchOptions = (
-  endpoint: string,
-  fetchAPIOptions: FetchOpenAlexAPIOptions,
-): Effect.Effect<FetchAPIMinimalConfig, ConfigError, never> =>
-  Effect.gen(function* () {
-    const { userAgent, rateLimit, perPage, apiURL }: EnvConfig =
-      yield* getEnv();
-    const fetchParams: FetchAPIMinimalConfig = {
-      userAgent,
-      rateLimit,
-      apiURL,
-      endpoint,
-      fetchAPIOptions,
-      perPage,
-    };
-    return fetchParams;
-  });
-
-const fetchAuthor = (
-  values: string[],
-  callback: (values: string[]) => FetchOpenAlexAPIOptions,
-): Effect.Effect<
-  readonly AuthorsResult[],
-  ConfigError | FetchError | ResponseParseError,
-  never
-> =>
-  Effect.gen(function* () {
-    const params: FetchOpenAlexAPIOptions = callback(values);
-    const opts: FetchAPIMinimalConfig = yield* buildFetchOptions(
-      "authors",
-      params,
-    );
-    const authors = yield* fetchAPIResults<AuthorsResult>(opts);
-    return authors;
-  });
-
-const fetchWork = (
-  values: string[],
-  callback: (values: string[]) => FetchOpenAlexAPIOptions,
-): Effect.Effect<
-  readonly WorksResult[],
-  ConfigError | FetchError | ResponseParseError,
-  never
-> =>
-  Effect.gen(function* () {
-    const params: FetchOpenAlexAPIOptions = callback(values);
-    const opts: FetchAPIMinimalConfig = yield* buildFetchOptions(
-      "works",
-      params,
-    );
-    const works = yield* fetchAPIResults<WorksResult>(opts);
-    return works;
-  });
 
 const searchAuthorByName = (
   names: string[],
@@ -96,7 +31,11 @@ const searchAuthorByName = (
   readonly AuthorsResult[],
   ConfigError | FetchError | ResponseParseError,
   never
-> => fetchAuthor(names, searchAuthor);
+> =>
+  Effect.gen(function* () {
+    const env: EnvConfig = yield* getEnv();
+    return yield* searchAuthorsByName(names, buildConfig(env));
+  });
 
 const searchAuthorByORCID = (
   orcid: string[],
@@ -104,17 +43,25 @@ const searchAuthorByORCID = (
   readonly AuthorsResult[],
   ConfigError | FetchError | ResponseParseError,
   never
-> => fetchAuthor(orcid, filterByORCID);
+> =>
+  Effect.gen(function* () {
+    const env: EnvConfig = yield* getEnv();
+    return yield* searchAuthorsByORCID(orcid, buildConfig(env));
+  });
 
-const searchWorksByAuthorIDs = (
+const searchWorksByAuthorIDsFn = (
   ids: string[],
 ): Effect.Effect<
   readonly WorksResult[],
   ConfigError | FetchError | ResponseParseError,
   never
-> => fetchWork(ids, filterAuthorshipByIDs);
+> =>
+  Effect.gen(function* () {
+    const env: EnvConfig = yield* getEnv();
+    return yield* searchWorksByAuthorIDs(ids, buildConfig(env));
+  });
 
-const searchWorksByORCID = (
+const searchWorksByORCIDFn = (
   orcid: ORCID,
 ): Effect.Effect<
   readonly WorksResult[],
@@ -122,27 +69,26 @@ const searchWorksByORCID = (
   never
 > =>
   Effect.gen(function* () {
-    const params: FetchOpenAlexAPIOptions = filterWorksByORCID(orcid);
-    const opts: FetchAPIMinimalConfig = yield* buildFetchOptions(
-      "works",
-      params,
-    );
-    const works = yield* fetchAPIResults<WorksResult>(opts);
-    return works;
+    const env: EnvConfig = yield* getEnv();
+    return yield* searchWorksByORCID(orcid, buildConfig(env));
   });
 
-const searchWorksByDOI = (
+const searchWorksByDOIFn = (
   dois: string[],
 ): Effect.Effect<
   readonly WorksResult[],
   ConfigError | FetchError | ResponseParseError,
   never
-> => fetchWork(dois, filterWorksByDOI);
+> =>
+  Effect.gen(function* () {
+    const env: EnvConfig = yield* getEnv();
+    return yield* searchWorksByDOI(dois, buildConfig(env));
+  });
 
 export {
   searchAuthorByName,
   searchAuthorByORCID,
-  searchWorksByAuthorIDs,
-  searchWorksByORCID,
-  searchWorksByDOI,
+  searchWorksByAuthorIDsFn as searchWorksByAuthorIDs,
+  searchWorksByORCIDFn as searchWorksByORCID,
+  searchWorksByDOIFn as searchWorksByDOI,
 };

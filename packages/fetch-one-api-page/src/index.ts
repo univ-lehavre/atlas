@@ -111,19 +111,49 @@ const fetchJSON = <T>(
     return json;
   });
 
+interface RateLimitInfo {
+  limit: number;
+  remaining: number;
+  creditsUsed: number;
+  resetInSeconds: number;
+}
+
+interface PageResult<T> {
+  data: T;
+  rateLimit?: RateLimitInfo;
+}
+
+const parseRateLimitHeaders = (headers: Headers): RateLimitInfo | undefined => {
+  const limit = headers.get("X-RateLimit-Limit");
+  const remaining = headers.get("X-RateLimit-Remaining");
+  const creditsUsed = headers.get("X-RateLimit-Credits-Used");
+  const reset = headers.get("X-RateLimit-Reset");
+  return limit !== null &&
+    remaining !== null &&
+    creditsUsed !== null &&
+    reset !== null
+    ? {
+        limit: Number.parseInt(limit, 10),
+        remaining: Number.parseInt(remaining, 10),
+        creditsUsed: Number.parseInt(creditsUsed, 10),
+        resetInSeconds: Number.parseInt(reset, 10),
+      }
+    : undefined;
+};
+
 /**
  * Fetch one page of results from an API endpoint.
  * @param endpointURL The base URL of the API endpoint
  * @param params Parameters to add to the URL
  * @param userAgent The name of the application making the request
  * @throws {FetchError} If the fetch function fails
- * @returns An Effect that resolves to the JSON response or an error
+ * @returns An Effect that resolves to the JSON response with rate limit info or an error
  */
 const fetchOnePage = <T>(
   endpointURL: URL,
   params: Query,
   userAgent: string,
-): Effect.Effect<T, FetchError | ResponseParseError> =>
+): Effect.Effect<PageResult<T>, FetchError | ResponseParseError> =>
   Effect.gen(function* () {
     yield* Effect.logDebug(
       `Starting fetchOnePage with parameters: ${JSON.stringify({ endpointURL, params, userAgent }, null, 2)}`,
@@ -134,11 +164,13 @@ const fetchOnePage = <T>(
     yield* Effect.logDebug(
       `Using headers: ${JSON.stringify(headers, null, 2)}`,
     );
-    const json = yield* fetchJSON<T>(url, "GET", headers);
+    const response: Response = yield* URLToResponse(url, "GET", headers);
+    const rateLimit = parseRateLimitHeaders(response.headers);
+    const data = yield* responseToJSON<T>(response);
     yield* Effect.logDebug(
-      `Received response: ${JSON.stringify(json, null, 2)}`,
+      `Received response: ${JSON.stringify(data, null, 2)}`,
     );
-    return json;
+    return { data, rateLimit };
   });
 
 export {
@@ -148,7 +180,10 @@ export {
   responseToJSON,
   fetchJSON,
   fetchOnePage,
+  parseRateLimitHeaders,
   FetchError,
   ResponseParseError,
   type Query,
+  type RateLimitInfo,
+  type PageResult,
 };
