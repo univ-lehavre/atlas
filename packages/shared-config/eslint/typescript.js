@@ -13,6 +13,7 @@ import { basePlugins, baseRules, prettierConfig, tseslint } from './base.js';
  * @typedef {Object} TypeScriptOptions
  * @property {string[]} [ignores] - Additional patterns to ignore
  * @property {string[]} [workspaceModules] - Workspace module names to allow in n/no-missing-import
+ * @property {string} [tsconfigRootDir] - Root directory for tsconfig resolution (pass import.meta.dirname from eslint.config.js)
  */
 
 /**
@@ -21,7 +22,7 @@ import { basePlugins, baseRules, prettierConfig, tseslint } from './base.js';
  * @returns {import('typescript-eslint').ConfigArray}
  */
 export function typescript(options = {}) {
-  const { ignores = [], workspaceModules = [] } = options;
+  const { ignores = [], workspaceModules = [], tsconfigRootDir } = options;
 
   return tseslint.config(
     // Ignores
@@ -46,6 +47,7 @@ export function typescript(options = {}) {
           projectService: {
             allowDefaultProject: ['*.js', '*.ts'],
           },
+          ...(tsconfigRootDir !== undefined && { tsconfigRootDir }),
         },
       },
     },
