@@ -41,7 +41,7 @@
     "docs:preview": "vitepress preview docs",
     "docs:api": "typedoc",
     "changeset:add": "changeset",
-    "changeset:version": "changeset version && pnpm exec prettier --write '**/CHANGELOG.md'",
+    "changeset:version": "changeset version && pnpm exec prettier --no-config --write '**/CHANGELOG.md'",
     "changeset:publish": "pnpm build && changeset publish",
     "release": "pnpm build && ./scripts/publish-packages.sh",
     "clean": "find . \\( -name 'node_modules' -o -name 'dist' -o -name '.svelte-kit' -o -name '.turbo' -o -name 'coverage' \\) -not -path '*/.git/*' -prune -exec rm -rf {} +",
