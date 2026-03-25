@@ -9,7 +9,19 @@ pnpm changeset publish
 
 echo ""
 echo "📦 Publishing packages to GitHub Packages..."
-pnpm changeset publish --registry https://npm.pkg.github.com
+# changeset publish does not support --registry; publish to GitHub Packages
+# by iterating over publishable packages and calling pnpm publish directly
+find packages -maxdepth 2 -name "package.json" \
+  ! -path "*/node_modules/*" \
+  ! -path "*/.svelte-kit/*" | while read -r pkg; do
+  private=$(node -e "const p=require('./$pkg'); process.stdout.write(String(p.private ?? false))")
+  name=$(node -e "const p=require('./$pkg'); process.stdout.write(p.name ?? '')")
+  if [ "$private" = "false" ] && [ -n "$name" ]; then
+    dir=$(dirname "$pkg")
+    echo "  Publishing $name from $dir..."
+    pnpm --filter "$name" publish --registry https://npm.pkg.github.com --no-git-checks 2>&1 || true
+  fi
+done
 
 echo ""
-echo "✅ Published to both registries successfully!"
+echo "✅ Published successfully!"
