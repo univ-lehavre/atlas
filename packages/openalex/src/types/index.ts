@@ -19,6 +19,7 @@ interface Env {
   rate_limit: RateLimiter.RateLimiter.Options;
   per_page: number;
   openalex_api_url: string;
+  openalex_api_key?: string;
 }
 interface Args {
   name?: string;

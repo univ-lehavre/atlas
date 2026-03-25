@@ -1,9 +1,3 @@
 export { ConsentType } from './types';
 
-export {
-  getConsentStatus,
-  grantConsent,
-  revokeConsent,
-  hasConsent,
-  getAllConsents,
-} from './service';
+export { getConsentStatus, grantConsent, revokeConsent, getAllConsents } from './service';

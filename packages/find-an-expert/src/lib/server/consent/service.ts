@@ -88,17 +88,6 @@ export const revokeConsent = async (
 };
 
 /**
- * Checks if a user has granted a specific consent.
- * @param userId - The user ID
- * @param consentType - The consent type
- * @returns true if granted, false if denied or never asked
- */
-export const hasConsent = async (userId: string, consentType: TConsentType): Promise<boolean> => {
-  const current = await currentConsentRepo.get(userId, consentType);
-  return current?.granted ?? false;
-};
-
-/**
  * Gets all current consents for a user.
  * @param userId - The user ID
  * @returns Map of consent type to current consent

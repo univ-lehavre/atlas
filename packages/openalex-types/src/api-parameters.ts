@@ -8,6 +8,7 @@ interface FetchOpenAlexAPIOptions {
   page?: number;
   per_page?: number;
   cursor?: string;
+  api_key?: string;
 }
 
 export type { FetchOpenAlexAPIOptions };

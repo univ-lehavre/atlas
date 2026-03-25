@@ -71,6 +71,13 @@ interface OpenalexResponse<T> {
   results: T[];
 }
 
+interface RateLimitInfo {
+  limit: number;
+  remaining: number;
+  creditsUsed: number;
+  resetInSeconds: number;
+}
+
 export type {
   AuthorsResult,
   OpenalexResponse,
@@ -78,4 +85,5 @@ export type {
   WorksResult,
   IInstitution,
   AuthorshipInstitution,
+  RateLimitInfo,
 };
