@@ -26,9 +26,9 @@ ${pc.bold("Usage:")}
   atlas-researcher-profiles from-redcap        Read researchers from REDCap
 
 ${pc.bold("Environment variables:")}
-  REDCAP_URL             REDCap API URL
-  REDCAP_TOKEN           REDCap API token
-  OPENALEX_USER_AGENT    User-Agent for OpenAlex API (e.g. mailto:you@example.com)
+  REDCAP_API_URL             REDCap API URL
+  REDCAP_API_TOKEN           REDCap API token
+  OPENALEX_USER_AGENT        User-Agent for OpenAlex API (e.g. mailto:you@example.com)
 
 ${pc.bold("CSV columns:")}
   userid, last_name, middle_name, first_name, orcid
@@ -48,14 +48,14 @@ export const main = async (): Promise<void> => {
     return;
   }
 
-  const redcapUrl = getEnv("REDCAP_URL");
-  const redcapToken = getEnv("REDCAP_TOKEN");
+  const redcapUrl = getEnv("REDCAP_API_URL");
+  const redcapToken = getEnv("REDCAP_API_TOKEN");
   const openAlexUserAgent =
     getEnv("OPENALEX_USER_AGENT") || "atlas-researcher-profiles/1.0.0";
 
   if (redcapUrl === "" || redcapToken === "") {
     log.error(
-      "Missing required environment variables: REDCAP_URL and REDCAP_TOKEN",
+      "Missing required environment variables: REDCAP_API_URL and REDCAP_API_TOKEN",
     );
     process.exit(1);
   }
