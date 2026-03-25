@@ -273,9 +273,13 @@ describe("fetchOnePage", () => {
       const params = { userId: 1 };
       const userAgent = "MyApp/1.0";
 
-      const result = yield* fetchOnePage<unknown[]>(baseURL, params, userAgent);
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBeGreaterThan(0);
+      const { data } = yield* fetchOnePage<unknown[]>(
+        baseURL,
+        params,
+        userAgent,
+      );
+      expect(Array.isArray(data)).toBe(true);
+      expect(data.length).toBeGreaterThan(0);
     }),
   );
 
@@ -285,16 +289,16 @@ describe("fetchOnePage", () => {
       const params = { page: 1, "per-page": 5 } as const;
       const userAgent = "MyApp/1.0 (integration-test)";
 
-      const result = yield* fetchOnePage<any>(baseURL, params, userAgent);
+      const { data } = yield* fetchOnePage<any>(baseURL, params, userAgent);
 
-      expect(result).toBeDefined();
-      expect(result["meta"]).toBeDefined();
-      expect(result["meta"]["count"]).toBeDefined();
-      expect(result["meta"]["count"]).toBeGreaterThan(1_000_000);
-      expect(result["results"]).toBeDefined();
-      expect(result["results"].length).toBeDefined();
-      expect(result["results"].length).toBeGreaterThan(0);
-      expect(result["results"].length).toStrictEqual(5);
+      expect(data).toBeDefined();
+      expect(data["meta"]).toBeDefined();
+      expect(data["meta"]["count"]).toBeDefined();
+      expect(data["meta"]["count"]).toBeGreaterThan(1_000_000);
+      expect(data["results"]).toBeDefined();
+      expect(data["results"].length).toBeDefined();
+      expect(data["results"].length).toBeGreaterThan(0);
+      expect(data["results"].length).toStrictEqual(5);
     }),
   );
 

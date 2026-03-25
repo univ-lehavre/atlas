@@ -1,7 +1,6 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
 import { getInstitutionStats } from '$lib/server/openalex';
-import { hasConsent } from '$lib/server/consent';
 import { mapErrorToResponse } from '$lib/server/http';
 
 /**
@@ -9,7 +8,7 @@ import { mapErrorToResponse } from '$lib/server/http';
  * Returns comprehensive statistics for a single institution over the last 5 years.
  * Includes works count (all types), articles count, and authors count.
  *
- * Requires authentication and consent to use the OpenAlex polite pool.
+ * Requires authentication.
  *
  * Path parameters:
  * - id: OpenAlex institution ID
@@ -17,20 +16,8 @@ import { mapErrorToResponse } from '$lib/server/http';
 export const GET: RequestHandler = async ({ params, locals }) => {
   try {
     // Require authentication
-    if (!locals.userId || !locals.userEmail) {
+    if (!locals.userId) {
       return json({ code: 'unauthenticated', message: 'User not authenticated' }, { status: 401 });
-    }
-
-    // Verify consent for OpenAlex email usage
-    const consentGranted = await hasConsent(locals.userId, 'openalex_email');
-    if (!consentGranted) {
-      return json(
-        {
-          code: 'consent_required',
-          message: 'Consent required to use OpenAlex API with your email',
-        },
-        { status: 403 }
-      );
     }
 
     const institutionId = params.id;
@@ -42,8 +29,7 @@ export const GET: RequestHandler = async ({ params, locals }) => {
       );
     }
 
-    // Use authenticated user's email for polite pool
-    const result = await getInstitutionStats([institutionId], locals.userEmail);
+    const result = await getInstitutionStats([institutionId]);
     return json(result);
   } catch (error: unknown) {
     return mapErrorToResponse(error);
