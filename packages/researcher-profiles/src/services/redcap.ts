@@ -113,9 +113,16 @@ export const writeOaReferences = (
 ): Effect.Effect<void, RedcapWriteError> => {
   const client = makeClient(config);
   return client
-    .importRecords([{ userid, oa_references: JSON.stringify(works) }], {
-      overwriteBehavior: "overwrite",
-    })
+    .importRecords(
+      [
+        {
+          userid,
+          oa_references: JSON.stringify(works),
+          oa_references_imported_at: localIsoDateTime(),
+        },
+      ],
+      { overwriteBehavior: "overwrite" },
+    )
     .pipe(
       Effect.asVoid,
       Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
