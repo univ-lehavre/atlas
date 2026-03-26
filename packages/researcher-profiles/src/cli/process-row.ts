@@ -63,114 +63,37 @@ const showWorks = (works: readonly WorksResult[]): void => {
   }
 };
 
-export const processRow = async (
-  row: ResearcherRow,
-  redcapConfig: RedcapConfig,
+/** Parses stored author IDs JSON, returns empty array on failure. */
+const parseStoredAuthorIds = (raw: string): readonly string[] => {
+  if (raw === "") return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? (parsed as unknown[]).filter((x): x is string => typeof x === "string")
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+const fetchWorks = async (
+  chosenAuthors: readonly Pick<AuthorsResult, "id">[],
+  label: string,
+  researcher: string,
   openAlexConfig: OpenAlexConfig,
   onRateLimit?: (info: RateLimitInfo) => void,
-): Promise<"ok" | "skipped" | "error"> => {
-  const label = `${row.first_name} ${row.last_name} (${row.userid})`;
-  const researcher = `${row.first_name} ${row.last_name}`;
-
-  // Check if OpenAlex author search should be skipped (imported less than 1 month ago)
-  const authorDays = daysUntilNextUpdate(row.oa_author_ids_imported_date);
-  if (authorDays !== null) {
-    log.info(
-      `[${label}] Author IDs already imported on ${row.oa_author_ids_imported_date} — next update in ${String(authorDays)} day(s)`,
-    );
-    return "skipped";
-  }
-
-  // Step 1: Resolve authors
-  const s = spinner();
-  s.start(`[${label}] Searching authors on OpenAlex…`);
-
-  const authorsResult: Either.Either<readonly AuthorsResult[], unknown> =
-    await Effect.runPromise(
-      Effect.either(silenced(resolveAuthors(row, openAlexConfig))),
-    );
-
-  if (Either.isLeft(authorsResult)) {
-    s.stop(pc.red(`[${label}] Author search failed`));
-    log.error(JSON.stringify(authorsResult.left, null, 2));
-    return "error";
-  }
-
-  const allAuthors = authorsResult.right;
-  s.stop(
-    `[${label}] Found ${pc.bold(String(allAuthors.length))} author profile(s)`,
-  );
-
-  if (allAuthors.length === 0) {
-    log.warn(`  No OpenAlex profiles found for ${label}`);
-    return "skipped";
-  }
-
-  // Step 2: Multiselect authors
-  const selected = await multiselect({
-    message: `Select author profile(s) to include for ${pc.bold(label)}:`,
-    options: allAuthors.map((a) => {
-      const orcid = a.orcid !== "" && a.orcid !== "null" ? a.orcid : null;
-      const orcidHint = orcid !== null ? `ORCID: ${orcid} · ` : "";
-      return {
-        value: a.id,
-        label: a.display_name,
-        hint: `${orcidHint}${a.id}`,
-      };
-    }),
-    initialValues: allAuthors.map((a) => a.id),
-  });
-
-  if (isCancel(selected)) {
-    cancel("Cancelled");
-    process.exit(0);
-  }
-
-  const chosenAuthors = allAuthors.filter((a) =>
-    (selected as readonly string[]).includes(a.id),
-  );
-
-  if (chosenAuthors.length === 0) {
-    log.warn(`  No authors selected — skipping ${label}`);
-    return "skipped";
-  }
-
-  // Step 3: Write selected author IDs to REDCap
-  const idsSpinner = spinner();
-  idsSpinner.start(`[${label}] Saving author IDs to REDCap…`);
-
-  const idsResult: Either.Either<void, unknown> = await Effect.runPromise(
-    Effect.either(writeOaAuthorIds(redcapConfig, row.userid, chosenAuthors)),
-  );
-
-  if (Either.isLeft(idsResult)) {
-    idsSpinner.stop(pc.yellow(`[${label}] Could not save author IDs`));
-    log.warn(JSON.stringify(idsResult.left, null, 2));
-  } else {
-    idsSpinner.stop(`[${label}] Author IDs saved`);
-  }
-
-  // Check if works fetch should be skipped (imported less than 1 month ago)
-  const worksDays = daysUntilNextUpdate(row.oa_references_imported_at);
-  if (worksDays !== null) {
-    log.info(
-      `[${label}] Works already imported on ${row.oa_references_imported_at} — next update in ${String(worksDays)} day(s)`,
-    );
-    return "skipped";
-  }
-
-  // Step 4: Fetch works for selected authors
+): Promise<Either.Either<readonly WorksResult[], unknown>> => {
   const worksSpinner = spinner();
   worksSpinner.start(
     `[${label}] Fetching works… (0/${String(chosenAuthors.length)} authors)`,
   );
 
-  const worksResult: Either.Either<readonly WorksResult[], unknown> =
+  const result: Either.Either<readonly WorksResult[], unknown> =
     await Effect.runPromise(
       Effect.either(
         silenced(
           fetchWorksForAuthors(
-            chosenAuthors,
+            chosenAuthors as readonly AuthorsResult[],
             openAlexConfig,
             researcher,
             (done, total) => {
@@ -184,19 +107,145 @@ export const processRow = async (
       ),
     );
 
-  if (Either.isLeft(worksResult)) {
+  if (Either.isLeft(result)) {
     worksSpinner.stop(pc.red(`[${label}] Works fetch failed`));
+  } else {
+    worksSpinner.stop(
+      `[${label}] ${pc.bold(String(result.right.length))} work(s)`,
+    );
+  }
+
+  return result;
+};
+
+export const processRow = async (
+  row: ResearcherRow,
+  redcapConfig: RedcapConfig,
+  openAlexConfig: OpenAlexConfig,
+  onRateLimit?: (info: RateLimitInfo) => void,
+): Promise<"ok" | "skipped" | "error"> => {
+  const label = `${row.first_name} ${row.last_name} (${row.userid})`;
+  const researcher = `${row.first_name} ${row.last_name}`;
+
+  let chosenAuthors: readonly Pick<AuthorsResult, "id">[];
+
+  const authorDays = daysUntilNextUpdate(row.oa_author_ids_imported_date);
+
+  if (authorDays !== null) {
+    // Author IDs are fresh — reuse stored IDs
+    const storedIds = parseStoredAuthorIds(row.researcher_oa_ids);
+    if (storedIds.length === 0) {
+      log.warn(
+        `[${label}] Author IDs marked fresh but no stored IDs found — skipping`,
+      );
+      return "skipped";
+    }
+    log.info(
+      `[${label}] Author IDs up to date (next update in ${String(authorDays)} day(s)) — ${String(storedIds.length)} author(s)`,
+    );
+    chosenAuthors = storedIds.map((id) => ({ id }));
+  } else {
+    // Step 1: Resolve authors
+    const s = spinner();
+    s.start(`[${label}] Searching authors on OpenAlex…`);
+
+    const authorsResult: Either.Either<readonly AuthorsResult[], unknown> =
+      await Effect.runPromise(
+        Effect.either(silenced(resolveAuthors(row, openAlexConfig))),
+      );
+
+    if (Either.isLeft(authorsResult)) {
+      s.stop(pc.red(`[${label}] Author search failed`));
+      log.error(JSON.stringify(authorsResult.left, null, 2));
+      return "error";
+    }
+
+    const allAuthors = authorsResult.right;
+    s.stop(
+      `[${label}] Found ${pc.bold(String(allAuthors.length))} author profile(s)`,
+    );
+
+    if (allAuthors.length === 0) {
+      log.warn(`  No OpenAlex profiles found for ${label}`);
+      return "skipped";
+    }
+
+    // Step 2: Multiselect authors
+    const selected = await multiselect({
+      message: `Select author profile(s) to include for ${pc.bold(label)}:`,
+      options: allAuthors.map((a) => {
+        const orcid = a.orcid !== "" && a.orcid !== "null" ? a.orcid : null;
+        const orcidHint = orcid !== null ? `ORCID: ${orcid} · ` : "";
+        return {
+          value: a.id,
+          label: a.display_name,
+          hint: `${orcidHint}${a.id}`,
+        };
+      }),
+      initialValues: allAuthors.map((a) => a.id),
+    });
+
+    if (isCancel(selected)) {
+      cancel("Cancelled");
+      process.exit(0);
+    }
+
+    const chosen = allAuthors.filter((a) =>
+      (selected as readonly string[]).includes(a.id),
+    );
+
+    if (chosen.length === 0) {
+      log.warn(`  No authors selected — skipping ${label}`);
+      return "skipped";
+    }
+
+    // Step 3: Write selected author IDs to REDCap
+    const idsSpinner = spinner();
+    idsSpinner.start(`[${label}] Saving author IDs to REDCap…`);
+
+    const idsResult: Either.Either<void, unknown> = await Effect.runPromise(
+      Effect.either(writeOaAuthorIds(redcapConfig, row.userid, chosen)),
+    );
+
+    if (Either.isLeft(idsResult)) {
+      idsSpinner.stop(pc.yellow(`[${label}] Could not save author IDs`));
+      log.warn(JSON.stringify(idsResult.left, null, 2));
+    } else {
+      idsSpinner.stop(`[${label}] Author IDs saved`);
+    }
+
+    chosenAuthors = chosen;
+  }
+
+  // Check if works fetch should be skipped (imported less than 1 month ago)
+  const worksDays = daysUntilNextUpdate(row.oa_references_imported_at);
+  if (worksDays !== null) {
+    log.info(
+      `[${label}] Works already imported — next update in ${String(worksDays)} day(s)`,
+    );
+    return "skipped";
+  }
+
+  // Step 4: Fetch works for selected authors
+  const worksResult = await fetchWorks(
+    chosenAuthors,
+    label,
+    researcher,
+    openAlexConfig,
+    onRateLimit,
+  );
+
+  if (Either.isLeft(worksResult)) {
     log.error(JSON.stringify(worksResult.left, null, 2));
     return "error";
   }
 
   const works = worksResult.right;
-  worksSpinner.stop(`[${label}] ${pc.bold(String(works.length))} work(s)`);
 
-  // Step 4: Show works sample
+  // Step 5: Show works sample
   showWorks(works);
 
-  // Step 5: Confirm and write
+  // Step 6: Confirm and write
   const confirmed = await confirm({
     message: `Write ${String(works.length)} works to REDCap for ${label}?`,
   });
