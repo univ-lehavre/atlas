@@ -61,34 +61,21 @@ export const fetchResearchers = (
     })
     .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
 
-  const fetchRefs = client
-    .exportRecords<Record<string, string>>({
-      fields: ["userid", "oa_references"],
-    })
-    .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
-
-  return Effect.all([fetchMeta, fetchRefs], { concurrency: 1 }).pipe(
-    Effect.map(([metaRecords, refRecords]) => {
-      // record_id == userid in this project — join on userid
-      const refsByUserid = new Map(
-        refRecords.map((r) => [r["userid"] ?? "", r["oa_references"] ?? ""]),
-      );
-      return metaRecords.map((r) => {
-        const userid = r["userid"] ?? "";
-        return {
-          userid,
-          last_name: r["last_name"] ?? "",
-          middle_name: r["middle_name"] ?? "",
-          first_name: r["first_name"] ?? "",
-          orcid: r["orcid"] ?? "",
-          researcher_oa_ids: r["researcher_oa_ids"] ?? "",
-          oa_references: refsByUserid.get(userid) ?? "",
-          oa_author_ids_imported_date: r["oa_author_ids_imported_date"] ?? "",
-          oa_references_imported_at: r["oa_references_imported_at"] ?? "",
-          final_references_imported_at: r["final_references_imported_at"] ?? "",
-        };
-      });
-    }),
+  return fetchMeta.pipe(
+    Effect.map((metaRecords) =>
+      metaRecords.map((r) => ({
+        userid: r["userid"] ?? "",
+        last_name: r["last_name"] ?? "",
+        middle_name: r["middle_name"] ?? "",
+        first_name: r["first_name"] ?? "",
+        orcid: r["orcid"] ?? "",
+        researcher_oa_ids: r["researcher_oa_ids"] ?? "",
+        oa_references: "",
+        oa_author_ids_imported_date: r["oa_author_ids_imported_date"] ?? "",
+        oa_references_imported_at: r["oa_references_imported_at"] ?? "",
+        final_references_imported_at: r["final_references_imported_at"] ?? "",
+      })),
+    ),
   );
 };
 
@@ -124,6 +111,26 @@ export const writeOaAuthorIds = (
     .pipe(
       Effect.asVoid,
       Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+    );
+};
+
+/**
+ * Fetches `oa_references` JSON for a single userid.
+ * Must be fetched individually to avoid REDCap truncating large notes fields.
+ */
+export const fetchOaReferences = (
+  config: RedcapConnectionConfig,
+  userid: string,
+): Effect.Effect<string, RedcapFetchError> => {
+  const client = makeClient(config);
+  return client
+    .exportRecords<Record<string, string>>({
+      fields: ["userid", "oa_references"],
+      filterLogic: `[userid] = "${userid}"`,
+    })
+    .pipe(
+      Effect.map((records) => records[0]?.["oa_references"] ?? ""),
+      Effect.mapError((cause) => new RedcapFetchError({ cause })),
     );
 };
 
