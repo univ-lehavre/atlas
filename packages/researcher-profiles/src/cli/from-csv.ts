@@ -12,6 +12,7 @@ import { parseCsv } from "../services/csv.js";
 import { fetchQuota, type OpenAlexQuota } from "../services/openalex.js";
 import type { ResearcherRow } from "../types.js";
 import { processRow } from "./process-row.js";
+import { selectResearchers } from "./select-researchers.js";
 
 export interface FromCsvOptions {
   readonly filePath: string;
@@ -47,10 +48,6 @@ export const fromCsv = async (opts: FromCsvOptions): Promise<void> => {
       : {}),
   };
 
-  // Fetch initial quota
-  const quotaBefore = await fetchQuota(openAlexConfig);
-  showQuota(quotaBefore, "OpenAlex quota before");
-
   // Load CSV
   const s = spinner();
   s.start(`Reading ${opts.filePath}…`);
@@ -73,8 +70,15 @@ export const fromCsv = async (opts: FromCsvOptions): Promise<void> => {
     process.exit(1);
   }
 
-  const researchers = parseResult.right;
-  s.stop(`Loaded ${pc.bold(String(researchers.length))} researchers from CSV`);
+  const allResearchers = parseResult.right;
+  s.stop(
+    `Loaded ${pc.bold(String(allResearchers.length))} researchers from CSV`,
+  );
+
+  const quotaBefore = await fetchQuota(openAlexConfig);
+  showQuota(quotaBefore, "OpenAlex quota");
+
+  const researchers = await selectResearchers(allResearchers);
 
   let ok = 0;
   let skipped = 0;
