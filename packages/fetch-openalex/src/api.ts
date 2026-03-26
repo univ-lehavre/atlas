@@ -58,11 +58,29 @@ const fetchAPIQueue = <T>(
 const fetchAPIResults = <T>(
   opts: FetchAPIMinimalConfig,
 ): Effect.Effect<readonly T[], FetchError | ResponseParseError> =>
-  Effect.gen(function* () {
-    const { queue, worker } = yield* fetchAPIQueue<T>({ ...opts });
-    yield* Effect.all([worker], { concurrency: "unbounded", discard: true });
-    const results = yield* Queue.takeAll(queue);
-    return Chunk.toReadonlyArray(results);
-  });
+  Effect.scoped(
+    Effect.gen(function* () {
+      const url: URL = buildEndpointURL(opts.apiURL, opts.endpoint);
+      const params: Query = buildInitialParams(opts);
+
+      const curriedFetch = yield* makeRateLimitedFetcher<T>(
+        url,
+        opts.userAgent,
+        opts.rateLimit,
+        opts.onRateLimit,
+      );
+
+      const queue: Queue.Queue<T> = yield* ensureQueue<T>();
+      const store: Store<T> = yield* ensureStore<T>({
+        maxPages: opts.maxPages,
+      });
+
+      const worker = makeWorker<T>(store, queue, curriedFetch, params);
+      yield* worker;
+
+      const results = yield* Queue.takeAll(queue);
+      return Chunk.toReadonlyArray(results);
+    }),
+  );
 
 export { fetchAPIQueue, fetchAPIResults, type FetchAPIConfig };
