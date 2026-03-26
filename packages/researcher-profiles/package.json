@@ -48,6 +48,9 @@
     "@univ-lehavre/atlas-fetch-openalex": "workspace:*",
     "@univ-lehavre/atlas-openalex-types": "workspace:*",
     "csv-parse": "^5.6.0",
+    "fuse.js": "^7.1.0",
+    "mammoth": "^1.9.0",
+    "pdfjs-dist": "^5.3.31",
     "effect": "^3.19.15",
     "picocolors": "^1.1.1"
   },

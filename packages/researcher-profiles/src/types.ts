@@ -14,10 +14,14 @@ export interface ResearcherRow {
   readonly orcid: string;
   /** JSON array of OpenAlex author IDs, or empty string if never imported. */
   readonly researcher_oa_ids: string;
+  /** JSON array of WorksResult[], or empty string if never imported. */
+  readonly oa_references: string;
   /** ISO datetime of last OpenAlex author ID import, or empty string if never done. */
   readonly oa_author_ids_imported_date: string;
   /** ISO datetime of last OpenAlex works import, or empty string if never done. */
   readonly oa_references_imported_at: string;
+  /** ISO datetime of last final references import, or empty string if never done. */
+  readonly final_references_imported_at: string;
 }
 
 /**

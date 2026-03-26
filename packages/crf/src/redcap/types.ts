@@ -121,5 +121,10 @@ export interface RedcapClient {
     instrument: InstrumentName
   ) => Effect.Effect<ArrayBuffer, RedcapHttpError | RedcapNetworkError>;
 
+  readonly exportFile: (
+    field: string,
+    recordId: string
+  ) => Effect.Effect<ArrayBuffer, RedcapHttpError | RedcapNetworkError>;
+
   readonly findUserIdByEmail: (email: string) => Effect.Effect<string | null, RedcapClientError>;
 }

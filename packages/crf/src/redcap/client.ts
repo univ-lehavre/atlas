@@ -355,6 +355,13 @@ const makeRedcapClient = (config: RedcapConfig, fetchFn: typeof fetch = fetch): 
         fetchFn
       ),
 
+    exportFile: (field: string, recordId: string) =>
+      fetchBuffer(
+        config,
+        { content: 'file', action: 'export', field, record: recordId, returnFormat: 'json' },
+        fetchFn
+      ),
+
     findUserIdByEmail: (email: string) =>
       pipe(
         applyExportTransform(
