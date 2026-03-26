@@ -12,6 +12,8 @@ export interface ResearcherRow {
   readonly middle_name: string;
   readonly first_name: string;
   readonly orcid: string;
+  /** JSON array of OpenAlex author IDs, or empty string if never imported. */
+  readonly researcher_oa_ids: string;
   /** ISO datetime of last OpenAlex author ID import, or empty string if never done. */
   readonly oa_author_ids_imported_date: string;
   /** ISO datetime of last OpenAlex works import, or empty string if never done. */
