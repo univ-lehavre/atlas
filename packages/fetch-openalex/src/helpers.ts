@@ -124,6 +124,14 @@ export const makeWorker = <T>(
 /**
  * Fetches all pages and collects results into a plain array (no Queue scope issues).
  */
+const isValidAPIResponse = <T>(r: unknown): r is APIResponse<T> =>
+  typeof r === "object" &&
+  r !== null &&
+  "meta" in r &&
+  typeof (r as Record<string, unknown>)["meta"] === "object" &&
+  "results" in r &&
+  Array.isArray((r as Record<string, unknown>)["results"]);
+
 export const fetchAllPages = <T>(
   store: Store<T>,
   fetchPage: (
@@ -137,9 +145,11 @@ export const fetchAllPages = <T>(
     // eslint-disable-next-line functional/no-loop-statements -- sequential pagination requires a loop
     while (yield* store.hasMorePages()) {
       params["page"] = yield* store.page;
-      const response: APIResponse<T> = yield* fetchPage(params);
-      yield* Ref.update(acc, (xs) => [...xs, ...response.results]);
-      yield* store.addNewItems(response);
+      const raw: APIResponse<T> = yield* fetchPage(params);
+      // eslint-disable-next-line functional/no-conditional-statements -- guard: stop pagination on malformed response
+      if (!isValidAPIResponse<T>(raw)) break;
+      yield* Ref.update(acc, (xs) => [...xs, ...raw.results]);
+      yield* store.addNewItems(raw);
       yield* store.incPage();
       const st = yield* store.current;
       yield* Effect.sync(() =>
