@@ -10,6 +10,7 @@ import { fetchQuota, type OpenAlexQuota } from "../services/openalex.js";
 import { fetchResearchers } from "../services/redcap.js";
 import type { ResearcherRow } from "../types.js";
 import { processRow } from "./process-row.js";
+import { selectResearchers } from "./select-researchers.js";
 
 export interface FromRedcapOptions {
   readonly redcapUrl: string;
@@ -44,10 +45,6 @@ export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
       : {}),
   };
 
-  // Fetch initial quota
-  const quotaBefore = await fetchQuota(openAlexConfig);
-  showQuota(quotaBefore, "OpenAlex quota before");
-
   // Fetch researchers from REDCap
   const s = spinner();
   s.start("Fetching researchers from REDCap…");
@@ -61,8 +58,16 @@ export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
     process.exit(1);
   }
 
-  const researchers = fetchResult.right;
-  s.stop(`Found ${pc.bold(String(researchers.length))} researchers in REDCap`);
+  const allResearchers = fetchResult.right;
+  s.stop(
+    `Found ${pc.bold(String(allResearchers.length))} researchers in REDCap`,
+  );
+
+  // Fetch quota after loading, before processing
+  const quotaBefore = await fetchQuota(openAlexConfig);
+  showQuota(quotaBefore, "OpenAlex quota");
+
+  const researchers = await selectResearchers(allResearchers);
 
   let ok = 0;
   let skipped = 0;

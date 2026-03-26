@@ -85,7 +85,8 @@ export const processRow = async (
   const selected = await multiselect({
     message: `Select author profile(s) to include for ${pc.bold(label)}:`,
     options: allAuthors.map((a) => {
-      const orcidHint = a.orcid !== "" ? `ORCID: ${a.orcid} · ` : "";
+      const orcid = a.orcid !== "" && a.orcid !== "null" ? a.orcid : null;
+      const orcidHint = orcid !== null ? `ORCID: ${orcid} · ` : "";
       return {
         value: a.id,
         label: a.display_name,
