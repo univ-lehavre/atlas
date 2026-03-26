@@ -135,7 +135,7 @@ export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
 
   if (Either.isLeft(fetchResult)) {
     s.stop(pc.red("Failed to fetch researchers from REDCap"));
-    log.error(String(fetchResult.left));
+    log.error(JSON.stringify(fetchResult.left, null, 2));
     process.exit(1);
   }
 
