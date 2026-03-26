@@ -74,8 +74,9 @@ const selectResearchersForMatch = async (
 };
 
 const parseOaReferences = (
-  raw: string,
+  buffer: ArrayBuffer,
 ): { works: readonly WorksResult[]; error: string | null } => {
+  const raw = new TextDecoder().decode(buffer);
   if (raw === "") return { works: [], error: null };
   try {
     const parsed: unknown = JSON.parse(raw);

@@ -362,6 +362,26 @@ const makeRedcapClient = (config: RedcapConfig, fetchFn: typeof fetch = fetch): 
         fetchFn
       ),
 
+    importFile: (field: string, recordId: string, fileName: string, content: Uint8Array) =>
+      pipe(
+        Effect.tryPromise({
+          try: () => {
+            const form = new FormData();
+            form.append('token', config.token);
+            form.append('content', 'file');
+            form.append('action', 'import');
+            form.append('field', field);
+            form.append('record', recordId);
+            form.append('returnFormat', 'json');
+            form.append('file', new Blob([content.buffer as ArrayBuffer]), fileName);
+            return fetchFn(config.url, { method: 'POST', body: form });
+          },
+          catch: (cause) => new RedcapNetworkError({ cause }),
+        }),
+        Effect.flatMap(checkResponseStatus),
+        Effect.asVoid
+      ),
+
     findUserIdByEmail: (email: string) =>
       pipe(
         applyExportTransform(
