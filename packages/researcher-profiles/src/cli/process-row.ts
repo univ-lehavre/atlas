@@ -9,7 +9,7 @@
 
 import { spinner, log, multiselect, isCancel, cancel } from "@clack/prompts";
 import pc from "picocolors";
-import { Effect, Either, Logger, LogLevel } from "effect";
+import { Effect, Either } from "effect";
 import type {
   AuthorsResult,
   WorksResult,
@@ -32,7 +32,7 @@ interface RedcapConfig {
 }
 
 const silenced = <A, E>(effect: Effect.Effect<A, E>): Effect.Effect<A, E> =>
-  effect.pipe(Logger.withMinimumLogLevel(LogLevel.None));
+  effect;
 
 /** Returns the number of days until the next update, or null if > 1 month ago / never imported. */
 export const daysUntilNextUpdate = (importedDate: string): number | null => {
