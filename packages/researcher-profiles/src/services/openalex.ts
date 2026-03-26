@@ -25,6 +25,12 @@ export interface ResolveResult {
   readonly works: readonly WorksResult[];
 }
 
+export interface ResolveAuthorsResult {
+  readonly byName: readonly AuthorsResult[];
+  readonly byOrcid: readonly AuthorsResult[];
+  readonly unique: readonly AuthorsResult[];
+}
+
 export type { RateLimitInfo } from "@univ-lehavre/atlas-fetch-openalex";
 
 const deduplicateById = <T extends { id: string }>(
@@ -41,7 +47,7 @@ const deduplicateById = <T extends { id: string }>(
 export const resolveAuthors = (
   row: ResearcherRow,
   config: OpenAlexConfig,
-): Effect.Effect<readonly AuthorsResult[], OpenAlexSearchError> => {
+): Effect.Effect<ResolveAuthorsResult, OpenAlexSearchError> => {
   const researcher = `${row.first_name} ${row.last_name}`;
   const names =
     row.middle_name === ""
@@ -68,9 +74,11 @@ export const resolveAuthors = (
         );
 
   return Effect.all([byName, byOrcid], { concurrency: 1 }).pipe(
-    Effect.map(([nameResults, orcidResults]) =>
-      deduplicateById([...nameResults, ...orcidResults]),
-    ),
+    Effect.map(([byNameResults, byOrcidResults]) => ({
+      byName: byNameResults,
+      byOrcid: byOrcidResults,
+      unique: deduplicateById([...byNameResults, ...byOrcidResults]),
+    })),
   );
 };
 
@@ -110,11 +118,11 @@ export const resolveAll = (
   config: OpenAlexConfig,
 ): Effect.Effect<ResolveResult, OpenAlexSearchError> =>
   resolveAuthors(row, config).pipe(
-    Effect.flatMap((authors) =>
+    Effect.flatMap((result) =>
       fetchWorksForAuthors(
-        authors,
+        result.unique,
         config,
         `${row.first_name} ${row.last_name}`,
-      ).pipe(Effect.map((works) => ({ authors, works }))),
+      ).pipe(Effect.map((works) => ({ authors: result.unique, works }))),
     ),
   );
