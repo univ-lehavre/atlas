@@ -23,7 +23,7 @@ import type {
 } from "@univ-lehavre/atlas-openalex-types";
 import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
 import { resolveAuthors, fetchWorksForAuthors } from "../services/openalex.js";
-import { writeOaReferences } from "../services/redcap.js";
+import { writeOaAuthorIds, writeOaReferences } from "../services/redcap.js";
 import type { ResearcherRow } from "../types.js";
 
 interface RedcapConfig {
@@ -110,7 +110,22 @@ export const processRow = async (
     return "skipped";
   }
 
-  // Step 3: Fetch works for selected authors
+  // Step 3: Write selected author IDs to REDCap
+  const idsSpinner = spinner();
+  idsSpinner.start(`[${label}] Saving author IDs to REDCap…`);
+
+  const idsResult: Either.Either<void, unknown> = await Effect.runPromise(
+    Effect.either(writeOaAuthorIds(redcapConfig, row.userid, chosenAuthors)),
+  );
+
+  if (Either.isLeft(idsResult)) {
+    idsSpinner.stop(pc.yellow(`[${label}] Could not save author IDs`));
+    log.warn(JSON.stringify(idsResult.left, null, 2));
+  } else {
+    idsSpinner.stop(`[${label}] Author IDs saved`);
+  }
+
+  // Step 4: Fetch works for selected authors
   const worksSpinner = spinner();
   worksSpinner.start(`[${label}] Fetching works…`);
 

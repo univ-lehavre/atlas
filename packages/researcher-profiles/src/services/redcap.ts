@@ -7,7 +7,10 @@ import {
   RedcapUrl,
   RedcapToken,
 } from "@univ-lehavre/atlas-crf/redcap";
-import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+import type {
+  AuthorsResult,
+  WorksResult,
+} from "@univ-lehavre/atlas-openalex-types";
 import { Effect } from "effect";
 import { RedcapFetchError, RedcapWriteError } from "../errors.js";
 import type { ResearcherRow } from "../types.js";
@@ -54,6 +57,26 @@ export const fetchResearchers = (
         })),
       ),
       Effect.mapError((cause) => new RedcapFetchError({ cause })),
+    );
+};
+
+/**
+ * Writes selected OpenAlex author IDs to the `researcher_oa_ids` field for a given userid.
+ */
+export const writeOaAuthorIds = (
+  config: RedcapConnectionConfig,
+  userid: string,
+  authors: readonly AuthorsResult[],
+): Effect.Effect<void, RedcapWriteError> => {
+  const client = makeClient(config);
+  return client
+    .importRecords(
+      [{ userid, researcher_oa_ids: JSON.stringify(authors.map((a) => a.id)) }],
+      { overwriteBehavior: "overwrite" },
+    )
+    .pipe(
+      Effect.asVoid,
+      Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
     );
 };
 
