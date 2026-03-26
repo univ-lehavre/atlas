@@ -63,6 +63,15 @@ export const fetchResearchers = (
 /**
  * Writes selected OpenAlex author IDs to the `researcher_oa_ids` field for a given userid.
  */
+const localIsoDateTime = (): string => {
+  const now = new Date();
+  const pad = (n: number): string => String(n).padStart(2, "0");
+  return (
+    `${String(now.getFullYear())}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ` +
+    `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
+  );
+};
+
 export const writeOaAuthorIds = (
   config: RedcapConnectionConfig,
   userid: string,
@@ -71,7 +80,13 @@ export const writeOaAuthorIds = (
   const client = makeClient(config);
   return client
     .importRecords(
-      [{ userid, researcher_oa_ids: JSON.stringify(authors.map((a) => a.id)) }],
+      [
+        {
+          userid,
+          researcher_oa_ids: JSON.stringify(authors.map((a) => a.id)),
+          oa_author_ids_imported_date: localIsoDateTime(),
+        },
+      ],
       { overwriteBehavior: "overwrite" },
     )
     .pipe(
