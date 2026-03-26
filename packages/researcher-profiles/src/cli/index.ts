@@ -6,7 +6,7 @@
  *   from-redcap      — resolve OpenAlex works from REDCap researchers
  */
 
-import { intro, log } from "@clack/prompts";
+import { intro, log, select, text, isCancel, cancel } from "@clack/prompts";
 import pc from "picocolors";
 import { fromCsv } from "./from-csv.js";
 import { fromRedcap } from "./from-redcap.js";
@@ -35,10 +35,62 @@ ${pc.bold("CSV columns:")}
 `);
 };
 
+const runInteractiveMenu = async (
+  redcapUrl: string,
+  redcapToken: string,
+  openAlexUserAgent: string,
+): Promise<void> => {
+  intro(pc.cyan("atlas-researcher-profiles") + pc.dim(` v${VERSION}`));
+
+  const command = await select({
+    message: "What would you like to do?",
+    options: [
+      {
+        value: "from-redcap",
+        label: "from-redcap",
+        hint: "fetch researchers from REDCap",
+      },
+      {
+        value: "from-csv",
+        label: "from-csv",
+        hint: "read researchers from a CSV file",
+      },
+    ],
+  });
+
+  if (isCancel(command)) {
+    cancel("Cancelled.");
+    process.exit(0);
+  }
+
+  if (command === "from-csv") {
+    const filePath = await text({
+      message: "Path to CSV file:",
+      placeholder: "researchers.csv",
+      validate: (v) => (v.trim() === "" ? "Path is required" : undefined),
+    });
+
+    if (isCancel(filePath)) {
+      cancel("Cancelled.");
+      process.exit(0);
+    }
+
+    await fromCsv({
+      filePath: filePath.trim(),
+      redcapUrl,
+      redcapToken,
+      openAlexUserAgent,
+    });
+    return;
+  }
+
+  await fromRedcap({ redcapUrl, redcapToken, openAlexUserAgent });
+};
+
 export const main = async (): Promise<void> => {
   const command = process.argv[2];
 
-  if (command === undefined || command === "--help" || command === "-h") {
+  if (command === "--help" || command === "-h") {
     printHelp();
     return;
   }
@@ -58,6 +110,11 @@ export const main = async (): Promise<void> => {
       "Missing required environment variables: REDCAP_API_URL and REDCAP_API_TOKEN",
     );
     process.exit(1);
+  }
+
+  if (command === undefined) {
+    await runInteractiveMenu(redcapUrl, redcapToken, openAlexUserAgent);
+    return;
   }
 
   if (command === "from-csv") {
