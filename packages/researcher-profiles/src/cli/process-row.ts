@@ -156,13 +156,24 @@ export const processRow = async (
 
   // Step 4: Fetch works for selected authors
   const worksSpinner = spinner();
-  worksSpinner.start(`[${label}] Fetching works…`);
+  worksSpinner.start(
+    `[${label}] Fetching works… (0/${String(chosenAuthors.length)} authors)`,
+  );
 
   const worksResult: Either.Either<readonly WorksResult[], unknown> =
     await Effect.runPromise(
       Effect.either(
         silenced(
-          fetchWorksForAuthors(chosenAuthors, openAlexConfig, researcher),
+          fetchWorksForAuthors(
+            chosenAuthors,
+            openAlexConfig,
+            researcher,
+            (done, total) => {
+              worksSpinner.message(
+                `[${label}] Fetching works… (${String(done)}/${String(total)} authors)`,
+              );
+            },
+          ),
         ),
       ),
     );
