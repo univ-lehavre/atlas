@@ -20,11 +20,14 @@ export interface RedcapConnectionConfig {
 /**
  * Creates a REDCap client from connection config.
  */
+const normalizeUrl = (url: string): string =>
+  url.endsWith("/") ? url : `${url}/`;
+
 const makeClient = (
   config: RedcapConnectionConfig,
 ): ReturnType<typeof createRedcapClient> =>
   createRedcapClient({
-    url: RedcapUrl(config.url),
+    url: RedcapUrl(normalizeUrl(config.url)),
     token: RedcapToken(config.token),
   });
 
@@ -38,13 +41,12 @@ export const fetchResearchers = (
   const client = makeClient(config);
   return client
     .exportRecords<Record<string, string>>({
-      forms: ["researcher_profile"],
-      fields: ["record_id", "last_name", "middle_name", "first_name", "orcid"],
+      fields: ["userid", "last_name", "middle_name", "first_name", "orcid"],
     })
     .pipe(
       Effect.map((records) =>
         records.map((r) => ({
-          userid: r["record_id"] ?? "",
+          userid: r["userid"] ?? "",
           last_name: r["last_name"] ?? "",
           middle_name: r["middle_name"] ?? "",
           first_name: r["first_name"] ?? "",
@@ -65,10 +67,9 @@ export const writeOaReferences = (
 ): Effect.Effect<void, RedcapWriteError> => {
   const client = makeClient(config);
   return client
-    .importRecords(
-      [{ record_id: userid, oa_references: JSON.stringify(works) }],
-      { overwriteBehavior: "overwrite" },
-    )
+    .importRecords([{ userid, oa_references: JSON.stringify(works) }], {
+      overwriteBehavior: "overwrite",
+    })
     .pipe(
       Effect.asVoid,
       Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),

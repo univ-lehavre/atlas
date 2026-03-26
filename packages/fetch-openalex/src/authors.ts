@@ -15,7 +15,7 @@ import type { OpenAlexConfig } from "./institutions.js";
 const OPENALEX_BASE_URL = "https://api.openalex.org";
 
 const DEFAULT_RATE_LIMIT = { limit: 1, interval: "1 seconds" } as const;
-const DEFAULT_PER_PAGE = 25;
+const DEFAULT_PER_PAGE = 100;
 
 const buildConfig = (
   endpoint: string,
