@@ -14,6 +14,8 @@ export interface ResearcherRow {
   readonly orcid: string;
   /** ISO datetime of last OpenAlex author ID import, or empty string if never done. */
   readonly oa_author_ids_imported_date: string;
+  /** ISO datetime of last OpenAlex works import, or empty string if never done. */
+  readonly oa_references_imported_at: string;
 }
 
 /**

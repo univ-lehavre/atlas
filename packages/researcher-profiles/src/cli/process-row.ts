@@ -37,6 +37,18 @@ interface RedcapConfig {
 const silenced = <A, E>(effect: Effect.Effect<A, E>): Effect.Effect<A, E> =>
   effect.pipe(Logger.withMinimumLogLevel(LogLevel.None));
 
+/** Returns the number of days until the next update, or null if > 1 month ago / never imported. */
+const daysUntilNextUpdate = (importedDate: string): number | null => {
+  if (importedDate === "") return null;
+  const importedAt = new Date(importedDate);
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  if (importedAt <= oneMonthAgo) return null;
+  const nextUpdate = new Date(importedAt);
+  nextUpdate.setMonth(nextUpdate.getMonth() + 1);
+  return Math.ceil((nextUpdate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+};
+
 const showWorks = (works: readonly WorksResult[]): void => {
   if (works.length === 0) {
     log.warn("  No works found");
@@ -60,24 +72,16 @@ export const processRow = async (
   const label = `${row.first_name} ${row.last_name} (${row.userid})`;
   const researcher = `${row.first_name} ${row.last_name}`;
 
-  // Check if OpenAlex search should be skipped (imported less than 1 month ago)
+  // Check if OpenAlex author search should be skipped (imported less than 1 month ago)
+  const authorDays = daysUntilNextUpdate(row.oa_author_ids_imported_date);
+  if (authorDays !== null) {
+    log.info(
+      `[${label}] Author IDs already imported on ${row.oa_author_ids_imported_date} — next update in ${String(authorDays)} day(s)`,
+    );
+    return "skipped";
+  }
+
   if (row.oa_author_ids_imported_date !== "") {
-    const importedAt = new Date(row.oa_author_ids_imported_date);
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-    if (importedAt > oneMonthAgo) {
-      const nextUpdate = new Date(importedAt);
-      nextUpdate.setMonth(nextUpdate.getMonth() + 1);
-      const daysUntil = Math.ceil(
-        (nextUpdate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-      );
-      log.info(
-        `[${label}] Author IDs already imported on ${row.oa_author_ids_imported_date} — next update in ${String(daysUntil)} day(s)`,
-      );
-      return "skipped";
-    }
-
     // Outdated — ask for confirmation before re-running
     const confirmed = await confirm({
       message: `[${label}] Last import: ${row.oa_author_ids_imported_date} (> 1 month ago). Re-run OpenAlex search?`,
@@ -161,6 +165,29 @@ export const processRow = async (
     log.warn(JSON.stringify(idsResult.left, null, 2));
   } else {
     idsSpinner.stop(`[${label}] Author IDs saved`);
+  }
+
+  // Check if works fetch should be skipped (imported less than 1 month ago)
+  const worksDays = daysUntilNextUpdate(row.oa_references_imported_at);
+  if (worksDays !== null) {
+    log.info(
+      `[${label}] Works already imported on ${row.oa_references_imported_at} — next update in ${String(worksDays)} day(s)`,
+    );
+    return "skipped";
+  }
+
+  if (row.oa_references_imported_at !== "") {
+    const confirmed = await confirm({
+      message: `[${label}] Last works import: ${row.oa_references_imported_at} (> 1 month ago). Re-fetch works?`,
+    });
+    if (isCancel(confirmed)) {
+      cancel("Cancelled");
+      process.exit(0);
+    }
+    if (!confirmed) {
+      log.warn(`Skipped ${label}`);
+      return "skipped";
+    }
   }
 
   // Step 4: Fetch works for selected authors

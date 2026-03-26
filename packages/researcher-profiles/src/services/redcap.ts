@@ -51,6 +51,7 @@ export const fetchResearchers = (
         "first_name",
         "orcid",
         "oa_author_ids_imported_date",
+        "oa_references_imported_at",
       ],
     })
     .pipe(
@@ -62,6 +63,7 @@ export const fetchResearchers = (
           first_name: r["first_name"] ?? "",
           orcid: r["orcid"] ?? "",
           oa_author_ids_imported_date: r["oa_author_ids_imported_date"] ?? "",
+          oa_references_imported_at: r["oa_references_imported_at"] ?? "",
         })),
       ),
       Effect.mapError((cause) => new RedcapFetchError({ cause })),
