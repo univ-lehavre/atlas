@@ -33,7 +33,8 @@ const extractPdf = (
 ): Effect.Effect<string, FileExtractError> =>
   Effect.tryPromise({
     try: async () => {
-      const pdfjsLib = await import("pdfjs-dist");
+      // eslint-disable-next-line n/no-missing-import -- pdfjs-dist legacy build for Node.js
+      const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
       const loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(buffer),
       });

@@ -63,17 +63,19 @@ export const fetchResearchers = (
 
   const fetchRefs = client
     .exportRecords<Record<string, string>>({
-      fields: ["userid", "oa_references"],
+      fields: ["record_id", "oa_references"],
     })
     .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
 
   return Effect.all([fetchMeta, fetchRefs], { concurrency: 1 }).pipe(
     Effect.map(([metaRecords, refRecords]) => {
-      const refsByUserid = new Map(
-        refRecords.map((r) => [r["userid"] ?? "", r["oa_references"] ?? ""]),
+      // Join on record_id (REDCap primary key) since userid may not be present in all rows
+      const refsByRecordId = new Map(
+        refRecords.map((r) => [r["record_id"] ?? "", r["oa_references"] ?? ""]),
       );
       return metaRecords.map((r) => {
         const userid = r["userid"] ?? "";
+        const recordId = r["record_id"] ?? userid;
         return {
           userid,
           last_name: r["last_name"] ?? "",
@@ -81,7 +83,7 @@ export const fetchResearchers = (
           first_name: r["first_name"] ?? "",
           orcid: r["orcid"] ?? "",
           researcher_oa_ids: r["researcher_oa_ids"] ?? "",
-          oa_references: refsByUserid.get(userid) ?? "",
+          oa_references: refsByRecordId.get(recordId) ?? "",
           oa_author_ids_imported_date: r["oa_author_ids_imported_date"] ?? "",
           oa_references_imported_at: r["oa_references_imported_at"] ?? "",
           final_references_imported_at: r["final_references_imported_at"] ?? "",
