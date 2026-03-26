@@ -51,15 +51,18 @@ const parseQuotaHeaders = (headers: Headers): OpenAlexQuota => ({
  * Fetches current OpenAlex API quota via a minimal request.
  * Requires an apiKey to get personalized quota headers.
  */
+// A DOI lookup costs 0 credits (vs 1 credit for a search), making it ideal for quota probing.
+const QUOTA_PROBE_URL =
+  "https://api.openalex.org/works/https://doi.org/10.1038/s41586-020-2649-2";
+
 export const fetchQuota = (
   config: OpenAlexConfig,
 ): Promise<OpenAlexQuota | null> =>
   config.apiKey === undefined
     ? Promise.resolve(null)
-    : fetch(
-        `${config.apiURL ?? "https://api.openalex.org"}/authors?search=test&per_page=1&api_key=${config.apiKey}`,
-        { headers: { "User-Agent": config.userAgent } },
-      ).then((r) => parseQuotaHeaders(r.headers));
+    : fetch(`${QUOTA_PROBE_URL}?api_key=${config.apiKey}`, {
+        headers: { "User-Agent": config.userAgent },
+      }).then((r) => parseQuotaHeaders(r.headers));
 
 /**
  * Resolves unique OpenAlex author profiles for a researcher.
