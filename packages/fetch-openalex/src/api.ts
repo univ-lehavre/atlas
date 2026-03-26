@@ -1,6 +1,4 @@
-import type { RateLimiter } from "effect";
 import { Effect, Queue, Chunk } from "effect";
-import type { FetchOpenAlexAPIOptions } from "@univ-lehavre/atlas-openalex-types";
 import type {
   FetchError,
   ResponseParseError,
@@ -14,17 +12,8 @@ import {
   ensureStore,
   makeRateLimitedFetcher,
   makeWorker,
+  type FetchAPIMinimalConfig,
 } from "./helpers.js";
-
-interface FetchAPIMinimalConfig {
-  userAgent: string;
-  rateLimit: RateLimiter.RateLimiter.Options;
-  apiURL: string;
-  endpoint: string;
-  fetchAPIOptions: FetchOpenAlexAPIOptions;
-  perPage: number;
-  maxPages?: number;
-}
 
 interface FetchAPIConfig<T> extends FetchAPIMinimalConfig {
   now?: boolean;
@@ -51,6 +40,7 @@ const fetchAPIQueue = <T>(
         url,
         opts.userAgent,
         opts.rateLimit,
+        opts.onRateLimit,
       );
 
       const queue: Queue.Queue<T> = yield* ensureQueue<T>(opts.queue);
@@ -75,9 +65,4 @@ const fetchAPIResults = <T>(
     return Chunk.toReadonlyArray(results);
   });
 
-export {
-  fetchAPIQueue,
-  fetchAPIResults,
-  type FetchAPIMinimalConfig,
-  type FetchAPIConfig,
-};
+export { fetchAPIQueue, fetchAPIResults, type FetchAPIConfig };

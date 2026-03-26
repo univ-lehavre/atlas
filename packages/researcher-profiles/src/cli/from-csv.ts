@@ -8,8 +8,8 @@ import pc from "picocolors";
 import { readFileSync } from "node:fs";
 import { Effect, Either } from "effect";
 import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
+import type { RateLimitInfo } from "@univ-lehavre/atlas-fetch-openalex";
 import { parseCsv } from "../services/csv.js";
-import { fetchQuota, type OpenAlexQuota } from "../services/openalex.js";
 import type { ResearcherRow } from "../types.js";
 import { processRow } from "./process-row.js";
 import { selectResearchers } from "./select-researchers.js";
@@ -27,7 +27,7 @@ interface RedcapConfig {
   readonly token: string;
 }
 
-const showQuota = (quota: OpenAlexQuota | null, label: string): void => {
+const showQuota = (quota: RateLimitInfo | null, label: string): void => {
   if (quota === null) return;
   log.info(
     `${label} — quota: ${pc.bold(String(quota.remaining))}/${pc.bold(String(quota.limit))} requests remaining` +
@@ -75,25 +75,23 @@ export const fromCsv = async (opts: FromCsvOptions): Promise<void> => {
     `Loaded ${pc.bold(String(allResearchers.length))} researchers from CSV`,
   );
 
-  const quotaBefore = await fetchQuota(openAlexConfig);
-  showQuota(quotaBefore, "OpenAlex quota");
-
   const researchers = await selectResearchers(allResearchers);
 
   let ok = 0;
   let skipped = 0;
   let errors = 0;
+  let lastQuota: RateLimitInfo | null = null;
 
   for (const row of researchers) {
-    const status = await processRow(row, redcapConfig, openAlexConfig);
+    const status = await processRow(row, redcapConfig, openAlexConfig, (q) => {
+      lastQuota = q;
+    });
     if (status === "ok") ok++;
     else if (status === "skipped") skipped++;
     else errors++;
   }
 
-  // Fetch final quota
-  const quotaAfter = await fetchQuota(openAlexConfig);
-  showQuota(quotaAfter, "OpenAlex quota after");
+  showQuota(lastQuota, "OpenAlex quota after");
 
   const parts: string[] = [];
   if (ok > 0) parts.push(pc.green(`${String(ok)} written`));

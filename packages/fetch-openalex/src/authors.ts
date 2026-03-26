@@ -9,7 +9,8 @@ import type {
   FetchOpenAlexAPIOptions,
 } from "@univ-lehavre/atlas-openalex-types";
 import type { ORCID } from "@univ-lehavre/atlas-openalex-types";
-import { fetchAPIResults, type FetchAPIMinimalConfig } from "./api.js";
+import { fetchAPIResults } from "./api.js";
+import type { FetchAPIMinimalConfig } from "./helpers.js";
 import type { OpenAlexConfig } from "./institutions.js";
 
 const OPENALEX_BASE_URL = "https://api.openalex.org";
@@ -21,6 +22,7 @@ const buildConfig = (
   endpoint: string,
   fetchAPIOptions: FetchOpenAlexAPIOptions,
   config: OpenAlexConfig,
+  onRateLimit?: FetchAPIMinimalConfig["onRateLimit"],
 ): FetchAPIMinimalConfig => ({
   userAgent: config.userAgent,
   rateLimit: DEFAULT_RATE_LIMIT,
@@ -31,6 +33,7 @@ const buildConfig = (
     ...(config.apiKey === undefined ? {} : { api_key: config.apiKey }),
   },
   perPage: DEFAULT_PER_PAGE,
+  onRateLimit,
 });
 
 /**
@@ -82,9 +85,10 @@ const searchWorksByAuthorIDs = (
 const searchWorksByAuthorID = (
   id: string,
   config: OpenAlexConfig,
+  onRateLimit?: FetchAPIMinimalConfig["onRateLimit"],
 ): Effect.Effect<readonly WorksResult[], FetchError | ResponseParseError> =>
   fetchAPIResults<WorksResult>(
-    buildConfig("works", { filter: `author.id:${id}` }, config),
+    buildConfig("works", { filter: `author.id:${id}` }, config, onRateLimit),
   );
 
 /**

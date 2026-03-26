@@ -21,7 +21,10 @@ import type {
   AuthorsResult,
   WorksResult,
 } from "@univ-lehavre/atlas-openalex-types";
-import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
+import type {
+  OpenAlexConfig,
+  RateLimitInfo,
+} from "@univ-lehavre/atlas-fetch-openalex";
 import { resolveAuthors, fetchWorksForAuthors } from "../services/openalex.js";
 import { writeOaAuthorIds, writeOaReferences } from "../services/redcap.js";
 import type { ResearcherRow } from "../types.js";
@@ -52,6 +55,7 @@ export const processRow = async (
   row: ResearcherRow,
   redcapConfig: RedcapConfig,
   openAlexConfig: OpenAlexConfig,
+  onRateLimit?: (info: RateLimitInfo) => void,
 ): Promise<"ok" | "skipped" | "error"> => {
   const label = `${row.first_name} ${row.last_name} (${row.userid})`;
   const researcher = `${row.first_name} ${row.last_name}`;
@@ -63,8 +67,13 @@ export const processRow = async (
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
 
     if (importedAt > oneMonthAgo) {
+      const nextUpdate = new Date(importedAt);
+      nextUpdate.setMonth(nextUpdate.getMonth() + 1);
+      const daysUntil = Math.ceil(
+        (nextUpdate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+      );
       log.info(
-        `[${label}] Author IDs already imported on ${row.oa_author_ids_imported_date} — skipping OpenAlex search`,
+        `[${label}] Author IDs already imported on ${row.oa_author_ids_imported_date} — next update in ${String(daysUntil)} day(s)`,
       );
       return "skipped";
     }
@@ -173,6 +182,7 @@ export const processRow = async (
                 `[${label}] Fetching works… (${String(done)}/${String(total)} authors)`,
               );
             },
+            onRateLimit,
           ),
         ),
       ),
