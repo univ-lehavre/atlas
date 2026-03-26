@@ -25,7 +25,11 @@ import type {
   OpenAlexConfig,
   RateLimitInfo,
 } from "@univ-lehavre/atlas-fetch-openalex";
-import { resolveAuthors, fetchWorksForAuthors } from "../services/openalex.js";
+import {
+  resolveAuthors,
+  fetchWorksForAuthors,
+  type ResolveAuthorsResult,
+} from "../services/openalex.js";
 import { writeOaAuthorIds, writeOaReferences } from "../services/redcap.js";
 import type { ResearcherRow } from "../types.js";
 
@@ -149,7 +153,7 @@ export const processRow = async (
     const s = spinner();
     s.start(`[${label}] Searching authors on OpenAlex…`);
 
-    const authorsResult: Either.Either<readonly AuthorsResult[], unknown> =
+    const authorsResult: Either.Either<ResolveAuthorsResult, unknown> =
       await Effect.runPromise(
         Effect.either(silenced(resolveAuthors(row, openAlexConfig))),
       );
@@ -160,9 +164,12 @@ export const processRow = async (
       return "error";
     }
 
-    const allAuthors = authorsResult.right;
+    const { byName, byOrcid, unique: allAuthors } = authorsResult.right;
+    const namePart = `by name: ${pc.bold(String(byName.length))}`;
+    const orcidPart =
+      row.orcid !== "" ? ` · by ORCID: ${pc.bold(String(byOrcid.length))}` : "";
     s.stop(
-      `[${label}] Found ${pc.bold(String(allAuthors.length))} author profile(s)`,
+      `[${label}] ${pc.bold(String(allAuthors.length))} unique profile(s) (${namePart}${orcidPart})`,
     );
 
     if (allAuthors.length === 0) {
