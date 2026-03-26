@@ -1,4 +1,5 @@
-import { Effect, Queue, Chunk } from "effect";
+import { Effect } from "effect";
+import type { Queue } from "effect";
 import type {
   FetchError,
   ResponseParseError,
@@ -12,6 +13,7 @@ import {
   ensureStore,
   makeRateLimitedFetcher,
   makeWorker,
+  fetchAllPages,
   type FetchAPIMinimalConfig,
 } from "./helpers.js";
 
@@ -70,22 +72,11 @@ const fetchAPIResults = <T>(
         opts.onRateLimit,
       );
 
-      const queue: Queue.Queue<T> = yield* ensureQueue<T>();
       const store: Store<T> = yield* ensureStore<T>({
         maxPages: opts.maxPages,
       });
 
-      const worker = makeWorker<T>(
-        store,
-        queue,
-        curriedFetch,
-        params,
-        opts.onPage,
-      );
-      yield* worker;
-
-      const results = yield* Queue.takeAll(queue);
-      return Chunk.toReadonlyArray(results);
+      return yield* fetchAllPages<T>(store, curriedFetch, params, opts.onPage);
     }),
   );
 

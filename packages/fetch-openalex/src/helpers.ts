@@ -120,3 +120,31 @@ export const makeWorker = <T>(
       );
     }
   });
+
+/**
+ * Fetches all pages and collects results into a plain array (no Queue scope issues).
+ */
+export const fetchAllPages = <T>(
+  store: Store<T>,
+  fetchPage: (
+    q: Query,
+  ) => Effect.Effect<APIResponse<T>, FetchError | ResponseParseError>,
+  params: Query,
+  onPage?: (page: number, total: number | null) => void,
+): Effect.Effect<readonly T[], FetchError | ResponseParseError> =>
+  Effect.gen(function* () {
+    const acc = yield* Ref.make<T[]>([]);
+    // eslint-disable-next-line functional/no-loop-statements -- sequential pagination requires a loop
+    while (yield* store.hasMorePages()) {
+      params["page"] = yield* store.page;
+      const response: APIResponse<T> = yield* fetchPage(params);
+      yield* Ref.update(acc, (xs) => [...xs, ...response.results]);
+      yield* store.addNewItems(response);
+      yield* store.incPage();
+      const st = yield* store.current;
+      yield* Effect.sync(() =>
+        onPage?.(st.page - 1, st.totalPages > 0 ? st.totalPages : null),
+      );
+    }
+    return yield* Ref.get(acc);
+  });
