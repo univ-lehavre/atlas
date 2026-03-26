@@ -44,12 +44,14 @@ const toMatchResult = (
  * @param works - OpenAlex works to match
  * @param text - Plain text extracted from the publications file
  * @param threshold - Fuse.js threshold (0 = exact, 1 = anything). Default 0.2.
+ * @param onWork - Optional callback called for each work tested: (title, score | null)
  * @returns Matched works with their best score, sorted by score ascending (lower = better match)
  */
 export const matchReferences = (
   works: readonly WorksResult[],
   text: string,
   threshold = 0.2,
+  onWork?: (title: string, score: number | null) => void,
 ): readonly MatchResult[] => {
   const lines = splitLines(text);
 
@@ -62,7 +64,12 @@ export const matchReferences = (
 
   return works
     .filter((w) => w.title !== "")
-    .map((work) => toMatchResult(fuse, work))
+    .map((work) => {
+      const result = toMatchResult(fuse, work);
+      // eslint-disable-next-line functional/no-expression-statements -- side-effect callback for logging
+      onWork?.(work.title, result?.score ?? null);
+      return result;
+    })
     .filter((r): r is MatchResult => r !== null)
     .sort((a, b) => a.score - b.score);
 };
