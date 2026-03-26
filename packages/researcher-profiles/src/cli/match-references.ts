@@ -4,7 +4,14 @@
  * stores matched works in `final_references` + `final_references_imported_at`.
  */
 
-import { spinner, log, outro } from "@clack/prompts";
+import {
+  spinner,
+  log,
+  outro,
+  multiselect,
+  isCancel,
+  cancel,
+} from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either } from "effect";
 import {
@@ -14,6 +21,8 @@ import {
 } from "../services/redcap.js";
 import { extractText } from "../services/file-extractor.js";
 import { matchReferences } from "../services/reference-matcher.js";
+import { daysUntilNextUpdate } from "./process-row.js";
+import type { ResearcherRow } from "../types.js";
 import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
 
 interface MatchReferencesOptions {
@@ -26,6 +35,38 @@ interface RedcapConfig {
   readonly url: string;
   readonly token: string;
 }
+
+const relativeDate = (dateStr: string): string => {
+  if (dateStr === "") return "never";
+  const days = daysUntilNextUpdate(dateStr);
+  if (days !== null) return `update in ${String(days)}d`;
+  return `imported ${new Date(dateStr).toISOString().slice(0, 10)}`;
+};
+
+const selectResearchersForMatch = async (
+  researchers: readonly ResearcherRow[],
+): Promise<readonly ResearcherRow[]> => {
+  const selected = await multiselect({
+    message: `Select researchers to match (${pc.bold(String(researchers.length))} with oa_references):`,
+    options: [...researchers]
+      .sort((a, b) => a.last_name.localeCompare(b.last_name, "fr"))
+      .map((r) => ({
+        value: r.userid,
+        label: `${r.first_name} ${r.last_name}`,
+        hint: `works: ${relativeDate(r.oa_references_imported_at)} · final: ${relativeDate(r.final_references_imported_at)}`,
+      })),
+    initialValues: researchers.map((r) => r.userid),
+  });
+
+  if (isCancel(selected)) {
+    cancel("Cancelled.");
+    process.exit(0);
+  }
+
+  return researchers.filter((r) =>
+    (selected as readonly string[]).includes(r.userid),
+  );
+};
 
 const parseOaReferences = (raw: string): readonly WorksResult[] => {
   if (raw === "") return [];
@@ -59,8 +100,24 @@ export const matchReferencesCommand = async (
     process.exit(1);
   }
 
-  const researchers = fetchResult.right;
-  s.stop(`Found ${pc.bold(String(researchers.length))} researchers in REDCap`);
+  const allResearchers = fetchResult.right;
+  s.stop(
+    `Found ${pc.bold(String(allResearchers.length))} researchers in REDCap`,
+  );
+
+  const withRefs = allResearchers.filter((r) => r.oa_references !== "");
+
+  if (withRefs.length === 0) {
+    outro("No researchers with oa_references — nothing to do");
+    return;
+  }
+
+  const researchers = await selectResearchersForMatch(withRefs);
+
+  if (researchers.length === 0) {
+    outro("Nothing selected");
+    return;
+  }
 
   let ok = 0;
   let skipped = 0;
@@ -69,12 +126,6 @@ export const matchReferencesCommand = async (
   for (const row of researchers) {
     const label = `${row.first_name} ${row.last_name} (${row.userid})`;
     const oaWorks = parseOaReferences(row.oa_references);
-
-    if (oaWorks.length === 0) {
-      log.warn(`[${label}] No oa_references found — skipping`);
-      skipped++;
-      continue;
-    }
 
     // Download publications file
     const fileSpinner = spinner();
