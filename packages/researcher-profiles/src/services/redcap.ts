@@ -44,14 +44,7 @@ export const fetchResearchers = (
   const client = makeClient(config);
   return client
     .exportRecords<Record<string, string>>({
-      fields: [
-        "userid",
-        "last_name",
-        "middle_name",
-        "first_name",
-        "orcid",
-        "oa_author_ids_imported_date",
-      ],
+      fields: ["userid", "last_name", "middle_name", "first_name", "orcid"],
     })
     .pipe(
       Effect.map((records) =>
