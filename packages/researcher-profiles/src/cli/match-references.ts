@@ -157,7 +157,18 @@ export const matchReferencesCommand = async (
     const text = extractResult.right;
 
     // Match references
-    const matched = matchReferences(oaWorks, text, opts.threshold);
+    const matched = matchReferences(
+      oaWorks,
+      text,
+      opts.threshold,
+      (title, score) => {
+        const scoreStr =
+          score !== null
+            ? pc.dim(`score: ${score.toFixed(3)}`)
+            : pc.dim("no match");
+        log.message(`  ${scoreStr}  ${title}`);
+      },
+    );
     const matchedWorks = matched.map((m) => m.work);
     const ratio =
       oaWorks.length > 0
