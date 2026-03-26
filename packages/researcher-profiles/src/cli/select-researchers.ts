@@ -21,7 +21,7 @@ export const selectResearchers = async (
       hint:
         r.orcid !== "" && r.orcid !== "null" ? `ORCID: ${r.orcid}` : r.userid,
     })),
-    initialValues: researchers.map((r) => r.userid),
+    initialValues: [],
   });
 
   if (isCancel(selected)) {
