@@ -8,6 +8,7 @@
 import { intro, log } from "@clack/prompts";
 import pc from "picocolors";
 import { fromRedcap } from "./from-redcap.js";
+import { matchReferencesCommand } from "./match-references.js";
 
 const VERSION = "1.0.0";
 
@@ -20,7 +21,11 @@ ${pc.bold("atlas-researcher-profiles")} v${VERSION}
 Resolve OpenAlex works for researchers and write results to REDCap.
 
 ${pc.bold("Usage:")}
-  atlas-researcher-profiles from-redcap   Read researchers from REDCap
+  atlas-researcher-profiles from-redcap                      Read researchers from REDCap
+  atlas-researcher-profiles match-references [--threshold N] Fuzzy-match publications file against oa_references
+
+${pc.bold("Options:")}
+  --threshold N   Fuse.js match threshold (0–1, default 0.2; lower = stricter)
 
 ${pc.bold("Environment variables:")}
   REDCAP_API_URL             REDCap API URL
@@ -61,6 +66,17 @@ export const main = async (): Promise<void> => {
     process.stdout.write("\u001Bc");
     intro(pc.cyan("atlas-researcher-profiles") + pc.dim(" · from-redcap"));
     await fromRedcap(opts);
+    return;
+  }
+
+  if (command === "match-references") {
+    const thresholdArg =
+      process.argv[3] === "--threshold" ? process.argv[4] : undefined;
+    const threshold =
+      thresholdArg !== undefined ? Number.parseFloat(thresholdArg) : 0.2;
+    process.stdout.write("\u001Bc");
+    intro(pc.cyan("atlas-researcher-profiles") + pc.dim(" · match-references"));
+    await matchReferencesCommand({ redcapUrl, redcapToken, threshold });
     return;
   }
 
