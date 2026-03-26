@@ -44,7 +44,14 @@ export const fetchResearchers = (
   const client = makeClient(config);
   return client
     .exportRecords<Record<string, string>>({
-      fields: ["userid", "last_name", "middle_name", "first_name", "orcid"],
+      fields: [
+        "userid",
+        "last_name",
+        "middle_name",
+        "first_name",
+        "orcid",
+        "oa_author_ids_imported_date",
+      ],
     })
     .pipe(
       Effect.map((records) =>
@@ -54,6 +61,7 @@ export const fetchResearchers = (
           middle_name: r["middle_name"] ?? "",
           first_name: r["first_name"] ?? "",
           orcid: r["orcid"] ?? "",
+          oa_author_ids_imported_date: r["oa_author_ids_imported_date"] ?? "",
         })),
       ),
       Effect.mapError((cause) => new RedcapFetchError({ cause })),

@@ -56,6 +56,35 @@ export const processRow = async (
   const label = `${row.first_name} ${row.last_name} (${row.userid})`;
   const researcher = `${row.first_name} ${row.last_name}`;
 
+  // Check if OpenAlex search should be skipped (imported less than 1 month ago)
+  if (row.oa_author_ids_imported_date !== "") {
+    const importedAt = new Date(row.oa_author_ids_imported_date);
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    if (importedAt > oneMonthAgo) {
+      log.info(
+        `[${label}] Author IDs already imported on ${row.oa_author_ids_imported_date} — skipping OpenAlex search`,
+      );
+      return "skipped";
+    }
+
+    // Outdated — ask for confirmation before re-running
+    const confirmed = await confirm({
+      message: `[${label}] Last import: ${row.oa_author_ids_imported_date} (> 1 month ago). Re-run OpenAlex search?`,
+    });
+
+    if (isCancel(confirmed)) {
+      cancel("Cancelled");
+      process.exit(0);
+    }
+
+    if (!confirmed) {
+      log.warn(`Skipped ${label}`);
+      return "skipped";
+    }
+  }
+
   // Step 1: Resolve authors
   const s = spinner();
   s.start(`[${label}] Searching authors on OpenAlex…`);
