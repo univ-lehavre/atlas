@@ -16,6 +16,7 @@ import pc from "picocolors";
 import { Effect, Either } from "effect";
 import {
   fetchResearchers,
+  fetchOaReferences,
   downloadPublicationsFile,
   writeFinalReferences,
 } from "../services/redcap.js";
@@ -46,16 +47,20 @@ const relativeDate = (dateStr: string): string => {
 const selectResearchersForMatch = async (
   researchers: readonly ResearcherRow[],
 ): Promise<readonly ResearcherRow[]> => {
+  // Only show researchers with oa_references already imported
+  const withOaRefs = researchers.filter(
+    (r) => r.oa_references_imported_at !== "",
+  );
   const selected = await multiselect({
-    message: `Select researchers to match (${pc.bold(String(researchers.length))} with oa_references):`,
-    options: [...researchers]
+    message: `Select researchers to match (${pc.bold(String(withOaRefs.length))} with oa_references):`,
+    options: [...withOaRefs]
       .sort((a, b) => a.last_name.localeCompare(b.last_name, "fr"))
       .map((r) => ({
         value: r.userid,
         label: `${r.first_name} ${r.last_name}`,
         hint: `works: ${relativeDate(r.oa_references_imported_at)} · final: ${relativeDate(r.final_references_imported_at)}`,
       })),
-    initialValues: researchers.map((r) => r.userid),
+    initialValues: withOaRefs.map((r) => r.userid),
   });
 
   if (isCancel(selected)) {
@@ -63,18 +68,27 @@ const selectResearchersForMatch = async (
     process.exit(0);
   }
 
-  return researchers.filter((r) =>
+  return withOaRefs.filter((r) =>
     (selected as readonly string[]).includes(r.userid),
   );
 };
 
-const parseOaReferences = (raw: string): readonly WorksResult[] => {
-  if (raw === "") return [];
+const parseOaReferences = (
+  raw: string,
+): { works: readonly WorksResult[]; error: string | null } => {
+  if (raw === "") return { works: [], error: null };
   try {
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as WorksResult[]) : [];
-  } catch {
-    return [];
+    const works = Array.isArray(parsed) ? (parsed as WorksResult[]) : [];
+    return {
+      works,
+      error: Array.isArray(parsed) ? null : "parsed value is not an array",
+    };
+  } catch (e) {
+    return {
+      works: [],
+      error: String(e) + ` (last 80 chars: ${raw.slice(-80)})`,
+    };
   }
 };
 
@@ -105,14 +119,7 @@ export const matchReferencesCommand = async (
     `Found ${pc.bold(String(allResearchers.length))} researchers in REDCap`,
   );
 
-  const withRefs = allResearchers.filter((r) => r.oa_references !== "");
-
-  if (withRefs.length === 0) {
-    outro("No researchers with oa_references — nothing to do");
-    return;
-  }
-
-  const researchers = await selectResearchersForMatch(withRefs);
+  const researchers = await selectResearchersForMatch(allResearchers);
 
   if (researchers.length === 0) {
     outro("Nothing selected");
@@ -125,7 +132,30 @@ export const matchReferencesCommand = async (
 
   for (const row of researchers) {
     const label = `${row.first_name} ${row.last_name} (${row.userid})`;
-    const oaWorks = parseOaReferences(row.oa_references);
+
+    // Fetch oa_references individually to avoid REDCap truncation of large notes fields
+    const refsResult = await Effect.runPromise(
+      Effect.either(fetchOaReferences(redcapConfig, row.userid)),
+    );
+
+    if (Either.isLeft(refsResult)) {
+      log.warn(`[${label}] Failed to fetch oa_references — skipping`);
+      skipped++;
+      continue;
+    }
+
+    const { works: oaWorks, error: parseError } = parseOaReferences(
+      refsResult.right,
+    );
+    if (parseError !== null) {
+      log.warn(`[${label}] JSON parse error: ${parseError}`);
+    }
+
+    if (oaWorks.length === 0) {
+      log.warn(`[${label}] No oa_references found — skipping`);
+      skipped++;
+      continue;
+    }
 
     // Download publications file
     const fileSpinner = spinner();
