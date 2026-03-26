@@ -12,7 +12,7 @@ import type { ResearcherRow } from "../types.js";
 import { processRow, daysUntilNextUpdate } from "./process-row.js";
 import { selectResearchers } from "./select-researchers.js";
 
-export interface FromRedcapOptions {
+interface FromRedcapOptions {
   readonly redcapUrl: string;
   readonly redcapToken: string;
   readonly openAlexUserAgent: string;
