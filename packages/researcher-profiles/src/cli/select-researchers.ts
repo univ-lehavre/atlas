@@ -15,12 +15,14 @@ export const selectResearchers = async (
 ): Promise<readonly ResearcherRow[]> => {
   const selected = await multiselect({
     message: `Select researchers to process (${pc.bold(String(researchers.length))} total):`,
-    options: researchers.map((r) => ({
-      value: r.userid,
-      label: `${r.first_name} ${r.last_name}`,
-      hint:
-        r.orcid !== "" && r.orcid !== "null" ? `ORCID: ${r.orcid}` : r.userid,
-    })),
+    options: [...researchers]
+      .sort((a, b) => a.last_name.localeCompare(b.last_name, "fr"))
+      .map((r) => ({
+        value: r.userid,
+        label: `${r.first_name} ${r.last_name}`,
+        hint:
+          r.orcid !== "" && r.orcid !== "null" ? `ORCID: ${r.orcid}` : r.userid,
+      })),
     initialValues: [],
   });
 
