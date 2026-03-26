@@ -91,18 +91,28 @@ export const fetchWorksForAuthors = (
   authors: readonly AuthorsResult[],
   config: OpenAlexConfig,
   researcher: string,
-  onProgress?: (fetched: number, total: number) => void,
+  onProgress?: (
+    authorIndex: number,
+    authorTotal: number,
+    page: number,
+    pageTotal: number | null,
+  ) => void,
   onRateLimit?: (info: RateLimitInfo) => void,
 ): Effect.Effect<readonly WorksResult[], OpenAlexSearchError> =>
   authors.length === 0
     ? Effect.succeed([])
     : Effect.reduce(authors, [] as WorksResult[], (acc, author, index) =>
-        searchWorksByAuthorID(author.id, config, onRateLimit).pipe(
+        searchWorksByAuthorID(
+          author.id,
+          config,
+          onRateLimit,
+          onProgress === undefined
+            ? undefined
+            : (page: number, total: number | null) =>
+                onProgress(index + 1, authors.length, page, total),
+        ).pipe(
           Effect.mapError(
             (cause) => new OpenAlexSearchError({ researcher, cause }),
-          ),
-          Effect.tap(() =>
-            Effect.sync(() => onProgress?.(index + 1, authors.length)),
           ),
           Effect.map(
             (works) => deduplicateById([...acc, ...works]) as WorksResult[],
