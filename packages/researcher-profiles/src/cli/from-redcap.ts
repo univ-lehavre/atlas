@@ -82,6 +82,11 @@ export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
     );
   }
 
+  if (pending.length === 0) {
+    outro("All researchers are up-to-date — nothing to do");
+    return;
+  }
+
   const researchers = await selectResearchers(pending);
 
   let ok = 0;
