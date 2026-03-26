@@ -1,4 +1,4 @@
-export type { ResearcherRow, OaReferencesRecord } from "./types.js";
+export type { ResearcherRow } from "./types.js";
 export {
   CsvParseError,
   CsvReadError,

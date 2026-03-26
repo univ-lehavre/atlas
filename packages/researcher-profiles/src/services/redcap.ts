@@ -20,9 +20,6 @@ export interface RedcapConnectionConfig {
   readonly token: string;
 }
 
-/**
- * Creates a REDCap client from connection config.
- */
 const normalizeUrl = (url: string): string =>
   url.endsWith("/") ? url : `${url}/`;
 
@@ -34,18 +31,17 @@ const makeClient = (
     token: RedcapToken(config.token),
   });
 
+const toJsonBytes = (value: unknown): Uint8Array =>
+  new TextEncoder().encode(JSON.stringify(value));
+
 /**
  * Fetches all researchers from the `references_openalex` REDCap instrument.
- * Maps `record_id` to `userid`.
- * Uses two separate exports to avoid REDCap truncating large `notes` fields
- * when mixed with other fields in the same request.
  */
 export const fetchResearchers = (
   config: RedcapConnectionConfig,
 ): Effect.Effect<readonly ResearcherRow[], RedcapFetchError> => {
   const client = makeClient(config);
-
-  const fetchMeta = client
+  return client
     .exportRecords<Record<string, string>>({
       fields: [
         "userid",
@@ -59,29 +55,24 @@ export const fetchResearchers = (
         "final_references_imported_at",
       ],
     })
-    .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
-
-  return fetchMeta.pipe(
-    Effect.map((metaRecords) =>
-      metaRecords.map((r) => ({
-        userid: r["userid"] ?? "",
-        last_name: r["last_name"] ?? "",
-        middle_name: r["middle_name"] ?? "",
-        first_name: r["first_name"] ?? "",
-        orcid: r["orcid"] ?? "",
-        researcher_oa_ids: r["researcher_oa_ids"] ?? "",
-        oa_references: "",
-        oa_author_ids_imported_date: r["oa_author_ids_imported_date"] ?? "",
-        oa_references_imported_at: r["oa_references_imported_at"] ?? "",
-        final_references_imported_at: r["final_references_imported_at"] ?? "",
-      })),
-    ),
-  );
+    .pipe(
+      Effect.map((records) =>
+        records.map((r) => ({
+          userid: r["userid"] ?? "",
+          last_name: r["last_name"] ?? "",
+          middle_name: r["middle_name"] ?? "",
+          first_name: r["first_name"] ?? "",
+          orcid: r["orcid"] ?? "",
+          researcher_oa_ids: r["researcher_oa_ids"] ?? "",
+          oa_author_ids_imported_date: r["oa_author_ids_imported_date"] ?? "",
+          oa_references_imported_at: r["oa_references_imported_at"] ?? "",
+          final_references_imported_at: r["final_references_imported_at"] ?? "",
+        })),
+      ),
+      Effect.mapError((cause) => new RedcapFetchError({ cause })),
+    );
 };
 
-/**
- * Writes selected OpenAlex author IDs to the `researcher_oa_ids` field for a given userid.
- */
 const localIsoDateTime = (): string => {
   const now = new Date();
   const pad = (n: number): string => String(n).padStart(2, "0");
@@ -91,6 +82,9 @@ const localIsoDateTime = (): string => {
   );
 };
 
+/**
+ * Writes selected OpenAlex author IDs to the `researcher_oa_ids` field for a given userid.
+ */
 export const writeOaAuthorIds = (
   config: RedcapConnectionConfig,
   userid: string,
@@ -115,23 +109,16 @@ export const writeOaAuthorIds = (
 };
 
 /**
- * Fetches `oa_references` JSON for a single userid.
- * Must be fetched individually to avoid REDCap truncating large notes fields.
+ * Downloads `oa_references` file field for a given userid and parses as JSON.
  */
 export const fetchOaReferences = (
   config: RedcapConnectionConfig,
   userid: string,
-): Effect.Effect<string, RedcapFetchError> => {
+): Effect.Effect<ArrayBuffer, RedcapFetchError> => {
   const client = makeClient(config);
   return client
-    .exportRecords<Record<string, string>>({
-      fields: ["userid", "oa_references"],
-      filterLogic: `[userid] = "${userid}"`,
-    })
-    .pipe(
-      Effect.map((records) => records[0]?.["oa_references"] ?? ""),
-      Effect.mapError((cause) => new RedcapFetchError({ cause })),
-    );
+    .exportFile("oa_references", userid)
+    .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
 };
 
 /**
@@ -148,7 +135,8 @@ export const downloadPublicationsFile = (
 };
 
 /**
- * Writes OpenAlex works JSON to the `oa_references` field for a given userid.
+ * Uploads OpenAlex works as a JSON file to the `oa_references` file field.
+ * Also updates the `oa_references_imported_at` timestamp via importRecords.
  */
 export const writeOaReferences = (
   config: RedcapConnectionConfig,
@@ -156,26 +144,41 @@ export const writeOaReferences = (
   works: readonly WorksResult[],
 ): Effect.Effect<void, RedcapWriteError> => {
   const client = makeClient(config);
-  return client
-    .importRecords(
-      [
-        {
+  return Effect.all(
+    [
+      client
+        .importFile(
+          "oa_references",
           userid,
-          oa_references: JSON.stringify(works),
-          oa_references_imported_at: localIsoDateTime(),
-          references_openalex_complete: "2",
-        },
-      ],
-      { overwriteBehavior: "overwrite" },
-    )
-    .pipe(
-      Effect.asVoid,
-      Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
-    );
+          "oa_references.json",
+          toJsonBytes(works),
+        )
+        .pipe(
+          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+        ),
+      client
+        .importRecords(
+          [
+            {
+              userid,
+              oa_references_imported_at: localIsoDateTime(),
+              references_openalex_complete: "2",
+            },
+          ],
+          { overwriteBehavior: "overwrite" },
+        )
+        .pipe(
+          Effect.asVoid,
+          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+        ),
+    ],
+    { concurrency: 1 },
+  ).pipe(Effect.asVoid);
 };
 
 /**
- * Writes matched final references JSON to the `final_references` field for a given userid.
+ * Uploads matched final references as a JSON file to the `final_references` file field.
+ * Also updates the `final_references_imported_at` timestamp via importRecords.
  */
 export const writeFinalReferences = (
   config: RedcapConnectionConfig,
@@ -183,19 +186,33 @@ export const writeFinalReferences = (
   works: readonly WorksResult[],
 ): Effect.Effect<void, RedcapWriteError> => {
   const client = makeClient(config);
-  return client
-    .importRecords(
-      [
-        {
+  return Effect.all(
+    [
+      client
+        .importFile(
+          "final_references",
           userid,
-          final_references: JSON.stringify(works),
-          final_references_imported_at: localIsoDateTime(),
-        },
-      ],
-      { overwriteBehavior: "overwrite" },
-    )
-    .pipe(
-      Effect.asVoid,
-      Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
-    );
+          "final_references.json",
+          toJsonBytes(works),
+        )
+        .pipe(
+          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+        ),
+      client
+        .importRecords(
+          [
+            {
+              userid,
+              final_references_imported_at: localIsoDateTime(),
+            },
+          ],
+          { overwriteBehavior: "overwrite" },
+        )
+        .pipe(
+          Effect.asVoid,
+          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+        ),
+    ],
+    { concurrency: 1 },
+  ).pipe(Effect.asVoid);
 };

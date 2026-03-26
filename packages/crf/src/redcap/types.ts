@@ -126,5 +126,12 @@ export interface RedcapClient {
     recordId: string
   ) => Effect.Effect<ArrayBuffer, RedcapHttpError | RedcapNetworkError>;
 
+  readonly importFile: (
+    field: string,
+    recordId: string,
+    fileName: string,
+    content: Uint8Array
+  ) => Effect.Effect<void, RedcapHttpError | RedcapNetworkError>;
+
   readonly findUserIdByEmail: (email: string) => Effect.Effect<string | null, RedcapClientError>;
 }
