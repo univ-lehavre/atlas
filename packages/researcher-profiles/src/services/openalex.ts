@@ -6,7 +6,7 @@
 import {
   searchAuthorsByName,
   searchAuthorsByORCID,
-  searchWorksByAuthorIDs,
+  searchWorksByAuthorID,
 } from "@univ-lehavre/atlas-fetch-openalex";
 import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
 import type {
@@ -105,24 +105,30 @@ export const resolveAuthors = (
 };
 
 /**
- * Fetches and deduplicates works for a list of OpenAlex authors.
+ * Fetches and deduplicates works for a list of OpenAlex authors, one request per author.
+ * Calls onProgress after each author with the running total of works collected.
  */
 export const fetchWorksForAuthors = (
   authors: readonly AuthorsResult[],
   config: OpenAlexConfig,
   researcher: string,
+  onProgress?: (fetched: number, total: number) => void,
 ): Effect.Effect<readonly WorksResult[], OpenAlexSearchError> =>
   authors.length === 0
     ? Effect.succeed([])
-    : searchWorksByAuthorIDs(
-        authors.map((a) => a.id),
-        config,
-      ).pipe(
-        Effect.map((works) => deduplicateById([...works])),
-        Effect.mapError(
-          (cause) => new OpenAlexSearchError({ researcher, cause }),
+    : Effect.reduce(authors, [] as WorksResult[], (acc, author, index) =>
+        searchWorksByAuthorID(author.id, config).pipe(
+          Effect.mapError(
+            (cause) => new OpenAlexSearchError({ researcher, cause }),
+          ),
+          Effect.tap(() =>
+            Effect.sync(() => onProgress?.(index + 1, authors.length)),
+          ),
+          Effect.map(
+            (works) => deduplicateById([...acc, ...works]) as WorksResult[],
+          ),
         ),
-      );
+      ).pipe(Effect.map((works) => works as readonly WorksResult[]));
 
 /**
  * Resolves authors and their deduplicated works for a researcher row.

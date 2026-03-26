@@ -73,6 +73,21 @@ const searchWorksByAuthorIDs = (
   );
 
 /**
+ * Searches for works by a single author OpenAlex ID.
+ * Prefer this over searchWorksByAuthorIDs when fetching for multiple authors,
+ * as the multi-ID filter is unreliable with many IDs.
+ * @param id - Author OpenAlex ID
+ * @param config - OpenAlex API configuration
+ */
+const searchWorksByAuthorID = (
+  id: string,
+  config: OpenAlexConfig,
+): Effect.Effect<readonly WorksResult[], FetchError | ResponseParseError> =>
+  fetchAPIResults<WorksResult>(
+    buildConfig("works", { filter: `author.id:${id}` }, config),
+  );
+
+/**
  * Searches for works by author ORCID.
  * @param orcid - Author ORCID
  * @param config - OpenAlex API configuration
@@ -101,6 +116,7 @@ const searchWorksByDOI = (
 export {
   searchAuthorsByName,
   searchAuthorsByORCID,
+  searchWorksByAuthorID,
   searchWorksByAuthorIDs,
   searchWorksByORCID,
   searchWorksByDOI,

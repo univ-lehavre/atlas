@@ -25,6 +25,7 @@ export {
 export {
   searchAuthorsByName,
   searchAuthorsByORCID,
+  searchWorksByAuthorID,
   searchWorksByAuthorIDs,
   searchWorksByORCID,
   searchWorksByDOI,
