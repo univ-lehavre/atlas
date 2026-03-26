@@ -22,6 +22,13 @@ export interface ResolveResult {
   readonly works: readonly WorksResult[];
 }
 
+export interface OpenAlexQuota {
+  readonly limit: number;
+  readonly remaining: number;
+  readonly creditsUsed: number;
+  readonly resetInSeconds: number;
+}
+
 const deduplicateById = <T extends { id: string }>(
   items: readonly T[],
 ): readonly T[] =>
@@ -30,10 +37,35 @@ const deduplicateById = <T extends { id: string }>(
   );
 
 /**
+ * Fetches current OpenAlex API quota via a minimal HEAD-like request.
+ * Requires an apiKey to get personalized quota headers.
+ */
+const parseQuotaHeaders = (headers: Headers): OpenAlexQuota => ({
+  limit: Number(headers.get("x-ratelimit-limit") ?? "0"),
+  remaining: Number(headers.get("x-ratelimit-remaining") ?? "0"),
+  creditsUsed: Number(headers.get("x-ratelimit-credits-used") ?? "0"),
+  resetInSeconds: Number(headers.get("x-ratelimit-reset") ?? "0"),
+});
+
+/**
+ * Fetches current OpenAlex API quota via a minimal request.
+ * Requires an apiKey to get personalized quota headers.
+ */
+export const fetchQuota = (
+  config: OpenAlexConfig,
+): Promise<OpenAlexQuota | null> =>
+  config.apiKey === undefined
+    ? Promise.resolve(null)
+    : fetch(
+        `${config.apiURL ?? "https://api.openalex.org"}/authors?search=test&per_page=1&api_key=${config.apiKey}`,
+        { headers: { "User-Agent": config.userAgent } },
+      ).then((r) => parseQuotaHeaders(r.headers));
+
+/**
  * Resolves unique OpenAlex author profiles for a researcher.
  * Searches by name (with and without middle name) and by ORCID if present.
  */
-const resolveAuthors = (
+export const resolveAuthors = (
   row: ResearcherRow,
   config: OpenAlexConfig,
 ): Effect.Effect<readonly AuthorsResult[], OpenAlexSearchError> => {
@@ -72,7 +104,7 @@ const resolveAuthors = (
 /**
  * Fetches and deduplicates works for a list of OpenAlex authors.
  */
-const fetchWorksForAuthors = (
+export const fetchWorksForAuthors = (
   authors: readonly AuthorsResult[],
   config: OpenAlexConfig,
   researcher: string,

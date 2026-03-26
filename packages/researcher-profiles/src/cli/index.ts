@@ -39,6 +39,7 @@ const runInteractiveMenu = async (
   redcapUrl: string,
   redcapToken: string,
   openAlexUserAgent: string,
+  openAlexApiKey: string | undefined,
 ): Promise<void> => {
   intro(pc.cyan("atlas-researcher-profiles") + pc.dim(` v${VERSION}`));
 
@@ -81,11 +82,17 @@ const runInteractiveMenu = async (
       redcapUrl,
       redcapToken,
       openAlexUserAgent,
+      openAlexApiKey,
     });
     return;
   }
 
-  await fromRedcap({ redcapUrl, redcapToken, openAlexUserAgent });
+  await fromRedcap({
+    redcapUrl,
+    redcapToken,
+    openAlexUserAgent,
+    openAlexApiKey,
+  });
 };
 
 export const main = async (): Promise<void> => {
@@ -105,6 +112,7 @@ export const main = async (): Promise<void> => {
   const redcapToken = getEnv("REDCAP_API_TOKEN");
   const openAlexUserAgent =
     getEnv("OPENALEX_USER_AGENT") || "atlas-researcher-profiles/1.0.0";
+  const openAlexApiKey = getEnv("OPENALEX_API_TOKEN") || undefined;
 
   if (redcapUrl === "" || redcapToken === "") {
     log.error(
@@ -113,8 +121,15 @@ export const main = async (): Promise<void> => {
     process.exit(1);
   }
 
+  const opts = { redcapUrl, redcapToken, openAlexUserAgent, openAlexApiKey };
+
   if (command === undefined) {
-    await runInteractiveMenu(redcapUrl, redcapToken, openAlexUserAgent);
+    await runInteractiveMenu(
+      redcapUrl,
+      redcapToken,
+      openAlexUserAgent,
+      openAlexApiKey,
+    );
     return;
   }
 
@@ -125,13 +140,13 @@ export const main = async (): Promise<void> => {
       process.exit(1);
     }
     intro(pc.cyan("atlas-researcher-profiles") + pc.dim(" · from-csv"));
-    await fromCsv({ filePath, redcapUrl, redcapToken, openAlexUserAgent });
+    await fromCsv({ filePath, ...opts });
     return;
   }
 
   if (command === "from-redcap") {
     intro(pc.cyan("atlas-researcher-profiles") + pc.dim(" · from-redcap"));
-    await fromRedcap({ redcapUrl, redcapToken, openAlexUserAgent });
+    await fromRedcap(opts);
     return;
   }
 
