@@ -7,14 +7,7 @@
  *   5. Confirm and write to REDCap
  */
 
-import {
-  spinner,
-  log,
-  confirm,
-  multiselect,
-  isCancel,
-  cancel,
-} from "@clack/prompts";
+import { spinner, log, multiselect, isCancel, cancel } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either, Logger, LogLevel } from "effect";
 import type {
@@ -251,21 +244,6 @@ export const processRow = async (
 
   // Step 5: Show works sample
   showWorks(works);
-
-  // Step 6: Confirm and write
-  const confirmed = await confirm({
-    message: `Write ${String(works.length)} works to REDCap for ${label}?`,
-  });
-
-  if (isCancel(confirmed)) {
-    cancel("Cancelled");
-    process.exit(0);
-  }
-
-  if (!confirmed) {
-    log.warn(`Skipped ${label}`);
-    return "skipped";
-  }
 
   const writeSpinner = spinner();
   writeSpinner.start(`[${label}] Writing to REDCap…`);
