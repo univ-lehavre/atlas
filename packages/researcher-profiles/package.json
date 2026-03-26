@@ -33,7 +33,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node --env-file=../../.env dist/bin/atlas-researcher-profiles.js",
+    "start": "tsc && node --env-file=../../.env dist/bin/atlas-researcher-profiles.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",
@@ -43,7 +43,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@clack/prompts": "^0.11.0",
+    "@clack/prompts": "^1.1.0",
     "@univ-lehavre/atlas-crf": "workspace:*",
     "@univ-lehavre/atlas-fetch-openalex": "workspace:*",
     "@univ-lehavre/atlas-openalex-types": "workspace:*",
