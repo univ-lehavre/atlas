@@ -9,7 +9,7 @@ import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
 import type { RateLimitInfo } from "@univ-lehavre/atlas-fetch-openalex";
 import { fetchResearchers } from "../services/redcap.js";
 import type { ResearcherRow } from "../types.js";
-import { processRow } from "./process-row.js";
+import { processRow, daysUntilNextUpdate } from "./process-row.js";
 import { selectResearchers } from "./select-researchers.js";
 
 export interface FromRedcapOptions {
@@ -63,7 +63,22 @@ export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
     `Found ${pc.bold(String(allResearchers.length))} researchers in REDCap`,
   );
 
-  const researchers = await selectResearchers(allResearchers);
+  const isUpToDate = (row: ResearcherRow): boolean => {
+    const authorDays = daysUntilNextUpdate(row.oa_author_ids_imported_date);
+    const worksDays = daysUntilNextUpdate(row.oa_references_imported_at);
+    return authorDays !== null && worksDays !== null;
+  };
+
+  const upToDate = allResearchers.filter(isUpToDate);
+  const pending = allResearchers.filter((r) => !isUpToDate(r));
+
+  if (upToDate.length > 0) {
+    log.info(
+      `${pc.dim(String(upToDate.length))} researcher(s) already up-to-date — excluded from selection`,
+    );
+  }
+
+  const researchers = await selectResearchers(pending);
 
   let ok = 0;
   let skipped = 0;

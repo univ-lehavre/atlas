@@ -38,7 +38,7 @@ const silenced = <A, E>(effect: Effect.Effect<A, E>): Effect.Effect<A, E> =>
   effect.pipe(Logger.withMinimumLogLevel(LogLevel.None));
 
 /** Returns the number of days until the next update, or null if > 1 month ago / never imported. */
-const daysUntilNextUpdate = (importedDate: string): number | null => {
+export const daysUntilNextUpdate = (importedDate: string): number | null => {
   if (importedDate === "") return null;
   const importedAt = new Date(importedDate);
   const oneMonthAgo = new Date();
@@ -79,23 +79,6 @@ export const processRow = async (
       `[${label}] Author IDs already imported on ${row.oa_author_ids_imported_date} — next update in ${String(authorDays)} day(s)`,
     );
     return "skipped";
-  }
-
-  if (row.oa_author_ids_imported_date !== "") {
-    // Outdated — ask for confirmation before re-running
-    const confirmed = await confirm({
-      message: `[${label}] Last import: ${row.oa_author_ids_imported_date} (> 1 month ago). Re-run OpenAlex search?`,
-    });
-
-    if (isCancel(confirmed)) {
-      cancel("Cancelled");
-      process.exit(0);
-    }
-
-    if (!confirmed) {
-      log.warn(`Skipped ${label}`);
-      return "skipped";
-    }
   }
 
   // Step 1: Resolve authors
@@ -174,20 +157,6 @@ export const processRow = async (
       `[${label}] Works already imported on ${row.oa_references_imported_at} — next update in ${String(worksDays)} day(s)`,
     );
     return "skipped";
-  }
-
-  if (row.oa_references_imported_at !== "") {
-    const confirmed = await confirm({
-      message: `[${label}] Last works import: ${row.oa_references_imported_at} (> 1 month ago). Re-fetch works?`,
-    });
-    if (isCancel(confirmed)) {
-      cancel("Cancelled");
-      process.exit(0);
-    }
-    if (!confirmed) {
-      log.warn(`Skipped ${label}`);
-      return "skipped";
-    }
   }
 
   // Step 4: Fetch works for selected authors
