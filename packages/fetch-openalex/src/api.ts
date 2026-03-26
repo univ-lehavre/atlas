@@ -75,7 +75,13 @@ const fetchAPIResults = <T>(
         maxPages: opts.maxPages,
       });
 
-      const worker = makeWorker<T>(store, queue, curriedFetch, params);
+      const worker = makeWorker<T>(
+        store,
+        queue,
+        curriedFetch,
+        params,
+        opts.onPage,
+      );
       yield* worker;
 
       const results = yield* Queue.takeAll(queue);

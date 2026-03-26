@@ -26,8 +26,12 @@ interface FetchAPIMinimalConfigBase {
 /** Called after each page with the latest rate limit info, if available. */
 type OnRateLimit = (info: RateLimitInfo) => void;
 
+/** Called after each page with the current page index and total pages (once known). */
+type OnPage = (page: number, total: number | null) => void;
+
 export type FetchAPIMinimalConfig = FetchAPIMinimalConfigBase & {
   readonly onRateLimit?: OnRateLimit;
+  readonly onPage?: OnPage;
 };
 
 export const buildEndpointURL = (apiURL: string, endpoint: string): URL =>
@@ -100,6 +104,7 @@ export const makeWorker = <T>(
     q: Query,
   ) => Effect.Effect<APIResponse<T>, FetchError | ResponseParseError>,
   params: Query,
+  onPage?: (page: number, total: number | null) => void,
 ): Effect.Effect<void, FetchError | ResponseParseError> =>
   Effect.gen(function* () {
     // eslint-disable-next-line functional/no-loop-statements -- sequential pagination requires a loop
@@ -109,5 +114,9 @@ export const makeWorker = <T>(
       yield* queue.offerAll(response.results);
       yield* store.addNewItems(response);
       yield* store.incPage();
+      const st = yield* store.current;
+      yield* Effect.sync(() =>
+        onPage?.(st.page - 1, st.totalPages > 0 ? st.totalPages : null),
+      );
     }
   });

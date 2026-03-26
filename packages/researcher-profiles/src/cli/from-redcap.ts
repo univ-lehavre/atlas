@@ -24,11 +24,15 @@ interface RedcapConfig {
   readonly token: string;
 }
 
-const showQuota = (quota: RateLimitInfo | null, label: string): void => {
+const showQuota = (
+  quota: RateLimitInfo | null,
+  totalCredits: number,
+  label: string,
+): void => {
   if (quota === null) return;
   log.info(
     `${label} — quota: ${pc.bold(String(quota.remaining))}/${pc.bold(String(quota.limit))} requests remaining` +
-      ` · ${pc.bold(String(quota.creditsUsed))} credits used` +
+      ` · ${pc.bold(String(totalCredits))} credits used this session` +
       ` · resets in ${pc.dim(String(quota.resetInSeconds) + "s")}`,
   );
 };
@@ -84,17 +88,19 @@ export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
   let skipped = 0;
   let errors = 0;
   let lastQuota: RateLimitInfo | null = null;
+  let totalCredits = 0;
 
   for (const row of researchers) {
     const status = await processRow(row, redcapConfig, openAlexConfig, (q) => {
       lastQuota = q;
+      totalCredits += q.creditsUsed;
     });
     if (status === "ok") ok++;
     else if (status === "skipped") skipped++;
     else errors++;
   }
 
-  showQuota(lastQuota, "OpenAlex quota after");
+  showQuota(lastQuota, totalCredits, "OpenAlex quota after");
 
   const parts: string[] = [];
   if (ok > 0) parts.push(pc.green(`${String(ok)} written`));

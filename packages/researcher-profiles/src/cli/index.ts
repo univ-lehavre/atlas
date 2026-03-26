@@ -58,6 +58,7 @@ export const main = async (): Promise<void> => {
   const opts = { redcapUrl, redcapToken, openAlexUserAgent, openAlexApiKey };
 
   if (command === undefined || command === "from-redcap") {
+    process.stdout.write("\u001Bc");
     intro(pc.cyan("atlas-researcher-profiles") + pc.dim(" · from-redcap"));
     await fromRedcap(opts);
     return;

@@ -23,6 +23,7 @@ const buildConfig = (
   fetchAPIOptions: FetchOpenAlexAPIOptions,
   config: OpenAlexConfig,
   onRateLimit?: FetchAPIMinimalConfig["onRateLimit"],
+  onPage?: FetchAPIMinimalConfig["onPage"],
 ): FetchAPIMinimalConfig => ({
   userAgent: config.userAgent,
   rateLimit: DEFAULT_RATE_LIMIT,
@@ -34,6 +35,7 @@ const buildConfig = (
   },
   perPage: DEFAULT_PER_PAGE,
   onRateLimit,
+  onPage,
 });
 
 /**
@@ -86,9 +88,16 @@ const searchWorksByAuthorID = (
   id: string,
   config: OpenAlexConfig,
   onRateLimit?: FetchAPIMinimalConfig["onRateLimit"],
+  onPage?: FetchAPIMinimalConfig["onPage"],
 ): Effect.Effect<readonly WorksResult[], FetchError | ResponseParseError> =>
   fetchAPIResults<WorksResult>(
-    buildConfig("works", { filter: `author.id:${id}` }, config, onRateLimit),
+    buildConfig(
+      "works",
+      { filter: `author.id:${id}` },
+      config,
+      onRateLimit,
+      onPage,
+    ),
   );
 
 /**

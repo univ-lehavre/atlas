@@ -93,9 +93,13 @@ const fetchWorks = async (
             chosenAuthors as readonly AuthorsResult[],
             openAlexConfig,
             researcher,
-            (done, total) => {
+            (authorIndex, authorTotal, page, pageTotal) => {
+              const pagePart =
+                pageTotal !== null
+                  ? `page ${String(page)}/${String(pageTotal)}`
+                  : `page ${String(page)}`;
               worksSpinner.message(
-                `[${label}] Fetching works… (${String(done)}/${String(total)} authors)`,
+                `[${label}] Fetching works… author ${String(authorIndex)}/${String(authorTotal)} · ${pagePart}`,
               );
             },
             onRateLimit,
