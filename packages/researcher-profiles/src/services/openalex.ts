@@ -8,7 +8,10 @@ import {
   searchAuthorsByORCID,
   searchWorksByAuthorID,
 } from "@univ-lehavre/atlas-fetch-openalex";
-import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
+import type {
+  OpenAlexConfig,
+  RateLimitInfo,
+} from "@univ-lehavre/atlas-fetch-openalex";
 import type {
   AuthorsResult,
   WorksResult,
@@ -22,12 +25,7 @@ export interface ResolveResult {
   readonly works: readonly WorksResult[];
 }
 
-export interface OpenAlexQuota {
-  readonly limit: number;
-  readonly remaining: number;
-  readonly creditsUsed: number;
-  readonly resetInSeconds: number;
-}
+export type { RateLimitInfo } from "@univ-lehavre/atlas-fetch-openalex";
 
 const deduplicateById = <T extends { id: string }>(
   items: readonly T[],
@@ -35,34 +33,6 @@ const deduplicateById = <T extends { id: string }>(
   items.filter(
     (item, index) => items.findIndex((i) => i.id === item.id) === index,
   );
-
-/**
- * Fetches current OpenAlex API quota via a minimal HEAD-like request.
- * Requires an apiKey to get personalized quota headers.
- */
-const parseQuotaHeaders = (headers: Headers): OpenAlexQuota => ({
-  limit: Number(headers.get("x-ratelimit-limit") ?? "0"),
-  remaining: Number(headers.get("x-ratelimit-remaining") ?? "0"),
-  creditsUsed: Number(headers.get("x-ratelimit-credits-used") ?? "0"),
-  resetInSeconds: Number(headers.get("x-ratelimit-reset") ?? "0"),
-});
-
-/**
- * Fetches current OpenAlex API quota via a minimal request.
- * Requires an apiKey to get personalized quota headers.
- */
-// A DOI lookup costs 0 credits (vs 1 credit for a search), making it ideal for quota probing.
-const QUOTA_PROBE_URL =
-  "https://api.openalex.org/works/https://doi.org/10.1038/s41586-020-2649-2";
-
-export const fetchQuota = (
-  config: OpenAlexConfig,
-): Promise<OpenAlexQuota | null> =>
-  config.apiKey === undefined
-    ? Promise.resolve(null)
-    : fetch(`${QUOTA_PROBE_URL}?api_key=${config.apiKey}`, {
-        headers: { "User-Agent": config.userAgent },
-      }).then((r) => parseQuotaHeaders(r.headers));
 
 /**
  * Resolves unique OpenAlex author profiles for a researcher.
@@ -106,18 +76,20 @@ export const resolveAuthors = (
 
 /**
  * Fetches and deduplicates works for a list of OpenAlex authors, one request per author.
- * Calls onProgress after each author with the running total of works collected.
+ * Calls onProgress after each author with the current count.
+ * Calls onRateLimit with the latest quota info after each page fetched.
  */
 export const fetchWorksForAuthors = (
   authors: readonly AuthorsResult[],
   config: OpenAlexConfig,
   researcher: string,
   onProgress?: (fetched: number, total: number) => void,
+  onRateLimit?: (info: RateLimitInfo) => void,
 ): Effect.Effect<readonly WorksResult[], OpenAlexSearchError> =>
   authors.length === 0
     ? Effect.succeed([])
     : Effect.reduce(authors, [] as WorksResult[], (acc, author, index) =>
-        searchWorksByAuthorID(author.id, config).pipe(
+        searchWorksByAuthorID(author.id, config, onRateLimit).pipe(
           Effect.mapError(
             (cause) => new OpenAlexSearchError({ researcher, cause }),
           ),

@@ -3,6 +3,7 @@ import type { FetchOpenAlexAPIOptions } from "@univ-lehavre/atlas-openalex-types
 import type {
   FetchError,
   ResponseParseError,
+  RateLimitInfo,
 } from "@univ-lehavre/atlas-fetch-one-api-page";
 import {
   fetchOnePage,
@@ -10,15 +11,24 @@ import {
 } from "@univ-lehavre/atlas-fetch-one-api-page";
 import { Store, type APIResponse, initialState, type IState } from "./store.js";
 
-interface FetchAPIMinimalConfig {
-  userAgent: string;
-  rateLimit: RateLimiter.RateLimiter.Options;
-  apiURL: string;
-  endpoint: string;
-  fetchAPIOptions: FetchOpenAlexAPIOptions;
-  perPage: number;
-  maxPages?: number;
+export type { RateLimitInfo } from "@univ-lehavre/atlas-fetch-one-api-page";
+
+interface FetchAPIMinimalConfigBase {
+  readonly userAgent: string;
+  readonly rateLimit: RateLimiter.RateLimiter.Options;
+  readonly apiURL: string;
+  readonly endpoint: string;
+  readonly fetchAPIOptions: FetchOpenAlexAPIOptions;
+  readonly perPage: number;
+  readonly maxPages?: number;
 }
+
+/** Called after each page with the latest rate limit info, if available. */
+type OnRateLimit = (info: RateLimitInfo) => void;
+
+export type FetchAPIMinimalConfig = FetchAPIMinimalConfigBase & {
+  readonly onRateLimit?: OnRateLimit;
+};
 
 export const buildEndpointURL = (apiURL: string, endpoint: string): URL =>
   new URL(`${apiURL}/${endpoint}`);
@@ -39,6 +49,7 @@ export const makeRateLimitedFetcher = <T>(
   url: URL,
   userAgent: string,
   rateLimit: RateLimiter.RateLimiter.Options,
+  onRateLimit?: (info: RateLimitInfo) => void,
   deps?: {
     makeRateLimiter?: MakeRateLimiterFn;
     fetchOnePage?: FetchOnePageFn<T>;
@@ -54,7 +65,11 @@ export const makeRateLimitedFetcher = <T>(
         ua,
       ): Effect.Effect<APIResponse<T>, FetchError | ResponseParseError> =>
         fetchOnePage<APIResponse<T>>(u, p, ua).pipe(
-          Effect.map((result) => result.data),
+          Effect.map((result) =>
+            result.rateLimit !== undefined && onRateLimit !== undefined
+              ? (onRateLimit(result.rateLimit), result.data)
+              : result.data,
+          ),
         ));
 
     const ratelimiter: RateLimiter.RateLimiter = yield* makeLimiter(rateLimit);
