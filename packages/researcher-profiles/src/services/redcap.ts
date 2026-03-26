@@ -37,12 +37,15 @@ const makeClient = (
 /**
  * Fetches all researchers from the `references_openalex` REDCap instrument.
  * Maps `record_id` to `userid`.
+ * Uses two separate exports to avoid REDCap truncating large `notes` fields
+ * when mixed with other fields in the same request.
  */
 export const fetchResearchers = (
   config: RedcapConnectionConfig,
 ): Effect.Effect<readonly ResearcherRow[], RedcapFetchError> => {
   const client = makeClient(config);
-  return client
+
+  const fetchMeta = client
     .exportRecords<Record<string, string>>({
       fields: [
         "userid",
@@ -51,29 +54,41 @@ export const fetchResearchers = (
         "first_name",
         "orcid",
         "researcher_oa_ids",
-        "oa_references",
         "oa_author_ids_imported_date",
         "oa_references_imported_at",
         "final_references_imported_at",
       ],
     })
-    .pipe(
-      Effect.map((records) =>
-        records.map((r) => ({
-          userid: r["userid"] ?? "",
+    .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
+
+  const fetchRefs = client
+    .exportRecords<Record<string, string>>({
+      fields: ["userid", "oa_references"],
+    })
+    .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
+
+  return Effect.all([fetchMeta, fetchRefs], { concurrency: 1 }).pipe(
+    Effect.map(([metaRecords, refRecords]) => {
+      const refsByUserid = new Map(
+        refRecords.map((r) => [r["userid"] ?? "", r["oa_references"] ?? ""]),
+      );
+      return metaRecords.map((r) => {
+        const userid = r["userid"] ?? "";
+        return {
+          userid,
           last_name: r["last_name"] ?? "",
           middle_name: r["middle_name"] ?? "",
           first_name: r["first_name"] ?? "",
           orcid: r["orcid"] ?? "",
           researcher_oa_ids: r["researcher_oa_ids"] ?? "",
-          oa_references: r["oa_references"] ?? "",
+          oa_references: refsByUserid.get(userid) ?? "",
           oa_author_ids_imported_date: r["oa_author_ids_imported_date"] ?? "",
           oa_references_imported_at: r["oa_references_imported_at"] ?? "",
           final_references_imported_at: r["final_references_imported_at"] ?? "",
-        })),
-      ),
-      Effect.mapError((cause) => new RedcapFetchError({ cause })),
-    );
+        };
+      });
+    }),
+  );
 };
 
 /**
