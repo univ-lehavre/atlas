@@ -67,7 +67,8 @@ const runInteractiveMenu = async (
     const filePath = await text({
       message: "Path to CSV file:",
       placeholder: "researchers.csv",
-      validate: (v) => (v.trim() === "" ? "Path is required" : undefined),
+      validate: (v) =>
+        v === undefined || v.trim() === "" ? "Path is required" : undefined,
     });
 
     if (isCancel(filePath)) {
