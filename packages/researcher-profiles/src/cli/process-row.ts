@@ -166,6 +166,7 @@ export const processRow = async (
   const researcher = `${row.first_name} ${row.last_name}`;
 
   let chosenAuthors: readonly Pick<AuthorsResult, "id">[];
+  let prefetchedWorks: readonly WorksResult[] | null = null;
 
   const authorDays = daysUntilNextUpdate(row.oa_author_ids_imported_date);
 
@@ -189,7 +190,7 @@ export const processRow = async (
     chosenAuthors = storedIds.map((id) => ({ id }));
   } else {
     // Step 1: Resolve authors
-    note(`[${label}] Recherche de noms alternatifs sur OpenAlex`);
+    note(`[${label}] Recherche d'auteurs sur OpenAlex`);
     const s = spinner();
     s.start(`[${label}] Searching authors on OpenAlex…`);
 
@@ -217,21 +218,40 @@ export const processRow = async (
       return "skipped";
     }
 
-    // Step 2: Build flat name list
-    const nameEntries = allAuthors.flatMap((a) =>
-      [a.display_name, ...a.display_name_alternatives].map((name) => ({
-        name,
-        authorId: a.id,
-      })),
-    );
-    const uniqueNameEntries = nameEntries.filter(
-      (e, i) => nameEntries.findIndex((x) => x.name === e.name) === i,
-    );
-    const sortedNameEntries = [...uniqueNameEntries].sort((a, b) =>
-      a.name.localeCompare(b.name),
+    // Step 2: Fetch works for all resolved authors (needed for raw_author_name extraction)
+    note(`[${label}] Téléchargement des travaux d'OpenAlex`);
+    const worksResult = await fetchWorks(
+      allAuthors,
+      label,
+      researcher,
+      openAlexConfig,
+      onRateLimit,
     );
 
-    // Fetch existing entries to avoid duplicates and allow merging
+    if (Either.isLeft(worksResult)) {
+      log.error(JSON.stringify(worksResult.left, null, 2));
+      return "error";
+    }
+
+    prefetchedWorks = worksResult.right;
+
+    // Step 3: Extract raw_author_name from authorships
+    const allAuthorIds = new Set(allAuthors.map((a) => a.id));
+    const rawNameMap = new Map<string, string>(); // name → authorId (first seen)
+    for (const work of prefetchedWorks) {
+      for (const authorship of work.authorships) {
+        const aid = authorship.author.id;
+        const name = authorship.raw_author_name;
+        if (allAuthorIds.has(aid) && name !== "" && !rawNameMap.has(name)) {
+          rawNameMap.set(name, aid);
+        }
+      }
+    }
+    const sortedNameEntries = [...rawNameMap.entries()]
+      .map(([name, authorId]) => ({ name, authorId }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    // Step 4: Fetch existing entries and present only new names
     const existingResult = await Effect.runPromise(
       Effect.either(fetchAlternativeAuthorFullnames(redcapConfig, row.userid)),
     );
@@ -239,8 +259,6 @@ export const processRow = async (
       ? parseFullnameEntries(existingResult.right)
       : [];
     const existingNames = new Set(existingEntries.map((e) => e.name));
-
-    // Only present names not already stored
     const newNameEntries = sortedNameEntries.filter(
       (e) => !existingNames.has(e.name),
     );
@@ -253,6 +271,7 @@ export const processRow = async (
       );
       mergedEntries = existingEntries;
     } else {
+      note(`[${label}] Sélection des noms alternatifs`);
       const selected = await multiselect({
         message: `Select new fullname(s) to associate with ${pc.bold(label)} (${String(newNameEntries.length)} new):`,
         options: newNameEntries.map((e) => ({
@@ -273,10 +292,8 @@ export const processRow = async (
         selected: selectedNames.has(e.name),
       }));
 
-      // Merge existing entries with new ones
       mergedEntries = [...existingEntries, ...newFullnameEntries];
 
-      // Step 3: Write merged fullname entries to REDCap
       const idsSpinner = spinner();
       idsSpinner.start(`[${label}] Saving fullnames to REDCap…`);
 
@@ -307,17 +324,16 @@ export const processRow = async (
     const chosenAuthorIds = new Set(
       mergedEntries.filter((e) => e.selected).map((e) => e.authorId),
     );
-    const chosen = allAuthors.filter((a) => chosenAuthorIds.has(a.id));
 
-    if (chosen.length === 0) {
+    if (chosenAuthorIds.size === 0) {
       log.warn(`  No names selected — skipping ${label}`);
       return "skipped";
     }
 
-    chosenAuthors = chosen;
+    chosenAuthors = allAuthors.filter((a) => chosenAuthorIds.has(a.id));
   }
 
-  // Check if works fetch should be skipped (imported less than 1 month ago)
+  // Check if works write should be skipped (imported less than 1 month ago)
   const worksDays = daysUntilNextUpdate(row.oa_references_imported_at);
   if (worksDays !== null) {
     log.info(
@@ -326,24 +342,29 @@ export const processRow = async (
     return "skipped";
   }
 
-  // Step 4: Fetch works for selected authors
-  note(`[${label}] Téléchargement des travaux d'OpenAlex`);
-  const worksResult = await fetchWorks(
-    chosenAuthors,
-    label,
-    researcher,
-    openAlexConfig,
-    onRateLimit,
-  );
+  // Fetch works if not already prefetched (fresh author IDs path)
+  let works: readonly WorksResult[];
+  if (prefetchedWorks !== null) {
+    works = prefetchedWorks;
+  } else {
+    note(`[${label}] Téléchargement des travaux d'OpenAlex`);
+    const worksResult = await fetchWorks(
+      chosenAuthors,
+      label,
+      researcher,
+      openAlexConfig,
+      onRateLimit,
+    );
 
-  if (Either.isLeft(worksResult)) {
-    log.error(JSON.stringify(worksResult.left, null, 2));
-    return "error";
+    if (Either.isLeft(worksResult)) {
+      log.error(JSON.stringify(worksResult.left, null, 2));
+      return "error";
+    }
+
+    works = worksResult.right;
   }
 
-  const works = worksResult.right;
-
-  // Step 5: Show works sample
+  // Show works sample
   showWorks(works);
 
   const writeSpinner = spinner();
