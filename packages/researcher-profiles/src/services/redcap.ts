@@ -53,7 +53,6 @@ export const fetchResearchers = (
         "middle_name",
         "first_name",
         "orcid",
-        "researcher_oa_ids",
         "oa_author_ids_imported_date",
         "oa_references_imported_at",
         "final_references_imported_at",
@@ -69,7 +68,6 @@ export const fetchResearchers = (
           middle_name: r["middle_name"] ?? "",
           first_name: r["first_name"] ?? "",
           orcid: r["orcid"] ?? "",
-          researcher_oa_ids: r["researcher_oa_ids"] ?? "",
           oa_author_ids_imported_date: r["oa_author_ids_imported_date"] ?? "",
           oa_references_imported_at: r["oa_references_imported_at"] ?? "",
           final_references_imported_at: r["final_references_imported_at"] ?? "",
@@ -136,6 +134,19 @@ export const writeAlternativeAuthorFullnames = (
       Effect.asVoid,
       Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
     );
+};
+
+/**
+ * Downloads the `alternative_author_fullnames` file field for a given userid.
+ */
+export const fetchAlternativeAuthorFullnames = (
+  config: RedcapConnectionConfig,
+  userid: string,
+): Effect.Effect<ArrayBuffer, RedcapFetchError> => {
+  const client = makeClient(config);
+  return client
+    .exportFile("alternative_author_fullnames", userid)
+    .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
 };
 
 /**
