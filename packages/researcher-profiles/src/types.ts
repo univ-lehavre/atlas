@@ -23,4 +23,6 @@ export interface ResearcherRow {
   readonly final_references_imported_at: string;
   /** ISO datetime of last raw references import, or empty string if never done. */
   readonly raw_references_imported_at: string;
+  /** REDCap completion status for the references_openalex instrument. "2" = Complete. */
+  readonly references_openalex_complete: string;
 }

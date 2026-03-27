@@ -124,7 +124,6 @@ export const processRow = async (
   redcapConfig: RedcapConfig,
   openAlexConfig: OpenAlexConfig,
   onRateLimit?: (info: RateLimitInfo) => void,
-  force = false,
 ): Promise<"ok" | "skipped" | "error"> => {
   const label = `${row.first_name} ${row.last_name} (${row.userid})`;
   const researcher = `${row.first_name} ${row.last_name}`;
@@ -230,7 +229,7 @@ export const processRow = async (
 
   // Check if works fetch should be skipped (imported less than 1 month ago)
   const worksDays = daysUntilNextUpdate(row.oa_references_imported_at);
-  if (worksDays !== null && !force) {
+  if (worksDays !== null) {
     log.info(
       `[${label}] Works already imported — next update in ${String(worksDays)} day(s)`,
     );

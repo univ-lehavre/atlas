@@ -58,6 +58,7 @@ export const fetchResearchers = (
         "oa_references_imported_at",
         "final_references_imported_at",
         "raw_references_imported_at",
+        "references_openalex_complete",
       ],
     })
     .pipe(
@@ -73,6 +74,7 @@ export const fetchResearchers = (
           oa_references_imported_at: r["oa_references_imported_at"] ?? "",
           final_references_imported_at: r["final_references_imported_at"] ?? "",
           raw_references_imported_at: r["raw_references_imported_at"] ?? "",
+          references_openalex_complete: r["references_openalex_complete"] ?? "",
         })),
       ),
       Effect.mapError((cause) => new RedcapFetchError({ cause })),
