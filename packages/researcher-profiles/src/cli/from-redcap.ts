@@ -95,7 +95,10 @@ export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
   let lastQuota: RateLimitInfo | null = null;
   let totalCredits = 0;
 
-  for (const row of researchers) {
+  for (const [i, row] of researchers.entries()) {
+    log.step(
+      `[${String(i + 1)}/${String(researchers.length)}] ${row.first_name} ${row.last_name} (${row.userid})`,
+    );
     const status = await processRow(row, redcapConfig, openAlexConfig, (q) => {
       lastQuota = q;
       totalCredits += q.creditsUsed;
