@@ -238,27 +238,39 @@ export const processRow = async (
     const chosen = allAuthors.filter((a) => chosenAuthorIds.has(a.id));
 
     // Step 3: Write fullname entries (with selected author IDs) to REDCap
+    // Never overwrite if a file already exists
     const idsSpinner = spinner();
     idsSpinner.start(`[${label}] Saving fullnames to REDCap…`);
 
-    const fullnamesResult = await Effect.runPromise(
-      Effect.either(
-        writeAlternativeAuthorFullnames(
-          redcapConfig,
-          row.userid,
-          fullnameEntries,
-        ),
-      ),
+    const existingFullnames = await Effect.runPromise(
+      Effect.either(fetchAlternativeAuthorFullnames(redcapConfig, row.userid)),
     );
 
-    if (Either.isLeft(fullnamesResult)) {
-      idsSpinner.stop(pc.yellow(`[${label}] Could not save fullnames`));
-      log.warn(JSON.stringify(fullnamesResult.left, null, 2));
-    } else {
+    if (Either.isRight(existingFullnames)) {
       const selectedCount = fullnameEntries.filter((e) => e.selected).length;
       idsSpinner.stop(
-        `[${label}] ${pc.bold(String(selectedCount))} fullname(s) selected · ${pc.bold(String(chosen.length))} OpenAlex author ID(s) — saved`,
+        `[${label}] ${pc.bold(String(selectedCount))} fullname(s) selected · ${pc.bold(String(chosen.length))} OpenAlex author ID(s) — existing file preserved`,
       );
+    } else {
+      const fullnamesResult = await Effect.runPromise(
+        Effect.either(
+          writeAlternativeAuthorFullnames(
+            redcapConfig,
+            row.userid,
+            fullnameEntries,
+          ),
+        ),
+      );
+
+      if (Either.isLeft(fullnamesResult)) {
+        idsSpinner.stop(pc.yellow(`[${label}] Could not save fullnames`));
+        log.warn(JSON.stringify(fullnamesResult.left, null, 2));
+      } else {
+        const selectedCount = fullnameEntries.filter((e) => e.selected).length;
+        idsSpinner.stop(
+          `[${label}] ${pc.bold(String(selectedCount))} fullname(s) selected · ${pc.bold(String(chosen.length))} OpenAlex author ID(s) — saved`,
+        );
+      }
     }
 
     chosenAuthors = chosen;
