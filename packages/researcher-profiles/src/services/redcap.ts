@@ -117,6 +117,28 @@ export const writeOaAuthorIds = (
 };
 
 /**
+ * Uploads the full list of author fullnames (with selection status) to `alternative_author_fullnames`.
+ */
+export const writeAlternativeAuthorFullnames = (
+  config: RedcapConnectionConfig,
+  userid: string,
+  entries: readonly { name: string; authorId: string; selected: boolean }[],
+): Effect.Effect<void, RedcapWriteError> => {
+  const client = makeClient(config);
+  return client
+    .importFile(
+      "alternative_author_fullnames",
+      userid,
+      "alternative_author_fullnames.json",
+      toJsonBytes(entries),
+    )
+    .pipe(
+      Effect.asVoid,
+      Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+    );
+};
+
+/**
  * Downloads `oa_references` file field for a given userid and parses as JSON.
  */
 export const fetchOaReferences = (
