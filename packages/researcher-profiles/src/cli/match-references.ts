@@ -116,11 +116,7 @@ export const matchReferencesCommand = async (
   let skipped = 0;
   let errors = 0;
 
-  for (const [i, row] of researchers.entries()) {
-    note(
-      `${row.first_name} ${row.last_name} · ${row.userid}`,
-      `Researcher ${String(i + 1)}/${String(researchers.length)}`,
-    );
+  for (const row of researchers) {
     const label = `${row.first_name} ${row.last_name} (${row.userid})`;
 
     // Fetch oa_references individually to avoid REDCap truncation of large notes fields
@@ -214,7 +210,7 @@ export const matchReferencesCommand = async (
       ),
     );
 
-    log.step(
+    note(
       `[${label}] Matching entre OpenAlex et les références uploadées par le chercheur`,
     );
 
