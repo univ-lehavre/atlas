@@ -53,14 +53,6 @@ export const daysUntilNextUpdate = (importedDate: string): number | null => {
 const showWorks = (works: readonly WorksResult[]): void => {
   if (works.length === 0) {
     log.warn("  No works found");
-    return;
-  }
-  log.info(`  ${String(works.length)} work(s) found — sample:`);
-  for (const w of works.slice(0, 5)) {
-    log.message(`  · [${pc.dim(String(w.publication_year))}] ${w.title}`);
-  }
-  if (works.length > 5) {
-    log.message(pc.dim(`  … and ${String(works.length - 5)} more`));
   }
 };
 
