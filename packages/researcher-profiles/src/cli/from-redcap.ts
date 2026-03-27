@@ -67,15 +67,28 @@ export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
     `Found ${pc.bold(String(allResearchers.length))} researchers in REDCap`,
   );
 
+  const isComplete = (row: ResearcherRow): boolean =>
+    row.references_openalex_complete === "2";
+
   const isUpToDate = (row: ResearcherRow): boolean => {
     const authorDays = daysUntilNextUpdate(row.oa_author_ids_imported_date);
     const worksDays = daysUntilNextUpdate(row.oa_references_imported_at);
     return authorDays !== null && worksDays !== null;
   };
 
-  const upToDate = allResearchers.filter(isUpToDate);
-  const pending = allResearchers.filter((r) => !isUpToDate(r));
+  const complete = allResearchers.filter(isComplete);
+  const upToDate = allResearchers.filter(
+    (r) => !isComplete(r) && isUpToDate(r),
+  );
+  const pending = allResearchers.filter(
+    (r) => !isComplete(r) && !isUpToDate(r),
+  );
 
+  if (complete.length > 0) {
+    log.info(
+      `${pc.dim(String(complete.length))} researcher(s) complete (references_openalex_complete = 2) — excluded`,
+    );
+  }
   if (upToDate.length > 0) {
     log.info(
       `${pc.dim(String(upToDate.length))} researcher(s) already up-to-date — excluded from selection`,
