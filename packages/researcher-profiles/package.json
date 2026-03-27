@@ -44,21 +44,23 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.1.0",
+    "@napi-rs/canvas": "^0.1.97",
     "@univ-lehavre/atlas-crf": "workspace:*",
     "@univ-lehavre/atlas-fetch-openalex": "workspace:*",
     "@univ-lehavre/atlas-openalex-types": "workspace:*",
     "csv-parse": "^5.6.0",
+    "effect": "^3.19.15",
     "fuse.js": "^7.1.0",
-    "pdfkit": "^0.15.2",
     "mammoth": "^1.9.0",
     "pdfjs-dist": "^5.3.31",
-    "effect": "^3.19.15",
-    "picocolors": "^1.1.1"
+    "pdfkit": "^0.15.2",
+    "picocolors": "^1.1.1",
+    "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
-    "@types/pdfkit": "^0.13.9",
     "@effect/vitest": "0.26.0",
     "@types/node": "^25.0.10",
+    "@types/pdfkit": "^0.13.9",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^9.39.2",
     "prettier": "^3.8.1",
