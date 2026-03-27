@@ -27,6 +27,7 @@ import {
   writeOaAuthorIds,
   writeOaReferences,
   writeAlternativeAuthorFullnames,
+  fetchAlternativeAuthorFullnames,
 } from "../services/redcap.js";
 import type { ResearcherRow } from "../types.js";
 
@@ -56,14 +57,20 @@ const showWorks = (works: readonly WorksResult[]): void => {
   }
 };
 
-/** Parses stored author IDs JSON, returns empty array on failure. */
-const parseStoredAuthorIds = (raw: string): readonly string[] => {
+/** Parses alternative_author_fullnames JSON, returns selected author IDs. */
+const parseStoredAuthorIds = (buffer: ArrayBuffer): readonly string[] => {
+  const raw = new TextDecoder().decode(buffer);
   if (raw === "") return [];
   try {
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? (parsed as unknown[]).filter((x): x is string => typeof x === "string")
-      : [];
+    if (!Array.isArray(parsed)) return [];
+    return [
+      ...new Set(
+        (parsed as { authorId?: unknown; selected?: unknown }[])
+          .filter((e) => e.selected === true && typeof e.authorId === "string")
+          .map((e) => e.authorId as string),
+      ),
+    ];
   } catch {
     return [];
   }
@@ -81,6 +88,9 @@ const fetchWorks = async (
     `[${label}] Fetching works… (0/${String(chosenAuthors.length)} authors)`,
   );
 
+  const pagesPerAuthor = new Map<number, number>();
+  let lastAuthorTotal = 0;
+
   const result: Either.Either<readonly WorksResult[], unknown> =
     await Effect.runPromise(
       Effect.either(
@@ -90,6 +100,8 @@ const fetchWorks = async (
             openAlexConfig,
             researcher,
             (authorIndex, authorTotal, page, pageTotal) => {
+              pagesPerAuthor.set(authorIndex, page);
+              lastAuthorTotal = authorTotal;
               const pagePart =
                 pageTotal !== null
                   ? `page ${String(page)}/${String(pageTotal)}`
@@ -107,8 +119,12 @@ const fetchWorks = async (
   if (Either.isLeft(result)) {
     worksSpinner.stop(pc.red(`[${label}] Works fetch failed`));
   } else {
+    const totalPages = [...pagesPerAuthor.values()].reduce((s, p) => s + p, 0);
     worksSpinner.stop(
-      `[${label}] ${pc.bold(String(result.right.length))} work(s)`,
+      `[${label}] ${pc.bold(String(result.right.length))} work(s)` +
+        pc.dim(
+          ` · ${String(lastAuthorTotal)} author(s) · ${String(totalPages)} page(s)`,
+        ),
     );
   }
 
@@ -129,8 +145,13 @@ export const processRow = async (
   const authorDays = daysUntilNextUpdate(row.oa_author_ids_imported_date);
 
   if (authorDays !== null) {
-    // Author IDs are fresh — reuse stored IDs
-    const storedIds = parseStoredAuthorIds(row.researcher_oa_ids);
+    // Author IDs are fresh — reuse stored IDs from alternative_author_fullnames
+    const storedResult = await Effect.runPromise(
+      Effect.either(fetchAlternativeAuthorFullnames(redcapConfig, row.userid)),
+    );
+    const storedIds = Either.isRight(storedResult)
+      ? parseStoredAuthorIds(storedResult.right)
+      : [];
     if (storedIds.length === 0) {
       log.warn(
         `[${label}] Author IDs marked fresh but no stored IDs found — skipping`,
