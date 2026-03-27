@@ -60,7 +60,7 @@ const selectResearchersForMatch = async (
         label: `${r.first_name} ${r.last_name}`,
         hint: `works: ${relativeDate(r.oa_references_imported_at)} · final: ${relativeDate(r.final_references_imported_at)}`,
       })),
-    initialValues: withOaRefs.map((r) => r.userid),
+    initialValues: [],
   });
 
   if (isCancel(selected)) {
@@ -140,7 +140,9 @@ export const matchReferencesCommand = async (
     );
 
     if (Either.isLeft(refsResult)) {
-      log.warn(`[${label}] Failed to fetch oa_references — skipping`);
+      log.warn(
+        `[${label}] Failed to fetch oa_references — skipping: ${JSON.stringify(refsResult.left)}`,
+      );
       skipped++;
       continue;
     }
@@ -188,18 +190,7 @@ export const matchReferencesCommand = async (
     const text = extractResult.right;
 
     // Match references
-    const matched = matchReferences(
-      oaWorks,
-      text,
-      opts.threshold,
-      (title, score) => {
-        const scoreStr =
-          score !== null
-            ? pc.dim(`score: ${score.toFixed(3)}`)
-            : pc.dim("no match");
-        log.message(`  ${scoreStr}  ${title}`);
-      },
-    );
+    const matched = matchReferences(oaWorks, text, opts.threshold);
     const matchedWorks = matched.map((m) => m.work);
     const ratio =
       oaWorks.length > 0
@@ -216,13 +207,28 @@ export const matchReferencesCommand = async (
 
     const writeResult = await Effect.runPromise(
       Effect.either(
-        writeFinalReferences(redcapConfig, row.userid, matchedWorks),
+        writeFinalReferences(
+          redcapConfig,
+          row.userid,
+          matchedWorks,
+          `${row.first_name} ${row.last_name}`,
+        ),
       ),
     );
 
     if (Either.isLeft(writeResult)) {
       writeSpinner.stop(pc.red(`[${label}] REDCap write failed`));
-      log.error(JSON.stringify(writeResult.left, null, 2));
+      const err = writeResult.left;
+      const cause = (err as { cause?: unknown }).cause;
+      const causeStr =
+        cause instanceof Error ? cause.message : JSON.stringify(cause, null, 2);
+      log.error(
+        JSON.stringify(
+          { userid: err.userid, _tag: err._tag, cause: causeStr },
+          null,
+          2,
+        ),
+      );
       errors++;
       continue;
     }

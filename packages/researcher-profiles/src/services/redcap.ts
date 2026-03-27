@@ -14,6 +14,7 @@ import type {
 import { Effect } from "effect";
 import { RedcapFetchError, RedcapWriteError } from "../errors.js";
 import type { ResearcherRow } from "../types.js";
+import { generateReferencesPdf } from "./pdf-generator.js";
 
 export interface RedcapConnectionConfig {
   readonly url: string;
@@ -184,6 +185,7 @@ export const writeFinalReferences = (
   config: RedcapConnectionConfig,
   userid: string,
   works: readonly WorksResult[],
+  researcherName: string,
 ): Effect.Effect<void, RedcapWriteError> => {
   const client = makeClient(config);
   return Effect.all(
@@ -198,6 +200,25 @@ export const writeFinalReferences = (
         .pipe(
           Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
         ),
+      Effect.tryPromise({
+        try: () => generateReferencesPdf(works, researcherName),
+        catch: (cause) => new RedcapWriteError({ userid, cause }),
+      }).pipe(
+        Effect.flatMap((pdfBytes) =>
+          client
+            .importFile(
+              "final_references_pdf",
+              userid,
+              "final_references.pdf",
+              pdfBytes,
+            )
+            .pipe(
+              Effect.mapError(
+                (cause) => new RedcapWriteError({ userid, cause }),
+              ),
+            ),
+        ),
+      ),
       client
         .importRecords(
           [
