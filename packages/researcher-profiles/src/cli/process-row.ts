@@ -95,12 +95,6 @@ const parseFullnameEntries = (buffer: ArrayBuffer): FullnameEntry[] => {
   }
 };
 
-/** Parses alternative_author_fullnames JSON, returns selected author IDs. */
-const parseStoredAuthorIds = (buffer: ArrayBuffer): readonly string[] => {
-  const entries = parseFullnameEntries(buffer);
-  return [...new Set(entries.filter((e) => e.selected).map((e) => e.authorId))];
-};
-
 const fetchWorks = async (
   chosenAuthors: readonly Pick<AuthorsResult, "id">[],
   label: string,
@@ -165,29 +159,33 @@ export const processRow = async (
   const label = `${row.first_name} ${row.last_name} (${row.userid})`;
   const researcher = `${row.first_name} ${row.last_name}`;
 
-  let chosenAuthors: readonly Pick<AuthorsResult, "id">[];
+  let allAuthorIdsForFetch: readonly string[] = [];
+  let selectedNameFilter = new Set<string>();
   let prefetchedWorks: readonly WorksResult[] | null = null;
 
   const authorDays = daysUntilNextUpdate(row.oa_author_ids_imported_date);
 
   if (authorDays !== null) {
-    // Author IDs are fresh — reuse stored IDs from alternative_author_fullnames
+    // Author IDs are fresh — reuse stored entries from alternative_author_fullnames
     const storedResult = await Effect.runPromise(
       Effect.either(fetchAlternativeAuthorFullnames(redcapConfig, row.userid)),
     );
-    const storedIds = Either.isRight(storedResult)
-      ? parseStoredAuthorIds(storedResult.right)
+    const storedEntries = Either.isRight(storedResult)
+      ? parseFullnameEntries(storedResult.right)
       : [];
-    if (storedIds.length === 0) {
+    allAuthorIdsForFetch = [...new Set(storedEntries.map((e) => e.authorId))];
+    selectedNameFilter = new Set(
+      storedEntries.filter((e) => e.selected).map((e) => e.name),
+    );
+    if (allAuthorIdsForFetch.length === 0) {
       log.warn(
         `[${label}] Author IDs marked fresh but no stored IDs found — skipping`,
       );
       return "skipped";
     }
     log.info(
-      `[${label}] Author IDs up to date (next update in ${String(authorDays)} day(s)) — ${String(storedIds.length)} author(s)`,
+      `[${label}] Author IDs up to date (next update in ${String(authorDays)} day(s)) — ${String(allAuthorIdsForFetch.length)} author(s)`,
     );
-    chosenAuthors = storedIds.map((id) => ({ id }));
   } else {
     // Step 1: Resolve authors
     note(`[${label}] Recherche d'auteurs sur OpenAlex`);
@@ -217,6 +215,8 @@ export const processRow = async (
       log.warn(`  No OpenAlex profiles found for ${label}`);
       return "skipped";
     }
+
+    allAuthorIdsForFetch = allAuthors.map((a) => a.id);
 
     // Step 2: Fetch works for all resolved authors (needed for raw_author_name extraction)
     note(`[${label}] Téléchargement des travaux d'OpenAlex`);
@@ -321,16 +321,14 @@ export const processRow = async (
       }
     }
 
-    const chosenAuthorIds = new Set(
-      mergedEntries.filter((e) => e.selected).map((e) => e.authorId),
+    selectedNameFilter = new Set(
+      mergedEntries.filter((e) => e.selected).map((e) => e.name),
     );
 
-    if (chosenAuthorIds.size === 0) {
+    if (selectedNameFilter.size === 0) {
       log.warn(`  No names selected — skipping ${label}`);
       return "skipped";
     }
-
-    chosenAuthors = allAuthors.filter((a) => chosenAuthorIds.has(a.id));
   }
 
   // Check if works write should be skipped (imported less than 1 month ago)
@@ -343,13 +341,13 @@ export const processRow = async (
   }
 
   // Fetch works if not already prefetched (fresh author IDs path)
-  let works: readonly WorksResult[];
+  let allWorks: readonly WorksResult[];
   if (prefetchedWorks !== null) {
-    works = prefetchedWorks;
+    allWorks = prefetchedWorks;
   } else {
     note(`[${label}] Téléchargement des travaux d'OpenAlex`);
     const worksResult = await fetchWorks(
-      chosenAuthors,
+      allAuthorIdsForFetch.map((id) => ({ id })),
       label,
       researcher,
       openAlexConfig,
@@ -361,8 +359,20 @@ export const processRow = async (
       return "error";
     }
 
-    works = worksResult.right;
+    allWorks = worksResult.right;
   }
+
+  // Filter works to those having at least one authorship with a selected raw_author_name
+  const works =
+    selectedNameFilter.size > 0
+      ? allWorks.filter((w) =>
+          w.authorships.some((a) => selectedNameFilter.has(a.raw_author_name)),
+        )
+      : allWorks;
+
+  log.info(
+    `[${label}] ${pc.bold(String(works.length))}/${pc.bold(String(allWorks.length))} work(s) after name filter`,
+  );
 
   // Show works sample
   showWorks(works);
