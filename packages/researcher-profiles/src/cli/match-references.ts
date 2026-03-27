@@ -270,17 +270,22 @@ export const matchReferencesCommand = async (
     // Merge: DOI-based works take precedence, then fuzzy matches — deduplicate by DOI
     const seenDois = new Set<string>();
     const matchedWorks: WorksResult[] = [];
-    for (const w of [...doiWorksFromText, ...fetchedByDoi, ...fuzzyWithDoi]) {
+    let doiAdded = 0;
+    let fuzzyAdded = 0;
+    for (const [source, w] of [
+      ...[...doiWorksFromText, ...fetchedByDoi].map((w) => ["doi", w] as const),
+      ...fuzzyWithDoi.map((w) => ["fuzzy", w] as const),
+    ]) {
       const key = normalizeDoi(w.doi);
       if (seenDois.has(key)) continue;
       seenDois.add(key);
       matchedWorks.push(w);
+      if (source === "doi") doiAdded++;
+      else fuzzyAdded++;
     }
 
-    const doiTotal = doiWorksFromText.length + fetchedByDoi.length;
-
     log.info(
-      `[${label}] fuzzy: ${pc.bold(String(fuzzyWithDoi.length))} · DOI: ${pc.bold(String(doiTotal))} · total: ${pc.bold(String(matchedWorks.length))}`,
+      `[${label}] fuzzy: ${pc.bold(String(fuzzyAdded))} · DOI: ${pc.bold(String(doiAdded))} · total: ${pc.bold(String(matchedWorks.length))}`,
     );
 
     if (matchedWorks.length === 0) {
