@@ -1,6 +1,5 @@
-import type { RateLimiter } from "effect";
-import { Effect, Queue, Chunk } from "effect";
-import type { FetchOpenAlexAPIOptions } from "@univ-lehavre/atlas-openalex-types";
+import { Effect } from "effect";
+import type { Queue } from "effect";
 import type {
   FetchError,
   ResponseParseError,
@@ -14,17 +13,9 @@ import {
   ensureStore,
   makeRateLimitedFetcher,
   makeWorker,
+  fetchAllPages,
+  type FetchAPIMinimalConfig,
 } from "./helpers.js";
-
-interface FetchAPIMinimalConfig {
-  userAgent: string;
-  rateLimit: RateLimiter.RateLimiter.Options;
-  apiURL: string;
-  endpoint: string;
-  fetchAPIOptions: FetchOpenAlexAPIOptions;
-  perPage: number;
-  maxPages?: number;
-}
 
 interface FetchAPIConfig<T> extends FetchAPIMinimalConfig {
   now?: boolean;
@@ -51,6 +42,7 @@ const fetchAPIQueue = <T>(
         url,
         opts.userAgent,
         opts.rateLimit,
+        opts.onRateLimit,
       );
 
       const queue: Queue.Queue<T> = yield* ensureQueue<T>(opts.queue);
@@ -68,16 +60,24 @@ const fetchAPIQueue = <T>(
 const fetchAPIResults = <T>(
   opts: FetchAPIMinimalConfig,
 ): Effect.Effect<readonly T[], FetchError | ResponseParseError> =>
-  Effect.gen(function* () {
-    const { queue, worker } = yield* fetchAPIQueue<T>({ ...opts });
-    yield* Effect.all([worker], { concurrency: "unbounded", discard: true });
-    const results = yield* Queue.takeAll(queue);
-    return Chunk.toReadonlyArray(results);
-  });
+  Effect.scoped(
+    Effect.gen(function* () {
+      const url: URL = buildEndpointURL(opts.apiURL, opts.endpoint);
+      const params: Query = buildInitialParams(opts);
 
-export {
-  fetchAPIQueue,
-  fetchAPIResults,
-  type FetchAPIMinimalConfig,
-  type FetchAPIConfig,
-};
+      const curriedFetch = yield* makeRateLimitedFetcher<T>(
+        url,
+        opts.userAgent,
+        opts.rateLimit,
+        opts.onRateLimit,
+      );
+
+      const store: Store<T> = yield* ensureStore<T>({
+        maxPages: opts.maxPages,
+      });
+
+      return yield* fetchAllPages<T>(store, curriedFetch, params, opts.onPage);
+    }),
+  );
+
+export { fetchAPIQueue, fetchAPIResults, type FetchAPIConfig };
