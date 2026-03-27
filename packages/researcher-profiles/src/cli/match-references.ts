@@ -4,7 +4,7 @@
  * stores matched works in `final_references` + `final_references_imported_at`.
  */
 
-import { spinner, log, outro } from "@clack/prompts";
+import { spinner, log, note, outro } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either, Logger, LogLevel } from "effect";
 
@@ -116,7 +116,11 @@ export const matchReferencesCommand = async (
   let skipped = 0;
   let errors = 0;
 
-  for (const row of researchers) {
+  for (const [i, row] of researchers.entries()) {
+    note(
+      `${row.first_name} ${row.last_name} · ${row.userid}`,
+      `Researcher ${String(i + 1)}/${String(researchers.length)}`,
+    );
     const label = `${row.first_name} ${row.last_name} (${row.userid})`;
 
     // Fetch oa_references individually to avoid REDCap truncation of large notes fields
