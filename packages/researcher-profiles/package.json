@@ -49,12 +49,14 @@
     "@univ-lehavre/atlas-openalex-types": "workspace:*",
     "csv-parse": "^5.6.0",
     "fuse.js": "^7.1.0",
+    "pdfkit": "^0.15.2",
     "mammoth": "^1.9.0",
     "pdfjs-dist": "^5.3.31",
     "effect": "^3.19.15",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
+    "@types/pdfkit": "^0.13.9",
     "@effect/vitest": "0.26.0",
     "@types/node": "^25.0.10",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
