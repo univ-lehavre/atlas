@@ -56,23 +56,42 @@ const showWorks = (works: readonly WorksResult[]): void => {
   }
 };
 
-/** Parses alternative_author_fullnames JSON, returns selected author IDs. */
-const parseStoredAuthorIds = (buffer: ArrayBuffer): readonly string[] => {
+interface FullnameEntry {
+  name: string;
+  authorId: string;
+  selected: boolean;
+}
+
+/** Parses alternative_author_fullnames JSON, returns all entries. */
+const parseFullnameEntries = (buffer: ArrayBuffer): FullnameEntry[] => {
   const raw = new TextDecoder().decode(buffer);
   if (raw === "") return [];
   try {
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return [
-      ...new Set(
-        (parsed as { authorId?: unknown; selected?: unknown }[])
-          .filter((e) => e.selected === true && typeof e.authorId === "string")
-          .map((e) => e.authorId as string),
-      ),
-    ];
+    return (
+      parsed as { name?: unknown; authorId?: unknown; selected?: unknown }[]
+    )
+      .filter(
+        (e) =>
+          typeof e.name === "string" &&
+          typeof e.authorId === "string" &&
+          typeof e.selected === "boolean",
+      )
+      .map((e) => ({
+        name: e.name as string,
+        authorId: e.authorId as string,
+        selected: e.selected as boolean,
+      }));
   } catch {
     return [];
   }
+};
+
+/** Parses alternative_author_fullnames JSON, returns selected author IDs. */
+const parseStoredAuthorIds = (buffer: ArrayBuffer): readonly string[] => {
+  const entries = parseFullnameEntries(buffer);
+  return [...new Set(entries.filter((e) => e.selected).map((e) => e.authorId))];
 };
 
 const fetchWorks = async (
@@ -191,7 +210,7 @@ export const processRow = async (
       return "skipped";
     }
 
-    // Step 2: Build flat name list and multiselect
+    // Step 2: Build flat name list
     const nameEntries = allAuthors.flatMap((a) =>
       [a.display_name, ...a.display_name_alternatives].map((name) => ({
         name,
@@ -201,63 +220,65 @@ export const processRow = async (
     const uniqueNameEntries = nameEntries.filter(
       (e, i) => nameEntries.findIndex((x) => x.name === e.name) === i,
     );
-
     const sortedNameEntries = [...uniqueNameEntries].sort((a, b) =>
       a.name.localeCompare(b.name),
     );
 
-    const selected = await multiselect({
-      message: `Select fullname(s) to associate with ${pc.bold(label)}:`,
-      options: sortedNameEntries.map((e) => ({
-        value: e.name,
-        label: e.name,
-      })),
-      initialValues: sortedNameEntries.map((e) => e.name),
-    });
-
-    if (isCancel(selected)) {
-      cancel("Cancelled");
-      process.exit(0);
-    }
-
-    const selectedNames = new Set(selected as readonly string[]);
-
-    if (selectedNames.size === 0) {
-      log.warn(`  No names selected — skipping ${label}`);
-      return "skipped";
-    }
-
-    const fullnameEntries = sortedNameEntries.map((e) => ({
-      ...e,
-      selected: selectedNames.has(e.name),
-    }));
-
-    const chosenAuthorIds = new Set(
-      fullnameEntries.filter((e) => e.selected).map((e) => e.authorId),
-    );
-    const chosen = allAuthors.filter((a) => chosenAuthorIds.has(a.id));
-
-    // Step 3: Write fullname entries (with selected author IDs) to REDCap
-    // Never overwrite if a file already exists
-    const idsSpinner = spinner();
-    idsSpinner.start(`[${label}] Saving fullnames to REDCap…`);
-
-    const existingFullnames = await Effect.runPromise(
+    // Fetch existing entries to avoid duplicates and allow merging
+    const existingResult = await Effect.runPromise(
       Effect.either(fetchAlternativeAuthorFullnames(redcapConfig, row.userid)),
     );
+    const existingEntries: FullnameEntry[] = Either.isRight(existingResult)
+      ? parseFullnameEntries(existingResult.right)
+      : [];
+    const existingNames = new Set(existingEntries.map((e) => e.name));
 
-    if (Either.isRight(existingFullnames)) {
-      const selectedCount = fullnameEntries.filter((e) => e.selected).length;
-      idsSpinner.stop(
-        `[${label}] ${pc.bold(String(selectedCount))} fullname(s) selected · ${pc.bold(String(chosen.length))} OpenAlex author ID(s) — existing file preserved`,
+    // Only present names not already stored
+    const newNameEntries = sortedNameEntries.filter(
+      (e) => !existingNames.has(e.name),
+    );
+
+    let mergedEntries: FullnameEntry[];
+
+    if (newNameEntries.length === 0) {
+      log.info(
+        `[${label}] No new names — using existing ${pc.bold(String(existingEntries.length))} entries`,
       );
+      mergedEntries = existingEntries;
     } else {
+      const selected = await multiselect({
+        message: `Select new fullname(s) to associate with ${pc.bold(label)} (${String(newNameEntries.length)} new):`,
+        options: newNameEntries.map((e) => ({
+          value: e.name,
+          label: e.name,
+        })),
+        initialValues: newNameEntries.map((e) => e.name),
+      });
+
+      if (isCancel(selected)) {
+        cancel("Cancelled");
+        process.exit(0);
+      }
+
+      const selectedNames = new Set(selected as readonly string[]);
+      const newFullnameEntries = newNameEntries.map((e) => ({
+        ...e,
+        selected: selectedNames.has(e.name),
+      }));
+
+      // Merge existing entries with new ones
+      mergedEntries = [...existingEntries, ...newFullnameEntries];
+
+      // Step 3: Write merged fullname entries to REDCap
+      const idsSpinner = spinner();
+      idsSpinner.start(`[${label}] Saving fullnames to REDCap…`);
+
       const fullnamesResult = await Effect.runPromise(
         Effect.either(
           writeAlternativeAuthorFullnames(
             redcapConfig,
             row.userid,
-            fullnameEntries,
+            mergedEntries,
           ),
         ),
       );
@@ -266,11 +287,24 @@ export const processRow = async (
         idsSpinner.stop(pc.yellow(`[${label}] Could not save fullnames`));
         log.warn(JSON.stringify(fullnamesResult.left, null, 2));
       } else {
-        const selectedCount = fullnameEntries.filter((e) => e.selected).length;
+        const selectedCount = mergedEntries.filter((e) => e.selected).length;
+        const chosenCount = new Set(
+          mergedEntries.filter((e) => e.selected).map((e) => e.authorId),
+        ).size;
         idsSpinner.stop(
-          `[${label}] ${pc.bold(String(selectedCount))} fullname(s) selected · ${pc.bold(String(chosen.length))} OpenAlex author ID(s) — saved`,
+          `[${label}] ${pc.bold(String(selectedCount))} fullname(s) selected · ${pc.bold(String(chosenCount))} OpenAlex author ID(s) — saved`,
         );
       }
+    }
+
+    const chosenAuthorIds = new Set(
+      mergedEntries.filter((e) => e.selected).map((e) => e.authorId),
+    );
+    const chosen = allAuthors.filter((a) => chosenAuthorIds.has(a.id));
+
+    if (chosen.length === 0) {
+      log.warn(`  No names selected — skipping ${label}`);
+      return "skipped";
     }
 
     chosenAuthors = chosen;
