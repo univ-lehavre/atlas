@@ -6,7 +6,10 @@
 
 import { spinner, log, outro } from "@clack/prompts";
 import pc from "picocolors";
-import { Effect, Either } from "effect";
+import { Effect, Either, Logger, LogLevel } from "effect";
+
+const silenced = <A, E>(effect: Effect.Effect<A, E>): Effect.Effect<A, E> =>
+  effect.pipe(Logger.withMinimumLogLevel(LogLevel.None));
 import {
   fetchResearchers,
   fetchOaReferences,
@@ -195,10 +198,8 @@ export const matchReferencesCommand = async (
       continue;
     }
 
-    // Write raw references PDF
-    const rawSpinner = spinner();
-    rawSpinner.start(`[${label}] Saving raw references…`);
-    const rawResult = await Effect.runPromise(
+    // Write raw references PDF (silent)
+    await Effect.runPromise(
       Effect.either(
         writeRawReferences(
           redcapConfig,
@@ -208,13 +209,10 @@ export const matchReferencesCommand = async (
         ),
       ),
     );
-    if (Either.isLeft(rawResult)) {
-      rawSpinner.stop(pc.yellow(`[${label}] Could not save raw references`));
-      const cause = (rawResult.left as { cause?: unknown }).cause;
-      log.warn(cause instanceof Error ? cause.message : JSON.stringify(cause));
-    } else {
-      rawSpinner.stop(`[${label}] Raw references saved`);
-    }
+
+    log.step(
+      `[${label}] Matching entre OpenAlex et les références uploadées par le chercheur`,
+    );
 
     // Match references by title (fuzzy)
     const matched = matchReferences(oaWorks, text, opts.threshold);
@@ -253,7 +251,7 @@ export const matchReferencesCommand = async (
         `[${label}] Fetching ${String(missingDois.length)} DOI(s) not in oa_references…`,
       );
       const doiResult = await Effect.runPromise(
-        Effect.either(searchWorksByDOI(missingDois, openAlexConfig)),
+        Effect.either(silenced(searchWorksByDOI(missingDois, openAlexConfig))),
       );
       if (Either.isLeft(doiResult)) {
         doiSpinner.stop(
@@ -280,21 +278,10 @@ export const matchReferencesCommand = async (
     }
 
     const doiTotal = doiWorksFromText.length + fetchedByDoi.length;
-    const ratio =
-      oaWorks.length > 0
-        ? Math.round((matchedWorks.length / oaWorks.length) * 100)
-        : 0;
 
     log.info(
-      `[${label}] ${pc.bold(String(matchedWorks.length))}/${pc.bold(String(oaWorks.length))} final works` +
-        ` (${String(ratio)}%) — ${pc.dim(`${String(doiTotal)} by DOI, ${String(fuzzyWithDoi.length)} by fuzzy title`)}`,
+      `[${label}] fuzzy: ${pc.bold(String(fuzzyWithDoi.length))} · DOI: ${pc.bold(String(doiTotal))} · total: ${pc.bold(String(matchedWorks.length))}`,
     );
-
-    if (missingDois.length > 0) {
-      log.info(
-        `[${label}] ${pc.bold(String(missingDois.length))} DOI(s) from text not in oa_references: ${missingDois.slice(0, 5).join(", ")}${missingDois.length > 5 ? "…" : ""}`,
-      );
-    }
 
     if (matchedWorks.length === 0) {
       log.warn(
@@ -336,7 +323,7 @@ export const matchReferencesCommand = async (
       continue;
     }
 
-    writeSpinner.stop(pc.green(`[${label}] Written ✓`));
+    writeSpinner.stop(`[${label}] Written`);
     ok++;
   }
 
