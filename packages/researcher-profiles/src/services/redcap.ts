@@ -192,7 +192,6 @@ export const writeOaReferences = (
             {
               userid,
               oa_references_imported_at: localIsoDateTime(),
-              references_openalex_complete: "2",
             },
           ],
           { overwriteBehavior: "overwrite" },
