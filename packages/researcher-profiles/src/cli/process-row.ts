@@ -7,7 +7,14 @@
  *   5. Confirm and write to REDCap
  */
 
-import { spinner, log, multiselect, isCancel, cancel } from "@clack/prompts";
+import {
+  spinner,
+  log,
+  note,
+  multiselect,
+  isCancel,
+  cancel,
+} from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either, Logger, LogLevel } from "effect";
 import type {
@@ -182,7 +189,7 @@ export const processRow = async (
     chosenAuthors = storedIds.map((id) => ({ id }));
   } else {
     // Step 1: Resolve authors
-    log.step(`[${label}] Recherche de noms alternatifs sur OpenAlex`);
+    note(`[${label}] Recherche de noms alternatifs sur OpenAlex`);
     const s = spinner();
     s.start(`[${label}] Searching authors on OpenAlex…`);
 
@@ -320,7 +327,7 @@ export const processRow = async (
   }
 
   // Step 4: Fetch works for selected authors
-  log.step(`[${label}] Téléchargement des travaux d'OpenAlex`);
+  note(`[${label}] Téléchargement des travaux d'OpenAlex`);
   const worksResult = await fetchWorks(
     chosenAuthors,
     label,

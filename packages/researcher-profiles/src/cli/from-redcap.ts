@@ -2,7 +2,7 @@
  * `from-redcap` command — fetches researchers from REDCap and resolves their OpenAlex works.
  */
 
-import { spinner, log, note, outro } from "@clack/prompts";
+import { spinner, log, outro } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either } from "effect";
 import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
@@ -95,11 +95,7 @@ export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
   let lastQuota: RateLimitInfo | null = null;
   let totalCredits = 0;
 
-  for (const [i, row] of researchers.entries()) {
-    note(
-      `${row.first_name} ${row.last_name} · ${row.userid}`,
-      `Researcher ${String(i + 1)}/${String(researchers.length)}`,
-    );
+  for (const row of researchers) {
     const status = await processRow(row, redcapConfig, openAlexConfig, (q) => {
       lastQuota = q;
       totalCredits += q.creditsUsed;
