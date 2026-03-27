@@ -116,7 +116,10 @@ export const matchReferencesCommand = async (
   let skipped = 0;
   let errors = 0;
 
-  for (const row of researchers) {
+  for (const [i, row] of researchers.entries()) {
+    log.step(
+      `[${String(i + 1)}/${String(researchers.length)}] ${row.first_name} ${row.last_name} (${row.userid})`,
+    );
     const label = `${row.first_name} ${row.last_name} (${row.userid})`;
 
     // Fetch oa_references individually to avoid REDCap truncation of large notes fields
