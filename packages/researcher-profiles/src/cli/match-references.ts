@@ -19,6 +19,7 @@ import {
   fetchOaReferences,
   downloadPublicationsFile,
   writeFinalReferences,
+  writeRawReferences,
 } from "../services/redcap.js";
 import { extractText } from "../services/file-extractor.js";
 import { matchReferences } from "../services/reference-matcher.js";
@@ -182,24 +183,86 @@ export const matchReferencesCommand = async (
     );
 
     if (Either.isLeft(extractResult)) {
-      log.warn(`[${label}] Failed to extract text — skipping`);
+      const extractErr = extractResult.left;
+      const extractCause = (extractErr as { cause?: unknown }).cause;
+      const extractCauseStr =
+        extractCause instanceof Error
+          ? extractCause.message
+          : JSON.stringify(extractCause);
+      log.warn(
+        `[${label}] Failed to extract text — skipping: ${extractCauseStr}`,
+      );
       skipped++;
       continue;
     }
 
     const text = extractResult.right;
 
+    const previewLines = text
+      .split(/\r?\n/)
+      .filter((l) => l.trim().length > 20)
+      .slice(0, 3);
+    log.info(
+      `[${label}] Extracted ${String(text.trim().length)} chars — preview: ${previewLines.map((l) => `"${l.trim().slice(0, 60)}"`).join(" | ")}`,
+    );
+
+    if (text.trim().length < 100) {
+      log.warn(
+        `[${label}] Too little text extracted (${String(text.trim().length)} chars) — PDF may be a scanned image (OCR not supported)`,
+      );
+      skipped++;
+      continue;
+    }
+
+    // Write raw references PDF
+    const rawSpinner = spinner();
+    rawSpinner.start(`[${label}] Saving raw references…`);
+    const rawResult = await Effect.runPromise(
+      Effect.either(
+        writeRawReferences(
+          redcapConfig,
+          row.userid,
+          text,
+          `${row.first_name} ${row.last_name}`,
+        ),
+      ),
+    );
+    if (Either.isLeft(rawResult)) {
+      rawSpinner.stop(pc.yellow(`[${label}] Could not save raw references`));
+      const cause = (rawResult.left as { cause?: unknown }).cause;
+      log.warn(cause instanceof Error ? cause.message : JSON.stringify(cause));
+    } else {
+      rawSpinner.stop(`[${label}] Raw references saved`);
+    }
+
     // Match references
     const matched = matchReferences(oaWorks, text, opts.threshold);
-    const matchedWorks = matched.map((m) => m.work);
+    const withDoi = matched
+      .map((m) => m.work)
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- doi is typed string but can be null at runtime
+      .filter((w) => w.doi !== null && w.doi !== undefined && w.doi !== "");
+    const seenDois = new Set<string>();
+    const matchedWorks = withDoi.filter((w) => {
+      if (seenDois.has(w.doi)) return false;
+      seenDois.add(w.doi);
+      return true;
+    });
     const ratio =
       oaWorks.length > 0
         ? Math.round((matchedWorks.length / oaWorks.length) * 100)
         : 0;
 
     log.info(
-      `[${label}] ${pc.bold(String(matchedWorks.length))}/${pc.bold(String(oaWorks.length))} works matched (${String(ratio)}%)`,
+      `[${label}] ${pc.bold(String(matchedWorks.length))}/${pc.bold(String(oaWorks.length))} works matched with DOI (${String(ratio)}%)`,
     );
+
+    if (matchedWorks.length === 0) {
+      log.warn(
+        `[${label}] No matches — PDF may be a scanned image or titles do not overlap. Skipping write.`,
+      );
+      skipped++;
+      continue;
+    }
 
     // Write final references
     const writeSpinner = spinner();

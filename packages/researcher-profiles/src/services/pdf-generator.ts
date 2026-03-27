@@ -68,9 +68,40 @@ const renderDoc = (
       });
     doc.moveDown(0.6);
   }
-
-  doc.end();
 };
+
+const makePdf = (
+  render: (doc: PDFKit.PDFDocument) => void,
+): Promise<Uint8Array> =>
+  new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 60, size: "A4" });
+    const chunks: Buffer[] = [];
+    doc.on("data", (chunk: Buffer) => {
+      chunks.push(chunk);
+    });
+    doc.on("end", () => {
+      resolve(new Uint8Array(Buffer.concat(chunks)));
+    });
+    doc.on("error", reject);
+    render(doc);
+    doc.end();
+  });
+
+/**
+ * Generates a PDF buffer with the raw extracted text.
+ */
+export const generateRawReferencesPdf = (
+  text: string,
+  researcherName: string,
+): Promise<Uint8Array> =>
+  makePdf((doc) => {
+    doc
+      .fontSize(16)
+      .font("Helvetica-Bold")
+      .text(`Raw references — ${researcherName}`);
+    doc.moveDown(1.5);
+    doc.fontSize(10).font("Helvetica").text(text, { lineGap: 2 });
+  });
 
 /**
  * Generates a PDF buffer with references formatted in APA-like style.
@@ -79,17 +110,6 @@ export const generateReferencesPdf = (
   works: readonly WorksResult[],
   researcherName: string,
 ): Promise<Uint8Array> =>
-  new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ margin: 60, size: "A4" });
-    const chunks: Buffer[] = [];
-
-    doc.on("data", (chunk: Buffer) => {
-      chunks.push(chunk);
-    });
-    doc.on("end", () => {
-      resolve(new Uint8Array(Buffer.concat(chunks)));
-    });
-    doc.on("error", reject);
-
+  makePdf((doc) => {
     renderDoc(doc, works, researcherName);
   });

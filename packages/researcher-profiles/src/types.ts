@@ -21,4 +21,6 @@ export interface ResearcherRow {
   readonly oa_references_imported_at: string;
   /** ISO datetime of last final references import, or empty string if never done. */
   readonly final_references_imported_at: string;
+  /** ISO datetime of last raw references import, or empty string if never done. */
+  readonly raw_references_imported_at: string;
 }

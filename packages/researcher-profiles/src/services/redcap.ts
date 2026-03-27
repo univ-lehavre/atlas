@@ -14,7 +14,10 @@ import type {
 import { Effect } from "effect";
 import { RedcapFetchError, RedcapWriteError } from "../errors.js";
 import type { ResearcherRow } from "../types.js";
-import { generateReferencesPdf } from "./pdf-generator.js";
+import {
+  generateReferencesPdf,
+  generateRawReferencesPdf,
+} from "./pdf-generator.js";
 
 export interface RedcapConnectionConfig {
   readonly url: string;
@@ -54,6 +57,7 @@ export const fetchResearchers = (
         "oa_author_ids_imported_date",
         "oa_references_imported_at",
         "final_references_imported_at",
+        "raw_references_imported_at",
       ],
     })
     .pipe(
@@ -68,6 +72,7 @@ export const fetchResearchers = (
           oa_author_ids_imported_date: r["oa_author_ids_imported_date"] ?? "",
           oa_references_imported_at: r["oa_references_imported_at"] ?? "",
           final_references_imported_at: r["final_references_imported_at"] ?? "",
+          raw_references_imported_at: r["raw_references_imported_at"] ?? "",
         })),
       ),
       Effect.mapError((cause) => new RedcapFetchError({ cause })),
@@ -175,6 +180,55 @@ export const writeOaReferences = (
     ],
     { concurrency: 1 },
   ).pipe(Effect.asVoid);
+};
+
+/**
+ * Generates a simple plain-text PDF from extracted text and uploads it to `raw_references`.
+ * Also updates `raw_references_imported_at`.
+ */
+export const writeRawReferences = (
+  config: RedcapConnectionConfig,
+  userid: string,
+  text: string,
+  researcherName: string,
+): Effect.Effect<void, RedcapWriteError> => {
+  const client = makeClient(config);
+  return Effect.tryPromise<Uint8Array, RedcapWriteError>({
+    try: () => generateRawReferencesPdf(text, researcherName),
+    catch: (cause) => new RedcapWriteError({ userid, cause }),
+  }).pipe(
+    Effect.flatMap((pdfBytes) =>
+      Effect.all(
+        [
+          client
+            .importFile(
+              "raw_references",
+              userid,
+              "raw_references.pdf",
+              pdfBytes,
+            )
+            .pipe(
+              Effect.mapError(
+                (cause) => new RedcapWriteError({ userid, cause }),
+              ),
+            ),
+          client
+            .importRecords(
+              [{ userid, raw_references_imported_at: localIsoDateTime() }],
+              { overwriteBehavior: "overwrite" },
+            )
+            .pipe(
+              Effect.asVoid,
+              Effect.mapError(
+                (cause) => new RedcapWriteError({ userid, cause }),
+              ),
+            ),
+        ],
+        { concurrency: 1 },
+      ),
+    ),
+    Effect.asVoid,
+  );
 };
 
 /**
