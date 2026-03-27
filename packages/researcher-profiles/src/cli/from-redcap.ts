@@ -17,7 +17,6 @@ interface FromRedcapOptions {
   readonly redcapToken: string;
   readonly openAlexUserAgent: string;
   readonly openAlexApiKey?: string;
-  readonly force?: boolean;
 }
 
 interface RedcapConfig {
@@ -74,11 +73,8 @@ export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
     return authorDays !== null && worksDays !== null;
   };
 
-  const upToDate = opts.force === true ? [] : allResearchers.filter(isUpToDate);
-  const pending =
-    opts.force === true
-      ? [...allResearchers]
-      : allResearchers.filter((r) => !isUpToDate(r));
+  const upToDate = allResearchers.filter(isUpToDate);
+  const pending = allResearchers.filter((r) => !isUpToDate(r));
 
   if (upToDate.length > 0) {
     log.info(
@@ -100,16 +96,10 @@ export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
   let totalCredits = 0;
 
   for (const row of researchers) {
-    const status = await processRow(
-      row,
-      redcapConfig,
-      openAlexConfig,
-      (q) => {
-        lastQuota = q;
-        totalCredits += q.creditsUsed;
-      },
-      opts.force === true,
-    );
+    const status = await processRow(row, redcapConfig, openAlexConfig, (q) => {
+      lastQuota = q;
+      totalCredits += q.creditsUsed;
+    });
     if (status === "ok") ok++;
     else if (status === "skipped") skipped++;
     else errors++;

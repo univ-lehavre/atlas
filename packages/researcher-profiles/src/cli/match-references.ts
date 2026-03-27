@@ -4,14 +4,7 @@
  * stores matched works in `final_references` + `final_references_imported_at`.
  */
 
-import {
-  spinner,
-  log,
-  outro,
-  multiselect,
-  isCancel,
-  cancel,
-} from "@clack/prompts";
+import { spinner, log, outro } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either } from "effect";
 import {
@@ -23,8 +16,6 @@ import {
 } from "../services/redcap.js";
 import { extractText } from "../services/file-extractor.js";
 import { matchReferences } from "../services/reference-matcher.js";
-import { daysUntilNextUpdate } from "./process-row.js";
-import type { ResearcherRow } from "../types.js";
 import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
 import {
   searchWorksByDOI,
@@ -43,42 +34,6 @@ interface RedcapConfig {
   readonly url: string;
   readonly token: string;
 }
-
-const relativeDate = (dateStr: string): string => {
-  if (dateStr === "") return "never";
-  const days = daysUntilNextUpdate(dateStr);
-  if (days !== null) return `update in ${String(days)}d`;
-  return `imported ${new Date(dateStr).toISOString().slice(0, 10)}`;
-};
-
-const selectResearchersForMatch = async (
-  researchers: readonly ResearcherRow[],
-): Promise<readonly ResearcherRow[]> => {
-  // Only show researchers with oa_references already imported
-  const withOaRefs = researchers.filter(
-    (r) => r.oa_references_imported_at !== "",
-  );
-  const selected = await multiselect({
-    message: `Select researchers to match (${pc.bold(String(withOaRefs.length))} with oa_references):`,
-    options: [...withOaRefs]
-      .sort((a, b) => a.last_name.localeCompare(b.last_name, "fr"))
-      .map((r) => ({
-        value: r.userid,
-        label: `${r.first_name} ${r.last_name}`,
-        hint: `works: ${relativeDate(r.oa_references_imported_at)} · final: ${relativeDate(r.final_references_imported_at)}`,
-      })),
-    initialValues: [],
-  });
-
-  if (isCancel(selected)) {
-    cancel("Cancelled.");
-    process.exit(0);
-  }
-
-  return withOaRefs.filter((r) =>
-    (selected as readonly string[]).includes(r.userid),
-  );
-};
 
 const parseOaReferences = (
   buffer: ArrayBuffer,
@@ -142,14 +97,15 @@ export const matchReferencesCommand = async (
   }
 
   const allResearchers = fetchResult.right;
+  const researchers = allResearchers.filter(
+    (r) => r.references_openalex_complete !== "2",
+  );
   s.stop(
-    `Found ${pc.bold(String(allResearchers.length))} researchers in REDCap`,
+    `Found ${pc.bold(String(researchers.length))}/${pc.bold(String(allResearchers.length))} researchers to process (references_openalex_complete ≠ 2)`,
   );
 
-  const researchers = await selectResearchersForMatch(allResearchers);
-
   if (researchers.length === 0) {
-    outro("Nothing selected");
+    outro("All researchers are already complete");
     return;
   }
 
