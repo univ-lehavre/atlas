@@ -7,10 +7,7 @@ import {
   RedcapUrl,
   RedcapToken,
 } from "@univ-lehavre/atlas-crf/redcap";
-import type {
-  AuthorsResult,
-  WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
 import { Effect } from "effect";
 import { RedcapFetchError, RedcapWriteError } from "../errors.js";
 import type { ResearcherRow } from "../types.js";
@@ -89,33 +86,8 @@ const localIsoDateTime = (): string => {
 };
 
 /**
- * Writes selected OpenAlex author IDs to the `researcher_oa_ids` field for a given userid.
- */
-export const writeOaAuthorIds = (
-  config: RedcapConnectionConfig,
-  userid: string,
-  authors: readonly AuthorsResult[],
-): Effect.Effect<void, RedcapWriteError> => {
-  const client = makeClient(config);
-  return client
-    .importRecords(
-      [
-        {
-          userid,
-          researcher_oa_ids: JSON.stringify(authors.map((a) => a.id)),
-          oa_author_ids_imported_date: localIsoDateTime(),
-        },
-      ],
-      { overwriteBehavior: "overwrite" },
-    )
-    .pipe(
-      Effect.asVoid,
-      Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
-    );
-};
-
-/**
  * Uploads the full list of author fullnames (with selection status) to `alternative_author_fullnames`.
+ * Also updates `oa_author_ids_imported_date` timestamp.
  */
 export const writeAlternativeAuthorFullnames = (
   config: RedcapConnectionConfig,
@@ -123,17 +95,31 @@ export const writeAlternativeAuthorFullnames = (
   entries: readonly { name: string; authorId: string; selected: boolean }[],
 ): Effect.Effect<void, RedcapWriteError> => {
   const client = makeClient(config);
-  return client
-    .importFile(
-      "alternative_author_fullnames",
-      userid,
-      "alternative_author_fullnames.json",
-      toJsonBytes(entries),
-    )
-    .pipe(
-      Effect.asVoid,
-      Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
-    );
+  return Effect.all(
+    [
+      client
+        .importFile(
+          "alternative_author_fullnames",
+          userid,
+          "alternative_author_fullnames.json",
+          toJsonBytes(entries),
+        )
+        .pipe(
+          Effect.asVoid,
+          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+        ),
+      client
+        .importRecords(
+          [{ userid, oa_author_ids_imported_date: localIsoDateTime() }],
+          { overwriteBehavior: "overwrite" },
+        )
+        .pipe(
+          Effect.asVoid,
+          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+        ),
+    ],
+    { concurrency: 1 },
+  ).pipe(Effect.asVoid);
 };
 
 /**

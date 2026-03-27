@@ -24,7 +24,6 @@ import {
   type ResolveAuthorsResult,
 } from "../services/openalex.js";
 import {
-  writeOaAuthorIds,
   writeOaReferences,
   writeAlternativeAuthorFullnames,
   fetchAlternativeAuthorFullnames,
@@ -237,29 +236,21 @@ export const processRow = async (
     );
     const chosen = allAuthors.filter((a) => chosenAuthorIds.has(a.id));
 
-    // Step 3: Write author IDs and fullname entries to REDCap
+    // Step 3: Write fullname entries (with selected author IDs) to REDCap
     const idsSpinner = spinner();
-    idsSpinner.start(`[${label}] Saving author IDs and fullnames to REDCap…`);
+    idsSpinner.start(`[${label}] Saving fullnames to REDCap…`);
 
-    const [idsResult, fullnamesResult] = await Promise.all([
-      Effect.runPromise(
-        Effect.either(writeOaAuthorIds(redcapConfig, row.userid, chosen)),
-      ),
-      Effect.runPromise(
-        Effect.either(
-          writeAlternativeAuthorFullnames(
-            redcapConfig,
-            row.userid,
-            fullnameEntries,
-          ),
+    const fullnamesResult = await Effect.runPromise(
+      Effect.either(
+        writeAlternativeAuthorFullnames(
+          redcapConfig,
+          row.userid,
+          fullnameEntries,
         ),
       ),
-    ]);
+    );
 
-    if (Either.isLeft(idsResult)) {
-      idsSpinner.stop(pc.yellow(`[${label}] Could not save author IDs`));
-      log.warn(JSON.stringify(idsResult.left, null, 2));
-    } else if (Either.isLeft(fullnamesResult)) {
+    if (Either.isLeft(fullnamesResult)) {
       idsSpinner.stop(pc.yellow(`[${label}] Could not save fullnames`));
       log.warn(JSON.stringify(fullnamesResult.left, null, 2));
     } else {
