@@ -184,7 +184,13 @@ export const main = async (): Promise<void> => {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- answer is string | symbol; symbol case is handled by isCancel above
       return Number.parseFloat(answer as string);
     })();
-    await matchReferencesCommand({ redcapUrl, redcapToken, threshold });
+    await matchReferencesCommand({
+      redcapUrl,
+      redcapToken,
+      threshold,
+      openAlexUserAgent,
+      openAlexApiKey,
+    });
     return;
   }
 };

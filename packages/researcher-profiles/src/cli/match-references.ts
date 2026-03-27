@@ -26,11 +26,17 @@ import { matchReferences } from "../services/reference-matcher.js";
 import { daysUntilNextUpdate } from "./process-row.js";
 import type { ResearcherRow } from "../types.js";
 import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+import {
+  searchWorksByDOI,
+  type OpenAlexConfig,
+} from "@univ-lehavre/atlas-fetch-openalex";
 
 interface MatchReferencesOptions {
   readonly redcapUrl: string;
   readonly redcapToken: string;
   readonly threshold: number;
+  readonly openAlexUserAgent: string;
+  readonly openAlexApiKey?: string;
 }
 
 interface RedcapConfig {
@@ -94,12 +100,31 @@ const parseOaReferences = (
   }
 };
 
+const DOI_REGEX = /\b10\.\d{4,}\/[^\s"'<>,;]+/g;
+
+const extractDoisFromText = (text: string): string[] => {
+  const matches = text.match(DOI_REGEX) ?? [];
+  return [
+    ...new Set(matches.map((d) => d.toLowerCase().replace(/[.)]+$/, ""))),
+  ];
+};
+
+const normalizeDoi = (doi: string): string =>
+  doi
+    .toLowerCase()
+    .replace(/^https?:\/\/doi\.org\//i, "")
+    .replace(/[.)]+$/, "");
+
 export const matchReferencesCommand = async (
   opts: MatchReferencesOptions,
 ): Promise<void> => {
   const redcapConfig: RedcapConfig = {
     url: opts.redcapUrl,
     token: opts.redcapToken,
+  };
+  const openAlexConfig: OpenAlexConfig = {
+    userAgent: opts.openAlexUserAgent,
+    apiKey: opts.openAlexApiKey,
   };
 
   // Fetch researchers
@@ -235,26 +260,85 @@ export const matchReferencesCommand = async (
       rawSpinner.stop(`[${label}] Raw references saved`);
     }
 
-    // Match references
+    // Match references by title (fuzzy)
     const matched = matchReferences(oaWorks, text, opts.threshold);
-    const withDoi = matched
+    const fuzzyWithDoi = matched
       .map((m) => m.work)
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- doi is typed string but can be null at runtime
       .filter((w) => w.doi !== null && w.doi !== undefined && w.doi !== "");
+
+    // Find DOIs in extracted text
+    const textDois = extractDoisFromText(text);
+    const oaDoiMap = new Map<string, WorksResult>();
+    for (const w of oaWorks) {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- doi is typed string but can be null at runtime
+      if (w.doi !== null && w.doi !== undefined && w.doi !== "") {
+        oaDoiMap.set(normalizeDoi(w.doi), w);
+      }
+    }
+
+    // DOIs from text already covered by oa_references
+    const doiWorksFromText: WorksResult[] = [];
+    const missingDois: string[] = [];
+    for (const doi of textDois) {
+      const found = oaDoiMap.get(doi);
+      if (found !== undefined) {
+        doiWorksFromText.push(found);
+      } else {
+        missingDois.push(doi);
+      }
+    }
+
+    // Fetch missing DOIs from OpenAlex
+    let fetchedByDoi: WorksResult[] = [];
+    if (missingDois.length > 0) {
+      const doiSpinner = spinner();
+      doiSpinner.start(
+        `[${label}] Fetching ${String(missingDois.length)} DOI(s) not in oa_references…`,
+      );
+      const doiResult = await Effect.runPromise(
+        Effect.either(searchWorksByDOI(missingDois, openAlexConfig)),
+      );
+      if (Either.isLeft(doiResult)) {
+        doiSpinner.stop(
+          pc.yellow(
+            `[${label}] Could not fetch missing DOIs — continuing without them`,
+          ),
+        );
+      } else {
+        fetchedByDoi = doiResult.right as WorksResult[];
+        doiSpinner.stop(
+          `[${label}] Fetched ${pc.bold(String(fetchedByDoi.length))} work(s) by DOI from OpenAlex`,
+        );
+      }
+    }
+
+    // Merge: DOI-based works take precedence, then fuzzy matches — deduplicate by DOI
     const seenDois = new Set<string>();
-    const matchedWorks = withDoi.filter((w) => {
-      if (seenDois.has(w.doi)) return false;
-      seenDois.add(w.doi);
-      return true;
-    });
+    const matchedWorks: WorksResult[] = [];
+    for (const w of [...doiWorksFromText, ...fetchedByDoi, ...fuzzyWithDoi]) {
+      const key = normalizeDoi(w.doi);
+      if (seenDois.has(key)) continue;
+      seenDois.add(key);
+      matchedWorks.push(w);
+    }
+
+    const doiTotal = doiWorksFromText.length + fetchedByDoi.length;
     const ratio =
       oaWorks.length > 0
         ? Math.round((matchedWorks.length / oaWorks.length) * 100)
         : 0;
 
     log.info(
-      `[${label}] ${pc.bold(String(matchedWorks.length))}/${pc.bold(String(oaWorks.length))} works matched with DOI (${String(ratio)}%)`,
+      `[${label}] ${pc.bold(String(matchedWorks.length))}/${pc.bold(String(oaWorks.length))} final works` +
+        ` (${String(ratio)}%) — ${pc.dim(`${String(doiTotal)} by DOI, ${String(fuzzyWithDoi.length)} by fuzzy title`)}`,
     );
+
+    if (missingDois.length > 0) {
+      log.info(
+        `[${label}] ${pc.bold(String(missingDois.length))} DOI(s) from text not in oa_references: ${missingDois.slice(0, 5).join(", ")}${missingDois.length > 5 ? "…" : ""}`,
+      );
+    }
 
     if (matchedWorks.length === 0) {
       log.warn(
