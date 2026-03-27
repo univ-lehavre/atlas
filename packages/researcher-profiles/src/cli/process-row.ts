@@ -9,7 +9,7 @@
 
 import { spinner, log, multiselect, isCancel, cancel } from "@clack/prompts";
 import pc from "picocolors";
-import { Effect, Either } from "effect";
+import { Effect, Either, Logger, LogLevel } from "effect";
 import type {
   AuthorsResult,
   WorksResult,
@@ -23,7 +23,11 @@ import {
   fetchWorksForAuthors,
   type ResolveAuthorsResult,
 } from "../services/openalex.js";
-import { writeOaAuthorIds, writeOaReferences } from "../services/redcap.js";
+import {
+  writeOaAuthorIds,
+  writeOaReferences,
+  writeAlternativeAuthorFullnames,
+} from "../services/redcap.js";
 import type { ResearcherRow } from "../types.js";
 
 interface RedcapConfig {
@@ -32,7 +36,7 @@ interface RedcapConfig {
 }
 
 const silenced = <A, E>(effect: Effect.Effect<A, E>): Effect.Effect<A, E> =>
-  effect;
+  effect.pipe(Logger.withMinimumLogLevel(LogLevel.None));
 
 /** Returns the number of days until the next update, or null if > 1 month ago / never imported. */
 export const daysUntilNextUpdate = (importedDate: string): number | null => {
@@ -174,25 +178,28 @@ export const processRow = async (
       return "skipped";
     }
 
-    // Step 2: Multiselect authors
+    // Step 2: Build flat name list and multiselect
+    const nameEntries = allAuthors.flatMap((a) =>
+      [a.display_name, ...a.display_name_alternatives].map((name) => ({
+        name,
+        authorId: a.id,
+      })),
+    );
+    const uniqueNameEntries = nameEntries.filter(
+      (e, i) => nameEntries.findIndex((x) => x.name === e.name) === i,
+    );
+
+    const sortedNameEntries = [...uniqueNameEntries].sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+
     const selected = await multiselect({
-      message: `Select author profile(s) to include for ${pc.bold(label)}:`,
-      options: allAuthors.flatMap((a) => {
-        const orcid = a.orcid !== "" && a.orcid !== "null" ? a.orcid : null;
-        const orcidHint = orcid !== null ? `ORCID: ${orcid} · ` : "";
-        const mainOption = {
-          value: a.id,
-          label: a.display_name,
-          hint: `${orcidHint}${a.id}`,
-        };
-        const altOptions = a.display_name_alternatives.map((name) => ({
-          value: a.id,
-          label: name,
-          hint: `alt · ${orcidHint}${a.id}`,
-        }));
-        return [mainOption, ...altOptions];
-      }),
-      initialValues: allAuthors.map((a) => a.id),
+      message: `Select fullname(s) to associate with ${pc.bold(label)}:`,
+      options: sortedNameEntries.map((e) => ({
+        value: e.name,
+        label: e.name,
+      })),
+      initialValues: sortedNameEntries.map((e) => e.name),
     });
 
     if (isCancel(selected)) {
@@ -200,28 +207,53 @@ export const processRow = async (
       process.exit(0);
     }
 
-    const chosen = allAuthors.filter((a) =>
-      (selected as readonly string[]).includes(a.id),
-    );
+    const selectedNames = new Set(selected as readonly string[]);
 
-    if (chosen.length === 0) {
-      log.warn(`  No authors selected — skipping ${label}`);
+    if (selectedNames.size === 0) {
+      log.warn(`  No names selected — skipping ${label}`);
       return "skipped";
     }
 
-    // Step 3: Write selected author IDs to REDCap
-    const idsSpinner = spinner();
-    idsSpinner.start(`[${label}] Saving author IDs to REDCap…`);
+    const fullnameEntries = sortedNameEntries.map((e) => ({
+      ...e,
+      selected: selectedNames.has(e.name),
+    }));
 
-    const idsResult: Either.Either<void, unknown> = await Effect.runPromise(
-      Effect.either(writeOaAuthorIds(redcapConfig, row.userid, chosen)),
+    const chosenAuthorIds = new Set(
+      fullnameEntries.filter((e) => e.selected).map((e) => e.authorId),
     );
+    const chosen = allAuthors.filter((a) => chosenAuthorIds.has(a.id));
+
+    // Step 3: Write author IDs and fullname entries to REDCap
+    const idsSpinner = spinner();
+    idsSpinner.start(`[${label}] Saving author IDs and fullnames to REDCap…`);
+
+    const [idsResult, fullnamesResult] = await Promise.all([
+      Effect.runPromise(
+        Effect.either(writeOaAuthorIds(redcapConfig, row.userid, chosen)),
+      ),
+      Effect.runPromise(
+        Effect.either(
+          writeAlternativeAuthorFullnames(
+            redcapConfig,
+            row.userid,
+            fullnameEntries,
+          ),
+        ),
+      ),
+    ]);
 
     if (Either.isLeft(idsResult)) {
       idsSpinner.stop(pc.yellow(`[${label}] Could not save author IDs`));
       log.warn(JSON.stringify(idsResult.left, null, 2));
+    } else if (Either.isLeft(fullnamesResult)) {
+      idsSpinner.stop(pc.yellow(`[${label}] Could not save fullnames`));
+      log.warn(JSON.stringify(fullnamesResult.left, null, 2));
     } else {
-      idsSpinner.stop(`[${label}] Author IDs saved`);
+      const selectedCount = fullnameEntries.filter((e) => e.selected).length;
+      idsSpinner.stop(
+        `[${label}] ${pc.bold(String(selectedCount))} fullname(s) selected · ${pc.bold(String(chosen.length))} OpenAlex author ID(s) — saved`,
+      );
     }
 
     chosenAuthors = chosen;
