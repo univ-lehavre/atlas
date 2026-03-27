@@ -6,7 +6,7 @@
  *   match-references — match publications file against oa_references (default)
  */
 
-import { intro, log, text, isCancel, cancel } from "@clack/prompts";
+import { intro, log } from "@clack/prompts";
 import pc from "picocolors";
 import { fromRedcap } from "./from-redcap.js";
 import { matchReferencesCommand } from "./match-references.js";
@@ -26,7 +26,7 @@ ${pc.bold("Usage:")}
   atlas-researcher-profiles from-redcap
 
 ${pc.bold("Options:")}
-  --threshold N   Fuse.js match threshold (0–1, default 0.2; lower = stricter)
+  --threshold N   Fuse.js match threshold (0–1, default 0.2; lower = stricter; optional)
 
 ${pc.bold("Environment variables:")}
   REDCAP_API_URL             REDCap API URL
@@ -35,24 +35,7 @@ ${pc.bold("Environment variables:")}
 `);
 };
 
-const promptThreshold = async (): Promise<number> => {
-  const answer = await text({
-    message: "Fuse.js match threshold (0–1, lower = stricter):",
-    initialValue: "0.2",
-    validate: (v) => {
-      const n = Number.parseFloat(v ?? "");
-      if (Number.isNaN(n) || n < 0 || n > 1)
-        return "Must be a number between 0 and 1";
-      return void 0;
-    },
-  });
-  if (isCancel(answer)) {
-    cancel("Cancelled.");
-    process.exit(0);
-  }
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- answer is string | symbol; symbol case is handled by isCancel above
-  return Number.parseFloat(answer as string);
-};
+const DEFAULT_THRESHOLD = 0.2;
 
 export const main = async (): Promise<void> => {
   const command = process.argv[2];
@@ -94,11 +77,10 @@ export const main = async (): Promise<void> => {
 
   if (command === undefined) {
     await fromRedcap(opts);
-    const threshold = await promptThreshold();
     await matchReferencesCommand({
       redcapUrl,
       redcapToken,
-      threshold,
+      threshold: DEFAULT_THRESHOLD,
       openAlexUserAgent,
       openAlexApiKey,
     });
@@ -139,18 +121,16 @@ export const main = async (): Promise<void> => {
       log.error("--threshold requires a numeric value (e.g. --threshold 0.3)");
       process.exit(1);
     }
-    const threshold = await (async () => {
-      if (thresholdArg !== undefined) {
-        const v = Number.parseFloat(thresholdArg);
-        if (Number.isNaN(v)) {
-          log.error(
-            `Invalid threshold value: ${pc.bold(thresholdArg)} — must be a number between 0 and 1`,
-          );
-          process.exit(1);
-        }
-        return v;
+    const threshold = (() => {
+      if (thresholdArg === undefined) return DEFAULT_THRESHOLD;
+      const v = Number.parseFloat(thresholdArg);
+      if (Number.isNaN(v)) {
+        log.error(
+          `Invalid threshold value: ${pc.bold(thresholdArg)} — must be a number between 0 and 1`,
+        );
+        process.exit(1);
       }
-      return promptThreshold();
+      return v;
     })();
     await matchReferencesCommand({
       redcapUrl,
