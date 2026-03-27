@@ -188,6 +188,7 @@ describe("helpers", () => {
             url,
             "tester/1.0",
             {} as unknown as RateLimiter.RateLimiter.Options,
+            undefined,
             { makeRateLimiter, fetchOnePage },
           );
           const q: Query = { search: "x" } as Query;

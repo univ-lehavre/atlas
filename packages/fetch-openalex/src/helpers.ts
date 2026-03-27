@@ -3,6 +3,7 @@ import type { FetchOpenAlexAPIOptions } from "@univ-lehavre/atlas-openalex-types
 import type {
   FetchError,
   ResponseParseError,
+  RateLimitInfo,
 } from "@univ-lehavre/atlas-fetch-one-api-page";
 import {
   fetchOnePage,
@@ -10,15 +11,28 @@ import {
 } from "@univ-lehavre/atlas-fetch-one-api-page";
 import { Store, type APIResponse, initialState, type IState } from "./store.js";
 
-interface FetchAPIMinimalConfig {
-  userAgent: string;
-  rateLimit: RateLimiter.RateLimiter.Options;
-  apiURL: string;
-  endpoint: string;
-  fetchAPIOptions: FetchOpenAlexAPIOptions;
-  perPage: number;
-  maxPages?: number;
+export type { RateLimitInfo } from "@univ-lehavre/atlas-fetch-one-api-page";
+
+interface FetchAPIMinimalConfigBase {
+  readonly userAgent: string;
+  readonly rateLimit: RateLimiter.RateLimiter.Options;
+  readonly apiURL: string;
+  readonly endpoint: string;
+  readonly fetchAPIOptions: FetchOpenAlexAPIOptions;
+  readonly perPage: number;
+  readonly maxPages?: number;
 }
+
+/** Called after each page with the latest rate limit info, if available. */
+type OnRateLimit = (info: RateLimitInfo) => void;
+
+/** Called after each page with the current page index and total pages (once known). */
+type OnPage = (page: number, total: number | null) => void;
+
+export type FetchAPIMinimalConfig = FetchAPIMinimalConfigBase & {
+  readonly onRateLimit?: OnRateLimit;
+  readonly onPage?: OnPage;
+};
 
 export const buildEndpointURL = (apiURL: string, endpoint: string): URL =>
   new URL(`${apiURL}/${endpoint}`);
@@ -39,6 +53,7 @@ export const makeRateLimitedFetcher = <T>(
   url: URL,
   userAgent: string,
   rateLimit: RateLimiter.RateLimiter.Options,
+  onRateLimit?: (info: RateLimitInfo) => void,
   deps?: {
     makeRateLimiter?: MakeRateLimiterFn;
     fetchOnePage?: FetchOnePageFn<T>;
@@ -54,7 +69,11 @@ export const makeRateLimitedFetcher = <T>(
         ua,
       ): Effect.Effect<APIResponse<T>, FetchError | ResponseParseError> =>
         fetchOnePage<APIResponse<T>>(u, p, ua).pipe(
-          Effect.map((result) => result.data),
+          Effect.map((result) =>
+            result.rateLimit !== undefined && onRateLimit !== undefined
+              ? (onRateLimit(result.rateLimit), result.data)
+              : result.data,
+          ),
         ));
 
     const ratelimiter: RateLimiter.RateLimiter = yield* makeLimiter(rateLimit);
@@ -85,6 +104,7 @@ export const makeWorker = <T>(
     q: Query,
   ) => Effect.Effect<APIResponse<T>, FetchError | ResponseParseError>,
   params: Query,
+  onPage?: (page: number, total: number | null) => void,
 ): Effect.Effect<void, FetchError | ResponseParseError> =>
   Effect.gen(function* () {
     // eslint-disable-next-line functional/no-loop-statements -- sequential pagination requires a loop
@@ -94,5 +114,47 @@ export const makeWorker = <T>(
       yield* queue.offerAll(response.results);
       yield* store.addNewItems(response);
       yield* store.incPage();
+      const st = yield* store.current;
+      yield* Effect.sync(() =>
+        onPage?.(st.page - 1, st.totalPages > 0 ? st.totalPages : null),
+      );
     }
+  });
+
+/**
+ * Fetches all pages and collects results into a plain array (no Queue scope issues).
+ */
+const isValidAPIResponse = <T>(r: unknown): r is APIResponse<T> =>
+  typeof r === "object" &&
+  r !== null &&
+  "meta" in r &&
+  typeof (r as Record<string, unknown>)["meta"] === "object" &&
+  "results" in r &&
+  Array.isArray((r as Record<string, unknown>)["results"]);
+
+export const fetchAllPages = <T>(
+  store: Store<T>,
+  fetchPage: (
+    q: Query,
+  ) => Effect.Effect<APIResponse<T>, FetchError | ResponseParseError>,
+  params: Query,
+  onPage?: (page: number, total: number | null) => void,
+): Effect.Effect<readonly T[], FetchError | ResponseParseError> =>
+  Effect.gen(function* () {
+    const acc = yield* Ref.make<T[]>([]);
+    // eslint-disable-next-line functional/no-loop-statements -- sequential pagination requires a loop
+    while (yield* store.hasMorePages()) {
+      params["page"] = yield* store.page;
+      const raw: APIResponse<T> = yield* fetchPage(params);
+      // eslint-disable-next-line functional/no-conditional-statements -- guard: stop pagination on malformed response
+      if (!isValidAPIResponse<T>(raw)) break;
+      yield* Ref.update(acc, (xs) => [...xs, ...raw.results]);
+      yield* store.addNewItems(raw);
+      yield* store.incPage();
+      const st = yield* store.current;
+      yield* Effect.sync(() =>
+        onPage?.(st.page - 1, st.totalPages > 0 ? st.totalPages : null),
+      );
+    }
+    return yield* Ref.get(acc);
   });

@@ -1,9 +1,6 @@
-export {
-  fetchAPIQueue,
-  fetchAPIResults,
-  type FetchAPIMinimalConfig,
-  type FetchAPIConfig,
-} from "./api.js";
+export { fetchAPIQueue, fetchAPIResults, type FetchAPIConfig } from "./api.js";
+
+export { type FetchAPIMinimalConfig, type RateLimitInfo } from "./helpers.js";
 
 export { type APIResponse, initialState, type IState, Store } from "./store.js";
 
@@ -25,6 +22,7 @@ export {
 export {
   searchAuthorsByName,
   searchAuthorsByORCID,
+  searchWorksByAuthorID,
   searchWorksByAuthorIDs,
   searchWorksByORCID,
   searchWorksByDOI,
