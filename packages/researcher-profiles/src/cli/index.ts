@@ -2,19 +2,13 @@
  * CLI entry point for atlas-researcher-profiles.
  *
  * Commands:
- *   from-redcap  — resolve OpenAlex works from REDCap researchers
+ *   from-redcap      — resolve OpenAlex works from REDCap researchers
+ *   match-references — match publications file against oa_references (default)
  */
 
-import {
-  intro,
-  log,
-  select,
-  confirm,
-  text,
-  isCancel,
-  cancel,
-} from "@clack/prompts";
+import { intro, log } from "@clack/prompts";
 import pc from "picocolors";
+import { run } from "./run.js";
 import { fromRedcap } from "./from-redcap.js";
 import { matchReferencesCommand } from "./match-references.js";
 
@@ -29,12 +23,12 @@ ${pc.bold("atlas-researcher-profiles")} v${VERSION}
 Resolve OpenAlex works for researchers and write results to REDCap.
 
 ${pc.bold("Usage:")}
-  atlas-researcher-profiles from-redcap [--force]             Read researchers from REDCap
-  atlas-researcher-profiles match-references [--threshold N] Fuzzy-match publications file against oa_references
+  atlas-researcher-profiles [match-references] [--threshold N]
+  atlas-researcher-profiles from-redcap [--batch]
 
 ${pc.bold("Options:")}
-  --force         Re-process researchers already marked as up-to-date
-  --threshold N   Fuse.js match threshold (0–1, default 0.2; lower = stricter)
+  --threshold N   Fuse.js match threshold (0–1, default 0.2; lower = stricter; optional)
+  --batch, --yes  Auto-accept all name selections without prompting
 
 ${pc.bold("Environment variables:")}
   REDCAP_API_URL             REDCap API URL
@@ -42,6 +36,8 @@ ${pc.bold("Environment variables:")}
   OPENALEX_USER_AGENT        User-Agent for OpenAlex API (e.g. mailto:you@example.com)
 `);
 };
+
+const DEFAULT_THRESHOLD = 0.2;
 
 export const main = async (): Promise<void> => {
   const command = process.argv[2];
@@ -76,70 +72,55 @@ export const main = async (): Promise<void> => {
     process.exit(1);
   }
 
-  const opts = { redcapUrl, redcapToken, openAlexUserAgent, openAlexApiKey };
+  const allArgs = new Set(process.argv.slice(2));
+  const batch = allArgs.has("--batch") || allArgs.has("--yes");
+  const opts = {
+    redcapUrl,
+    redcapToken,
+    openAlexUserAgent,
+    openAlexApiKey,
+    batch,
+  };
 
   process.stdout.write("\u001Bc");
   intro(pc.cyan("atlas-researcher-profiles") + pc.dim(` v${VERSION}`));
 
-  // Interactive command selection if not provided
-  const resolvedCommand =
-    command ??
-    (await (async () => {
-      const picked = await select({
-        message: "What do you want to do?",
-        options: [
-          {
-            value: "from-redcap",
-            label: "from-redcap",
-            hint: "resolve OpenAlex works and write to REDCap",
-          },
-          {
-            value: "match-references",
-            label: "match-references",
-            hint: "fuzzy-match publications file against oa_references",
-          },
-        ],
-      });
-      if (isCancel(picked)) {
-        cancel("Cancelled.");
-        process.exit(0);
-      }
-      return picked as string;
-    })());
+  if (command === undefined) {
+    await run({
+      redcapUrl,
+      redcapToken,
+      openAlexUserAgent,
+      openAlexApiKey,
+      threshold: DEFAULT_THRESHOLD,
+      batch,
+    });
+    return;
+  }
 
-  if (resolvedCommand === "from-redcap") {
+  if (command === "from-redcap") {
     const args = process.argv.slice(3);
-    const unknownArgs = args.filter((a) => a !== "--force");
+    const knownFlags = new Set(["--batch", "--yes"]);
+    const unknownArgs = args.filter((a) => !knownFlags.has(a));
     if (unknownArgs.length > 0) {
       log.error(
         `Unknown option(s) for from-redcap: ${unknownArgs.map((a) => pc.bold(a)).join(", ")}`,
       );
-      log.message(`Usage: atlas-researcher-profiles from-redcap [--force]`);
+      log.message(`Usage: atlas-researcher-profiles from-redcap [--batch]`);
       process.exit(1);
     }
-    const force =
-      args.includes("--force") ||
-      (await (async () => {
-        if (args.includes("--force")) return true;
-        const answer = await confirm({
-          message:
-            "Re-process researchers already marked as up-to-date? (--force)",
-        });
-        if (isCancel(answer)) {
-          cancel("Cancelled.");
-          process.exit(0);
-        }
-        return answer;
-      })());
-    await fromRedcap({ ...opts, force });
+    await fromRedcap(opts);
     return;
   }
 
-  if (resolvedCommand === "match-references") {
+  if (command === "match-references") {
     const args = process.argv.slice(3);
     const thresholdIdx = args.indexOf("--threshold");
+    const batchFlags = new Set(["--batch", "--yes"]);
     const unknownArgs = args.filter(
-      (a, i) => a !== "--threshold" && args[i - 1] !== "--threshold",
+      (a, i) =>
+        a !== "--threshold" &&
+        args[i - 1] !== "--threshold" &&
+        !batchFlags.has(a),
     );
     if (unknownArgs.length > 0) {
       log.error(
@@ -156,35 +137,24 @@ export const main = async (): Promise<void> => {
       log.error("--threshold requires a numeric value (e.g. --threshold 0.3)");
       process.exit(1);
     }
-    const threshold = await (async () => {
-      if (thresholdArg !== undefined) {
-        const v = Number.parseFloat(thresholdArg);
-        if (Number.isNaN(v)) {
-          log.error(
-            `Invalid threshold value: ${pc.bold(thresholdArg)} — must be a number between 0 and 1`,
-          );
-          process.exit(1);
-        }
-        return v;
+    const threshold = (() => {
+      if (thresholdArg === undefined) return DEFAULT_THRESHOLD;
+      const v = Number.parseFloat(thresholdArg);
+      if (Number.isNaN(v)) {
+        log.error(
+          `Invalid threshold value: ${pc.bold(thresholdArg)} — must be a number between 0 and 1`,
+        );
+        process.exit(1);
       }
-      const answer = await text({
-        message: "Fuse.js match threshold (0–1, lower = stricter):",
-        initialValue: "0.2",
-        validate: (v) => {
-          const n = Number.parseFloat(v ?? "");
-          if (Number.isNaN(n) || n < 0 || n > 1)
-            return "Must be a number between 0 and 1";
-          return void 0;
-        },
-      });
-      if (isCancel(answer)) {
-        cancel("Cancelled.");
-        process.exit(0);
-      }
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- answer is string | symbol; symbol case is handled by isCancel above
-      return Number.parseFloat(answer as string);
+      return v;
     })();
-    await matchReferencesCommand({ redcapUrl, redcapToken, threshold });
+    await matchReferencesCommand({
+      redcapUrl,
+      redcapToken,
+      threshold,
+      openAlexUserAgent,
+      openAlexApiKey,
+    });
     return;
   }
 };

@@ -17,32 +17,34 @@ const relativeDate = (dateStr: string): string => {
 
 /**
  * Prompts the user to select which researchers to process.
- * All researchers are pre-selected by default.
+ * @param preselectAll - If true, all researchers are pre-selected.
  */
 export const selectResearchers = async (
   researchers: readonly ResearcherRow[],
+  preselectAll = false,
 ): Promise<readonly ResearcherRow[]> => {
+  const sorted = [...researchers].sort((a, b) =>
+    a.last_name.localeCompare(b.last_name, "fr"),
+  );
   const selected = await multiselect({
     message: `Select researchers to process (${pc.bold(String(researchers.length))} total):`,
-    options: [...researchers]
-      .sort((a, b) => a.last_name.localeCompare(b.last_name, "fr"))
-      .map((r) => {
-        const authorDate = relativeDate(r.oa_author_ids_imported_date);
-        const worksDate = relativeDate(r.oa_references_imported_at);
-        const dateParts = [authorDate, worksDate].filter((s) => s !== "");
-        const orcidHint =
-          r.orcid !== "" && r.orcid !== "null" ? `ORCID: ${r.orcid}` : r.userid;
-        const hint =
-          dateParts.length > 0
-            ? `${orcidHint} · authors: ${dateParts[0] ?? ""} · works: ${dateParts[1] ?? ""}`
-            : orcidHint;
-        return {
-          value: r.userid,
-          label: `${r.first_name} ${r.last_name}`,
-          hint,
-        };
-      }),
-    initialValues: [],
+    initialValues: preselectAll ? sorted.map((r) => r.userid) : [],
+    options: sorted.map((r) => {
+      const authorDate = relativeDate(r.oa_author_ids_imported_date);
+      const worksDate = relativeDate(r.oa_references_imported_at);
+      const dateParts = [authorDate, worksDate].filter((s) => s !== "");
+      const orcidHint =
+        r.orcid !== "" && r.orcid !== "null" ? `ORCID: ${r.orcid}` : r.userid;
+      const hint =
+        dateParts.length > 0
+          ? `${orcidHint} · authors: ${dateParts[0] ?? ""} · works: ${dateParts[1] ?? ""}`
+          : orcidHint;
+      return {
+        value: r.userid,
+        label: `${r.first_name} ${r.last_name}`,
+        hint,
+      };
+    }),
   });
 
   if (isCancel(selected)) {
@@ -50,7 +52,6 @@ export const selectResearchers = async (
     process.exit(0);
   }
 
-  return researchers.filter((r) =>
-    (selected as readonly string[]).includes(r.userid),
-  );
+  const selectedIds = Array.isArray(selected) ? selected : [];
+  return researchers.filter((r) => selectedIds.includes(r.userid));
 };

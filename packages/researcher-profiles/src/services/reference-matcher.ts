@@ -13,13 +13,39 @@ export interface MatchResult {
 }
 
 /**
+ * Splits a long line into overlapping windows to improve fuzzy matching accuracy.
+ * Prevents Bitap from searching a title against an overly long string.
+ */
+const slidingWindows = (
+  text: string,
+  size: number,
+  step: number,
+): readonly string[] => {
+  const count = Math.max(1, Math.ceil((text.length - size) / step) + 1);
+  return Array.from({ length: count }, (_, i) => {
+    const start = Math.min(i * step, Math.max(0, text.length - size));
+    return text.slice(start, start + size);
+  });
+};
+
+const LONG_LINE_THRESHOLD = 500;
+const WINDOW_SIZE = 200;
+const WINDOW_STEP = 80;
+
+/**
  * Splits text into candidate reference lines (non-empty lines of reasonable length).
+ * Long lines (e.g. PDF text with no newlines) are broken into overlapping windows.
  */
 const splitLines = (text: string): readonly string[] =>
   text
     .split(/\r?\n/)
     .map((l) => l.trim())
-    .filter((l) => l.length > 20);
+    .filter((l) => l.length > 20)
+    .flatMap((l) =>
+      l.length > LONG_LINE_THRESHOLD
+        ? slidingWindows(l, WINDOW_SIZE, WINDOW_STEP)
+        : [l],
+    );
 
 /**
  * Returns the best Fuse.js score for a single title against all lines, or null if no match.

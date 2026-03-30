@@ -7,9 +7,9 @@
  *   5. Confirm and write to REDCap
  */
 
-import { spinner, log, multiselect, isCancel, cancel } from "@clack/prompts";
+import { spinner, log, multiselect, isCancel } from "@clack/prompts";
 import pc from "picocolors";
-import { Effect, Either } from "effect";
+import { Effect, Either, Logger, LogLevel } from "effect";
 import type {
   AuthorsResult,
   WorksResult,
@@ -23,7 +23,11 @@ import {
   fetchWorksForAuthors,
   type ResolveAuthorsResult,
 } from "../services/openalex.js";
-import { writeOaAuthorIds, writeOaReferences } from "../services/redcap.js";
+import {
+  writeOaReferences,
+  writeAlternativeAuthorFullnames,
+  fetchAlternativeAuthorFullnames,
+} from "../services/redcap.js";
 import type { ResearcherRow } from "../types.js";
 
 interface RedcapConfig {
@@ -32,7 +36,7 @@ interface RedcapConfig {
 }
 
 const silenced = <A, E>(effect: Effect.Effect<A, E>): Effect.Effect<A, E> =>
-  effect;
+  effect.pipe(Logger.withMinimumLogLevel(LogLevel.None));
 
 /** Returns the number of days until the next update, or null if > 1 month ago / never imported. */
 export const daysUntilNextUpdate = (importedDate: string): number | null => {
@@ -49,25 +53,36 @@ export const daysUntilNextUpdate = (importedDate: string): number | null => {
 const showWorks = (works: readonly WorksResult[]): void => {
   if (works.length === 0) {
     log.warn("  No works found");
-    return;
-  }
-  log.info(`  ${String(works.length)} work(s) found — sample:`);
-  for (const w of works.slice(0, 5)) {
-    log.message(`  · [${pc.dim(String(w.publication_year))}] ${w.title}`);
-  }
-  if (works.length > 5) {
-    log.message(pc.dim(`  … and ${String(works.length - 5)} more`));
   }
 };
 
-/** Parses stored author IDs JSON, returns empty array on failure. */
-const parseStoredAuthorIds = (raw: string): readonly string[] => {
+interface FullnameEntry {
+  name: string;
+  authorId: string;
+  selected: boolean;
+}
+
+/** Parses alternative_author_fullnames JSON, returns all entries. */
+const parseFullnameEntries = (buffer: ArrayBuffer): FullnameEntry[] => {
+  const raw = new TextDecoder().decode(buffer);
   if (raw === "") return [];
   try {
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed)
-      ? (parsed as unknown[]).filter((x): x is string => typeof x === "string")
-      : [];
+    if (!Array.isArray(parsed)) return [];
+    return (
+      parsed as { name?: unknown; authorId?: unknown; selected?: unknown }[]
+    )
+      .filter(
+        (e) =>
+          typeof e.name === "string" &&
+          typeof e.authorId === "string" &&
+          typeof e.selected === "boolean",
+      )
+      .map((e) => ({
+        name: e.name as string,
+        authorId: e.authorId as string,
+        selected: e.selected as boolean,
+      }));
   } catch {
     return [];
   }
@@ -85,6 +100,9 @@ const fetchWorks = async (
     `[${label}] Fetching works… (0/${String(chosenAuthors.length)} authors)`,
   );
 
+  const pagesPerAuthor = new Map<number, number>();
+  let lastAuthorTotal = 0;
+
   const result: Either.Either<readonly WorksResult[], unknown> =
     await Effect.runPromise(
       Effect.either(
@@ -94,6 +112,8 @@ const fetchWorks = async (
             openAlexConfig,
             researcher,
             (authorIndex, authorTotal, page, pageTotal) => {
+              pagesPerAuthor.set(authorIndex, page);
+              lastAuthorTotal = authorTotal;
               const pagePart =
                 pageTotal !== null
                   ? `page ${String(page)}/${String(pageTotal)}`
@@ -111,8 +131,12 @@ const fetchWorks = async (
   if (Either.isLeft(result)) {
     worksSpinner.stop(pc.red(`[${label}] Works fetch failed`));
   } else {
+    const totalPages = [...pagesPerAuthor.values()].reduce((s, p) => s + p, 0);
     worksSpinner.stop(
-      `[${label}] ${pc.bold(String(result.right.length))} work(s)`,
+      `[${label}] ${pc.bold(String(result.right.length))} work(s)` +
+        pc.dim(
+          ` · ${String(lastAuthorTotal)} author(s) · ${String(totalPages)} page(s)`,
+        ),
     );
   }
 
@@ -124,30 +148,45 @@ export const processRow = async (
   redcapConfig: RedcapConfig,
   openAlexConfig: OpenAlexConfig,
   onRateLimit?: (info: RateLimitInfo) => void,
-  force = false,
+  batch?: boolean,
 ): Promise<"ok" | "skipped" | "error"> => {
   const label = `${row.first_name} ${row.last_name} (${row.userid})`;
   const researcher = `${row.first_name} ${row.last_name}`;
 
-  let chosenAuthors: readonly Pick<AuthorsResult, "id">[];
+  let allAuthorIdsForFetch: readonly string[] = [];
+  let selectedNameFilter = new Set<string>();
+  let prefetchedWorks: readonly WorksResult[] | null = null;
 
   const authorDays = daysUntilNextUpdate(row.oa_author_ids_imported_date);
 
   if (authorDays !== null) {
-    // Author IDs are fresh — reuse stored IDs
-    const storedIds = parseStoredAuthorIds(row.researcher_oa_ids);
-    if (storedIds.length === 0) {
+    // Author IDs are fresh — reuse stored entries from alternative_author_fullnames
+    const storedResult = await Effect.runPromise(
+      Effect.either(fetchAlternativeAuthorFullnames(redcapConfig, row.userid)),
+    );
+    const storedEntries = Either.isRight(storedResult)
+      ? parseFullnameEntries(storedResult.right)
+      : [];
+    allAuthorIdsForFetch = [...new Set(storedEntries.map((e) => e.authorId))];
+    selectedNameFilter = new Set(
+      storedEntries.filter((e) => e.selected).map((e) => e.name),
+    );
+    if (allAuthorIdsForFetch.length === 0) {
       log.warn(
         `[${label}] Author IDs marked fresh but no stored IDs found — skipping`,
       );
       return "skipped";
     }
+    if (selectedNameFilter.size === 0) {
+      log.warn(`[${label}] No names selected in stored entries — skipping`);
+      return "skipped";
+    }
     log.info(
-      `[${label}] Author IDs up to date (next update in ${String(authorDays)} day(s)) — ${String(storedIds.length)} author(s)`,
+      `[${label}] Author IDs up to date (next update in ${String(authorDays)} day(s)) — ${String(allAuthorIdsForFetch.length)} author(s)`,
     );
-    chosenAuthors = storedIds.map((id) => ({ id }));
   } else {
     // Step 1: Resolve authors
+    log.info("Searching authors on OpenAlex…");
     const s = spinner();
     s.start(`[${label}] Searching authors on OpenAlex…`);
 
@@ -175,79 +214,175 @@ export const processRow = async (
       return "skipped";
     }
 
-    // Step 2: Multiselect authors
-    const selected = await multiselect({
-      message: `Select author profile(s) to include for ${pc.bold(label)}:`,
-      options: allAuthors.map((a) => {
-        const orcid = a.orcid !== "" && a.orcid !== "null" ? a.orcid : null;
-        const orcidHint = orcid !== null ? `ORCID: ${orcid} · ` : "";
-        return {
-          value: a.id,
-          label: a.display_name,
-          hint: `${orcidHint}${a.id}`,
-        };
-      }),
-      initialValues: allAuthors.map((a) => a.id),
-    });
+    allAuthorIdsForFetch = allAuthors.map((a) => a.id);
 
-    if (isCancel(selected)) {
-      cancel("Cancelled");
-      process.exit(0);
-    }
-
-    const chosen = allAuthors.filter((a) =>
-      (selected as readonly string[]).includes(a.id),
+    // Step 2: Fetch works for all resolved authors (needed for raw_author_name extraction)
+    log.info("Downloading works from OpenAlex…");
+    const worksResult = await fetchWorks(
+      allAuthors,
+      label,
+      researcher,
+      openAlexConfig,
+      onRateLimit,
     );
 
-    if (chosen.length === 0) {
-      log.warn(`  No authors selected — skipping ${label}`);
+    if (Either.isLeft(worksResult)) {
+      log.error(JSON.stringify(worksResult.left, null, 2));
+      return "error";
+    }
+
+    prefetchedWorks = worksResult.right;
+
+    // Step 3: Extract raw_author_name from authorships
+    const allAuthorIds = new Set(allAuthors.map((a) => a.id));
+    const rawNameMap = new Map<string, string>(); // name → authorId (first seen)
+    for (const work of prefetchedWorks) {
+      for (const authorship of work.authorships) {
+        const aid = authorship.author.id;
+        const name = authorship.raw_author_name;
+        if (allAuthorIds.has(aid) && name !== "" && !rawNameMap.has(name)) {
+          rawNameMap.set(name, aid);
+        }
+      }
+    }
+    const sortedNameEntries = [...rawNameMap.entries()]
+      .map(([name, authorId]) => ({ name, authorId }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    // Step 4: Fetch existing entries and present only new names
+    const existingResult = await Effect.runPromise(
+      Effect.either(fetchAlternativeAuthorFullnames(redcapConfig, row.userid)),
+    );
+    const existingEntries: FullnameEntry[] = Either.isRight(existingResult)
+      ? parseFullnameEntries(existingResult.right)
+      : [];
+    const existingNames = new Set(existingEntries.map((e) => e.name));
+    const newNameEntries = sortedNameEntries.filter(
+      (e) => !existingNames.has(e.name),
+    );
+
+    let mergedEntries: FullnameEntry[];
+
+    if (newNameEntries.length === 0) {
+      log.info(
+        `[${label}] No new names — using existing ${pc.bold(String(existingEntries.length))} entries`,
+      );
+      mergedEntries = existingEntries;
+    } else {
+      let selectedNames: Set<string>;
+
+      if (batch === true) {
+        selectedNames = new Set(newNameEntries.map((e) => e.name));
+        log.info(
+          `[${label}] Batch mode — auto-selecting ${pc.bold(String(newNameEntries.length))} new name(s)`,
+        );
+      } else {
+        log.info("Select alternative names");
+        const selected = await multiselect({
+          message: `Select author name variants found in OpenAlex article metadata for ${pc.bold(label)} (${String(newNameEntries.length)} new):`,
+          options: newNameEntries.map((e) => ({
+            value: e.name,
+            label: e.name,
+          })),
+          initialValues: newNameEntries.map((e) => e.name),
+        });
+
+        if (isCancel(selected)) {
+          log.warn(`[${label}] Skipped (cancelled)`);
+          return "skipped";
+        }
+
+        selectedNames = new Set(Array.isArray(selected) ? selected : []);
+      }
+
+      const newFullnameEntries = newNameEntries.map((e) => ({
+        ...e,
+        selected: selectedNames.has(e.name),
+      }));
+
+      mergedEntries = [...existingEntries, ...newFullnameEntries];
+
+      const idsSpinner = spinner();
+      idsSpinner.start(`[${label}] Saving fullnames to REDCap…`);
+
+      const fullnamesResult = await Effect.runPromise(
+        Effect.either(
+          writeAlternativeAuthorFullnames(
+            redcapConfig,
+            row.userid,
+            mergedEntries,
+          ),
+        ),
+      );
+
+      if (Either.isLeft(fullnamesResult)) {
+        idsSpinner.stop(
+          pc.red(`[${label}] Could not save fullnames — aborting`),
+        );
+        log.error(JSON.stringify(fullnamesResult.left, null, 2));
+        return "error";
+      } else {
+        const selectedCount = mergedEntries.filter((e) => e.selected).length;
+        const chosenCount = new Set(
+          mergedEntries.filter((e) => e.selected).map((e) => e.authorId),
+        ).size;
+        idsSpinner.stop(
+          `[${label}] ${pc.bold(String(selectedCount))} fullname(s) selected · ${pc.bold(String(chosenCount))} OpenAlex author ID(s) — saved`,
+        );
+      }
+    }
+
+    selectedNameFilter = new Set(
+      mergedEntries.filter((e) => e.selected).map((e) => e.name),
+    );
+
+    if (selectedNameFilter.size === 0) {
+      log.warn(`  No names selected — skipping ${label}`);
       return "skipped";
     }
-
-    // Step 3: Write selected author IDs to REDCap
-    const idsSpinner = spinner();
-    idsSpinner.start(`[${label}] Saving author IDs to REDCap…`);
-
-    const idsResult: Either.Either<void, unknown> = await Effect.runPromise(
-      Effect.either(writeOaAuthorIds(redcapConfig, row.userid, chosen)),
-    );
-
-    if (Either.isLeft(idsResult)) {
-      idsSpinner.stop(pc.yellow(`[${label}] Could not save author IDs`));
-      log.warn(JSON.stringify(idsResult.left, null, 2));
-    } else {
-      idsSpinner.stop(`[${label}] Author IDs saved`);
-    }
-
-    chosenAuthors = chosen;
   }
 
-  // Check if works fetch should be skipped (imported less than 1 month ago)
+  // Check if works write should be skipped (imported less than 1 month ago)
   const worksDays = daysUntilNextUpdate(row.oa_references_imported_at);
-  if (worksDays !== null && !force) {
+  if (worksDays !== null) {
     log.info(
       `[${label}] Works already imported — next update in ${String(worksDays)} day(s)`,
     );
     return "skipped";
   }
 
-  // Step 4: Fetch works for selected authors
-  const worksResult = await fetchWorks(
-    chosenAuthors,
-    label,
-    researcher,
-    openAlexConfig,
-    onRateLimit,
-  );
+  // Fetch works if not already prefetched (fresh author IDs path)
+  let allWorks: readonly WorksResult[];
+  if (prefetchedWorks !== null) {
+    allWorks = prefetchedWorks;
+  } else {
+    log.info("Downloading works from OpenAlex…");
+    const worksResult = await fetchWorks(
+      allAuthorIdsForFetch.map((id) => ({ id })),
+      label,
+      researcher,
+      openAlexConfig,
+      onRateLimit,
+    );
 
-  if (Either.isLeft(worksResult)) {
-    log.error(JSON.stringify(worksResult.left, null, 2));
-    return "error";
+    if (Either.isLeft(worksResult)) {
+      log.error(JSON.stringify(worksResult.left, null, 2));
+      return "error";
+    }
+
+    allWorks = worksResult.right;
   }
 
-  const works = worksResult.right;
+  // Filter works to those having at least one authorship with a selected raw_author_name
+  const works = allWorks.filter((w) =>
+    w.authorships.some((a) => selectedNameFilter.has(a.raw_author_name)),
+  );
 
-  // Step 5: Show works sample
+  log.info(
+    `[${label}] ${pc.bold(String(works.length))}/${pc.bold(String(allWorks.length))} work(s) after name filter`,
+  );
+
+  // Show works sample
   showWorks(works);
 
   const writeSpinner = spinner();
@@ -263,6 +398,6 @@ export const processRow = async (
     return "error";
   }
 
-  writeSpinner.stop(pc.green(`[${label}] Written to REDCap ✓`));
+  writeSpinner.stop(`[${label}] Written to REDCap`);
   return "ok";
 };
