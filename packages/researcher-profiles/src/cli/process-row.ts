@@ -279,7 +279,7 @@ export const processRow = async (
       } else {
         log.info("Select alternative names");
         const selected = await multiselect({
-          message: `Select new fullname(s) to associate with ${pc.bold(label)} (${String(newNameEntries.length)} new):`,
+          message: `Select author name variants found in OpenAlex article metadata for ${pc.bold(label)} (${String(newNameEntries.length)} new):`,
           options: newNameEntries.map((e) => ({
             value: e.name,
             label: e.name,
