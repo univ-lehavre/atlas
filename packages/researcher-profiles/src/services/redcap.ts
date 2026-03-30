@@ -7,10 +7,7 @@ import {
   RedcapUrl,
   RedcapToken,
 } from "@univ-lehavre/atlas-crf/redcap";
-import type {
-  AuthorsResult,
-  WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
 import { Effect } from "effect";
 import { RedcapFetchError, RedcapWriteError } from "../errors.js";
 import type { ResearcherRow } from "../types.js";
@@ -53,11 +50,11 @@ export const fetchResearchers = (
         "middle_name",
         "first_name",
         "orcid",
-        "researcher_oa_ids",
         "oa_author_ids_imported_date",
         "oa_references_imported_at",
         "final_references_imported_at",
         "raw_references_imported_at",
+        "references_openalex_complete",
       ],
     })
     .pipe(
@@ -68,11 +65,11 @@ export const fetchResearchers = (
           middle_name: r["middle_name"] ?? "",
           first_name: r["first_name"] ?? "",
           orcid: r["orcid"] ?? "",
-          researcher_oa_ids: r["researcher_oa_ids"] ?? "",
           oa_author_ids_imported_date: r["oa_author_ids_imported_date"] ?? "",
           oa_references_imported_at: r["oa_references_imported_at"] ?? "",
           final_references_imported_at: r["final_references_imported_at"] ?? "",
           raw_references_imported_at: r["raw_references_imported_at"] ?? "",
+          references_openalex_complete: r["references_openalex_complete"] ?? "",
         })),
       ),
       Effect.mapError((cause) => new RedcapFetchError({ cause })),
@@ -89,29 +86,53 @@ const localIsoDateTime = (): string => {
 };
 
 /**
- * Writes selected OpenAlex author IDs to the `researcher_oa_ids` field for a given userid.
+ * Uploads the full list of author fullnames (with selection status) to `alternative_author_fullnames`.
+ * Also updates `oa_author_ids_imported_date` timestamp.
  */
-export const writeOaAuthorIds = (
+export const writeAlternativeAuthorFullnames = (
   config: RedcapConnectionConfig,
   userid: string,
-  authors: readonly AuthorsResult[],
+  entries: readonly { name: string; authorId: string; selected: boolean }[],
 ): Effect.Effect<void, RedcapWriteError> => {
   const client = makeClient(config);
-  return client
-    .importRecords(
-      [
-        {
+  return Effect.all(
+    [
+      client
+        .importFile(
+          "alternative_author_fullnames",
           userid,
-          researcher_oa_ids: JSON.stringify(authors.map((a) => a.id)),
-          oa_author_ids_imported_date: localIsoDateTime(),
-        },
-      ],
-      { overwriteBehavior: "overwrite" },
-    )
-    .pipe(
-      Effect.asVoid,
-      Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
-    );
+          "alternative_author_fullnames.json",
+          toJsonBytes(entries),
+        )
+        .pipe(
+          Effect.asVoid,
+          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+        ),
+      client
+        .importRecords(
+          [{ userid, oa_author_ids_imported_date: localIsoDateTime() }],
+          { overwriteBehavior: "overwrite" },
+        )
+        .pipe(
+          Effect.asVoid,
+          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+        ),
+    ],
+    { concurrency: 1 },
+  ).pipe(Effect.asVoid);
+};
+
+/**
+ * Downloads the `alternative_author_fullnames` file field for a given userid.
+ */
+export const fetchAlternativeAuthorFullnames = (
+  config: RedcapConnectionConfig,
+  userid: string,
+): Effect.Effect<ArrayBuffer, RedcapFetchError> => {
+  const client = makeClient(config);
+  return client
+    .exportFile("alternative_author_fullnames", userid)
+    .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
 };
 
 /**
@@ -168,7 +189,6 @@ export const writeOaReferences = (
             {
               userid,
               oa_references_imported_at: localIsoDateTime(),
-              references_openalex_complete: "2",
             },
           ],
           { overwriteBehavior: "overwrite" },
@@ -279,6 +299,7 @@ export const writeFinalReferences = (
             {
               userid,
               final_references_imported_at: localIsoDateTime(),
+              references_openalex_complete: "2",
             },
           ],
           { overwriteBehavior: "overwrite" },

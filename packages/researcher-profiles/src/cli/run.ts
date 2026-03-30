@@ -1,28 +1,28 @@
 /**
- * `from-redcap` command — fetches researchers from REDCap and resolves their OpenAlex works.
+ * Unified per-researcher pipeline: resolves OpenAlex works (processRow) then
+ * matches publications file against oa_references (matchRow) for each researcher
+ * in sequence, relying on REDCap dates to skip already-fresh steps.
  */
 
 import { spinner, log, outro } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either } from "effect";
-import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
-import type { RateLimitInfo } from "@univ-lehavre/atlas-fetch-openalex";
+import type {
+  OpenAlexConfig,
+  RateLimitInfo,
+} from "@univ-lehavre/atlas-fetch-openalex";
 import { fetchResearchers } from "../services/redcap.js";
-import type { ResearcherRow } from "../types.js";
-import { processRow, daysUntilNextUpdate } from "./process-row.js";
+import { processRow } from "./process-row.js";
+import { matchRow } from "./match-row.js";
 import { selectResearchers } from "./select-researchers.js";
 
-interface FromRedcapOptions {
+export interface RunOptions {
   readonly redcapUrl: string;
   readonly redcapToken: string;
   readonly openAlexUserAgent: string;
   readonly openAlexApiKey?: string;
+  readonly threshold: number;
   readonly batch?: boolean;
-}
-
-interface RedcapConfig {
-  readonly url: string;
-  readonly token: string;
 }
 
 const showQuota = (
@@ -38,13 +38,8 @@ const showQuota = (
   );
 };
 
-export const fromRedcap = async (
-  opts: FromRedcapOptions,
-): Promise<readonly ResearcherRow[]> => {
-  const redcapConfig: RedcapConfig = {
-    url: opts.redcapUrl,
-    token: opts.redcapToken,
-  };
+export const run = async (opts: RunOptions): Promise<void> => {
+  const redcapConfig = { url: opts.redcapUrl, token: opts.redcapToken };
   const openAlexConfig: OpenAlexConfig = {
     userAgent: opts.openAlexUserAgent,
     ...(opts.openAlexApiKey !== undefined
@@ -52,12 +47,13 @@ export const fromRedcap = async (
       : {}),
   };
 
-  // Fetch researchers from REDCap
+  // Fetch researchers
   const s = spinner();
   s.start("Fetching researchers from REDCap…");
 
-  const fetchResult: Either.Either<readonly ResearcherRow[], unknown> =
-    await Effect.runPromise(Effect.either(fetchResearchers(redcapConfig)));
+  const fetchResult = await Effect.runPromise(
+    Effect.either(fetchResearchers(redcapConfig)),
+  );
 
   if (Either.isLeft(fetchResult)) {
     s.stop(pc.red("Failed to fetch researchers from REDCap"));
@@ -66,25 +62,15 @@ export const fromRedcap = async (
   }
 
   const allResearchers = fetchResult.right;
+  const pending = allResearchers.filter(
+    (r) => r.references_openalex_complete !== "2",
+  );
+  const complete = allResearchers.filter(
+    (r) => r.references_openalex_complete === "2",
+  );
+
   s.stop(
     `Found ${pc.bold(String(allResearchers.length))} researchers in REDCap`,
-  );
-
-  const isComplete = (row: ResearcherRow): boolean =>
-    row.references_openalex_complete === "2";
-
-  const isUpToDate = (row: ResearcherRow): boolean => {
-    const authorDays = daysUntilNextUpdate(row.oa_author_ids_imported_date);
-    const worksDays = daysUntilNextUpdate(row.oa_references_imported_at);
-    return authorDays !== null && worksDays !== null;
-  };
-
-  const complete = allResearchers.filter(isComplete);
-  const upToDate = allResearchers.filter(
-    (r) => !isComplete(r) && isUpToDate(r),
-  );
-  const pending = allResearchers.filter(
-    (r) => !isComplete(r) && !isUpToDate(r),
   );
 
   if (complete.length > 0) {
@@ -92,18 +78,17 @@ export const fromRedcap = async (
       `${pc.dim(String(complete.length))} researcher(s) complete (references_openalex_complete = 2) — excluded`,
     );
   }
-  if (upToDate.length > 0) {
-    log.info(
-      `${pc.dim(String(upToDate.length))} researcher(s) already up-to-date — excluded from selection`,
-    );
-  }
 
   if (pending.length === 0) {
-    outro("All researchers are up-to-date — nothing to do");
-    return [];
+    outro("All researchers are already complete");
+    return;
   }
 
   const researchers = await selectResearchers(pending);
+
+  log.info(
+    `Match threshold: ${pc.bold(String(opts.threshold))} (lower = stricter)`,
+  );
 
   let skipped = 0;
   let errors = 0;
@@ -112,13 +97,13 @@ export const fromRedcap = async (
 
   for (const [i, row] of researchers.entries()) {
     const label = `${row.first_name} ${row.last_name} (${row.userid})`;
+    const t0 = Date.now();
     log.info(
       pc.bold(`── ${label} ──`) +
         pc.dim(` [${String(i + 1)}/${String(researchers.length)}]`),
     );
 
-    const t0 = Date.now();
-    const status = await processRow(
+    const processStatus = await processRow(
       row,
       redcapConfig,
       openAlexConfig,
@@ -128,16 +113,31 @@ export const fromRedcap = async (
       },
       opts.batch,
     );
-    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+
+    const matchStatus = await matchRow(row, {
+      redcap: redcapConfig,
+      openAlex: openAlexConfig,
+      threshold: opts.threshold,
+    });
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (lastQuota !== null) {
       showQuota(lastQuota, totalCredits, "OpenAlex quota");
     }
 
-    if (status === "ok") {
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+
+    // Combined status: error > ok > skipped
+    const combined =
+      processStatus === "error" || matchStatus === "error"
+        ? "error"
+        : processStatus === "ok" || matchStatus === "ok"
+          ? "ok"
+          : "skipped";
+
+    if (combined === "ok") {
       log.success(`[${label}] Done ${pc.dim(`(${elapsed}s)`)}`);
-    } else if (status === "skipped") {
+    } else if (combined === "skipped") {
       skipped++;
       log.info(`[${label}] Skipped ${pc.dim(`(${elapsed}s)`)}`);
     } else {
@@ -151,5 +151,4 @@ export const fromRedcap = async (
   if (errors > 0) parts.push(pc.yellow(`${String(errors)} errors`));
 
   outro(parts.join(", ") || "Nothing to do");
-  return researchers;
 };

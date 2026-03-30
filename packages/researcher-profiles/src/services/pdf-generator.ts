@@ -7,8 +7,9 @@ import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
 
 const formatAuthors = (work: WorksResult): string => {
   const authors = work.authorships.map((a) => {
-    const parts = a.author.display_name.split(" ");
-    if (parts.length < 2) return a.author.display_name;
+    const name = a.author.display_name ?? "";
+    const parts = name.split(" ");
+    if (parts.length < 2) return name;
     const lastName = parts.at(-1) ?? "";
     const initials = parts
       .slice(0, -1)

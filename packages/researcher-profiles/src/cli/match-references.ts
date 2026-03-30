@@ -4,102 +4,31 @@
  * stores matched works in `final_references` + `final_references_imported_at`.
  */
 
-import {
-  spinner,
-  log,
-  outro,
-  multiselect,
-  isCancel,
-  cancel,
-} from "@clack/prompts";
+import { spinner, log, outro } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either } from "effect";
-import {
-  fetchResearchers,
-  fetchOaReferences,
-  downloadPublicationsFile,
-  writeFinalReferences,
-  writeRawReferences,
-} from "../services/redcap.js";
-import { extractText } from "../services/file-extractor.js";
-import { matchReferences } from "../services/reference-matcher.js";
-import { daysUntilNextUpdate } from "./process-row.js";
-import type { ResearcherRow } from "../types.js";
-import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+import { selectResearchers } from "./select-researchers.js";
+import { matchRow } from "./match-row.js";
+import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
+import { fetchResearchers } from "../services/redcap.js";
 
 interface MatchReferencesOptions {
   readonly redcapUrl: string;
   readonly redcapToken: string;
   readonly threshold: number;
+  readonly openAlexUserAgent: string;
+  readonly openAlexApiKey?: string;
+  /** If provided, skip the interactive prompt and process only these userids. */
+  readonly userids?: readonly string[];
 }
-
-interface RedcapConfig {
-  readonly url: string;
-  readonly token: string;
-}
-
-const relativeDate = (dateStr: string): string => {
-  if (dateStr === "") return "never";
-  const days = daysUntilNextUpdate(dateStr);
-  if (days !== null) return `update in ${String(days)}d`;
-  return `imported ${new Date(dateStr).toISOString().slice(0, 10)}`;
-};
-
-const selectResearchersForMatch = async (
-  researchers: readonly ResearcherRow[],
-): Promise<readonly ResearcherRow[]> => {
-  // Only show researchers with oa_references already imported
-  const withOaRefs = researchers.filter(
-    (r) => r.oa_references_imported_at !== "",
-  );
-  const selected = await multiselect({
-    message: `Select researchers to match (${pc.bold(String(withOaRefs.length))} with oa_references):`,
-    options: [...withOaRefs]
-      .sort((a, b) => a.last_name.localeCompare(b.last_name, "fr"))
-      .map((r) => ({
-        value: r.userid,
-        label: `${r.first_name} ${r.last_name}`,
-        hint: `works: ${relativeDate(r.oa_references_imported_at)} · final: ${relativeDate(r.final_references_imported_at)}`,
-      })),
-    initialValues: [],
-  });
-
-  if (isCancel(selected)) {
-    cancel("Cancelled.");
-    process.exit(0);
-  }
-
-  return withOaRefs.filter((r) =>
-    (selected as readonly string[]).includes(r.userid),
-  );
-};
-
-const parseOaReferences = (
-  buffer: ArrayBuffer,
-): { works: readonly WorksResult[]; error: string | null } => {
-  const raw = new TextDecoder().decode(buffer);
-  if (raw === "") return { works: [], error: null };
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    const works = Array.isArray(parsed) ? (parsed as WorksResult[]) : [];
-    return {
-      works,
-      error: Array.isArray(parsed) ? null : "parsed value is not an array",
-    };
-  } catch (e) {
-    return {
-      works: [],
-      error: String(e) + ` (last 80 chars: ${raw.slice(-80)})`,
-    };
-  }
-};
 
 export const matchReferencesCommand = async (
   opts: MatchReferencesOptions,
 ): Promise<void> => {
-  const redcapConfig: RedcapConfig = {
-    url: opts.redcapUrl,
-    token: opts.redcapToken,
+  const redcapConfig = { url: opts.redcapUrl, token: opts.redcapToken };
+  const openAlexConfig: OpenAlexConfig = {
+    userAgent: opts.openAlexUserAgent,
+    apiKey: opts.openAlexApiKey,
   };
 
   // Fetch researchers
@@ -117,191 +46,66 @@ export const matchReferencesCommand = async (
   }
 
   const allResearchers = fetchResult.right;
+  const pending = allResearchers.filter(
+    (r) => r.references_openalex_complete !== "2",
+  );
+  const complete = allResearchers.filter(
+    (r) => r.references_openalex_complete === "2",
+  );
   s.stop(
     `Found ${pc.bold(String(allResearchers.length))} researchers in REDCap`,
   );
 
-  const researchers = await selectResearchersForMatch(allResearchers);
+  if (complete.length > 0) {
+    log.info(
+      `${pc.dim(String(complete.length))} researcher(s) complete (references_openalex_complete = 2) — excluded`,
+    );
+  }
 
-  if (researchers.length === 0) {
-    outro("Nothing selected");
+  if (pending.length === 0) {
+    outro("All researchers are already complete");
     return;
   }
 
-  let ok = 0;
+  const { userids } = opts;
+  const researchers =
+    userids !== undefined
+      ? pending.filter((r) => userids.includes(r.userid))
+      : await selectResearchers(pending, true);
+
+  log.info(
+    `Match threshold: ${pc.bold(String(opts.threshold))} (lower = stricter)`,
+  );
+
   let skipped = 0;
   let errors = 0;
 
-  for (const row of researchers) {
+  for (const [i, row] of researchers.entries()) {
     const label = `${row.first_name} ${row.last_name} (${row.userid})`;
-
-    // Fetch oa_references individually to avoid REDCap truncation of large notes fields
-    const refsResult = await Effect.runPromise(
-      Effect.either(fetchOaReferences(redcapConfig, row.userid)),
-    );
-
-    if (Either.isLeft(refsResult)) {
-      log.warn(
-        `[${label}] Failed to fetch oa_references — skipping: ${JSON.stringify(refsResult.left)}`,
-      );
-      skipped++;
-      continue;
-    }
-
-    const { works: oaWorks, error: parseError } = parseOaReferences(
-      refsResult.right,
-    );
-    if (parseError !== null) {
-      log.warn(`[${label}] JSON parse error: ${parseError}`);
-    }
-
-    if (oaWorks.length === 0) {
-      log.warn(`[${label}] No oa_references found — skipping`);
-      skipped++;
-      continue;
-    }
-
-    // Download publications file
-    const fileSpinner = spinner();
-    fileSpinner.start(`[${label}] Downloading publications file…`);
-
-    const fileResult = await Effect.runPromise(
-      Effect.either(downloadPublicationsFile(redcapConfig, row.userid)),
-    );
-
-    if (Either.isLeft(fileResult)) {
-      fileSpinner.stop(pc.yellow(`[${label}] No publications file — skipping`));
-      skipped++;
-      continue;
-    }
-
-    fileSpinner.stop(`[${label}] File downloaded`);
-
-    // Extract text
-    const extractResult = await Effect.runPromise(
-      Effect.either(extractText(fileResult.right)),
-    );
-
-    if (Either.isLeft(extractResult)) {
-      const extractErr = extractResult.left;
-      const extractCause = (extractErr as { cause?: unknown }).cause;
-      const extractCauseStr =
-        extractCause instanceof Error
-          ? extractCause.message
-          : JSON.stringify(extractCause);
-      log.warn(
-        `[${label}] Failed to extract text — skipping: ${extractCauseStr}`,
-      );
-      skipped++;
-      continue;
-    }
-
-    const text = extractResult.right;
-
-    const previewLines = text
-      .split(/\r?\n/)
-      .filter((l) => l.trim().length > 20)
-      .slice(0, 3);
+    const t0 = Date.now();
     log.info(
-      `[${label}] Extracted ${String(text.trim().length)} chars — preview: ${previewLines.map((l) => `"${l.trim().slice(0, 60)}"`).join(" | ")}`,
+      pc.bold(`── ${label} ──`) +
+        pc.dim(` [${String(i + 1)}/${String(researchers.length)}]`),
     );
 
-    if (text.trim().length < 100) {
-      log.warn(
-        `[${label}] Too little text extracted (${String(text.trim().length)} chars) — PDF may be a scanned image (OCR not supported)`,
-      );
-      skipped++;
-      continue;
-    }
-
-    // Write raw references PDF
-    const rawSpinner = spinner();
-    rawSpinner.start(`[${label}] Saving raw references…`);
-    const rawResult = await Effect.runPromise(
-      Effect.either(
-        writeRawReferences(
-          redcapConfig,
-          row.userid,
-          text,
-          `${row.first_name} ${row.last_name}`,
-        ),
-      ),
-    );
-    if (Either.isLeft(rawResult)) {
-      rawSpinner.stop(pc.yellow(`[${label}] Could not save raw references`));
-      const cause = (rawResult.left as { cause?: unknown }).cause;
-      log.warn(cause instanceof Error ? cause.message : JSON.stringify(cause));
-    } else {
-      rawSpinner.stop(`[${label}] Raw references saved`);
-    }
-
-    // Match references
-    const matched = matchReferences(oaWorks, text, opts.threshold);
-    const withDoi = matched
-      .map((m) => m.work)
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- doi is typed string but can be null at runtime
-      .filter((w) => w.doi !== null && w.doi !== undefined && w.doi !== "");
-    const seenDois = new Set<string>();
-    const matchedWorks = withDoi.filter((w) => {
-      if (seenDois.has(w.doi)) return false;
-      seenDois.add(w.doi);
-      return true;
+    const status = await matchRow(row, {
+      redcap: redcapConfig,
+      openAlex: openAlexConfig,
+      threshold: opts.threshold,
     });
-    const ratio =
-      oaWorks.length > 0
-        ? Math.round((matchedWorks.length / oaWorks.length) * 100)
-        : 0;
 
-    log.info(
-      `[${label}] ${pc.bold(String(matchedWorks.length))}/${pc.bold(String(oaWorks.length))} works matched with DOI (${String(ratio)}%)`,
-    );
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
 
-    if (matchedWorks.length === 0) {
-      log.warn(
-        `[${label}] No matches — PDF may be a scanned image or titles do not overlap. Skipping write.`,
-      );
+    if (status === "ok") {
+      log.success(`[${label}] Written ${pc.dim(`(${elapsed}s)`)}`);
+    } else if (status === "skipped") {
       skipped++;
-      continue;
-    }
-
-    // Write final references
-    const writeSpinner = spinner();
-    writeSpinner.start(`[${label}] Writing final references to REDCap…`);
-
-    const writeResult = await Effect.runPromise(
-      Effect.either(
-        writeFinalReferences(
-          redcapConfig,
-          row.userid,
-          matchedWorks,
-          `${row.first_name} ${row.last_name}`,
-        ),
-      ),
-    );
-
-    if (Either.isLeft(writeResult)) {
-      writeSpinner.stop(pc.red(`[${label}] REDCap write failed`));
-      const err = writeResult.left;
-      const cause = (err as { cause?: unknown }).cause;
-      const causeStr =
-        cause instanceof Error ? cause.message : JSON.stringify(cause, null, 2);
-      log.error(
-        JSON.stringify(
-          { userid: err.userid, _tag: err._tag, cause: causeStr },
-          null,
-          2,
-        ),
-      );
+    } else {
       errors++;
-      continue;
     }
-
-    writeSpinner.stop(pc.green(`[${label}] Written ✓`));
-    ok++;
   }
 
   const parts: string[] = [];
-  if (ok > 0) parts.push(pc.green(`${String(ok)} written`));
   if (skipped > 0) parts.push(pc.dim(`${String(skipped)} skipped`));
   if (errors > 0) parts.push(pc.yellow(`${String(errors)} errors`));
 
