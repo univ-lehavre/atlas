@@ -76,13 +76,14 @@ export const main = async (): Promise<void> => {
   intro(pc.cyan("atlas-researcher-profiles") + pc.dim(` v${VERSION}`));
 
   if (command === undefined) {
-    await fromRedcap(opts);
+    const processed = await fromRedcap(opts);
     await matchReferencesCommand({
       redcapUrl,
       redcapToken,
       threshold: DEFAULT_THRESHOLD,
       openAlexUserAgent,
       openAlexApiKey,
+      userids: processed.map((r) => r.userid),
     });
     return;
   }
