@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-fetch-openalex
 
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [[`ea53772`](https://github.com/univ-lehavre/atlas/commit/ea53772f4125a7e201d53e6bc8b37bf44cac96f1)]:
+  - @univ-lehavre/atlas-openalex-types@3.1.1
+
 ## 0.4.0
 
 ### Minor Changes
