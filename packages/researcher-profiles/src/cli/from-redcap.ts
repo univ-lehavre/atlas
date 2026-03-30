@@ -37,7 +37,9 @@ const showQuota = (
   );
 };
 
-export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
+export const fromRedcap = async (
+  opts: FromRedcapOptions,
+): Promise<readonly ResearcherRow[]> => {
   const redcapConfig: RedcapConfig = {
     url: opts.redcapUrl,
     token: opts.redcapToken,
@@ -97,7 +99,7 @@ export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
 
   if (pending.length === 0) {
     outro("All researchers are up-to-date — nothing to do");
-    return;
+    return [];
   }
 
   const researchers = await selectResearchers(pending);
@@ -126,4 +128,5 @@ export const fromRedcap = async (opts: FromRedcapOptions): Promise<void> => {
   if (errors > 0) parts.push(pc.yellow(`${String(errors)} errors`));
 
   outro(parts.join(", ") || "Nothing to do");
+  return researchers;
 };

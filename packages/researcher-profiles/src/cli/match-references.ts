@@ -32,6 +32,8 @@ interface MatchReferencesOptions {
   readonly threshold: number;
   readonly openAlexUserAgent: string;
   readonly openAlexApiKey?: string;
+  /** If provided, skip the interactive prompt and process only these userids. */
+  readonly userids?: readonly string[];
 }
 
 interface RedcapConfig {
@@ -122,7 +124,11 @@ export const matchReferencesCommand = async (
     return;
   }
 
-  const researchers = await selectResearchers(pending, true);
+  const { userids } = opts;
+  const researchers =
+    userids !== undefined
+      ? pending.filter((r) => userids.includes(r.userid))
+      : await selectResearchers(pending, true);
 
   let ok = 0;
   let skipped = 0;
