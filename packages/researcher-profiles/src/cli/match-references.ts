@@ -7,6 +7,7 @@
 import { spinner, log, note, outro } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either, Logger, LogLevel } from "effect";
+import { selectResearchers } from "./select-researchers.js";
 
 const silenced = <A, E>(effect: Effect.Effect<A, E>): Effect.Effect<A, E> =>
   effect.pipe(Logger.withMinimumLogLevel(LogLevel.None));
@@ -100,17 +101,28 @@ export const matchReferencesCommand = async (
   }
 
   const allResearchers = fetchResult.right;
-  const researchers = allResearchers.filter(
+  const pending = allResearchers.filter(
     (r) => r.references_openalex_complete !== "2",
   );
+  const complete = allResearchers.filter(
+    (r) => r.references_openalex_complete === "2",
+  );
   s.stop(
-    `Found ${pc.bold(String(researchers.length))}/${pc.bold(String(allResearchers.length))} researchers to process (references_openalex_complete ≠ 2)`,
+    `Found ${pc.bold(String(allResearchers.length))} researchers in REDCap`,
   );
 
-  if (researchers.length === 0) {
+  if (complete.length > 0) {
+    log.info(
+      `${pc.dim(String(complete.length))} researcher(s) complete (references_openalex_complete = 2) — excluded`,
+    );
+  }
+
+  if (pending.length === 0) {
     outro("All researchers are already complete");
     return;
   }
+
+  const researchers = await selectResearchers(pending);
 
   let ok = 0;
   let skipped = 0;
