@@ -23,10 +23,11 @@ Resolve OpenAlex works for researchers and write results to REDCap.
 
 ${pc.bold("Usage:")}
   atlas-researcher-profiles [match-references] [--threshold N]
-  atlas-researcher-profiles from-redcap
+  atlas-researcher-profiles from-redcap [--batch]
 
 ${pc.bold("Options:")}
   --threshold N   Fuse.js match threshold (0–1, default 0.2; lower = stricter; optional)
+  --batch, --yes  Auto-accept all name selections without prompting
 
 ${pc.bold("Environment variables:")}
   REDCAP_API_URL             REDCap API URL
@@ -70,7 +71,16 @@ export const main = async (): Promise<void> => {
     process.exit(1);
   }
 
-  const opts = { redcapUrl, redcapToken, openAlexUserAgent, openAlexApiKey };
+  const allArgs = process.argv.slice(2);
+  const batch =
+    allArgs.includes("--batch") || allArgs.includes("--yes");
+  const opts = {
+    redcapUrl,
+    redcapToken,
+    openAlexUserAgent,
+    openAlexApiKey,
+    batch,
+  };
 
   process.stdout.write("\u001Bc");
   intro(pc.cyan("atlas-researcher-profiles") + pc.dim(` v${VERSION}`));
@@ -90,11 +100,13 @@ export const main = async (): Promise<void> => {
 
   if (command === "from-redcap") {
     const args = process.argv.slice(3);
-    if (args.length > 0) {
+    const knownFlags = new Set(["--batch", "--yes"]);
+    const unknownArgs = args.filter((a) => !knownFlags.has(a));
+    if (unknownArgs.length > 0) {
       log.error(
-        `Unknown option(s) for from-redcap: ${args.map((a) => pc.bold(a)).join(", ")}`,
+        `Unknown option(s) for from-redcap: ${unknownArgs.map((a) => pc.bold(a)).join(", ")}`,
       );
-      log.message(`Usage: atlas-researcher-profiles from-redcap`);
+      log.message(`Usage: atlas-researcher-profiles from-redcap [--batch]`);
       process.exit(1);
     }
     await fromRedcap(opts);
@@ -104,8 +116,12 @@ export const main = async (): Promise<void> => {
   if (command === "match-references") {
     const args = process.argv.slice(3);
     const thresholdIdx = args.indexOf("--threshold");
+    const batchFlags = new Set(["--batch", "--yes"]);
     const unknownArgs = args.filter(
-      (a, i) => a !== "--threshold" && args[i - 1] !== "--threshold",
+      (a, i) =>
+        a !== "--threshold" &&
+        args[i - 1] !== "--threshold" &&
+        !batchFlags.has(a),
     );
     if (unknownArgs.length > 0) {
       log.error(
