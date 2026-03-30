@@ -105,12 +105,10 @@ export const fromRedcap = async (
 
   const researchers = await selectResearchers(pending);
 
-  let ok = 0;
   let skipped = 0;
   let errors = 0;
   let lastQuota: RateLimitInfo | null = null;
   let totalCredits = 0;
-  let quotaShown = false;
 
   for (const [i, row] of researchers.entries()) {
     const label = `${row.first_name} ${row.last_name} (${row.userid})`;
@@ -132,8 +130,12 @@ export const fromRedcap = async (
     );
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
 
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (lastQuota !== null) {
+      showQuota(lastQuota, totalCredits, "OpenAlex quota");
+    }
+
     if (status === "ok") {
-      ok++;
       log.success(`[${label}] Done ${pc.dim(`(${elapsed}s)`)}`);
     } else if (status === "skipped") {
       skipped++;
@@ -142,18 +144,9 @@ export const fromRedcap = async (
       errors++;
       log.error(`[${label}] Error ${pc.dim(`(${elapsed}s)`)}`);
     }
-
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!quotaShown && lastQuota !== null) {
-      showQuota(lastQuota, totalCredits, "OpenAlex quota");
-      quotaShown = true;
-    }
   }
 
-  showQuota(lastQuota, totalCredits, "OpenAlex quota (final)");
-
   const parts: string[] = [];
-  if (ok > 0) parts.push(pc.green(`${String(ok)} written`));
   if (skipped > 0) parts.push(pc.dim(`${String(skipped)} skipped`));
   if (errors > 0) parts.push(pc.yellow(`${String(errors)} errors`));
 

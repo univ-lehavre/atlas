@@ -6,7 +6,7 @@
  * Skips silently if there is no publications file or no oa_references.
  */
 
-import { spinner, log, note } from "@clack/prompts";
+import { spinner, log } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either, Logger, LogLevel } from "effect";
 import {
@@ -114,8 +114,9 @@ export const matchRow = async (
   fileSpinner.stop(`[${label}] File downloaded`);
 
   // Extract text
+  log.step("Extracting text from publications file…");
   const extractSpinner = spinner();
-  extractSpinner.start(`[${label}] Extracting text from file…`);
+  extractSpinner.start(`[${label}] Extracting text…`);
 
   const extractResult = await Effect.runPromise(
     Effect.either(extractText(fileResult.right)),
@@ -164,7 +165,7 @@ export const matchRow = async (
     ),
   );
 
-  note(label, "Matching OpenAlex works against uploaded references");
+  log.info("Matching OpenAlex works against uploaded references…");
 
   // Match references by title (fuzzy)
   const matched = matchReferences(oaWorks, text, config.threshold);

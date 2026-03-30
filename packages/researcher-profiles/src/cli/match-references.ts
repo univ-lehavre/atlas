@@ -77,7 +77,6 @@ export const matchReferencesCommand = async (
     `Match threshold: ${pc.bold(String(opts.threshold))} (lower = stricter)`,
   );
 
-  let ok = 0;
   let skipped = 0;
   let errors = 0;
 
@@ -98,7 +97,6 @@ export const matchReferencesCommand = async (
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
 
     if (status === "ok") {
-      ok++;
       log.success(`[${label}] Written ${pc.dim(`(${elapsed}s)`)}`);
     } else if (status === "skipped") {
       skipped++;
@@ -108,7 +106,6 @@ export const matchReferencesCommand = async (
   }
 
   const parts: string[] = [];
-  if (ok > 0) parts.push(pc.green(`${String(ok)} written`));
   if (skipped > 0) parts.push(pc.dim(`${String(skipped)} skipped`));
   if (errors > 0) parts.push(pc.yellow(`${String(errors)} errors`));
 
