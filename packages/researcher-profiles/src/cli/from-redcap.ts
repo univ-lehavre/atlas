@@ -17,6 +17,7 @@ interface FromRedcapOptions {
   readonly redcapToken: string;
   readonly openAlexUserAgent: string;
   readonly openAlexApiKey?: string;
+  readonly batch?: boolean;
 }
 
 interface RedcapConfig {
@@ -109,18 +110,46 @@ export const fromRedcap = async (
   let errors = 0;
   let lastQuota: RateLimitInfo | null = null;
   let totalCredits = 0;
+  let quotaShown = false;
 
-  for (const row of researchers) {
-    const status = await processRow(row, redcapConfig, openAlexConfig, (q) => {
-      lastQuota = q;
-      totalCredits += q.creditsUsed;
-    });
-    if (status === "ok") ok++;
-    else if (status === "skipped") skipped++;
-    else errors++;
+  for (const [i, row] of researchers.entries()) {
+    const label = `${row.first_name} ${row.last_name} (${row.userid})`;
+    log.info(
+      pc.bold(`── ${label} ──`) +
+        pc.dim(` [${String(i + 1)}/${String(researchers.length)}]`),
+    );
+
+    const t0 = Date.now();
+    const status = await processRow(
+      row,
+      redcapConfig,
+      openAlexConfig,
+      (q) => {
+        lastQuota = q;
+        totalCredits += q.creditsUsed;
+      },
+      opts.batch,
+    );
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+
+    if (status === "ok") {
+      ok++;
+      log.success(`[${label}] Done ${pc.dim(`(${elapsed}s)`)}`);
+    } else if (status === "skipped") {
+      skipped++;
+      log.info(`[${label}] Skipped ${pc.dim(`(${elapsed}s)`)}`);
+    } else {
+      errors++;
+      log.error(`[${label}] Error ${pc.dim(`(${elapsed}s)`)}`);
+    }
+
+    if (!quotaShown && lastQuota !== null) {
+      showQuota(lastQuota, totalCredits, "OpenAlex quota");
+      quotaShown = true;
+    }
   }
 
-  showQuota(lastQuota, totalCredits, "OpenAlex quota after");
+  showQuota(lastQuota, totalCredits, "OpenAlex quota (final)");
 
   const parts: string[] = [];
   if (ok > 0) parts.push(pc.green(`${String(ok)} written`));

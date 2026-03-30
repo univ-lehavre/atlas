@@ -7,14 +7,7 @@
  *   5. Confirm and write to REDCap
  */
 
-import {
-  spinner,
-  log,
-  note,
-  multiselect,
-  isCancel,
-  cancel,
-} from "@clack/prompts";
+import { spinner, log, note, multiselect, isCancel } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either, Logger, LogLevel } from "effect";
 import type {
@@ -155,6 +148,7 @@ export const processRow = async (
   redcapConfig: RedcapConfig,
   openAlexConfig: OpenAlexConfig,
   onRateLimit?: (info: RateLimitInfo) => void,
+  batch?: boolean,
 ): Promise<"ok" | "skipped" | "error"> => {
   const label = `${row.first_name} ${row.last_name} (${row.userid})`;
   const researcher = `${row.first_name} ${row.last_name}`;
@@ -192,7 +186,7 @@ export const processRow = async (
     );
   } else {
     // Step 1: Resolve authors
-    note(`[${label}] Recherche d'auteurs sur OpenAlex`);
+    note(`[${label}] Searching authors on OpenAlex`);
     const s = spinner();
     s.start(`[${label}] Searching authors on OpenAlex…`);
 
@@ -223,7 +217,7 @@ export const processRow = async (
     allAuthorIdsForFetch = allAuthors.map((a) => a.id);
 
     // Step 2: Fetch works for all resolved authors (needed for raw_author_name extraction)
-    note(`[${label}] Téléchargement des travaux d'OpenAlex`);
+    note(`[${label}] Downloading works from OpenAlex`);
     const worksResult = await fetchWorks(
       allAuthors,
       label,
@@ -275,24 +269,34 @@ export const processRow = async (
       );
       mergedEntries = existingEntries;
     } else {
-      note(`[${label}] Sélection des noms alternatifs`);
-      const selected = await multiselect({
-        message: `Select new fullname(s) to associate with ${pc.bold(label)} (${String(newNameEntries.length)} new):`,
-        options: newNameEntries.map((e) => ({
-          value: e.name,
-          label: e.name,
-        })),
-        initialValues: newNameEntries.map((e) => e.name),
-      });
+      let selectedNames: Set<string>;
 
-      if (isCancel(selected)) {
-        cancel("Cancelled");
-        process.exit(0);
+      if (batch === true) {
+        selectedNames = new Set(newNameEntries.map((e) => e.name));
+        log.info(
+          `[${label}] Batch mode — auto-selecting ${pc.bold(String(newNameEntries.length))} new name(s)`,
+        );
+      } else {
+        note(`[${label}] Select alternative names`);
+        const selected = await multiselect({
+          message: `Select new fullname(s) to associate with ${pc.bold(label)} (${String(newNameEntries.length)} new):`,
+          options: newNameEntries.map((e) => ({
+            value: e.name,
+            label: e.name,
+          })),
+          initialValues: newNameEntries.map((e) => e.name),
+        });
+
+        if (isCancel(selected)) {
+          log.warn(`[${label}] Skipped (cancelled)`);
+          return "skipped";
+        }
+
+        selectedNames = new Set(
+          Array.isArray(selected) ? (selected as string[]) : [],
+        );
       }
 
-      const selectedNames = new Set(
-        Array.isArray(selected) ? (selected as string[]) : [],
-      );
       const newFullnameEntries = newNameEntries.map((e) => ({
         ...e,
         selected: selectedNames.has(e.name),
@@ -354,7 +358,7 @@ export const processRow = async (
   if (prefetchedWorks !== null) {
     allWorks = prefetchedWorks;
   } else {
-    note(`[${label}] Téléchargement des travaux d'OpenAlex`);
+    note(`[${label}] Downloading works from OpenAlex`);
     const worksResult = await fetchWorks(
       allAuthorIdsForFetch.map((id) => ({ id })),
       label,

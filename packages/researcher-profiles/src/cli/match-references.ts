@@ -130,12 +130,21 @@ export const matchReferencesCommand = async (
       ? pending.filter((r) => userids.includes(r.userid))
       : await selectResearchers(pending, true);
 
+  log.info(
+    `Match threshold: ${pc.bold(String(opts.threshold))} (lower = stricter)`,
+  );
+
   let ok = 0;
   let skipped = 0;
   let errors = 0;
 
-  for (const row of researchers) {
+  for (const [i, row] of researchers.entries()) {
     const label = `${row.first_name} ${row.last_name} (${row.userid})`;
+    const t0 = Date.now();
+    log.info(
+      pc.bold(`── ${label} ──`) +
+        pc.dim(` [${String(i + 1)}/${String(researchers.length)}]`),
+    );
 
     // Fetch oa_references individually to avoid REDCap truncation of large notes fields
     const refsResult = await Effect.runPromise(
@@ -180,20 +189,24 @@ export const matchReferencesCommand = async (
     fileSpinner.stop(`[${label}] File downloaded`);
 
     // Extract text
+    const extractSpinner = spinner();
+    extractSpinner.start(`[${label}] Extracting text from file…`);
+
     const extractResult = await Effect.runPromise(
       Effect.either(extractText(fileResult.right)),
     );
 
     if (Either.isLeft(extractResult)) {
+      extractSpinner.stop(
+        pc.yellow(`[${label}] Failed to extract text — skipping`),
+      );
       const extractErr = extractResult.left;
       const extractCause = (extractErr as { cause?: unknown }).cause;
       const extractCauseStr =
         extractCause instanceof Error
           ? extractCause.message
           : JSON.stringify(extractCause);
-      log.warn(
-        `[${label}] Failed to extract text — skipping: ${extractCauseStr}`,
-      );
+      log.warn(`  ${extractCauseStr}`);
       skipped++;
       continue;
     }
@@ -204,8 +217,8 @@ export const matchReferencesCommand = async (
       .split(/\r?\n/)
       .filter((l) => l.trim().length > 20)
       .slice(0, 3);
-    log.info(
-      `[${label}] Extracted ${String(text.trim().length)} chars — preview: ${previewLines.map((l) => `"${l.trim().slice(0, 60)}"`).join(" | ")}`,
+    extractSpinner.stop(
+      `[${label}] Extracted ${pc.bold(String(text.trim().length))} chars — preview: ${previewLines.map((l) => `"${l.trim().slice(0, 60)}"`).join(" | ")}`,
     );
 
     if (text.trim().length < 100) {
@@ -228,9 +241,7 @@ export const matchReferencesCommand = async (
       ),
     );
 
-    note(
-      `[${label}] Matching entre OpenAlex et les références uploadées par le chercheur`,
-    );
+    note(`[${label}] Matching OpenAlex works against uploaded references`);
 
     // Match references by title (fuzzy)
     const matched = matchReferences(oaWorks, text, opts.threshold);
@@ -302,7 +313,7 @@ export const matchReferencesCommand = async (
     }
 
     log.info(
-      `[${label}] fuzzy: ${pc.bold(String(fuzzyAdded))} · DOI: ${pc.bold(String(doiAdded))} · total: ${pc.bold(String(matchedWorks.length))}`,
+      `[${label}] fuzzy: ${pc.bold(String(fuzzyAdded))} · DOI: ${pc.bold(String(doiAdded))} · total: ${pc.bold(String(matchedWorks.length))} · threshold: ${String(opts.threshold)}`,
     );
 
     if (matchedWorks.length === 0) {
@@ -345,7 +356,8 @@ export const matchReferencesCommand = async (
       continue;
     }
 
-    writeSpinner.stop(`[${label}] Written`);
+    const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    writeSpinner.stop(`[${label}] Written ${pc.dim(`(${elapsed}s)`)}`);
     ok++;
   }
 
