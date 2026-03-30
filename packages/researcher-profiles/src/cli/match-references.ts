@@ -122,7 +122,7 @@ export const matchReferencesCommand = async (
     return;
   }
 
-  const researchers = await selectResearchers(pending);
+  const researchers = await selectResearchers(pending, true);
 
   let ok = 0;
   let skipped = 0;
