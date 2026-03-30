@@ -90,12 +90,10 @@ export const run = async (opts: RunOptions): Promise<void> => {
     `Match threshold: ${pc.bold(String(opts.threshold))} (lower = stricter)`,
   );
 
-  let ok = 0;
   let skipped = 0;
   let errors = 0;
   let lastQuota: RateLimitInfo | null = null;
   let totalCredits = 0;
-  let quotaShown = false;
 
   for (const [i, row] of researchers.entries()) {
     const label = `${row.first_name} ${row.last_name} (${row.userid})`;
@@ -116,17 +114,16 @@ export const run = async (opts: RunOptions): Promise<void> => {
       opts.batch,
     );
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!quotaShown && lastQuota !== null) {
-      showQuota(lastQuota, totalCredits, "OpenAlex quota");
-      quotaShown = true;
-    }
-
     const matchStatus = await matchRow(row, {
       redcap: redcapConfig,
       openAlex: openAlexConfig,
       threshold: opts.threshold,
     });
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (lastQuota !== null) {
+      showQuota(lastQuota, totalCredits, "OpenAlex quota");
+    }
 
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
 
@@ -139,7 +136,6 @@ export const run = async (opts: RunOptions): Promise<void> => {
           : "skipped";
 
     if (combined === "ok") {
-      ok++;
       log.success(`[${label}] Done ${pc.dim(`(${elapsed}s)`)}`);
     } else if (combined === "skipped") {
       skipped++;
@@ -150,10 +146,7 @@ export const run = async (opts: RunOptions): Promise<void> => {
     }
   }
 
-  showQuota(lastQuota, totalCredits, "OpenAlex quota (final)");
-
   const parts: string[] = [];
-  if (ok > 0) parts.push(pc.green(`${String(ok)} written`));
   if (skipped > 0) parts.push(pc.dim(`${String(skipped)} skipped`));
   if (errors > 0) parts.push(pc.yellow(`${String(errors)} errors`));
 
