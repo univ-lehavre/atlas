@@ -52,6 +52,6 @@ export const selectResearchers = async (
     process.exit(0);
   }
 
-  const selectedIds = Array.isArray(selected) ? (selected as string[]) : [];
+  const selectedIds = Array.isArray(selected) ? selected : [];
   return researchers.filter((r) => selectedIds.includes(r.userid));
 };
