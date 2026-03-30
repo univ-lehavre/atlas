@@ -1,5 +1,13 @@
 # @univ-lehavre/atlas-biblio-cli
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [[`ea53772`](https://github.com/univ-lehavre/atlas/commit/ea53772f4125a7e201d53e6bc8b37bf44cac96f1), [`626254a`](https://github.com/univ-lehavre/atlas/commit/626254ac79c12e2ceb014f2d062599ef0dcea105)]:
+  - @univ-lehavre/atlas-openalex-types@3.1.1
+  - @univ-lehavre/atlas-validate-openalex@0.5.1
+
 ## 0.2.0
 
 ### Minor Changes

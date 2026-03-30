@@ -1,5 +1,21 @@
 # @univ-lehavre/atlas-validate-openalex
 
+## 0.5.1
+
+### Patch Changes
+
+- [#79](https://github.com/univ-lehavre/atlas/pull/79) [`626254a`](https://github.com/univ-lehavre/atlas/commit/626254ac79c12e2ceb014f2d062599ef0dcea105) Thanks [@chasset](https://github.com/chasset)! - feat(researcher-profiles): pipeline unifié par chercheur
+  - Nouveau mode par défaut : traite chaque chercheur de bout en bout (résolution OpenAlex + match publications) avant de passer au suivant, en s'appuyant sur les dates REDCap pour ignorer les étapes déjà à jour
+  - `cli/match-row.ts` : extraction de la logique de matching par chercheur (réutilisée par la commande standalone `match-references`)
+  - `cli/run.ts` : orchestrateur unifié remplaçant la cascade `from-redcap` → `match-references`
+  - Les commandes standalone `from-redcap` et `match-references` sont conservées
+
+  fix(validate-openalex): compatibilité avec `display_name: string | null` dans openalex-types
+
+- Updated dependencies [[`ea53772`](https://github.com/univ-lehavre/atlas/commit/ea53772f4125a7e201d53e6bc8b37bf44cac96f1)]:
+  - @univ-lehavre/atlas-openalex-types@3.1.1
+  - @univ-lehavre/atlas-fetch-openalex@0.4.1
+
 ## 0.5.0
 
 ### Minor Changes
