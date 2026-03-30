@@ -7,7 +7,7 @@
  *   5. Confirm and write to REDCap
  */
 
-import { spinner, log, note, multiselect, isCancel } from "@clack/prompts";
+import { spinner, log, multiselect, isCancel } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either, Logger, LogLevel } from "effect";
 import type {
@@ -186,7 +186,7 @@ export const processRow = async (
     );
   } else {
     // Step 1: Resolve authors
-    note(label, "Searching authors on OpenAlex");
+    log.info("Searching authors on OpenAlex…");
     const s = spinner();
     s.start(`[${label}] Searching authors on OpenAlex…`);
 
@@ -217,7 +217,7 @@ export const processRow = async (
     allAuthorIdsForFetch = allAuthors.map((a) => a.id);
 
     // Step 2: Fetch works for all resolved authors (needed for raw_author_name extraction)
-    note(label, "Downloading works from OpenAlex");
+    log.info("Downloading works from OpenAlex…");
     const worksResult = await fetchWorks(
       allAuthors,
       label,
@@ -277,7 +277,7 @@ export const processRow = async (
           `[${label}] Batch mode — auto-selecting ${pc.bold(String(newNameEntries.length))} new name(s)`,
         );
       } else {
-        note(label, "Select alternative names");
+        log.info("Select alternative names");
         const selected = await multiselect({
           message: `Select new fullname(s) to associate with ${pc.bold(label)} (${String(newNameEntries.length)} new):`,
           options: newNameEntries.map((e) => ({
@@ -356,7 +356,7 @@ export const processRow = async (
   if (prefetchedWorks !== null) {
     allWorks = prefetchedWorks;
   } else {
-    note(label, "Downloading works from OpenAlex");
+    log.info("Downloading works from OpenAlex…");
     const worksResult = await fetchWorks(
       allAuthorIdsForFetch.map((id) => ({ id })),
       label,
