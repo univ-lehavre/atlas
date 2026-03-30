@@ -120,13 +120,17 @@ const renderPageToText = async (
   return data.text;
 };
 
+/** Maximum number of pages to OCR — avoids hours-long processing on large PDFs. */
+const MAX_OCR_PAGES = 50;
+
 const ocrPdf = async (buffer: ArrayBuffer): Promise<string> => {
   // eslint-disable-next-line n/no-missing-import -- tesseract.js is installed
   const { createWorker } = await import("tesseract.js");
   const pdf = await loadPdfjsDoc(buffer.slice(0));
   const worker = await createWorker("fra+eng");
+  const pageCount = Math.min(pdf.numPages, MAX_OCR_PAGES);
   const results: string[] = await Promise.all(
-    Array.from({ length: pdf.numPages }, async (_, i) => {
+    Array.from({ length: pageCount }, async (_, i) => {
       const page = await pdf.getPage(i + 1);
       return renderPageToText(
         worker as Parameters<typeof renderPageToText>[0],

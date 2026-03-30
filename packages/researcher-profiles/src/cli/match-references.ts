@@ -236,14 +236,12 @@ export const matchReferencesCommand = async (
     const matched = matchReferences(oaWorks, text, opts.threshold);
     const fuzzyWithDoi = matched
       .map((m) => m.work)
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- doi is typed string but can be null at runtime
       .filter((w) => w.doi !== null && w.doi !== undefined && w.doi !== "");
 
     // Find DOIs in extracted text
     const textDois = extractDoisFromText(text);
     const oaDoiMap = new Map<string, WorksResult>();
     for (const w of oaWorks) {
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- doi is typed string but can be null at runtime
       if (w.doi !== null && w.doi !== undefined && w.doi !== "") {
         oaDoiMap.set(normalizeDoi(w.doi), w);
       }
@@ -278,7 +276,7 @@ export const matchReferencesCommand = async (
           ),
         );
       } else {
-        fetchedByDoi = doiResult.right as WorksResult[];
+        fetchedByDoi = [...doiResult.right];
         doiSpinner.stop(
           `[${label}] Fetched ${pc.bold(String(fetchedByDoi.length))} work(s) by DOI from OpenAlex`,
         );
@@ -294,7 +292,8 @@ export const matchReferencesCommand = async (
       ...[...doiWorksFromText, ...fetchedByDoi].map((w) => ["doi", w] as const),
       ...fuzzyWithDoi.map((w) => ["fuzzy", w] as const),
     ]) {
-      const key = normalizeDoi(w.doi);
+      // w.doi is guaranteed non-null: fuzzyWithDoi and doiWorksFromText/fetchedByDoi are pre-filtered
+      const key = normalizeDoi(w.doi ?? "");
       if (seenDois.has(key)) continue;
       seenDois.add(key);
       matchedWorks.push(w);

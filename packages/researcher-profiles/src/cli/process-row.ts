@@ -183,6 +183,10 @@ export const processRow = async (
       );
       return "skipped";
     }
+    if (selectedNameFilter.size === 0) {
+      log.warn(`[${label}] No names selected in stored entries — skipping`);
+      return "skipped";
+    }
     log.info(
       `[${label}] Author IDs up to date (next update in ${String(authorDays)} day(s)) — ${String(allAuthorIdsForFetch.length)} author(s)`,
     );
@@ -286,7 +290,9 @@ export const processRow = async (
         process.exit(0);
       }
 
-      const selectedNames = new Set(selected as readonly string[]);
+      const selectedNames = new Set(
+        Array.isArray(selected) ? (selected as string[]) : [],
+      );
       const newFullnameEntries = newNameEntries.map((e) => ({
         ...e,
         selected: selectedNames.has(e.name),
@@ -308,8 +314,11 @@ export const processRow = async (
       );
 
       if (Either.isLeft(fullnamesResult)) {
-        idsSpinner.stop(pc.yellow(`[${label}] Could not save fullnames`));
-        log.warn(JSON.stringify(fullnamesResult.left, null, 2));
+        idsSpinner.stop(
+          pc.red(`[${label}] Could not save fullnames — aborting`),
+        );
+        log.error(JSON.stringify(fullnamesResult.left, null, 2));
+        return "error";
       } else {
         const selectedCount = mergedEntries.filter((e) => e.selected).length;
         const chosenCount = new Set(
@@ -363,12 +372,9 @@ export const processRow = async (
   }
 
   // Filter works to those having at least one authorship with a selected raw_author_name
-  const works =
-    selectedNameFilter.size > 0
-      ? allWorks.filter((w) =>
-          w.authorships.some((a) => selectedNameFilter.has(a.raw_author_name)),
-        )
-      : allWorks;
+  const works = allWorks.filter((w) =>
+    w.authorships.some((a) => selectedNameFilter.has(a.raw_author_name)),
+  );
 
   log.info(
     `[${label}] ${pc.bold(String(works.length))}/${pc.bold(String(allWorks.length))} work(s) after name filter`,

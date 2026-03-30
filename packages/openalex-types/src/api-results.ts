@@ -43,7 +43,7 @@ interface Authorship {
   author_position: string;
   author: {
     id: string;
-    display_name: string;
+    display_name: string | null;
     orcid: string;
   };
   institutions: AuthorshipInstitution[];
@@ -54,7 +54,7 @@ interface Authorship {
 
 interface WorksResult {
   id: OpenAlexID;
-  doi: string;
+  doi: string | null;
   title: string;
   display_name: string;
   publication_year: number;
