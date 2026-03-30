@@ -8,6 +8,7 @@
 
 import { intro, log } from "@clack/prompts";
 import pc from "picocolors";
+import { run } from "./run.js";
 import { fromRedcap } from "./from-redcap.js";
 import { matchReferencesCommand } from "./match-references.js";
 
@@ -71,9 +72,8 @@ export const main = async (): Promise<void> => {
     process.exit(1);
   }
 
-  const allArgs = process.argv.slice(2);
-  const batch =
-    allArgs.includes("--batch") || allArgs.includes("--yes");
+  const allArgs = new Set(process.argv.slice(2));
+  const batch = allArgs.has("--batch") || allArgs.has("--yes");
   const opts = {
     redcapUrl,
     redcapToken,
@@ -86,14 +86,13 @@ export const main = async (): Promise<void> => {
   intro(pc.cyan("atlas-researcher-profiles") + pc.dim(` v${VERSION}`));
 
   if (command === undefined) {
-    const processed = await fromRedcap(opts);
-    await matchReferencesCommand({
+    await run({
       redcapUrl,
       redcapToken,
-      threshold: DEFAULT_THRESHOLD,
       openAlexUserAgent,
       openAlexApiKey,
-      userids: processed.map((r) => r.userid),
+      threshold: DEFAULT_THRESHOLD,
+      batch,
     });
     return;
   }

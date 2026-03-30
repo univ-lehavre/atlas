@@ -197,7 +197,7 @@ const checkWork = (
           entity: "author",
           field: "display_name_alternatives",
           value: authorship.raw_author_name,
-          label: authorship.author.display_name,
+          label: authorship.author.display_name ?? undefined,
           status: isRejected ? "rejected" : "accepted",
         }),
       ]);
