@@ -53,6 +53,15 @@ pre-commit:
 
 pre-push:
   commands:
+    check-branch:
+      priority: 1
+      run: |
+        branch=$(git rev-parse --abbrev-ref HEAD)
+        if [ "$branch" = "main" ]; then
+          echo "❌ Push direct sur main interdit. Utilisez une branche et une PR."
+          exit 1
+        fi
+
     check-sync:
       run: |
         git fetch origin --quiet
