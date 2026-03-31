@@ -30,7 +30,7 @@
     "audit:security": "pnpm audit --audit-level=high",
     "audit:licenses": "license-checker --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;Unlicense\" --excludePrivatePackages",
     "audit:unused": "knip --exclude unresolved,types",
-    "audit:duplicates": "jscpd --pattern \"packages/*/src/**/*.ts\" --pattern \"apps/*/src/**/*.ts\"",
+    "audit:duplicates": "jscpd --pattern \"packages/*/src/**/*.ts\" --pattern \"apps/*/src/**/*.ts\" --pattern \"services/*/src/**/*.ts\"",
     "audit:size": "size-limit",
     "audit:versions": "taze -r --ignore-paths packages/redcap-openapi/upstream",
     "ci:audit": "pnpm audit:security && pnpm audit:licenses && pnpm audit:unused && pnpm audit:duplicates && pnpm audit:size && pnpm audit:versions",
@@ -45,12 +45,12 @@
     "changeset:publish": "pnpm build && changeset publish",
     "release": "pnpm build && ./scripts/publish-packages.sh",
     "others": "git -C . ls-files --others",
-    "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json' 'packages/crf/docs/redcap-api.html'",
+    "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json'",
     "prepare": "lefthook install"
   },
   "size-limit": [
     {
-      "path": "packages/crf/dist/**/*.js",
+      "path": "services/crf/dist/**/*.js",
       "limit": "100 KB"
     },
     {
@@ -76,10 +76,9 @@
   },
   "typedocOptions": {
     "entryPoints": [
-      "packages/crf",
+      "packages/redcap-client",
       "packages/net",
       "packages/redcap-core",
-      "packages/redcap-openapi",
       "packages/errors",
       "packages/validators",
       "packages/appwrite",
@@ -88,9 +87,11 @@
       "packages/fetch-one-api-page",
       "packages/fetch-openalex",
       "packages/validate-openalex",
-      "packages/biblio-cli",
       "packages/openalex",
-      "packages/researcher-profiles"
+      "services/crf",
+      "tools/dev/redcap-openapi",
+      "tools/cli/biblio-cli",
+      "tools/cli/researcher-profiles"
     ],
     "entryPointStrategy": "packages",
     "out": "docs/api",
