@@ -12,7 +12,7 @@ export default mergeConfig(
       include: ['tests/**/*.test.ts'],
       coverage: {
         provider: 'v8',
-        thresholds: { statements: 80, functions: 78 },
+        thresholds: { statements: 80, functions: 80 },
       },
     },
   })

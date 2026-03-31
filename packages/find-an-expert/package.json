@@ -14,8 +14,7 @@
     "format:check": "prettier --check --ignore-path ../../.prettierignore .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test:unit": "vitest",
-    "test": "pnpm run test:unit -- --run",
+    "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "knip": "knip",
     "cpd": "jscpd src"
