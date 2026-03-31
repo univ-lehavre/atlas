@@ -6,6 +6,9 @@ on:
     paths:
       - 'docs/**'
       - 'packages/*/src/**'
+      - 'apps/*/src/**'
+      - 'services/*/src/**'
+      - 'tools/*/src/**'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
@@ -38,7 +41,7 @@ jobs:
 
       - name: Create SvelteKit env files
         run: |
-          for app in packages/amarre packages/ecrin packages/find-an-expert; do
+          for app in apps/amarre apps/ecrin apps/find-an-expert; do
             cp "$app/.env.example" "$app/.env" 2>/dev/null || true
           done
 
