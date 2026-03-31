@@ -7,7 +7,13 @@
  *   5. Confirm and write to REDCap
  */
 
-import { spinner, log, multiselect, isCancel } from "@clack/prompts";
+import {
+  spinner,
+  log,
+  multiselect,
+  groupMultiselect,
+  isCancel,
+} from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either, Logger, LogLevel } from "effect";
 import type {
@@ -27,6 +33,8 @@ import {
   writeOaReferences,
   writeAlternativeAuthorFullnames,
   fetchAlternativeAuthorFullnames,
+  fetchAlternativeAuthorAffiliations,
+  writeAlternativeAuthorAffiliations,
 } from "../services/redcap.js";
 import type { ResearcherRow } from "../types.js";
 
@@ -62,6 +70,32 @@ interface FullnameEntry {
   selected: boolean;
 }
 
+interface AffiliationEntry {
+  affiliation: string;
+  selected: boolean;
+}
+
+/** Parses alternative_author_affiliations JSON, returns all entries. */
+const parseAffiliationEntries = (buffer: ArrayBuffer): AffiliationEntry[] => {
+  const raw = new TextDecoder().decode(buffer);
+  if (raw === "") return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return (parsed as { affiliation?: unknown; selected?: unknown }[])
+      .filter(
+        (e) =>
+          typeof e.affiliation === "string" && typeof e.selected === "boolean",
+      )
+      .map((e) => ({
+        affiliation: e.affiliation as string,
+        selected: e.selected as boolean,
+      }));
+  } catch {
+    return [];
+  }
+};
+
 /** Parses alternative_author_fullnames JSON, returns all entries. */
 const parseFullnameEntries = (buffer: ArrayBuffer): FullnameEntry[] => {
   const raw = new TextDecoder().decode(buffer);
@@ -86,6 +120,70 @@ const parseFullnameEntries = (buffer: ArrayBuffer): FullnameEntry[] => {
   } catch {
     return [];
   }
+};
+
+const UNKNOWN_INSTITUTION = "Non identifié";
+
+/**
+ * Builds a grouped map of raw_affiliation_strings keyed by institution label.
+ * Uses authorship.affiliations to link each raw string to its institution(s).
+ * Strings with no matching institution are grouped under UNKNOWN_INSTITUTION.
+ * Each string appears only once (first institution encountered wins).
+ */
+const buildAffiliationGroups = (
+  works: readonly WorksResult[],
+  authorIds: Set<string>,
+): Record<string, string[]> => {
+  // raw_affiliation_string → institution label (first seen wins)
+  const stringToGroup = new Map<string, string>();
+
+  for (const work of works) {
+    for (const authorship of work.authorships) {
+      if (!authorIds.has(authorship.author.id)) continue;
+
+      const institutionById = new Map(
+        authorship.institutions.map((i) => [i.id, i]),
+      );
+
+      // Use affiliations mapping (raw_affiliation_string → institution_ids)
+      for (const aff of authorship.affiliations) {
+        const str = aff.raw_affiliation_string;
+        if (str === "" || stringToGroup.has(str)) continue;
+        const inst = aff.institution_ids
+          .map((id) => institutionById.get(id))
+          .find((i) => i !== undefined);
+        const group = inst
+          ? `${inst.display_name} · ${inst.country_code} (${inst.id})`
+          : UNKNOWN_INSTITUTION;
+        stringToGroup.set(str, group);
+      }
+
+      // Catch any raw_affiliation_strings not covered by affiliations
+      for (const str of authorship.raw_affiliation_strings) {
+        if (str === "" || stringToGroup.has(str)) continue;
+        stringToGroup.set(str, UNKNOWN_INSTITUTION);
+      }
+    }
+  }
+
+  // Group strings by institution label
+  const groups = new Map<string, string[]>();
+  for (const [str, group] of stringToGroup) {
+    const bucket = groups.get(group) ?? [];
+    bucket.push(str);
+    groups.set(group, bucket);
+  }
+  for (const bucket of groups.values())
+    bucket.sort((a, b) => a.localeCompare(b));
+
+  // Sort groups alphabetically, UNKNOWN_INSTITUTION last
+  return Object.fromEntries(
+    [...groups.entries()].sort(([a], [b]) => {
+      if (a === UNKNOWN_INSTITUTION) return 1;
+      if (b === UNKNOWN_INSTITUTION) return -1;
+      return a.localeCompare(b);
+    }),
+  );
 };
 
 const fetchWorks = async (
@@ -154,6 +252,7 @@ export const processRow = async (
   const researcher = `${row.first_name} ${row.last_name}`;
 
   let allAuthorIdsForFetch: readonly string[] = [];
+  let allAuthorIds = new Set<string>();
   let selectedNameFilter = new Set<string>();
   let prefetchedWorks: readonly WorksResult[] | null = null;
 
@@ -168,6 +267,7 @@ export const processRow = async (
       ? parseFullnameEntries(storedResult.right)
       : [];
     allAuthorIdsForFetch = [...new Set(storedEntries.map((e) => e.authorId))];
+    allAuthorIds = new Set(allAuthorIdsForFetch);
     selectedNameFilter = new Set(
       storedEntries.filter((e) => e.selected).map((e) => e.name),
     );
@@ -234,7 +334,7 @@ export const processRow = async (
     prefetchedWorks = worksResult.right;
 
     // Step 3: Extract raw_author_name from authorships
-    const allAuthorIds = new Set(allAuthors.map((a) => a.id));
+    allAuthorIds = new Set(allAuthors.map((a) => a.id));
     const rawNameMap = new Map<string, string>(); // name → authorId (first seen)
     for (const work of prefetchedWorks) {
       for (const authorship of work.authorships) {
@@ -382,14 +482,136 @@ export const processRow = async (
     `[${label}] ${pc.bold(String(works.length))}/${pc.bold(String(allWorks.length))} work(s) after name filter`,
   );
 
+  // Step: Extract raw_affiliation_strings from name-filtered works, grouped by institution
+  const affiliationGroups = buildAffiliationGroups(works, allAuthorIds);
+
+  const existingAffResult = await Effect.runPromise(
+    Effect.either(fetchAlternativeAuthorAffiliations(redcapConfig, row.userid)),
+  );
+  const existingAffEntries: AffiliationEntry[] = Either.isRight(
+    existingAffResult,
+  )
+    ? parseAffiliationEntries(existingAffResult.right)
+    : [];
+  const existingAffs = new Set(existingAffEntries.map((e) => e.affiliation));
+
+  // Flat list of new affiliation strings across all groups
+  const newAffiliations = Object.values(affiliationGroups)
+    .flat()
+    .filter((a) => !existingAffs.has(a));
+
+  // Grouped options restricted to new affiliations (for groupMultiselect)
+  const newAffiliationGroups: Record<
+    string,
+    { value: string; label: string }[]
+  > = {};
+  for (const [group, affs] of Object.entries(affiliationGroups)) {
+    const opts = affs
+      .filter((a) => !existingAffs.has(a))
+      .map((a) => ({ value: a, label: a }));
+    if (opts.length > 0) newAffiliationGroups[group] = opts;
+  }
+
+  let mergedAffEntries: AffiliationEntry[];
+
+  if (newAffiliations.length === 0) {
+    log.info(
+      `[${label}] No new affiliations — using existing ${pc.bold(String(existingAffEntries.length))} entries`,
+    );
+    mergedAffEntries = existingAffEntries;
+  } else {
+    let selectedAffs: Set<string>;
+
+    if (batch === true) {
+      selectedAffs = new Set(newAffiliations);
+      log.info(
+        `[${label}] Batch mode — auto-selecting ${pc.bold(String(newAffiliations.length))} new affiliation(s)`,
+      );
+    } else {
+      log.info("Select affiliations");
+      const selected = await groupMultiselect<string>({
+        message: `Select affiliation strings found in OpenAlex article metadata for ${pc.bold(label)} (${String(newAffiliations.length)} new):`,
+        options: newAffiliationGroups,
+        initialValues: newAffiliations,
+      });
+
+      if (isCancel(selected)) {
+        log.warn(`[${label}] Skipped (cancelled)`);
+        return "skipped";
+      }
+
+      selectedAffs = new Set(Array.isArray(selected) ? selected : []);
+    }
+
+    const newAffEntries = newAffiliations.map((a) => ({
+      affiliation: a,
+      selected: selectedAffs.has(a),
+    }));
+
+    mergedAffEntries = [...existingAffEntries, ...newAffEntries];
+
+    const affSpinner = spinner();
+    affSpinner.start(`[${label}] Saving affiliations to REDCap…`);
+
+    const affResult = await Effect.runPromise(
+      Effect.either(
+        writeAlternativeAuthorAffiliations(
+          redcapConfig,
+          row.userid,
+          mergedAffEntries,
+        ),
+      ),
+    );
+
+    if (Either.isLeft(affResult)) {
+      affSpinner.stop(
+        pc.red(`[${label}] Could not save affiliations — aborting`),
+      );
+      log.error(JSON.stringify(affResult.left, null, 2));
+      return "error";
+    } else {
+      const selectedCount = mergedAffEntries.filter((e) => e.selected).length;
+      affSpinner.stop(
+        `[${label}] ${pc.bold(String(selectedCount))} affiliation(s) selected — saved`,
+      );
+    }
+  }
+
+  const selectedAffiliationFilter = new Set(
+    mergedAffEntries.filter((e) => e.selected).map((e) => e.affiliation),
+  );
+
+  if (selectedAffiliationFilter.size === 0) {
+    log.warn(`  No affiliations selected — skipping ${label}`);
+    return "skipped";
+  }
+
+  // Second filter: keep only works where the researcher's authorship has at least
+  // one raw_affiliation_string in selectedAffiliationFilter
+  const worksAfterAffFilter = works.filter((w) =>
+    w.authorships.some(
+      (a) =>
+        allAuthorIds.has(a.author.id) &&
+        a.raw_affiliation_strings.some((aff) =>
+          selectedAffiliationFilter.has(aff),
+        ),
+    ),
+  );
+
+  log.info(
+    `[${label}] ${pc.bold(String(worksAfterAffFilter.length))}/${pc.bold(String(works.length))} work(s) after affiliation filter`,
+  );
+
   // Show works sample
-  showWorks(works);
+  showWorks(worksAfterAffFilter);
 
   const writeSpinner = spinner();
   writeSpinner.start(`[${label}] Writing to REDCap…`);
 
   const writeResult: Either.Either<void, unknown> = await Effect.runPromise(
-    Effect.either(writeOaReferences(redcapConfig, row.userid, works)),
+    Effect.either(
+      writeOaReferences(redcapConfig, row.userid, worksAfterAffFilter),
+    ),
   );
 
   if (Either.isLeft(writeResult)) {
