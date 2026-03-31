@@ -88,7 +88,8 @@
       "packages/fetch-openalex",
       "packages/validate-openalex",
       "packages/biblio-cli",
-      "packages/openalex"
+      "packages/openalex",
+      "packages/researcher-profiles"
     ],
     "entryPointStrategy": "packages",
     "out": "docs/api",

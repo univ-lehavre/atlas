@@ -12,11 +12,13 @@ import type {
 } from "../types/index.js";
 
 /**
- * Recherche des auteurs dans l'API OpenAlex par display_name et display_name_alternatives.
- * Le second prénom, s’il n’est pas spécifié, renvoie tous les résultats.
- * @param search Le terme de recherche.
- * @param start_page La page de résultats à partir de laquelle commencer la recherche.
- * @returns Une réponse contenant les résultats de la recherche.
+ * Searches for authors in the OpenAlex API by `display_name` and
+ * `display_name_alternatives`. If the middle name is not specified, all
+ * matching results are returned.
+ *
+ * @param search - The search term (author name).
+ * @param start_page - The page number to start from (default: 1).
+ * @returns An Effect resolving to a paginated response of author results.
  */
 const searchAuthors = (
   search: string,
@@ -43,6 +45,15 @@ const searchAuthors = (
     return response;
   });
 
+/**
+ * Retrieves articles from OpenAlex filtered by author IDs, institution IDs,
+ * and type `article`.
+ *
+ * @param authors_ids - List of OpenAlex author IDs.
+ * @param institutions_ids - List of OpenAlex institution IDs.
+ * @param start_page - The page number to start from (default: 1).
+ * @returns An Effect resolving to a paginated response of works.
+ */
 const retrieve_articles = (
   authors_ids: string[],
   institutions_ids: string[],
@@ -65,6 +76,13 @@ const retrieve_articles = (
     return response;
   });
 
+/**
+ * Retrieves articles from OpenAlex by a list of work IDs.
+ *
+ * @param works_ids - List of OpenAlex work IDs.
+ * @param start_page - The page number to start from (default: 1).
+ * @returns An Effect resolving to a paginated response of works.
+ */
 const retrieve_articles_given_work_ids = (
   works_ids: string[],
   start_page: number = 1,
