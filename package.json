@@ -26,7 +26,7 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "test:coverage": "turbo test:coverage",
-    "check:ci": "pnpm format:check && pnpm svelte:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build",
+    "ci:checks": "pnpm format:check && pnpm svelte:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build",
     "audit:security": "pnpm audit --audit-level=high",
     "audit:licenses": "license-checker --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;Unlicense\" --excludePrivatePackages",
     "audit:unused": "knip --exclude unresolved,types",
@@ -44,7 +44,8 @@
     "changeset:version": "changeset version && pnpm exec prettier --no-config --write '**/CHANGELOG.md'",
     "changeset:publish": "pnpm build && changeset publish",
     "release": "pnpm build && ./scripts/publish-packages.sh",
-    "clean": "find . \\( -name 'node_modules' -o -name 'dist' -o -name 'build' -o -name '*.traineddata' -o -name '.hypothesis' -o -name '.svelte-kit' -o -name '.turbo' -o -name 'coverage' \\) -not -path '*/.git/*' -prune -exec rm -rf {} +",
+    "others": "git -C . ls-files --others",
+    "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json' 'packages/crf/docs/redcap-api.html'",
     "prepare": "lefthook install"
   },
   "size-limit": [
@@ -154,11 +155,11 @@
     "onlyBuiltDependencies": [
       "@duckdb/node-api",
       "@parcel/watcher",
-      "core-js",
       "esbuild",
       "lefthook",
       "msgpackr-extract",
       "protobufjs",
+      "sharp",
       "tesseract.js",
       "unrs-resolver",
       "vue-demi"

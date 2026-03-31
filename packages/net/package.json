@@ -45,6 +45,7 @@
     "atlas-net": "./dist/bin/atlas-net.js"
   },
   "scripts": {
+    "prepare": "pnpm build",
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/bin/atlas-net.js",

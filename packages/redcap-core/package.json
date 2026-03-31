@@ -50,6 +50,7 @@
     "src"
   ],
   "scripts": {
+    "prepare": "pnpm build",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
