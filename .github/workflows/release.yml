@@ -38,7 +38,7 @@ jobs:
       - name: Configure Git identity
         run: |
           git config user.name "chasset"
-          git config user.email "chasset@users.noreply.github.com"
+          git config user.email "1488688+chasset@users.noreply.github.com"
 
       - name: Create SvelteKit env files
         run: |
