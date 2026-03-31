@@ -48,7 +48,6 @@
     "specs"
   ],
   "scripts": {
-    "prepare": "pnpm build",
     "build": "tsc",
     "dev": "tsc --watch",
     "lint": "eslint src",
