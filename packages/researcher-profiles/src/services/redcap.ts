@@ -123,6 +123,41 @@ export const writeAlternativeAuthorFullnames = (
 };
 
 /**
+ * Downloads the `alternative_author_affiliations` file field for a given userid.
+ */
+export const fetchAlternativeAuthorAffiliations = (
+  config: RedcapConnectionConfig,
+  userid: string,
+): Effect.Effect<ArrayBuffer, RedcapFetchError> => {
+  const client = makeClient(config);
+  return client
+    .exportFile("alternative_author_affiliations", userid)
+    .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
+};
+
+/**
+ * Uploads the full list of affiliation strings (with selection status) to `alternative_author_affiliations`.
+ */
+export const writeAlternativeAuthorAffiliations = (
+  config: RedcapConnectionConfig,
+  userid: string,
+  entries: readonly { affiliation: string; selected: boolean }[],
+): Effect.Effect<void, RedcapWriteError> => {
+  const client = makeClient(config);
+  return client
+    .importFile(
+      "alternative_author_affiliations",
+      userid,
+      "alternative_author_affiliations.json",
+      toJsonBytes(entries),
+    )
+    .pipe(
+      Effect.asVoid,
+      Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+    );
+};
+
+/**
  * Downloads the `alternative_author_fullnames` file field for a given userid.
  */
 export const fetchAlternativeAuthorFullnames = (
