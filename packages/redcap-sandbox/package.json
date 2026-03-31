@@ -24,6 +24,7 @@
     "test:security": "./scripts/test-security.sh",
     "test:api": "tsx tests/api-smoke.ts",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "lint": "eslint tests",
     "lint:fix": "eslint tests --fix",
     "format": "prettier --write tests",
