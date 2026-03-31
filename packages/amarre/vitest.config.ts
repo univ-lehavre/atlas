@@ -5,5 +5,15 @@ import viteConfig from './vite.config';
 // other virtual aliases are properly resolved in tests.
 export default mergeConfig(
   viteConfig,
-  defineConfig({ test: { environment: 'node', globals: true, include: ['tests/**/*.test.ts'] } })
+  defineConfig({
+    test: {
+      environment: 'node',
+      globals: true,
+      include: ['tests/**/*.test.ts'],
+      coverage: {
+        provider: 'v8',
+        thresholds: { statements: 80, functions: 78 },
+      },
+    },
+  })
 );
