@@ -7,13 +7,7 @@
  *   5. Confirm and write to REDCap
  */
 
-import {
-  spinner,
-  log,
-  multiselect,
-  groupMultiselect,
-  isCancel,
-} from "@clack/prompts";
+import { spinner, log, multiselect, isCancel } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either, Logger, LogLevel } from "effect";
 import type {
@@ -122,67 +116,24 @@ const parseFullnameEntries = (buffer: ArrayBuffer): FullnameEntry[] => {
   }
 };
 
-const UNKNOWN_INSTITUTION = "Non identifié";
-
-/**
- * Builds a grouped map of raw_affiliation_strings keyed by institution label.
- * Uses authorship.affiliations to link each raw string to its institution(s).
- * Strings with no matching institution are grouped under UNKNOWN_INSTITUTION.
- * Each string appears only once (first institution encountered wins).
- */
-const buildAffiliationGroups = (
+const extractInstitutions = (
   works: readonly WorksResult[],
   authorIds: Set<string>,
-): Record<string, string[]> => {
-  // raw_affiliation_string → institution label (first seen wins)
-  const stringToGroup = new Map<string, string>();
-
+): { id: string; display_name: string; country_code: string }[] => {
+  const seen = new Map<
+    string,
+    { id: string; display_name: string; country_code: string }
+  >();
   for (const work of works) {
     for (const authorship of work.authorships) {
       if (!authorIds.has(authorship.author.id)) continue;
-
-      const institutionById = new Map(
-        authorship.institutions.map((i) => [i.id, i]),
-      );
-
-      // Use affiliations mapping (raw_affiliation_string → institution_ids)
-      for (const aff of authorship.affiliations) {
-        const str = aff.raw_affiliation_string;
-        if (str === "" || stringToGroup.has(str)) continue;
-        const inst = aff.institution_ids
-          .map((id) => institutionById.get(id))
-          .find((i) => i !== undefined);
-        const group = inst
-          ? `${inst.display_name} · ${inst.country_code} (${inst.id})`
-          : UNKNOWN_INSTITUTION;
-        stringToGroup.set(str, group);
-      }
-
-      // Catch any raw_affiliation_strings not covered by affiliations
-      for (const str of authorship.raw_affiliation_strings) {
-        if (str === "" || stringToGroup.has(str)) continue;
-        stringToGroup.set(str, UNKNOWN_INSTITUTION);
+      for (const inst of authorship.institutions) {
+        if (!seen.has(inst.id)) seen.set(inst.id, inst);
       }
     }
   }
-
-  // Group strings by institution label
-  const groups = new Map<string, string[]>();
-  for (const [str, group] of stringToGroup) {
-    const bucket = groups.get(group) ?? [];
-    bucket.push(str);
-    groups.set(group, bucket);
-  }
-  for (const bucket of groups.values())
-    bucket.sort((a, b) => a.localeCompare(b));
-
-  // Sort groups alphabetically, UNKNOWN_INSTITUTION last
-  return Object.fromEntries(
-    [...groups.entries()].sort(([a], [b]) => {
-      if (a === UNKNOWN_INSTITUTION) return 1;
-      if (b === UNKNOWN_INSTITUTION) return -1;
-      return a.localeCompare(b);
-    }),
+  return [...seen.values()].sort((a, b) =>
+    a.display_name.localeCompare(b.display_name),
   );
 };
 
@@ -482,8 +433,8 @@ export const processRow = async (
     `[${label}] ${pc.bold(String(works.length))}/${pc.bold(String(allWorks.length))} work(s) after name filter`,
   );
 
-  // Step: Extract raw_affiliation_strings from name-filtered works, grouped by institution
-  const affiliationGroups = buildAffiliationGroups(works, allAuthorIds);
+  // Step: Extract institutions from name-filtered works
+  const allInstitutions = extractInstitutions(works, allAuthorIds);
 
   const existingAffResult = await Effect.runPromise(
     Effect.either(fetchAlternativeAuthorAffiliations(redcapConfig, row.userid)),
@@ -494,45 +445,34 @@ export const processRow = async (
     ? parseAffiliationEntries(existingAffResult.right)
     : [];
   const existingAffs = new Set(existingAffEntries.map((e) => e.affiliation));
-
-  // Flat list of new affiliation strings across all groups
-  const newAffiliations = Object.values(affiliationGroups)
-    .flat()
-    .filter((a) => !existingAffs.has(a));
-
-  // Grouped options restricted to new affiliations (for groupMultiselect)
-  const newAffiliationGroups: Record<
-    string,
-    { value: string; label: string }[]
-  > = {};
-  for (const [group, affs] of Object.entries(affiliationGroups)) {
-    const opts = affs
-      .filter((a) => !existingAffs.has(a))
-      .map((a) => ({ value: a, label: a }));
-    if (opts.length > 0) newAffiliationGroups[group] = opts;
-  }
+  const newInstitutions = allInstitutions.filter(
+    (i) => !existingAffs.has(i.id),
+  );
 
   let mergedAffEntries: AffiliationEntry[];
 
-  if (newAffiliations.length === 0) {
+  if (newInstitutions.length === 0) {
     log.info(
-      `[${label}] No new affiliations — using existing ${pc.bold(String(existingAffEntries.length))} entries`,
+      `[${label}] No new institutions — using existing ${pc.bold(String(existingAffEntries.length))} entries`,
     );
     mergedAffEntries = existingAffEntries;
   } else {
     let selectedAffs: Set<string>;
 
     if (batch === true) {
-      selectedAffs = new Set(newAffiliations);
+      selectedAffs = new Set(newInstitutions.map((i) => i.id));
       log.info(
-        `[${label}] Batch mode — auto-selecting ${pc.bold(String(newAffiliations.length))} new affiliation(s)`,
+        `[${label}] Batch mode — auto-selecting ${pc.bold(String(newInstitutions.length))} new institution(s)`,
       );
     } else {
-      log.info("Select affiliations");
-      const selected = await groupMultiselect<string>({
-        message: `Select affiliation strings found in OpenAlex article metadata for ${pc.bold(label)} (${String(newAffiliations.length)} new):`,
-        options: newAffiliationGroups,
-        initialValues: newAffiliations,
+      log.info("Select institutions");
+      const selected = await multiselect<string>({
+        message: `Select institutions found in OpenAlex article metadata for ${pc.bold(label)} (${String(newInstitutions.length)} new):`,
+        options: newInstitutions.map((i) => ({
+          value: i.id,
+          label: `${i.display_name} · ${i.country_code}`,
+        })),
+        initialValues: newInstitutions.map((i) => i.id),
       });
 
       if (isCancel(selected)) {
@@ -543,15 +483,15 @@ export const processRow = async (
       selectedAffs = new Set(Array.isArray(selected) ? selected : []);
     }
 
-    const newAffEntries = newAffiliations.map((a) => ({
-      affiliation: a,
-      selected: selectedAffs.has(a),
+    const newAffEntries: AffiliationEntry[] = newInstitutions.map((i) => ({
+      affiliation: i.id,
+      selected: selectedAffs.has(i.id),
     }));
 
     mergedAffEntries = [...existingAffEntries, ...newAffEntries];
 
     const affSpinner = spinner();
-    affSpinner.start(`[${label}] Saving affiliations to REDCap…`);
+    affSpinner.start(`[${label}] Saving institutions to REDCap…`);
 
     const affResult = await Effect.runPromise(
       Effect.either(
@@ -565,14 +505,14 @@ export const processRow = async (
 
     if (Either.isLeft(affResult)) {
       affSpinner.stop(
-        pc.red(`[${label}] Could not save affiliations — aborting`),
+        pc.red(`[${label}] Could not save institutions — aborting`),
       );
       log.error(JSON.stringify(affResult.left, null, 2));
       return "error";
     } else {
       const selectedCount = mergedAffEntries.filter((e) => e.selected).length;
       affSpinner.stop(
-        `[${label}] ${pc.bold(String(selectedCount))} affiliation(s) selected — saved`,
+        `[${label}] ${pc.bold(String(selectedCount))} institution(s) selected — saved`,
       );
     }
   }
@@ -582,19 +522,17 @@ export const processRow = async (
   );
 
   if (selectedAffiliationFilter.size === 0) {
-    log.warn(`  No affiliations selected — skipping ${label}`);
+    log.warn(`  No institutions selected — skipping ${label}`);
     return "skipped";
   }
 
   // Second filter: keep only works where the researcher's authorship has at least
-  // one raw_affiliation_string in selectedAffiliationFilter
+  // one institution id in selectedAffiliationFilter
   const worksAfterAffFilter = works.filter((w) =>
     w.authorships.some(
       (a) =>
         allAuthorIds.has(a.author.id) &&
-        a.raw_affiliation_strings.some((aff) =>
-          selectedAffiliationFilter.has(aff),
-        ),
+        a.institutions.some((i) => selectedAffiliationFilter.has(i.id)),
     ),
   );
 
