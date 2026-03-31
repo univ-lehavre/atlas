@@ -4,12 +4,13 @@
  */
 
 import * as dns from 'node:dns';
+import * as net from 'node:net';
 import * as tls from 'node:tls';
 import { Effect } from 'effect';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Hostname, Port, TimeoutMs } from './types.js';
-import { dnsResolve, tlsHandshake } from './diagnostics.js';
+import { checkInternet, dnsResolve, tcpPing, tlsHandshake } from './diagnostics.js';
 
 // Test constants with branded types
 const TEST_HOSTNAME = Hostname('example.com');
@@ -23,7 +24,41 @@ const TEST_TIMEOUT_CUSTOM = TimeoutMs(10_000);
 
 // Mock node modules
 vi.mock('node:dns');
+vi.mock('node:net', () => ({
+  Socket: vi.fn(),
+}));
 vi.mock('node:tls');
+
+// Helper to create mock TCP socket
+const createMockTcpSocket = (): {
+  mockSocket: {
+    on: ReturnType<typeof vi.fn>;
+    setTimeout: ReturnType<typeof vi.fn>;
+    connect: ReturnType<typeof vi.fn>;
+    removeAllListeners: ReturnType<typeof vi.fn>;
+    destroy: ReturnType<typeof vi.fn>;
+  };
+  getEventHandler: (event: string) => ((...args: unknown[]) => void) | undefined;
+} => {
+  const eventHandlers: Record<string, (...args: unknown[]) => void> = {};
+  const mockSocket = {
+    on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
+      eventHandlers[event] = handler;
+    }),
+    setTimeout: vi.fn(),
+    connect: vi.fn(),
+    removeAllListeners: vi.fn(),
+    destroy: vi.fn(),
+  };
+  // eslint-disable-next-line func-style
+  (net.Socket as unknown as ReturnType<typeof vi.fn>).mockImplementation(function () {
+    return mockSocket;
+  });
+  return {
+    mockSocket,
+    getEventHandler: (event: string) => eventHandlers[event],
+  };
+};
 
 // Helper to create mock TLS socket
 const createMockTlsSocket = (): {
@@ -321,6 +356,74 @@ describe('diagnostics', () => {
       await resultPromise;
 
       expect(mockSocket.destroy).toHaveBeenCalled();
+    });
+  });
+  describe('tcpPing', () => {
+    it('should return ok status on connect', async () => {
+      const { getEventHandler } = createMockTcpSocket();
+
+      const resultPromise = Effect.runPromise(tcpPing(TEST_HOSTNAME, TEST_PORT_HTTPS));
+      getEventHandler('connect')?.();
+
+      const result = await resultPromise;
+
+      expect(result.name).toBe('TCP Connect');
+      expect(result.status).toBe('ok');
+      expect(typeof result.latencyMs).toBe('number');
+    });
+
+    it('should return error status on timeout', async () => {
+      const { getEventHandler } = createMockTcpSocket();
+
+      const resultPromise = Effect.runPromise(tcpPing(TEST_HOSTNAME_SLOW, TEST_PORT_HTTPS));
+      getEventHandler('timeout')?.();
+
+      const result = await resultPromise;
+
+      expect(result.status).toBe('error');
+      expect(result.message).toBe('Connection timeout');
+    });
+
+    it('should return error status with message on socket error', async () => {
+      const { getEventHandler } = createMockTcpSocket();
+
+      const resultPromise = Effect.runPromise(tcpPing(TEST_HOSTNAME, TEST_PORT_HTTPS));
+      getEventHandler('error')?.(new Error('Connection refused'));
+
+      const result = await resultPromise;
+
+      expect(result.status).toBe('error');
+      expect(result.message).toBe('Connection refused');
+    });
+
+    it('should use custom name and timeout from options', async () => {
+      const { getEventHandler } = createMockTcpSocket();
+
+      const resultPromise = Effect.runPromise(
+        tcpPing(TEST_HOSTNAME, TEST_PORT_HTTPS, {
+          name: 'Custom Check',
+          timeoutMs: TEST_TIMEOUT_CUSTOM,
+        })
+      );
+      getEventHandler('connect')?.();
+
+      const result = await resultPromise;
+
+      expect(result.name).toBe('Custom Check');
+    });
+  });
+
+  describe('checkInternet', () => {
+    it('should delegate to tcpPing with "Internet Check" name', async () => {
+      const { getEventHandler } = createMockTcpSocket();
+
+      const resultPromise = Effect.runPromise(checkInternet());
+      getEventHandler('connect')?.();
+
+      const result = await resultPromise;
+
+      expect(result.name).toBe('Internet Check');
+      expect(result.status).toBe('ok');
     });
   });
 });

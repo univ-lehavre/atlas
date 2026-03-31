@@ -35,21 +35,11 @@ pre-commit:
       run: pnpm lint
       glob: '*.{js,ts,svelte}'
 
-    cpd:
-      run: pnpm audit:duplicates
-
-    knip:
-      run: pnpm audit:unused
-
-    test:
-      run: pnpm test:coverage
-
     typecheck:
       run: pnpm typecheck
 
     svelte:check:
       run: pnpm svelte:check
-      glob: '*.svelte'
 
 pre-push:
   commands:
@@ -82,3 +72,15 @@ pre-push:
     check-lockfile:
       run: pnpm install --frozen-lockfile
       priority: 2
+
+    test:
+      run: pnpm test:coverage
+      priority: 3
+
+    cpd:
+      run: pnpm audit:duplicates
+      priority: 4
+
+    knip:
+      run: pnpm audit:unused
+      priority: 4

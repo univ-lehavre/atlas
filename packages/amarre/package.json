@@ -15,8 +15,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "openapi:generate": "tsx scripts/generate-openapi.ts",
-    "test:unit": "vitest",
-    "test": "pnpm run test:unit -- --run",
+    "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "knip": "knip"
   },
