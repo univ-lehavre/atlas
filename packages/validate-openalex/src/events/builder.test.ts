@@ -1,6 +1,18 @@
-import { describe, it, expect } from "vitest";
-import { buildReference } from "./builder.js";
-import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+import { describe, it, expect } from "@effect/vitest";
+import { Effect, Ref } from "effect";
+import {
+  buildReference,
+  buildEvent,
+  buildAuthorResultsPendingEvents,
+} from "./builder.js";
+import type {
+  WorksResult,
+  AuthorsResult,
+  OpenAlexID,
+  ORCID,
+} from "@univ-lehavre/atlas-openalex-types";
+import { ContextStore, EventsStore } from "../store/init.js";
+import type { IContext } from "../context/types.js";
 
 const makeWork = (overrides: Partial<WorksResult> = {}): WorksResult =>
   ({
@@ -43,4 +55,66 @@ describe("buildReference", () => {
     const work = makeWork({ publication_year: 2020 });
     expect(buildReference(work)).toBe("2020 - Test Article Title");
   });
+});
+
+const orcid = "0000-0001-2345-6789" as unknown as ORCID;
+const ctxWithNamespace: IContext = {
+  type: "author",
+  id: orcid,
+  backup: false,
+  NAMESPACE: "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+};
+
+describe("buildEvent", () => {
+  it.effect(
+    "creates an IEvent with dataIntegrity, createdAt, updatedAt, and hasBeenExtendedAt=never",
+    () =>
+      Effect.gen(function* () {
+        const partial = {
+          from: "A1" as unknown as OpenAlexID,
+          id: orcid,
+          entity: "author" as const,
+          field: "affiliation" as const,
+          value: "I1",
+          status: "pending" as const,
+        };
+        const event = yield* buildEvent(partial).pipe(
+          Effect.provideServiceEffect(ContextStore, Ref.make(ctxWithNamespace)),
+        );
+        expect(event.hasBeenExtendedAt).toBe("never");
+        expect(typeof event.dataIntegrity).toBe("string");
+        expect(event.dataIntegrity.length).toBeGreaterThan(0);
+        expect(typeof event.createdAt).toBe("string");
+        expect(event.createdAt).toBe(event.updatedAt);
+        expect(event.value).toBe("I1");
+        expect(event.entity).toBe("author");
+      }),
+  );
+});
+
+describe("buildAuthorResultsPendingEvents", () => {
+  it.effect("builds pending events from AuthorsResult array", () =>
+    Effect.gen(function* () {
+      const authors: AuthorsResult[] = [
+        {
+          id: "https://openalex.org/A1",
+          display_name_alternatives: ["Alt Name"],
+          affiliations: [{ institution: { id: "I1", display_name: "Univ A" } }],
+        } as unknown as AuthorsResult,
+      ];
+      const events = yield* buildAuthorResultsPendingEvents(authors).pipe(
+        Effect.provideServiceEffect(ContextStore, Ref.make(ctxWithNamespace)),
+        Effect.provideServiceEffect(EventsStore, Ref.make([])),
+      );
+      expect(events.length).toBeGreaterThan(0);
+      const displayNameEvent = events.find(
+        (e) => e.field === "display_name_alternatives",
+      );
+      expect(displayNameEvent?.value).toBe("Alt Name");
+      expect(displayNameEvent?.status).toBe("pending");
+      const affiliationEvent = events.find((e) => e.field === "affiliation");
+      expect(affiliationEvent?.value).toBe("I1");
+      expect(affiliationEvent?.label).toBe("Univ A");
+    }),
+  );
 });
