@@ -44,7 +44,7 @@
     "changeset:version": "changeset version && pnpm exec prettier --no-config --write '**/CHANGELOG.md'",
     "changeset:publish": "pnpm build && changeset publish",
     "release": "pnpm build && ./scripts/publish-packages.sh",
-    "clean": "find . \\( -name 'node_modules' -o -name 'dist' -o -name '.svelte-kit' -o -name '.turbo' -o -name 'coverage' \\) -not -path '*/.git/*' -prune -exec rm -rf {} +",
+    "clean": "find . \\( -name 'node_modules' -o -name 'dist' -o -name 'build' -o -name '*.traineddata' -o -name '.hypothesis' -o -name '.svelte-kit' -o -name '.turbo' -o -name 'coverage' \\) -not -path '*/.git/*' -prune -exec rm -rf {} +",
     "prepare": "lefthook install"
   },
   "size-limit": [
@@ -153,13 +153,12 @@
     "onlyBuiltDependencies": [
       "@duckdb/node-api",
       "@parcel/watcher",
-      "@scarf/scarf",
       "core-js",
       "esbuild",
       "lefthook",
       "msgpackr-extract",
       "protobufjs",
-      "sharp",
+      "tesseract.js",
       "unrs-resolver",
       "vue-demi"
     ]
