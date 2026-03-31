@@ -27,6 +27,8 @@ import {
   writeOaReferences,
   writeAlternativeAuthorFullnames,
   fetchAlternativeAuthorFullnames,
+  fetchAlternativeAuthorAffiliations,
+  writeAlternativeAuthorAffiliations,
 } from "../services/redcap.js";
 import type { ResearcherRow } from "../types.js";
 
@@ -62,6 +64,32 @@ interface FullnameEntry {
   selected: boolean;
 }
 
+interface AffiliationEntry {
+  affiliation: string;
+  selected: boolean;
+}
+
+/** Parses alternative_author_affiliations JSON, returns all entries. */
+const parseAffiliationEntries = (buffer: ArrayBuffer): AffiliationEntry[] => {
+  const raw = new TextDecoder().decode(buffer);
+  if (raw === "") return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return (parsed as { affiliation?: unknown; selected?: unknown }[])
+      .filter(
+        (e) =>
+          typeof e.affiliation === "string" && typeof e.selected === "boolean",
+      )
+      .map((e) => ({
+        affiliation: e.affiliation as string,
+        selected: e.selected as boolean,
+      }));
+  } catch {
+    return [];
+  }
+};
+
 /** Parses alternative_author_fullnames JSON, returns all entries. */
 const parseFullnameEntries = (buffer: ArrayBuffer): FullnameEntry[] => {
   const raw = new TextDecoder().decode(buffer);
@@ -86,6 +114,27 @@ const parseFullnameEntries = (buffer: ArrayBuffer): FullnameEntry[] => {
   } catch {
     return [];
   }
+};
+
+const extractInstitutions = (
+  works: readonly WorksResult[],
+  authorIds: Set<string>,
+): { id: string; display_name: string; country_code: string }[] => {
+  const seen = new Map<
+    string,
+    { id: string; display_name: string; country_code: string }
+  >();
+  for (const work of works) {
+    for (const authorship of work.authorships) {
+      if (!authorIds.has(authorship.author.id)) continue;
+      for (const inst of authorship.institutions) {
+        if (!seen.has(inst.id)) seen.set(inst.id, inst);
+      }
+    }
+  }
+  return [...seen.values()].sort((a, b) =>
+    a.display_name.localeCompare(b.display_name),
+  );
 };
 
 const fetchWorks = async (
@@ -154,6 +203,7 @@ export const processRow = async (
   const researcher = `${row.first_name} ${row.last_name}`;
 
   let allAuthorIdsForFetch: readonly string[] = [];
+  let allAuthorIds = new Set<string>();
   let selectedNameFilter = new Set<string>();
   let prefetchedWorks: readonly WorksResult[] | null = null;
 
@@ -168,6 +218,7 @@ export const processRow = async (
       ? parseFullnameEntries(storedResult.right)
       : [];
     allAuthorIdsForFetch = [...new Set(storedEntries.map((e) => e.authorId))];
+    allAuthorIds = new Set(allAuthorIdsForFetch);
     selectedNameFilter = new Set(
       storedEntries.filter((e) => e.selected).map((e) => e.name),
     );
@@ -234,7 +285,7 @@ export const processRow = async (
     prefetchedWorks = worksResult.right;
 
     // Step 3: Extract raw_author_name from authorships
-    const allAuthorIds = new Set(allAuthors.map((a) => a.id));
+    allAuthorIds = new Set(allAuthors.map((a) => a.id));
     const rawNameMap = new Map<string, string>(); // name → authorId (first seen)
     for (const work of prefetchedWorks) {
       for (const authorship of work.authorships) {
@@ -382,14 +433,123 @@ export const processRow = async (
     `[${label}] ${pc.bold(String(works.length))}/${pc.bold(String(allWorks.length))} work(s) after name filter`,
   );
 
+  // Step: Extract institutions from name-filtered works
+  const allInstitutions = extractInstitutions(works, allAuthorIds);
+
+  const existingAffResult = await Effect.runPromise(
+    Effect.either(fetchAlternativeAuthorAffiliations(redcapConfig, row.userid)),
+  );
+  const existingAffEntries: AffiliationEntry[] = Either.isRight(
+    existingAffResult,
+  )
+    ? parseAffiliationEntries(existingAffResult.right)
+    : [];
+  const existingAffs = new Set(existingAffEntries.map((e) => e.affiliation));
+  const newInstitutions = allInstitutions.filter(
+    (i) => !existingAffs.has(i.id),
+  );
+
+  let mergedAffEntries: AffiliationEntry[];
+
+  if (newInstitutions.length === 0) {
+    log.info(
+      `[${label}] No new institutions — using existing ${pc.bold(String(existingAffEntries.length))} entries`,
+    );
+    mergedAffEntries = existingAffEntries;
+  } else {
+    let selectedAffs: Set<string>;
+
+    if (batch === true) {
+      selectedAffs = new Set(newInstitutions.map((i) => i.id));
+      log.info(
+        `[${label}] Batch mode — auto-selecting ${pc.bold(String(newInstitutions.length))} new institution(s)`,
+      );
+    } else {
+      log.info("Select institutions");
+      const selected = await multiselect<string>({
+        message: `Select institutions found in OpenAlex article metadata for ${pc.bold(label)} (${String(newInstitutions.length)} new):`,
+        options: newInstitutions.map((i) => ({
+          value: i.id,
+          label: `${i.display_name} · ${i.country_code}`,
+        })),
+        initialValues: newInstitutions.map((i) => i.id),
+      });
+
+      if (isCancel(selected)) {
+        log.warn(`[${label}] Skipped (cancelled)`);
+        return "skipped";
+      }
+
+      selectedAffs = new Set(Array.isArray(selected) ? selected : []);
+    }
+
+    const newAffEntries: AffiliationEntry[] = newInstitutions.map((i) => ({
+      affiliation: i.id,
+      selected: selectedAffs.has(i.id),
+    }));
+
+    mergedAffEntries = [...existingAffEntries, ...newAffEntries];
+
+    const affSpinner = spinner();
+    affSpinner.start(`[${label}] Saving institutions to REDCap…`);
+
+    const affResult = await Effect.runPromise(
+      Effect.either(
+        writeAlternativeAuthorAffiliations(
+          redcapConfig,
+          row.userid,
+          mergedAffEntries,
+        ),
+      ),
+    );
+
+    if (Either.isLeft(affResult)) {
+      affSpinner.stop(
+        pc.red(`[${label}] Could not save institutions — aborting`),
+      );
+      log.error(JSON.stringify(affResult.left, null, 2));
+      return "error";
+    } else {
+      const selectedCount = mergedAffEntries.filter((e) => e.selected).length;
+      affSpinner.stop(
+        `[${label}] ${pc.bold(String(selectedCount))} institution(s) selected — saved`,
+      );
+    }
+  }
+
+  const selectedAffiliationFilter = new Set(
+    mergedAffEntries.filter((e) => e.selected).map((e) => e.affiliation),
+  );
+
+  if (selectedAffiliationFilter.size === 0) {
+    log.warn(`  No institutions selected — skipping ${label}`);
+    return "skipped";
+  }
+
+  // Second filter: keep only works where the researcher's authorship has at least
+  // one institution id in selectedAffiliationFilter
+  const worksAfterAffFilter = works.filter((w) =>
+    w.authorships.some(
+      (a) =>
+        allAuthorIds.has(a.author.id) &&
+        a.institutions.some((i) => selectedAffiliationFilter.has(i.id)),
+    ),
+  );
+
+  log.info(
+    `[${label}] ${pc.bold(String(worksAfterAffFilter.length))}/${pc.bold(String(works.length))} work(s) after affiliation filter`,
+  );
+
   // Show works sample
-  showWorks(works);
+  showWorks(worksAfterAffFilter);
 
   const writeSpinner = spinner();
   writeSpinner.start(`[${label}] Writing to REDCap…`);
 
   const writeResult: Either.Either<void, unknown> = await Effect.runPromise(
-    Effect.either(writeOaReferences(redcapConfig, row.userid, works)),
+    Effect.either(
+      writeOaReferences(redcapConfig, row.userid, worksAfterAffFilter),
+    ),
   );
 
   if (Either.isLeft(writeResult)) {
