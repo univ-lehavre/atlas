@@ -32,17 +32,17 @@
   "dependencies": {
     "@clack/prompts": "1.0.0-alpha.6",
     "@effect/experimental": "^0.60.0",
-    "@effect/platform-node": "^0.104.1",
+    "@effect/platform-node": "^0.106.0",
     "@univ-lehavre/atlas-openalex-types": "workspace:*",
     "@univ-lehavre/atlas-validate-openalex": "workspace:*",
-    "effect": "^3.19.15"
+    "effect": "^3.21.0"
   },
   "devDependencies": {
-    "@types/node": "^25.0.10",
+    "@types/node": "^25.5.0",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "eslint": "^9.39.2",
+    "eslint": "^10.1.0",
     "prettier": "^3.8.1",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   },
   "publishConfig": {
     "access": "public"

@@ -123,7 +123,7 @@ const extractInstitutions = (
       }
     }
   }
-  return [...seen.values()].sort((a, b) =>
+  return [...seen.values()].toSorted((a, b) =>
     a.display_name.localeCompare(b.display_name),
   );
 };
@@ -193,6 +193,7 @@ export const processRow = async (
   const label = `${row.first_name} ${row.last_name} (${row.userid})`;
   const researcher = `${row.first_name} ${row.last_name}`;
 
+  // eslint-disable-next-line no-useless-assignment -- initialized for the two branches below
   let allAuthorIdsForFetch: readonly string[] = [];
   let allAuthorIds = new Set<string>();
   let selectedNameFilter = new Set<string>();
@@ -289,7 +290,7 @@ export const processRow = async (
     }
     const sortedNameEntries = [...rawNameMap.entries()]
       .map(([name, authorId]) => ({ name, authorId }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+      .toSorted((a, b) => a.name.localeCompare(b.name));
 
     // Step 4: Fetch existing entries and present only new names
     const existingResult = await Effect.runPromise(

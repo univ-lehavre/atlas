@@ -45,7 +45,7 @@
     "changeset:publish": "pnpm build && changeset publish",
     "release": "pnpm build && ./scripts/publish-packages.sh",
     "others": "git -C . ls-files --others",
-    "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json'",
+    "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json' 'apps/*/tests/baselines/*.json' 'docs/.vitepress/dist'",
     "prepare": "lefthook install"
   },
   "size-limit": [
@@ -108,55 +108,56 @@
     "hideBreadcrumbs": true
   },
   "devDependencies": {
-    "@braintree/sanitize-url": "^7.1.1",
-    "@changesets/changelog-github": "^0.5.2",
+    "@braintree/sanitize-url": "^7.1.2",
+    "@changesets/changelog-github": "^0.6.0",
     "@changesets/cli": "^2.30.0",
-    "@commitlint/cli": "^20.3.1",
-    "@commitlint/config-conventional": "^20.3.1",
+    "@commitlint/cli": "^20.5.0",
+    "@commitlint/config-conventional": "^20.5.0",
     "@modyfi/vite-plugin-yaml": "^1.1.1",
-    "@size-limit/file": "^12.0.0",
+    "@size-limit/file": "^12.0.1",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "@vitest/coverage-v8": "^4.0.18",
-    "chart.js": "^4.5.0",
+    "@vitest/coverage-v8": "^4.1.2",
+    "chart.js": "^4.5.1",
     "cytoscape": "^3.33.1",
     "cytoscape-cose-bilkent": "^4.1.0",
-    "dayjs": "^1.11.19",
+    "dayjs": "^1.11.20",
     "debug": "^4.4.3",
-    "jscpd": "^4.0.7",
-    "knip": "^6.0.6",
-    "lefthook": "^2.0.16",
+    "jscpd": "^4.0.8",
+    "knip": "^6.1.1",
+    "lefthook": "^2.1.4",
     "license-checker": "^25.0.1",
-    "mermaid": "^11.12.2",
-    "prettier": "^3.0.0",
+    "mermaid": "^11.14.0",
+    "prettier": "^3.8.1",
     "simple-git": "^3.33.0",
     "size-limit": "^12.0.1",
-    "taze": "^19.9.2",
+    "taze": "^19.11.0",
     "tsx": "^4.21.0",
-    "turbo": "^2.7.6",
-    "typedoc": "^0.28.16",
-    "typedoc-plugin-markdown": "^4.9.0",
+    "turbo": "^2.9.3",
+    "typedoc": "^0.28.18",
+    "typedoc-plugin-markdown": "^4.11.0",
     "vitepress": "^1.6.4",
-    "vitepress-openapi": "^0.1.13",
+    "vitepress-openapi": "^0.1.19",
     "vitepress-plugin-mermaid": "^2.0.17",
-    "vitest": "^4.0.18",
-    "vue-chartjs": "^5.3.2"
+    "vitest": "^4.1.2",
+    "vue-chartjs": "^5.3.3"
   },
-  "packageManager": "pnpm@10.28.2",
+  "packageManager": "pnpm@10.33.0",
   "pnpm": {
     "overrides": {
-      "picomatch": ">=4.0.4",
-      "fast-xml-parser": ">=5.5.6",
-      "flatted": ">=3.4.2",
-      "minimatch": ">=10.2.3",
-      "undici": ">=7.24.0",
       "@isaacs/brace-expansion": ">=5.0.1",
-      "effect": ">=3.20.0",
-      "rollup": ">=4.59.0",
-      "@xmldom/xmldom": ">=0.8.12"
+      "@xmldom/xmldom": ">=0.9.9",
+      "effect": ">=3.21.0",
+      "fast-xml-parser": ">=5.5.9",
+      "flatted": ">=3.4.2",
+      "minimatch": ">=10.2.5",
+      "picomatch": ">=4.0.4",
+      "rollup": ">=4.60.1",
+      "undici": ">=7.24.6"
     },
     "onlyBuiltDependencies": [
       "@duckdb/node-api",
       "@parcel/watcher",
+      "@scarf/scarf",
       "esbuild",
       "lefthook",
       "msgpackr-extract",
@@ -165,6 +166,9 @@
       "tesseract.js",
       "unrs-resolver",
       "vue-demi"
-    ]
+    ],
+    "patchedDependencies": {
+      "reprism@0.0.11": "patches/reprism@0.0.11.patch"
+    }
   }
 }

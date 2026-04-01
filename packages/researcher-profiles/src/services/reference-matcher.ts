@@ -97,5 +97,5 @@ export const matchReferences = (
       return result;
     })
     .filter((r): r is MatchResult => r !== null)
-    .sort((a, b) => a.score - b.score);
+    .toSorted((a, b) => a.score - b.score);
 };

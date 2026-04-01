@@ -23,7 +23,7 @@ export const selectResearchers = async (
   researchers: readonly ResearcherRow[],
   preselectAll = false,
 ): Promise<readonly ResearcherRow[]> => {
-  const sorted = [...researchers].sort((a, b) =>
+  const sorted = [...researchers].toSorted((a, b) =>
     a.last_name.localeCompare(b.last_name, "fr"),
   );
   const selected = await multiselect({

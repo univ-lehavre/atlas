@@ -15,6 +15,7 @@
     "sourceMap": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "moduleDetection": "force"
+    "moduleDetection": "force",
+    "ignoreDeprecations": "6.0"
   }
 }
