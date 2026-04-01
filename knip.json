@@ -201,7 +201,6 @@
     "vue-chartjs",
     "mermaid",
     "vitepress-plugin-mermaid",
-    "@braintree/sanitize-url",
     "dayjs",
     "debug",
     "cytoscape",
