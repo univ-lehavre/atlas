@@ -10,10 +10,13 @@ packages:
 onlyBuiltDependencies:
   - '@duckdb/node-api'
   - '@parcel/watcher'
+  - '@scarf/scarf'
   - core-js
   - esbuild
   - lefthook
   - msgpackr-extract
   - protobufjs
+  - sharp
+  - tesseract.js
   - unrs-resolver
   - vue-demi
