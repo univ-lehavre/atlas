@@ -84,3 +84,7 @@ pre-push:
     knip:
       run: pnpm audit:unused
       priority: 4
+
+    docs:
+      run: pnpm build && pnpm docs:api && pnpm docs:build
+      priority: 5
