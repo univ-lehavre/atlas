@@ -1,7 +1,7 @@
 /**
  * Unified per-researcher pipeline: resolves OpenAlex works (processRow) then
  * matches publications file against oa_references (matchRow) for each researcher
- * in sequence, relying on REDCap dates to skip already-fresh steps.
+ * in sequence, relying on oa_imported_at to skip already-fresh steps.
  */
 
 import { spinner, log, outro } from "@clack/prompts";
@@ -62,12 +62,8 @@ export const run = async (opts: RunOptions): Promise<void> => {
   }
 
   const allResearchers = fetchResult.right;
-  const pending = allResearchers.filter(
-    (r) => r.references_openalex_complete !== "2",
-  );
-  const complete = allResearchers.filter(
-    (r) => r.references_openalex_complete === "2",
-  );
+  const pending = allResearchers.filter((r) => r.openalex_complete !== "2");
+  const complete = allResearchers.filter((r) => r.openalex_complete === "2");
 
   s.stop(
     `Found ${pc.bold(String(allResearchers.length))} researchers in REDCap`,
@@ -75,7 +71,7 @@ export const run = async (opts: RunOptions): Promise<void> => {
 
   if (complete.length > 0) {
     log.info(
-      `${pc.dim(String(complete.length))} researcher(s) complete (references_openalex_complete = 2) — excluded`,
+      `${pc.dim(String(complete.length))} researcher(s) complete (openalex_complete = 2) — excluded`,
     );
   }
 
