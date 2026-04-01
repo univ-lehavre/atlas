@@ -26,7 +26,7 @@
     "typecheck": "turbo typecheck",
     "test": "turbo test",
     "test:coverage": "turbo test:coverage",
-    "ci:checks": "pnpm format:check && pnpm svelte:check && pnpm lint && pnpm typecheck && pnpm test:coverage && pnpm build",
+    "ci:checks": "turbo run format:check check lint typecheck test:coverage build",
     "audit:security": "pnpm audit --audit-level=high",
     "audit:licenses": "license-checker --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;Unlicense\" --excludePrivatePackages",
     "audit:unused": "knip --exclude unresolved,types",
@@ -50,12 +50,36 @@
   },
   "size-limit": [
     {
+      "path": "packages/net/dist/**/*.js",
+      "limit": "20 KB"
+    },
+    {
       "path": "services/crf/dist/**/*.js",
       "limit": "100 KB"
     },
     {
-      "path": "packages/net/dist/**/*.js",
-      "limit": "20 KB"
+      "path": "packages/fetch-openalex/dist/**/*.js",
+      "limit": "140 KB"
+    },
+    {
+      "path": "packages/researcher-profiles/dist/**/*.js",
+      "limit": "230 KB"
+    },
+    {
+      "path": "packages/openalex/dist/**/*.js",
+      "limit": "250 KB"
+    },
+    {
+      "path": "packages/redcap-client/dist/**/*.js",
+      "limit": "260 KB"
+    },
+    {
+      "path": "packages/validate-openalex/dist/**/*.js",
+      "limit": "700 KB"
+    },
+    {
+      "path": "packages/redcap-core/dist/**/*.js",
+      "limit": "750 KB"
     }
   ],
   "jscpd": {
@@ -91,7 +115,10 @@
       "services/crf",
       "tools/dev/redcap-openapi",
       "tools/cli/biblio-cli",
-      "packages/researcher-profiles"
+      "packages/researcher-profiles",
+      "tools/cli/crf-cli",
+      "tools/cli/net-cli",
+      "tools/cli/researcher-profiles"
     ],
     "entryPointStrategy": "packages",
     "out": "docs/api",
@@ -108,7 +135,6 @@
     "hideBreadcrumbs": true
   },
   "devDependencies": {
-    "@braintree/sanitize-url": "^7.1.2",
     "@changesets/changelog-github": "^0.6.0",
     "@changesets/cli": "^2.30.0",
     "@commitlint/cli": "^20.5.0",
