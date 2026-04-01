@@ -11,7 +11,7 @@ import type {
   OpenAlexConfig,
   RateLimitInfo,
 } from "@univ-lehavre/atlas-fetch-openalex";
-import { fetchResearchers } from "../services/redcap.js";
+import { fetchResearchers } from "@univ-lehavre/atlas-researcher-profiles";
 import { processRow } from "./process-row.js";
 import { matchRow } from "./match-row.js";
 import { selectResearchers } from "./select-researchers.js";

@@ -14,15 +14,15 @@ import {
   downloadPublicationsFile,
   writeFinalReferences,
   writeRawReferences,
-} from "../services/redcap.js";
-import { extractText } from "../services/file-extractor.js";
-import { matchReferences } from "../services/reference-matcher.js";
+} from "@univ-lehavre/atlas-researcher-profiles";
+import { extractText } from "@univ-lehavre/atlas-researcher-profiles";
+import { matchReferences } from "@univ-lehavre/atlas-researcher-profiles";
 import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
 import {
   searchWorksByDOI,
   type OpenAlexConfig,
 } from "@univ-lehavre/atlas-fetch-openalex";
-import type { ResearcherRow } from "../types.js";
+import type { ResearcherRow } from "@univ-lehavre/atlas-researcher-profiles";
 
 const silenced = <A, E>(effect: Effect.Effect<A, E>): Effect.Effect<A, E> =>
   effect.pipe(Logger.withMinimumLogLevel(LogLevel.None));
