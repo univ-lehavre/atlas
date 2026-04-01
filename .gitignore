@@ -33,6 +33,7 @@ docs/api/
 
 # Testing
 .hypothesis/
+apps/*/tests/baselines/*.json
 
 # Assets
 assets/source/
