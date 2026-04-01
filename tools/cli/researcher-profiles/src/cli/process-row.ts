@@ -449,31 +449,10 @@ export const processRow = async (
     );
     mergedAffEntries = existingAffEntries;
   } else {
-    let selectedAffs: Set<string>;
-
-    if (batch === true) {
-      selectedAffs = new Set(newInstitutions.map((i) => i.id));
-      log.info(
-        `[${label}] Batch mode — auto-selecting ${pc.bold(String(newInstitutions.length))} new institution(s)`,
-      );
-    } else {
-      log.info("Select institutions");
-      const selected = await multiselect<string>({
-        message: `Select institutions found in OpenAlex article metadata for ${pc.bold(label)} (${String(newInstitutions.length)} new):`,
-        options: newInstitutions.map((i) => ({
-          value: i.id,
-          label: `${i.display_name} · ${i.country_code}`,
-        })),
-        initialValues: newInstitutions.map((i) => i.id),
-      });
-
-      if (isCancel(selected)) {
-        log.warn(`[${label}] Skipped (cancelled)`);
-        return "skipped";
-      }
-
-      selectedAffs = new Set(Array.isArray(selected) ? selected : []);
-    }
+    const selectedAffs = new Set(newInstitutions.map((i) => i.id));
+    log.info(
+      `[${label}] Auto-selecting ${pc.bold(String(newInstitutions.length))} new institution(s)`,
+    );
 
     const newAffEntries: AffiliationEntry[] = newInstitutions.map((i) => ({
       affiliation: i.id,
@@ -524,7 +503,8 @@ export const processRow = async (
     w.authorships.some(
       (a) =>
         allAuthorIds.has(a.author.id) &&
-        a.institutions.some((i) => selectedAffiliationFilter.has(i.id)),
+        (a.institutions.length === 0 ||
+          a.institutions.some((i) => selectedAffiliationFilter.has(i.id))),
     ),
   );
 
