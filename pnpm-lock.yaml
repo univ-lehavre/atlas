@@ -15,6 +15,11 @@ overrides:
   rollup: '>=4.60.1'
   undici: '>=7.24.6'
 
+patchedDependencies:
+  reprism@0.0.11:
+    hash: 55dbe47a28644ce4c72ba30a19d63ae1f40942e84cf37cfe4b6a6d5c6409949e
+    path: patches/reprism@0.0.11.patch
+
 importers:
 
   .:
@@ -8944,13 +8949,13 @@ snapshots:
   '@jscpd/tokenizer@4.0.3':
     dependencies:
       '@jscpd/core': 4.0.3
-      reprism: 0.0.11
+      reprism: 0.0.11(patch_hash=55dbe47a28644ce4c72ba30a19d63ae1f40942e84cf37cfe4b6a6d5c6409949e)
       spark-md5: 3.0.2
 
   '@jscpd/tokenizer@4.0.4':
     dependencies:
       '@jscpd/core': 4.0.4
-      reprism: 0.0.11
+      reprism: 0.0.11(patch_hash=55dbe47a28644ce4c72ba30a19d63ae1f40942e84cf37cfe4b6a6d5c6409949e)
       spark-md5: 3.0.2
 
   '@kurkle/color@0.3.4': {}
@@ -13478,7 +13483,7 @@ snapshots:
 
   repeat-string@1.6.1: {}
 
-  reprism@0.0.11: {}
+  reprism@0.0.11(patch_hash=55dbe47a28644ce4c72ba30a19d63ae1f40942e84cf37cfe4b6a6d5c6409949e): {}
 
   require-directory@2.1.1: {}
 
