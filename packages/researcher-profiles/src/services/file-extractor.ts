@@ -202,7 +202,7 @@ const extractTxt = (
   buffer: ArrayBuffer,
 ): Effect.Effect<string, FileExtractError> =>
   Effect.try({
-    try: () => new TextDecoder("utf8").decode(buffer),
+    try: () => new TextDecoder("utf-8").decode(buffer),
     catch: (cause) => new FileExtractError({ cause }),
   });
 

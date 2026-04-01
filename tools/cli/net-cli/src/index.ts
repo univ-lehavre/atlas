@@ -244,6 +244,7 @@ const command = Command.make(
             message: 'Enter target URL to diagnose',
             placeholder: 'https://example.com',
             validate: (value) => {
+              if (!value) return 'Please enter a URL';
               try {
                 new URL(value);
               } catch {

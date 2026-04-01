@@ -1,0 +1,41 @@
+diff --git a/languages/django.js b/languages/django.js
+index ec8402adcb93c3465318e8af507bf34ff38b6043..f74c5367153cbc3048275c58481224e63a37aef6 100644
+--- a/languages/django.js
++++ b/languages/django.js
+@@ -36,15 +36,19 @@ exports.default = {
+     Prism.languages.insertBefore('django', 'entity', _django_template);
+     Prism.languages.insertBefore('inside', 'tag', _django_template, Prism.languages.django.tag);
+ 
+-    if (Prism.languages.javascript) {
++    if (Prism.languages.javascript && Prism.languages.django.script) {
+       // Combine js code and template tags painting inside <script> blocks
+       Prism.languages.insertBefore('inside', 'string', _django_template, Prism.languages.django.script);
+-      Prism.languages.django.script.inside.string.inside = _django_template;
++      if (Prism.languages.django.script.inside && Prism.languages.django.script.inside.string) {
++        Prism.languages.django.script.inside.string.inside = _django_template;
++      }
+     }
+-    if (Prism.languages.css) {
++    if (Prism.languages.css && Prism.languages.django.style) {
+       // Combine css code and template tags painting inside <style> blocks
+       Prism.languages.insertBefore('inside', 'atrule', { tag: _django_template.property }, Prism.languages.django.style);
+-      Prism.languages.django.style.inside.string.inside = _django_template;
++      if (Prism.languages.django.style.inside && Prism.languages.django.style.inside.string) {
++        Prism.languages.django.style.inside.string.inside = _django_template;
++      }
+     }
+ 
+     // Add an Jinja2 alias
+diff --git a/lib/core.js b/lib/core.js
+index c531988e46d8bd35348d1bc7d099c49dfe4ea39a..8ff77aba6cb0411798930356094e6a57bef58abf 100644
+--- a/lib/core.js
++++ b/lib/core.js
+@@ -223,6 +223,8 @@ function insertBefore() {
+     return grammar;
+   }
+ 
++  if (!grammar) return {};
++
+   var ret = {};
+ 
+   Object.keys(grammar).forEach(function (key) {

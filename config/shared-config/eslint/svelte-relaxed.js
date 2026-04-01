@@ -67,6 +67,9 @@ export function svelteRelaxed(options = {}) {
 					extraFileExtensions: ['.svelte'],
 				},
 			},
+			rules: {
+				'no-useless-assignment': 'off', // false positive with $bindable()
+			},
 		},
 
 		// Relaxed TypeScript rules

@@ -194,7 +194,7 @@ async function runDocs(): Promise<void> {
     placeholder: '3000',
     defaultValue: '3000',
     validate: (value) => {
-      const port = Number.parseInt(value, 10);
+      const port = Number.parseInt(value ?? '', 10);
       if (Number.isNaN(port) || port < 1 || port > 65535) {
         return 'Please enter a valid port number (1-65535)';
       }

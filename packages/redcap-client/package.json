@@ -43,18 +43,18 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@univ-lehavre/atlas-net": "workspace:*",
     "@univ-lehavre/atlas-redcap-core": "workspace:*",
-    "effect": "^3.19.15",
-    "@univ-lehavre/atlas-net": "workspace:*"
+    "effect": "^3.21.0"
   },
   "devDependencies": {
-    "@types/node": "^25.0.10",
+    "@types/node": "^25.5.0",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "eslint": "^9.39.2",
-    "openapi-typescript": "^7.10.1",
+    "eslint": "^10.1.0",
+    "openapi-typescript": "^7.13.0",
     "prettier": "^3.8.1",
-    "typescript": "^5.9.3",
-    "vitest": "^4.0.18"
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.2"
   },
   "publishConfig": {
     "access": "public"
