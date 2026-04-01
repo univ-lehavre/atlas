@@ -30,7 +30,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@clack/prompts": "^0.11.0",
+    "@clack/prompts": "^1.2.0",
     "@effect/cli": "^0.75.0",
     "@effect/platform": "^0.96.0",
     "@effect/platform-node": "^0.106.0",

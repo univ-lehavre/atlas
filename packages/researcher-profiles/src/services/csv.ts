@@ -20,6 +20,6 @@ export const parseCsv = (
         columns: true,
         trim: true,
         skip_empty_lines: true,
-      }) as ResearcherRow[],
+      }),
     catch: (cause) => new CsvParseError({ cause }),
   });
