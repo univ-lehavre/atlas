@@ -192,7 +192,9 @@ const extractDocx = (
   Effect.tryPromise({
     try: async () => {
       const mammoth = await import("mammoth");
-      const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+      const result = await mammoth.extractRawText({
+        buffer: Buffer.from(buffer),
+      });
       return result.value;
     },
     catch: (cause) => new FileExtractError({ cause }),
