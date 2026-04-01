@@ -38,9 +38,9 @@
     "effect": "^3.21.0"
   },
   "devDependencies": {
-    "@types/node": "^25.0.10",
+    "@types/node": "^25.5.0",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "eslint": "^9.39.2",
+    "eslint": "^10.1.0",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3"
   },

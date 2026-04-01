@@ -196,6 +196,7 @@ export function svelte(options = {}) {
         '@typescript-eslint/strict-boolean-expressions': 'off',
         'no-console': 'off',
         'prefer-const': 'off', // $props() destructuring uses let
+        'no-useless-assignment': 'off', // false positive with $bindable()
       },
     },
 
