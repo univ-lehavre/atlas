@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-redcap-client",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "REDCap API client for Atlas - Effect-based typed client",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

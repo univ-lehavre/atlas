@@ -1,5 +1,14 @@
 # @univ-lehavre/atlas-openalex
 
+## 1.0.1
+
+### Patch Changes
+
+- [#87](https://github.com/univ-lehavre/atlas/pull/87) [`cd38531`](https://github.com/univ-lehavre/atlas/commit/cd38531d422afa9c1e47c88d0a617dbaf8c753da) Thanks [@chasset](https://github.com/chasset)! - chore(deps): upgrade all dependencies to latest (eslint v10, typescript v6, vite v8, @effect/platform v0.96, @clack/prompts v1, csv-parse v6, pdfkit v0.18, node-appwrite v23, appwrite v24)
+
+- Updated dependencies [[`cd38531`](https://github.com/univ-lehavre/atlas/commit/cd38531d422afa9c1e47c88d0a617dbaf8c753da)]:
+  - @univ-lehavre/atlas-fetch-one-api-page@1.1.1
+
 ## 1.0.0
 
 ### Minor Changes
