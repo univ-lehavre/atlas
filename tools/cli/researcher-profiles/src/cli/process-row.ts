@@ -154,8 +154,6 @@ export const processRow = async (
 
   // eslint-disable-next-line no-useless-assignment -- initialized for the two branches below
   let allAuthorIdsForFetch: readonly string[] = [];
-  let allAuthorIds = new Set<string>();
-  let selectedNameFilter = new Set<string>();
   let prefetchedWorks: readonly WorksResult[] | null = null;
 
   const importedDays = daysUntilNextUpdate(row.oa_imported_at);
@@ -163,18 +161,10 @@ export const processRow = async (
   if (importedDays !== null) {
     // Data is fresh — reuse stored entries from oa_data
     allAuthorIdsForFetch = [...new Set(data.fullnames.map((e) => e.authorId))];
-    allAuthorIds = new Set(allAuthorIdsForFetch);
-    selectedNameFilter = new Set(
-      data.fullnames.filter((e) => e.selected).map((e) => e.name),
-    );
     if (allAuthorIdsForFetch.length === 0) {
       log.warn(
         `[${label}] Data marked fresh but no stored author IDs found — skipping`,
       );
-      return "skipped";
-    }
-    if (selectedNameFilter.size === 0) {
-      log.warn(`[${label}] No names selected in stored entries — skipping`);
       return "skipped";
     }
     log.info(
@@ -228,7 +218,7 @@ export const processRow = async (
     prefetchedWorks = worksResult.right;
 
     // Step 3: Extract raw_author_name from authorships
-    allAuthorIds = new Set(allAuthors.map((a) => a.id));
+    const allAuthorIds = new Set(allAuthors.map((a) => a.id));
     const rawNameMap = new Map<string, string>(); // name → authorId (first seen)
     for (const work of prefetchedWorks) {
       for (const authorship of work.authorships) {
@@ -290,15 +280,6 @@ export const processRow = async (
       mergedFullnames = [...data.fullnames, ...newFullnameEntries];
     }
 
-    selectedNameFilter = new Set(
-      mergedFullnames.filter((e) => e.selected).map((e) => e.name),
-    );
-
-    if (selectedNameFilter.size === 0) {
-      log.warn(`  No names selected — skipping ${label}`);
-      return "skipped";
-    }
-
     // Update data with merged fullnames (affiliations updated below)
     data = { ...data, fullnames: mergedFullnames };
   }
@@ -332,23 +313,11 @@ export const processRow = async (
     allWorks = worksResult.right;
   }
 
-  // Filter works by selected name.
-  // Works where the researcher's authorship has an empty/missing raw_author_name
-  // are kept unconditionally (no data to filter on).
-  const works = allWorks.filter((w) =>
-    w.authorships.some(
-      (a) =>
-        allAuthorIds.has(a.author.id) &&
-        (a.raw_author_name === "" || selectedNameFilter.has(a.raw_author_name)),
-    ),
-  );
+  log.info(`[${label}] ${pc.bold(String(allWorks.length))} work(s) downloaded`);
 
-  log.info(
-    `[${label}] ${pc.bold(String(works.length))}/${pc.bold(String(allWorks.length))} work(s) after name filter`,
-  );
-
-  // Auto-select all institutions
-  const allInstitutions = extractInstitutions(works, allAuthorIds);
+  // Extract all institutions from downloaded works (for affiliation metadata)
+  const allAuthorIds = new Set(allAuthorIdsForFetch);
+  const allInstitutions = extractInstitutions(allWorks, allAuthorIds);
   const existingAffs = new Set(data.affiliations.map((e) => e.affiliation));
   const newInstitutions = allInstitutions.filter(
     (i) => !existingAffs.has(i.id),
@@ -371,36 +340,13 @@ export const processRow = async (
     mergedAffEntries = [...data.affiliations, ...newAffEntries];
   }
 
-  const selectedAffiliationFilter = new Set(
-    mergedAffEntries.filter((e) => e.selected).map((e) => e.affiliation),
-  );
+  showWorks(allWorks);
 
-  if (selectedAffiliationFilter.size === 0) {
-    log.warn(`  No institutions selected — skipping ${label}`);
-    return "skipped";
-  }
-
-  // Filter works by affiliation (keep works with no institution too)
-  const worksAfterAffFilter = works.filter((w) =>
-    w.authorships.some(
-      (a) =>
-        allAuthorIds.has(a.author.id) &&
-        (a.institutions.length === 0 ||
-          a.institutions.some((i) => selectedAffiliationFilter.has(i.id))),
-    ),
-  );
-
-  log.info(
-    `[${label}] ${pc.bold(String(worksAfterAffFilter.length))}/${pc.bold(String(works.length))} work(s) after affiliation filter`,
-  );
-
-  showWorks(worksAfterAffFilter);
-
-  // Write updated data
+  // Write all downloaded works — name/affiliation filtering happens in matchRow
   const updatedData: ResearcherData = {
     ...data,
     affiliations: mergedAffEntries,
-    oa_references: worksAfterAffFilter,
+    oa_references: allWorks,
   };
 
   const writeSpinner = spinner();

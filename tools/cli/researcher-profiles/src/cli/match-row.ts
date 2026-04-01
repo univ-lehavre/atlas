@@ -78,7 +78,55 @@ export const matchRow = async (
     return "skipped";
   }
 
-  const oaWorks = data.oa_references;
+  // Apply name filter
+  const allAuthorIds = new Set(data.fullnames.map((e) => e.authorId));
+  const selectedNameFilter = new Set(
+    data.fullnames.filter((e) => e.selected).map((e) => e.name),
+  );
+
+  if (selectedNameFilter.size === 0) {
+    log.warn(`[${label}] No names selected — skipping`);
+    return "skipped";
+  }
+
+  const worksAfterNameFilter = data.oa_references.filter((w) =>
+    w.authorships.some(
+      (a) =>
+        allAuthorIds.has(a.author.id) &&
+        (a.raw_author_name === "" || selectedNameFilter.has(a.raw_author_name)),
+    ),
+  );
+
+  log.info(
+    `[${label}] ${pc.bold(String(worksAfterNameFilter.length))}/${pc.bold(String(data.oa_references.length))} work(s) after name filter`,
+  );
+
+  // Apply affiliation filter
+  const selectedAffiliationFilter = new Set(
+    data.affiliations.filter((e) => e.selected).map((e) => e.affiliation),
+  );
+
+  const worksAfterAffFilter =
+    selectedAffiliationFilter.size === 0
+      ? worksAfterNameFilter
+      : worksAfterNameFilter.filter((w) =>
+          w.authorships.some(
+            (a) =>
+              allAuthorIds.has(a.author.id) &&
+              (a.institutions.length === 0 ||
+                a.institutions.some((i) =>
+                  selectedAffiliationFilter.has(i.id),
+                )),
+          ),
+        );
+
+  if (selectedAffiliationFilter.size > 0) {
+    log.info(
+      `[${label}] ${pc.bold(String(worksAfterAffFilter.length))}/${pc.bold(String(worksAfterNameFilter.length))} work(s) after affiliation filter`,
+    );
+  }
+
+  const oaWorks = worksAfterAffFilter;
 
   // Download publications file
   const fileSpinner = spinner();
