@@ -32,7 +32,7 @@
   "dependencies": {
     "@clack/prompts": "1.0.0-alpha.6",
     "@effect/experimental": "^0.60.0",
-    "@effect/platform-node": "^0.104.1",
+    "@effect/platform-node": "^0.106.0",
     "@univ-lehavre/atlas-openalex-types": "workspace:*",
     "@univ-lehavre/atlas-validate-openalex": "workspace:*",
     "effect": "^3.21.0"
