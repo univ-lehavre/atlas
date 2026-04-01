@@ -45,7 +45,7 @@
     "changeset:publish": "pnpm build && changeset publish",
     "release": "pnpm build && ./scripts/publish-packages.sh",
     "others": "git -C . ls-files --others",
-    "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json' 'apps/*/tests/baselines/*.json'",
+    "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json' 'apps/*/tests/baselines/*.json' 'docs/.vitepress/dist'",
     "prepare": "lefthook install"
   },
   "size-limit": [
@@ -157,6 +157,7 @@
     "onlyBuiltDependencies": [
       "@duckdb/node-api",
       "@parcel/watcher",
+      "@scarf/scarf",
       "esbuild",
       "lefthook",
       "msgpackr-extract",
