@@ -810,6 +810,9 @@ importers:
       '@univ-lehavre/atlas-redcap-client':
         specifier: workspace:*
         version: link:../redcap-client
+      '@xmldom/xmldom':
+        specifier: '>=0.9.9'
+        version: 0.9.9
       csv-parse:
         specifier: ^6.2.1
         version: 6.2.1

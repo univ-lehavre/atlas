@@ -30,15 +30,14 @@ export const selectResearchers = async (
     message: `Select researchers to process (${pc.bold(String(researchers.length))} total):`,
     initialValues: preselectAll ? sorted.map((r) => r.userid) : [],
     options: sorted.map((r) => {
-      const authorDate = relativeDate(r.oa_author_ids_imported_date);
-      const worksDate = relativeDate(r.oa_references_imported_at);
-      const dateParts = [authorDate, worksDate].filter((s) => s !== "");
+      const importDate = relativeDate(r.oa_imported_at);
       const orcidHint =
         r.orcid !== "" && r.orcid !== "null" ? `ORCID: ${r.orcid}` : r.userid;
+      const lockHint = r.oa_locked_at !== "" ? pc.red(" [LOCKED]") : "";
       const hint =
-        dateParts.length > 0
-          ? `${orcidHint} · authors: ${dateParts[0] ?? ""} · works: ${dateParts[1] ?? ""}`
-          : orcidHint;
+        importDate !== ""
+          ? `${orcidHint} · ${importDate}${lockHint}`
+          : `${orcidHint}${lockHint}`;
       return {
         value: r.userid,
         label: `${r.first_name} ${r.last_name}`,

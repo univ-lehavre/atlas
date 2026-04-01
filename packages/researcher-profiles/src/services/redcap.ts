@@ -8,13 +8,11 @@ import {
   RedcapToken,
 } from "@univ-lehavre/atlas-redcap-client";
 import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
-import { Effect } from "effect";
+import { Effect, Either } from "effect";
 import { RedcapFetchError, RedcapWriteError } from "../errors.js";
-import type { ResearcherRow } from "../types.js";
-import {
-  generateReferencesPdf,
-  generateRawReferencesPdf,
-} from "./pdf-generator.js";
+import type { ResearcherRow, ResearcherData } from "../types.js";
+import { emptyResearcherData } from "../types.js";
+import { generateCombinedPdf, type PdfDebugInfo } from "./pdf-generator.js";
 
 export interface RedcapConnectionConfig {
   readonly url: string;
@@ -35,8 +33,37 @@ const makeClient = (
 const toJsonBytes = (value: unknown): Uint8Array =>
   new TextEncoder().encode(JSON.stringify(value));
 
+const parseJsonObject = (raw: string): Record<string, unknown> | null => {
+  const parsed = Either.try(() => JSON.parse(raw) as unknown);
+  const value = Either.isLeft(parsed) ? null : parsed.right;
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+};
+
+const parseResearcherData = (buffer: ArrayBuffer): ResearcherData => {
+  const raw = new TextDecoder().decode(buffer);
+  const p = raw === "" ? null : parseJsonObject(raw);
+  return p === null
+    ? emptyResearcherData
+    : {
+        fullnames: Array.isArray(p["fullnames"])
+          ? (p["fullnames"] as ResearcherData["fullnames"])
+          : [],
+        affiliations: Array.isArray(p["affiliations"])
+          ? (p["affiliations"] as ResearcherData["affiliations"])
+          : [],
+        oa_references: Array.isArray(p["oa_references"])
+          ? (p["oa_references"] as WorksResult[])
+          : [],
+        final_references: Array.isArray(p["final_references"])
+          ? (p["final_references"] as WorksResult[])
+          : [],
+      };
+};
+
 /**
- * Fetches all researchers from the `references_openalex` REDCap instrument.
+ * Fetches all researchers from the `openalex` REDCap instrument.
  */
 export const fetchResearchers = (
   config: RedcapConnectionConfig,
@@ -50,11 +77,9 @@ export const fetchResearchers = (
         "middle_name",
         "first_name",
         "orcid",
-        "oa_author_ids_imported_date",
-        "oa_references_imported_at",
-        "final_references_imported_at",
-        "raw_references_imported_at",
-        "references_openalex_complete",
+        "oa_imported_at",
+        "oa_locked_at",
+        "openalex_complete",
       ],
     })
     .pipe(
@@ -65,11 +90,9 @@ export const fetchResearchers = (
           middle_name: r["middle_name"] ?? "",
           first_name: r["first_name"] ?? "",
           orcid: r["orcid"] ?? "",
-          oa_author_ids_imported_date: r["oa_author_ids_imported_date"] ?? "",
-          oa_references_imported_at: r["oa_references_imported_at"] ?? "",
-          final_references_imported_at: r["final_references_imported_at"] ?? "",
-          raw_references_imported_at: r["raw_references_imported_at"] ?? "",
-          references_openalex_complete: r["references_openalex_complete"] ?? "",
+          oa_imported_at: r["oa_imported_at"] ?? "",
+          oa_locked_at: r["oa_locked_at"] ?? "",
+          openalex_complete: r["openalex_complete"] ?? "",
         })),
       ),
       Effect.mapError((cause) => new RedcapFetchError({ cause })),
@@ -86,33 +109,42 @@ const localIsoDateTime = (): string => {
 };
 
 /**
- * Uploads the full list of author fullnames (with selection status) to `alternative_author_fullnames`.
- * Also updates `oa_author_ids_imported_date` timestamp.
+ * Fetches the `oa_data` file field for a given userid and parses it as ResearcherData.
+ * Returns empty ResearcherData if the field has no file.
  */
-export const writeAlternativeAuthorFullnames = (
+export const fetchResearcherData = (
   config: RedcapConnectionConfig,
   userid: string,
-  entries: readonly { name: string; authorId: string; selected: boolean }[],
+): Effect.Effect<ResearcherData, RedcapFetchError> => {
+  const client = makeClient(config);
+  return client.exportFile("oa_data", userid).pipe(
+    Effect.map(parseResearcherData),
+    Effect.catchAll(() => Effect.succeed(emptyResearcherData)),
+  );
+};
+
+/**
+ * Writes the full ResearcherData to `oa_data` and updates `oa_imported_at`.
+ * Used after resolving authors (fullnames + affiliations + oa_references).
+ */
+export const writeResearcherData = (
+  config: RedcapConnectionConfig,
+  userid: string,
+  data: ResearcherData,
 ): Effect.Effect<void, RedcapWriteError> => {
   const client = makeClient(config);
   return Effect.all(
     [
       client
-        .importFile(
-          "alternative_author_fullnames",
-          userid,
-          "alternative_author_fullnames.json",
-          toJsonBytes(entries),
-        )
+        .importFile("oa_data", userid, "oa_data.json", toJsonBytes(data))
         .pipe(
           Effect.asVoid,
           Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
         ),
       client
-        .importRecords(
-          [{ userid, oa_author_ids_imported_date: localIsoDateTime() }],
-          { overwriteBehavior: "overwrite" },
-        )
+        .importRecords([{ userid, oa_imported_at: localIsoDateTime() }], {
+          overwriteBehavior: "overwrite",
+        })
         .pipe(
           Effect.asVoid,
           Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
@@ -122,65 +154,78 @@ export const writeAlternativeAuthorFullnames = (
   ).pipe(Effect.asVoid);
 };
 
-/**
- * Downloads the `alternative_author_affiliations` file field for a given userid.
- */
-export const fetchAlternativeAuthorAffiliations = (
-  config: RedcapConnectionConfig,
+const writeFilesAndRecord = (
+  client: ReturnType<typeof makeClient>,
   userid: string,
-): Effect.Effect<ArrayBuffer, RedcapFetchError> => {
-  const client = makeClient(config);
-  return client
-    .exportFile("alternative_author_affiliations", userid)
-    .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
-};
+  data: ResearcherData,
+  pdfBytes: Uint8Array,
+): Effect.Effect<void, RedcapWriteError> =>
+  Effect.all(
+    [
+      client
+        .importFile("oa_data", userid, "oa_data.json", toJsonBytes(data))
+        .pipe(
+          Effect.asVoid,
+          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+        ),
+      client.importFile("oa_pdf", userid, "oa_references.pdf", pdfBytes).pipe(
+        Effect.asVoid,
+        Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+      ),
+      client
+        .importRecords(
+          [
+            {
+              userid,
+              oa_imported_at: localIsoDateTime(),
+              openalex_complete: "2",
+            },
+          ],
+          { overwriteBehavior: "overwrite" },
+        )
+        .pipe(
+          Effect.asVoid,
+          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
+        ),
+    ],
+    { concurrency: 1 },
+  ).pipe(Effect.asVoid);
 
 /**
- * Uploads the full list of affiliation strings (with selection status) to `alternative_author_affiliations`.
+ * Writes the full ResearcherData to `oa_data`, generates a combined PDF in `oa_pdf`,
+ * updates `oa_imported_at`, and marks `openalex_complete = "2"`.
+ *
+ * The PDF contains two sections:
+ *   1. Références vérifiées — data.final_references (Chicago Notes)
+ *   2. En attente de vérification — oa_references not in final_references (Chicago Notes)
  */
-export const writeAlternativeAuthorAffiliations = (
+export const writeFinalReferences = (
   config: RedcapConnectionConfig,
   userid: string,
-  entries: readonly { affiliation: string; selected: boolean }[],
+  data: ResearcherData,
+  researcherName: string,
+  debugInfo?: PdfDebugInfo,
 ): Effect.Effect<void, RedcapWriteError> => {
   const client = makeClient(config);
-  return client
-    .importFile(
-      "alternative_author_affiliations",
-      userid,
-      "alternative_author_affiliations.json",
-      toJsonBytes(entries),
-    )
-    .pipe(
-      Effect.asVoid,
-      Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
-    );
-};
+  const finalIds = new Set(data.final_references.map((w) => w.id));
+  const pendingReferences = data.oa_references.filter(
+    (w) => !finalIds.has(w.id),
+  );
 
-/**
- * Downloads the `alternative_author_fullnames` file field for a given userid.
- */
-export const fetchAlternativeAuthorFullnames = (
-  config: RedcapConnectionConfig,
-  userid: string,
-): Effect.Effect<ArrayBuffer, RedcapFetchError> => {
-  const client = makeClient(config);
-  return client
-    .exportFile("alternative_author_fullnames", userid)
-    .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
-};
-
-/**
- * Downloads `oa_references` file field for a given userid and parses as JSON.
- */
-export const fetchOaReferences = (
-  config: RedcapConnectionConfig,
-  userid: string,
-): Effect.Effect<ArrayBuffer, RedcapFetchError> => {
-  const client = makeClient(config);
-  return client
-    .exportFile("oa_references", userid)
-    .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
+  return Effect.tryPromise<Uint8Array, RedcapWriteError>({
+    try: () =>
+      generateCombinedPdf(
+        data.final_references,
+        pendingReferences,
+        researcherName,
+        debugInfo,
+      ),
+    catch: (cause) => new RedcapWriteError({ userid, cause }),
+  }).pipe(
+    Effect.flatMap((pdfBytes) =>
+      writeFilesAndRecord(client, userid, data, pdfBytes),
+    ),
+  );
 };
 
 /**
@@ -194,156 +239,4 @@ export const downloadPublicationsFile = (
   return client
     .exportFile("publications", userid)
     .pipe(Effect.mapError((cause) => new RedcapFetchError({ cause })));
-};
-
-/**
- * Uploads OpenAlex works as a JSON file to the `oa_references` file field.
- * Also updates the `oa_references_imported_at` timestamp via importRecords.
- */
-export const writeOaReferences = (
-  config: RedcapConnectionConfig,
-  userid: string,
-  works: readonly WorksResult[],
-): Effect.Effect<void, RedcapWriteError> => {
-  const client = makeClient(config);
-  return Effect.all(
-    [
-      client
-        .importFile(
-          "oa_references",
-          userid,
-          "oa_references.json",
-          toJsonBytes(works),
-        )
-        .pipe(
-          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
-        ),
-      client
-        .importRecords(
-          [
-            {
-              userid,
-              oa_references_imported_at: localIsoDateTime(),
-            },
-          ],
-          { overwriteBehavior: "overwrite" },
-        )
-        .pipe(
-          Effect.asVoid,
-          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
-        ),
-    ],
-    { concurrency: 1 },
-  ).pipe(Effect.asVoid);
-};
-
-/**
- * Generates a simple plain-text PDF from extracted text and uploads it to `raw_references`.
- * Also updates `raw_references_imported_at`.
- */
-export const writeRawReferences = (
-  config: RedcapConnectionConfig,
-  userid: string,
-  text: string,
-  researcherName: string,
-): Effect.Effect<void, RedcapWriteError> => {
-  const client = makeClient(config);
-  return Effect.tryPromise<Uint8Array, RedcapWriteError>({
-    try: () => generateRawReferencesPdf(text, researcherName),
-    catch: (cause) => new RedcapWriteError({ userid, cause }),
-  }).pipe(
-    Effect.flatMap((pdfBytes) =>
-      Effect.all(
-        [
-          client
-            .importFile(
-              "raw_references",
-              userid,
-              "raw_references.pdf",
-              pdfBytes,
-            )
-            .pipe(
-              Effect.mapError(
-                (cause) => new RedcapWriteError({ userid, cause }),
-              ),
-            ),
-          client
-            .importRecords(
-              [{ userid, raw_references_imported_at: localIsoDateTime() }],
-              { overwriteBehavior: "overwrite" },
-            )
-            .pipe(
-              Effect.asVoid,
-              Effect.mapError(
-                (cause) => new RedcapWriteError({ userid, cause }),
-              ),
-            ),
-        ],
-        { concurrency: 1 },
-      ),
-    ),
-    Effect.asVoid,
-  );
-};
-
-/**
- * Uploads matched final references as a JSON file to the `final_references` file field.
- * Also updates the `final_references_imported_at` timestamp via importRecords.
- */
-export const writeFinalReferences = (
-  config: RedcapConnectionConfig,
-  userid: string,
-  works: readonly WorksResult[],
-  researcherName: string,
-): Effect.Effect<void, RedcapWriteError> => {
-  const client = makeClient(config);
-  return Effect.all(
-    [
-      client
-        .importFile(
-          "final_references",
-          userid,
-          "final_references.json",
-          toJsonBytes(works),
-        )
-        .pipe(
-          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
-        ),
-      Effect.tryPromise({
-        try: () => generateReferencesPdf(works, researcherName),
-        catch: (cause) => new RedcapWriteError({ userid, cause }),
-      }).pipe(
-        Effect.flatMap((pdfBytes) =>
-          client
-            .importFile(
-              "final_references_pdf",
-              userid,
-              "final_references.pdf",
-              pdfBytes,
-            )
-            .pipe(
-              Effect.mapError(
-                (cause) => new RedcapWriteError({ userid, cause }),
-              ),
-            ),
-        ),
-      ),
-      client
-        .importRecords(
-          [
-            {
-              userid,
-              final_references_imported_at: localIsoDateTime(),
-              references_openalex_complete: "2",
-            },
-          ],
-          { overwriteBehavior: "overwrite" },
-        )
-        .pipe(
-          Effect.asVoid,
-          Effect.mapError((cause) => new RedcapWriteError({ userid, cause })),
-        ),
-    ],
-    { concurrency: 1 },
-  ).pipe(Effect.asVoid);
 };

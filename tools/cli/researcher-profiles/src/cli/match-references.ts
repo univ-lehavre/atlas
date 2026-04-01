@@ -1,7 +1,7 @@
 /**
  * `match-references` command — for each researcher, downloads their `publications`
  * file from REDCap, extracts text, fuzzy-matches titles from `oa_references`,
- * stores matched works in `final_references` + `final_references_imported_at`.
+ * stores matched works in `final_references` inside `oa_data` + generates `oa_pdf`.
  */
 
 import { spinner, log, outro } from "@clack/prompts";
@@ -46,19 +46,15 @@ export const matchReferencesCommand = async (
   }
 
   const allResearchers = fetchResult.right;
-  const pending = allResearchers.filter(
-    (r) => r.references_openalex_complete !== "2",
-  );
-  const complete = allResearchers.filter(
-    (r) => r.references_openalex_complete === "2",
-  );
+  const pending = allResearchers.filter((r) => r.openalex_complete !== "2");
+  const complete = allResearchers.filter((r) => r.openalex_complete === "2");
   s.stop(
     `Found ${pc.bold(String(allResearchers.length))} researchers in REDCap`,
   );
 
   if (complete.length > 0) {
     log.info(
-      `${pc.dim(String(complete.length))} researcher(s) complete (references_openalex_complete = 2) — excluded`,
+      `${pc.dim(String(complete.length))} researcher(s) complete (openalex_complete = 2) — excluded`,
     );
   }
 
