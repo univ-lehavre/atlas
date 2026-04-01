@@ -6,7 +6,7 @@ import {
   createRedcapClient,
   RedcapUrl,
   RedcapToken,
-} from "@univ-lehavre/atlas-crf/redcap";
+} from "@univ-lehavre/atlas-redcap-client";
 import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
 import { Effect } from "effect";
 import { RedcapFetchError, RedcapWriteError } from "../errors.js";

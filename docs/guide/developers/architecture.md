@@ -62,37 +62,37 @@ The project uses a strict ESLint configuration combining multiple plugins. See [
 
 Based on `tseslint.configs.strictTypeChecked` with additional rules:
 
-| Rule                          | Description                                      |
-| ----------------------------- | ------------------------------------------------ |
-| `strict-boolean-expressions`  | Forbids implicit boolean coercions               |
-| `no-floating-promises`        | Requires handling all promises                   |
-| `no-unnecessary-condition`    | Detects always true/false conditions             |
-| `consistent-type-imports`     | Forces `import type` for type imports            |
-| `switch-exhaustiveness-check` | Verifies all cases are covered                   |
-| `no-explicit-any`             | Forbids `any` (error, not warn)                  |
+| Rule                          | Description                           |
+| ----------------------------- | ------------------------------------- |
+| `strict-boolean-expressions`  | Forbids implicit boolean coercions    |
+| `no-floating-promises`        | Requires handling all promises        |
+| `no-unnecessary-condition`    | Detects always true/false conditions  |
+| `consistent-type-imports`     | Forces `import type` for type imports |
+| `switch-exhaustiveness-check` | Verifies all cases are covered        |
+| `no-explicit-any`             | Forbids `any` (error, not warn)       |
 
 ### Functional Programming
 
 Based on [eslint-plugin-functional](https://github.com/eslint-functional/eslint-plugin-functional):
 
-| Rule                        | Status | Description                                          |
-| --------------------------- | ------ | ---------------------------------------------------- |
-| `no-expression-statements`  | error  | Forbids expressions without return                   |
-| `no-conditional-statements` | error  | Forbids if/switch (forces ternaries/matching)        |
-| `no-throw-statements`       | error  | Forbids throw (forces Effect)                        |
-| `no-try-statements`         | error  | Forbids try/catch (forces Effect)                    |
-| `immutable-data`            | error  | Forbids mutation of objects/arrays                   |
-| `no-classes`                | off    | Disabled (Effect uses classes)                       |
+| Rule                        | Status | Description                                   |
+| --------------------------- | ------ | --------------------------------------------- |
+| `no-expression-statements`  | error  | Forbids expressions without return            |
+| `no-conditional-statements` | error  | Forbids if/switch (forces ternaries/matching) |
+| `no-throw-statements`       | error  | Forbids throw (forces Effect)                 |
+| `no-try-statements`         | error  | Forbids try/catch (forces Effect)             |
+| `immutable-data`            | error  | Forbids mutation of objects/arrays            |
+| `no-classes`                | off    | Disabled (Effect uses classes)                |
 
 ### Security
 
 Based on [eslint-plugin-security](https://github.com/eslint-community/eslint-plugin-security):
 
-| Rule                          | Description                              |
-| ----------------------------- | ---------------------------------------- |
-| `detect-unsafe-regex`         | Detects regex vulnerable to ReDoS        |
-| `detect-eval-with-expression` | Forbids eval() with expressions          |
-| `detect-object-injection`     | Warns on dynamic access                  |
+| Rule                          | Description                       |
+| ----------------------------- | --------------------------------- |
+| `detect-unsafe-regex`         | Detects regex vulnerable to ReDoS |
+| `detect-eval-with-expression` | Forbids eval() with expressions   |
+| `detect-object-injection`     | Warns on dynamic access           |
 
 ### Code Quality
 
@@ -126,10 +126,10 @@ Strict rules are disabled for `*.test.ts` and `*.spec.ts` files to allow classic
 
 ### `ready` Script
 
-The `pnpm check:ci` script runs all checks before a release. The order is optimized according to the **fail-fast** principle: the fastest and most likely to fail checks are run first.
+The `pnpm ci:checks` script runs all checks before a release. The order is optimized according to the **fail-fast** principle: the fastest and most likely to fail checks are run first.
 
 ```bash
-pnpm check:ci
+pnpm ci:checks
 ```
 
 **Execution order:**
@@ -151,15 +151,15 @@ pnpm audit:licenses
 
 **Allowed licenses:**
 
-| License          | Description                                                        |
-| ---------------- | ------------------------------------------------------------------ |
-| **MIT**          | Very permissive license, most common in the npm ecosystem          |
-| **Apache-2.0**   | Permissive with patent protection                                  |
-| **BSD-2-Clause** | Permissive, simplified version (2 clauses)                         |
-| **BSD-3-Clause** | Permissive, original version (3 clauses)                           |
-| **ISC**          | Equivalent to MIT, simplified                                      |
-| **0BSD**         | Public domain, no restrictions                                     |
-| **Unlicense**    | Explicit public domain                                             |
+| License          | Description                                               |
+| ---------------- | --------------------------------------------------------- |
+| **MIT**          | Very permissive license, most common in the npm ecosystem |
+| **Apache-2.0**   | Permissive with patent protection                         |
+| **BSD-2-Clause** | Permissive, simplified version (2 clauses)                |
+| **BSD-3-Clause** | Permissive, original version (3 clauses)                  |
+| **ISC**          | Equivalent to MIT, simplified                             |
+| **0BSD**         | Public domain, no restrictions                            |
+| **Unlicense**    | Explicit public domain                                    |
 
 **Why these licenses?**
 
@@ -214,13 +214,13 @@ MCP servers are configured in `.mcp.json`:
 
 ### Available Servers
 
-| Server          | Description                                               |
-| --------------- | --------------------------------------------------------- |
-| `effect-mcp`    | Effect.js documentation                                   |
-| `svelte-mcp`    | Svelte 5 and SvelteKit documentation                      |
-| `appwrite-docs` | Appwrite documentation                                    |
-| `appwrite-api`  | Appwrite API (requires env vars)                          |
-| `openalex`      | OpenAlex API for academic research (240M+ articles)       |
+| Server          | Description                                         |
+| --------------- | --------------------------------------------------- |
+| `effect-mcp`    | Effect.js documentation                             |
+| `svelte-mcp`    | Svelte 5 and SvelteKit documentation                |
+| `appwrite-docs` | Appwrite documentation                              |
+| `appwrite-api`  | Appwrite API (requires env vars)                    |
+| `openalex`      | OpenAlex API for academic research (240M+ articles) |
 
 ### Prerequisites
 
@@ -245,13 +245,13 @@ Atlas relies on two third-party platforms for its features:
 
 [REDCap](https://project-redcap.org/) is a secure web application developed by Vanderbilt University for creating and managing online surveys and research databases.
 
-| Feature | Value |
-|---------|-------|
-| Partner institutions | 8,000+ |
-| Countries | 164 |
-| Scientific citations | 51,000+ |
-| Compliance | GDPR, HIPAA, 21 CFR Part 11 |
-| Cost | Free for Consortium members |
+| Feature              | Value                       |
+| -------------------- | --------------------------- |
+| Partner institutions | 8,000+                      |
+| Countries            | 164                         |
+| Scientific citations | 51,000+                     |
+| Compliance           | GDPR, HIPAA, 21 CFR Part 11 |
+| Cost                 | Free for Consortium members |
 
 REDCap enables web and mobile data collection (including offline). The CRF module provides TypeScript tools for interacting with the REDCap API.
 
@@ -259,11 +259,11 @@ REDCap enables web and mobile data collection (including offline). The CRF modul
 
 [Appwrite](https://appwrite.io/) is an open-source backend platform providing essential services for application development:
 
-| Service | Description |
-|---------|-------------|
+| Service        | Description                         |
+| -------------- | ----------------------------------- |
 | Authentication | Login via email, OAuth, magic links |
-| Database | Data storage and querying |
-| Storage | File management with encryption |
-| Functions | Serverless code execution |
+| Database       | Data storage and querying           |
+| Storage        | File management with encryption     |
+| Functions      | Serverless code execution           |
 
 Appwrite is compliant with SOC-2, GDPR and HIPAA standards. The ECRIN and AMARRE projects use Appwrite for authentication and user data management.
