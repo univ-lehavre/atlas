@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-researcher-profiles",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Researcher profiles service layer: REDCap/CSV ingestion, OpenAlex matching, PDF/reference extraction",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

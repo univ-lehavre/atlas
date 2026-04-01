@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-find-an-expert",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
