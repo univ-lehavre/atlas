@@ -44,7 +44,7 @@
     "@univ-lehavre/atlas-fetch-one-api-page": "workspace:*",
     "@univ-lehavre/atlas-fetch-openalex": "workspace:*",
     "@univ-lehavre/atlas-openalex-types": "workspace:*",
-    "effect": "^3.19.15",
+    "effect": "^3.21.0",
     "json-stable-stringify": "^1.3.0",
     "picocolors": "^1.1.1",
     "uuid": "^13.0.0"
