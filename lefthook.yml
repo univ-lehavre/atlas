@@ -29,11 +29,9 @@ pre-commit:
 
     format:
       run: pnpm format:check
-      glob: '*.{js,ts,svelte,json,yaml,yml,md,css,html}'
 
     lint:
       run: pnpm lint
-      glob: '*.{js,ts,svelte}'
 
     typecheck:
       run: pnpm typecheck
@@ -42,6 +40,7 @@ pre-commit:
       run: pnpm svelte:check
 
 pre-push:
+  parallel: true
   commands:
     check-branch:
       priority: 1
@@ -84,4 +83,3 @@ pre-push:
     knip:
       run: pnpm audit:unused
       priority: 4
-

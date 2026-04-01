@@ -4,11 +4,11 @@ node_modules/
 # Build outputs
 dist/
 build/
-coverage/
-packages/*/coverage/
+**/coverage/
 
 # Generated files
 **/generated/**
+**/upstream/**
 **/tests/baselines/**
 
 # SvelteKit
@@ -22,6 +22,5 @@ docs/.vitepress/dist/
 .turbo/
 
 # REDCap OpenAPI specific
-packages/redcap-openapi/sandbox/
-packages/redcap-openapi/specs/
-packages/redcap-openapi/upstream/
+tools/dev/redcap-openapi/sandbox/
+tools/dev/redcap-openapi/specs/
