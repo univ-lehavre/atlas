@@ -2,7 +2,11 @@
  * @module @univ-lehavre/atlas-researcher-profiles
  */
 
-export { type ResearcherRow } from "./types.js";
+export {
+  type ResearcherRow,
+  type ResearcherData,
+  emptyResearcherData,
+} from "./types.js";
 
 export {
   CsvParseError,
@@ -28,23 +32,15 @@ export {
 export {
   type RedcapConnectionConfig,
   fetchResearchers,
-  writeAlternativeAuthorFullnames,
-  fetchAlternativeAuthorAffiliations,
-  writeAlternativeAuthorAffiliations,
-  fetchAlternativeAuthorFullnames,
-  fetchOaReferences,
-  downloadPublicationsFile,
-  writeOaReferences,
-  writeRawReferences,
+  fetchResearcherData,
+  writeResearcherData,
   writeFinalReferences,
+  downloadPublicationsFile,
 } from "./services/redcap.js";
 
 export { extractText } from "./services/file-extractor.js";
 
-export {
-  generateRawReferencesPdf,
-  generateReferencesPdf,
-} from "./services/pdf-generator.js";
+export { generateCombinedPdf } from "./services/pdf-generator.js";
 
 export {
   type MatchResult,

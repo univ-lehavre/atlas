@@ -1,6 +1,6 @@
 /**
  * Per-researcher match step: downloads the publications file, extracts text,
- * fuzzy-matches against oa_references, and writes final_references to REDCap.
+ * fuzzy-matches against oa_references, and writes final_references to oa_data.
  *
  * Returns "ok" | "skipped" | "error".
  * Skips silently if there is no publications file or no oa_references.
@@ -10,10 +10,9 @@ import { spinner, log } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either, Logger, LogLevel } from "effect";
 import {
-  fetchOaReferences,
-  downloadPublicationsFile,
+  fetchResearcherData,
   writeFinalReferences,
-  writeRawReferences,
+  downloadPublicationsFile,
 } from "@univ-lehavre/atlas-researcher-profiles";
 import { extractText } from "@univ-lehavre/atlas-researcher-profiles";
 import { matchReferences } from "@univ-lehavre/atlas-researcher-profiles";
@@ -48,55 +47,38 @@ const normalizeDoi = (doi: string): string =>
     .replace(/^https?:\/\/doi\.org\//i, "")
     .replace(/[.)]+$/, "");
 
-const parseOaReferences = (
-  buffer: ArrayBuffer,
-): { works: readonly WorksResult[]; error: string | null } => {
-  const raw = new TextDecoder().decode(buffer);
-  if (raw === "") return { works: [], error: null };
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    const works = Array.isArray(parsed) ? (parsed as WorksResult[]) : [];
-    return {
-      works,
-      error: Array.isArray(parsed) ? null : "parsed value is not an array",
-    };
-  } catch (e) {
-    return {
-      works: [],
-      error: String(e) + ` (last 80 chars: ${raw.slice(-80)})`,
-    };
-  }
-};
-
 export const matchRow = async (
   row: ResearcherRow,
   config: MatchRowConfig,
 ): Promise<"ok" | "skipped" | "error"> => {
   const label = `${row.first_name} ${row.last_name} (${row.userid})`;
 
-  // Fetch oa_references individually to avoid REDCap truncation of large notes fields
-  const refsResult = await Effect.runPromise(
-    Effect.either(fetchOaReferences(config.redcap, row.userid)),
+  // Check lock
+  if (row.oa_locked_at !== "") {
+    log.error(`[${label}] Locked since ${row.oa_locked_at} — aborting`);
+    process.exit(1);
+  }
+
+  // Fetch oa_data
+  const dataResult = await Effect.runPromise(
+    Effect.either(fetchResearcherData(config.redcap, row.userid)),
   );
 
-  if (Either.isLeft(refsResult)) {
+  if (Either.isLeft(dataResult)) {
     log.warn(
-      `[${label}] Failed to fetch oa_references — skipping: ${JSON.stringify(refsResult.left)}`,
+      `[${label}] Failed to fetch oa_data — skipping: ${JSON.stringify(dataResult.left)}`,
     );
     return "skipped";
   }
 
-  const { works: oaWorks, error: parseError } = parseOaReferences(
-    refsResult.right,
-  );
-  if (parseError !== null) {
-    log.warn(`[${label}] JSON parse error: ${parseError}`);
-  }
+  const data = dataResult.right;
 
-  if (oaWorks.length === 0) {
+  if (data.oa_references.length === 0) {
     log.warn(`[${label}] No oa_references found — skipping`);
     return "skipped";
   }
+
+  const oaWorks = data.oa_references;
 
   // Download publications file
   const fileSpinner = spinner();
@@ -114,7 +96,6 @@ export const matchRow = async (
   fileSpinner.stop(`[${label}] File downloaded`);
 
   // Extract text
-  log.step("Extracting text from publications file…");
   const extractSpinner = spinner();
   extractSpinner.start(`[${label}] Extracting text…`);
 
@@ -153,18 +134,6 @@ export const matchRow = async (
     return "skipped";
   }
 
-  // Write raw references PDF (silent)
-  await Effect.runPromise(
-    Effect.either(
-      writeRawReferences(
-        config.redcap,
-        row.userid,
-        text,
-        `${row.first_name} ${row.last_name}`,
-      ),
-    ),
-  );
-
   log.info("Matching OpenAlex works against uploaded references…");
 
   // Match references by title (fuzzy)
@@ -182,7 +151,6 @@ export const matchRow = async (
     }
   }
 
-  // DOIs from text already covered by oa_references
   const doiWorksFromText: WorksResult[] = [];
   const missingDois: string[] = [];
   for (const doi of textDois) {
@@ -227,7 +195,6 @@ export const matchRow = async (
     ...[...doiWorksFromText, ...fetchedByDoi].map((w) => ["doi", w] as const),
     ...fuzzyWithDoi.map((w) => ["fuzzy", w] as const),
   ]) {
-    // w.doi is guaranteed non-null: fuzzyWithDoi and doiWorksFromText/fetchedByDoi are pre-filtered
     const key = normalizeDoi(w.doi ?? "");
     if (seenDois.has(key)) continue;
     seenDois.add(key);
@@ -251,12 +218,14 @@ export const matchRow = async (
   const writeSpinner = spinner();
   writeSpinner.start(`[${label}] Writing final references to REDCap…`);
 
+  const updatedData = { ...data, final_references: matchedWorks };
+
   const writeResult = await Effect.runPromise(
     Effect.either(
       writeFinalReferences(
         config.redcap,
         row.userid,
-        matchedWorks,
+        updatedData,
         `${row.first_name} ${row.last_name}`,
       ),
     ),

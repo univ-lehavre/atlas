@@ -74,12 +74,11 @@ export const fromRedcap = async (
   );
 
   const isComplete = (row: ResearcherRow): boolean =>
-    row.references_openalex_complete === "2";
+    row.openalex_complete === "2";
 
   const isUpToDate = (row: ResearcherRow): boolean => {
-    const authorDays = daysUntilNextUpdate(row.oa_author_ids_imported_date);
-    const worksDays = daysUntilNextUpdate(row.oa_references_imported_at);
-    return authorDays !== null && worksDays !== null;
+    const days = daysUntilNextUpdate(row.oa_imported_at);
+    return days !== null;
   };
 
   const complete = allResearchers.filter(isComplete);
@@ -92,7 +91,7 @@ export const fromRedcap = async (
 
   if (complete.length > 0) {
     log.info(
-      `${pc.dim(String(complete.length))} researcher(s) complete (references_openalex_complete = 2) — excluded`,
+      `${pc.dim(String(complete.length))} researcher(s) complete (openalex_complete = 2) — excluded`,
     );
   }
   if (upToDate.length > 0) {
