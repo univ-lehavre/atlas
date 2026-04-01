@@ -19,9 +19,6 @@
     "packages/appwrite": {
       "project": [
         "src/**/*.ts"
-      ],
-      "ignoreDependencies": [
-        "@sveltejs/kit"
       ]
     },
     "packages/auth": {
@@ -59,7 +56,6 @@
         "src/**/*.ts"
       ],
       "ignore": [
-        "src/store/setter.ts",
         "src/oa/index.ts"
       ]
     },
@@ -132,6 +128,9 @@
     "packages/researcher-profiles": {
       "project": [
         "src/**/*.ts"
+      ],
+      "ignoreDependencies": [
+        "@xmldom/xmldom"
       ]
     },
     "tools/cli/researcher-profiles": {
@@ -180,7 +179,6 @@
       ],
       "ignore": [
         "src/redcap/commands.ts",
-        "src/server/index.ts",
         "src/shared/context.ts",
         "src/shared/terminal.ts"
       ]
@@ -191,12 +189,6 @@
       ]
     }
   },
-  "ignore": [
-    "**/dist/**",
-    "**/.svelte-kit/**",
-    "**/build/**",
-    "**/upstream/**"
-  ],
   "ignoreDependencies": [
     "@univ-lehavre/atlas-shared-config",
     "vitepress-openapi",
@@ -209,11 +201,6 @@
     "dayjs",
     "debug",
     "cytoscape",
-    "cytoscape-cose-bilkent",
-    "vitest",
-    "@vitest/coverage-v8"
-  ],
-  "ignoreBinaries": [
-    "prettier"
+    "cytoscape-cose-bilkent"
   ]
 }
