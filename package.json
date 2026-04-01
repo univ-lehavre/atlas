@@ -91,7 +91,7 @@
       "services/crf",
       "tools/dev/redcap-openapi",
       "tools/cli/biblio-cli",
-      "tools/cli/researcher-profiles"
+      "packages/researcher-profiles"
     ],
     "entryPointStrategy": "packages",
     "out": "docs/api",
@@ -151,7 +151,8 @@
       "undici": ">=7.24.0",
       "@isaacs/brace-expansion": ">=5.0.1",
       "effect": ">=3.20.0",
-      "rollup": ">=4.59.0"
+      "rollup": ">=4.59.0",
+      "@xmldom/xmldom": ">=0.8.12"
     },
     "onlyBuiltDependencies": [
       "@duckdb/node-api",

@@ -13,6 +13,7 @@ overrides:
   '@isaacs/brace-expansion': '>=5.0.1'
   effect: '>=3.20.0'
   rollup: '>=4.59.0'
+  '@xmldom/xmldom': '>=0.8.12'
 
 importers:
 
@@ -793,6 +794,67 @@ importers:
         specifier: ^4.0.18
         version: 4.0.18(@types/node@25.0.10)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.3)
 
+  packages/researcher-profiles:
+    dependencies:
+      '@napi-rs/canvas':
+        specifier: ^0.1.97
+        version: 0.1.97
+      '@univ-lehavre/atlas-fetch-openalex':
+        specifier: workspace:*
+        version: link:../fetch-openalex
+      '@univ-lehavre/atlas-openalex-types':
+        specifier: workspace:*
+        version: link:../openalex-types
+      '@univ-lehavre/atlas-redcap-client':
+        specifier: workspace:*
+        version: link:../redcap-client
+      csv-parse:
+        specifier: ^5.6.0
+        version: 5.6.0
+      effect:
+        specifier: '>=3.20.0'
+        version: 3.21.0
+      fuse.js:
+        specifier: ^7.1.0
+        version: 7.1.0
+      mammoth:
+        specifier: ^1.9.0
+        version: 1.12.0
+      pdfjs-dist:
+        specifier: ^5.3.31
+        version: 5.5.207
+      pdfkit:
+        specifier: ^0.15.2
+        version: 0.15.2
+      tesseract.js:
+        specifier: ^7.0.0
+        version: 7.0.0
+    devDependencies:
+      '@effect/vitest':
+        specifier: 0.26.0
+        version: 0.26.0(effect@3.21.0)(vitest@4.0.18(@types/node@25.0.10)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.3))
+      '@types/node':
+        specifier: ^25.0.10
+        version: 25.0.10
+      '@types/pdfkit':
+        specifier: ^0.13.9
+        version: 0.13.9
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^9.39.2
+        version: 9.39.2(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.1
+        version: 3.8.1
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: ^4.0.18
+        version: 4.0.18(@types/node@25.0.10)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.3)
+
   packages/validate-openalex:
     dependencies:
       '@clack/prompts':
@@ -1071,52 +1133,25 @@ importers:
       '@clack/prompts':
         specifier: ^1.1.0
         version: 1.1.0
-      '@napi-rs/canvas':
-        specifier: ^0.1.97
-        version: 0.1.97
       '@univ-lehavre/atlas-fetch-openalex':
         specifier: workspace:*
         version: link:../../../packages/fetch-openalex
       '@univ-lehavre/atlas-openalex-types':
         specifier: workspace:*
         version: link:../../../packages/openalex-types
-      '@univ-lehavre/atlas-redcap-client':
+      '@univ-lehavre/atlas-researcher-profiles':
         specifier: workspace:*
-        version: link:../../../packages/redcap-client
-      csv-parse:
-        specifier: ^5.6.0
-        version: 5.6.0
+        version: link:../../../packages/researcher-profiles
       effect:
         specifier: '>=3.20.0'
         version: 3.21.0
-      fuse.js:
-        specifier: ^7.1.0
-        version: 7.1.0
-      mammoth:
-        specifier: ^1.9.0
-        version: 1.12.0
-      pdfjs-dist:
-        specifier: ^5.3.31
-        version: 5.5.207
-      pdfkit:
-        specifier: ^0.15.2
-        version: 0.15.2
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
-      tesseract.js:
-        specifier: ^7.0.0
-        version: 7.0.0
     devDependencies:
-      '@effect/vitest':
-        specifier: 0.26.0
-        version: 0.26.0(effect@3.21.0)(vitest@4.0.18(@types/node@25.0.10)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.3))
       '@types/node':
         specifier: ^25.0.10
         version: 25.0.10
-      '@types/pdfkit':
-        specifier: ^0.13.9
-        version: 0.13.9
       '@univ-lehavre/atlas-shared-config':
         specifier: workspace:*
         version: link:../../../config/shared-config
@@ -1129,9 +1164,6 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
-      vitest:
-        specifier: ^4.0.18
-        version: 4.0.18(@types/node@25.0.10)(jiti@2.6.1)(jsdom@27.4.0)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.3)
 
   tools/dev/redcap-openapi:
     dependencies:
@@ -3688,10 +3720,9 @@ packages:
   '@xenova/transformers@2.17.2':
     resolution: {integrity: sha512-lZmHqzrVIkSvZdKZEx7IYY51TK0WDrC8eR0c5IMnBsO8di8are1zzw8BlLhyO2TklZKLN5UffNGs1IJwT6oOqQ==}
 
-  '@xmldom/xmldom@0.8.11':
-    resolution: {integrity: sha512-cQzWCtO6C8TQiYl1ruKNn2U6Ao4o4WBBcbL61yJl84x+j5sOWWFU9X7DpND8XZG3daDppSsigMdfAIl2upQBRw==}
-    engines: {node: '>=10.0.0'}
-    deprecated: this version has critical issues, please update to the latest version
+  '@xmldom/xmldom@0.9.9':
+    resolution: {integrity: sha512-qycIHAucxy/LXAYIjmLmtQ8q9GPnMbnjG1KXhWm9o5sCr6pOYDATkMPiTNa6/v8eELyqOQ2FsEqeoFYmgv/gJg==}
+    engines: {node: '>=14.6'}
 
   JSONStream@1.3.5:
     resolution: {integrity: sha512-E+iruNOY8VV9s4JEbe1aNEm6MiszPRr/UfcHMz0TQh1BXSxHK+ASV1R6W4HpjBhSeS+54PIsAMCBmwD06LLsqQ==}
@@ -9986,7 +10017,7 @@ snapshots:
       - bare-buffer
       - react-native-b4a
 
-  '@xmldom/xmldom@0.8.11': {}
+  '@xmldom/xmldom@0.9.9': {}
 
   JSONStream@1.3.5:
     dependencies:
@@ -12153,7 +12184,7 @@ snapshots:
 
   mammoth@1.12.0:
     dependencies:
-      '@xmldom/xmldom': 0.8.11
+      '@xmldom/xmldom': 0.9.9
       argparse: 1.0.10
       base64-js: 1.5.1
       bluebird: 3.4.7

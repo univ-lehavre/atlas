@@ -4,8 +4,8 @@
 
 import { multiselect, isCancel, cancel } from "@clack/prompts";
 import pc from "picocolors";
-import type { ResearcherRow } from "../types.js";
-import { daysUntilNextUpdate } from "./process-row.js";
+import type { ResearcherRow } from "@univ-lehavre/atlas-researcher-profiles";
+import { daysUntilNextUpdate } from "@univ-lehavre/atlas-researcher-profiles";
 
 const relativeDate = (dateStr: string): string => {
   if (dateStr === "") return "";

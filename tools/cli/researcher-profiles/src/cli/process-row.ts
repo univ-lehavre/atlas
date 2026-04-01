@@ -22,15 +22,18 @@ import {
   resolveAuthors,
   fetchWorksForAuthors,
   type ResolveAuthorsResult,
-} from "../services/openalex.js";
+} from "@univ-lehavre/atlas-researcher-profiles";
 import {
   writeOaReferences,
   writeAlternativeAuthorFullnames,
   fetchAlternativeAuthorFullnames,
   fetchAlternativeAuthorAffiliations,
   writeAlternativeAuthorAffiliations,
-} from "../services/redcap.js";
-import type { ResearcherRow } from "../types.js";
+} from "@univ-lehavre/atlas-researcher-profiles";
+import {
+  daysUntilNextUpdate,
+  type ResearcherRow,
+} from "@univ-lehavre/atlas-researcher-profiles";
 
 interface RedcapConfig {
   readonly url: string;
@@ -39,18 +42,6 @@ interface RedcapConfig {
 
 const silenced = <A, E>(effect: Effect.Effect<A, E>): Effect.Effect<A, E> =>
   effect.pipe(Logger.withMinimumLogLevel(LogLevel.None));
-
-/** Returns the number of days until the next update, or null if > 1 month ago / never imported. */
-export const daysUntilNextUpdate = (importedDate: string): number | null => {
-  if (importedDate === "") return null;
-  const importedAt = new Date(importedDate);
-  const oneMonthAgo = new Date();
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-  if (importedAt <= oneMonthAgo) return null;
-  const nextUpdate = new Date(importedAt);
-  nextUpdate.setMonth(nextUpdate.getMonth() + 1);
-  return Math.ceil((nextUpdate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-};
 
 const showWorks = (works: readonly WorksResult[]): void => {
   if (works.length === 0) {

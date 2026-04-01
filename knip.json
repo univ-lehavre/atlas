@@ -124,6 +124,11 @@
         "src/**/*.ts"
       ]
     },
+    "packages/researcher-profiles": {
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
     "tools/cli/researcher-profiles": {
       "project": [
         "src/**/*.ts"

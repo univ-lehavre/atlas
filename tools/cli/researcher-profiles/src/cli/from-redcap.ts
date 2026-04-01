@@ -7,9 +7,12 @@ import pc from "picocolors";
 import { Effect, Either } from "effect";
 import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
 import type { RateLimitInfo } from "@univ-lehavre/atlas-fetch-openalex";
-import { fetchResearchers } from "../services/redcap.js";
-import type { ResearcherRow } from "../types.js";
-import { processRow, daysUntilNextUpdate } from "./process-row.js";
+import {
+  fetchResearchers,
+  daysUntilNextUpdate,
+} from "@univ-lehavre/atlas-researcher-profiles";
+import type { ResearcherRow } from "@univ-lehavre/atlas-researcher-profiles";
+import { processRow } from "./process-row.js";
 import { selectResearchers } from "./select-researchers.js";
 
 interface FromRedcapOptions {

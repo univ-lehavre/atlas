@@ -10,7 +10,7 @@ import { Effect, Either } from "effect";
 import { selectResearchers } from "./select-researchers.js";
 import { matchRow } from "./match-row.js";
 import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
-import { fetchResearchers } from "../services/redcap.js";
+import { fetchResearchers } from "@univ-lehavre/atlas-researcher-profiles";
 
 interface MatchReferencesOptions {
   readonly redcapUrl: string;
