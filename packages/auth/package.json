@@ -56,7 +56,7 @@
     "@univ-lehavre/atlas-appwrite": "workspace:*",
     "@univ-lehavre/atlas-errors": "workspace:*",
     "@univ-lehavre/atlas-validators": "workspace:*",
-    "node-appwrite": "^21.1.0"
+    "node-appwrite": "^23.1.0"
   },
   "peerDependencies": {
     "@sveltejs/kit": "^2.0.0"
