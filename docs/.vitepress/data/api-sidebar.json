@@ -21,348 +21,22 @@
             "link": "/api/@univ-lehavre/atlas-crf/"
           },
           {
-            "text": "Crf",
+            "text": "Functions",
             "collapsed": true,
             "items": [
               {
-                "text": "Overview",
-                "link": "/api/@univ-lehavre/atlas-crf/crf/"
-              },
-              {
-                "text": "Functions",
-                "collapsed": true,
-                "items": [
-                  {
-                    "text": "createRedcapClient",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/functions/createRedcapClient"
-                  },
-                  {
-                    "text": "escapeFilterLogicValue",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/functions/escapeFilterLogicValue"
-                  },
-                  {
-                    "text": "makeRedcapClientLayer",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/functions/makeRedcapClientLayer"
-                  }
-                ]
-              },
-              {
-                "text": "Classes",
-                "collapsed": true,
-                "items": [
-                  {
-                    "text": "RedcapApiError",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/classes/RedcapApiError"
-                  },
-                  {
-                    "text": "RedcapClientService",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/classes/RedcapClientService"
-                  },
-                  {
-                    "text": "RedcapHttpError",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/classes/RedcapHttpError"
-                  },
-                  {
-                    "text": "RedcapNetworkError",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/classes/RedcapNetworkError"
-                  }
-                ]
-              },
-              {
-                "text": "Interfaces",
-                "collapsed": true,
-                "items": [
-                  {
-                    "text": "ExportRecordsOptions",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/interfaces/ExportRecordsOptions"
-                  },
-                  {
-                    "text": "ImportRecordsOptions",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/interfaces/ImportRecordsOptions"
-                  },
-                  {
-                    "text": "RedcapClient",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/interfaces/RedcapClient"
-                  },
-                  {
-                    "text": "RedcapConfig",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/interfaces/RedcapConfig"
-                  },
-                  {
-                    "text": "components",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/interfaces/components"
-                  },
-                  {
-                    "text": "operations",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/interfaces/operations"
-                  },
-                  {
-                    "text": "paths",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/interfaces/paths"
-                  }
-                ]
-              },
-              {
-                "text": "Types",
-                "collapsed": true,
-                "items": [
-                  {
-                    "text": "BooleanFlag",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/BooleanFlag"
-                  },
-                  {
-                    "text": "Email",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/Email"
-                  },
-                  {
-                    "text": "ErrorResponse",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/ErrorResponse"
-                  },
-                  {
-                    "text": "ExportFieldName",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/ExportFieldName"
-                  },
-                  {
-                    "text": "Field",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/Field"
-                  },
-                  {
-                    "text": "ImportResult",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/ImportResult"
-                  },
-                  {
-                    "text": "Instrument",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/Instrument"
-                  },
-                  {
-                    "text": "InstrumentName",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/InstrumentName"
-                  },
-                  {
-                    "text": "IsoTimestamp",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/IsoTimestamp"
-                  },
-                  {
-                    "text": "NonEmptyString",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/NonEmptyString"
-                  },
-                  {
-                    "text": "PositiveInt",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/PositiveInt"
-                  },
-                  {
-                    "text": "ProjectInfo",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/ProjectInfo"
-                  },
-                  {
-                    "text": "RecordId",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/RecordId"
-                  },
-                  {
-                    "text": "RedcapError",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/RedcapError"
-                  },
-                  {
-                    "text": "RedcapToken",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/RedcapToken"
-                  },
-                  {
-                    "text": "RedcapUrl",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/RedcapUrl"
-                  },
-                  {
-                    "text": "UserId",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/type-aliases/UserId"
-                  }
-                ]
-              },
-              {
-                "text": "Variables",
-                "collapsed": true,
-                "items": [
-                  {
-                    "text": "Email",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/variables/Email"
-                  },
-                  {
-                    "text": "InstrumentName",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/variables/InstrumentName"
-                  },
-                  {
-                    "text": "IsoTimestamp",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/variables/IsoTimestamp"
-                  },
-                  {
-                    "text": "NonEmptyString",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/variables/NonEmptyString"
-                  },
-                  {
-                    "text": "PositiveInt",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/variables/PositiveInt"
-                  },
-                  {
-                    "text": "RecordId",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/variables/RecordId"
-                  },
-                  {
-                    "text": "RedcapToken",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/variables/RedcapToken"
-                  },
-                  {
-                    "text": "RedcapUrl",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/variables/RedcapUrl"
-                  },
-                  {
-                    "text": "UserId",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/variables/UserId"
-                  },
-                  {
-                    "text": "fromBooleanFlag",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/variables/fromBooleanFlag"
-                  },
-                  {
-                    "text": "toBooleanFlag",
-                    "link": "/api/@univ-lehavre/atlas-crf/crf/variables/toBooleanFlag"
-                  }
-                ]
+                "text": "createApp",
+                "link": "/api/@univ-lehavre/atlas-crf/functions/createApp"
               }
             ]
           },
           {
-            "text": "Redcap",
+            "text": "Interfaces",
             "collapsed": true,
             "items": [
               {
-                "text": "Overview",
-                "link": "/api/@univ-lehavre/atlas-crf/redcap/"
-              },
-              {
-                "text": "Functions",
-                "collapsed": true,
-                "items": [
-                  {
-                    "text": "getAdapter",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/functions/getAdapter"
-                  },
-                  {
-                    "text": "getAdapterEffect",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/functions/getAdapterEffect"
-                  },
-                  {
-                    "text": "getLatestAdapter",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/functions/getLatestAdapter"
-                  },
-                  {
-                    "text": "getMinSupportedVersion",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/functions/getMinSupportedVersion"
-                  },
-                  {
-                    "text": "getSupportedVersionRanges",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/functions/getSupportedVersionRanges"
-                  },
-                  {
-                    "text": "isVersionSupported",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/functions/isVersionSupported"
-                  }
-                ]
-              },
-              {
-                "text": "Classes",
-                "collapsed": true,
-                "items": [
-                  {
-                    "text": "UnsupportedVersionError",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/classes/UnsupportedVersionError"
-                  },
-                  {
-                    "text": "VersionParseError",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/classes/VersionParseError"
-                  }
-                ]
-              },
-              {
-                "text": "Interfaces",
-                "collapsed": true,
-                "items": [
-                  {
-                    "text": "RedcapAdapter",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/interfaces/RedcapAdapter"
-                  },
-                  {
-                    "text": "RedcapFeatures",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/interfaces/RedcapFeatures"
-                  },
-                  {
-                    "text": "Version",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/interfaces/Version"
-                  }
-                ]
-              },
-              {
-                "text": "Types",
-                "collapsed": true,
-                "items": [
-                  {
-                    "text": "RedcapClientError",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/type-aliases/RedcapClientError"
-                  },
-                  {
-                    "text": "SupportedVersionString",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/type-aliases/SupportedVersionString"
-                  },
-                  {
-                    "text": "TransformedParams",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/type-aliases/TransformedParams"
-                  }
-                ]
-              },
-              {
-                "text": "Variables",
-                "collapsed": true,
-                "items": [
-                  {
-                    "text": "SUPPORTED_VERSIONS",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/variables/SUPPORTED_VERSIONS"
-                  },
-                  {
-                    "text": "compareVersions",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/variables/compareVersions"
-                  },
-                  {
-                    "text": "formatVersion",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/variables/formatVersion"
-                  },
-                  {
-                    "text": "getMajorVersion",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/variables/getMajorVersion"
-                  },
-                  {
-                    "text": "isVersionAtLeast",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/variables/isVersionAtLeast"
-                  },
-                  {
-                    "text": "isVersionInRange",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/variables/isVersionInRange"
-                  },
-                  {
-                    "text": "isVersionLessThan",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/variables/isVersionLessThan"
-                  },
-                  {
-                    "text": "parseVersion",
-                    "link": "/api/@univ-lehavre/atlas-crf/redcap/variables/parseVersion"
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "text": "Server",
-            "collapsed": true,
-            "items": [
-              {
-                "text": "Overview",
-                "link": "/api/@univ-lehavre/atlas-crf/server/"
+                "text": "CreateAppOptions",
+                "link": "/api/@univ-lehavre/atlas-crf/interfaces/CreateAppOptions"
               }
             ]
           }
@@ -905,22 +579,126 @@
             "link": "/api/@univ-lehavre/atlas-net/"
           },
           {
-            "text": "Cli",
+            "text": "Functions",
             "collapsed": true,
             "items": [
               {
-                "text": "Overview",
-                "link": "/api/@univ-lehavre/atlas-net/cli/"
+                "text": "checkInternet",
+                "link": "/api/@univ-lehavre/atlas-net/functions/checkInternet"
               },
               {
-                "text": "Functions",
-                "collapsed": true,
-                "items": [
-                  {
-                    "text": "main",
-                    "link": "/api/@univ-lehavre/atlas-net/cli/functions/main"
-                  }
-                ]
+                "text": "dnsResolve",
+                "link": "/api/@univ-lehavre/atlas-net/functions/dnsResolve"
+              },
+              {
+                "text": "tcpPing",
+                "link": "/api/@univ-lehavre/atlas-net/functions/tcpPing"
+              },
+              {
+                "text": "tlsHandshake",
+                "link": "/api/@univ-lehavre/atlas-net/functions/tlsHandshake"
+              }
+            ]
+          },
+          {
+            "text": "Interfaces",
+            "collapsed": true,
+            "items": [
+              {
+                "text": "DiagnosticResult",
+                "link": "/api/@univ-lehavre/atlas-net/interfaces/DiagnosticResult"
+              },
+              {
+                "text": "DiagnosticStep",
+                "link": "/api/@univ-lehavre/atlas-net/interfaces/DiagnosticStep"
+              },
+              {
+                "text": "TcpPingOptions",
+                "link": "/api/@univ-lehavre/atlas-net/interfaces/TcpPingOptions"
+              },
+              {
+                "text": "TlsHandshakeOptions",
+                "link": "/api/@univ-lehavre/atlas-net/interfaces/TlsHandshakeOptions"
+              }
+            ]
+          },
+          {
+            "text": "Types",
+            "collapsed": true,
+            "items": [
+              {
+                "text": "DiagnosticStatus",
+                "link": "/api/@univ-lehavre/atlas-net/type-aliases/DiagnosticStatus"
+              },
+              {
+                "text": "Host",
+                "link": "/api/@univ-lehavre/atlas-net/type-aliases/Host"
+              },
+              {
+                "text": "Hostname",
+                "link": "/api/@univ-lehavre/atlas-net/type-aliases/Hostname"
+              },
+              {
+                "text": "IpAddress",
+                "link": "/api/@univ-lehavre/atlas-net/type-aliases/IpAddress"
+              },
+              {
+                "text": "Port",
+                "link": "/api/@univ-lehavre/atlas-net/type-aliases/Port"
+              },
+              {
+                "text": "SafeApiUrl",
+                "link": "/api/@univ-lehavre/atlas-net/type-aliases/SafeApiUrl"
+              },
+              {
+                "text": "TimeoutMs",
+                "link": "/api/@univ-lehavre/atlas-net/type-aliases/TimeoutMs"
+              }
+            ]
+          },
+          {
+            "text": "Variables",
+            "collapsed": true,
+            "items": [
+              {
+                "text": "DEFAULT_INTERNET_CHECK_TIMEOUT_MS",
+                "link": "/api/@univ-lehavre/atlas-net/variables/DEFAULT_INTERNET_CHECK_TIMEOUT_MS"
+              },
+              {
+                "text": "DEFAULT_TCP_TIMEOUT_MS",
+                "link": "/api/@univ-lehavre/atlas-net/variables/DEFAULT_TCP_TIMEOUT_MS"
+              },
+              {
+                "text": "DEFAULT_TLS_TIMEOUT_MS",
+                "link": "/api/@univ-lehavre/atlas-net/variables/DEFAULT_TLS_TIMEOUT_MS"
+              },
+              {
+                "text": "HTTPS_PORT",
+                "link": "/api/@univ-lehavre/atlas-net/variables/HTTPS_PORT"
+              },
+              {
+                "text": "Hostname",
+                "link": "/api/@univ-lehavre/atlas-net/variables/Hostname"
+              },
+              {
+                "text": "INTERNET_CHECK_HOST",
+                "link": "/api/@univ-lehavre/atlas-net/variables/INTERNET_CHECK_HOST"
+              },
+              {
+                "text": "IpAddress",
+                "link": "/api/@univ-lehavre/atlas-net/variables/IpAddress"
+              },
+              {
+                "text": "Port",
+                "link": "/api/@univ-lehavre/atlas-net/variables/Port"
+              },
+              {
+                "text": "SafeApiUrl",
+                "link": "/api/@univ-lehavre/atlas-net/variables/SafeApiUrl"
+              },
+              {
+                "text": "TimeoutMs",
+                "link": "/api/@univ-lehavre/atlas-net/variables/TimeoutMs"
               }
             ]
           }

@@ -2,81 +2,214 @@
   "$schema": "https://unpkg.com/knip@5/schema.json",
   "workspaces": {
     ".": {
-      "project": ["*.{js,ts}"]
+      "project": [
+        "*.{js,ts}"
+      ]
     },
     "packages/appwrite": {
-      "project": ["src/**/*.ts"],
-      "ignoreDependencies": ["@sveltejs/kit"]
+      "project": [
+        "src/**/*.ts"
+      ],
+      "ignoreDependencies": [
+        "@sveltejs/kit"
+      ]
     },
     "packages/auth": {
-      "project": ["src/**/*.ts"]
+      "project": [
+        "src/**/*.ts"
+      ]
     },
     "packages/errors": {
-      "project": ["src/**/*.ts"]
+      "project": [
+        "src/**/*.ts"
+      ]
     },
     "packages/validators": {
-      "project": ["src/**/*.ts"]
+      "project": [
+        "src/**/*.ts"
+      ]
     },
-    "packages/crf": {
-      "project": ["src/**/*.ts"],
+    "packages/openalex-types": {
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
+    "packages/fetch-one-api-page": {
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
+    "packages/fetch-openalex": {
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
+    "packages/validate-openalex": {
+      "project": [
+        "src/**/*.ts"
+      ],
       "ignore": [
-        "src/redcap/brands.ts",
-        "src/redcap/errors.ts",
-        "src/redcap/version.ts",
-        "src/cli/shared/context.ts",
-        "src/cli/shared/terminal.ts",
+        "src/store/setter.ts",
+        "src/oa/index.ts"
+      ]
+    },
+    "packages/openalex": {
+      "project": [
+        "src/**/*.ts"
+      ],
+      "ignore": [
+        "src/errors.ts",
+        "src/prompt.ts",
+        "src/db/index.ts",
+        "src/group/helpers.ts"
+      ],
+      "ignoreDependencies": [
+        "@duckdb/node-api",
+        "@effect/experimental",
+        "@effect/platform-node",
+        "@xenova/transformers",
+        "uuid"
+      ]
+    },
+    "apps/*": {
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
+    "apps/amarre": {
+      "project": [
+        "src/**/*.ts",
+        "src/**/*.svelte"
+      ],
+      "ignore": [
+        "src/lib/ui/Retrieve.svelte",
+        "src/lib/ui/Rule.svelte"
+      ],
+      "ignoreDependencies": [
+        "@univ-lehavre/atlas-logos"
+      ]
+    },
+    "apps/ecrin": {
+      "project": [
+        "src/**/*.ts",
+        "src/**/*.svelte"
+      ],
+      "ignore": [
+        "src/lib/ui/Button.svelte",
+        "src/lib/ui/TakeTheSurvey.svelte",
+        "src/lib/redcap/index.ts"
+      ],
+      "ignoreDependencies": [
+        "@univ-lehavre/atlas-logos",
+        "appwrite",
+        "graphology-layout-force",
+        "luxon",
+        "openapi-response-validator",
+        "uuid",
+        "@types/luxon"
+      ]
+    },
+    "apps/find-an-expert": {
+      "project": [
+        "src/**/*.ts",
+        "src/**/*.svelte"
+      ],
+      "ignoreDependencies": [
+        "@univ-lehavre/atlas-logos",
+        "tailwindcss"
+      ]
+    },
+    "tools/cli/biblio-cli": {
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
+    "packages/researcher-profiles": {
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
+    "tools/cli/researcher-profiles": {
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
+    "tools/dev/redcap-openapi": {
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
+    "config/shared-config": {
+      "project": [
+        "*.json",
+        "eslint/**/*.js",
+        "prettier/**/*.js"
+      ]
+    },
+    "sandbox/redcap-sandbox": {
+      "project": [
+        "tests/**/*.ts"
+      ]
+    },
+    "packages/redcap-client": {
+      "project": [
+        "src/**/*.ts"
+      ],
+      "ignore": [
+        "src/brands.ts",
+        "src/errors.ts",
+        "src/version.ts"
+      ]
+    },
+    "services/crf": {
+      "project": [
+        "src/**/*.ts"
+      ],
+      "ignore": [
         "src/server/schemas.ts"
       ]
     },
-    "packages/redcap-openapi": {
-      "project": ["src/**/*.ts"]
+    "tools/cli/crf-cli": {
+      "project": [
+        "src/**/*.ts"
+      ],
+      "ignore": [
+        "src/redcap/commands.ts",
+        "src/server/index.ts",
+        "src/shared/context.ts",
+        "src/shared/terminal.ts"
+      ]
     },
-    "packages/redcap-sandbox": {
-      "project": ["tests/**/*.ts"]
-    },
-    "packages/shared-config": {
-      "project": ["*.json", "eslint/**/*.js", "prettier/**/*.js"]
-    },
-    "packages/find-an-expert": {
-      "project": ["src/**/*.ts", "src/**/*.svelte"],
-      "ignoreDependencies": ["@univ-lehavre/atlas-logos", "tailwindcss"]
-    },
-    "packages/ecrin": {
-      "project": ["src/**/*.ts", "src/**/*.svelte"],
-      "ignore": ["src/lib/ui/Button.svelte", "src/lib/ui/TakeTheSurvey.svelte", "src/lib/redcap/index.ts"],
-      "ignoreDependencies": ["@univ-lehavre/atlas-logos", "appwrite", "graphology-layout-force", "luxon", "openapi-response-validator", "uuid", "@types/luxon"]
-    },
-    "packages/amarre": {
-      "project": ["src/**/*.ts", "src/**/*.svelte"],
-      "ignore": ["src/lib/ui/Retrieve.svelte", "src/lib/ui/Rule.svelte"],
-      "ignoreDependencies": ["@univ-lehavre/atlas-logos"]
-    },
-    "packages/openalex-types": {
-      "project": ["src/**/*.ts"]
-    },
-    "packages/fetch-one-api-page": {
-      "project": ["src/**/*.ts"]
-    },
-    "packages/fetch-openalex": {
-      "project": ["src/**/*.ts"]
-    },
-    "packages/validate-openalex": {
-      "project": ["src/**/*.ts"],
-      "ignore": ["src/store/setter.ts", "src/oa/index.ts"]
-    },
-    "packages/biblio-cli": {
-      "project": ["src/**/*.ts"]
-    },
-    "packages/openalex": {
-      "project": ["src/**/*.ts"],
-      "ignore": ["src/errors.ts", "src/prompt.ts", "src/db/index.ts", "src/group/helpers.ts"],
-      "ignoreDependencies": ["@duckdb/node-api", "@effect/experimental", "@effect/platform-node", "@xenova/transformers", "uuid"]
-    },
-    "apps/*": {
-      "project": ["src/**/*.ts"]
+    "tools/cli/net-cli": {
+      "project": [
+        "src/**/*.ts"
+      ]
     }
   },
-  "ignore": ["**/dist/**", "**/.svelte-kit/**", "**/build/**", "**/upstream/**"],
-  "ignoreDependencies": ["@univ-lehavre/atlas-shared-config", "vitepress-openapi", "@modyfi/vite-plugin-yaml", "simple-git", "chart.js", "vue-chartjs", "mermaid", "vitepress-plugin-mermaid", "@braintree/sanitize-url", "dayjs", "debug", "cytoscape", "cytoscape-cose-bilkent", "vitest", "@vitest/coverage-v8"],
-  "ignoreBinaries": ["prettier"]
+  "ignore": [
+    "**/dist/**",
+    "**/.svelte-kit/**",
+    "**/build/**",
+    "**/upstream/**"
+  ],
+  "ignoreDependencies": [
+    "@univ-lehavre/atlas-shared-config",
+    "vitepress-openapi",
+    "@modyfi/vite-plugin-yaml",
+    "simple-git",
+    "chart.js",
+    "vue-chartjs",
+    "mermaid",
+    "vitepress-plugin-mermaid",
+    "@braintree/sanitize-url",
+    "dayjs",
+    "debug",
+    "cytoscape",
+    "cytoscape-cose-bilkent",
+    "vitest",
+    "@vitest/coverage-v8"
+  ],
+  "ignoreBinaries": [
+    "prettier"
+  ]
 }

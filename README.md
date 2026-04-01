@@ -87,20 +87,20 @@ pnpm add @univ-lehavre/atlas-redcap-core effect
 ```
 
 ```typescript
-import { Effect } from 'effect';
+import { Effect } from "effect";
 import {
   createRedcapClient,
   RedcapUrl,
   RedcapToken,
-} from '@univ-lehavre/atlas-redcap-core';
+} from "@univ-lehavre/atlas-redcap-core";
 
 const client = createRedcapClient({
-  url: RedcapUrl('https://redcap.example.com/api/'),
-  token: RedcapToken('YOUR_32_CHAR_HEXADECIMAL_TOKEN'),
+  url: RedcapUrl("https://redcap.example.com/api/"),
+  token: RedcapToken("YOUR_32_CHAR_HEXADECIMAL_TOKEN"),
 });
 
 const records = await Effect.runPromise(
-  client.exportRecords({ fields: ['record_id', 'name'] }),
+  client.exportRecords({ fields: ["record_id", "name"] }),
 );
 ```
 
@@ -117,7 +117,7 @@ pnpm dev
 pnpm test
 
 # Pre-release checks
-pnpm check:ci
+pnpm ci:checks
 ```
 
 ## Partners and Funders

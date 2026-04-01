@@ -27,14 +27,14 @@ atlas/
 
 ## Tech Stack
 
-| Area | Technologies |
-|------|--------------|
-| Runtime | Node.js 24+, TypeScript 5.x |
-| Framework | Effect, SvelteKit 2, Svelte 5 |
-| Package manager | pnpm (workspaces) |
-| Build | Vite, Turbo |
-| Test | Vitest |
-| Lint | ESLint, Prettier |
+| Area            | Technologies                  |
+| --------------- | ----------------------------- |
+| Runtime         | Node.js 24+, TypeScript 5.x   |
+| Framework       | Effect, SvelteKit 2, Svelte 5 |
+| Package manager | pnpm (workspaces)             |
+| Build           | Vite, Turbo                   |
+| Test            | Vitest                        |
+| Lint            | ESLint, Prettier              |
 
 ## Quick Start
 
@@ -52,7 +52,7 @@ pnpm build
 pnpm test
 
 # Full CI check
-pnpm check:ci
+pnpm ci:checks
 ```
 
 ## Audits

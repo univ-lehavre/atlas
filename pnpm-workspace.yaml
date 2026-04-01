@@ -2,7 +2,10 @@ packages:
   - packages/*
   - apps/*
   - services/*
-  - tools/*
+  - tools/cli/*
+  - tools/dev/*
+  - config/*
+  - sandbox/*
 
 onlyBuiltDependencies:
   - '@duckdb/node-api'
