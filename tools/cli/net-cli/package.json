@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-net-cli",
-  "version": "0.7.1",
+  "version": "1.0.0",
   "description": "Network diagnostic CLI for Atlas",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
@@ -10,8 +10,12 @@
     "directory": "tools/cli/net-cli"
   },
   "type": "module",
-  "engines": { "node": ">=24.0.0" },
-  "files": ["dist"],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "files": [
+    "dist"
+  ],
   "bin": {
     "atlas-net": "./dist/bin/atlas-net.js"
   },
@@ -41,5 +45,7 @@
     "prettier": "^3.8.1",
     "typescript": "^5.9.3"
   },
-  "publishConfig": { "access": "public" }
+  "publishConfig": {
+    "access": "public"
+  }
 }
