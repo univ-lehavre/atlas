@@ -191,6 +191,10 @@ const extractDocx = (
 ): Effect.Effect<string, FileExtractError> =>
   Effect.tryPromise({
     try: async () => {
+      // mammoth requires a DOMParser in Node.js — provide one from @xmldom/xmldom
+      const { DOMParser } = await import("@xmldom/xmldom");
+      // eslint-disable-next-line functional/no-expression-statements -- global injection required by mammoth internals
+      void Object.assign(globalThis, { DOMParser });
       const mammoth = await import("mammoth");
       const result = await mammoth.extractRawText({
         buffer: Buffer.from(buffer),
