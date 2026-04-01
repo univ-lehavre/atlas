@@ -2,10 +2,27 @@
  * Generates a combined PDF with two sections:
  *   1. Références vérifiées (Chicago Notes)
  *   2. En attente de vérification (Chicago Notes)
+ * And an optional debug appendix with author profiles, raw names, and extracted text.
  */
 
 import PDFDocument from "pdfkit";
 import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+
+export interface PdfDebugInfo {
+  /** All unique OpenAlex author profiles resolved for this researcher */
+  readonly authorProfiles: readonly {
+    readonly id: string;
+    readonly display_name: string;
+    readonly selected: boolean;
+  }[];
+  /** All raw_author_name values found in oa_references authorships */
+  readonly rawAuthorNames: readonly {
+    readonly name: string;
+    readonly selected: boolean;
+  }[];
+  /** The extracted text that was submitted to fuzzy matching */
+  readonly extractedText: string;
+}
 
 const formatAuthorsChicago = (work: WorksResult): string => {
   const authors = work.authorships.map((a) => {
@@ -91,15 +108,85 @@ const renderSection = (
   }
 };
 
+const renderDebugSection = (
+  doc: PDFKit.PDFDocument,
+  debug: PdfDebugInfo,
+): void => {
+  doc.addPage();
+  doc
+    .fontSize(14)
+    .font("Helvetica-Bold")
+    .fillColor("#000000")
+    .text("Annexe — Données de résolution", { align: "left" });
+  doc.moveDown(1.5);
+
+  // Author profiles
+  doc
+    .fontSize(12)
+    .font("Helvetica-Bold")
+    .text("Profils OpenAlex", { align: "left" });
+  doc.moveDown(0.5);
+  for (const profile of debug.authorProfiles) {
+    const color = profile.selected ? "#000000" : "#999999";
+    const marker = profile.selected ? "✓" : "○";
+    doc
+      .fontSize(9)
+      .font(profile.selected ? "Helvetica-Bold" : "Helvetica")
+      .fillColor(color)
+      .text(`${marker}  ${profile.display_name}  (${profile.id})`, {
+        align: "left",
+        lineGap: 2,
+      });
+  }
+  doc.fillColor("#000000").moveDown(1.5);
+
+  // Raw author names
+  doc
+    .fontSize(12)
+    .font("Helvetica-Bold")
+    .text("Variantes de noms (raw_author_name)", { align: "left" });
+  doc.moveDown(0.5);
+  for (const entry of debug.rawAuthorNames) {
+    const color = entry.selected ? "#000000" : "#999999";
+    const marker = entry.selected ? "✓" : "○";
+    doc
+      .fontSize(9)
+      .font(entry.selected ? "Helvetica-Bold" : "Helvetica")
+      .fillColor(color)
+      .text(`${marker}  ${entry.name}`, { align: "left", lineGap: 2 });
+  }
+  doc.fillColor("#000000").moveDown(1.5);
+
+  // Extracted text
+  doc
+    .fontSize(12)
+    .font("Helvetica-Bold")
+    .text("Texte extrait (soumis au fuzzy matching)", { align: "left" });
+  doc.moveDown(0.5);
+  // Truncate to avoid huge PDFs — 8000 chars is plenty for inspection
+  const preview =
+    debug.extractedText.length > 8000
+      ? debug.extractedText.slice(0, 8000) + "\n[…tronqué]"
+      : debug.extractedText;
+  doc
+    .fontSize(7.5)
+    .font("Courier")
+    .fillColor("#333333")
+    .text(preview, { align: "left", lineGap: 1 });
+  doc.fillColor("#000000");
+};
+
 /**
  * Generates a combined PDF with:
  *   - Section 1: "Références vérifiées" (finalReferences, Chicago Notes)
  *   - Section 2: "En attente de vérification" (pendingReferences, Chicago Notes)
+ *   - Appendix: debug info (author profiles, raw names, extracted text) if provided
  */
 export const generateCombinedPdf = (
   finalReferences: readonly WorksResult[],
   pendingReferences: readonly WorksResult[],
   researcherName: string,
+  debugInfo?: PdfDebugInfo,
 ): Promise<Uint8Array> =>
   makePdf((doc) => {
     doc
@@ -111,4 +198,8 @@ export const generateCombinedPdf = (
     renderSection(doc, "Références vérifiées", finalReferences);
     doc.moveDown(1.5);
     renderSection(doc, "En attente de vérification", pendingReferences);
+
+    if (debugInfo !== undefined) {
+      renderDebugSection(doc, debugInfo);
+    }
   });
