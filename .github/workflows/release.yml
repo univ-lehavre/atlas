@@ -7,6 +7,10 @@ on:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
 jobs:
   release:
     name: Release
@@ -29,7 +33,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version-file: .nvmrc
           cache: 'pnpm'
 
       - name: Install Dependencies
@@ -39,12 +43,6 @@ jobs:
         run: |
           git config user.name "chasset"
           git config user.email "1488688+chasset@users.noreply.github.com"
-
-      - name: Create SvelteKit env files
-        run: |
-          for app in apps/amarre apps/ecrin apps/find-an-expert; do
-            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
-          done
 
       - name: Create Release Pull Request or Publish to registries
         id: changesets
