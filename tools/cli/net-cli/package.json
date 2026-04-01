@@ -31,9 +31,9 @@
   },
   "dependencies": {
     "@clack/prompts": "^0.11.0",
-    "@effect/cli": "^0.73.2",
-    "@effect/platform": "^0.94.5",
-    "@effect/platform-node": "^0.104.1",
+    "@effect/cli": "^0.75.0",
+    "@effect/platform": "^0.96.0",
+    "@effect/platform-node": "^0.106.0",
     "@univ-lehavre/atlas-net": "workspace:*",
     "effect": "^3.21.0",
     "picocolors": "^1.1.1"
