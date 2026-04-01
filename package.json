@@ -165,6 +165,9 @@
       "tesseract.js",
       "unrs-resolver",
       "vue-demi"
-    ]
+    ],
+    "patchedDependencies": {
+      "reprism@0.0.11": "patches/reprism@0.0.11.patch"
+    }
   }
 }
