@@ -4,7 +4,7 @@ node_modules/
 # Build outputs
 dist/
 build/
-coverage/
+**/coverage/
 
 # Environment files
 .env
@@ -37,6 +37,9 @@ apps/*/tests/baselines/*.json
 
 # Assets
 assets/source/
+
+# Upstream sources (REDCap, etc.)
+**/upstream/
 
 # DuckDB (packages/openalex)
 packages/openalex/*.db

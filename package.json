@@ -180,20 +180,7 @@
       "rollup": ">=4.60.1",
       "undici": ">=7.24.6"
     },
-    "onlyBuiltDependencies": [
-      "@duckdb/node-api",
-      "@parcel/watcher",
-      "@scarf/scarf",
-      "esbuild",
-      "lefthook",
-      "msgpackr-extract",
-      "protobufjs",
-      "sharp",
-      "tesseract.js",
-      "unrs-resolver",
-      "vue-demi"
-    ],
-    "patchedDependencies": {
+"patchedDependencies": {
       "reprism@0.0.11": "patches/reprism@0.0.11.patch"
     }
   }

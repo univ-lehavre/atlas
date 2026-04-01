@@ -1,9 +1,19 @@
 {
-  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
       "project": [
         "*.{js,ts}"
+      ]
+    },
+    "packages/net": {
+      "project": [
+        "src/**/*.ts"
+      ]
+    },
+    "packages/redcap-core": {
+      "project": [
+        "src/**/*.ts"
       ]
     },
     "packages/appwrite": {
@@ -69,11 +79,6 @@
         "@effect/platform-node",
         "@xenova/transformers",
         "uuid"
-      ]
-    },
-    "apps/*": {
-      "project": [
-        "src/**/*.ts"
       ]
     },
     "apps/amarre": {
