@@ -332,9 +332,15 @@ export const processRow = async (
     allWorks = worksResult.right;
   }
 
-  // Filter works by selected name
+  // Filter works by selected name.
+  // Works where the researcher's authorship has an empty/missing raw_author_name
+  // are kept unconditionally (no data to filter on).
   const works = allWorks.filter((w) =>
-    w.authorships.some((a) => selectedNameFilter.has(a.raw_author_name)),
+    w.authorships.some(
+      (a) =>
+        allAuthorIds.has(a.author.id) &&
+        (a.raw_author_name === "" || selectedNameFilter.has(a.raw_author_name)),
+    ),
   );
 
   log.info(
