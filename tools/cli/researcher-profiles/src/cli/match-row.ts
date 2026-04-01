@@ -21,7 +21,10 @@ import {
   searchWorksByDOI,
   type OpenAlexConfig,
 } from "@univ-lehavre/atlas-fetch-openalex";
-import type { ResearcherRow } from "@univ-lehavre/atlas-researcher-profiles";
+import type {
+  ResearcherRow,
+  PdfDebugInfo,
+} from "@univ-lehavre/atlas-researcher-profiles";
 
 const silenced = <A, E>(effect: Effect.Effect<A, E>): Effect.Effect<A, E> =>
   effect.pipe(Logger.withMinimumLogLevel(LogLevel.None));
@@ -262,6 +265,36 @@ export const matchRow = async (
     return "skipped";
   }
 
+  // Build debug appendix
+  const profileMap = new Map<
+    string,
+    { id: string; display_name: string; selected: boolean }
+  >();
+  for (const work of data.oa_references) {
+    for (const authorship of work.authorships) {
+      const aid = authorship.author.id;
+      if (allAuthorIds.has(aid) && !profileMap.has(aid)) {
+        profileMap.set(aid, {
+          id: aid,
+          display_name: authorship.author.display_name ?? aid,
+          selected:
+            selectedNameFilter.size > 0
+              ? data.fullnames.some((e) => e.authorId === aid && e.selected)
+              : true,
+        });
+      }
+    }
+  }
+  const debugInfo: PdfDebugInfo = {
+    authorProfiles: [...profileMap.values()].toSorted((a, b) =>
+      a.display_name.localeCompare(b.display_name),
+    ),
+    rawAuthorNames: data.fullnames
+      .map((e) => ({ name: e.name, selected: e.selected }))
+      .toSorted((a, b) => a.name.localeCompare(b.name)),
+    extractedText: text,
+  };
+
   // Write final references
   const writeSpinner = spinner();
   writeSpinner.start(`[${label}] Writing final references to REDCap…`);
@@ -275,6 +308,7 @@ export const matchRow = async (
         row.userid,
         updatedData,
         `${row.first_name} ${row.last_name}`,
+        debugInfo,
       ),
     ),
   );

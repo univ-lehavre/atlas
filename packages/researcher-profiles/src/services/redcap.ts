@@ -12,7 +12,7 @@ import { Effect, Either } from "effect";
 import { RedcapFetchError, RedcapWriteError } from "../errors.js";
 import type { ResearcherRow, ResearcherData } from "../types.js";
 import { emptyResearcherData } from "../types.js";
-import { generateCombinedPdf } from "./pdf-generator.js";
+import { generateCombinedPdf, type PdfDebugInfo } from "./pdf-generator.js";
 
 export interface RedcapConnectionConfig {
   readonly url: string;
@@ -204,6 +204,7 @@ export const writeFinalReferences = (
   userid: string,
   data: ResearcherData,
   researcherName: string,
+  debugInfo?: PdfDebugInfo,
 ): Effect.Effect<void, RedcapWriteError> => {
   const client = makeClient(config);
   const finalIds = new Set(data.final_references.map((w) => w.id));
@@ -217,6 +218,7 @@ export const writeFinalReferences = (
         data.final_references,
         pendingReferences,
         researcherName,
+        debugInfo,
       ),
     catch: (cause) => new RedcapWriteError({ userid, cause }),
   }).pipe(

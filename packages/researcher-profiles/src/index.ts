@@ -40,7 +40,10 @@ export {
 
 export { extractText } from "./services/file-extractor.js";
 
-export { generateCombinedPdf } from "./services/pdf-generator.js";
+export {
+  type PdfDebugInfo,
+  generateCombinedPdf,
+} from "./services/pdf-generator.js";
 
 export {
   type MatchResult,
