@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-researcher-profiles-cli",
-  "version": "1.3.1",
+  "version": "1.3.2",
   "description": "Researcher profiles CLI: fetch OpenAlex works from CSV or REDCap and write to REDCap",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
