@@ -1,10 +1,25 @@
 # Dependencies
-node_modules/
 **/node_modules/
 
 # Build outputs
 **/dist/
-coverage/
+**/coverage/
+
+# SvelteKit
+**/.svelte-kit/
+
+# Turbo
+**/.turbo/
+
+# Upstream sources
+**/upstream/
+
+# Documentation
+docs/
+*.md
+
+# Sandbox
+sandbox/
 
 # Environment files
 .env*
@@ -17,12 +32,10 @@ coverage/
 # IDE
 .vscode/
 .idea/
-
-# Turbo
-**/.turbo/
-
-# Documentation
-*.md
+**/.DS_Store
 
 # Logs
 **/*.log
+
+# Assets
+**/*.traineddata
