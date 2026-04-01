@@ -66,7 +66,8 @@ const extractInstitutions = (
     }
   }
   return [...seen.values()].toSorted((a, b) =>
-    a.display_name.localeCompare(b.display_name),
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- OpenAlex data may have null display_name despite the type
+    (a.display_name ?? "").localeCompare(b.display_name ?? ""),
   );
 };
 
