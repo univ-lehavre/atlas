@@ -53,7 +53,7 @@ const renderDoc = (
     });
   doc.moveDown(1.5);
 
-  const sorted = [...works].sort(
+  const sorted = [...works].toSorted(
     (a, b) => b.publication_year - a.publication_year,
   );
 

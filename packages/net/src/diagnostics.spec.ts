@@ -50,7 +50,6 @@ const createMockTcpSocket = (): {
     removeAllListeners: vi.fn(),
     destroy: vi.fn(),
   };
-  // eslint-disable-next-line func-style
   (net.Socket as unknown as ReturnType<typeof vi.fn>).mockImplementation(function () {
     return mockSocket;
   });

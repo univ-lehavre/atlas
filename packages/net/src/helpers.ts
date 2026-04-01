@@ -33,7 +33,11 @@ export const formatCertificateMessage = (cert: tls.PeerCertificate): string => {
   const daysLeft = validTo
     ? Math.floor((validTo.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     : null;
-  const cn = cert.subject ? cert.subject.CN : null;
+  const cn = cert.subject
+    ? Array.isArray(cert.subject.CN)
+      ? cert.subject.CN[0]
+      : cert.subject.CN
+    : null;
   let message = cn ?? 'Certificate valid';
   if (daysLeft !== null && daysLeft < 30) {
     message += ` (expires in ${String(daysLeft)} days)`;
