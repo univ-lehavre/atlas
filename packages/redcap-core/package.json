@@ -61,7 +61,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "effect": "^3.19.15"
+    "effect": "^3.21.0"
   },
   "devDependencies": {
     "@types/node": "^25.0.10",

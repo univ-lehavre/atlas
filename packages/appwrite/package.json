@@ -56,7 +56,7 @@
     }
   },
   "devDependencies": {
-    "@sveltejs/kit": "^2.50.1",
+    "@sveltejs/kit": "^2.55.0",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^9.39.2",
     "prettier": "^3.8.1",

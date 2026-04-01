@@ -33,11 +33,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@clack/prompts": "^1.1.0",
-    "@univ-lehavre/atlas-researcher-profiles": "workspace:*",
+    "@clack/prompts": "^1.2.0",
     "@univ-lehavre/atlas-fetch-openalex": "workspace:*",
     "@univ-lehavre/atlas-openalex-types": "workspace:*",
-    "effect": "^3.19.15",
+    "@univ-lehavre/atlas-researcher-profiles": "workspace:*",
+    "effect": "^3.21.0",
     "picocolors": "^1.1.1"
   },
   "devDependencies": {

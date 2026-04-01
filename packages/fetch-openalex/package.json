@@ -41,7 +41,7 @@
   "dependencies": {
     "@univ-lehavre/atlas-fetch-one-api-page": "workspace:*",
     "@univ-lehavre/atlas-openalex-types": "workspace:*",
-    "effect": "^3.19.15"
+    "effect": "^3.21.0"
   },
   "devDependencies": {
     "@effect/vitest": "0.26.0",
