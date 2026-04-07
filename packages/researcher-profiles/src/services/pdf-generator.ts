@@ -1,11 +1,13 @@
 /**
- * Generates a combined PDF with two sections:
- *   1. Références vérifiées (Chicago Notes)
- *   2. En attente de vérification (Chicago Notes)
- * And an optional debug appendix with author profiles, raw names, and extracted text.
+ * Generates a combined PDF with:
+ *   1. Annexe — Données de résolution (debug appendix)
+ *   2. PDF du champ publications (if provided)
+ *   3. Références vérifiées (Chicago Notes)
+ *   4. En attente de vérification (Chicago Notes)
  */
 
 import PDFDocument from "pdfkit";
+import { PDFDocument as PDFLibDocument } from "pdf-lib";
 import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
 
 export interface PdfDebugInfo {
@@ -22,6 +24,8 @@ export interface PdfDebugInfo {
   }[];
   /** The extracted text that was submitted to fuzzy matching */
   readonly extractedText: string;
+  /** Raw bytes of the publications PDF field, inserted after the extracted text */
+  readonly publicationsPdfBytes?: Uint8Array;
 }
 
 const formatAuthorsChicago = (work: WorksResult): string => {
@@ -108,85 +112,75 @@ const renderSection = (
   }
 };
 
-const renderDebugSection = (
-  doc: PDFKit.PDFDocument,
-  debug: PdfDebugInfo,
-): void => {
-  doc.addPage();
-  doc
-    .fontSize(14)
-    .font("Helvetica-Bold")
-    .fillColor("#000000")
-    .text("Annexe — Données de résolution", { align: "left" });
-  doc.moveDown(1.5);
-
-  // Author profiles
-  doc
-    .fontSize(12)
-    .font("Helvetica-Bold")
-    .text("Profils OpenAlex", { align: "left" });
-  doc.moveDown(0.5);
-  for (const profile of debug.authorProfiles) {
-    const color = profile.selected ? "#000000" : "#999999";
-    const marker = profile.selected ? "✓" : "○";
+const generateDebugPdf = (debug: PdfDebugInfo): Promise<Uint8Array> =>
+  makePdf((doc) => {
     doc
-      .fontSize(9)
-      .font(profile.selected ? "Helvetica-Bold" : "Helvetica")
-      .fillColor(color)
-      .text(`${marker}  ${profile.display_name}  (${profile.id})`, {
-        align: "left",
-        lineGap: 2,
-      });
-  }
-  doc.fillColor("#000000").moveDown(1.5);
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .fillColor("#000000")
+      .text("Annexe — Données de résolution", { align: "left" });
+    doc.moveDown(1.5);
 
-  // Raw author names
-  doc
-    .fontSize(12)
-    .font("Helvetica-Bold")
-    .text("Variantes de noms (raw_author_name)", { align: "left" });
-  doc.moveDown(0.5);
-  for (const entry of debug.rawAuthorNames) {
-    const color = entry.selected ? "#000000" : "#999999";
-    const marker = entry.selected ? "✓" : "○";
+    // Author profiles
     doc
-      .fontSize(9)
-      .font(entry.selected ? "Helvetica-Bold" : "Helvetica")
-      .fillColor(color)
-      .text(`${marker}  ${entry.name}`, { align: "left", lineGap: 2 });
-  }
-  doc.fillColor("#000000").moveDown(1.5);
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("Profils OpenAlex", { align: "left" });
+    doc.moveDown(0.5);
+    for (const profile of debug.authorProfiles) {
+      const color = profile.selected ? "#000000" : "#999999";
+      const marker = profile.selected ? "✓" : "○";
+      doc
+        .fontSize(9)
+        .font(profile.selected ? "Helvetica-Bold" : "Helvetica")
+        .fillColor(color)
+        .text(`${marker}  ${profile.display_name}  (${profile.id})`, {
+          align: "left",
+          lineGap: 2,
+        });
+    }
+    doc.fillColor("#000000").moveDown(1.5);
 
-  // Extracted text
-  doc
-    .fontSize(12)
-    .font("Helvetica-Bold")
-    .text("Texte extrait (soumis au fuzzy matching)", { align: "left" });
-  doc.moveDown(0.5);
-  // Truncate to avoid huge PDFs — 8000 chars is plenty for inspection
-  const preview =
-    debug.extractedText.length > 8000
-      ? debug.extractedText.slice(0, 8000) + "\n[…tronqué]"
-      : debug.extractedText;
-  doc
-    .fontSize(7.5)
-    .font("Courier")
-    .fillColor("#333333")
-    .text(preview, { align: "left", lineGap: 1 });
-  doc.fillColor("#000000");
-};
+    // Raw author names
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("Variantes de noms (raw_author_name)", { align: "left" });
+    doc.moveDown(0.5);
+    for (const entry of debug.rawAuthorNames) {
+      const color = entry.selected ? "#000000" : "#999999";
+      const marker = entry.selected ? "✓" : "○";
+      doc
+        .fontSize(9)
+        .font(entry.selected ? "Helvetica-Bold" : "Helvetica")
+        .fillColor(color)
+        .text(`${marker}  ${entry.name}`, { align: "left", lineGap: 2 });
+    }
+    doc.fillColor("#000000").moveDown(1.5);
 
-/**
- * Generates a combined PDF with:
- *   - Section 1: "Références vérifiées" (finalReferences, Chicago Notes)
- *   - Section 2: "En attente de vérification" (pendingReferences, Chicago Notes)
- *   - Appendix: debug info (author profiles, raw names, extracted text) if provided
- */
-export const generateCombinedPdf = (
+    // Extracted text
+    doc
+      .fontSize(12)
+      .font("Helvetica-Bold")
+      .text("Texte extrait (soumis au fuzzy matching)", { align: "left" });
+    doc.moveDown(0.5);
+    // Truncate to avoid huge PDFs — 8000 chars is plenty for inspection
+    const preview =
+      debug.extractedText.length > 8000
+        ? debug.extractedText.slice(0, 8000) + "\n[…tronqué]"
+        : debug.extractedText;
+    doc
+      .fontSize(7.5)
+      .font("Courier")
+      .fillColor("#333333")
+      .text(preview, { align: "left", lineGap: 1 });
+    doc.fillColor("#000000");
+  });
+
+const generateReferencesPdf = (
   finalReferences: readonly WorksResult[],
   pendingReferences: readonly WorksResult[],
   researcherName: string,
-  debugInfo?: PdfDebugInfo,
 ): Promise<Uint8Array> =>
   makePdf((doc) => {
     doc
@@ -198,8 +192,46 @@ export const generateCombinedPdf = (
     renderSection(doc, "Références vérifiées", finalReferences);
     doc.moveDown(1.5);
     renderSection(doc, "En attente de vérification", pendingReferences);
-
-    if (debugInfo !== undefined) {
-      renderDebugSection(doc, debugInfo);
-    }
   });
+
+/**
+ * Generates a combined PDF with:
+ *   1. Annexe — Données de résolution (debug appendix, if provided)
+ *   2. PDF du champ publications (if provided, inserted after extracted text)
+ *   3. Références vérifiées — data.final_references (Chicago Notes)
+ *   4. En attente de vérification — oa_references not in final_references (Chicago Notes)
+ */
+export const generateCombinedPdf = async (
+  finalReferences: readonly WorksResult[],
+  pendingReferences: readonly WorksResult[],
+  researcherName: string,
+  debugInfo?: PdfDebugInfo,
+): Promise<Uint8Array> => {
+  const [debugPdf, refPdf] = await Promise.all([
+    debugInfo === undefined ? undefined : generateDebugPdf(debugInfo),
+    generateReferencesPdf(finalReferences, pendingReferences, researcherName),
+  ]);
+
+  const parts: Uint8Array[] = [];
+  if (debugPdf !== undefined) {
+    parts.push(debugPdf);
+    if (debugInfo?.publicationsPdfBytes !== undefined) {
+      parts.push(debugInfo.publicationsPdfBytes);
+    }
+  }
+  parts.push(refPdf);
+
+  if (parts.length === 1) {
+    return refPdf;
+  }
+
+  const merged = await PDFLibDocument.create();
+  for (const part of parts) {
+    const src = await PDFLibDocument.load(part);
+    const pages = await merged.copyPages(src, src.getPageIndices());
+    for (const page of pages) {
+      merged.addPage(page);
+    }
+  }
+  return merged.save();
+};
