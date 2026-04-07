@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-researcher-profiles
 
+## 1.3.4
+
+### Patch Changes
+
+- Updated dependencies [[`9ad08ac`](https://github.com/univ-lehavre/atlas/commit/9ad08aca02fdd62ed0636f7b6e7434ee7ef659dc)]:
+  - @univ-lehavre/atlas-researcher-profiles@1.6.0
+
 ## 1.3.3
 
 ### Patch Changes
