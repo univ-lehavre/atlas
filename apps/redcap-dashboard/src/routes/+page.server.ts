@@ -28,8 +28,17 @@ const toRawLog = (e: ReturnType<typeof enrichLogs>[number]): RawLog => ({
 const fetchAll = async (apiUrl: string): Promise<ReturnType<typeof enrichLogs>> => {
   const tokensCsv = readFileSync(TOKENS_PATH, 'utf8');
   const tokens = parseTokensCsv(tokensCsv);
-  const results = await Promise.all(tokens.map((token) => fetchProjectLogs(apiUrl, token)));
-  return enrichLogs(results.flat());
+  console.log(`[redcap] fetching logs for ${tokens.length} projects from ${apiUrl}`);
+  const results = await Promise.all(
+    tokens.map(async (token) => {
+      const logs = await fetchProjectLogs(apiUrl, token);
+      console.log(`[redcap] project ${token.project_id}: ${logs.length} entries`);
+      return logs;
+    })
+  );
+  const enriched = enrichLogs(results.flat());
+  console.log(`[redcap] total after enrichment: ${enriched.length} entries`);
+  return enriched;
 };
 
 const updateCacheIfNeeded = async (
