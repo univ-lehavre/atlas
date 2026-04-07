@@ -43,6 +43,8 @@ export default {
         'openalex',
         'openalex-types',
         'redcap-core',
+        'redcap-dashboard',
+        'redcap-logs',
         'redcap-openapi',
         'redcap-sandbox',
         'researcher-profiles',
