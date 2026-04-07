@@ -293,6 +293,7 @@ export const matchRow = async (
       .map((e) => ({ name: e.name, selected: e.selected }))
       .toSorted((a, b) => a.name.localeCompare(b.name)),
     extractedText: text,
+    publicationsPdfBytes: new Uint8Array(fileResult.right),
   };
 
   // Write final references
