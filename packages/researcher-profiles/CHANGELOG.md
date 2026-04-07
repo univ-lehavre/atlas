@@ -1,5 +1,13 @@
 # @univ-lehavre/atlas-researcher-profiles
 
+## 1.6.0
+
+### Minor Changes
+
+- [#93](https://github.com/univ-lehavre/atlas/pull/93) [`9ad08ac`](https://github.com/univ-lehavre/atlas/commit/9ad08aca02fdd62ed0636f7b6e7434ee7ef659dc) Thanks [@chasset](https://github.com/chasset)! - Insert the publications PDF field before references in the generated OA PDF.
+
+  The debug appendix (Annexe — Données de résolution) is now emitted first, followed by the raw publications PDF (from the REDCap field), then the verified and pending references. PDFs are assembled with `pdf-lib`.
+
 ## 1.5.0
 
 ### Minor Changes
