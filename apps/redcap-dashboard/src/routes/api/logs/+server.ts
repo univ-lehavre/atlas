@@ -14,7 +14,7 @@ import type { RawLog, ProjectToken } from '@univ-lehavre/atlas-redcap-logs';
 
 type CacheFile = Awaited<ReturnType<typeof readCache>>;
 
-const TOKENS_PATH = path.resolve(import.meta.dirname, '../../../../../redcap-token.csv');
+const TOKENS_PATH = path.resolve(import.meta.dirname, '../../../../../../redcap-token.csv');
 const BATCH_SIZE = 3;
 
 const chunk = <T>(arr: T[], size: number): T[][] =>
@@ -72,11 +72,13 @@ const persistAndSend = async (
   });
 };
 
+const encoder = new TextEncoder();
+
 export const GET = (): Response => {
   const stream = new ReadableStream({
     start(controller) {
       const send: Sender = (data) => {
-        controller.enqueue(`data: ${JSON.stringify(data)}\n\n`);
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
       };
 
       const run = async () => {
