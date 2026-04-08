@@ -22,7 +22,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node dist/bin/atlas-stats.js",
+    "start": "NODE_TLS_REJECT_UNAUTHORIZED=0 node dist/bin/atlas-stats.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",

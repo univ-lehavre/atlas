@@ -13,3 +13,16 @@ export { fetchReleases } from "./github.js";
 export { fetchNpmPackages, fetchAllDownloads } from "./npm.js";
 export type { OnBatchDone } from "./npm.js";
 export { computeStats } from "./compute.js";
+export {
+  resolveWorkspaceRoot,
+  resolveToken,
+  collectAtlasStats,
+  collectAtlasStatsWithFallback,
+  buildAtlasCliReport,
+} from "./cli.js";
+export type {
+  CollectAtlasStatsHooks,
+  CollectAtlasStatsWithFallbackHooks,
+  AtlasCliRow,
+  AtlasCliReport,
+} from "./cli.js";

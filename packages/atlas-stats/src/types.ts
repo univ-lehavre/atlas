@@ -16,6 +16,7 @@ export interface NpmPackageMeta {
   name: string;
   version: string;
   date: string;
+  publishDates?: string[];
 }
 
 export interface NpmDailyPoint {

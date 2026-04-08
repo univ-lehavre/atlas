@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["ATLAS_STATS_CACHE_PATH"],
+  "globalEnv": ["ATLAS_STATS_CACHE_PATH", "GITHUB_TOKEN"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

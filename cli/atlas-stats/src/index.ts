@@ -1,6 +1,3 @@
-import { readFile } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import path from "node:path";
 import process from "node:process";
 import {
   intro,
@@ -15,16 +12,14 @@ import {
 } from "@clack/prompts";
 import {
   readCache,
-  writeCache,
   isCacheStale,
-  fetchReleases,
-  fetchNpmPackages,
-  fetchAllDownloads,
   computeStats,
+  resolveWorkspaceRoot,
+  resolveToken,
+  collectAtlasStatsWithFallback,
+  buildAtlasCliReport,
 } from "@univ-lehavre/atlas-stats";
-import type { Period } from "@univ-lehavre/atlas-stats";
-
-// ── Arg parsing ───────────────────────────────────────────────────────────────
+import type { AtlasStatsCache, Period } from "@univ-lehavre/atlas-stats";
 
 interface CliOptions {
   readonly token: string | null;
@@ -35,8 +30,7 @@ interface CliOptions {
 }
 
 const PERIOD_VALUES: Period[] = ["day", "week", "month", "quarter"];
-const WORKSPACE_MARKER = "pnpm-workspace.yaml";
-const ENV_FILES = ["apps/atlas-dashboard/.env", ".env"];
+const PACKAGE_SCOPE = "@univ-lehavre/";
 
 const isPeriod = (v: string): v is Period =>
   (PERIOD_VALUES as string[]).includes(v);
@@ -77,63 +71,6 @@ const parseArgs = (argv: readonly string[]): CliOptions => {
   return { token, period, force, json, help };
 };
 
-// ── Token resolution ──────────────────────────────────────────────────────────
-
-const resolveWorkspaceRoot = (): string => {
-  let cursor = process.cwd();
-  for (;;) {
-    if (existsSync(path.join(cursor, WORKSPACE_MARKER))) return cursor;
-    const parent = path.dirname(cursor);
-    if (parent === cursor) return process.cwd();
-    cursor = parent;
-  }
-};
-
-const parseEnvLine = (line: string): [string, string] | null => {
-  const trimmed = line.trim();
-  if (trimmed === "" || trimmed.startsWith("#")) return null;
-  const idx = trimmed.indexOf("=");
-  if (idx < 1) return null;
-  const key = trimmed.slice(0, idx).trim();
-  const raw = trimmed.slice(idx + 1).trim();
-  return [key, raw.replace(/^"|"$|^'|'$/g, "")];
-};
-
-const readEnvFileVar = async (
-  filePath: string,
-  key: string,
-): Promise<string | null> => {
-  try {
-    const raw = await readFile(filePath, "utf8");
-    for (const line of raw.split(/\r?\n/)) {
-      const entry = parseEnvLine(line);
-      if (entry !== null && entry[0] === key) return entry[1];
-    }
-    return null;
-  } catch {
-    return null;
-  }
-};
-
-const resolveToken = async (
-  argToken: string | null,
-  workspaceRoot: string,
-): Promise<string | null> => {
-  if (argToken !== null && argToken !== "") return argToken;
-  const envVar = process.env["GITHUB_TOKEN"];
-  if (envVar !== undefined && envVar !== "") return envVar;
-  for (const file of ENV_FILES) {
-    const value = await readEnvFileVar(
-      path.resolve(workspaceRoot, file),
-      "GITHUB_TOKEN",
-    );
-    if (value !== null && value !== "") return value;
-  }
-  return null;
-};
-
-// ── Formatting ────────────────────────────────────────────────────────────────
-
 const fmtNumber = (n: number): string =>
   n >= 1_000_000
     ? `${(n / 1_000_000).toFixed(1)} M`
@@ -153,41 +90,34 @@ const fmtDate = (iso: string): string => {
 
 const pad = (s: string, n: number): string => s.padEnd(n, " ");
 
-// ── Collect ───────────────────────────────────────────────────────────────────
-
-const collectData = async (token: string): Promise<void> => {
-  const end = new Date();
-  const start = new Date();
-  start.setDate(start.getDate() - 89);
-
+const collectWithUi = async (
+  token: string,
+  fallbackCache: AtlasStatsCache | null,
+): Promise<AtlasStatsCache> => {
   const s = spinner();
+  let lastProgress = "Collecte en cours…";
+  s.start(lastProgress);
 
-  s.start("Récupération des releases GitHub…");
-  const releases = await fetchReleases(token);
-  s.message(`${String(releases.length)} releases récupérées — paquets npm…`);
-
-  const packages = await fetchNpmPackages();
-  s.message(
-    `${String(packages.length)} paquets npm trouvés — téléchargements…`,
-  );
-
-  const downloads = await fetchAllDownloads(
-    packages,
-    start,
-    end,
-    (done, total) => {
-      s.message(`Téléchargements ${String(done)}/${String(total)}…`);
-    },
-  );
-
-  s.stop(
-    `Collecte terminée — ${String(packages.length)} paquets, ${String(releases.length)} releases`,
-  );
-
-  await writeCache({ savedAt: Date.now(), releases, packages, downloads });
+  try {
+    const cache = await collectAtlasStatsWithFallback(token, fallbackCache, {
+      onProgress: (message) => {
+        lastProgress = message;
+        s.message(message);
+      },
+      onWarning: (message) => {
+        log.warn(message);
+      },
+      onFallback: (message) => {
+        log.warn(message);
+      },
+    });
+    s.stop(lastProgress);
+    return cache;
+  } catch (error) {
+    s.stop("Collecte interrompue");
+    throw error;
+  }
 };
-
-// ── Main ──────────────────────────────────────────────────────────────────────
 
 export const main = async (): Promise<void> => {
   const options = parseArgs(process.argv.slice(2));
@@ -216,30 +146,34 @@ export const main = async (): Promise<void> => {
     return;
   }
 
-  // ── JSON mode (non-interactive) ─────────────────────────────────────────────
+  const workspaceRoot = resolveWorkspaceRoot();
+
   if (options.json) {
-    const workspaceRoot = resolveWorkspaceRoot();
     const resolvedToken = await resolveToken(options.token, workspaceRoot);
     const token =
       resolvedToken ??
       fail("GITHUB_TOKEN introuvable. Utilise --token ou configure .env");
 
     const cache = await readCache();
-    if (options.force || cache === null || isCacheStale(cache)) {
-      await collectData(token);
-    }
-
     const fresh =
-      (await readCache()) ?? fail("Cache introuvable après collecte");
+      options.force || cache === null || isCacheStale(cache)
+        ? await collectAtlasStatsWithFallback(token, cache, {
+            onWarning: (message) => {
+              console.error(message);
+            },
+            onFallback: (message) => {
+              console.error(message);
+            },
+          })
+        : cache;
+
     const period: Period = options.period ?? "week";
     console.log(JSON.stringify(computeStats(fresh, period), null, 2));
     return;
   }
 
-  // ── Interactive mode ────────────────────────────────────────────────────────
   intro("Atlas Stats");
 
-  const workspaceRoot = resolveWorkspaceRoot();
   let token = await resolveToken(options.token, workspaceRoot);
 
   if (token === null) {
@@ -255,9 +189,10 @@ export const main = async (): Promise<void> => {
     token = answer.trim();
   }
 
-  // Check cache
   const cache = await readCache();
   const cacheUsable = cache !== null && !isCacheStale(cache);
+
+  let freshCache: AtlasStatsCache | null = cache;
 
   if (cacheUsable && !options.force) {
     const age = Math.round((Date.now() - cache.savedAt) / 60_000);
@@ -270,13 +205,17 @@ export const main = async (): Promise<void> => {
       process.exit(0);
     }
     if (!useCache) {
-      await collectData(token);
+      freshCache = await collectWithUi(token, cache);
     }
   } else {
-    await collectData(token);
+    freshCache = await collectWithUi(token, cache);
   }
 
-  // Period selection
+  if (freshCache === null) {
+    cancel("Cache introuvable après collecte.");
+    process.exit(1);
+  }
+
   let period: Period;
   if (options.period !== null) {
     period = options.period;
@@ -298,47 +237,94 @@ export const main = async (): Promise<void> => {
     period = answer;
   }
 
-  const fresh = await readCache();
-  if (fresh === null) {
-    cancel("Cache introuvable après collecte.");
-    process.exit(1);
+  const report = await buildAtlasCliReport(freshCache, period, workspaceRoot);
+  for (const warning of report.warnings) {
+    log.warn(warning);
   }
 
-  const stats = computeStats(fresh, period);
-
-  // ── KPIs ───────────────────────────────────────────────────────────────────
-  const { kpi } = stats;
   log.info(
     [
-      `Releases  : ${String(kpi.releases)}`,
-      `Paquets   : ${String(kpi.packagesTotal)} total, ${String(kpi.packagesActive)} actif(s)`,
-      `Downloads : ${fmtNumber(kpi.downloadsTotal)}`,
+      `Releases GitHub (${period}) : ${String(report.summary.githubReleasesForPeriod)}`,
+      `Releases GitHub (API total) : ${String(report.summary.githubReleasesApiTotal)}`,
+      `Releases GitHub (mappées)   : ${String(report.summary.githubReleasesMappedTotal)}`,
+      `Releases npm (total)        : ${report.summary.npmReleasesTotalLabel}`,
+      `Paquets (${period})         : ${String(report.summary.packagesTotal)} total, ${String(report.summary.packagesActive)} actif(s)`,
+      `Downloads : ${fmtNumber(report.summary.downloadsTotal)}`,
     ].join("\n"),
   );
 
-  // ── Package table ──────────────────────────────────────────────────────────
-  const COL_NAME = 38;
+  const COL_NAME = 32;
   const COL_VER = 10;
+  const COL_NPM = 6;
+  const COL_GH = 9;
+  const COL_NPM_RELEASES = 10;
+  const COL_GH_RELEASES = 9;
+  const COL_MONO = 10;
   const COL_DATE = 18;
   const COL_DL = 12;
 
   const header =
     pad("Paquet", COL_NAME) +
     pad("Version", COL_VER) +
+    pad("npm", COL_NPM) +
+    pad("GitHub", COL_GH) +
+    pad("Rel npm", COL_NPM_RELEASES) +
+    pad("Rel GH", COL_GH_RELEASES) +
+    pad("Monorepo", COL_MONO) +
     pad("Dernière pub.", COL_DATE) +
     "Téléchargements".padStart(COL_DL);
 
-  const separator = "─".repeat(COL_NAME + COL_VER + COL_DATE + COL_DL);
+  const totalWidth =
+    COL_NAME +
+    COL_VER +
+    COL_NPM +
+    COL_GH +
+    COL_NPM_RELEASES +
+    COL_GH_RELEASES +
+    COL_MONO +
+    COL_DATE +
+    COL_DL;
+  const separator = "─".repeat(totalWidth);
 
-  const rows = stats.packages.map(
-    (pkg) =>
-      pad(pkg.name.replace("@univ-lehavre/", ""), COL_NAME) +
-      pad(pkg.version, COL_VER) +
-      pad(fmtDate(pkg.lastPublishedAt), COL_DATE) +
-      fmtNumber(pkg.totalDownloads).padStart(COL_DL),
+  const rows = report.rows.map(
+    (row) =>
+      pad(row.packageName.replace(PACKAGE_SCOPE, ""), COL_NAME) +
+      pad(row.version, COL_VER) +
+      pad(row.npmPresent ? "oui" : "non", COL_NPM) +
+      pad(row.ghPresent ? "oui" : "non", COL_GH) +
+      pad(
+        row.npmReleaseCount === null ? "?" : String(row.npmReleaseCount),
+        COL_NPM_RELEASES,
+      ) +
+      pad(String(row.ghReleaseCount), COL_GH_RELEASES) +
+      pad(row.monorepoPresent ? "oui" : "non", COL_MONO) +
+      pad(fmtDate(row.lastPublishedAt), COL_DATE) +
+      fmtNumber(row.totalDownloads).padStart(COL_DL),
   );
 
-  log.message([header, separator, ...rows].join("\n"));
+  const tableRows: string[] = [];
+  tableRows.push(...rows.slice(0, report.splitIndex));
+  if (report.splitIndex > 0 && report.splitIndex < rows.length) {
+    const label = " ABSENTS DU MONOREPO ";
+    const left = Math.max(0, Math.floor((totalWidth - label.length) / 2));
+    const right = Math.max(0, totalWidth - label.length - left);
+    tableRows.push("─".repeat(left) + label + "─".repeat(right));
+  }
+  tableRows.push(...rows.slice(report.splitIndex));
+  tableRows.push(separator);
+  tableRows.push(
+    pad("TOTAL", COL_NAME) +
+      pad("—", COL_VER) +
+      pad("—", COL_NPM) +
+      pad("—", COL_GH) +
+      pad(report.totals.npmReleasesLabel, COL_NPM_RELEASES) +
+      pad(String(report.totals.ghReleasesTotal), COL_GH_RELEASES) +
+      pad("—", COL_MONO) +
+      pad("—", COL_DATE) +
+      fmtNumber(report.totals.downloadsTotal).padStart(COL_DL),
+  );
+
+  log.message([header, separator, ...tableRows].join("\n"));
 
   outro("Terminé");
 };
