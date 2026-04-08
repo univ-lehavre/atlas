@@ -1,11 +1,12 @@
-export type LogUserType = "loggé" | "lien_personnel" | "anonyme";
+export type LogUserType = "loggé" | "enquêté";
 
 export type LogActionCategory =
-  | "Données"
-  | "Survey"
-  | "API"
+  | "Enregistrements"
+  | "Questionnaires"
+  | "Fichiers"
   | "Projet"
   | "Utilisateurs"
+  | "API"
   | "Authentification"
   | "Autre";
 
@@ -22,15 +23,34 @@ export interface RollingPoint {
   readonly date: Date;
   readonly users_total: number;
   readonly users_logged: number;
-  readonly users_link: number;
-  readonly users_anon: number;
+  readonly users_surveyed: number;
   readonly projects_active: number;
   readonly actions_total: number;
-  readonly actions_data: number;
-  readonly actions_survey: number;
-  readonly actions_api: number;
+  readonly actions_surveyed_user: number;
+  readonly actions_records: number;
+  readonly actions_surveys: number;
+  readonly actions_files: number;
   readonly actions_project: number;
   readonly actions_users: number;
+  readonly actions_api: number;
+  readonly actions_auth: number;
+  readonly actions_other: number;
+}
+
+export interface MonthlyPoint {
+  readonly date: Date;
+  readonly users_total: number;
+  readonly users_logged: number;
+  readonly users_surveyed: number;
+  readonly projects_active: number;
+  readonly actions_total: number;
+  readonly actions_surveyed_user: number;
+  readonly actions_records: number;
+  readonly actions_surveys: number;
+  readonly actions_files: number;
+  readonly actions_project: number;
+  readonly actions_users: number;
+  readonly actions_api: number;
   readonly actions_auth: number;
   readonly actions_other: number;
 }

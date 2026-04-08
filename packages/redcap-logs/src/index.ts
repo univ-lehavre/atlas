@@ -1,6 +1,7 @@
 export type {
   RedcapLogEntry,
   RollingPoint,
+  MonthlyPoint,
   ProjectToken,
   LogUserType,
   LogActionCategory,
@@ -11,3 +12,4 @@ export type { RawLog } from "./api.js";
 export { readCache, writeCache, isCacheStale } from "./cache.js";
 export { enrichLogs, parseTokensCsv } from "./enrich.js";
 export { computeRollingWindow } from "./rolling.js";
+export { computeMonthlyCalendar } from "./monthly.js";

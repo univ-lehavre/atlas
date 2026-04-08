@@ -1,13 +1,19 @@
 # REDCap Dashboard
 
-Dashboard SvelteKit pour visualiser les logs REDCap en **fenêtre glissante de 30 jours**.
+Dashboard SvelteKit pour visualiser les logs REDCap en **statistiques mensuelles calendaires**.
 
 Il affiche 4 graphiques:
 
-- Utilisateurs actifs (loggé / lien personnel / anonyme)
+- Utilisateurs loggés
 - Projets actifs
 - Actions totales
 - Actions par catégorie
+
+Le tableau de bord permet de filtrer l’affichage sur:
+
+- les 6 derniers mois
+- la dernière année
+- tout l’historique
 
 Il propose aussi une page dédiée à l’actualisation: `/actualisation` (spinner, progression, dates et état `OK` / `WARN` / `ERROR`).
 
@@ -84,7 +90,7 @@ pnpm --filter @univ-lehavre/atlas-redcap-dashboard format
 - Le bouton **"Actualiser depuis REDCap"** ouvre un flux SSE sur `GET /api/logs`.
 - La page **`/actualisation`** permet de suivre l’état global de la collecte et l’historique des dates importantes.
 - Les projets sont collectés par lots (`BATCH_SIZE = 3`) et l'UI reçoit la progression en temps réel.
-- Les données sont enrichies puis converties en série temporelle 30 jours.
+- Les données sont enrichies puis converties en série temporelle mensuelle (calendrier).
 - Un cache local est utilisé dans le dossier courant de lancement: `./.redcap-stats.json`.
 - TTL du cache: **24h**. Si le cache est récent, l'API renvoie immédiatement l'état `cached`.
 

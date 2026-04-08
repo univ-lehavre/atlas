@@ -7,29 +7,46 @@ import type { RawLog } from "./api.js";
 
 const ANON_USERNAMES = new Set(["survey", "[survey respondent]", ""]);
 const HEX32_RE = /^[\da-f]{32}$/i;
+const normalize = (value: string): string =>
+  value
+    .toLowerCase()
+    .normalize("NFD")
+    .replaceAll(/\p{Diacritic}/gu, "");
 
 const classifyUserType = (username: string): LogUserType =>
   ANON_USERNAMES.has(username.toLowerCase())
-    ? "anonyme"
+    ? "enquêté"
     : HEX32_RE.test(username)
-      ? "lien_personnel"
+      ? "enquêté"
       : "loggé";
 
 const classifyAction = (action: string): LogActionCategory => {
-  const a = action.toLowerCase();
-  return /login|logout/.test(a)
+  const a = normalize(action);
+  return /\blogin\b|\blogout\b|connexion|deconnexion|authentif|password|mot de passe|2fa|mfa/.test(
+    a,
+  )
     ? "Authentification"
-    : /\bapi\b/.test(a)
+    : /\bapi\b|web service/.test(a)
       ? "API"
-      : /user|role|rights/.test(a)
+      : /user|utilisateur|role|rights?|permission|privilege|droit/.test(a)
         ? "Utilisateurs"
-        : /survey|participant/.test(a)
-          ? "Survey"
-          : /project|design|settings/.test(a)
-            ? "Projet"
-            : /record|save|create|delete|import|export/.test(a)
-              ? "Données"
-              : "Autre";
+        : /project|projet|design|conception|settings?|parametr|instrument/.test(
+              a,
+            )
+          ? "Projet"
+          : /survey|enquete|participant|reponse|questionnaire|alerte|invitation/.test(
+                a,
+              )
+            ? "Questionnaires"
+            : /download|upload|document|fichier|file repository|signature/.test(
+                  a,
+                )
+              ? "Fichiers"
+              : /record|enregistrement|save|create|delete|import|export|mettre a jour|mise a jour|update|creer|supprimer|verrouiller|deverrouiller|lock|unlock/.test(
+                    a,
+                  )
+                ? "Enregistrements"
+                : "Autre";
 };
 
 const toEntry = (raw: RawLog): RedcapLogEntry | null => {

@@ -2,11 +2,12 @@
   import { invalidateAll } from '$app/navigation';
   import PlotChart from '$lib/components/PlotChart.svelte';
   import {
-    usersOptions,
+    loggedUsersOptions,
     projectsOptions,
     actionsOptions,
     actionCategoriesOptions,
     type SerializedPoint,
+    type YScaleMode,
   } from '$lib/charts.js';
   import type { PageData } from './$types.js';
 
@@ -15,7 +16,28 @@
   const cachedAt = $derived(
     data.cachedAt !== null ? new Date(data.cachedAt).toLocaleString('fr-FR') : null
   );
-  const rolling = $derived(data.rolling as unknown as SerializedPoint[]);
+  const monthly = $derived(data.monthly as unknown as SerializedPoint[]);
+
+  type Period = '6m' | '12m' | 'all';
+  let selectedPeriod = $state<Period>('6m');
+  let yScaleMode = $state<YScaleMode>('linear');
+
+  const startOfMonth = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), 1);
+  const subtractMonths = (date: Date, months: number): Date =>
+    new Date(date.getFullYear(), date.getMonth() - months, 1);
+
+  const filteredMonthly = $derived.by(() => {
+    if (selectedPeriod === 'all' || monthly.length === 0) return monthly;
+    const last = new Date(monthly.at(-1)!.date);
+    const anchor = startOfMonth(last);
+    const months = selectedPeriod === '6m' ? 6 : 12;
+    const from = subtractMonths(anchor, months - 1).getTime();
+    const to = anchor.getTime();
+    return monthly.filter((point) => {
+      const ts = startOfMonth(new Date(point.date)).getTime();
+      return ts >= from && ts <= to;
+    });
+  });
 
   let fetching = $state(false);
   let progress = $state(0);
@@ -76,16 +98,29 @@
       <div>
         <h1>REDCap Dashboard</h1>
         <p class="subtitle">
-          Fenêtre glissante 30 jours — {new Date().toLocaleDateString('fr-FR')}
+          Statistiques mensuelles (calendrier) — {new Date().toLocaleDateString('fr-FR')}
           {#if cachedAt !== null}
             <span class="cache-info">· données du {cachedAt}</span>
           {/if}
         </p>
         <a class="link-refresh-page" href="/actualisation">Page d’actualisation des statistiques</a>
       </div>
-      <button class="btn-refresh" onclick={collectFromApi} disabled={fetching}>
-        {fetching ? 'Collecte…' : 'Actualiser depuis REDCap'}
-      </button>
+      <div class="controls">
+        <label class="period-label" for="period-select">Période</label>
+        <select id="period-select" class="period-select" bind:value={selectedPeriod}>
+          <option value="6m">6 derniers mois</option>
+          <option value="12m">Dernière année</option>
+          <option value="all">Tout l’historique</option>
+        </select>
+        <label class="period-label" for="y-scale-select">Échelle Y</label>
+        <select id="y-scale-select" class="period-select" bind:value={yScaleMode}>
+          <option value="linear">Linéaire</option>
+          <option value="log">Logarithmique</option>
+        </select>
+        <button class="btn-refresh" onclick={collectFromApi} disabled={fetching}>
+          {fetching ? 'Collecte…' : 'Actualiser depuis REDCap'}
+        </button>
+      </div>
     </div>
 
     {#if fetching}
@@ -96,12 +131,24 @@
     {/if}
   </header>
 
-  {#if rolling.length > 0}
+  {#if filteredMonthly.length > 0}
     <div class="grid">
-      <PlotChart title="G1 — Utilisateurs actifs" options={usersOptions(rolling)} />
-      <PlotChart title="G2 — Projets actifs" options={projectsOptions(rolling)} />
-      <PlotChart title="G3 — Actions totales" options={actionsOptions(rolling)} />
-      <PlotChart title="G4 — Actions par catégorie" options={actionCategoriesOptions(rolling)} />
+      <PlotChart
+        title="G1 — Utilisateurs loggés"
+        options={loggedUsersOptions(filteredMonthly, yScaleMode)}
+      />
+      <PlotChart
+        title="G2 — Projets actifs"
+        options={projectsOptions(filteredMonthly, yScaleMode)}
+      />
+      <PlotChart
+        title="G3 — Actions totales"
+        options={actionsOptions(filteredMonthly, yScaleMode)}
+      />
+      <PlotChart
+        title="G4 — Actions par catégorie"
+        options={actionCategoriesOptions(filteredMonthly, yScaleMode)}
+      />
     </div>
   {:else}
     <p class="empty">Aucune donnée — cliquez sur « Actualiser depuis REDCap ».</p>
@@ -122,6 +169,27 @@
     justify-content: space-between;
     gap: 1rem;
     margin-bottom: 1rem;
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .period-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+
+  .period-select {
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    padding: 0.45rem 0.55rem;
+    font-size: 0.85rem;
+    background: #fff;
   }
 
   h1 {
@@ -205,5 +273,16 @@
     font-size: 0.9rem;
     margin-top: 2rem;
     text-align: center;
+  }
+
+  @media (max-width: 780px) {
+    .header-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .controls {
+      justify-content: flex-start;
+    }
   }
 </style>

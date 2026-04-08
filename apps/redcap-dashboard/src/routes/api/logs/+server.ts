@@ -5,7 +5,7 @@ import {
   fetchProjectLogs,
   enrichLogs,
   parseTokensCsv,
-  computeRollingWindow,
+  computeMonthlyCalendar,
   readCache,
   writeCache,
   isCacheStale,
@@ -70,7 +70,7 @@ const persistAndSend = async (
     total: enriched.length,
     hasNewData,
     cachedAt: persistedAt,
-    rolling: computeRollingWindow(enriched),
+    monthly: computeMonthlyCalendar(enriched),
   });
 };
 
@@ -87,7 +87,11 @@ export const GET = ({ url }: { url: URL }): Response => {
       const run = async () => {
         const cache = await readCache();
         if (!forceRefresh && cache !== null && !isCacheStale(cache)) {
-          send({ type: 'cached', cachedAt: cache.savedAt, total: cache.logs.length });
+          send({
+            type: 'cached',
+            cachedAt: cache.savedAt,
+            total: enrichLogs(cache.logs).length,
+          });
           controller.close();
           return;
         }

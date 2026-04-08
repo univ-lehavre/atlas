@@ -1,6 +1,11 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { isCacheStale, parseTokensCsv, readCache } from '@univ-lehavre/atlas-redcap-logs';
+import {
+  enrichLogs,
+  isCacheStale,
+  parseTokensCsv,
+  readCache,
+} from '@univ-lehavre/atlas-redcap-logs';
 
 type ProjectStatus = 'OK' | 'WARN' | 'ERROR';
 
@@ -30,12 +35,12 @@ export const load = async (): Promise<{
   projects: ProjectHealthRow[];
 }> => {
   const cache = await readCache();
+  const logs = cache === null ? [] : enrichLogs(cache.logs);
   const tokens = parseTokensCsv(readFileSync(TOKENS_PATH, 'utf8'));
   const byProject = new Map<number, number>();
 
-  for (const log of cache?.logs ?? []) {
-    const ts = new Date(log.timestamp).getTime();
-    if (Number.isNaN(ts)) continue;
+  for (const log of logs) {
+    const ts = log.timestamp.getTime();
     const current = byProject.get(log.project_id);
     if (current === undefined || ts > current) {
       byProject.set(log.project_id, ts);

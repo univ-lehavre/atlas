@@ -3,6 +3,7 @@ import type {
   RedcapLogEntry,
   RollingPoint,
 } from "./types.js";
+import { countDistinctSurveyed } from "./surveyed.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const MS_30_DAYS = 30 * MS_PER_DAY;
@@ -22,39 +23,39 @@ const countCategories = (
   window: readonly RedcapLogEntry[],
 ): Pick<
   RollingPoint,
-  | "actions_data"
-  | "actions_survey"
-  | "actions_api"
+  | "actions_records"
+  | "actions_surveys"
+  | "actions_files"
   | "actions_project"
   | "actions_users"
+  | "actions_api"
   | "actions_auth"
   | "actions_other"
 > => ({
-  actions_data: countOf(window, "Données"),
-  actions_survey: countOf(window, "Survey"),
-  actions_api: countOf(window, "API"),
+  actions_records: countOf(window, "Enregistrements"),
+  actions_surveys: countOf(window, "Questionnaires"),
+  actions_files: countOf(window, "Fichiers"),
   actions_project: countOf(window, "Projet"),
   actions_users: countOf(window, "Utilisateurs"),
+  actions_api: countOf(window, "API"),
   actions_auth: countOf(window, "Authentification"),
   actions_other: countOf(window, "Autre"),
 });
 
 const countUsers = (
   window: readonly RedcapLogEntry[],
-): Pick<
-  RollingPoint,
-  "users_total" | "users_logged" | "users_link" | "users_anon"
-> => {
-  const uniqueTypes = [
-    ...new Map(
-      window.map((e) => [`${e.username}|${e.user_type}`, e.user_type]),
-    ).values(),
-  ];
+): Pick<RollingPoint, "users_total" | "users_logged" | "users_surveyed"> => {
+  const loggedUsers = new Set(
+    window
+      .filter((entry) => entry.user_type === "loggé")
+      .map((entry) => entry.username),
+  );
+  const surveyedUsers = countDistinctSurveyed(window);
+
   return {
-    users_total: uniqueTypes.length,
-    users_logged: uniqueTypes.filter((t) => t === "loggé").length,
-    users_link: uniqueTypes.filter((t) => t === "lien_personnel").length,
-    users_anon: uniqueTypes.filter((t) => t === "anonyme").length,
+    users_total: loggedUsers.size + surveyedUsers,
+    users_logged: loggedUsers.size,
+    users_surveyed: surveyedUsers,
   };
 };
 
@@ -74,6 +75,9 @@ const computePoint = (
     ...countUsers(window),
     projects_active: projectIds.size,
     actions_total: window.length,
+    actions_surveyed_user: window.filter(
+      (entry) => entry.user_type === "enquêté",
+    ).length,
     ...countCategories(window),
   };
 };
