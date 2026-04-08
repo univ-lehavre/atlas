@@ -1,5 +1,5 @@
 ---
-'@univ-lehavre/atlas-repo-dashboard': patch
+'@univ-lehavre/atlas-dashboard': patch
 '@univ-lehavre/atlas-stats': patch
 '@univ-lehavre/atlas-stats-cli': patch
 ---

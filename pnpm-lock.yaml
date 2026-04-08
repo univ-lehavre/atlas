@@ -523,7 +523,7 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
-  cli/biblio-cli:
+  cli/biblio:
     dependencies:
       '@clack/prompts':
         specifier: 1.0.0-alpha.6
@@ -560,7 +560,7 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
-  cli/crf-cli:
+  cli/crf:
     dependencies:
       '@clack/prompts':
         specifier: ^1.2.0
@@ -606,7 +606,7 @@ importers:
         specifier: ^6.0.2
         version: 6.0.2
 
-  cli/net-cli:
+  cli/net:
     dependencies:
       '@clack/prompts':
         specifier: ^1.2.0

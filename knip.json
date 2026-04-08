@@ -120,7 +120,7 @@
         "tailwindcss"
       ]
     },
-    "cli/biblio-cli": {
+    "cli/biblio": {
       "project": [
         "src/**/*.ts"
       ]
@@ -173,7 +173,7 @@
         "src/server/schemas.ts"
       ]
     },
-    "cli/crf-cli": {
+    "cli/crf": {
       "project": [
         "src/**/*.ts"
       ],
@@ -183,7 +183,7 @@
         "src/shared/terminal.ts"
       ]
     },
-    "cli/net-cli": {
+    "cli/net": {
       "project": [
         "src/**/*.ts"
       ]

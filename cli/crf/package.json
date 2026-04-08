@@ -7,7 +7,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/univ-lehavre/atlas.git",
-    "directory": "cli/crf-cli"
+    "directory": "cli/crf"
   },
   "type": "module",
   "engines": {
