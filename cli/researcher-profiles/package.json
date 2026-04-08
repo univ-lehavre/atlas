@@ -7,7 +7,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/univ-lehavre/atlas.git",
-    "directory": "tools/cli/researcher-profiles"
+    "directory": "cli/researcher-profiles"
   },
   "bugs": {
     "url": "https://github.com/univ-lehavre/atlas/issues"

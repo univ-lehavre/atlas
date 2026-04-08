@@ -120,7 +120,7 @@
         "tailwindcss"
       ]
     },
-    "tools/cli/biblio-cli": {
+    "cli/biblio-cli": {
       "project": [
         "src/**/*.ts"
       ]
@@ -133,12 +133,12 @@
         "@xmldom/xmldom"
       ]
     },
-    "tools/cli/researcher-profiles": {
+    "cli/researcher-profiles": {
       "project": [
         "src/**/*.ts"
       ]
     },
-    "tools/cli/redcap-openapi": {
+    "cli/redcap-openapi": {
       "project": [
         "src/**/*.ts"
       ]
@@ -173,7 +173,7 @@
         "src/server/schemas.ts"
       ]
     },
-    "tools/cli/crf-cli": {
+    "cli/crf-cli": {
       "project": [
         "src/**/*.ts"
       ],
@@ -183,7 +183,7 @@
         "src/shared/terminal.ts"
       ]
     },
-    "tools/cli/net-cli": {
+    "cli/net-cli": {
       "project": [
         "src/**/*.ts"
       ]

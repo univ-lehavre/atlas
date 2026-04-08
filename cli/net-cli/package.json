@@ -1,13 +1,13 @@
 {
-  "name": "@univ-lehavre/atlas-redcap-stats-cli",
-  "version": "0.2.0",
-  "description": "CLI to test REDCap project tokens and inspect API responses",
+  "name": "@univ-lehavre/atlas-net-cli",
+  "version": "1.0.1",
+  "description": "Network diagnostic CLI for Atlas",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/univ-lehavre/atlas.git",
-    "directory": "tools/cli/redcap-stats"
+    "directory": "cli/net-cli"
   },
   "type": "module",
   "engines": {
@@ -17,12 +17,12 @@
     "dist"
   ],
   "bin": {
-    "atlas-redcap-stats": "./dist/bin/atlas-redcap-stats.js"
+    "atlas-net": "./dist/bin/atlas-net.js"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node dist/bin/atlas-redcap-stats.js",
+    "start": "node dist/bin/atlas-net.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",
@@ -30,7 +30,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@univ-lehavre/atlas-redcap-logs": "workspace:*"
+    "@clack/prompts": "^1.2.0",
+    "@effect/cli": "^0.75.0",
+    "@effect/platform": "^0.96.0",
+    "@effect/platform-node": "^0.106.0",
+    "@univ-lehavre/atlas-net": "workspace:*",
+    "effect": "^3.21.0",
+    "picocolors": "^1.1.1"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

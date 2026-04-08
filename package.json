@@ -113,12 +113,12 @@
       "packages/validate-openalex",
       "packages/openalex",
       "services/crf",
-      "tools/cli/redcap-openapi",
-      "tools/cli/biblio-cli",
+      "cli/redcap-openapi",
+      "cli/biblio-cli",
       "packages/researcher-profiles",
-      "tools/cli/crf-cli",
-      "tools/cli/net-cli",
-      "tools/cli/researcher-profiles"
+      "cli/crf-cli",
+      "cli/net-cli",
+      "cli/researcher-profiles"
     ],
     "entryPointStrategy": "packages",
     "out": "docs/api",
