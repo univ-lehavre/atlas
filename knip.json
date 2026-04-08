@@ -138,7 +138,7 @@
         "src/**/*.ts"
       ]
     },
-    "tools/dev/redcap-openapi": {
+    "tools/cli/redcap-openapi": {
       "project": [
         "src/**/*.ts"
       ]

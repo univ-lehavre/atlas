@@ -14,13 +14,13 @@ pnpm install
 
 ```bash
 pnpm --filter @univ-lehavre/atlas-redcap-stats-cli build
-node tools/cli-redcap-stats/dist/bin/atlas-redcap-stats.js --project 25
+node tools/cli/redcap-stats/dist/bin/atlas-redcap-stats.js --project 25
 ```
 
 ### Test all projects
 
 ```bash
-node tools/cli-redcap-stats/dist/bin/atlas-redcap-stats.js --all
+node tools/cli/redcap-stats/dist/bin/atlas-redcap-stats.js --all
 ```
 
 ## Options

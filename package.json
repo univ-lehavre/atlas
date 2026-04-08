@@ -113,7 +113,7 @@
       "packages/validate-openalex",
       "packages/openalex",
       "services/crf",
-      "tools/dev/redcap-openapi",
+      "tools/cli/redcap-openapi",
       "tools/cli/biblio-cli",
       "packages/researcher-profiles",
       "tools/cli/crf-cli",
