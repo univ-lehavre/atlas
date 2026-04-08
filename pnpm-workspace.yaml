@@ -4,6 +4,7 @@ packages:
   - services/*
   - tools/cli/*
   - tools/cli-redcap-stats
+  - tools/cli-atlas-stats
   - tools/dev/*
   - config/*
   - sandbox/*

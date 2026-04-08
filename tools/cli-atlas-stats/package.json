@@ -1,0 +1,46 @@
+{
+  "name": "@univ-lehavre/atlas-stats-cli",
+  "version": "0.1.0",
+  "description": "CLI interactif pour visualiser les statistiques GitHub et npm du dépôt Atlas",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "tools/cli-atlas-stats"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "atlas-stats": "./dist/bin/atlas-stats.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/bin/atlas-stats.js",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.10.1",
+    "@univ-lehavre/atlas-stats": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "eslint": "^10.1.0",
+    "prettier": "^3.8.1",
+    "typescript": "^6.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "@univ-lehavre/atlas-repo-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "prepare": "svelte-kit sync || echo ''",
+    "format": "prettier --write --ignore-path ../../.prettierignore .",
+    "format:check": "prettier --check --ignore-path ../../.prettierignore .",
+    "typecheck": "tsc --noEmit",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-node": "^5.5.4",
+    "@sveltejs/kit": "^2.55.0",
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
+    "@types/node": "^25.5.0",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "eslint": "^10.1.0",
+    "prettier": "^3.8.1",
+    "prettier-plugin-svelte": "^3.5.1",
+    "svelte": "^5.55.1",
+    "svelte-check": "^4.4.6",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.5"
+  },
+  "dependencies": {
+    "@observablehq/plot": "^0.6.16",
+    "@univ-lehavre/atlas-stats": "workspace:*"
+  }
+}
