@@ -3,6 +3,7 @@ packages:
   - apps/*
   - services/*
   - tools/cli/*
+  - tools/cli-redcap-stats
   - tools/dev/*
   - config/*
   - sandbox/*

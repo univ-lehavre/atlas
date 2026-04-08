@@ -267,8 +267,20 @@ describe("fetchJSON", () => {
 });
 
 describe("fetchOnePage", () => {
+  const originalFetch = globalThis.fetch;
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
   it.effect("should fetch data successfully using jsonplaceholder", () =>
     Effect.gen(function* () {
+      globalThis.fetch = (async () =>
+        ({
+          headers: new Headers({ "content-type": "application/json" }),
+          json: async () => [{ id: 1, userId: 1, title: "test post" }],
+        }) as unknown as Response) as typeof fetch;
+
       const baseURL = new URL("https://jsonplaceholder.typicode.com/posts");
       const params = { userId: 1 };
       const userAgent = "MyApp/1.0";
@@ -285,6 +297,21 @@ describe("fetchOnePage", () => {
 
   it.effect("should fetch one page from OpenAlex", () =>
     Effect.gen(function* () {
+      globalThis.fetch = (async () =>
+        ({
+          headers: new Headers({ "content-type": "application/json" }),
+          json: async () => ({
+            meta: { count: 2_000_000 },
+            results: [
+              { id: "W1" },
+              { id: "W2" },
+              { id: "W3" },
+              { id: "W4" },
+              { id: "W5" },
+            ],
+          }),
+        }) as unknown as Response) as typeof fetch;
+
       const baseURL = new URL("https://api.openalex.org/works");
       const params = { page: 1, "per-page": 5 } as const;
       const userAgent = "MyApp/1.0 (integration-test)";
@@ -304,7 +331,11 @@ describe("fetchOnePage", () => {
 
   it.effect("should handle fetch errors", () =>
     Effect.gen(function* () {
-      const baseURL = new URL("https://invalid.url");
+      globalThis.fetch = (async () => {
+        throw new Error("network fail");
+      }) as typeof fetch;
+
+      const baseURL = new URL("https://example.com/invalid");
       const params = {};
       const userAgent = "MyApp/1.0";
 
