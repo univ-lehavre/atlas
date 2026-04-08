@@ -1,9 +1,8 @@
 import { readFile, writeFile } from "node:fs/promises";
-import { homedir } from "node:os";
 import path from "node:path";
 import type { RawLog } from "./api.js";
 
-const CACHE_PATH = path.join(homedir(), ".redcap-stats.json");
+const CACHE_PATH = path.resolve(process.cwd(), ".redcap-stats.json");
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 export interface CacheFile {
