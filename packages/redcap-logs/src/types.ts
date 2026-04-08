@@ -55,6 +55,8 @@ export interface MonthlyPoint {
   readonly actions_other: number;
 }
 
+export type Granularity = "day" | "week" | "month" | "quarter";
+
 export interface ProjectToken {
   readonly project_id: number;
   readonly token: string;

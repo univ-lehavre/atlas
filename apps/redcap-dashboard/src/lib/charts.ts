@@ -2,9 +2,6 @@ import * as Plot from '@observablehq/plot';
 import type { MonthlyPoint } from '@univ-lehavre/atlas-redcap-logs';
 
 const WIDTH = 900;
-export type YScaleMode = 'linear' | 'log';
-const yScale = (mode: YScaleMode): Plot.ScaleOptions =>
-  mode === 'log' ? { type: 'symlog' } : { type: 'linear' };
 
 // SvelteKit serializes Date to ISO strings — rehydrate before passing to Plot
 export type SerializedPoint = Omit<MonthlyPoint, 'date'> & { date: string | Date };
@@ -12,42 +9,33 @@ const rehydrate = (data: SerializedPoint[]): MonthlyPoint[] =>
   data.map((p) => ({ ...p, date: new Date(p.date) }));
 
 // G1 — Utilisateurs loggés (évolution)
-export const loggedUsersOptions = (
-  data: SerializedPoint[],
-  mode: YScaleMode = 'linear'
-): Plot.PlotOptions => {
+export const loggedUsersOptions = (data: SerializedPoint[]): Plot.PlotOptions => {
   const d = rehydrate(data);
   return {
     width: WIDTH,
-    y: { label: 'Utilisateurs loggés (mensuel)', ...yScale(mode) },
+    y: { label: 'Utilisateurs loggés', type: 'linear' },
     x: { label: null },
     marks: [Plot.barY(d, { x: 'date', y: 'users_logged', fill: '#0072B2', tip: true })],
   };
 };
 
 // G2 — Projets actifs
-export const projectsOptions = (
-  data: SerializedPoint[],
-  mode: YScaleMode = 'linear'
-): Plot.PlotOptions => {
+export const projectsOptions = (data: SerializedPoint[]): Plot.PlotOptions => {
   const d = rehydrate(data);
   return {
     width: WIDTH,
-    y: { label: 'Projets actifs (mensuel)', ...yScale(mode) },
+    y: { label: 'Projets actifs', type: 'linear' },
     x: { label: null },
     marks: [Plot.barY(d, { x: 'date', y: 'projects_active', fill: '#56B4E9', tip: true })],
   };
 };
 
 // G3 — Actions totales
-export const actionsOptions = (
-  data: SerializedPoint[],
-  mode: YScaleMode = 'linear'
-): Plot.PlotOptions => {
+export const actionsOptions = (data: SerializedPoint[]): Plot.PlotOptions => {
   const d = rehydrate(data);
   return {
     width: WIDTH,
-    y: { label: 'Actions totales (mensuel)', ...yScale(mode) },
+    y: { label: 'Actions totales', type: 'linear' },
     x: { label: null },
     marks: [Plot.barY(d, { x: 'date', y: 'actions_total', fill: '#6ee7b7', tip: true })],
   };
@@ -109,15 +97,12 @@ const toActionBars = (data: MonthlyPoint[]): ActionBarDatum[] =>
     }))
   );
 
-export const actionCategoriesOptions = (
-  data: SerializedPoint[],
-  mode: YScaleMode = 'linear'
-): Plot.PlotOptions => {
+export const actionCategoriesOptions = (data: SerializedPoint[]): Plot.PlotOptions => {
   const d = rehydrate(data);
   const actionBars = toActionBars(d);
   return {
     width: WIDTH,
-    y: { label: 'Actions (mensuel)', ...yScale(mode) },
+    y: { label: 'Actions', type: 'linear' },
     x: { label: null },
     color: {
       legend: true,

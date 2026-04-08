@@ -4,10 +4,8 @@
   import {
     loggedUsersOptions,
     projectsOptions,
-    actionsOptions,
     actionCategoriesOptions,
     type SerializedPoint,
-    type YScaleMode,
   } from '$lib/charts.js';
   import type { PageData } from './$types.js';
 
@@ -16,27 +14,55 @@
   const cachedAt = $derived(
     data.cachedAt !== null ? new Date(data.cachedAt).toLocaleString('fr-FR') : null
   );
-  const monthly = $derived(data.monthly as unknown as SerializedPoint[]);
 
+  type Granularity = 'day' | 'week' | 'month' | 'quarter';
   type Period = '6m' | '12m' | 'all';
+
+  let selectedGranularity = $state<Granularity>('month');
   let selectedPeriod = $state<Period>('6m');
-  let yScaleMode = $state<YScaleMode>('linear');
 
-  const startOfMonth = (date: Date): Date => new Date(date.getFullYear(), date.getMonth(), 1);
-  const subtractMonths = (date: Date, months: number): Date =>
-    new Date(date.getFullYear(), date.getMonth() - months, 1);
+  let points = $state<SerializedPoint[]>([]);
 
-  const filteredMonthly = $derived.by(() => {
-    if (selectedPeriod === 'all' || monthly.length === 0) return monthly;
-    const last = new Date(monthly.at(-1)!.date);
-    const anchor = startOfMonth(last);
-    const months = selectedPeriod === '6m' ? 6 : 12;
-    const from = subtractMonths(anchor, months - 1).getTime();
-    const to = anchor.getTime();
-    return monthly.filter((point) => {
-      const ts = startOfMonth(new Date(point.date)).getTime();
-      return ts >= from && ts <= to;
-    });
+  $effect(() => {
+    const g = selectedGranularity;
+    // Depend on cachedAt so the effect re-runs after invalidateAll()
+    void data.cachedAt;
+    fetch(`/api/stats?granularity=${g}`)
+      .then((r) => r.json())
+      .then((body: { points?: SerializedPoint[] }) => {
+        if (body.points) points = body.points;
+      })
+      .catch(() => {
+        /* keep current points on error */
+      });
+  });
+
+  const startOf = (date: Date, g: Granularity): Date => {
+    if (g === 'day') return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    if (g === 'week') {
+      const day = date.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate() + diff);
+    }
+    if (g === 'quarter') {
+      const q = Math.floor(date.getMonth() / 3);
+      return new Date(date.getFullYear(), q * 3, 1);
+    }
+    return new Date(date.getFullYear(), date.getMonth(), 1);
+  };
+
+  const subtractPeriod = (anchor: Date, period: Period, g: Granularity): Date => {
+    if (period === 'all') return new Date(0);
+    const months = period === '6m' ? 6 : 12;
+    return startOf(new Date(anchor.getFullYear(), anchor.getMonth() - (months - 1), 1), g);
+  };
+
+  const filteredPoints = $derived.by(() => {
+    if (selectedPeriod === 'all' || points.length === 0) return points;
+    const last = new Date(points.at(-1)!.date);
+    const anchor = startOf(last, selectedGranularity);
+    const from = subtractPeriod(anchor, selectedPeriod, selectedGranularity).getTime();
+    return points.filter((p) => startOf(new Date(p.date), selectedGranularity).getTime() >= from);
   });
 
   let fetching = $state(false);
@@ -98,24 +124,26 @@
       <div>
         <h1>REDCap Dashboard</h1>
         <p class="subtitle">
-          Statistiques mensuelles (calendrier) — {new Date().toLocaleDateString('fr-FR')}
+          Statistiques — {new Date().toLocaleDateString('fr-FR')}
           {#if cachedAt !== null}
             <span class="cache-info">· données du {cachedAt}</span>
           {/if}
         </p>
-        <a class="link-refresh-page" href="/actualisation">Page d’actualisation des statistiques</a>
+        <a class="link-refresh-page" href="/actualisation">Page d'actualisation des statistiques</a>
       </div>
       <div class="controls">
+        <label class="period-label" for="granularity-select">Agrégation</label>
+        <select id="granularity-select" class="period-select" bind:value={selectedGranularity}>
+          <option value="day">Jour</option>
+          <option value="week">Semaine</option>
+          <option value="month">Mois</option>
+          <option value="quarter">Trimestre</option>
+        </select>
         <label class="period-label" for="period-select">Période</label>
         <select id="period-select" class="period-select" bind:value={selectedPeriod}>
           <option value="6m">6 derniers mois</option>
           <option value="12m">Dernière année</option>
-          <option value="all">Tout l’historique</option>
-        </select>
-        <label class="period-label" for="y-scale-select">Échelle Y</label>
-        <select id="y-scale-select" class="period-select" bind:value={yScaleMode}>
-          <option value="linear">Linéaire</option>
-          <option value="log">Logarithmique</option>
+          <option value="all">Tout l'historique</option>
         </select>
         <button class="btn-refresh" onclick={collectFromApi} disabled={fetching}>
           {fetching ? 'Collecte…' : 'Actualiser depuis REDCap'}
@@ -131,24 +159,14 @@
     {/if}
   </header>
 
-  {#if filteredMonthly.length > 0}
+  {#if filteredPoints.length > 0}
     <div class="grid">
       <PlotChart
-        title="G1 — Utilisateurs loggés"
-        options={loggedUsersOptions(filteredMonthly, yScaleMode)}
+        title="Nombre d'utilisateurs actifs"
+        options={loggedUsersOptions(filteredPoints)}
       />
-      <PlotChart
-        title="G2 — Projets actifs"
-        options={projectsOptions(filteredMonthly, yScaleMode)}
-      />
-      <PlotChart
-        title="G3 — Actions totales"
-        options={actionsOptions(filteredMonthly, yScaleMode)}
-      />
-      <PlotChart
-        title="G4 — Actions par catégorie"
-        options={actionCategoriesOptions(filteredMonthly, yScaleMode)}
-      />
+      <PlotChart title="Nombre de projets actifs" options={projectsOptions(filteredPoints)} />
+      <PlotChart title="Nombre d'évènements" options={actionCategoriesOptions(filteredPoints)} />
     </div>
   {:else}
     <p class="empty">Aucune donnée — cliquez sur « Actualiser depuis REDCap ».</p>

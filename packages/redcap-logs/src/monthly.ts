@@ -1,19 +1,17 @@
 import type {
+  Granularity,
   LogActionCategory,
   MonthlyPoint,
   RedcapLogEntry,
 } from "./types.js";
 import { countDistinctSurveyed } from "./surveyed.js";
 
-const monthKey = (date: Date): string =>
-  `${String(date.getFullYear())}-${String(date.getMonth()).padStart(2, "0")}`;
-
 const countOf = (
   entries: readonly RedcapLogEntry[],
   cat: LogActionCategory,
 ): number => entries.filter((e) => e.action_category === cat).length;
 
-const computeMonthlyPoint = (
+const computePoint = (
   date: Date,
   entries: readonly RedcapLogEntry[],
 ): MonthlyPoint => {
@@ -46,26 +44,71 @@ const computeMonthlyPoint = (
   };
 };
 
-export const computeMonthlyCalendar = (
+const pad2 = (n: number): string => String(n).padStart(2, "0");
+
+const isoMonday = (date: Date): Date => {
+  const day = date.getDay(); // 0=Sun
+  const diff = day === 0 ? -6 : 1 - day;
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + diff);
+};
+
+const bucketKey = (granularity: Granularity, date: Date): string => {
+  const y = date.getFullYear();
+  const m = date.getMonth();
+  const d = date.getDate();
+  const keys: Record<Granularity, string> = {
+    day: `${String(y)}-${pad2(m + 1)}-${pad2(d)}`,
+    week: (() => {
+      const mon = isoMonday(date);
+      return `${String(mon.getFullYear())}-${pad2(mon.getMonth() + 1)}-${pad2(mon.getDate())}`;
+    })(),
+    month: `${String(y)}-${pad2(m)}`,
+    quarter: `${String(y)}-Q${String(Math.floor(m / 3) + 1)}`,
+  };
+  return keys[granularity];
+};
+
+const bucketDate = (granularity: Granularity, key: string): Date => {
+  const dates: Record<Granularity, Date> = {
+    day: new Date(key),
+    week: new Date(key),
+    quarter: (() => {
+      const parts = key.split("-");
+      const q = Number((parts[1] ?? "Q1").slice(1));
+      return new Date(Number(parts[0]), (q - 1) * 3, 1);
+    })(),
+    month: (() => {
+      const parts = key.split("-");
+      return new Date(Number(parts[0]), Number(parts[1]), 1);
+    })(),
+  };
+  return dates[granularity];
+};
+
+export const computeCalendar = (
+  granularity: Granularity,
   entries: readonly RedcapLogEntry[],
 ): MonthlyPoint[] => {
-  const byMonth = Object.groupBy(entries, (entry) => monthKey(entry.timestamp));
+  const byBucket = Object.groupBy(entries, (entry) =>
+    bucketKey(granularity, entry.timestamp),
+  );
 
-  return Object.entries(byMonth)
-    .flatMap(([key, monthEntries]) => {
-      const parts = key.split("-");
-      const year = Number(parts[0]);
-      const month = Number(parts[1]);
-      return monthEntries === undefined
+  return Object.entries(byBucket)
+    .flatMap(([key, bucketEntries]) =>
+      bucketEntries === undefined
         ? []
         : [
-            computeMonthlyPoint(
-              new Date(year, month, 1),
-              monthEntries.toSorted(
+            computePoint(
+              bucketDate(granularity, key),
+              bucketEntries.toSorted(
                 (a, b) => a.timestamp.getTime() - b.timestamp.getTime(),
               ),
             ),
-          ];
-    })
+          ],
+    )
     .toSorted((a, b) => a.date.getTime() - b.date.getTime());
 };
+
+export const computeMonthlyCalendar = (
+  entries: readonly RedcapLogEntry[],
+): MonthlyPoint[] => computeCalendar("month", entries);
