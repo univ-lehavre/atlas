@@ -7,7 +7,6 @@ export type {
   PackageRow,
   DashboardStats,
 } from '@univ-lehavre/atlas-stats';
-export { PERIOD_DAYS } from '@univ-lehavre/atlas-stats';
 
 // SseEvent is dashboard-specific (used only by the SSE server route)
 export type SseEvent =
