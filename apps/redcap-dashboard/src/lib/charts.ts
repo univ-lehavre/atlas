@@ -30,17 +30,6 @@ export const projectsOptions = (data: SerializedPoint[]): Plot.PlotOptions => {
   };
 };
 
-// G3 — Actions totales
-export const actionsOptions = (data: SerializedPoint[]): Plot.PlotOptions => {
-  const d = rehydrate(data);
-  return {
-    width: WIDTH,
-    y: { label: 'Actions totales', type: 'linear' },
-    x: { label: null },
-    marks: [Plot.barY(d, { x: 'date', y: 'actions_total', fill: '#6ee7b7', tip: true })],
-  };
-};
-
 // G4 — Actions par catégorie
 type ActionKey = keyof Pick<
   MonthlyPoint,
