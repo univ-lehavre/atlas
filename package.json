@@ -42,8 +42,8 @@
     "docs:api": "typedoc",
     "changeset:add": "changeset",
     "changeset:version": "changeset version && pnpm exec prettier --no-config --write '**/CHANGELOG.md'",
-    "changeset:publish": "pnpm build && changeset publish",
-    "release": "pnpm build && ./scripts/publish-packages.sh",
+    "changeset:publish": "turbo build --filter='!./apps/**' && changeset publish",
+    "release": "turbo build --filter='!./apps/**' && ./scripts/publish-packages.sh",
     "others": "git -C . ls-files --others",
     "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json' 'apps/*/tests/baselines/*.json' 'docs/.vitepress/dist'",
     "prepare": "lefthook install"
