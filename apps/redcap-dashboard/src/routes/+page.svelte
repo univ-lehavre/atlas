@@ -81,6 +81,7 @@
             <span class="cache-info">· données du {cachedAt}</span>
           {/if}
         </p>
+        <a class="link-refresh-page" href="/actualisation">Page d’actualisation des statistiques</a>
       </div>
       <button class="btn-refresh" onclick={collectFromApi} disabled={fetching}>
         {fetching ? 'Collecte…' : 'Actualiser depuis REDCap'}
@@ -137,6 +138,18 @@
 
   .cache-info {
     color: #9ca3af;
+  }
+
+  .link-refresh-page {
+    display: inline-block;
+    margin-top: 0.45rem;
+    font-size: 0.85rem;
+    color: #2563eb;
+    text-decoration: none;
+  }
+
+  .link-refresh-page:hover {
+    text-decoration: underline;
   }
 
   .btn-refresh {

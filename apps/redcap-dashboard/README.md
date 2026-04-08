@@ -9,6 +9,8 @@ Il affiche 4 graphiques:
 - Actions totales
 - Actions par catégorie
 
+Il propose aussi une page dédiée à l’actualisation: `/actualisation` (spinner, progression, dates et état `OK` / `WARN` / `ERROR`).
+
 ## Prérequis
 
 - Node.js `>= 24`
@@ -80,9 +82,10 @@ pnpm --filter @univ-lehavre/atlas-redcap-dashboard format
 ## Fonctionnement de la collecte
 
 - Le bouton **"Actualiser depuis REDCap"** ouvre un flux SSE sur `GET /api/logs`.
+- La page **`/actualisation`** permet de suivre l’état global de la collecte et l’historique des dates importantes.
 - Les projets sont collectés par lots (`BATCH_SIZE = 3`) et l'UI reçoit la progression en temps réel.
 - Les données sont enrichies puis converties en série temporelle 30 jours.
-- Un cache local est utilisé: `~/.redcap-stats.json`.
+- Un cache local est utilisé dans le dossier courant de lancement: `./.redcap-stats.json`.
 - TTL du cache: **24h**. Si le cache est récent, l'API renvoie immédiatement l'état `cached`.
 
 Types d'événements SSE émis:
