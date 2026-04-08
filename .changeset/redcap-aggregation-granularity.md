@@ -3,4 +3,8 @@
 "@univ-lehavre/atlas-redcap-dashboard": minor
 ---
 
-Add multi-granularity aggregation (day, week, month, quarter) to redcap-logs via `computeCalendar`, expose a new `/api/stats?granularity=` endpoint in the dashboard, replace the Y-scale selector with a granularity selector, and patch out April 7–8 2026 log entries.
+**`atlas-redcap-dashboard` — Initial release.** SvelteKit dashboard for REDCap log statistics.
+
+**`atlas-redcap-logs`** — Add `Granularity` type and `computeCalendar(granularity, entries)` supporting day, week, month, and quarter aggregations.
+
+**`atlas-redcap-dashboard`** — Add `/api/stats?granularity=` endpoint, replace Y-scale selector with aggregation selector, patch out April 7–8 2026 log entries.
