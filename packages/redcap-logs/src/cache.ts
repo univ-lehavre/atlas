@@ -24,7 +24,11 @@ export const readCache = (): Promise<CacheFile | null> =>
 
 export const writeCache = (logs: RawLog[]): Promise<void> =>
   // eslint-disable-next-line security/detect-non-literal-fs-filename
-  writeFile(CACHE_PATH, JSON.stringify({ savedAt: Date.now(), logs }), "utf8");
+  writeFile(
+    CACHE_PATH,
+    `${JSON.stringify({ savedAt: Date.now(), logs }, null, 2)}\n`,
+    "utf8",
+  );
 
 export const isCacheStale = (cache: CacheFile): boolean =>
   Date.now() - cache.savedAt > CACHE_TTL_MS;
