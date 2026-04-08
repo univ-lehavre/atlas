@@ -7,12 +7,12 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/univ-lehavre/atlas.git",
-    "directory": "packages/shared-config"
+    "directory": "config/shared-config"
   },
   "bugs": {
     "url": "https://github.com/univ-lehavre/atlas/issues"
   },
-  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/shared-config#readme",
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/config/shared-config#readme",
   "keywords": [
     "typescript",
     "tsconfig",
