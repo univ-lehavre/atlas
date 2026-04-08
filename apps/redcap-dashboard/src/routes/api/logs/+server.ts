@@ -96,7 +96,7 @@ export const GET = ({ url }: { url: URL }): Response => {
           return;
         }
         const tokens = parseTokensCsv(readFileSync(TOKENS_PATH, 'utf8'));
-        const ctx: FetchCtx = { apiUrl: env.REDCAP_API_URL, total: tokens.length, send };
+        const ctx: FetchCtx = { apiUrl: env.REDCAP_API_URL ?? '', total: tokens.length, send };
         send({ type: 'start', total: ctx.total });
         const { logs } = await runBatches(chunk(tokens, BATCH_SIZE), ctx, { logs: [], done: 0 });
         await persistAndSend(logs, cache, send);
