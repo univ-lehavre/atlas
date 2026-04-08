@@ -1083,6 +1083,28 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@types/node@25.5.0)(jsdom@29.0.1(@noble/hashes@1.8.0))(vite@8.0.5(@types/node@25.5.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
+  tools/cli-redcap-stats:
+    dependencies:
+      '@univ-lehavre/atlas-redcap-logs':
+        specifier: workspace:*
+        version: link:../../packages/redcap-logs
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.1.0
+        version: 10.1.0(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.1
+        version: 3.8.1
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
   tools/cli/biblio-cli:
     dependencies:
       '@clack/prompts':

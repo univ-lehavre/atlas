@@ -53,3 +53,4 @@ rocketchat-k3s-roadmap.pdf
 *.traineddata
 CLAUDE.md
 *-token.csv
+apps/redcap-dashboard/.redcap-stats.json
