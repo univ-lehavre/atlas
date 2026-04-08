@@ -53,7 +53,9 @@ const persistAndSend = async (
 ): Promise<void> => {
   const enriched = enrichLogs(allLogs);
   const hasNewData = enriched.length > (cache?.logs.length ?? 0);
-  if (hasNewData) {
+  const shouldWriteCache = cache === null || hasNewData || (cache !== null && isCacheStale(cache));
+  const persistedAt = shouldWriteCache ? Date.now() : (cache?.savedAt ?? null);
+  if (shouldWriteCache) {
     await writeCache(
       enriched.map((e) => ({
         project_id: e.project_id,
@@ -67,14 +69,15 @@ const persistAndSend = async (
     type: 'done',
     total: enriched.length,
     hasNewData,
-    cachedAt: hasNewData ? Date.now() : (cache?.savedAt ?? null),
+    cachedAt: persistedAt,
     rolling: computeRollingWindow(enriched),
   });
 };
 
 const encoder = new TextEncoder();
 
-export const GET = (): Response => {
+export const GET = ({ url }: { url: URL }): Response => {
+  const forceRefresh = url.searchParams.get('force') === '1';
   const stream = new ReadableStream({
     start(controller) {
       const send: Sender = (data) => {
@@ -83,7 +86,7 @@ export const GET = (): Response => {
 
       const run = async () => {
         const cache = await readCache();
-        if (cache !== null && !isCacheStale(cache)) {
+        if (!forceRefresh && cache !== null && !isCacheStale(cache)) {
           send({ type: 'cached', cachedAt: cache.savedAt, total: cache.logs.length });
           controller.close();
           return;
