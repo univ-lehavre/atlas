@@ -12,7 +12,7 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ROOT_DIR = resolve(__dirname, '..');
+const ROOT_DIR = resolve(__dirname, '..', '..');
 const API_DIR = join(ROOT_DIR, 'docs/api/@univ-lehavre');
 const OUTPUT_FILE = join(ROOT_DIR, 'docs/.vitepress/data/api-sidebar.json');
 
