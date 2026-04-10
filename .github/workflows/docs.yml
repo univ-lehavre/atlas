@@ -4,12 +4,13 @@ on:
   push:
     branches: [main]
     paths:
-      - 'docs/**'
-      - 'packages/*/src/**'
-      - 'apps/*/src/**'
-      - 'services/*/src/**'
-      - 'tools/*/src/**'
-      - '.github/workflows/docs.yml'
+      - "docs/**"
+      - "packages/*/src/**"
+      - "apps/*/src/**"
+      - "services/*/src/**"
+      - "cli/*/src/**"
+      - "config/*/src/**"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
 permissions:
@@ -42,6 +43,12 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Create SvelteKit env files
+        run: |
+          for app in apps/amarre apps/ecrin apps/find-an-expert; do
+            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
+          done
 
       - name: Build packages (for API docs)
         run: pnpm build
