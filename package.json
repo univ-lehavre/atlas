@@ -28,7 +28,7 @@
     "test:coverage": "turbo test:coverage",
     "ci:checks": "turbo run format:check check lint typecheck test:coverage build",
     "audit:security": "pnpm audit --audit-level=high",
-    "audit:licenses": "license-checker --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;Unlicense\" --excludePrivatePackages",
+    "audit:licenses": "node scripts/audit/licenses.mjs",
     "audit:unused": "knip --exclude unresolved,types",
     "audit:structure": "node scripts/audit/workspace-structure.mjs",
     "audit:duplicates": "jscpd --pattern \"packages/*/src/**/*.ts\" --pattern \"apps/*/src/**/*.ts\" --pattern \"services/*/src/**/*.ts\"",
@@ -152,7 +152,6 @@
     "jscpd": "^4.0.8",
     "knip": "^6.3.1",
     "lefthook": "^2.1.5",
-    "license-checker": "^25.0.1",
     "mermaid": "^11.14.0",
     "prettier": "^3.8.2",
     "simple-git": "^3.35.2",
@@ -182,7 +181,7 @@
       "minimatch": ">=10.2.5",
       "picomatch": ">=4.0.4",
       "rollup": ">=4.60.1",
-      "undici": ">=7.24.7 <8"
+      "undici": ">=8.0.2"
     },
     "patchedDependencies": {
       "reprism@0.0.11": "patches/reprism@0.0.11.patch"
