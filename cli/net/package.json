@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-net-cli",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Network diagnostic CLI for Atlas",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

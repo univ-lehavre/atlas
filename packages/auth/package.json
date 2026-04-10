@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-auth",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Shared authentication service for Atlas SvelteKit applications",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

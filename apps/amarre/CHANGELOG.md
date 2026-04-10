@@ -1,5 +1,14 @@
 # @univ-lehavre/amarre
 
+## 2.0.3
+
+### Patch Changes
+
+- Updated dependencies [[`35dec18`](https://github.com/univ-lehavre/atlas/commit/35dec1802d501625c14f4f83e167e881040b1f19)]:
+  - @univ-lehavre/atlas-appwrite@0.2.3
+  - @univ-lehavre/atlas-errors@0.2.3
+  - @univ-lehavre/atlas-validators@0.2.3
+
 ## 2.0.2
 
 ### Patch Changes

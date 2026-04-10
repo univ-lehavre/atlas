@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-validators",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Shared validation utilities for Atlas applications",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-crf-cli",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "CRF CLI - REDCap connectivity test and CRF server management",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
