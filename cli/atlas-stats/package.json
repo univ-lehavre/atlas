@@ -34,10 +34,10 @@
     "@univ-lehavre/atlas-stats": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.5.2",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^10.1.0",
-    "prettier": "^3.8.1",
+    "prettier": "^3.8.2",
     "typescript": "^6.0.2"
   },
   "publishConfig": {

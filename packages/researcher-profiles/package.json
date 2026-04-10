@@ -54,13 +54,13 @@
   },
   "devDependencies": {
     "@effect/vitest": "0.26.0",
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.5.2",
     "@types/pdfkit": "^0.17.5",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^10.1.0",
-    "prettier": "^3.8.1",
+    "prettier": "^3.8.2",
     "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.4"
   },
   "publishConfig": {
     "access": "public"

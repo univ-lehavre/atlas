@@ -19,18 +19,18 @@
     "@sveltejs/adapter-node": "^5.5.4",
     "@sveltejs/kit": "^2.55.0",
     "@sveltejs/vite-plugin-svelte": "^7.0.0",
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.5.2",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^10.1.0",
-    "prettier": "^3.8.1",
+    "prettier": "^3.8.2",
     "prettier-plugin-svelte": "^3.5.1",
-    "svelte": "^5.55.1",
+    "svelte": "^5.55.2",
     "svelte-check": "^4.4.6",
     "typescript": "^6.0.2",
-    "vite": "^8.0.5"
+    "vite": "^8.0.8"
   },
   "dependencies": {
-    "@observablehq/plot": "^0.6.16",
+    "@observablehq/plot": "^0.6.17",
     "@univ-lehavre/atlas-redcap-logs": "workspace:*"
   }
 }
