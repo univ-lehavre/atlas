@@ -34,7 +34,7 @@
     "audit:duplicates": "jscpd --pattern \"packages/*/src/**/*.ts\" --pattern \"apps/*/src/**/*.ts\" --pattern \"services/*/src/**/*.ts\"",
     "audit:size": "size-limit",
     "audit:versions": "taze -r --ignore-paths packages/redcap-openapi/upstream",
-    "ci:audit": "pnpm audit:security && pnpm audit:licenses && pnpm audit:unused && pnpm audit:structure && pnpm audit:duplicates && pnpm audit:size && pnpm audit:versions",
+    "ci:audit": "pnpm audit:security && pnpm audit:licenses && pnpm audit:unused && pnpm audit:structure && pnpm audit:duplicates && pnpm audit:size",
     "stats:generate": "tsx scripts/docs/generate-repo-stats.ts",
     "api:sidebar": "tsx scripts/docs/generate-api-sidebar.ts",
     "docs:dev": "vitepress dev docs",
@@ -184,7 +184,7 @@
       "rollup": ">=4.60.1",
       "undici": ">=7.24.6"
     },
-"patchedDependencies": {
+    "patchedDependencies": {
       "reprism@0.0.11": "patches/reprism@0.0.11.patch"
     }
   }
