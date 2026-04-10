@@ -6,10 +6,17 @@ on:
     paths:
       - "docs/**"
       - "packages/*/src/**"
+      - "packages/*/README.md"
       - "apps/*/src/**"
+      - "apps/*/README.md"
       - "services/*/src/**"
+      - "services/*/README.md"
       - "cli/*/src/**"
+      - "cli/*/README.md"
       - "config/*/src/**"
+      - "scripts/docs/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
 
@@ -25,11 +32,13 @@ concurrency:
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
     name: Build Documentation
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v6
         with:
@@ -71,6 +80,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Deploy to GitHub Pages
         id: deployment

@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -13,11 +16,13 @@ concurrency:
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
 
@@ -43,8 +48,6 @@ jobs:
           key: turbo-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
             turbo-${{ runner.os }}-
-
-      - run: pnpm build
 
       - run: pnpm format:check
 
@@ -53,6 +56,7 @@ jobs:
   typecheck:
     name: Typecheck
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
 
@@ -78,8 +82,6 @@ jobs:
           key: turbo-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
             turbo-${{ runner.os }}-
-
-      - run: pnpm build
 
       - run: pnpm typecheck
 
@@ -88,6 +90,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
 
@@ -114,13 +117,12 @@ jobs:
           restore-keys: |
             turbo-${{ runner.os }}-
 
-      - run: pnpm build
-
       - run: pnpm test:coverage
 
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [lint, typecheck, test]
     steps:
       - uses: actions/checkout@v6
@@ -156,6 +158,7 @@ jobs:
   docs:
     name: Documentation
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     needs: [build]
     steps:
       - uses: actions/checkout@v6
@@ -197,6 +200,7 @@ jobs:
   audit:
     name: Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
 
