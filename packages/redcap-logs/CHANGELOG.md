@@ -1,5 +1,13 @@
 # @univ-lehavre/atlas-redcap-logs
 
+## 0.3.0
+
+### Minor Changes
+
+- [#100](https://github.com/univ-lehavre/atlas/pull/100) [`02f3bdc`](https://github.com/univ-lehavre/atlas/commit/02f3bdcf6777f5ebd4fd730020f3d4e87cbc247e) Thanks [@chasset](https://github.com/chasset)! - Add endpoint network diagnostics helpers to REDCap logs.
+  - add `diagnoseEndpointNetwork` export to probe DNS/TCP/TLS connectivity for REDCap API endpoints
+  - expose structured diagnostics (target, DNS result, TCP probe, TLS metadata/errors) for dashboard and CLI troubleshooting
+
 ## 0.2.0
 
 ### Minor Changes

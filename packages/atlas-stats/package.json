@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-stats",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "GitHub releases and npm package stats fetching, caching and computation for the Atlas monorepo",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
