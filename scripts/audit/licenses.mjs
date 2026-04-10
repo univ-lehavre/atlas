@@ -25,6 +25,7 @@ const ALLOWED_LICENSES = new Set([
 
 const PACKAGE_LICENSE_EXCEPTIONS = new Set([
   "@tybys/wasm-util",
+  "fsevents",
   "png-js",
   "flatbuffers"
 ])
