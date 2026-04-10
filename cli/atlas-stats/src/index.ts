@@ -180,7 +180,8 @@ export const main = async (): Promise<void> => {
     const answer = await text({
       message: "GitHub token (ou GITHUB_TOKEN dans .env)",
       placeholder: "ghp_…",
-      validate: (v) => (v.trim() === "" ? "Token requis" : undefined),
+      validate: (v) =>
+        typeof v !== "string" || v.trim() === "" ? "Token requis" : undefined,
     });
     if (isCancel(answer)) {
       cancel("Annulé.");

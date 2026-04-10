@@ -40,17 +40,17 @@
   },
   "dependencies": {
     "effect": "^3.21.0",
-    "qs": "^6.15.0"
+    "qs": "^6.15.1"
   },
   "devDependencies": {
-    "@effect/vitest": "0.26.0",
-    "@types/node": "^25.5.0",
+    "@effect/vitest": "0.29.0",
+    "@types/node": "^25.6.0",
     "@types/qs": "^6.15.0",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "eslint": "^10.1.0",
-    "prettier": "^3.8.1",
+    "eslint": "^10.2.0",
+    "prettier": "^3.8.2",
     "typescript": "^6.0.2",
-    "vitest": "^4.1.2"
+    "vitest": "^4.1.4"
   },
   "publishConfig": {
     "access": "public"

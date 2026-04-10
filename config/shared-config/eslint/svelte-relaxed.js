@@ -31,6 +31,7 @@ export function svelteRelaxed(options = {}) {
 				'.svelte-kit/**',
 				'build/**',
 				'dist/**',
+				'coverage/**',
 				'node_modules/**',
 				...ignores,
 			],

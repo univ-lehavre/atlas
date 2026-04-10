@@ -1,6 +1,4 @@
-import { fail, redirect } from '@sveltejs/kit';
-
-import type { Actions } from './$types';
+import { fail, redirect, type Actions } from '@sveltejs/kit';
 import { signupWithEmail, logout } from '$lib/server/auth';
 import { ApplicationError } from '$lib/server/http';
 
