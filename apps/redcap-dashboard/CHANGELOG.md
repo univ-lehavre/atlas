@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-redcap-dashboard
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [[`02f3bdc`](https://github.com/univ-lehavre/atlas/commit/02f3bdcf6777f5ebd4fd730020f3d4e87cbc247e)]:
+  - @univ-lehavre/atlas-redcap-logs@0.3.0
+
 ## 0.2.0
 
 ### Minor Changes

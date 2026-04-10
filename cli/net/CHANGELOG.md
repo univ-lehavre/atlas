@@ -1,5 +1,13 @@
 # @univ-lehavre/atlas-net-cli
 
+## 1.0.2
+
+### Patch Changes
+
+- [#100](https://github.com/univ-lehavre/atlas/pull/100) [`eaaf319`](https://github.com/univ-lehavre/atlas/commit/eaaf31902d9b49adaa0c3cd5771e9d0707fabe29) Thanks [@chasset](https://github.com/chasset)! - Standardize CLI workspace layout and metadata.
+  - move CLI workspaces from `cli/*-cli` directories to `cli/*`
+  - align `repository.directory` with new workspace paths
+
 ## 1.0.1
 
 ### Patch Changes

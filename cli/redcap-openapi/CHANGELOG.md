@@ -1,5 +1,14 @@
 # @univ-lehavre/atlas-redcap
 
+## 1.4.2
+
+### Patch Changes
+
+- [#100](https://github.com/univ-lehavre/atlas/pull/100) [`aced246`](https://github.com/univ-lehavre/atlas/commit/aced24617bdc0839a40d8a52e69d6222e96b609a) Thanks [@chasset](https://github.com/chasset)! - Move REDCap tooling packages into the unified `cli/*` layout.
+  - relocate `atlas-redcap-openapi` from `tools/dev/redcap-openapi` to `cli/redcap-openapi`
+  - relocate `atlas-redcap-stats-cli` from `tools/cli-redcap-stats` to `cli/redcap-stats`
+  - update workspace and tooling references (pnpm lockfile, TypeDoc, Knip, package metadata)
+
 ## 1.4.1
 
 ### Patch Changes
