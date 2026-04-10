@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-crf",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "CRF Service - HTTP microservice for REDCap",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

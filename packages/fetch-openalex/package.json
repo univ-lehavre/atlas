@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-fetch-openalex",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "OpenAlex API paginated fetch with rate limiting and queue-based state",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
