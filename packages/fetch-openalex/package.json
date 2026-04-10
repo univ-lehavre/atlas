@@ -44,7 +44,7 @@
     "effect": "^3.21.0"
   },
   "devDependencies": {
-    "@effect/vitest": "0.26.0",
+    "@effect/vitest": "0.29.0",
     "@types/node": "^25.5.2",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^10.1.0",

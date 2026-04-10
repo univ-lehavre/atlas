@@ -43,7 +43,7 @@
     "qs": "^6.15.1"
   },
   "devDependencies": {
-    "@effect/vitest": "0.26.0",
+    "@effect/vitest": "0.29.0",
     "@types/node": "^25.5.2",
     "@types/qs": "^6.15.0",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
