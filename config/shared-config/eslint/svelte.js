@@ -26,7 +26,15 @@ export function svelte(options = {}) {
   return tseslint.config(
     // Ignores
     {
-      ignores: ['.svelte-kit/**', 'build/**', 'dist/**', '**/*.config.js', '**/*.config.ts', ...ignores],
+      ignores: [
+        '.svelte-kit/**',
+        'build/**',
+        'dist/**',
+        'coverage/**',
+        '**/*.config.js',
+        '**/*.config.ts',
+        ...ignores,
+      ],
     },
 
     // Base plugins
@@ -242,4 +250,3 @@ export function svelte(options = {}) {
     ...prettierConfig
   );
 }
-
