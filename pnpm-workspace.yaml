@@ -1,12 +1,10 @@
 packages:
-  - packages/*
   - apps/*
-  - services/*
-  - tools/cli/*
-  - tools/cli-redcap-stats
-  - tools/dev/*
+  - cli/*
   - config/*
+  - packages/*
   - sandbox/*
+  - services/*
 
 onlyBuiltDependencies:
   - '@duckdb/node-api'

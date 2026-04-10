@@ -1,6 +1,7 @@
 {
   "name": "@univ-lehavre/atlas-amarre",
   "version": "2.0.2",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite dev",

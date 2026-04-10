@@ -60,6 +60,7 @@ atlas/
 |----------|-------------|
 | [General architecture](./architecture.md) | Effect patterns, ESLint, scripts |
 | [Zero Trust infrastructure](./infrastructure.md) | Kubernetes, security |
+| [Workspace conventions](./workspace-conventions.md) | Repository structure and naming rules |
 
 ### Audits
 

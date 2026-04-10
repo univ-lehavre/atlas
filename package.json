@@ -30,12 +30,13 @@
     "audit:security": "pnpm audit --audit-level=high",
     "audit:licenses": "license-checker --onlyAllow \"MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD;Unlicense\" --excludePrivatePackages",
     "audit:unused": "knip --exclude unresolved,types",
+    "audit:structure": "node scripts/audit/workspace-structure.mjs",
     "audit:duplicates": "jscpd --pattern \"packages/*/src/**/*.ts\" --pattern \"apps/*/src/**/*.ts\" --pattern \"services/*/src/**/*.ts\"",
     "audit:size": "size-limit",
     "audit:versions": "taze -r --ignore-paths packages/redcap-openapi/upstream",
-    "ci:audit": "pnpm audit:security && pnpm audit:licenses && pnpm audit:unused && pnpm audit:duplicates && pnpm audit:size && pnpm audit:versions",
-    "stats:generate": "tsx scripts/generate-repo-stats.ts",
-    "api:sidebar": "tsx scripts/generate-api-sidebar.ts",
+    "ci:audit": "pnpm audit:security && pnpm audit:licenses && pnpm audit:unused && pnpm audit:structure && pnpm audit:duplicates && pnpm audit:size",
+    "stats:generate": "tsx scripts/docs/generate-repo-stats.ts",
+    "api:sidebar": "tsx scripts/docs/generate-api-sidebar.ts",
     "docs:dev": "vitepress dev docs",
     "docs:build": "pnpm api:sidebar && pnpm stats:generate && vitepress build docs",
     "docs:preview": "vitepress preview docs",
@@ -43,7 +44,7 @@
     "changeset:add": "changeset",
     "changeset:version": "changeset version && pnpm exec prettier --no-config --write '**/CHANGELOG.md'",
     "changeset:publish": "turbo build --filter='!./apps/**' && changeset publish",
-    "release": "turbo build --filter='!./apps/**' && ./scripts/publish-packages.sh",
+    "release": "turbo build --filter='!./apps/**' && ./scripts/release/publish-packages.sh",
     "others": "git -C . ls-files --others",
     "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json' 'apps/*/tests/baselines/*.json' 'docs/.vitepress/dist'",
     "prepare": "lefthook install"
@@ -113,12 +114,12 @@
       "packages/validate-openalex",
       "packages/openalex",
       "services/crf",
-      "tools/dev/redcap-openapi",
-      "tools/cli/biblio-cli",
+      "cli/redcap-openapi",
+      "cli/biblio",
       "packages/researcher-profiles",
-      "tools/cli/crf-cli",
-      "tools/cli/net-cli",
-      "tools/cli/researcher-profiles"
+      "cli/crf",
+      "cli/net",
+      "cli/researcher-profiles"
     ],
     "entryPointStrategy": "packages",
     "out": "docs/api",
@@ -183,7 +184,7 @@
       "rollup": ">=4.60.1",
       "undici": ">=7.24.6"
     },
-"patchedDependencies": {
+    "patchedDependencies": {
       "reprism@0.0.11": "patches/reprism@0.0.11.patch"
     }
   }

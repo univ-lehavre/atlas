@@ -200,6 +200,52 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@types/node@25.5.0)(jsdom@29.0.1(@noble/hashes@1.8.0))(vite@8.0.5(@types/node@25.5.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
+  apps/atlas-dashboard:
+    dependencies:
+      '@observablehq/plot':
+        specifier: ^0.6.16
+        version: 0.6.17
+      '@univ-lehavre/atlas-stats':
+        specifier: workspace:*
+        version: link:../../packages/atlas-stats
+    devDependencies:
+      '@sveltejs/adapter-node':
+        specifier: ^5.5.4
+        version: 5.5.4(@sveltejs/kit@2.55.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.1)(vite@8.0.5(@types/node@25.5.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))(svelte@5.55.1)(typescript@6.0.2)(vite@8.0.5(@types/node@25.5.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))
+      '@sveltejs/kit':
+        specifier: ^2.55.0
+        version: 2.55.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.1)(vite@8.0.5(@types/node@25.5.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))(svelte@5.55.1)(typescript@6.0.2)(vite@8.0.5(@types/node@25.5.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+      '@sveltejs/vite-plugin-svelte':
+        specifier: ^7.0.0
+        version: 7.0.0(svelte@5.55.1)(vite@8.0.5(@types/node@25.5.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.1.0
+        version: 10.1.0(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.1
+        version: 3.8.1
+      prettier-plugin-svelte:
+        specifier: ^3.5.1
+        version: 3.5.1(prettier@3.8.1)(svelte@5.55.1)
+      svelte:
+        specifier: ^5.55.1
+        version: 5.55.1
+      svelte-check:
+        specifier: ^4.4.6
+        version: 4.4.6(picomatch@4.0.4)(svelte@5.55.1)(typescript@6.0.2)
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vite:
+        specifier: ^8.0.5
+        version: 8.0.5(@types/node@25.5.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)
+
   apps/ecrin:
     dependencies:
       '@sigma/node-border':
@@ -452,6 +498,247 @@ importers:
         specifier: ^8.0.5
         version: 8.0.5(@types/node@25.5.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)
 
+  cli/atlas-stats:
+    dependencies:
+      '@clack/prompts':
+        specifier: ^0.10.1
+        version: 0.10.1
+      '@univ-lehavre/atlas-stats':
+        specifier: workspace:*
+        version: link:../../packages/atlas-stats
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.1.0
+        version: 10.1.0(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.1
+        version: 3.8.1
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
+  cli/biblio:
+    dependencies:
+      '@clack/prompts':
+        specifier: 1.0.0-alpha.6
+        version: 1.0.0-alpha.6
+      '@effect/experimental':
+        specifier: ^0.60.0
+        version: 0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0)
+      '@effect/platform-node':
+        specifier: ^0.106.0
+        version: 0.106.0(@effect/cluster@0.56.1(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/workflow@0.16.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0)
+      '@univ-lehavre/atlas-openalex-types':
+        specifier: workspace:*
+        version: link:../../packages/openalex-types
+      '@univ-lehavre/atlas-validate-openalex':
+        specifier: workspace:*
+        version: link:../../packages/validate-openalex
+      effect:
+        specifier: '>=3.21.0'
+        version: 3.21.0
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.1.0
+        version: 10.1.0(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.1
+        version: 3.8.1
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
+  cli/crf:
+    dependencies:
+      '@clack/prompts':
+        specifier: ^1.2.0
+        version: 1.2.0
+      '@effect/cli':
+        specifier: ^0.75.0
+        version: 0.75.0(@effect/platform@0.96.0(effect@3.21.0))(@effect/printer-ansi@0.47.0(@effect/typeclass@0.38.0(effect@3.21.0))(effect@3.21.0))(@effect/printer@0.47.0(@effect/typeclass@0.38.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0)
+      '@effect/platform':
+        specifier: ^0.96.0
+        version: 0.96.0(effect@3.21.0)
+      '@effect/platform-node':
+        specifier: ^0.106.0
+        version: 0.106.0(@effect/cluster@0.56.1(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/workflow@0.16.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0)
+      '@hono/node-server':
+        specifier: ^1.19.12
+        version: 1.19.12(hono@4.12.9)
+      '@univ-lehavre/atlas-crf':
+        specifier: workspace:*
+        version: link:../../services/crf
+      '@univ-lehavre/atlas-redcap-client':
+        specifier: workspace:*
+        version: link:../../packages/redcap-client
+      effect:
+        specifier: '>=3.21.0'
+        version: 3.21.0
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.1.0
+        version: 10.1.0(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.1
+        version: 3.8.1
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
+  cli/net:
+    dependencies:
+      '@clack/prompts':
+        specifier: ^1.2.0
+        version: 1.2.0
+      '@effect/cli':
+        specifier: ^0.75.0
+        version: 0.75.0(@effect/platform@0.96.0(effect@3.21.0))(@effect/printer-ansi@0.47.0(@effect/typeclass@0.38.0(effect@3.21.0))(effect@3.21.0))(@effect/printer@0.47.0(@effect/typeclass@0.38.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0)
+      '@effect/platform':
+        specifier: ^0.96.0
+        version: 0.96.0(effect@3.21.0)
+      '@effect/platform-node':
+        specifier: ^0.106.0
+        version: 0.106.0(@effect/cluster@0.56.1(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/workflow@0.16.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0)
+      '@univ-lehavre/atlas-net':
+        specifier: workspace:*
+        version: link:../../packages/net
+      effect:
+        specifier: '>=3.21.0'
+        version: 3.21.0
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.1.0
+        version: 10.1.0(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.1
+        version: 3.8.1
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
+  cli/redcap-openapi:
+    dependencies:
+      '@clack/prompts':
+        specifier: ^1.2.0
+        version: 1.2.0
+      '@univ-lehavre/atlas-redcap-core':
+        specifier: workspace:*
+        version: link:../../packages/redcap-core
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
+      yaml:
+        specifier: ^2.8.3
+        version: 2.8.3
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.1.0
+        version: 10.1.0(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.1
+        version: 3.8.1
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
+  cli/redcap-stats:
+    dependencies:
+      '@univ-lehavre/atlas-redcap-logs':
+        specifier: workspace:*
+        version: link:../../packages/redcap-logs
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.1.0
+        version: 10.1.0(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.1
+        version: 3.8.1
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
+  cli/researcher-profiles:
+    dependencies:
+      '@clack/prompts':
+        specifier: ^1.2.0
+        version: 1.2.0
+      '@univ-lehavre/atlas-fetch-openalex':
+        specifier: workspace:*
+        version: link:../../packages/fetch-openalex
+      '@univ-lehavre/atlas-openalex-types':
+        specifier: workspace:*
+        version: link:../../packages/openalex-types
+      '@univ-lehavre/atlas-researcher-profiles':
+        specifier: workspace:*
+        version: link:../../packages/researcher-profiles
+      effect:
+        specifier: '>=3.21.0'
+        version: 3.21.0
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.1.0
+        version: 10.1.0(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.1
+        version: 3.8.1
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+
   config/shared-config:
     dependencies:
       '@eslint-community/eslint-plugin-eslint-comments':
@@ -536,6 +823,27 @@ importers:
       tsup:
         specifier: ^8.5.1
         version: 8.5.1(jiti@2.6.1)(postcss@8.5.8)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.3)
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.2
+      vitest:
+        specifier: ^4.1.2
+        version: 4.1.2(@types/node@25.5.0)(jsdom@29.0.1(@noble/hashes@1.8.0))(vite@8.0.5(@types/node@25.5.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/atlas-stats:
+    devDependencies:
+      '@types/node':
+        specifier: ^25.5.0
+        version: 25.5.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.1.0
+        version: 10.1.0(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.1
+        version: 3.8.1
       typescript:
         specifier: ^6.0.2
         version: 6.0.2
@@ -1083,222 +1391,6 @@ importers:
         specifier: ^4.1.2
         version: 4.1.2(@types/node@25.5.0)(jsdom@29.0.1(@noble/hashes@1.8.0))(vite@8.0.5(@types/node@25.5.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
-  tools/cli-redcap-stats:
-    dependencies:
-      '@univ-lehavre/atlas-redcap-logs':
-        specifier: workspace:*
-        version: link:../../packages/redcap-logs
-    devDependencies:
-      '@types/node':
-        specifier: ^25.5.0
-        version: 25.5.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../config/shared-config
-      eslint:
-        specifier: ^10.1.0
-        version: 10.1.0(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.1
-        version: 3.8.1
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-
-  tools/cli/biblio-cli:
-    dependencies:
-      '@clack/prompts':
-        specifier: 1.0.0-alpha.6
-        version: 1.0.0-alpha.6
-      '@effect/experimental':
-        specifier: ^0.60.0
-        version: 0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0)
-      '@effect/platform-node':
-        specifier: ^0.106.0
-        version: 0.106.0(@effect/cluster@0.56.1(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/workflow@0.16.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0)
-      '@univ-lehavre/atlas-openalex-types':
-        specifier: workspace:*
-        version: link:../../../packages/openalex-types
-      '@univ-lehavre/atlas-validate-openalex':
-        specifier: workspace:*
-        version: link:../../../packages/validate-openalex
-      effect:
-        specifier: '>=3.21.0'
-        version: 3.21.0
-    devDependencies:
-      '@types/node':
-        specifier: ^25.5.0
-        version: 25.5.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../../config/shared-config
-      eslint:
-        specifier: ^10.1.0
-        version: 10.1.0(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.1
-        version: 3.8.1
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-
-  tools/cli/crf-cli:
-    dependencies:
-      '@clack/prompts':
-        specifier: ^1.2.0
-        version: 1.2.0
-      '@effect/cli':
-        specifier: ^0.75.0
-        version: 0.75.0(@effect/platform@0.96.0(effect@3.21.0))(@effect/printer-ansi@0.47.0(@effect/typeclass@0.38.0(effect@3.21.0))(effect@3.21.0))(@effect/printer@0.47.0(@effect/typeclass@0.38.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0)
-      '@effect/platform':
-        specifier: ^0.96.0
-        version: 0.96.0(effect@3.21.0)
-      '@effect/platform-node':
-        specifier: ^0.106.0
-        version: 0.106.0(@effect/cluster@0.56.1(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/workflow@0.16.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0)
-      '@hono/node-server':
-        specifier: ^1.19.12
-        version: 1.19.12(hono@4.12.9)
-      '@univ-lehavre/atlas-crf':
-        specifier: workspace:*
-        version: link:../../../services/crf
-      '@univ-lehavre/atlas-redcap-client':
-        specifier: workspace:*
-        version: link:../../../packages/redcap-client
-      effect:
-        specifier: '>=3.21.0'
-        version: 3.21.0
-      picocolors:
-        specifier: ^1.1.1
-        version: 1.1.1
-    devDependencies:
-      '@types/node':
-        specifier: ^25.5.0
-        version: 25.5.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../../config/shared-config
-      eslint:
-        specifier: ^10.1.0
-        version: 10.1.0(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.1
-        version: 3.8.1
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-
-  tools/cli/net-cli:
-    dependencies:
-      '@clack/prompts':
-        specifier: ^1.2.0
-        version: 1.2.0
-      '@effect/cli':
-        specifier: ^0.75.0
-        version: 0.75.0(@effect/platform@0.96.0(effect@3.21.0))(@effect/printer-ansi@0.47.0(@effect/typeclass@0.38.0(effect@3.21.0))(effect@3.21.0))(@effect/printer@0.47.0(@effect/typeclass@0.38.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0)
-      '@effect/platform':
-        specifier: ^0.96.0
-        version: 0.96.0(effect@3.21.0)
-      '@effect/platform-node':
-        specifier: ^0.106.0
-        version: 0.106.0(@effect/cluster@0.56.1(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/workflow@0.16.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(@effect/rpc@0.73.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/sql@0.49.0(@effect/experimental@0.60.0(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(@effect/platform@0.96.0(effect@3.21.0))(effect@3.21.0))(effect@3.21.0)
-      '@univ-lehavre/atlas-net':
-        specifier: workspace:*
-        version: link:../../../packages/net
-      effect:
-        specifier: '>=3.21.0'
-        version: 3.21.0
-      picocolors:
-        specifier: ^1.1.1
-        version: 1.1.1
-    devDependencies:
-      '@types/node':
-        specifier: ^25.5.0
-        version: 25.5.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../../config/shared-config
-      eslint:
-        specifier: ^10.1.0
-        version: 10.1.0(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.1
-        version: 3.8.1
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-
-  tools/cli/researcher-profiles:
-    dependencies:
-      '@clack/prompts':
-        specifier: ^1.2.0
-        version: 1.2.0
-      '@univ-lehavre/atlas-fetch-openalex':
-        specifier: workspace:*
-        version: link:../../../packages/fetch-openalex
-      '@univ-lehavre/atlas-openalex-types':
-        specifier: workspace:*
-        version: link:../../../packages/openalex-types
-      '@univ-lehavre/atlas-researcher-profiles':
-        specifier: workspace:*
-        version: link:../../../packages/researcher-profiles
-      effect:
-        specifier: '>=3.21.0'
-        version: 3.21.0
-      picocolors:
-        specifier: ^1.1.1
-        version: 1.1.1
-    devDependencies:
-      '@types/node':
-        specifier: ^25.5.0
-        version: 25.5.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../../config/shared-config
-      eslint:
-        specifier: ^10.1.0
-        version: 10.1.0(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.1
-        version: 3.8.1
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-
-  tools/dev/redcap-openapi:
-    dependencies:
-      '@clack/prompts':
-        specifier: ^1.2.0
-        version: 1.2.0
-      '@univ-lehavre/atlas-redcap-core':
-        specifier: workspace:*
-        version: link:../../../packages/redcap-core
-      picocolors:
-        specifier: ^1.1.1
-        version: 1.1.1
-      yaml:
-        specifier: ^2.8.3
-        version: 2.8.3
-    devDependencies:
-      '@types/node':
-        specifier: ^25.5.0
-        version: 25.5.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../../config/shared-config
-      eslint:
-        specifier: ^10.1.0
-        version: 10.1.0(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.1
-        version: 3.8.1
-      tsx:
-        specifier: ^4.21.0
-        version: 4.21.0
-      typescript:
-        specifier: ^6.0.2
-        version: 6.0.2
-
 packages:
 
   '@algolia/abtesting@1.13.0':
@@ -1516,6 +1608,9 @@ packages:
   '@chevrotain/utils@11.1.2':
     resolution: {integrity: sha512-4mudFAQ6H+MqBTfqLmU7G1ZwRzCLfJEooL/fsF6rCX5eePMbGhoy5n4g+G4vlh2muDcsCTJtL+uKbOzWxs5LHA==}
 
+  '@clack/core@0.4.2':
+    resolution: {integrity: sha512-NYQfcEy8MWIxrT5Fj8nIVchfRFA26yYKJcvBS7WlUIlw2OmQOY9DhGGXMovyI5J5PpxrCPGkgUi207EBrjpBvg==}
+
   '@clack/core@1.0.0-alpha.4':
     resolution: {integrity: sha512-VCtU+vjyKPMSakVrB9q1bOnXN7QW/w4+YQDQCOF59GrzydW+169i0fVx/qzRRXJgt8KGj/pZZ/JxXroFZIDByg==}
 
@@ -1524,6 +1619,9 @@ packages:
 
   '@clack/core@1.2.0':
     resolution: {integrity: sha512-qfxof/3T3t9DPU/Rj3OmcFyZInceqj/NVtO9rwIuJqCUgh32gwPjpFQQp/ben07qKlhpwq7GzfWpST4qdJ5Drg==}
+
+  '@clack/prompts@0.10.1':
+    resolution: {integrity: sha512-Q0T02vx8ZM9XSv9/Yde0jTmmBQufZhPJfYAg2XrrrxWWaZgq1rr8nU8Hv710BQ1dhoP8rtY7YUdpGej2Qza/cw==}
 
   '@clack/prompts@1.0.0-alpha.4':
     resolution: {integrity: sha512-KnmtDF2xQGoI5AlBme9akHtvCRV0RKAARUXHBQO2tMwnY8B08/4zPWigT7uLK25UPrMCEqnyQPkKRjNdhPbf8g==}
@@ -8061,6 +8159,11 @@ snapshots:
 
   '@chevrotain/utils@11.1.2': {}
 
+  '@clack/core@0.4.2':
+    dependencies:
+      picocolors: 1.1.1
+      sisteransi: 1.0.5
+
   '@clack/core@1.0.0-alpha.4':
     dependencies:
       picocolors: 1.1.1
@@ -8074,6 +8177,12 @@ snapshots:
   '@clack/core@1.2.0':
     dependencies:
       fast-wrap-ansi: 0.1.6
+      sisteransi: 1.0.5
+
+  '@clack/prompts@0.10.1':
+    dependencies:
+      '@clack/core': 0.4.2
+      picocolors: 1.1.1
       sisteransi: 1.0.5
 
   '@clack/prompts@1.0.0-alpha.4':

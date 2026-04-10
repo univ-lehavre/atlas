@@ -17,6 +17,16 @@
 
   type Granularity = 'day' | 'week' | 'month' | 'quarter';
   type Period = '6m' | '12m' | 'all';
+  type NotificationKind = 'info' | 'success' | 'warning' | 'error';
+  type NotificationCode = 'COLLECT' | 'CACHE' | 'DONE' | 'ERROR' | 'NETWORK';
+
+  interface Notification {
+    readonly id: number;
+    readonly kind: NotificationKind;
+    readonly code: string;
+    readonly icon: string;
+    readonly message: string;
+  }
 
   let selectedGranularity = $state<Granularity>('month');
   let selectedPeriod = $state<Period>('6m');
@@ -69,14 +79,52 @@
   let progress = $state(0);
   let progressTotal = $state(0);
   let statusMessage = $state('');
+  let notifications = $state<Notification[]>([]);
+  let notificationId = 0;
+  let progressNotified = false;
 
   const pct = $derived(progressTotal > 0 ? Math.round((progress / progressTotal) * 100) : 0);
+
+  const dismissNotification = (id: number) => {
+    notifications = notifications.filter((notification) => notification.id !== id);
+  };
+
+  const notificationMeta: Record<
+    NotificationCode,
+    { kind: NotificationKind; icon: string; label: string }
+  > = {
+    COLLECT: { kind: 'info', icon: 'R', label: 'COLLECTE' },
+    CACHE: { kind: 'success', icon: 'C', label: 'CACHE' },
+    DONE: { kind: 'success', icon: 'V', label: 'TERMINE' },
+    ERROR: { kind: 'error', icon: '!', label: 'ERREUR' },
+    NETWORK: { kind: 'warning', icon: 'N', label: 'RESEAU' },
+  };
+
+  const pushNotification = (
+    code: NotificationCode,
+    message: string,
+    options?: { sticky?: boolean; durationMs?: number }
+  ) => {
+    const id = ++notificationId;
+    const sticky = options?.sticky ?? false;
+    const durationMs = options?.durationMs ?? 5000;
+    const meta = notificationMeta[code];
+    notifications = [
+      ...notifications,
+      { id, kind: meta.kind, code: meta.label, icon: meta.icon, message },
+    ].slice(-5);
+    if (!sticky) {
+      setTimeout(() => dismissNotification(id), durationMs);
+    }
+  };
 
   const collectFromApi = () => {
     fetching = true;
     progress = 0;
     progressTotal = 0;
+    progressNotified = false;
     statusMessage = 'Connexion…';
+    pushNotification('COLLECT', 'Connexion à REDCap en cours…');
 
     const source = new EventSource('/api/logs');
 
@@ -86,25 +134,36 @@
         total?: number;
         done?: number;
         cachedAt?: number;
+        message?: string;
       };
 
       if (msg.type === 'start') {
         progressTotal = msg.total ?? 0;
         statusMessage = 'Collecte en cours…';
+        pushNotification('COLLECT', `Collecte démarrée (${String(progressTotal)} projets).`);
       } else if (msg.type === 'progress') {
         progress = msg.done ?? 0;
         statusMessage = `${String(progress)} / ${String(progressTotal)} projets`;
+        if (!progressNotified && progressTotal > 0) {
+          progressNotified = true;
+          pushNotification('COLLECT', 'Progression de la collecte en cours.');
+        }
       } else if (msg.type === 'cached') {
         statusMessage = 'Données récentes disponibles';
+        pushNotification('CACHE', 'Le cache est récent: aucune collecte nécessaire.');
         source.close();
         fetching = false;
       } else if (msg.type === 'done') {
         statusMessage = 'Mise à jour des graphiques…';
         source.close();
         await invalidateAll();
+        pushNotification('DONE', 'Actualisation terminée, graphiques mis à jour.');
         fetching = false;
       } else if (msg.type === 'error') {
         statusMessage = 'Erreur lors de la collecte';
+        pushNotification('ERROR', msg.message ?? 'Erreur pendant la collecte REDCap.', {
+          durationMs: 7000,
+        });
         source.close();
         fetching = false;
       }
@@ -112,6 +171,9 @@
 
     source.onerror = () => {
       statusMessage = 'Connexion perdue';
+      pushNotification('NETWORK', 'Connexion SSE perdue pendant la collecte.', {
+        durationMs: 7000,
+      });
       source.close();
       fetching = false;
     };
@@ -171,6 +233,28 @@
   {:else}
     <p class="empty">Aucune donnée — cliquez sur « Actualiser depuis REDCap ».</p>
   {/if}
+
+  <div class="notice-stack" aria-live="polite">
+    {#each notifications as notification (notification.id)}
+      <article class="notice" data-kind={notification.kind}>
+        <div class="notice-main">
+          <div class="notice-meta">
+            <span class="notice-icon">{notification.icon}</span>
+            <span class="notice-code">{notification.code}</span>
+          </div>
+          <p>{notification.message}</p>
+        </div>
+        <button
+          class="notice-close"
+          type="button"
+          aria-label="Fermer la notification"
+          onclick={() => dismissNotification(notification.id)}
+        >
+          ×
+        </button>
+      </article>
+    {/each}
+  </div>
 </main>
 
 <style>
@@ -291,6 +375,117 @@
     font-size: 0.9rem;
     margin-top: 2rem;
     text-align: center;
+  }
+
+  .notice-stack {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    display: grid;
+    gap: 0.6rem;
+    width: min(360px, calc(100vw - 2rem));
+    z-index: 50;
+  }
+
+  .notice {
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+    padding: 0.65rem 0.75rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  .notice-main {
+    display: grid;
+    gap: 0.35rem;
+  }
+
+  .notice-meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .notice-icon {
+    width: 1.2rem;
+    height: 1.2rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    border: 1px solid #d1d5db;
+    color: #111827;
+    background: #f9fafb;
+  }
+
+  .notice-code {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    border-radius: 999px;
+    padding: 0.12rem 0.4rem;
+    border: 1px solid #d1d5db;
+    color: #374151;
+    background: #f3f4f6;
+  }
+
+  .notice p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #111827;
+  }
+
+  .notice[data-kind='info'] {
+    border-left: 4px solid #2563eb;
+  }
+
+  .notice[data-kind='success'] {
+    border-left: 4px solid #15803d;
+  }
+
+  .notice[data-kind='warning'] {
+    border-left: 4px solid #b45309;
+  }
+
+  .notice[data-kind='error'] {
+    border-left: 4px solid #b91c1c;
+  }
+
+  .notice[data-kind='success'] .notice-icon,
+  .notice[data-kind='success'] .notice-code {
+    border-color: #86efac;
+    background: #dcfce7;
+    color: #14532d;
+  }
+
+  .notice[data-kind='warning'] .notice-icon,
+  .notice[data-kind='warning'] .notice-code {
+    border-color: #fcd34d;
+    background: #fef3c7;
+    color: #78350f;
+  }
+
+  .notice[data-kind='error'] .notice-icon,
+  .notice[data-kind='error'] .notice-code {
+    border-color: #fca5a5;
+    background: #fee2e2;
+    color: #7f1d1d;
+  }
+
+  .notice-close {
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
   }
 
   @media (max-width: 780px) {

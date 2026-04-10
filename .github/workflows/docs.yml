@@ -4,12 +4,20 @@ on:
   push:
     branches: [main]
     paths:
-      - 'docs/**'
-      - 'packages/*/src/**'
-      - 'apps/*/src/**'
-      - 'services/*/src/**'
-      - 'tools/*/src/**'
-      - '.github/workflows/docs.yml'
+      - "docs/**"
+      - "packages/*/src/**"
+      - "packages/*/README.md"
+      - "apps/*/src/**"
+      - "apps/*/README.md"
+      - "services/*/src/**"
+      - "services/*/README.md"
+      - "cli/*/src/**"
+      - "cli/*/README.md"
+      - "config/*/src/**"
+      - "scripts/docs/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
 permissions:
@@ -24,11 +32,13 @@ concurrency:
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
     name: Build Documentation
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v6
         with:
@@ -40,6 +50,12 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+
+      - name: Create SvelteKit env files
+        run: |
+          for app in apps/amarre apps/ecrin apps/find-an-expert; do
+            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
+          done
 
       - run: pnpm install --frozen-lockfile
 
@@ -64,6 +80,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
