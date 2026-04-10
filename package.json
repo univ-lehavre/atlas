@@ -38,7 +38,7 @@
     "stats:generate": "tsx scripts/docs/generate-repo-stats.ts",
     "api:sidebar": "tsx scripts/docs/generate-api-sidebar.ts",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "pnpm api:sidebar && pnpm stats:generate && vitepress build docs",
+    "docs:build": "mkdir -p docs/public/openapi && pnpm api:sidebar && pnpm stats:generate && vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "docs:api": "typedoc",
     "changeset:add": "changeset",
