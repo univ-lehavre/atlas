@@ -36,7 +36,6 @@
     "@effect/platform-node": "^0.106.0",
     "@effect/rpc": "^0.75.0",
     "@effect/sql": "^0.51.0",
-    "@effect/workflow": "^0.18.0",
     "@univ-lehavre/atlas-openalex-types": "workspace:*",
     "@univ-lehavre/atlas-validate-openalex": "workspace:*",
     "effect": "^3.21.0"
