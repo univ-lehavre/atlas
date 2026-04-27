@@ -1,5 +1,16 @@
 # @univ-lehavre/atlas-stats-cli
 
+## 1.0.0
+
+### Major Changes
+
+- [`885539b`](https://github.com/univ-lehavre/atlas/commit/885539b9ba8c013680cb9784ccf8d124c8b73ce4) Thanks [@chasset](https://github.com/chasset)! - Bump all packages to v1.0.0 — stabilisation des API publiques.
+
+### Patch Changes
+
+- Updated dependencies [[`885539b`](https://github.com/univ-lehavre/atlas/commit/885539b9ba8c013680cb9784ccf8d124c8b73ce4)]:
+  - @univ-lehavre/atlas-stats@1.0.0
+
 ## 0.1.3
 
 ### Patch Changes

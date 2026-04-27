@@ -1,5 +1,20 @@
 # @univ-lehavre/atlas-crf
 
+## 2.0.4
+
+### Patch Changes
+
+- [`dc70780`](https://github.com/univ-lehavre/atlas/commit/dc707802c2dc220e9eba4b6089b090a91cbf7465) Thanks [@chasset](https://github.com/chasset)! - Extract CLI interaction from `packages/openalex` into new `cli/openalex` workspace.
+
+  `@univ-lehavre/atlas-openalex` is now a proper reusable library (adds `exports`/`main`/`types` fields, removes `@clack/prompts`, `yargs`, `picocolors` dependencies). The interactive researcher curation program moves to `@univ-lehavre/atlas-openalex-cli`.
+
+  `@univ-lehavre/atlas-crf`: extract `projectResponses` helper and refactor `createApp` to reduce duplication.
+
+  `@univ-lehavre/atlas-find-an-expert`: add consent and user service test coverage.
+
+- Updated dependencies []:
+  - @univ-lehavre/atlas-redcap-client@2.0.3
+
 ## 2.0.3
 
 ### Patch Changes

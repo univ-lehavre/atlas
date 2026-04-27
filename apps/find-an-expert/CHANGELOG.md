@@ -1,5 +1,27 @@
 # @univ-lehavre/atlas-find-an-expert
 
+## 1.0.0
+
+### Major Changes
+
+- [`885539b`](https://github.com/univ-lehavre/atlas/commit/885539b9ba8c013680cb9784ccf8d124c8b73ce4) Thanks [@chasset](https://github.com/chasset)! - Bump all packages to v1.0.0 — stabilisation des API publiques.
+
+### Patch Changes
+
+- [`dc70780`](https://github.com/univ-lehavre/atlas/commit/dc707802c2dc220e9eba4b6089b090a91cbf7465) Thanks [@chasset](https://github.com/chasset)! - Extract CLI interaction from `packages/openalex` into new `cli/openalex` workspace.
+
+  `@univ-lehavre/atlas-openalex` is now a proper reusable library (adds `exports`/`main`/`types` fields, removes `@clack/prompts`, `yargs`, `picocolors` dependencies). The interactive researcher curation program moves to `@univ-lehavre/atlas-openalex-cli`.
+
+  `@univ-lehavre/atlas-crf`: extract `projectResponses` helper and refactor `createApp` to reduce duplication.
+
+  `@univ-lehavre/atlas-find-an-expert`: add consent and user service test coverage.
+
+- Updated dependencies [[`885539b`](https://github.com/univ-lehavre/atlas/commit/885539b9ba8c013680cb9784ccf8d124c8b73ce4)]:
+  - @univ-lehavre/atlas-appwrite@1.0.0
+  - @univ-lehavre/atlas-errors@1.0.0
+  - @univ-lehavre/atlas-validators@1.0.0
+  - @univ-lehavre/atlas-fetch-openalex@1.0.0
+
 ## 0.5.6
 
 ### Patch Changes

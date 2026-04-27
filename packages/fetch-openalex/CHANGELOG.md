@@ -1,5 +1,17 @@
 # @univ-lehavre/atlas-fetch-openalex
 
+## 1.0.0
+
+### Major Changes
+
+- [`885539b`](https://github.com/univ-lehavre/atlas/commit/885539b9ba8c013680cb9784ccf8d124c8b73ce4) Thanks [@chasset](https://github.com/chasset)! - Bump all packages to v1.0.0 — stabilisation des API publiques.
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @univ-lehavre/atlas-fetch-one-api-page@1.1.3
+  - @univ-lehavre/atlas-openalex-types@3.1.4
+
 ## 0.4.4
 
 ### Patch Changes

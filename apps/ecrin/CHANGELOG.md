@@ -1,5 +1,14 @@
 # @univ-lehavre/ecrin
 
+## 2.0.5
+
+### Patch Changes
+
+- Updated dependencies [[`885539b`](https://github.com/univ-lehavre/atlas/commit/885539b9ba8c013680cb9784ccf8d124c8b73ce4)]:
+  - @univ-lehavre/atlas-appwrite@1.0.0
+  - @univ-lehavre/atlas-errors@1.0.0
+  - @univ-lehavre/atlas-validators@1.0.0
+
 ## 2.0.4
 
 ### Patch Changes
