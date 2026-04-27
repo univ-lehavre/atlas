@@ -1,5 +1,16 @@
 # @univ-lehavre/atlas-researcher-profiles
 
+## 1.3.8
+
+### Patch Changes
+
+- [#109](https://github.com/univ-lehavre/atlas/pull/109) [`2373654`](https://github.com/univ-lehavre/atlas/commit/2373654c0267e728c87807786b4b311cae29b4ec) Thanks [@chasset](https://github.com/chasset)! - Mise à jour des dépendances (minor/patch) : svelte, vite, vitest, typescript, eslint, prettier, effect, @sveltejs/kit, appwrite, knip, turbo, lefthook, et autres.
+
+- Updated dependencies [[`2373654`](https://github.com/univ-lehavre/atlas/commit/2373654c0267e728c87807786b4b311cae29b4ec)]:
+  - @univ-lehavre/atlas-fetch-openalex@0.4.4
+  - @univ-lehavre/atlas-openalex-types@3.1.4
+  - @univ-lehavre/atlas-researcher-profiles@1.6.4
+
 ## 1.3.7
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-net",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Network diagnostic utilities for Atlas",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
