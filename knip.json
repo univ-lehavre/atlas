@@ -64,7 +64,6 @@
         "src/**/*.ts"
       ],
       "ignore": [
-        "src/errors.ts",
         "src/db/index.ts",
         "src/group/helpers.ts"
       ],

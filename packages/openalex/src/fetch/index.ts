@@ -1,1 +1,5 @@
-export { searchAuthors } from "./fetch-openalex-entities.js";
+export {
+  searchAuthors,
+  retrieve_articles,
+  retrieve_articles_given_work_ids,
+} from "./fetch-openalex-entities.js";
