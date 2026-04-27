@@ -1,5 +1,11 @@
 # @univ-lehavre/atlas-researcher-profiles
 
+## 1.6.2
+
+### Patch Changes
+
+- [#106](https://github.com/univ-lehavre/atlas/pull/106) [`1c7401f`](https://github.com/univ-lehavre/atlas/commit/1c7401fd3b0b2056706365db120d1b049df9198f) Thanks [@chasset](https://github.com/chasset)! - Raise the DOM parser dependency floor used for DOCX extraction to avoid vulnerable XML serialization versions.
+
 ## 1.6.1
 
 ### Patch Changes
