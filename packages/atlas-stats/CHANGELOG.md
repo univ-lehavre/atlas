@@ -1,5 +1,11 @@
 # @univ-lehavre/atlas-stats
 
+## 0.1.3
+
+### Patch Changes
+
+- [#109](https://github.com/univ-lehavre/atlas/pull/109) [`2373654`](https://github.com/univ-lehavre/atlas/commit/2373654c0267e728c87807786b4b311cae29b4ec) Thanks [@chasset](https://github.com/chasset)! - Mise à jour des dépendances (minor/patch) : svelte, vite, vitest, typescript, eslint, prettier, effect, @sveltejs/kit, appwrite, knip, turbo, lefthook, et autres.
+
 ## 0.1.2
 
 ### Patch Changes

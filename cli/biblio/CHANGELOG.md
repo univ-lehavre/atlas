@@ -1,5 +1,15 @@
 # @univ-lehavre/atlas-biblio-cli
 
+## 0.2.5
+
+### Patch Changes
+
+- [#109](https://github.com/univ-lehavre/atlas/pull/109) [`2373654`](https://github.com/univ-lehavre/atlas/commit/2373654c0267e728c87807786b4b311cae29b4ec) Thanks [@chasset](https://github.com/chasset)! - Mise à jour des dépendances (minor/patch) : svelte, vite, vitest, typescript, eslint, prettier, effect, @sveltejs/kit, appwrite, knip, turbo, lefthook, et autres.
+
+- Updated dependencies [[`2373654`](https://github.com/univ-lehavre/atlas/commit/2373654c0267e728c87807786b4b311cae29b4ec)]:
+  - @univ-lehavre/atlas-openalex-types@3.1.4
+  - @univ-lehavre/atlas-validate-openalex@0.5.4
+
 ## 0.2.4
 
 ### Patch Changes

@@ -1,5 +1,17 @@
 # @univ-lehavre/atlas-find-an-expert
 
+## 0.5.6
+
+### Patch Changes
+
+- [#109](https://github.com/univ-lehavre/atlas/pull/109) [`2373654`](https://github.com/univ-lehavre/atlas/commit/2373654c0267e728c87807786b4b311cae29b4ec) Thanks [@chasset](https://github.com/chasset)! - Mise à jour des dépendances (minor/patch) : svelte, vite, vitest, typescript, eslint, prettier, effect, @sveltejs/kit, appwrite, knip, turbo, lefthook, et autres.
+
+- Updated dependencies [[`2373654`](https://github.com/univ-lehavre/atlas/commit/2373654c0267e728c87807786b4b311cae29b4ec)]:
+  - @univ-lehavre/atlas-appwrite@0.2.4
+  - @univ-lehavre/atlas-errors@0.2.4
+  - @univ-lehavre/atlas-fetch-openalex@0.4.4
+  - @univ-lehavre/atlas-validators@0.2.4
+
 ## 0.5.5
 
 ### Patch Changes
