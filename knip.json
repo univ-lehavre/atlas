@@ -128,9 +128,6 @@
     "packages/researcher-profiles": {
       "project": [
         "src/**/*.ts"
-      ],
-      "ignoreDependencies": [
-        "@xmldom/xmldom"
       ]
     },
     "cli/researcher-profiles": {

@@ -171,7 +171,8 @@
   "pnpm": {
     "overrides": {
       "@isaacs/brace-expansion": ">=5.0.1",
-      "@xmldom/xmldom": ">=0.9.9",
+      "@sveltejs/kit": ">=2.57.1",
+      "@xmldom/xmldom": ">=0.9.10",
       "defu": ">=6.1.7",
       "effect": ">=3.21.0",
       "fast-xml-parser": ">=5.5.11",
@@ -180,6 +181,7 @@
       "lodash-es": ">=4.18.1",
       "minimatch": ">=10.2.5",
       "picomatch": ">=4.0.4",
+      "protobufjs": ">=7.5.5",
       "rollup": ">=4.60.1",
       "undici": ">=7.24.7 <8"
     },
