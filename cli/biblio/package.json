@@ -31,21 +31,21 @@
   },
   "dependencies": {
     "@clack/prompts": "1.0.0-alpha.6",
-    "@effect/cluster": "^0.58.0",
+    "@effect/cluster": "^0.58.2",
     "@effect/experimental": "^0.60.0",
     "@effect/platform-node": "^0.106.0",
-    "@effect/rpc": "^0.75.0",
-    "@effect/sql": "^0.51.0",
+    "@effect/rpc": "^0.75.1",
+    "@effect/sql": "^0.51.1",
     "@univ-lehavre/atlas-openalex-types": "workspace:*",
     "@univ-lehavre/atlas-validate-openalex": "workspace:*",
-    "effect": "^3.21.0"
+    "effect": "^3.21.2"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "eslint": "^10.2.0",
-    "prettier": "^3.8.2",
-    "typescript": "^6.0.2"
+    "eslint": "^10.2.1",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3"
   },
   "publishConfig": {
     "access": "public"

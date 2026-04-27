@@ -24,7 +24,7 @@ export type TGitHubStats = z.infer<typeof GitHubStats>;
 /**
  * GitHub repository identifier.
  */
-export const GitHubRepo = z.object({
+const GitHubRepo = z.object({
   owner: z.string(),
   repo: z.string(),
 });
