@@ -31,28 +31,28 @@ const mapErrorToResponse = (
         data: null,
         error: { code: e.code ?? 'redcap_api_error', message: e.message },
       },
-      status: 400 as ContentfulStatusCode,
+      status: toContentfulStatus(400),
     })),
     Match.tag('RedcapNetworkError', () => ({
       body: {
         data: null,
         error: { code: 'network_error', message: 'Failed to connect to REDCap' },
       },
-      status: 503 as ContentfulStatusCode,
+      status: toContentfulStatus(503),
     })),
     Match.tag('VersionParseError', (e) => ({
       body: {
         data: null,
         error: { code: 'version_parse_error', message: e.message },
       },
-      status: 502 as ContentfulStatusCode,
+      status: toContentfulStatus(502),
     })),
     Match.tag('UnsupportedVersionError', (e) => ({
       body: {
         data: null,
         error: { code: 'unsupported_version', message: e.message },
       },
-      status: 501 as ContentfulStatusCode,
+      status: toContentfulStatus(501),
     })),
     Match.exhaustive
   );

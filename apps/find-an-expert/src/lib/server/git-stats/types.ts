@@ -7,7 +7,7 @@ export type { TGitHubStats };
 /**
  * Statistics for a single commit.
  */
-export const CommitStats = z.object({
+const CommitStats = z.object({
   hash: z.string(),
   timestamp: z.date(),
   author: z.string(),
@@ -22,7 +22,7 @@ export type TCommitStats = z.infer<typeof CommitStats>;
 /**
  * Statistics for TypeScript source code files.
  */
-export const CodeStats = z.object({
+const CodeStats = z.object({
   files: z.number().int().nonnegative(),
   constants: z.number().int().nonnegative(),
   functions: z.number().int().nonnegative(),
@@ -34,7 +34,7 @@ export type TCodeStats = z.infer<typeof CodeStats>;
 /**
  * Statistics for test files (*.spec.ts, *.test.ts).
  */
-export const TestStats = z.object({
+const TestStats = z.object({
   files: z.number().int().nonnegative(),
   describes: z.number().int().nonnegative(),
   tests: z.number().int().nonnegative(),
@@ -45,7 +45,7 @@ export type TTestStats = z.infer<typeof TestStats>;
 /**
  * Code delta representing added/modified/deleted statistics.
  */
-export const CodeDelta = z.object({
+const CodeDelta = z.object({
   added: CodeStats,
   modified: CodeStats,
   deleted: CodeStats,
@@ -56,7 +56,7 @@ export type TCodeDelta = z.infer<typeof CodeDelta>;
 /**
  * Statistics aggregated by time period (hourly).
  */
-export const PeriodStats = z.object({
+const PeriodStats = z.object({
   period: z.string(),
   commits: z.number().int().nonnegative(),
   additions: z.number().int().nonnegative(),
@@ -72,7 +72,7 @@ export type TPeriodStats = z.infer<typeof PeriodStats>;
 /**
  * Global repository statistics.
  */
-export const RepositoryStats = z.object({
+const RepositoryStats = z.object({
   totalCommits: z.number().int().nonnegative(),
   totalAdditions: z.number().int().nonnegative(),
   totalDeletions: z.number().int().nonnegative(),

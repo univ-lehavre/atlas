@@ -132,10 +132,7 @@ const ocrPdf = async (buffer: ArrayBuffer): Promise<string> => {
   const results: string[] = await Promise.all(
     Array.from({ length: pageCount }, async (_, i) => {
       const page = await pdf.getPage(i + 1);
-      return renderPageToText(
-        worker as Parameters<typeof renderPageToText>[0],
-        page,
-      );
+      return renderPageToText(worker, page);
     }),
   );
   // eslint-disable-next-line functional/no-expression-statements -- terminate worker side effect

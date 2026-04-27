@@ -1,7 +1,7 @@
 import z from 'zod';
 import { makeResponseSchema } from './common';
 
-export const surveyRequestItem = z
+const surveyRequestItem = z
   .object({
     record_id: z
       .string()
@@ -52,7 +52,7 @@ export const surveyRequestItem = z
 
 export type SurveyRequestItem = z.infer<typeof surveyRequestItem>;
 
-export const surveyRequestList = z.array(surveyRequestItem).openapi('SurveyRequestList');
+const surveyRequestList = z.array(surveyRequestItem).openapi('SurveyRequestList');
 
 export type SurveyRequestList = z.infer<typeof surveyRequestList>;
 

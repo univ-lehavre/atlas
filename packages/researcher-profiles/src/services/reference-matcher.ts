@@ -81,7 +81,7 @@ export const matchReferences = (
 ): readonly MatchResult[] => {
   const lines = splitLines(text);
 
-  const fuse = new Fuse(lines as string[], {
+  const fuse = new Fuse(lines, {
     includeScore: true,
     threshold,
     ignoreLocation: true,

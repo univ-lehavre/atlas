@@ -60,7 +60,7 @@ export type TCurrentConsent = z.infer<typeof CurrentConsent>;
 /**
  * Response for consent status API.
  */
-export const ConsentStatusResponse = z.object({
+const ConsentStatusResponse = z.object({
   consentType: ConsentType,
   granted: z.boolean().nullable(),
   updatedAt: appwriteDatetime.nullable(),
