@@ -1,6 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { User, type TUser, type UserRepository } from './types';
-import { isAdmin } from './service';
+import { isAdmin, getProfile } from './service';
+
+const mocks = vi.hoisted(() => ({ userRepo: { getById: vi.fn() } }));
+
+vi.mock('./repository', () => ({
+  AppwriteUserRepository: vi.fn(function () {
+    return mocks.userRepo;
+  }),
+}));
 
 describe('User schema', () => {
   it('should validate a complete user object', () => {
@@ -166,5 +174,31 @@ describe('isAdmin', () => {
 
   it('should return false for null user', () => {
     expect(isAdmin(null)).toBe(false);
+  });
+});
+
+describe('getProfile', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should return the user from the repository', async () => {
+    const user: TUser = { id: 'user1', email: 'user@example.com', labels: [] };
+    mocks.userRepo.getById.mockResolvedValue(user);
+
+    const result = await getProfile('user1');
+
+    expect(mocks.userRepo.getById).toHaveBeenCalledWith('user1');
+    expect(result).toEqual(user);
+  });
+
+  it('should return fallback profile on repository error', async () => {
+    mocks.userRepo.getById.mockResolvedValue({ id: 'user2', email: null, labels: [] });
+
+    const result = await getProfile('user2');
+
+    expect(result.id).toBe('user2');
+    expect(result.email).toBeNull();
+    expect(result.labels).toEqual([]);
   });
 });

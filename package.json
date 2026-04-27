@@ -187,6 +187,13 @@
     },
     "patchedDependencies": {
       "reprism@0.0.11": "patches/reprism@0.0.11.patch"
+    },
+    "peerDependencyRules": {
+      "allowedVersions": {
+        "@effect/vitest>vitest": "^4",
+        "@standard-community/standard-json>quansync": "^1",
+        "openapi-typescript>typescript": "^6"
+      }
     }
   }
 }

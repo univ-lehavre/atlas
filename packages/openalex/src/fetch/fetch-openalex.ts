@@ -9,8 +9,6 @@ import { getEnv } from "../config.js";
 import type { ConfigError } from "effect/ConfigError";
 import { FetchError, StatusError } from "../errors.js";
 import type { OpenalexResponse, Query } from "../types/index.js";
-import { log, spinner } from "@clack/prompts";
-import type { SpinnerResult } from "@clack/prompts";
 
 const fetchAPI = <T>(
   base_url: URL,
@@ -27,8 +25,6 @@ const fetchAPI = <T>(
       const { user_agent, rate_limit, openalex_api_key } = yield* getEnv();
       const ratelimiter: RateLimiter.RateLimiter =
         yield* RateLimiter.make(rate_limit);
-      const spin = spinner();
-      spin.start("Fouille des données d'OpenAlex");
 
       // Inject api_key if available
       if (openalex_api_key) {
@@ -42,11 +38,12 @@ const fetchAPI = <T>(
         params,
         user_agent,
         base_url,
-        spin,
         entity_name,
       );
       const results = raw.flat();
-      spin.stop(`${results.length} ${entity_name} téléchargés d'OpenAlex`);
+      yield* Effect.logInfo(
+        `${results.length} ${entity_name} téléchargés d'OpenAlex`,
+      );
       const result: OpenalexResponse<T> = {
         meta: {
           count: results.length,
@@ -66,7 +63,6 @@ const exhaust = <T>(
   params: Query,
   user_agent: string,
   base_url: URL,
-  spin: SpinnerResult,
   entity_name: string,
   count: number = 0,
 ): Effect.Effect<T[][], StatusError | FetchError, never> =>
@@ -90,14 +86,15 @@ const exhaust = <T>(
         const response = pageResult.data;
         count += response.results.length;
         if (count > 10000) {
-          log.error(
-            `Le nombre maximal de 10 000 ${entity_name} a été atteint. Veuillez affiner votre recherche.`,
+          yield* Effect.fail(
+            new StatusError(
+              `Le nombre maximal de 10 000 ${entity_name} a été atteint. Veuillez affiner votre recherche.`,
+            ),
           );
-          process.exit(1);
         }
 
         total_pages = Math.ceil(response.meta.count / response.meta.per_page);
-        spin.message(
+        yield* Effect.logInfo(
           `${count}/${response.meta.count} ${entity_name} téléchargés | Page ${state}/${total_pages}`,
         );
         const result = response.results;

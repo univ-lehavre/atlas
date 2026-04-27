@@ -14,7 +14,7 @@ import type { Option, GroupMultiSelectOptions } from "@clack/prompts";
 import process from "node:process";
 import { Effect } from "effect";
 import color from "picocolors";
-import { PromptError } from "./errors.js";
+import { PromptError } from "@univ-lehavre/atlas-openalex";
 
 const prepare = (title: string): void =>
   intro(`${color.bgCyan(color.black(` ${title} `))}`);
