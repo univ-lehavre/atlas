@@ -1,5 +1,13 @@
 # @univ-lehavre/atlas-crf-cli
 
+## 2.0.5
+
+### Patch Changes
+
+- Updated dependencies [[`dc70780`](https://github.com/univ-lehavre/atlas/commit/dc707802c2dc220e9eba4b6089b090a91cbf7465)]:
+  - @univ-lehavre/atlas-crf@2.0.4
+  - @univ-lehavre/atlas-redcap-client@2.0.3
+
 ## 2.0.4
 
 ### Patch Changes

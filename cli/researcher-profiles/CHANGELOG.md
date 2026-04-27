@@ -1,5 +1,14 @@
 # @univ-lehavre/atlas-researcher-profiles
 
+## 1.3.9
+
+### Patch Changes
+
+- Updated dependencies [[`885539b`](https://github.com/univ-lehavre/atlas/commit/885539b9ba8c013680cb9784ccf8d124c8b73ce4)]:
+  - @univ-lehavre/atlas-fetch-openalex@1.0.0
+  - @univ-lehavre/atlas-openalex-types@3.1.4
+  - @univ-lehavre/atlas-researcher-profiles@1.6.5
+
 ## 1.3.8
 
 ### Patch Changes

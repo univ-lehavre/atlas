@@ -1,5 +1,11 @@
 # @univ-lehavre/atlas-redcap-logs
 
+## 1.0.0
+
+### Major Changes
+
+- [`885539b`](https://github.com/univ-lehavre/atlas/commit/885539b9ba8c013680cb9784ccf8d124c8b73ce4) Thanks [@chasset](https://github.com/chasset)! - Bump all packages to v1.0.0 — stabilisation des API publiques.
+
 ## 0.3.2
 
 ### Patch Changes
