@@ -1,5 +1,11 @@
 # @univ-lehavre/atlas-researcher-profiles
 
+## 1.6.3
+
+### Patch Changes
+
+- [#105](https://github.com/univ-lehavre/atlas/pull/105) [`3bec138`](https://github.com/univ-lehavre/atlas/commit/3bec138f504b95fbc616746e90b2deeac1e815a7) Thanks [@chasset](https://github.com/chasset)! - Validate researcher CSV inputs and make monthly OpenAlex refresh checks deterministic.
+
 ## 1.6.2
 
 ### Patch Changes
