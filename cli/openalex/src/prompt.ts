@@ -7,14 +7,12 @@ import {
   text,
   select,
   autocompleteMultiselect,
-  progress,
-  groupMultiselect,
 } from "@clack/prompts";
-import type { Option, GroupMultiSelectOptions } from "@clack/prompts";
+import type { Option } from "@clack/prompts";
 import process from "node:process";
 import { Effect } from "effect";
 import color from "picocolors";
-import { PromptError } from "./errors.js";
+import { PromptError } from "@univ-lehavre/atlas-openalex";
 
 const prepare = (title: string): void =>
   intro(`${color.bgCyan(color.black(` ${title} `))}`);
@@ -95,28 +93,4 @@ const multiple = (message: string, options: Option<string>[]) =>
       new PromptError(`Impossible to set parameters`, { cause: error }),
   });
 
-const groupSelect = (opts: GroupMultiSelectOptions<string>) =>
-  Effect.tryPromise({
-    try: () =>
-      group(
-        {
-          selection: () => groupMultiselect<string>(opts),
-        },
-        {
-          onCancel,
-        },
-      ),
-    catch: (error) =>
-      new PromptError(`Impossible to set parameters`, { cause: error }),
-  });
-
-export {
-  prepare,
-  finish,
-  who,
-  multiple,
-  log,
-  progress,
-  groupSelect,
-  selection,
-};
+export { prepare, finish, who, multiple, log, selection };

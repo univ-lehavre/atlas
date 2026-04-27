@@ -56,32 +56,28 @@ git checkout -b fix/bug-fix
 pnpm dev
 
 # A specific package
-pnpm -F @univ-lehavre/crf dev
+pnpm -F @univ-lehavre/atlas-crf dev
 ```
 
 ### 3. Check Before Committing
 
 ```bash
-# Quick check (format + lint)
-pnpm check:quick
+# Full CI check (format + lint + typecheck + tests + build)
+pnpm ci:checks
 
-# Full check
-pnpm check:full
-
-# Auto-fix format and lint issues
-pnpm fix
+# All audits (security + licenses + unused + structure + duplicates + size)
+pnpm ci:audit
 ```
 
 ### 4. Commit
 
-The `pre-commit` hook automatically runs:
+The `pre-commit` hook automatically runs in parallel:
 
-- Prettier (format)
+- Branch guard (blocks direct commits to `main`)
+- Prettier (format check)
 - ESLint (lint)
 - TypeScript (typecheck)
-- Vitest (test)
-- Knip (unused code)
-- jscpd (duplicate code)
+- SvelteKit (svelte:check)
 
 ### 5. Push
 
@@ -89,11 +85,22 @@ The `pre-push` hook checks:
 
 - That you are not on `main` (direct push is forbidden)
 - That your branch is synchronized with `origin/main`
-- Security audit
-- Dependency licenses
-- Lockfile integrity
+- Security audit (`audit:security`)
+- Dependency licenses (`audit:licenses`)
+- Lockfile integrity (`pnpm install --frozen-lockfile`)
+- Tests (`test:coverage`)
+- Duplicate code (`audit:duplicates`)
+- Unused code (`audit:unused`)
 
-### 6. Create a Pull Request
+### 6. Create a Changeset
+
+Before opening a PR, create a changeset to document the version bump:
+
+```bash
+pnpm changeset:add
+```
+
+### 7. Create a Pull Request
 
 Push your branch and create a PR on GitHub targeting `main`.
 
@@ -103,14 +110,13 @@ Push your branch and create a PR on GitHub targeting `main`.
 
 Executed before each commit. If a check fails, the commit is rejected.
 
-| Check     | Description               |
-| --------- | ------------------------- |
-| format    | Prettier auto-fix         |
-| lint      | ESLint auto-fix           |
-| typecheck | TypeScript verification   |
-| test      | Vitest tests              |
-| knip      | Unused code detection     |
-| cpd       | Duplicate code detection  |
+| Check          | Description                          |
+| -------------- | ------------------------------------ |
+| check-branch   | Blocks direct commits to `main`      |
+| format         | Prettier format check                |
+| lint           | ESLint                               |
+| typecheck      | TypeScript verification              |
+| svelte:check   | SvelteKit diagnostics                |
 
 ### pre-push
 
@@ -120,13 +126,16 @@ Executed before each push.
 | -------------- | ---------------------------------------- |
 | check-branch   | Blocks direct push to `main`             |
 | check-sync     | Warns if branch is not up to date        |
-| check-audit    | npm security audit                       |
+| check-audit    | npm security audit (high severity)       |
 | check-licenses | License verification                     |
 | check-lockfile | pnpm lockfile integrity                  |
+| test           | Test coverage                            |
+| cpd            | Duplicate code detection                 |
+| knip           | Unused code detection                    |
 
 ### commit-msg
 
-Verifies commit message format (Conventional Commits).
+Verifies commit message format (Conventional Commits). Email lines are automatically stripped.
 
 ### Temporarily Bypassing Hooks
 
@@ -146,58 +155,59 @@ git push --no-verify
 
 ### Development
 
-| Script           | Description                |
-| ---------------- | -------------------------- |
-| `pnpm dev`       | Watch mode for all packages |
-| `pnpm build`     | Build all packages         |
-| `pnpm test`      | Run tests                  |
-| `pnpm typecheck` | TypeScript verification    |
+| Script              | Description                    |
+| ------------------- | ------------------------------ |
+| `pnpm dev`          | Watch mode for all packages    |
+| `pnpm build`        | Build all packages             |
+| `pnpm test`         | Run tests                      |
+| `pnpm test:coverage`| Run tests with coverage        |
+| `pnpm typecheck`    | TypeScript verification        |
+| `pnpm lint`         | ESLint                         |
+| `pnpm format`       | Auto-fix formatting            |
+| `pnpm svelte:check` | SvelteKit diagnostics          |
 
-### Quality
+### CI
 
-| Script             | Description                                          |
-| ------------------ | ---------------------------------------------------- |
-| `pnpm fix`         | Auto-fix format + lint                               |
-| `pnpm check:quick` | Quick check (format + lint)                          |
-| `pnpm check`       | Standard check (format + lint + knip + cpd)          |
-| `pnpm check:full`  | Full check (+ typecheck + test + audit + size)       |
-
-### Ready (Pre-merge/release Verification)
-
-| Script               | Description                        | When to Use             |
-| -------------------- | ---------------------------------- | ----------------------- |
-| `pnpm ready:quick`   | format + lint + typecheck + test   | Before a quick commit   |
-| `pnpm ready`         | check:full + build                 | Before pushing a PR     |
-| `pnpm ready:release` | ready + outdated:major             | Before a release        |
+| Script           | Description                                                        |
+| ---------------- | ------------------------------------------------------------------ |
+| `pnpm ci:checks` | format:check + lint + typecheck + test:coverage + build (via turbo)|
+| `pnpm ci:audit`  | security + licenses + unused + structure + duplicates + size       |
 
 ### Audits
 
-| Script                | Description                          |
-| --------------------- | ------------------------------------ |
-| `pnpm audit`          | npm security audit                   |
-| `pnpm audit:all`      | All audits (security + licenses)     |
-| `pnpm license:audit`  | Allowed licenses verification        |
-| `pnpm knip`           | Unused code detection                |
-| `pnpm cpd`            | Duplicate code detection             |
-| `pnpm size`           | Bundle size verification             |
-| `pnpm outdated`       | Outdated dependencies                |
-| `pnpm outdated:major` | Dependencies with outdated major     |
+| Script                   | Description                              |
+| ------------------------ | ---------------------------------------- |
+| `pnpm audit:security`    | npm security audit (high severity)       |
+| `pnpm audit:licenses`    | Allowed licenses verification            |
+| `pnpm audit:unused`      | Unused exports/dependencies (knip)       |
+| `pnpm audit:structure`   | Workspace structure verification         |
+| `pnpm audit:duplicates`  | Duplicate code detection (jscpd)         |
+| `pnpm audit:size`        | Bundle size verification (size-limit)    |
+| `pnpm audit:versions`    | Outdated dependencies (taze)             |
 
 ### Documentation
 
-| Script            | Description                    |
-| ----------------- | ------------------------------ |
-| `pnpm docs:dev`   | Documentation in dev mode      |
-| `pnpm docs:build` | Build documentation            |
-| `pnpm docs:api`   | Generate API docs (TypeDoc)    |
+| Script              | Description                    |
+| ------------------- | ------------------------------ |
+| `pnpm docs:dev`     | Documentation in dev mode      |
+| `pnpm docs:build`   | Build documentation            |
+| `pnpm docs:preview` | Preview built documentation    |
+| `pnpm docs:api`     | Generate API docs (TypeDoc)    |
 
 ### Release
 
-| Script           | Description            |
-| ---------------- | ---------------------- |
-| `pnpm changeset` | Create a changeset     |
-| `pnpm bump`      | Update versions        |
-| `pnpm release`   | Publish packages       |
+| Script                    | Description                                  |
+| ------------------------- | -------------------------------------------- |
+| `pnpm changeset:add`      | Create a changeset                           |
+| `pnpm changeset:version`  | Bump versions and update changelogs          |
+| `pnpm changeset:publish`  | Publish packages to npm                      |
+| `pnpm release`            | Full release (build + publish)               |
+
+### Utilities
+
+| Script       | Description                              |
+| ------------ | ---------------------------------------- |
+| `pnpm clean` | Remove all build artifacts and caches    |
 
 ## Commit Conventions
 
@@ -229,35 +239,115 @@ type(scope): description
 
 ### Suggested Scopes
 
-| Scope    | Package/App   |
-| -------- | ------------- |
-| `crf`    | packages/crf  |
-| `net`    | packages/net  |
-| `docs`   | Documentation |
-| `deps`   | Dependencies  |
-| `config` | Configuration |
-| `ci`     | CI/CD         |
+| Scope       | Package/Area                              |
+| ----------- | ----------------------------------------- |
+| `amarre`    | apps/amarre                               |
+| `dashboard` | apps/atlas-dashboard                      |
+| `ecrin`     | apps/ecrin                                |
+| `find`      | apps/find-an-expert                       |
+| `redcap`    | apps/redcap-dashboard, packages/redcap-*  |
+| `crf`       | services/crf, cli/crf                     |
+| `net`       | packages/net, cli/net                     |
+| `openalex`  | packages/openalex*, packages/fetch-*      |
+| `profiles`  | packages/researcher-profiles, cli/researcher-profiles |
+| `deps`      | Dependencies                              |
+| `config`    | Configuration                             |
+| `ci`        | CI/CD                                     |
+| `docs`      | Documentation                             |
 
 ### Examples
 
 ```bash
 feat(crf): add exportRecords method
+fix(openalex): handle empty author list
 docs: update contributing guide
-chore(deps): update effect to v3.20
+chore(deps): update effect to v3.21
 ci: add size-limit check
+test(profiles): add consent service coverage
 ```
 
 ## Project Structure
 
 ```
 atlas/
-├── packages/
-│   ├── crf/                # REDCap client + server + CLI
-│   ├── net/                # Network utilities
-│   ├── eslint-config/      # Shared ESLint config
-│   └── typescript-config/  # Shared TypeScript config
-└── docs/                   # VitePress documentation
+├── apps/                    # SvelteKit web applications
+│   ├── amarre/              # Survey management app
+│   ├── atlas-dashboard/     # Main dashboard
+│   ├── ecrin/               # ECRIN portal
+│   ├── find-an-expert/      # Researcher discovery app
+│   └── redcap-dashboard/    # REDCap dashboard
+│
+├── packages/                # Shared libraries
+│   ├── appwrite/            # Appwrite client utilities
+│   ├── auth/                # Authentication helpers
+│   ├── errors/              # Shared error types
+│   ├── fetch-one-api-page/  # Paginated API fetching
+│   ├── fetch-openalex/      # OpenAlex API client
+│   ├── net/                 # Network utilities
+│   ├── openalex/            # OpenAlex domain logic
+│   ├── openalex-types/      # OpenAlex type definitions
+│   ├── redcap-client/       # REDCap HTTP client
+│   ├── redcap-core/         # REDCap domain types & adapters
+│   ├── redcap-logs/         # REDCap audit log types
+│   ├── researcher-profiles/ # Researcher profile generation
+│   ├── validate-openalex/   # OpenAlex data validation
+│   └── validators/          # Shared validation utilities
+│
+├── services/                # Backend microservices
+│   └── crf/                 # CRF HTTP service (Hono)
+│
+├── cli/                     # Command-line tools
+│   ├── biblio/              # Bibliography CLI
+│   ├── crf/                 # CRF management CLI
+│   ├── net/                 # Network diagnostics CLI
+│   ├── redcap-openapi/      # REDCap OpenAPI spec generator
+│   ├── redcap-stats/        # REDCap statistics CLI
+│   ├── atlas-stats/         # Atlas statistics CLI
+│   └── researcher-profiles/ # Researcher profile CLI
+│
+├── config/
+│   └── shared-config/       # Shared ESLint, Prettier, TypeScript configs
+│
+└── docs/                    # VitePress documentation
 ```
+
+## Architectural Rules by Category
+
+Each category has a strict responsibility boundary. Code placed in the wrong category is a bug in architecture.
+
+### `packages/` — Reusable Business Logic
+
+- **Contains**: domain types, algorithms, API clients, data transformations
+- **Style**: functional programming + [Effect](https://effect.website/) for error handling and composition
+- **No**: routing, HTTP handlers, UI, CLI prompts, direct process I/O
+- **Test coverage target**: ≥ 80%
+- **Rule**: a package must be importable by any other workspace without side effects
+
+### `apps/` — Web Frontend
+
+- **Contains**: SvelteKit routes, pages, components, frontend stores
+- **Style**: routing glue + UI — business logic lives in `packages/`
+- **No**: domain logic, data transformation, direct database calls outside of SvelteKit server hooks
+- **Rule**: an app route should delegate to a `packages/` function as soon as logic exceeds a few lines
+
+### `services/` — HTTP Microservices
+
+- **Contains**: Hono route definitions, middleware, OpenAPI schema, request/response wiring
+- **Style**: routing only — handlers call `packages/` functions and return responses
+- **No**: business logic, data transformation, anything that cannot be expressed as `request → package call → response`
+- **Rule**: a service handler that contains `if` branches on business data is misplaced logic
+
+### `cli/` — Command-Line Interfaces
+
+- **Contains**: argument parsing, prompts, terminal output formatting, progress display
+- **Style**: user interaction only — execution delegates to `packages/`
+- **No**: business logic, HTTP calls, data transformation
+- **Rule**: a CLI command should read its inputs, call a `packages/` function, and display the result
+
+### `config/` — Shared Tooling Configuration
+
+- **Contains**: ESLint presets, Prettier config, TypeScript base configs
+- **No**: runtime code
 
 ## Questions?
 

@@ -27,6 +27,60 @@ export interface CreateAppOptions {
   readonly disableRateLimit?: boolean;
 }
 
+const apiRoutes = [
+  {
+    pattern: /^\/api\/v1\/project\/(version|info|instruments|fields|export-field-names)$/,
+    methods: ['GET'],
+  },
+  { pattern: /^\/api\/v1\/records$/, methods: ['GET', 'PUT'] },
+  { pattern: /^\/api\/v1\/records\/[^/]+\/pdf$/, methods: ['GET'] },
+  { pattern: /^\/api\/v1\/records\/[^/]+\/survey-link$/, methods: ['GET'] },
+  { pattern: /^\/api\/v1\/users\/by-email$/, methods: ['GET'] },
+];
+
+// Return 405 for TRACE (RFC 9110 requires Allow header)
+const traceBlocker: Parameters<Hono['use']>[1] = async (c, next) => {
+  if (c.req.method === 'TRACE') {
+    c.header('Allow', 'GET, POST, PUT, DELETE, OPTIONS');
+    return c.json(
+      { data: null, error: { code: 'method_not_allowed', message: 'Method TRACE is not allowed' } },
+      405
+    );
+  }
+  return next();
+};
+
+const notFoundHandler: Parameters<Hono['notFound']>[0] = (c) => {
+  const { path, method } = c.req;
+  for (const route of apiRoutes) {
+    if (route.pattern.test(path) && !route.methods.includes(method)) {
+      c.header('Allow', route.methods.join(', '));
+      return c.json(
+        {
+          data: null,
+          error: { code: 'method_not_allowed', message: `Method ${method} is not allowed` },
+        },
+        405
+      );
+    }
+  }
+  return c.json({ data: null, error: { code: 'not_found', message: 'Resource not found' } }, 404);
+};
+
+const errorHandler: Parameters<Hono['onError']>[0] = (err, c) => {
+  console.error('Error:', err);
+  return c.json(
+    {
+      data: null,
+      error: {
+        code: 'internal_error',
+        message: err.message === '' ? 'An unexpected error occurred' : err.message,
+      },
+    },
+    500
+  );
+};
+
 /**
  * Creates and configures the Hono application.
  *
@@ -38,39 +92,16 @@ export const createApp = (options: CreateAppOptions): Hono => {
 
   const app = new Hono();
 
-  // Middleware
   app.use('*', logger());
   app.use('*', cors());
+  if (!disableRateLimit) app.use('/api/*', apiRateLimiter);
+  app.use('*', traceBlocker);
 
-  // Rate limiting (can be disabled for testing)
-  if (!disableRateLimit) {
-    app.use('/api/*', apiRateLimiter);
-  }
-
-  // Return 405 for unsupported methods (RFC 9110 requires Allow header)
-  app.use('*', async (c, next) => {
-    if (c.req.method === 'TRACE') {
-      c.header('Allow', 'GET, POST, PUT, DELETE, OPTIONS');
-      return c.json(
-        {
-          data: null,
-          error: { code: 'method_not_allowed', message: 'Method TRACE is not allowed' },
-        },
-        405
-      );
-    }
-    return next();
-  });
-
-  // Health check routes
   app.route('/health', health);
-
-  // API routes
   app.route('/api/v1/project', project);
   app.route('/api/v1/records', records);
   app.route('/api/v1/users', users);
 
-  // OpenAPI specification
   app.get(
     '/openapi.json',
     openAPIRouteHandler(app, {
@@ -91,68 +122,10 @@ export const createApp = (options: CreateAppOptions): Hono => {
     })
   );
 
-  // Scalar API documentation UI
-  app.get(
-    '/docs',
-    Scalar({
-      url: '/openapi.json',
-      theme: 'kepler',
-    })
-  );
+  app.get('/docs', Scalar({ url: '/openapi.json', theme: 'kepler' }));
 
-  // Handle 404 for API routes - return 405 for known paths with wrong method
-  app.notFound((c) => {
-    const path = c.req.path;
-    const method = c.req.method;
-
-    // Check if path matches API routes but method is not supported
-    const apiRoutes = [
-      {
-        pattern: /^\/api\/v1\/project\/(version|info|instruments|fields|export-field-names)$/,
-        methods: ['GET'],
-      },
-      { pattern: /^\/api\/v1\/records$/, methods: ['GET', 'PUT'] },
-      { pattern: /^\/api\/v1\/records\/[^/]+\/pdf$/, methods: ['GET'] },
-      { pattern: /^\/api\/v1\/records\/[^/]+\/survey-link$/, methods: ['GET'] },
-      { pattern: /^\/api\/v1\/users\/by-email$/, methods: ['GET'] },
-    ];
-
-    for (const route of apiRoutes) {
-      if (route.pattern.test(path) && !route.methods.includes(method)) {
-        c.header('Allow', route.methods.join(', '));
-        return c.json(
-          {
-            data: null,
-            error: { code: 'method_not_allowed', message: `Method ${method} is not allowed` },
-          },
-          405
-        );
-      }
-    }
-
-    return c.json(
-      {
-        data: null,
-        error: { code: 'not_found', message: 'Resource not found' },
-      },
-      404
-    );
-  });
-
-  // Error handling
-  app.onError((err, c) => {
-    console.error('Error:', err);
-    return c.json(
-      {
-        data: null,
-        error: {
-          code: 'internal_error',
-          message: err.message === '' ? 'An unexpected error occurred' : err.message,
-        },
-      },
-      500
-    );
-  });
+  app.notFound(notFoundHandler);
+  app.onError(errorHandler);
 
   return app;
 };

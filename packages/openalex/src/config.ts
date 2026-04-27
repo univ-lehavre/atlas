@@ -1,10 +1,6 @@
-import process from "node:process";
 import { Config, Effect } from "effect";
-import yargs from "yargs";
-import { hideBin } from "yargs/helpers";
 import type { ConfigError } from "effect/ConfigError";
-import { CommandLineError } from "./errors.js";
-import type { Args, Env } from "./types/index.js";
+import type { Env } from "./types/index.js";
 
 const getEnv = (): Effect.Effect<Env, ConfigError, never> =>
   Effect.gen(function* () {
@@ -30,14 +26,4 @@ const getEnv = (): Effect.Effect<Env, ConfigError, never> =>
     };
   });
 
-const cmd = (): Effect.Effect<Args, CommandLineError, never> =>
-  Effect.tryPromise({
-    try: async () => {
-      const argv = await yargs(hideBin(process.argv)).parse();
-      return { name: argv["name"] as string | undefined };
-    },
-    catch: (cause: unknown) =>
-      new CommandLineError(`Error while parsing arguments`, { cause }),
-  });
-
-export { getEnv, cmd };
+export { getEnv };

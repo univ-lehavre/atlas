@@ -64,8 +64,6 @@
         "src/**/*.ts"
       ],
       "ignore": [
-        "src/errors.ts",
-        "src/prompt.ts",
         "src/db/index.ts",
         "src/group/helpers.ts"
       ],
@@ -75,6 +73,11 @@
         "@effect/platform-node",
         "@xenova/transformers",
         "uuid"
+      ]
+    },
+    "cli/openalex": {
+      "project": [
+        "src/**/*.ts"
       ]
     },
     "apps/amarre": {
@@ -142,7 +145,6 @@
     },
     "config/shared-config": {
       "project": [
-        "*.json",
         "eslint/**/*.js",
         "prettier/**/*.js"
       ]

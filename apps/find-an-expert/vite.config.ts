@@ -44,10 +44,10 @@ export default defineConfig({
         'src/lib/**/*.d.ts',
       ],
       thresholds: {
-        statements: 44,
-        branches: 35,
-        functions: 27,
-        lines: 44,
+        statements: 47,
+        branches: 36,
+        functions: 31,
+        lines: 48,
       },
     },
 
