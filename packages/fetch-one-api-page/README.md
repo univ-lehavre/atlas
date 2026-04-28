@@ -1,6 +1,8 @@
 # @univ-lehavre/atlas-fetch-one-api-page
 
-Low-level HTTP Effect wrapper for paginated API requests. Handles URL building, headers, JSON parsing, and rate-limit header extraction.
+Client HTTP Effect pour récupérer une page d'API JSON avec métadonnées de pagination.
+
+Le package construit l'URL avec paramètres de requête, ajoute le `User-Agent`, exécute la requête `fetch`, valide le JSON, extrait les en-têtes de rate limit et retourne une réponse typée. Il expose des erreurs Effect dédiées pour les échecs réseau et de parsing.
 
 ## Installation
 

@@ -2,24 +2,24 @@
 
 [![DOI](https://zenodo.org/badge/1107483862.svg)](https://doi.org/10.5281/zenodo.17775106)
 
-Research network visualization and analysis module.
+Application SvelteKit de gestion des demandes AMARRE.
 
 ## About
 
-**AMARRE** is a major Atlas module for visualizing and analyzing research networks through interactive graphs. The application allows researchers to discover connections and understand the structure of their scientific community.
+**AMARRE** permet à un utilisateur authentifié de créer, compléter, suivre et administrer des demandes de questionnaires. L'application s'appuie sur Appwrite pour l'authentification et le stockage utilisateur, expose des routes API pour les demandes, les liens, les PDF et les téléchargements REDCap, et fournit une page de documentation OpenAPI générée.
 
 ## Features
 
-- **Interactive graphs**: Network visualization with zoom, pan, and selection
-- **Network analysis**: Centrality metrics, clustering, community detection
-- **Export**: Graph export in various formats
-- **Filtering**: Filter by attributes, date, relationship type
+- **Demandes**: création, liste, suivi et finalisation des demandes de questionnaires
+- **Documents REDCap**: récupération de liens, PDF et fichiers associés aux demandes
+- **Authentification**: inscription, connexion, session courante et déconnexion via Appwrite
+- **API documentée**: routes `api/v1` et page `/api/docs` adossée à la spécification OpenAPI
 
 ## Technical Stack
 
 - **Frontend**: SvelteKit 2, Svelte 5
-- **Visualization**: Sigma.js, Graphology, ForceAtlas2
-- **Backend**: Appwrite (authentication, database)
+- **Backend**: Appwrite, REDCap
+- **Validation/API**: Zod, zod-to-openapi
 
 ## Scripts
 

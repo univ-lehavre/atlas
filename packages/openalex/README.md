@@ -1,20 +1,29 @@
 # @univ-lehavre/atlas-openalex
 
-Interactive CLI for OpenAlex data mining. Guides a researcher through author search, affiliation selection, and publication curation — backed by DuckDB, ML embeddings, and string similarity grouping.
+Bibliothèque de curation OpenAlex pour recherche d'auteurs et récupération de publications.
+
+Le package expose la recherche d'auteurs, la récupération d'articles par auteur ou par identifiants de travaux, la lecture de configuration d'environnement et les erreurs métier associées. Il sert de couche fonctionnelle au CLI OpenAlex qui guide la sélection des formes de nom, affiliations et publications.
 
 ## Usage
 
-```bash
-pnpm -F @univ-lehavre/atlas-openalex start
-# or with a name argument
-node --env-file .env dist/index.js --name "Dupont Jean"
+```typescript
+import { Effect } from "effect";
+import {
+  searchAuthors,
+  retrieve_articles,
+  retrieve_articles_given_work_ids,
+} from "@univ-lehavre/atlas-openalex";
+
+const authors = await Effect.runPromise(searchAuthors("Dupont Jean"));
+const works = await Effect.runPromise(
+  retrieve_articles(
+    ["https://openalex.org/A123456789"],
+    ["https://openalex.org/I4210166736"],
+  ),
+);
 ```
 
-The CLI:
-1. Searches OpenAlex for authors matching the given name
-2. Selects relevant display name variants
-3. Filters by institution affiliation
-4. Curates the final list of publications
+Pour un usage interactif en terminal, voir `@univ-lehavre/atlas-openalex-cli` dans `cli/openalex`.
 
 ## Configuration
 
@@ -38,7 +47,7 @@ OPENALEX_API_KEY=          # optional
 
 ### `src/group/`
 
-String similarity utilities for grouping affiliation strings:
+Utilitaires internes de similarité pour regrouper des chaînes d'affiliation:
 
 | Export | Description |
 |--------|-------------|

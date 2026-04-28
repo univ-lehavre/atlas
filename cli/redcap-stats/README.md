@@ -1,6 +1,8 @@
 # @univ-lehavre/atlas-redcap-stats-cli
 
-CLI to quickly test REDCap HTTP responses project by project using `redcap-token.csv`.
+CLI de test des réponses HTTP REDCap par projet.
+
+La commande lit un fichier `redcap-token.csv`, résout l'URL API depuis les options ou l'environnement, puis teste un projet précis ou tous les projets du CSV. Elle peut changer le `content` REDCap interrogé, appliquer un timeout, afficher un extrait de corps HTTP et produire une sortie JSON.
 
 ## Installation (monorepo)
 

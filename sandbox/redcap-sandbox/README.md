@@ -1,6 +1,8 @@
 # REDCap Sandbox
 
-Testing infrastructure for validating REDCap OpenAPI specs against real REDCap instances.
+Sandbox Docker et tests d'intégration pour valider REDCap avec Atlas.
+
+Ce workspace fournit un environnement REDCap isolé, des scripts d'installation, des tests de contrat, des tests de sécurité et des smoke tests API. Il sert à confronter les spécifications OpenAPI et clients Atlas à une instance REDCap réelle ou locale.
 
 ## Structure
 

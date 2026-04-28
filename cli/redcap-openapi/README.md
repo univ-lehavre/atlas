@@ -1,10 +1,10 @@
 # @univ-lehavre/atlas-redcap-openapi
 
-REDCap source code analysis, OpenAPI specification extraction, and API documentation tools.
+Outils CLI et bibliothèque pour extraire, comparer et servir des spécifications OpenAPI REDCap.
 
 ## About
 
-This package enables analyzing REDCap PHP source code to automatically extract OpenAPI specifications. It also provides version comparison tools and a documentation server.
+Ce package analyse le code source PHP de REDCap pour produire des spécifications OpenAPI, comparer des versions et détecter les changements d'API. Il expose aussi un serveur de documentation et une CLI `redcap` avec commandes `extract`, `compare` et `docs`.
 
 ## Features
 

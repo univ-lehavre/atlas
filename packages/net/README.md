@@ -1,10 +1,10 @@
 # @univ-lehavre/atlas-net
 
-Network diagnostic utilities for Atlas, built with [Effect](https://effect.website/).
+Utilitaires de diagnostic réseau Atlas construits avec [Effect](https://effect.website/).
 
 ## About
 
-This package provides typed and functional network diagnostic tools for Atlas applications. It is used by CLI tools to verify connectivity to REDCap servers and other services.
+Ce package fournit des types brandés et des fonctions de diagnostic pour tester une cible réseau: résolution DNS, ouverture TCP, négociation TLS et connectivité Internet. Il est consommé par les CLI et services qui doivent expliquer précisément les problèmes d'accès à REDCap ou à d'autres endpoints.
 
 ## Features
 

@@ -1,6 +1,8 @@
 # REDCap Docker Development Environment
 
-This directory contains Docker configuration for running a local REDCap instance.
+Configuration Docker pour exécuter une instance REDCap locale.
+
+Ce répertoire contient les services, volumes et paramètres nécessaires pour démarrer REDCap et ses dépendances en développement. Il sert de base aux scripts d'installation et aux tests de contrat du sandbox.
 
 ## Prerequisites
 

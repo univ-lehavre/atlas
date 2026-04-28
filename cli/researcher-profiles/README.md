@@ -1,6 +1,6 @@
-# @univ-lehavre/atlas-researcher-profiles
+# @univ-lehavre/atlas-researcher-profiles-cli
 
-CLI for resolving researcher profiles via OpenAlex and writing results to REDCap.
+CLI de résolution et d'écriture de profils chercheurs via OpenAlex et REDCap.
 
 For each researcher, the CLI:
 1. Searches OpenAlex by name (with and without middle name) and by ORCID

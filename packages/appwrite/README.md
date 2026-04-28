@@ -1,10 +1,10 @@
 # @univ-lehavre/atlas-appwrite
 
-Shared Appwrite client utilities for Atlas applications.
+Utilitaires Appwrite serveur pour les applications Atlas.
 
 ## About
 
-This package provides pre-configured Appwrite clients and utilities for Atlas SvelteKit applications. It simplifies the creation of admin and session clients, and provides a standardized user repository.
+Ce package crée des clients Appwrite admin ou sessionnés à partir de la configuration serveur et du cookie SvelteKit `session`. Il expose aussi des constantes de session/admin et des helpers pour les opérations utilisateur utilisées par les services d'authentification Atlas.
 
 ## Features
 

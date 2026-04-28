@@ -1,10 +1,10 @@
 # @univ-lehavre/atlas-auth
 
-Shared authentication service for Atlas SvelteKit applications.
+Service d'authentification partagé pour applications SvelteKit Atlas.
 
 ## About
 
-This package provides a complete authentication service based on Appwrite with magic link support. It handles signup, login, logout, and account deletion.
+Ce package encapsule l'authentification Appwrite par magic link: inscription avec validation de domaine, login par secret utilisateur, création du cookie de session, logout, suppression de compte et middleware SvelteKit de lecture de l'utilisateur courant. Il peut résoudre l'identifiant utilisateur via une source externe comme REDCap avant création du token.
 
 ## Features
 

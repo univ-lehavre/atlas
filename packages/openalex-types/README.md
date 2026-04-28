@@ -1,6 +1,8 @@
 # @univ-lehavre/atlas-openalex-types
 
-TypeScript types, branded types, and API response interfaces for the OpenAlex API.
+Types TypeScript partagés pour les réponses et identifiants OpenAlex.
+
+Ce package définit les types de réponses OpenAlex utilisés dans Atlas, les paramètres d'appel API et les types brandés `ORCID` et `OpenAlexID` avec helpers de conversion. Il évite de dupliquer les contrats OpenAlex entre clients, CLI et services de validation.
 
 ## Installation
 
