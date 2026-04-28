@@ -8,24 +8,30 @@ const root = execFileSync('git', ['rev-parse', '--show-toplevel'], {
 const coverageFile = 'coverage/coverage-final.json';
 const target = Number(process.argv[2] ?? 80);
 
+const useColor = process.stdout.isTTY;
+const red = (s) => (useColor ? `\x1b[31m${s}\x1b[0m` : s);
+const yellow = (s) => (useColor ? `\x1b[33m${s}\x1b[0m` : s);
+const green = (s) => (useColor ? `\x1b[32m${s}\x1b[0m` : s);
+const dim = (s) => (useColor ? `\x1b[2m${s}\x1b[0m` : s);
+
 const workspaceFiles = execFileSync('pnpm', ['ls', '-r', '--json', '--depth', '-1'], {
   cwd: root,
   encoding: 'utf8',
 });
 
-const workspaces = JSON.parse(workspaceFiles)
+const allWorkspaces = JSON.parse(workspaceFiles)
   .filter((workspace) => workspace.path !== root)
   .map((workspace) => ({
     name: workspace.name,
     path: workspace.path,
     coveragePath: `${workspace.path}/${coverageFile}`,
-  }))
-  .filter((workspace) => existsSync(workspace.coveragePath));
+    hasVitest: existsSync(`${workspace.path}/vitest.config.ts`),
+    hasCoverage: existsSync(`${workspace.path}/${coverageFile}`),
+  }));
 
 const empty = () => ({ covered: 0, total: 0 });
-
 const pct = ({ covered, total }) => (total === 0 ? 100 : (covered / total) * 100);
-const fmt = (value) => value.toFixed(2).padStart(6);
+const fmt = (value) => value.toFixed(1).padStart(6);
 
 const summarize = (coverage) => {
   const summary = {
@@ -51,7 +57,6 @@ const summarize = (coverage) => {
         summary.statements.covered += 1;
         fileSummary.statements.covered += 1;
       }
-
       const line = file.statementMap?.[id]?.start?.line;
       if (line !== undefined) {
         lines.set(line, (lines.get(line) ?? false) || hits > 0);
@@ -80,9 +85,7 @@ const summarize = (coverage) => {
 
     for (const covered of lines.values()) {
       summary.lines.total += 1;
-      if (covered) {
-        summary.lines.covered += 1;
-      }
+      if (covered) summary.lines.covered += 1;
     }
 
     if (
@@ -103,49 +106,76 @@ const summarize = (coverage) => {
   };
 };
 
-const rows = workspaces.map((workspace) => {
+const SHORT_PREFIX = '@univ-lehavre/atlas-';
+const shortName = (name) => name.replace(SHORT_PREFIX, '');
+
+const COL = 36;
+
+const colorPct = (value) => {
+  const s = fmt(value);
+  if (value < target * 0.5) return red(s);
+  if (value < target) return yellow(s);
+  return green(s);
+};
+
+const vitestPackages = allWorkspaces.filter((w) => w.hasVitest);
+const noVitestPackages = allWorkspaces.filter((w) => !w.hasVitest);
+
+const rows = vitestPackages.map((workspace) => {
+  if (!workspace.hasCoverage) return { ...workspace, missing: true };
   const coverage = JSON.parse(readFileSync(workspace.coveragePath, 'utf8'));
-  return {
-    ...workspace,
-    ...summarize(coverage),
-  };
+  return { ...workspace, missing: false, ...summarize(coverage) };
 });
 
-if (rows.length === 0) {
-  console.log(
-    `No ${coverageFile} files found. Run coverage locally without CI=true before using this report.`
-  );
-  process.exit(0);
-}
+rows.sort((a, b) => {
+  if (a.missing && !b.missing) return 1;
+  if (!a.missing && b.missing) return -1;
+  if (a.missing && b.missing) return a.name.localeCompare(b.name);
+  const lowestA = Math.min(a.statements, a.branches, a.functions, a.lines);
+  const lowestB = Math.min(b.statements, b.branches, b.functions, b.lines);
+  return lowestA - lowestB;
+});
 
-rows.sort(
-  (a, b) =>
-    Math.min(a.statements, a.branches, a.functions, a.lines) -
-    Math.min(b.statements, b.branches, b.functions, b.lines)
-);
+const covered = rows.filter((r) => !r.missing);
+const missing = rows.filter((r) => r.missing);
 
-console.log(`Coverage target: ${target}%`);
-console.log('Package'.padEnd(44), 'Stmts', 'Branch', 'Funcs', 'Lines', 'Gap', 'Zero files');
+console.log(`Coverage target: ${target}%\n`);
+console.log('Package'.padEnd(COL), ' Stmts Branch  Funcs  Lines    Gap  0-files');
+console.log('─'.repeat(COL + 46));
 
-for (const row of rows) {
+for (const row of covered) {
   const lowest = Math.min(row.statements, row.branches, row.functions, row.lines);
   const gap = Math.max(0, target - lowest);
+  const gapStr = gap === 0 ? green(fmt(0)) : gap > 20 ? red(fmt(gap)) : yellow(fmt(gap));
   console.log(
-    row.name.padEnd(44),
-    fmt(row.statements),
-    fmt(row.branches),
-    fmt(row.functions),
-    fmt(row.lines),
-    fmt(gap),
-    String(row.zeroFiles.length).padStart(5)
+    shortName(row.name).padEnd(COL),
+    colorPct(row.statements),
+    colorPct(row.branches),
+    colorPct(row.functions),
+    colorPct(row.lines),
+    gapStr,
+    String(row.zeroFiles.length).padStart(8)
   );
 }
 
-const offenders = rows.filter((row) => row.zeroFiles.length > 0);
+if (missing.length > 0) {
+  console.log('');
+  console.log(dim(`Packages with vitest but no coverage data (run pnpm test:coverage):`));
+  for (const row of missing) {
+    console.log(dim(`  ${shortName(row.name)}`));
+  }
+}
+
+if (noVitestPackages.length > 0) {
+  console.log('');
+  console.log(dim(`Packages without tests (${noVitestPackages.length}):`), dim(noVitestPackages.map((w) => shortName(w.name)).join(', ')));
+}
+
+const offenders = covered.filter((row) => row.zeroFiles.length > 0);
 if (offenders.length > 0) {
   console.log('\nFiles with 0% statement/function coverage:');
   for (const row of offenders) {
-    console.log(`\n${row.name}`);
+    console.log(`\n${shortName(row.name)}`);
     for (const file of row.zeroFiles.slice(0, 10)) {
       console.log(`  ${relative(row.path, file)}`);
     }
@@ -153,4 +183,11 @@ if (offenders.length > 0) {
       console.log(`  ... ${row.zeroFiles.length - 10} more`);
     }
   }
+}
+
+const belowTarget = covered.filter(
+  (r) => Math.min(r.statements, r.branches, r.functions, r.lines) < target
+);
+if (belowTarget.length > 0 || missing.length > 0) {
+  process.exitCode = 1;
 }
