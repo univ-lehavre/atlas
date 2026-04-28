@@ -21,13 +21,18 @@ const workspaceFiles = execFileSync('pnpm', ['ls', '-r', '--json', '--depth', '-
 
 const allWorkspaces = JSON.parse(workspaceFiles)
   .filter((workspace) => workspace.path !== root)
-  .map((workspace) => ({
-    name: workspace.name,
-    path: workspace.path,
-    coveragePath: `${workspace.path}/${coverageFile}`,
-    hasVitest: existsSync(`${workspace.path}/vitest.config.ts`),
-    hasCoverage: existsSync(`${workspace.path}/${coverageFile}`),
-  }));
+  .map((workspace) => {
+    const rel = relative(root, workspace.path);
+    const dir = rel.split('/')[0] ?? '';
+    return {
+      name: workspace.name,
+      path: workspace.path,
+      dir,
+      coveragePath: `${workspace.path}/${coverageFile}`,
+      hasVitest: existsSync(`${workspace.path}/vitest.config.ts`),
+      hasCoverage: existsSync(`${workspace.path}/${coverageFile}`),
+    };
+  });
 
 const empty = () => ({ covered: 0, total: 0 });
 const pct = ({ covered, total }) => (total === 0 ? 100 : (covered / total) * 100);
@@ -95,7 +100,8 @@ const summarize = (coverage) => {
 const SHORT_PREFIX = '@univ-lehavre/atlas-';
 const shortName = (name) => name.replace(SHORT_PREFIX, '');
 
-const COL = 36;
+const DIR_COL = 9;
+const COL = 28;
 
 const colorPct = (value) => {
   const s = fmt(value);
@@ -126,8 +132,8 @@ const covered = rows.filter((r) => !r.missing);
 const missing = rows.filter((r) => r.missing);
 
 console.log(`Coverage target: ${target}%  (files with 0% stmts+funcs excluded)\n`);
-console.log('Package'.padEnd(COL), ' Stmts Branch  Funcs  Lines    Gap  Skipped');
-console.log('─'.repeat(COL + 46));
+console.log('Dir'.padEnd(DIR_COL) + 'Package'.padEnd(COL), ' Stmts Branch  Funcs  Lines    Gap  Skipped');
+console.log('─'.repeat(DIR_COL + COL + 46));
 
 for (const row of covered) {
   const lowest = Math.min(row.statements, row.branches, row.functions, row.lines);
@@ -135,7 +141,7 @@ for (const row of covered) {
   const gapStr = gap === 0 ? green(fmt(0)) : gap > 20 ? red(fmt(gap)) : yellow(fmt(gap));
   const skipped = row.zeroFiles.length > 0 ? dim(String(row.zeroFiles.length).padStart(8)) : '        ';
   console.log(
-    shortName(row.name).padEnd(COL),
+    dim(row.dir.padEnd(DIR_COL)) + shortName(row.name).padEnd(COL),
     colorPct(row.statements),
     colorPct(row.branches),
     colorPct(row.functions),
