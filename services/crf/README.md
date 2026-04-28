@@ -1,52 +1,23 @@
-# @univ-lehavre/crf
+# @univ-lehavre/atlas-crf
 
-Case Report Form - Unified package for interacting with the REDCap API.
+Microservice HTTP CRF pour exposer une API REST au-dessus de REDCap.
 
 ## About
 
-This package provides a typed TypeScript client for the REDCap API, an HTTP REST server, and CLI tools. It uses an OpenAPI-first architecture with types generated from the `specs/redcap.yaml` specification.
+Ce service Hono encapsule le client REDCap Atlas et expose des routes, métadonnées projet, instruments, champs, records, PDF, liens de survey et recherche utilisateur par email. Il ajoute validation Effect, réponses d'erreur normalisées, rate limiting et documentation OpenAPI/Scalar côté serveur.
 
 ## Features
 
-- **REDCap Client**: Typed Effect client for the REDCap API
-- **HTTP Server**: REST microservice with Hono
-- **CLI**: Command-line tools for testing connectivity
-- **Generated Types**: TypeScript types generated from OpenAPI
-- **Branded Types**: Runtime validation of identifiers
-
-## Installation
-
-```bash
-pnpm add @univ-lehavre/crf effect
-```
+- **Health checks**: état du serveur REDCap, token et latence moyenne
+- **Projet REDCap**: version, informations projet, instruments, champs et noms d'export
+- **Records**: export, import, PDF et liens survey avec validation de requête
+- **Utilisateurs**: résolution d'un utilisateur REDCap par email
 
 ## Usage
 
-### REDCap Client
+### Server
 
-```typescript
-import { createRedcapClient, RedcapUrl, RedcapToken, RecordId } from '@univ-lehavre/crf/redcap';
-import { Effect } from 'effect';
-
-const client = createRedcapClient({
-  url: RedcapUrl('https://redcap.example.com/api/'),
-  token: RedcapToken('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'),
-});
-
-// Get REDCap version
-const version = await Effect.runPromise(client.getVersion());
-console.log('REDCap version:', version);
-
-// Export records
-const records = await Effect.runPromise(
-  client.exportRecords({
-    fields: ['record_id', 'first_name', 'last_name'],
-    filterLogic: '[age] >= 18',
-  })
-);
-```
-
-### CRF Server
+Depuis le monorepo:
 
 ```bash
 # Required environment variables
@@ -55,49 +26,45 @@ export REDCAP_API_TOKEN=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 export PORT=3000
 
 # Start the server
-pnpm -F @univ-lehavre/crf start
+pnpm -F @univ-lehavre/atlas-crf start
 ```
+
+Le package exporte aussi `createApp()` pour construire l'application Hono dans des tests ou dans un runtime serveur personnalisé.
 
 ## Server API
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /health` | Health check |
-| `GET /api/v1/project/version` | REDCap version |
-| `GET /api/v1/project/info` | Project information |
-| `GET /api/v1/records` | Export records |
-| `POST /api/v1/records` | Import records |
-| `GET /api/v1/users/:email` | Find a user |
-| `GET /openapi.json` | OpenAPI specification |
-| `GET /docs` | Scalar documentation |
+| Endpoint                                    | Description                   |
+| ------------------------------------------- | ----------------------------- |
+| `GET /health`                               | Health check                  |
+| `GET /api/v1/project/version`               | REDCap version                |
+| `GET /api/v1/project/info`                  | Project information           |
+| `GET /api/v1/project/instruments`           | REDCap instruments            |
+| `GET /api/v1/project/fields`                | REDCap data dictionary fields |
+| `GET /api/v1/project/export-field-names`    | Export field name mappings    |
+| `GET /api/v1/records`                       | Export records                |
+| `POST /api/v1/records`                      | Import records                |
+| `GET /api/v1/records/:recordId/pdf`         | Download record PDF           |
+| `GET /api/v1/records/:recordId/survey-link` | Get survey link               |
+| `GET /api/v1/users/by-email?email=...`      | Find a user                   |
+| `GET /openapi.json`                         | OpenAPI specification         |
+| `GET /docs`                                 | Scalar documentation          |
 
 ## Scripts
 
 ```bash
-pnpm -F @univ-lehavre/crf dev            # Development
-pnpm -F @univ-lehavre/crf build          # Production build
-pnpm -F @univ-lehavre/crf test           # Unit tests
-pnpm -F @univ-lehavre/crf generate:types # Regenerate types
-pnpm -F @univ-lehavre/crf mock:redcap    # Mock REDCap (Prism)
-pnpm -F @univ-lehavre/crf start          # Start the server
-pnpm -F @univ-lehavre/crf test:api       # API tests (Schemathesis)
-```
-
-## Branded Types
-
-The package uses branded types for runtime validation:
-
-```typescript
-import { RedcapToken, RecordId, InstrumentName, Email } from '@univ-lehavre/crf/redcap';
-
-const token = RedcapToken('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'); // OK
-const recordId = RecordId('abc12345678901234567'); // OK (20+ chars)
+pnpm -F @univ-lehavre/atlas-crf start:dev        # Development server
+pnpm -F @univ-lehavre/atlas-crf build            # Production build
+pnpm -F @univ-lehavre/atlas-crf test             # Unit tests
+pnpm -F @univ-lehavre/atlas-crf start            # Start built server
+pnpm -F @univ-lehavre/atlas-crf test:api         # API tests
+pnpm -F @univ-lehavre/atlas-crf test:integration # Integration tests
 ```
 
 ## Documentation
 
-- [API Documentation](../../docs/api/@univ-lehavre/atlas-crf/)
-- [CRF Guide](../../docs/guide/dev/crf.md)
+- [Documentation projet CRF](../../docs/projects/crf/index.md)
+- Documentation interactive du service: `GET /docs`
+- Spécification OpenAPI du service: `GET /openapi.json`
 
 ## Organization
 

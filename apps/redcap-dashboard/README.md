@@ -1,6 +1,8 @@
 # REDCap Dashboard
 
-Dashboard SvelteKit pour visualiser les logs REDCap en **statistiques mensuelles calendaires**.
+Dashboard SvelteKit pour collecter, actualiser et visualiser les logs d'audit REDCap.
+
+L'application consomme `@univ-lehavre/atlas-redcap-logs` pour lire les tokens projet, récupérer les logs REDCap, les enrichir et calculer des agrégations calendaires. Elle affiche des statistiques mensuelles et fournit une page d'actualisation avec progression, dates et statut détaillé.
 
 Il affiche 4 graphiques:
 

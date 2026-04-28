@@ -1,19 +1,17 @@
 # ECRIN
 
-Collaboration platform for researchers.
+Plateforme SvelteKit de collaboration, profils et réseau de recherche.
 
 ## About
 
-**ECRIN** is a major Atlas module that allows researchers to present their work, find collaborators, visualize research networks, and manage their data. The application is organized around 6 functional cards.
+**ECRIN** organise les parcours de présentation, collaboration, exploration, recherche, publication et administration autour d'un compte utilisateur. Le code fournit l'authentification Appwrite, des endpoints de gestion de compte, des routes REDCap pour les questionnaires, des services de graphe global/personnel et une documentation API exposée dans l'application.
 
 ## Features
 
-- **Introduce**: Share your scientific question and references
-- **Collaborate**: Create projects, build teams, find experts
-- **Explore**: Visualize your personal network and the community graph
-- **Ask**: Search for data and experts
-- **Publish**: Share your datasets and news
-- **Administrate**: Manage your account and surveys
+- **Accueil modulaire**: sections Introduce, Collaborate, Explore, Ask, Publish et Administrate
+- **Compte**: inscription, login magic link, logout, suppression et état de poussée de compte
+- **Questionnaires REDCap**: URL, téléchargement et suppression de données de surveys
+- **Graphes**: endpoints pour graphe global et graphes liés à l'utilisateur
 
 ## Technical Stack
 

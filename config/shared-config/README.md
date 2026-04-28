@@ -1,10 +1,10 @@
 # @univ-lehavre/atlas-shared-config
 
-Shared TypeScript, ESLint, and Prettier configuration for Atlas projects.
+Configurations TypeScript, ESLint et Prettier partagées par les unités Atlas.
 
 ## About
 
-This package centralizes all development configurations to ensure consistency across packages in the Atlas monorepo.
+Ce package exporte les presets utilisés par les applications SvelteKit, packages TypeScript, CLI Node et scripts internes du monorepo. Il fournit des `tsconfig`, des configurations ESLint spécialisées et des presets Prettier réutilisables depuis chaque unité de code.
 
 ## Features
 

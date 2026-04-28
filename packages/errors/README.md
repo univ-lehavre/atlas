@@ -1,10 +1,10 @@
 # @univ-lehavre/atlas-errors
 
-Shared error classes for Atlas applications.
+Erreurs applicatives normalisées pour les applications Atlas.
 
 ## About
 
-This package provides standardized error classes for Atlas applications, with error codes, HTTP statuses, and conversion to structured API responses.
+Ce package définit une base `ApplicationError`, des erreurs concrètes pour session, JSON, content-type, email, domaine autorisé et magic link, puis les convertit en réponses API structurées. Il sert de couche commune entre validateurs, services Appwrite et routes SvelteKit.
 
 ## Features
 

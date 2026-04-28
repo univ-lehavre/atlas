@@ -1,6 +1,8 @@
 # @univ-lehavre/atlas-fetch-openalex
 
-Central OpenAlex API client for the Atlas monorepo. Provides typed Effect-based functions for institutions, works, and authors — with `api_key` authentication and rate-limit header support.
+Client OpenAlex centralisé pour les applications et CLI Atlas.
+
+Ce package fournit des fonctions typées pour rechercher des institutions, auteurs et travaux, compter les publications, calculer des statistiques par institution et suivre les informations de rate limit. Il s'appuie sur une file de requêtes et un store Effect pour paginer les réponses OpenAlex avec `User-Agent` et clé API optionnelle.
 
 ## Installation
 

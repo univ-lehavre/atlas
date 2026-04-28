@@ -1,17 +1,17 @@
 # Find an Expert
 
-Web application to discover researcher expertise through their publications and contributions.
+Application SvelteKit pour explorer des expertises, institutions et dépôts de recherche.
 
 ## About
 
-**Find an Expert** is an ECRIN sub-project that enables discovering and analyzing researcher expertise through their publications (OpenAlex) and GitHub contributions. The application facilitates connections between researchers, institutions, and partners by identifying skills and areas of expertise.
+**Find an Expert** combine un site public, un tableau de bord utilisateur et une API métier pour rechercher des institutions OpenAlex, compter des publications, inspecter des dépôts GitHub et gérer le consentement utilisateur. Le code inclut l'authentification Appwrite, l'internationalisation FR/EN, les préférences de thème, des composants UI réutilisables et une page de documentation OpenAPI.
 
 ## Features
 
-- **Expertise search**: Find researchers by field, skill, or keyword
-- **Enriched profiles**: Publications (OpenAlex) and contributions (GitHub)
-- **Bibliographic analysis**: Publication metrics and collaborations
-- **Visualization**: Co-authorship graphs and expertise networks
+- **Recherche institutionnelle**: recherche et statistiques OpenAlex par institution
+- **Analyse de dépôts**: détails, issues, pull requests, contributeurs, stats et analyse de code
+- **Espace utilisateur**: dashboard, profil, consentements, préférences de thème et langue
+- **API documentée**: endpoints `api/v1`, fichier OpenAPI et interface `/api/docs`
 
 ## Tech Stack
 

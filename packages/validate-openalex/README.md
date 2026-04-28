@@ -1,6 +1,8 @@
 # @univ-lehavre/atlas-validate-openalex
 
-Interactive CLI for validating and assessing the reliability of OpenAlex bibliographic data. Guides a user through author search, affiliation selection, and publication curation using Effect.
+Moteur de workflow pour valider et fiabiliser des données bibliographiques OpenAlex.
+
+Ce package modélise les actions interactives de validation d'un auteur: contexte ORCID, événements, métriques, statuts globaux, sélection d'identifiants auteurs, variantes de noms, affiliations et publications. Il fournit les stores, prompts, actions et helpers utilisés par `atlas-biblio`.
 
 ## Installation
 
@@ -10,15 +12,16 @@ pnpm add @univ-lehavre/atlas-validate-openalex
 
 ## Usage
 
-```bash
-pnpm -F @univ-lehavre/atlas-validate-openalex start
+```typescript
+import {
+  loadStores,
+  active_actions,
+  action2option,
+  getEvents,
+} from "@univ-lehavre/atlas-validate-openalex";
 ```
 
-The CLI prompts interactively to:
-1. Search for an author by name
-2. Select matching display name variants
-3. Select relevant affiliations
-4. Curate the final publication list
+Le package expose les briques de workflow utilisées par le CLI `atlas-biblio`: stores, contexte auteur, événements, actions de validation, prompts et helpers de statut.
 
 ## Configuration
 
@@ -34,7 +37,7 @@ OPENALEX_API_KEY=          # optional
 
 ## API
 
-This package is primarily a CLI. Its internals are exported for programmatic use:
+Ce package est une bibliothèque de workflow. Ses modules sont exportés pour être assemblés par un CLI ou par d'autres outils:
 
 ### Fetch
 

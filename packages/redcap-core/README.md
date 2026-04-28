@@ -1,10 +1,10 @@
 # @univ-lehavre/atlas-redcap-core
 
-Pure and functional REDCap business logic with Effect.
+Coeur fonctionnel REDCap partagé par les packages Atlas.
 
 ## About
 
-This package provides shared types, utilities, and pure functions for REDCap integration. It is designed to be imported by other packages requiring REDCap functionality.
+Ce package rassemble les briques pures utilisées par les clients et services REDCap: types brandés, erreurs Effect, parsing et comparaison de versions, content-types, validation de formats, builders de paramètres et adaptateurs par versions REDCap 14, 15 et 16.
 
 ## Features
 

@@ -1,8 +1,8 @@
-# AI-Powered Automated Testing Agent
+# Tests AMARRE
 
 ## Overview
 
-This directory contains the AI-powered automated testing agent for the AMARRE project. The agent is designed to ensure comprehensive test coverage, detect drift in application behavior, and facilitate non-regression testing.
+Ce répertoire contient les tests automatisés et utilitaires de non-régression de l'application AMARRE. Il couvre les routes API de surveys, les validateurs serveur, la transformation des erreurs et la détection de dérive par rapport aux baselines de comportement.
 
 ## Features
 

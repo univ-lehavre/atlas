@@ -1,6 +1,8 @@
 # @univ-lehavre/atlas-logos
 
-Logos and brand assets for Atlas projects.
+Assets graphiques partagés des projets Atlas.
+
+Ce package publie les logos applicatifs, institutionnels et partenaires consommés par les apps du monorepo via des imports workspace ou des copies statiques. Il ne contient pas de logique runtime, uniquement des fichiers image versionnés.
 
 ## Contents
 

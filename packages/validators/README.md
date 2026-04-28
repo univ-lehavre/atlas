@@ -1,10 +1,10 @@
 # @univ-lehavre/atlas-validators
 
-Shared validation utilities for Atlas applications.
+Validateurs HTTP et données partagés par les applications Atlas.
 
 ## About
 
-This package provides reusable validation functions for Atlas applications, including email validation, JSON body parsing, and data normalization.
+Ce package centralise la validation d'email, la normalisation d'adresses, la vérification d'identifiants hexadécimaux et la lecture sûre de corps JSON avec contrôle du `Content-Type`. Il lève les erreurs standardisées de `@univ-lehavre/atlas-errors` pour harmoniser les réponses API.
 
 ## Features
 
