@@ -43,57 +43,43 @@ const summarize = (coverage) => {
   const zeroFiles = [];
 
   for (const [filePath, file] of Object.entries(coverage)) {
-    const fileSummary = {
-      statements: empty(),
-      branches: empty(),
-      functions: empty(),
-    };
+    const stmtHits = Object.values(file.s ?? {});
+    const funcHits = Object.values(file.f ?? {});
+    const hasStatements = stmtHits.length > 0;
+    const stmtsCovered = stmtHits.some((h) => h > 0);
+    const funcsCovered = funcHits.some((h) => h > 0);
+
+    if (hasStatements && !stmtsCovered && !funcsCovered) {
+      zeroFiles.push(filePath);
+      continue;
+    }
+
     const lines = new Map();
 
     for (const [id, hits] of Object.entries(file.s ?? {})) {
       summary.statements.total += 1;
-      fileSummary.statements.total += 1;
-      if (hits > 0) {
-        summary.statements.covered += 1;
-        fileSummary.statements.covered += 1;
-      }
+      if (hits > 0) summary.statements.covered += 1;
       const line = file.statementMap?.[id]?.start?.line;
       if (line !== undefined) {
         lines.set(line, (lines.get(line) ?? false) || hits > 0);
       }
     }
 
-    for (const hits of Object.values(file.f ?? {})) {
+    for (const hits of funcHits) {
       summary.functions.total += 1;
-      fileSummary.functions.total += 1;
-      if (hits > 0) {
-        summary.functions.covered += 1;
-        fileSummary.functions.covered += 1;
-      }
+      if (hits > 0) summary.functions.covered += 1;
     }
 
     for (const branchHits of Object.values(file.b ?? {})) {
       for (const hits of branchHits) {
         summary.branches.total += 1;
-        fileSummary.branches.total += 1;
-        if (hits > 0) {
-          summary.branches.covered += 1;
-          fileSummary.branches.covered += 1;
-        }
+        if (hits > 0) summary.branches.covered += 1;
       }
     }
 
     for (const covered of lines.values()) {
       summary.lines.total += 1;
       if (covered) summary.lines.covered += 1;
-    }
-
-    if (
-      fileSummary.statements.total > 0 &&
-      fileSummary.statements.covered === 0 &&
-      fileSummary.functions.covered === 0
-    ) {
-      zeroFiles.push(filePath);
     }
   }
 
@@ -139,14 +125,15 @@ rows.sort((a, b) => {
 const covered = rows.filter((r) => !r.missing);
 const missing = rows.filter((r) => r.missing);
 
-console.log(`Coverage target: ${target}%\n`);
-console.log('Package'.padEnd(COL), ' Stmts Branch  Funcs  Lines    Gap  0-files');
+console.log(`Coverage target: ${target}%  (files with 0% stmts+funcs excluded)\n`);
+console.log('Package'.padEnd(COL), ' Stmts Branch  Funcs  Lines    Gap  Skipped');
 console.log('─'.repeat(COL + 46));
 
 for (const row of covered) {
   const lowest = Math.min(row.statements, row.branches, row.functions, row.lines);
   const gap = Math.max(0, target - lowest);
   const gapStr = gap === 0 ? green(fmt(0)) : gap > 20 ? red(fmt(gap)) : yellow(fmt(gap));
+  const skipped = row.zeroFiles.length > 0 ? dim(String(row.zeroFiles.length).padStart(8)) : '        ';
   console.log(
     shortName(row.name).padEnd(COL),
     colorPct(row.statements),
@@ -154,7 +141,7 @@ for (const row of covered) {
     colorPct(row.functions),
     colorPct(row.lines),
     gapStr,
-    String(row.zeroFiles.length).padStart(8)
+    skipped
   );
 }
 
@@ -171,19 +158,6 @@ if (noVitestPackages.length > 0) {
   console.log(dim(`Packages without tests (${noVitestPackages.length}):`), dim(noVitestPackages.map((w) => shortName(w.name)).join(', ')));
 }
 
-const offenders = covered.filter((row) => row.zeroFiles.length > 0);
-if (offenders.length > 0) {
-  console.log('\nFiles with 0% statement/function coverage:');
-  for (const row of offenders) {
-    console.log(`\n${shortName(row.name)}`);
-    for (const file of row.zeroFiles.slice(0, 10)) {
-      console.log(`  ${relative(row.path, file)}`);
-    }
-    if (row.zeroFiles.length > 10) {
-      console.log(`  ... ${row.zeroFiles.length - 10} more`);
-    }
-  }
-}
 
 const belowTarget = covered.filter(
   (r) => Math.min(r.statements, r.branches, r.functions, r.lines) < target
