@@ -1,5 +1,16 @@
 # @univ-lehavre/atlas-validate-openalex
 
+## 1.0.1
+
+### Patch Changes
+
+- [#113](https://github.com/univ-lehavre/atlas/pull/113) [`6f6e5db`](https://github.com/univ-lehavre/atlas/commit/6f6e5db80769bf9b375510e37c5ed0dba2f3c310) Thanks [@chasset](https://github.com/chasset)! - Document code units with accurate README summaries.
+
+- Updated dependencies [[`6f6e5db`](https://github.com/univ-lehavre/atlas/commit/6f6e5db80769bf9b375510e37c5ed0dba2f3c310)]:
+  - @univ-lehavre/atlas-fetch-one-api-page@1.1.4
+  - @univ-lehavre/atlas-fetch-openalex@1.0.1
+  - @univ-lehavre/atlas-openalex-types@3.1.5
+
 ## 1.0.0
 
 ### Major Changes
