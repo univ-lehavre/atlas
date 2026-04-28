@@ -27,7 +27,8 @@
   "files": [
     "*.json",
     "eslint/**/*.js",
-    "prettier/**/*.js"
+    "prettier/**/*.js",
+    "vitest/**/*.js"
   ],
   "exports": {
     "./base.json": "./base.json",
@@ -39,7 +40,8 @@
     "./eslint/scripts": "./eslint/scripts.js",
     "./prettier": "./prettier/index.js",
     "./prettier/base": "./prettier/base.js",
-    "./prettier/svelte": "./prettier/svelte.js"
+    "./prettier/svelte": "./prettier/svelte.js",
+    "./vitest": "./vitest/index.js"
   },
   "dependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.7.1",

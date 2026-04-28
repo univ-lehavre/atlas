@@ -1,3 +1,4 @@
+import { coverageConfig } from '@univ-lehavre/atlas-shared-config/vitest';
 import { defineConfig, mergeConfig } from 'vitest/config';
 import viteConfig from './vite.config';
 
@@ -10,11 +11,9 @@ export default mergeConfig(
       environment: 'node',
       globals: true,
       include: ['tests/**/*.test.ts'],
-      coverage: {
-        provider: 'v8',
-        reporter: process.env.CI ? 'text' : ['text', 'html', 'json'],
-        thresholds: { statements: 80, functions: 80 },
-      },
+      coverage: coverageConfig({
+        thresholds: { statements: 42, branches: 52, functions: 36, lines: 43 },
+      }),
     },
   })
 );

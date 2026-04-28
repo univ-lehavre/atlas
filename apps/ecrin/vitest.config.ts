@@ -1,3 +1,4 @@
+import { coverageConfig } from '@univ-lehavre/atlas-shared-config/vitest';
 import { defineConfig } from 'vitest/config';
 import path from 'path';
 
@@ -6,10 +7,7 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
-    coverage: {
-      provider: 'v8',
-      reporter: process.env.CI ? 'text' : ['text', 'html', 'json'],
-    },
+    coverage: coverageConfig(),
   },
   resolve: {
     alias: {
