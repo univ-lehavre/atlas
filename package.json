@@ -1,6 +1,5 @@
 {
   "name": "atlas",
-  "private": true,
   "description": "REDCap API monorepo",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
