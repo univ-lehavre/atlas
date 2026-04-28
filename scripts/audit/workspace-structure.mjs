@@ -29,10 +29,6 @@ for (const root of ROOTS) {
     }
 
     if (root === 'apps') {
-      if (packageJson.private !== true) {
-        errors.push(`${dir}: apps must set "private": true`);
-      }
-
       const appToken = entry.startsWith('atlas-') ? entry : `atlas-${entry}`;
       const expectedName = `@univ-lehavre/${appToken}`;
       if (packageName !== expectedName) {

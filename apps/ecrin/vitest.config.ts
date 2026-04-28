@@ -8,7 +8,7 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
     coverage: coverageConfig({
-      thresholds: { statements: 19, branches: 16, functions: 14, lines: 20 },
+      thresholds: { statements: 28, branches: 18, functions: 27, lines: 28 },
     }),
   },
   resolve: {

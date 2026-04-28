@@ -123,19 +123,28 @@ rows.sort((a, b) => {
   if (a.missing && !b.missing) return 1;
   if (!a.missing && b.missing) return -1;
   if (a.missing && b.missing) return a.name.localeCompare(b.name);
-  const lowestA = Math.min(a.statements, a.branches, a.functions, a.lines);
-  const lowestB = Math.min(b.statements, b.branches, b.functions, b.lines);
-  return lowestA - lowestB;
+  const dirCmp = a.dir.localeCompare(b.dir);
+  if (dirCmp !== 0) return dirCmp;
+  const gapA = Math.max(0, target - Math.min(a.statements, a.branches, a.functions, a.lines));
+  const gapB = Math.max(0, target - Math.min(b.statements, b.branches, b.functions, b.lines));
+  return gapB - gapA;
 });
 
 const covered = rows.filter((r) => !r.missing);
 const missing = rows.filter((r) => r.missing);
 
+const SEPARATOR = dim('·'.repeat(DIR_COL + COL + 46));
+
 console.log(`Coverage target: ${target}%  (files with 0% stmts+funcs excluded)\n`);
 console.log('Dir'.padEnd(DIR_COL) + 'Package'.padEnd(COL), ' Stmts Branch  Funcs  Lines    Gap  Skipped');
 console.log('─'.repeat(DIR_COL + COL + 46));
 
+let lastDir = null;
 for (const row of covered) {
+  if (lastDir !== null && row.dir !== lastDir) {
+    console.log(SEPARATOR);
+  }
+  lastDir = row.dir;
   const lowest = Math.min(row.statements, row.branches, row.functions, row.lines);
   const gap = Math.max(0, target - lowest);
   const gapStr = gap === 0 ? green(fmt(0)) : gap > 20 ? red(fmt(gap)) : yellow(fmt(gap));
