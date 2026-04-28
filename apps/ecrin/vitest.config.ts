@@ -7,7 +7,9 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
-    coverage: coverageConfig(),
+    coverage: coverageConfig({
+      thresholds: { statements: 19, branches: 16, functions: 14, lines: 20 },
+    }),
   },
   resolve: {
     alias: {
