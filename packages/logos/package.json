@@ -12,5 +12,12 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.5"
   }
 }
