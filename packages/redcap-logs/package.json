@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-redcap-logs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "REDCap audit log fetching, enrichment and rolling-window analytics",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

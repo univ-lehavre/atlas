@@ -1,5 +1,17 @@
 # @univ-lehavre/ecrin
 
+## 2.0.6
+
+### Patch Changes
+
+- [#113](https://github.com/univ-lehavre/atlas/pull/113) [`6f6e5db`](https://github.com/univ-lehavre/atlas/commit/6f6e5db80769bf9b375510e37c5ed0dba2f3c310) Thanks [@chasset](https://github.com/chasset)! - Document code units with accurate README summaries.
+
+- Updated dependencies [[`6f6e5db`](https://github.com/univ-lehavre/atlas/commit/6f6e5db80769bf9b375510e37c5ed0dba2f3c310)]:
+  - @univ-lehavre/atlas-appwrite@1.0.1
+  - @univ-lehavre/atlas-errors@1.0.1
+  - @univ-lehavre/atlas-logos@1.1.2
+  - @univ-lehavre/atlas-validators@1.0.1
+
 ## 2.0.5
 
 ### Patch Changes

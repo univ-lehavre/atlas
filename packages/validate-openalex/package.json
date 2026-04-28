@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-validate-openalex",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CLI tools for OpenAlex bibliographic data validation and reliability",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

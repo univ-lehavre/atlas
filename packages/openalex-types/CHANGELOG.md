@@ -1,5 +1,11 @@
 # @univ-lehavre/atlas-openalex-types
 
+## 3.1.5
+
+### Patch Changes
+
+- [#113](https://github.com/univ-lehavre/atlas/pull/113) [`6f6e5db`](https://github.com/univ-lehavre/atlas/commit/6f6e5db80769bf9b375510e37c5ed0dba2f3c310) Thanks [@chasset](https://github.com/chasset)! - Document code units with accurate README summaries.
+
 ## 3.1.4
 
 ### Patch Changes

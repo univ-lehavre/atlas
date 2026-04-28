@@ -1,5 +1,11 @@
 # @univ-lehavre/atlas-fetch-one-api-page
 
+## 1.1.4
+
+### Patch Changes
+
+- [#113](https://github.com/univ-lehavre/atlas/pull/113) [`6f6e5db`](https://github.com/univ-lehavre/atlas/commit/6f6e5db80769bf9b375510e37c5ed0dba2f3c310) Thanks [@chasset](https://github.com/chasset)! - Document code units with accurate README summaries.
+
 ## 1.1.3
 
 ### Patch Changes
