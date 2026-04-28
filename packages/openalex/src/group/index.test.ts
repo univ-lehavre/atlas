@@ -254,4 +254,31 @@ describe("normalizeString", () => {
     const norm = normalizeString(s);
     expect(norm).toBe("ecole cafe - deja");
   });
+
+  test("conserve accents si removeDiacritics=false", () => {
+    expect(
+      normalizeString("éàü", {
+        removeDiacritics: false,
+        removePunctuation: false,
+        collapseWhitespace: false,
+        lower: false,
+      }),
+    ).toBe("éàü");
+  });
+
+  test("conserve ponctuation si removePunctuation=false", () => {
+    expect(normalizeString("hello!", { removePunctuation: false })).toContain(
+      "!",
+    );
+  });
+
+  test("conserve espaces multiples si collapseWhitespace=false", () => {
+    expect(normalizeString("a  b", { collapseWhitespace: false })).toContain(
+      "  ",
+    );
+  });
+
+  test("conserve la casse si lower=false", () => {
+    expect(normalizeString("ABC", { lower: false })).toBe("ABC");
+  });
 });
