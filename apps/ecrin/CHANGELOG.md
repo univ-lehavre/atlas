@@ -1,5 +1,17 @@
 # @univ-lehavre/ecrin
 
+## 2.0.7
+
+### Patch Changes
+
+- [#115](https://github.com/univ-lehavre/atlas/pull/115) [`fee2990`](https://github.com/univ-lehavre/atlas/commit/fee2990d90ef48667e6f4bd10de3478768f81b25) Thanks [@chasset](https://github.com/chasset)! - Update dependency ranges and lockfile entries, and make the version audit fail when outdated dependencies are detected.
+
+- Updated dependencies [[`eae5e1c`](https://github.com/univ-lehavre/atlas/commit/eae5e1c54e7e231acd9566221dd1926983e920ea), [`fee2990`](https://github.com/univ-lehavre/atlas/commit/fee2990d90ef48667e6f4bd10de3478768f81b25)]:
+  - @univ-lehavre/atlas-appwrite@1.0.2
+  - @univ-lehavre/atlas-logos@1.1.3
+  - @univ-lehavre/atlas-errors@1.0.1
+  - @univ-lehavre/atlas-validators@1.0.1
+
 ## 2.0.6
 
 ### Patch Changes

@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-dashboard
 
+## 1.0.2
+
+### Patch Changes
+
+- Updated dependencies [[`eae5e1c`](https://github.com/univ-lehavre/atlas/commit/eae5e1c54e7e231acd9566221dd1926983e920ea)]:
+  - @univ-lehavre/atlas-stats@1.0.2
+
 ## 1.0.1
 
 ### Patch Changes
