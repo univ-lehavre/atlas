@@ -1,5 +1,5 @@
 import { it, describe, expect } from "@effect/vitest";
-import { Effect, Ref } from "effect";
+import { Effect, Exit, Ref } from "effect";
 import {
   getEvents,
   getEventsData,
@@ -171,7 +171,7 @@ describe("getDisplayNameAlternatives", () => {
       }),
   );
 
-  it.effect("returns empty array when orcid is undefined", () =>
+  it.effect("fails when orcid is undefined", () =>
     Effect.gen(function* () {
       const result = yield* getDisplayNameAlternatives().pipe(
         Effect.provideServiceEffect(EventsStore, Ref.make([])),
@@ -179,8 +179,9 @@ describe("getDisplayNameAlternatives", () => {
           ContextStore,
           Ref.make(makeContext({ id: undefined })),
         ),
+        Effect.exit,
       );
-      expect(result).toEqual([]);
+      expect(Exit.isFailure(result)).toBe(true);
     }),
   );
 });
@@ -220,7 +221,7 @@ describe("getAffiliations", () => {
     }),
   );
 
-  it.effect("returns empty array when orcid is undefined", () =>
+  it.effect("fails when orcid is undefined", () =>
     Effect.gen(function* () {
       const result = yield* getAffiliations().pipe(
         Effect.provideServiceEffect(EventsStore, Ref.make([])),
@@ -228,8 +229,9 @@ describe("getAffiliations", () => {
           ContextStore,
           Ref.make(makeContext({ id: undefined })),
         ),
+        Effect.exit,
       );
-      expect(result).toEqual([]);
+      expect(Exit.isFailure(result)).toBe(true);
     }),
   );
 });

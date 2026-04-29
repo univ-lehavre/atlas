@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@effect/vitest";
-import { Effect, Ref } from "effect";
+import { Effect, Exit, Ref } from "effect";
 import {
   buildReference,
   buildEvent,
@@ -104,9 +104,9 @@ describe("buildAuthorResultsPendingEvents", () => {
       const result = yield* buildAuthorResultsPendingEvents([]).pipe(
         Effect.provideServiceEffect(ContextStore, Ref.make(ctxWithoutOrcid)),
         Effect.provideServiceEffect(EventsStore, Ref.make([])),
-        Effect.either,
+        Effect.exit,
       );
-      expect(result._tag).toBe("Left");
+      expect(Exit.isFailure(result)).toBe(true);
     }),
   );
 
