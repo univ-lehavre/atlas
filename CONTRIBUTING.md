@@ -344,6 +344,13 @@ Each category has a strict responsibility boundary. Code placed in the wrong cat
 - **No**: business logic, HTTP calls, data transformation
 - **Rule**: a CLI command should read its inputs, call a `packages/` function, and display the result
 
+### `ui/` — Shared Svelte Component Libraries
+
+- **Contains**: reusable Svelte components, stores, and actions shared across `apps/`
+- **Style**: declare `svelte` (and optionally `@sveltejs/kit`) as `peerDependencies` — business logic lives in `packages/`
+- **No**: routing, server-side logic, CLI entry points, domain logic
+- **Rule**: a `ui/` component that contains business logic should extract it to a `packages/` function
+
 ### `config/` — Shared Tooling Configuration
 
 - **Contains**: ESLint presets, Prettier config, TypeScript base configs

@@ -4,4 +4,5 @@ export default typescript({
   ignores: ['**/generated/**'],
   workspaceModules: ['@univ-lehavre/atlas-net'],
   tsconfigRootDir: import.meta.dirname,
+  architectureCategory: 'packages',
 });

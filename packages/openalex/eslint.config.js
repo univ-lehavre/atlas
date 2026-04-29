@@ -1,3 +1,3 @@
-import { scripts } from '@univ-lehavre/atlas-shared-config/eslint';
+import { scripts } from "@univ-lehavre/atlas-shared-config/eslint";
 
-export default scripts();
+export default scripts({ architectureCategory: "packages" });
