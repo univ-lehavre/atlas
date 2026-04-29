@@ -93,6 +93,23 @@ describe("buildEvent", () => {
 });
 
 describe("buildAuthorResultsPendingEvents", () => {
+  it.effect("throws when orcid is undefined in context", () =>
+    Effect.gen(function* () {
+      const ctxWithoutOrcid: IContext = {
+        type: "none",
+        id: undefined,
+        backup: false,
+        NAMESPACE: "ns",
+      };
+      const result = yield* buildAuthorResultsPendingEvents([]).pipe(
+        Effect.provideServiceEffect(ContextStore, Ref.make(ctxWithoutOrcid)),
+        Effect.provideServiceEffect(EventsStore, Ref.make([])),
+        Effect.either,
+      );
+      expect(result._tag).toBe("Left");
+    }),
+  );
+
   it.effect("builds pending events from AuthorsResult array", () =>
     Effect.gen(function* () {
       const authors: AuthorsResult[] = [

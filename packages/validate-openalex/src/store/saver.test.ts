@@ -111,3 +111,22 @@ describe("saveStores", () => {
     }),
   );
 });
+
+describe("saveContextStore with backup", () => {
+  it.effect(
+    "creates a backup copy when backup=true and file already exists",
+    () =>
+      Effect.gen(function* () {
+        writeFileSync(ctxFile, JSON.stringify({ existing: true }), "utf-8");
+        const ctx = makeContext({ backup: true });
+        const ctxRef = yield* Ref.make(ctx);
+
+        yield* saveContextStore().pipe(
+          Effect.provideService(ContextStore, ctxRef),
+        );
+
+        const written = JSON.parse(readFileSync(ctxFile, "utf-8")) as IContext;
+        expect(written.type).toBe("author");
+      }),
+  );
+});

@@ -170,6 +170,19 @@ describe("getDisplayNameAlternatives", () => {
         expect(result).toEqual([]);
       }),
   );
+
+  it.effect("returns empty array when orcid is undefined", () =>
+    Effect.gen(function* () {
+      const result = yield* getDisplayNameAlternatives().pipe(
+        Effect.provideServiceEffect(EventsStore, Ref.make([])),
+        Effect.provideServiceEffect(
+          ContextStore,
+          Ref.make(makeContext({ id: undefined })),
+        ),
+      );
+      expect(result).toEqual([]);
+    }),
+  );
 });
 
 describe("getAffiliations", () => {
@@ -204,6 +217,19 @@ describe("getAffiliations", () => {
       expect(result).toContain("Univ LH");
       expect(result).toContain("I2");
       expect(result).not.toContain("Univ X");
+    }),
+  );
+
+  it.effect("returns empty array when orcid is undefined", () =>
+    Effect.gen(function* () {
+      const result = yield* getAffiliations().pipe(
+        Effect.provideServiceEffect(EventsStore, Ref.make([])),
+        Effect.provideServiceEffect(
+          ContextStore,
+          Ref.make(makeContext({ id: undefined })),
+        ),
+      );
+      expect(result).toEqual([]);
     }),
   );
 });

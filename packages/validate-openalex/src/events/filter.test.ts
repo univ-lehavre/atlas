@@ -6,7 +6,9 @@ import {
   filterPending,
   filterDuplicates,
   removeDuplicates,
+  filterAcceptedAuthorDisplayNameAlternatives,
 } from "./filter.js";
+import type { ORCID } from "@univ-lehavre/atlas-openalex-types";
 
 const makeEvent = (overrides: Partial<IEvent> = {}): IEvent =>
   ({
@@ -109,6 +111,45 @@ describe("filterDuplicates", () => {
   it("returns only updated when existing is empty", () => {
     const updated = [makeEvent({ dataIntegrity: "uuid-1" })];
     expect(filterDuplicates([], updated)).toHaveLength(1);
+  });
+});
+
+describe("filterAcceptedAuthorDisplayNameAlternatives", () => {
+  const orcid = "0000-0001-2345-6789" as unknown as ORCID;
+
+  it("returns only accepted display_name_alternatives for the given orcid", () => {
+    const events = [
+      makeEvent({
+        id: orcid,
+        entity: "author",
+        field: "display_name_alternatives",
+        status: "accepted",
+        dataIntegrity: "uuid-1",
+      }),
+      makeEvent({
+        id: orcid,
+        entity: "author",
+        field: "display_name_alternatives",
+        status: "pending",
+        dataIntegrity: "uuid-2",
+      }),
+      makeEvent({
+        id: orcid,
+        entity: "author",
+        field: "affiliation",
+        status: "accepted",
+        dataIntegrity: "uuid-3",
+      }),
+    ];
+    const result = filterAcceptedAuthorDisplayNameAlternatives(events, orcid);
+    expect(result).toHaveLength(1);
+    expect(result[0].dataIntegrity).toBe("uuid-1");
+  });
+
+  it("returns empty array when no matching events", () => {
+    expect(filterAcceptedAuthorDisplayNameAlternatives([], orcid)).toHaveLength(
+      0,
+    );
   });
 });
 
