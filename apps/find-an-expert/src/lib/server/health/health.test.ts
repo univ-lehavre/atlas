@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import {
   HealthStatus,
   AttributeHealth,
@@ -7,6 +7,28 @@ import {
   ServiceHealth,
   HealthCheckResponse,
 } from './types';
+
+const mocks = vi.hoisted(() => ({
+  databases: {
+    get: vi.fn(),
+    getCollection: vi.fn(),
+    listAttributes: vi.fn(),
+  },
+  createAdminClient: vi.fn(),
+}));
+
+vi.mock('$env/static/private', () => ({
+  APPWRITE_ENDPOINT: 'https://appwrite.example.test/v1',
+  APPWRITE_DATABASE_ID: 'atlas',
+  APPWRITE_CONSENT_EVENTS_COLLECTION_ID: 'consent-events',
+  APPWRITE_CURRENT_CONSENTS_COLLECTION_ID: 'current-consents',
+}));
+
+vi.mock('$lib/server/appwrite', () => ({
+  createAdminClient: mocks.createAdminClient,
+}));
+
+import { performHealthCheck } from './service';
 
 describe('HealthStatus', () => {
   it('should accept valid status values', () => {
@@ -114,5 +136,91 @@ describe('HealthCheckResponse', () => {
       ],
     };
     expect(HealthCheckResponse.parse(data)).toEqual(data);
+  });
+});
+
+describe('performHealthCheck', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.createAdminClient.mockReturnValue({ databases: mocks.databases });
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 } as Response);
+    mocks.databases.get.mockResolvedValue({ name: 'Atlas' });
+    mocks.databases.getCollection.mockImplementation(
+      async (_databaseId: string, collectionId: string) => ({
+        name: collectionId === 'consent-events' ? 'Consent events' : 'Current consents',
+      })
+    );
+    mocks.databases.listAttributes.mockImplementation(
+      async (_databaseId: string, collectionId: string) => ({
+        attributes:
+          collectionId === 'consent-events'
+            ? [
+                { key: 'userId', type: 'string' },
+                { key: 'consentType', type: 'string' },
+                { key: 'action', type: 'string' },
+              ]
+            : [
+                { key: 'userId', type: 'string' },
+                { key: 'consentType', type: 'string' },
+                { key: 'granted', type: 'boolean' },
+              ],
+      })
+    );
+  });
+
+  it('should report healthy when Appwrite endpoint and schema are available', async () => {
+    const result = await performHealthCheck();
+
+    expect(result.status).toBe('healthy');
+    expect(result.services).toHaveLength(1);
+    expect(result.services[0]).toMatchObject({
+      name: 'appwrite',
+      status: 'healthy',
+      database: {
+        id: 'atlas',
+        name: 'Atlas',
+        exists: true,
+        apiKeyValid: true,
+      },
+    });
+    expect(global.fetch).toHaveBeenCalledWith('https://appwrite.example.test/v1/health', {
+      method: 'HEAD',
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it('should report degraded when expected collection attributes are missing', async () => {
+    mocks.databases.listAttributes.mockResolvedValue({
+      attributes: [{ key: 'userId', type: 'string' }],
+    });
+
+    const result = await performHealthCheck();
+
+    expect(result.status).toBe('degraded');
+    expect(result.services[0]?.error).toBe(
+      'Missing attributes: consent-events.consentType, consent-events.action, current-consents.consentType, current-consents.granted'
+    );
+  });
+
+  it('should check internet connectivity when Appwrite is unreachable', async () => {
+    vi.mocked(global.fetch)
+      .mockRejectedValueOnce(new Error('lookup failed', { cause: { code: 'ENOTFOUND' } }))
+      .mockResolvedValueOnce({ ok: true, status: 200 } as Response);
+
+    const result = await performHealthCheck();
+
+    expect(result.status).toBe('unhealthy');
+    expect(result.services).toEqual([
+      expect.objectContaining({
+        name: 'appwrite',
+        status: 'unhealthy',
+        error: 'DNS lookup failed - hostname not found',
+      }),
+      expect.objectContaining({
+        name: 'internet',
+        status: 'healthy',
+      }),
+    ]);
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 });

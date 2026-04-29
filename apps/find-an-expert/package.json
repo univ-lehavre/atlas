@@ -31,7 +31,7 @@
     "eslint": "^10.2.1",
     "jscpd": "^4.0.9",
     "jsdom": "^29.1.0",
-    "knip": "^6.7.0",
+    "knip": "^6.8.0",
     "prettier": "^3.8.3",
     "prettier-plugin-svelte": "^3.5.1",
     "svelte": "^5.55.5",
@@ -51,7 +51,7 @@
     "@univ-lehavre/atlas-logos": "workspace:*",
     "@univ-lehavre/atlas-validators": "workspace:*",
     "effect": "^3.21.2",
-    "node-appwrite": "^23.1.0",
+    "node-appwrite": "^24.0.0",
     "simple-git": "^3.36.0",
     "swagger-ui-dist": "^5.32.5",
     "zod": "^4.3.6"

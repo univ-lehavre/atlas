@@ -5,6 +5,7 @@ packages:
   - packages/*
   - sandbox/*
   - services/*
+  - ui/*
 
 onlyBuiltDependencies:
   - '@duckdb/node-api'

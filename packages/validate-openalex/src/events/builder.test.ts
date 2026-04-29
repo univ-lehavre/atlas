@@ -1,5 +1,5 @@
 import { describe, it, expect } from "@effect/vitest";
-import { Effect, Ref } from "effect";
+import { Effect, Exit, Ref } from "effect";
 import {
   buildReference,
   buildEvent,
@@ -93,6 +93,23 @@ describe("buildEvent", () => {
 });
 
 describe("buildAuthorResultsPendingEvents", () => {
+  it.effect("throws when orcid is undefined in context", () =>
+    Effect.gen(function* () {
+      const ctxWithoutOrcid: IContext = {
+        type: "none",
+        id: undefined,
+        backup: false,
+        NAMESPACE: "ns",
+      };
+      const result = yield* buildAuthorResultsPendingEvents([]).pipe(
+        Effect.provideServiceEffect(ContextStore, Ref.make(ctxWithoutOrcid)),
+        Effect.provideServiceEffect(EventsStore, Ref.make([])),
+        Effect.exit,
+      );
+      expect(Exit.isFailure(result)).toBe(true);
+    }),
+  );
+
   it.effect("builds pending events from AuthorsResult array", () =>
     Effect.gen(function* () {
       const authors: AuthorsResult[] = [

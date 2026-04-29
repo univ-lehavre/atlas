@@ -27,7 +27,8 @@
   "files": [
     "*.json",
     "eslint/**/*.js",
-    "prettier/**/*.js"
+    "prettier/**/*.js",
+    "vitest/**/*.js"
   ],
   "exports": {
     "./base.json": "./base.json",
@@ -39,7 +40,8 @@
     "./eslint/scripts": "./eslint/scripts.js",
     "./prettier": "./prettier/index.js",
     "./prettier/base": "./prettier/base.js",
-    "./prettier/svelte": "./prettier/svelte.js"
+    "./prettier/svelte": "./prettier/svelte.js",
+    "./vitest": "./vitest/index.js"
   },
   "dependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.7.1",
@@ -57,7 +59,7 @@
     "eslint-plugin-turbo": "^2.9.6",
     "eslint-plugin-unicorn": "^64.0.0",
     "globals": "^17.5.0",
-    "typescript-eslint": "^8.59.0"
+    "typescript-eslint": "^8.59.1"
   },
   "peerDependencies": {
     "eslint": "^10.0.0",
@@ -66,5 +68,12 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "scripts": {
+    "test": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage --passWithNoTests"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.5"
   }
 }

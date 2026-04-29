@@ -6,8 +6,18 @@ import {
   fetchJSON,
   URLToResponse,
   responseToJSON,
+  parseRateLimitHeaders,
+  FetchError,
 } from "./index.js";
 import { it, describe, expect, afterEach } from "@effect/vitest";
+
+describe("FetchError", () => {
+  it("can be constructed without cause", () => {
+    const err = new FetchError("oops");
+    expect(err.message).toBe("oops");
+    expect(err.name).toBe("FetchError");
+  });
+});
 
 describe("buildURL", () => {
   it("should build a URL with query parameters", () => {
@@ -266,6 +276,52 @@ describe("fetchJSON", () => {
   );
 });
 
+describe("parseRateLimitHeaders", () => {
+  it("returns RateLimitInfo when all headers are present", () => {
+    const headers = new Headers({
+      "X-RateLimit-Limit": "100",
+      "X-RateLimit-Remaining": "95",
+      "X-RateLimit-Credits-Used": "5",
+      "X-RateLimit-Reset": "60",
+    });
+    const result = parseRateLimitHeaders(headers);
+    expect(result).toEqual({
+      limit: 100,
+      remaining: 95,
+      creditsUsed: 5,
+      resetInSeconds: 60,
+    });
+  });
+
+  it("returns undefined when some headers are missing", () => {
+    const headers = new Headers({ "X-RateLimit-Limit": "100" });
+    expect(parseRateLimitHeaders(headers)).toBeUndefined();
+  });
+
+  it("returns undefined when no headers are present", () => {
+    expect(parseRateLimitHeaders(new Headers())).toBeUndefined();
+  });
+});
+
+describe("responseToJSON with null content-type", () => {
+  it.effect("parses response when content-type is null", () =>
+    Effect.gen(function* () {
+      const mockData = { value: 42 };
+      globalThis.fetch = (async () =>
+        ({
+          headers: new Headers(),
+          json: async () => mockData,
+        }) as unknown as Response) as typeof fetch;
+
+      const url = new URL("https://api.example.com/test");
+      const headers = new Headers();
+      const response = yield* URLToResponse(url, "GET", headers);
+      const result = yield* responseToJSON<typeof mockData>(response);
+      expect(result).toEqual(mockData);
+    }),
+  );
+});
+
 describe("fetchOnePage", () => {
   const originalFetch = globalThis.fetch;
 
@@ -326,6 +382,36 @@ describe("fetchOnePage", () => {
       expect(data["results"].length).toBeDefined();
       expect(data["results"].length).toBeGreaterThan(0);
       expect(data["results"].length).toStrictEqual(5);
+    }),
+  );
+
+  it.effect("should include rate limit info when headers are present", () =>
+    Effect.gen(function* () {
+      const mockData = { results: [] };
+      globalThis.fetch = (async () =>
+        ({
+          headers: new Headers({
+            "content-type": "application/json",
+            "X-RateLimit-Limit": "100",
+            "X-RateLimit-Remaining": "99",
+            "X-RateLimit-Credits-Used": "1",
+            "X-RateLimit-Reset": "60",
+          }),
+          json: async () => mockData,
+        }) as unknown as Response) as typeof fetch;
+
+      const { data, rateLimit } = yield* fetchOnePage<typeof mockData>(
+        new URL("https://api.example.com/test"),
+        {},
+        "MyApp/1.0",
+      );
+      expect(data).toEqual(mockData);
+      expect(rateLimit).toEqual({
+        limit: 100,
+        remaining: 99,
+        creditsUsed: 1,
+        resetInSeconds: 60,
+      });
     }),
   );
 

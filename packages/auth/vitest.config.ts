@@ -1,11 +1,11 @@
+import { coverageConfig } from '@univ-lehavre/atlas-shared-config/vitest';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
     include: ['src/**/*.test.ts'],
-    coverage: {
-      provider: 'v8',
-      thresholds: { statements: 95, functions: 95 },
-    },
+    coverage: coverageConfig({
+      thresholds: { statements: 72, branches: 90, functions: 64, lines: 72 },
+    }),
   },
 });

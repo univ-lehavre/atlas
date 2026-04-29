@@ -48,12 +48,12 @@
     "fuse.js": "^7.3.0",
     "mammoth": "^1.12.0",
     "pdf-lib": "^1.17.1",
-    "pdfjs-dist": "^5.6.205",
+    "pdfjs-dist": "^5.7.284",
     "pdfkit": "^0.18.0",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
-    "@effect/vitest": "0.29.0",
+    "@effect/vitest": "^0.29.0",
     "@types/node": "^25.6.0",
     "@types/pdfkit": "^0.17.6",
     "@univ-lehavre/atlas-shared-config": "workspace:*",

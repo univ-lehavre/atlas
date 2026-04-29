@@ -11,7 +11,6 @@ export interface CacheFile {
 }
 
 const readCacheFile = (): Promise<string | null> =>
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
   readFile(CACHE_PATH, "utf8").then(
     (content) => content,
     () => null,
@@ -23,7 +22,6 @@ export const readCache = (): Promise<CacheFile | null> =>
   );
 
 export const writeCache = (logs: RawLog[]): Promise<void> =>
-  // eslint-disable-next-line security/detect-non-literal-fs-filename
   writeFile(
     CACHE_PATH,
     `${JSON.stringify({ savedAt: Date.now(), logs }, null, 2)}\n`,

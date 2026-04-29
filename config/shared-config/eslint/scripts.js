@@ -5,15 +5,16 @@
  * Uses recommended (not strict) TypeScript rules.
  */
 
-import vitest from '@vitest/eslint-plugin';
-import eslint from '@eslint/js';
-import prettier from 'eslint-config-prettier';
-import globals from 'globals';
-import tseslint from 'typescript-eslint';
+import vitest from "@vitest/eslint-plugin";
+import eslint from "@eslint/js";
+import prettier from "eslint-config-prettier";
+import globals from "globals";
+import tseslint from "typescript-eslint";
 
 /**
  * @typedef {Object} ScriptsOptions
  * @property {string[]} [ignores] - Additional patterns to ignore
+ * @property {'packages' | 'cli'} [architectureCategory] - Monorepo category for architecture enforcement rules
  */
 
 /**
@@ -22,12 +23,12 @@ import tseslint from 'typescript-eslint';
  * @returns {import('typescript-eslint').ConfigArray}
  */
 export function scripts(options = {}) {
-  const { ignores = [] } = options;
+  const { ignores = [], architectureCategory } = options;
 
   return tseslint.config(
     // Ignores
     {
-      ignores: ['dist/**', ...ignores],
+      ignores: ["dist/**", ...ignores],
     },
 
     // Base
@@ -36,7 +37,7 @@ export function scripts(options = {}) {
 
     // Global settings for all TypeScript files
     {
-      files: ['**/*.ts'],
+      files: ["**/*.ts"],
       languageOptions: {
         globals: {
           ...globals.node,
@@ -44,25 +45,74 @@ export function scripts(options = {}) {
       },
       rules: {
         // Relaxed rules for analyzer/test scripts (not library code)
-        '@typescript-eslint/no-explicit-any': 'warn',
-        '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-        'no-console': 'off',
+        "@typescript-eslint/no-explicit-any": "warn",
+        "@typescript-eslint/no-unused-vars": [
+          "warn",
+          { argsIgnorePattern: "^_" },
+        ],
+        "no-console": "off",
       },
     },
 
     // Code Quality
     {
       rules: {
-        'prefer-const': 'error',
-        'no-var': 'error',
-        eqeqeq: ['error', 'always'],
-        curly: ['error', 'all'],
+        "prefer-const": "error",
+        "no-var": "error",
+        eqeqeq: ["error", "always"],
+        curly: ["error", "all"],
       },
     },
 
+    // Architecture enforcement
+    ...(architectureCategory === "packages"
+      ? [
+          {
+            rules: {
+              "no-restricted-imports": [
+                "error",
+                {
+                  paths: [
+                    {
+                      name: "@clack/prompts",
+                      message:
+                        "CLI I/O belongs in cli/ — delegate to a packages/ function instead.",
+                    },
+                    {
+                      name: "yargs",
+                      message: "CLI argument parsing belongs in cli/.",
+                    },
+                    {
+                      name: "commander",
+                      message: "CLI argument parsing belongs in cli/.",
+                    },
+                    {
+                      name: "meow",
+                      message: "CLI argument parsing belongs in cli/.",
+                    },
+                    {
+                      name: "inquirer",
+                      message: "CLI prompts belong in cli/.",
+                    },
+                    { name: "prompts", message: "CLI prompts belong in cli/." },
+                  ],
+                  patterns: [
+                    {
+                      group: ["node:readline", "node:tty"],
+                      message:
+                        "Terminal I/O belongs in cli/ — packages/ must be importable without side effects.",
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        ]
+      : []),
+
     // Vitest
     {
-      files: ['**/*.test.ts', '**/*.spec.ts'],
+      files: ["**/*.test.ts", "**/*.spec.ts"],
       plugins: { vitest },
       rules: {
         ...vitest.configs.recommended.rules,
@@ -71,21 +121,20 @@ export function scripts(options = {}) {
 
     // Disable strict rules for test files
     {
-      files: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts'],
+      files: ["**/*.test.ts", "**/*.spec.ts", "**/tests/**/*.ts"],
       extends: [tseslint.configs.disableTypeChecked],
       rules: {
-        '@typescript-eslint/no-explicit-any': 'off',
-        '@typescript-eslint/no-unsafe-assignment': 'off',
-        '@typescript-eslint/no-unsafe-member-access': 'off',
-        '@typescript-eslint/no-unsafe-call': 'off',
-        '@typescript-eslint/no-unsafe-return': 'off',
-        '@typescript-eslint/no-unsafe-argument': 'off',
-        'vitest/no-conditional-expect': 'off',
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unsafe-assignment": "off",
+        "@typescript-eslint/no-unsafe-member-access": "off",
+        "@typescript-eslint/no-unsafe-call": "off",
+        "@typescript-eslint/no-unsafe-return": "off",
+        "@typescript-eslint/no-unsafe-argument": "off",
+        "vitest/no-conditional-expect": "off",
       },
     },
 
     // Prettier (must be last)
-    prettier
+    prettier,
   );
 }
-

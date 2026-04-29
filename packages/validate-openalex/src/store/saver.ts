@@ -3,6 +3,7 @@ import { Config, ConfigError, Effect } from "effect";
 import { getEvents } from "../events/index.js";
 import { getContext } from "../context/index.js";
 import fs, { existsSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { ContextStore, EventsStore } from "./index.js";
 
 const timestamp = (): string => new Date().toISOString().replace(/[:.]/g, "-");
@@ -12,7 +13,11 @@ const writeFile = (value: unknown, file: string, backup: boolean) =>
     if (existsSync(file)) yield* Effect.log(`Writing ${file}`);
     if (backup && existsSync(file))
       yield* Effect.tryPromise({
-        try: () => fs.promises.copyFile(file, `${timestamp()}-${file}`),
+        try: () =>
+          fs.promises.copyFile(
+            file,
+            join(dirname(file), `${timestamp()}-${file.split("/").pop()}`),
+          ),
         catch: (cause) =>
           new Error(`Error while backing up ${file}`, { cause }),
       });

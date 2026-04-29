@@ -1,7 +1,7 @@
 import { typescript } from '@univ-lehavre/atlas-shared-config/eslint';
 
 export default [
-  ...typescript({ tsconfigRootDir: import.meta.dirname }),
+  ...typescript({ tsconfigRootDir: import.meta.dirname, architectureCategory: 'packages' }),
   // Disable strict functional rules for this imperative utility package
   {
     files: ['src/**/*.ts'],

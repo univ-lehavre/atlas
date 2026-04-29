@@ -516,6 +516,31 @@ describe("getOpenAlexIDByStatus", () => {
     const result = getOpenAlexIDByStatus(orcid, events);
     expect(result.get(validID)).toBe("rejected");
   });
+
+  it("sets status to pending when affiliation, display_name_alternatives and work are all pending", () => {
+    const events: IEvent[] = [
+      makeEvent({
+        entity: "author",
+        field: "affiliation",
+        status: "pending",
+        from: validID,
+      }),
+      makeEvent({
+        entity: "author",
+        field: "display_name_alternatives",
+        status: "pending",
+        from: validID,
+      }),
+      makeEvent({
+        entity: "work",
+        field: "id",
+        status: "pending",
+        from: validID,
+      }),
+    ];
+    const result = getOpenAlexIDByStatus(orcid, events);
+    expect(result.get(validID)).toBe("pending");
+  });
 });
 
 describe("getOpenAlexIDByStatusDashboard", () => {

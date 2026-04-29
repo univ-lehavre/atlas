@@ -1,6 +1,12 @@
 import { describe, it, expect } from "vitest";
 import type { IEvent } from "../events/types.js";
-import { string2option, events2options } from "./transformer.js";
+import {
+  string2option,
+  strings2options,
+  action2option,
+  events2options,
+} from "./transformer.js";
+import type { Action } from "../actions/types.js";
 
 type EventWithValue = Partial<IEvent> & { value: string; label?: string };
 
@@ -12,6 +18,26 @@ const makeOption = (value: string, label?: string): EventWithValue => ({
 describe("string2option", () => {
   it("wraps a string into an option object", () => {
     expect(string2option("foo")).toEqual({ value: "foo" });
+  });
+});
+
+describe("strings2options", () => {
+  it("converts an array of strings to options", () => {
+    expect(strings2options(["a", "b"])).toEqual([
+      { value: "a" },
+      { value: "b" },
+    ]);
+  });
+
+  it("returns empty array for empty input", () => {
+    expect(strings2options([])).toEqual([]);
+  });
+});
+
+describe("action2option", () => {
+  it("converts an action to an option using its name", () => {
+    const action = { name: "validate" } as unknown as Action;
+    expect(action2option(action)).toEqual({ value: "validate" });
   });
 });
 

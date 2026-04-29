@@ -51,7 +51,7 @@
     "test:api": "./scripts/test-api.sh"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.14",
+    "@hono/node-server": "^2.0.0",
     "@hono/standard-validator": "^0.2.2",
     "@univ-lehavre/atlas-redcap-client": "workspace:*",
     "effect": "^3.21.2",
@@ -60,7 +60,7 @@
     "hono-rate-limiter": "^0.5.3"
   },
   "devDependencies": {
-    "@scalar/hono-api-reference": "^0.10.10",
+    "@scalar/hono-api-reference": "^0.10.11",
     "@types/node": "^25.6.0",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^10.2.1",

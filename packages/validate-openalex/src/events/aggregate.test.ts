@@ -1,5 +1,5 @@
-import { it, describe, expect } from "@effect/vitest";
-import { aggregateEvents } from "./aggregate.js";
+import { it, describe, expect, vi } from "@effect/vitest";
+import { aggregateEvents, print_aggregate } from "./aggregate.js";
 import type { IEvent } from "./types.js";
 import type { ORCID } from "@univ-lehavre/atlas-openalex-types";
 
@@ -477,5 +477,33 @@ describe("aggregateEvents", () => {
     expect(result.get("Univ E")!.get("2019")).toBe(1);
     expect(result.get("Univ E")!.get("2020")).toBe(1);
     expect(result.get("Univ E")!.get("2021")).toBe(1);
+  });
+});
+
+describe("print_aggregate", () => {
+  it("logs 'Aucun résultat' when aggregate is empty", async () => {
+    const { log } = await import("@clack/prompts");
+    const spy = vi.spyOn(log, "message").mockImplementation(() => {});
+    print_aggregate(new Map());
+    expect(spy).toHaveBeenCalledWith("Aucun résultat à afficher.");
+    spy.mockRestore();
+  });
+
+  it("logs each affiliation and its years", async () => {
+    const { log } = await import("@clack/prompts");
+    const spy = vi.spyOn(log, "message").mockImplementation(() => {});
+    const agg = new Map([
+      [
+        "Univ A",
+        new Map([
+          ["2020", 2],
+          ["2021", 1],
+        ]),
+      ],
+      ["Univ B", new Map([["2019", 3]])],
+    ]);
+    print_aggregate(agg);
+    expect(spy).toHaveBeenCalledTimes(2);
+    spy.mockRestore();
   });
 });

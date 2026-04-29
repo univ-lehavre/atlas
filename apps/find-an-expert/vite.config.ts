@@ -1,3 +1,4 @@
+import { coverageConfig } from '@univ-lehavre/atlas-shared-config/vitest';
 import { defineConfig } from 'vitest/config';
 import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
@@ -32,9 +33,8 @@ export default defineConfig({
   test: {
     expect: { requireAssertions: true },
 
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html', 'lcov'],
+    coverage: coverageConfig({
+      reporter: process.env.CI ? 'text' : ['text', 'html', 'lcov'],
       reportsDirectory: './coverage',
       include: ['src/lib/**/*.ts'],
       exclude: [
@@ -44,12 +44,12 @@ export default defineConfig({
         'src/lib/**/*.d.ts',
       ],
       thresholds: {
-        statements: 47,
-        branches: 36,
-        functions: 31,
-        lines: 48,
+        statements: 58,
+        branches: 46,
+        functions: 41,
+        lines: 59,
       },
-    },
+    }),
 
     projects: [
       {
