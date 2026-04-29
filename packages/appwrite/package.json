@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-appwrite",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Shared Appwrite client utilities for Atlas applications",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
