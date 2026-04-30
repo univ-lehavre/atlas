@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-find-an-expert
 
+## 1.0.3
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @univ-lehavre/atlas-fetch-openalex@1.0.3
+
 ## 1.0.2
 
 ### Patch Changes

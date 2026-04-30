@@ -1,5 +1,25 @@
 # @univ-lehavre/atlas-researcher-profiles
 
+## 1.4.0
+
+### Minor Changes
+
+- [#117](https://github.com/univ-lehavre/atlas/pull/117) [`d7ed335`](https://github.com/univ-lehavre/atlas/commit/d7ed33581635fdd3991bb4add8c2edfd5e6dc1fd) Thanks [@chasset](https://github.com/chasset)! - Add researcher matching command (`match-researchers`)
+
+  Computes pairwise similarity and complementarity between researchers using an ensemble of TF-IDF weighted topic vectors (OpenAlex taxonomy) and semantic embeddings (`all-MiniLM-L6-v2`).
+  - `similarity`: 50% TF-IDF cosine + 50% embedding cosine
+  - `complementarity`: shared context (domain/field/subfield) × (1 − topic overlap)
+  - Output: ranked table or JSON; optional interactive SVG scatter plot (`--chart`)
+  - `--keywords` flag includes OpenAlex keyword vectors in both scoring and explanation
+  - `--sort-by similarity|complementarity` controls ranking
+
+### Patch Changes
+
+- Updated dependencies [[`d7ed335`](https://github.com/univ-lehavre/atlas/commit/d7ed33581635fdd3991bb4add8c2edfd5e6dc1fd)]:
+  - @univ-lehavre/atlas-researcher-profiles@1.7.0
+  - @univ-lehavre/atlas-openalex-types@3.1.6
+  - @univ-lehavre/atlas-fetch-openalex@1.0.3
+
 ## 1.3.11
 
 ### Patch Changes
