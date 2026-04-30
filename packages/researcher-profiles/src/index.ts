@@ -49,3 +49,41 @@ export {
   type MatchResult,
   matchReferences,
 } from "./services/reference-matcher.js";
+
+export {
+  type NormalizedWork,
+  type NormalizedTopic,
+  extractNormalizedWorks,
+} from "./services/topic-extractor.js";
+
+export {
+  type TfidfProfile,
+  buildTfidfProfiles,
+} from "./services/tfidf-profile.js";
+
+export {
+  type EmbeddingProfile,
+  buildEmbeddingProfiles,
+} from "./services/embedding-profile.js";
+
+export {
+  cosineSimilarity,
+  embeddingCosineSimilarity,
+  complementarityScore,
+} from "./services/scorer.js";
+
+export {
+  type MatchScore,
+  type EnsembleWeights,
+  computeEnsembleMatch,
+} from "./services/ensemble.js";
+
+export {
+  type ResearcherInfo,
+  type MatchExplanation,
+  type ResearcherMatch,
+  buildExplanation,
+  buildMatch,
+  sortByField,
+  topLabels,
+} from "./services/match-formatter.js";

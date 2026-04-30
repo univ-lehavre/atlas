@@ -25,7 +25,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "tsc && node --env-file=../../../.env dist/bin/atlas-researcher-profiles.js",
+    "start": "tsc && node --env-file=../../.env dist/bin/atlas-researcher-profiles.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",

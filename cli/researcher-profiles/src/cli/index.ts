@@ -11,6 +11,7 @@ import pc from "picocolors";
 import { run } from "./run.js";
 import { fromRedcap } from "./from-redcap.js";
 import { matchReferencesCommand } from "./match-references.js";
+import { matchResearchers } from "./match-researchers.js";
 
 const VERSION = "1.0.0";
 
@@ -25,10 +26,16 @@ Resolve OpenAlex works for researchers and write results to REDCap.
 ${pc.bold("Usage:")}
   atlas-researcher-profiles [match-references] [--threshold N]
   atlas-researcher-profiles from-redcap [--batch]
+  atlas-researcher-profiles match-researchers [--top N] [--output json|table] [--complementarity]
 
 ${pc.bold("Options:")}
-  --threshold N   Fuse.js match threshold (0–1, default 0.2; lower = stricter; optional)
-  --batch, --yes  Auto-accept all name selections without prompting
+  --threshold N       Fuse.js match threshold (0–1, default 0.2; lower = stricter; optional)
+  --batch, --yes      Auto-accept all name selections without prompting
+  --top N             Number of top matches to display (default 20)
+  --output            Output format: table (default) or json
+  --complementarity   Sort by complementarity instead of similarity
+  --keywords          Include OpenAlex keywords in TF-IDF vectors and complementarity (off by default)
+  --chart             Generate matches.html scatter plot (similarity × complementarity)
 
 ${pc.bold("Environment variables:")}
   REDCAP_API_URL             REDCap API URL
@@ -52,7 +59,11 @@ export const main = async (): Promise<void> => {
     return;
   }
 
-  const knownCommands = ["from-redcap", "match-references"];
+  const knownCommands = [
+    "from-redcap",
+    "match-references",
+    "match-researchers",
+  ];
   if (command !== undefined && !knownCommands.includes(command)) {
     log.error(`Unknown command: ${pc.bold(command)}`);
     printHelp();
@@ -109,6 +120,63 @@ export const main = async (): Promise<void> => {
       process.exit(1);
     }
     await fromRedcap(opts);
+    return;
+  }
+
+  if (command === "match-researchers") {
+    const args = process.argv.slice(3);
+    const topIdx = args.indexOf("--top");
+    const topArg = topIdx !== -1 ? args[topIdx + 1] : undefined;
+    const outputArg = args.includes("--output")
+      ? args[args.indexOf("--output") + 1]
+      : "table";
+    const sortBy = args.includes("--complementarity")
+      ? "complementarity"
+      : "similarity";
+    const keywords = args.includes("--keywords");
+    const chart = args.includes("--chart");
+    const knownFlags = new Set([
+      "--top",
+      "--output",
+      "--complementarity",
+      "--keywords",
+      "--chart",
+    ]);
+    const unknownArgs = args.filter(
+      (a, i) =>
+        !knownFlags.has(a) &&
+        args[i - 1] !== "--top" &&
+        args[i - 1] !== "--output",
+    );
+    if (unknownArgs.length > 0) {
+      log.error(
+        `Unknown option(s) for match-researchers: ${unknownArgs.map((a) => pc.bold(a)).join(", ")}`,
+      );
+      log.message(
+        `Usage: atlas-researcher-profiles match-researchers [--top N] [--output json|table] [--complementarity] [--keywords] [--chart]`,
+      );
+      process.exit(1);
+    }
+    const top = topArg !== undefined ? Number.parseInt(topArg, 10) : undefined;
+    if (topArg !== undefined && (top === undefined || Number.isNaN(top))) {
+      log.error(`Invalid --top value: ${pc.bold(topArg)} — must be an integer`);
+      process.exit(1);
+    }
+    if (outputArg !== "table" && outputArg !== "json") {
+      log.error(
+        `Invalid --output value: ${pc.bold(outputArg)} — must be "table" or "json"`,
+      );
+      process.exit(1);
+    }
+    await matchResearchers({
+      redcapUrl,
+      redcapToken,
+      top,
+      output: outputArg,
+      sortBy,
+      keywords,
+      chart,
+    });
     return;
   }
 
