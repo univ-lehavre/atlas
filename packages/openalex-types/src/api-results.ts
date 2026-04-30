@@ -52,6 +52,26 @@ interface Authorship {
   affiliations: AffiliationAuthorshipResult[];
 }
 
+interface TopicHierarchyEntry {
+  id: string;
+  display_name: string;
+}
+
+interface TopicEntry {
+  id: string;
+  display_name: string;
+  score: number;
+  subfield: TopicHierarchyEntry;
+  field: TopicHierarchyEntry;
+  domain: TopicHierarchyEntry;
+}
+
+interface KeywordEntry {
+  id: string;
+  display_name: string;
+  score: number;
+}
+
 interface WorksResult {
   id: OpenAlexID;
   doi: string | null;
@@ -60,6 +80,8 @@ interface WorksResult {
   publication_year: number;
   type: string;
   authorships: Authorship[];
+  topics?: TopicEntry[];
+  keywords?: KeywordEntry[];
 }
 
 interface OpenalexResponse<T> {
@@ -83,6 +105,9 @@ export type {
   OpenalexResponse,
   AffiliationsResult,
   WorksResult,
+  TopicEntry,
+  KeywordEntry,
+  TopicHierarchyEntry,
   IInstitution,
   AuthorshipInstitution,
   RateLimitInfo,
