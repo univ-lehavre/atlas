@@ -23,6 +23,7 @@ build/
 # VitePress
 docs/.vitepress/cache/
 docs/.vitepress/dist/
+docs/.vitepress/.temp/
 docs/.vitepress/data/repo-stats.json
 docs/.vitepress/data/api-sidebar.json
 
