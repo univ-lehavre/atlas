@@ -110,28 +110,28 @@ Push your branch and create a PR on GitHub targeting `main`.
 
 Executed before each commit. If a check fails, the commit is rejected.
 
-| Check          | Description                          |
-| -------------- | ------------------------------------ |
-| check-branch   | Blocks direct commits to `main`      |
-| format         | Prettier format check                |
-| lint           | ESLint                               |
-| typecheck      | TypeScript verification              |
-| svelte:check   | SvelteKit diagnostics                |
+| Check        | Description                     |
+| ------------ | ------------------------------- |
+| check-branch | Blocks direct commits to `main` |
+| format       | Prettier format check           |
+| lint         | ESLint                          |
+| typecheck    | TypeScript verification         |
+| svelte:check | SvelteKit diagnostics           |
 
 ### pre-push
 
 Executed before each push.
 
-| Check          | Description                              |
-| -------------- | ---------------------------------------- |
-| check-branch   | Blocks direct push to `main`             |
-| check-sync     | Warns if branch is not up to date        |
-| check-audit    | npm security audit (high severity)       |
-| check-licenses | License verification                     |
-| check-lockfile | pnpm lockfile integrity                  |
-| test           | Test coverage                            |
-| cpd            | Duplicate code detection                 |
-| knip           | Unused code detection                    |
+| Check          | Description                        |
+| -------------- | ---------------------------------- |
+| check-branch   | Blocks direct push to `main`       |
+| check-sync     | Warns if branch is not up to date  |
+| check-audit    | npm security audit (high severity) |
+| check-licenses | License verification               |
+| check-lockfile | pnpm lockfile integrity            |
+| test           | Test coverage                      |
+| cpd            | Duplicate code detection           |
+| knip           | Unused code detection              |
 
 ### commit-msg
 
@@ -155,59 +155,59 @@ git push --no-verify
 
 ### Development
 
-| Script              | Description                    |
-| ------------------- | ------------------------------ |
-| `pnpm dev`          | Watch mode for all packages    |
-| `pnpm build`        | Build all packages             |
-| `pnpm test`         | Run tests                      |
-| `pnpm test:coverage`| Run tests with coverage        |
-| `pnpm typecheck`    | TypeScript verification        |
-| `pnpm lint`         | ESLint                         |
-| `pnpm format`       | Auto-fix formatting            |
-| `pnpm svelte:check` | SvelteKit diagnostics          |
+| Script               | Description                 |
+| -------------------- | --------------------------- |
+| `pnpm dev`           | Watch mode for all packages |
+| `pnpm build`         | Build all packages          |
+| `pnpm test`          | Run tests                   |
+| `pnpm test:coverage` | Run tests with coverage     |
+| `pnpm typecheck`     | TypeScript verification     |
+| `pnpm lint`          | ESLint                      |
+| `pnpm format`        | Auto-fix formatting         |
+| `pnpm svelte:check`  | SvelteKit diagnostics       |
 
 ### CI
 
-| Script           | Description                                                        |
-| ---------------- | ------------------------------------------------------------------ |
-| `pnpm ci:checks` | format:check + lint + typecheck + test:coverage + build (via turbo)|
-| `pnpm ci:audit`  | security + licenses + unused + structure + duplicates + size       |
+| Script           | Description                                                         |
+| ---------------- | ------------------------------------------------------------------- |
+| `pnpm ci:checks` | format:check + lint + typecheck + test:coverage + build (via turbo) |
+| `pnpm ci:audit`  | security + licenses + unused + structure + duplicates + size        |
 
 ### Audits
 
-| Script                   | Description                              |
-| ------------------------ | ---------------------------------------- |
-| `pnpm audit:security`    | npm security audit (high severity)       |
-| `pnpm audit:licenses`    | Allowed licenses verification            |
-| `pnpm audit:unused`      | Unused exports/dependencies (knip)       |
-| `pnpm audit:structure`   | Workspace structure verification         |
-| `pnpm audit:duplicates`  | Duplicate code detection (jscpd)         |
-| `pnpm audit:size`        | Bundle size verification (size-limit)    |
-| `pnpm audit:versions`    | Outdated dependencies (taze)             |
+| Script                  | Description                           |
+| ----------------------- | ------------------------------------- |
+| `pnpm audit:security`   | npm security audit (high severity)    |
+| `pnpm audit:licenses`   | Allowed licenses verification         |
+| `pnpm audit:unused`     | Unused exports/dependencies (knip)    |
+| `pnpm audit:structure`  | Workspace structure verification      |
+| `pnpm audit:duplicates` | Duplicate code detection (jscpd)      |
+| `pnpm audit:size`       | Bundle size verification (size-limit) |
+| `pnpm audit:versions`   | Outdated dependencies (taze)          |
 
 ### Documentation
 
-| Script              | Description                    |
-| ------------------- | ------------------------------ |
-| `pnpm docs:dev`     | Documentation in dev mode      |
-| `pnpm docs:build`   | Build documentation            |
-| `pnpm docs:preview` | Preview built documentation    |
-| `pnpm docs:api`     | Generate API docs (TypeDoc)    |
+| Script              | Description                 |
+| ------------------- | --------------------------- |
+| `pnpm docs:dev`     | Documentation in dev mode   |
+| `pnpm docs:build`   | Build documentation         |
+| `pnpm docs:preview` | Preview built documentation |
+| `pnpm docs:api`     | Generate API docs (TypeDoc) |
 
 ### Release
 
-| Script                    | Description                                  |
-| ------------------------- | -------------------------------------------- |
-| `pnpm changeset:add`      | Create a changeset                           |
-| `pnpm changeset:version`  | Bump versions and update changelogs          |
-| `pnpm changeset:publish`  | Publish packages to npm                      |
-| `pnpm release`            | Full release (build + publish)               |
+| Script                   | Description                         |
+| ------------------------ | ----------------------------------- |
+| `pnpm changeset:add`     | Create a changeset                  |
+| `pnpm changeset:version` | Bump versions and update changelogs |
+| `pnpm changeset:publish` | Publish packages to npm             |
+| `pnpm release`           | Full release (build + publish)      |
 
 ### Utilities
 
-| Script       | Description                              |
-| ------------ | ---------------------------------------- |
-| `pnpm clean` | Remove all build artifacts and caches    |
+| Script       | Description                           |
+| ------------ | ------------------------------------- |
+| `pnpm clean` | Remove all build artifacts and caches |
 
 ## Commit Conventions
 
@@ -223,37 +223,37 @@ type(scope): description
 
 ### Allowed Types
 
-| Type       | Description                          |
-| ---------- | ------------------------------------ |
-| `feat`     | New feature                          |
-| `fix`      | Bug fix                              |
-| `docs`     | Documentation                        |
-| `style`    | Formatting (no code change)          |
-| `refactor` | Refactoring                          |
-| `perf`     | Performance improvement              |
-| `test`     | Add/modify tests                     |
-| `build`    | Build system                         |
-| `ci`       | CI configuration                     |
-| `chore`    | Maintenance                          |
-| `revert`   | Revert a commit                      |
+| Type       | Description                 |
+| ---------- | --------------------------- |
+| `feat`     | New feature                 |
+| `fix`      | Bug fix                     |
+| `docs`     | Documentation               |
+| `style`    | Formatting (no code change) |
+| `refactor` | Refactoring                 |
+| `perf`     | Performance improvement     |
+| `test`     | Add/modify tests            |
+| `build`    | Build system                |
+| `ci`       | CI configuration            |
+| `chore`    | Maintenance                 |
+| `revert`   | Revert a commit             |
 
 ### Suggested Scopes
 
-| Scope       | Package/Area                              |
-| ----------- | ----------------------------------------- |
-| `amarre`    | apps/amarre                               |
-| `dashboard` | apps/atlas-dashboard                      |
-| `ecrin`     | apps/ecrin                                |
-| `find`      | apps/find-an-expert                       |
-| `redcap`    | apps/redcap-dashboard, packages/redcap-*  |
-| `crf`       | services/crf, cli/crf                     |
-| `net`       | packages/net, cli/net                     |
-| `openalex`  | packages/openalex*, packages/fetch-*      |
+| Scope       | Package/Area                                          |
+| ----------- | ----------------------------------------------------- |
+| `amarre`    | apps/amarre                                           |
+| `dashboard` | apps/atlas-dashboard                                  |
+| `ecrin`     | apps/ecrin                                            |
+| `find`      | apps/find-an-expert                                   |
+| `redcap`    | apps/redcap-dashboard, packages/redcap-\*             |
+| `crf`       | services/crf, cli/crf                                 |
+| `net`       | packages/net, cli/net                                 |
+| `openalex`  | packages/openalex*, packages/fetch-*                  |
 | `profiles`  | packages/researcher-profiles, cli/researcher-profiles |
-| `deps`      | Dependencies                              |
-| `config`    | Configuration                             |
-| `ci`        | CI/CD                                     |
-| `docs`      | Documentation                             |
+| `deps`      | Dependencies                                          |
+| `config`    | Configuration                                         |
+| `ci`        | CI/CD                                                 |
+| `docs`      | Documentation                                         |
 
 ### Examples
 
@@ -315,6 +315,17 @@ atlas/
 
 Each category has a strict responsibility boundary. Code placed in the wrong category is a bug in architecture.
 
+| Category    | Exclusive role                    | Delegates to            | Typical misplaced code                                                    |
+| ----------- | --------------------------------- | ----------------------- | ------------------------------------------------------------------------- |
+| `packages/` | Reusable domain logic and clients | Nothing in the monorepo | HTTP handlers, Svelte runtime, CLI prompts, terminal I/O                  |
+| `apps/`     | SvelteKit web applications        | `packages/`, `ui/`      | Business rules, reusable domain transformations, imports from another app |
+| `services/` | HTTP microservices                | `packages/`             | Business rules, data transformations, cross-service imports               |
+| `cli/`      | Command-line interaction          | `packages/`             | Business rules, HTTP routing, reusable transformations                    |
+| `ui/`       | Shared Svelte components          | `packages/`             | Routes, server-only code, domain rules, CLI I/O                           |
+| `config/`   | Shared tooling configuration      | Nothing at runtime      | Executable or product runtime code                                        |
+| `sandbox/`  | Experiments and prototypes        | Anything needed locally | Shared production code, exported APIs, dependencies from shipped code     |
+| `scripts/`  | Repository automation             | Workspace packages      | Product runtime code, reusable domain logic, user-facing CLIs             |
+
 ### `packages/` — Reusable Business Logic
 
 - **Contains**: domain types, algorithms, API clients, data transformations
@@ -356,7 +367,29 @@ Each category has a strict responsibility boundary. Code placed in the wrong cat
 - **Contains**: ESLint presets, Prettier config, TypeScript base configs
 - **No**: runtime code
 
+### Static enforcement
+
+All rules above are checked automatically by:
+
+```bash
+pnpm audit:structure
+```
+
+This script (`scripts/audit/workspace-structure.mjs`) runs as part of `pnpm ci:audit` and is enforced in CI.
+
+### Adding a new exemption
+
+If a check produces a false positive for a legitimate transitional state, add the package name to the appropriate allow-list at the top of `scripts/audit/workspace-structure.mjs`:
+
+```js
+// Packages temporarily exempt from CLI I/O source checks
+const CLI_IO_MIGRATION_PENDING = new Set([
+  "@univ-lehavre/atlas-validate-openalex",
+]);
+```
+
+Document the reason in a comment and open a tracking issue to remove the exemption once the migration is done.
+
 ## Questions?
 
 - Open an [issue](https://github.com/univ-lehavre/atlas/issues) to report a bug
-- Check [CLAUDE.md](./CLAUDE.md) for more technical details
