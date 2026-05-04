@@ -55,3 +55,4 @@ CLAUDE.md
 *-token.csv
 apps/redcap-dashboard/.redcap-stats.json
 .atlas-stats.json
+cli/researcher-profiles/matches.html
