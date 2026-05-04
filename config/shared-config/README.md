@@ -38,11 +38,11 @@ pnpm add -D @univ-lehavre/atlas-shared-config
 
 ```javascript
 // eslint.config.js
-import { typescript } from '@univ-lehavre/atlas-shared-config/eslint';
+import { typescript } from "@univ-lehavre/atlas-shared-config/eslint";
 
 export default typescript({
-  ignores: ['**/generated/**'],
-  workspaceModules: ['@univ-lehavre/atlas-net'],
+  ignores: ["**/generated/**"],
+  workspaceModules: ["@univ-lehavre/atlas-net"],
 });
 ```
 
@@ -60,17 +60,17 @@ export default svelte;
 
 ## ESLint Presets
 
-| Preset | Usage | Level |
-|--------|-------|-------|
-| `typescript` | TypeScript libraries | Strict |
-| `svelte` | SvelteKit applications | Strict |
-| `scripts` | Internal tooling | Relaxed |
+| Preset       | Usage                  | Level   |
+| ------------ | ---------------------- | ------- |
+| `typescript` | TypeScript libraries   | Strict  |
+| `svelte`     | SvelteKit applications | Strict  |
+| `scripts`    | Internal tooling       | Relaxed |
 
 ## TypeScript Configuration
 
-| Config | Description |
-|--------|-------------|
-| `base.json` | Strict base configuration |
+| Config      | Description                     |
+| ----------- | ------------------------------- |
+| `base.json` | Strict base configuration       |
 | `node.json` | Node.js specific (extends base) |
 
 ## Scripts
@@ -82,7 +82,7 @@ pnpm -F @univ-lehavre/atlas-shared-config lint    # ESLint
 
 ## Documentation
 
-- [API Documentation](../../docs/api/@univ-lehavre/atlas-shared-config/)
+- [API Documentation](https://univ-lehavre.github.io/atlas/api/@univ-lehavre/atlas-shared-config/)
 
 ## Organization
 
@@ -97,15 +97,15 @@ Atlas is developed as part of two projects led by Le Havre Normandie University:
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
+    <img src="../../packages/logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
-    <img src="../logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="20">
+    <img src="../../packages/logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://eunicoast.eu/">
-    <img src="../logos/eunicoast.png" alt="EUNICoast" height="20">
+    <img src="../../packages/logos/eunicoast.png" alt="EUNICoast" height="20">
   </a>
 </p>
 

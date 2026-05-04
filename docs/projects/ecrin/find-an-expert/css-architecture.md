@@ -17,12 +17,12 @@
 
 The project uses a modern CSS architecture combining:
 
-| Technology                | Usage                                    | Proportion |
-| ------------------------- | ---------------------------------------- | ---------- |
-| **Tailwind CSS 4.1**      | Utilities (layout, spacing)              | ~70%       |
-| **CSS Custom Properties** | Centralized design tokens                | Global     |
-| **Scoped Styles**         | Complex components with variants         | ~30%       |
-| **OKLCH Color Space**     | Perceptually uniform color system        | 100%       |
+| Technology                | Usage                             | Proportion |
+| ------------------------- | --------------------------------- | ---------- |
+| **Tailwind CSS 4.1**      | Utilities (layout, spacing)       | ~70%       |
+| **CSS Custom Properties** | Centralized design tokens         | Global     |
+| **Scoped Styles**         | Complex components with variants  | ~30%       |
+| **OKLCH Color Space**     | Perceptually uniform color system | 100%       |
 
 ### Key Files
 
@@ -67,21 +67,22 @@ The system uses the OKLCH color space to generate consistent shades:
 
 **Color categories:**
 
-| Category    | Usage                           | Tokens              |
-| ----------- | ------------------------------- | ------------------- |
-| `primary`   | Main actions, links, CTA        | 50-950 (11 shades)  |
-| `accent`    | Secondary highlighting          | 50-950 (11 shades)  |
-| `secondary` | Text, neutral backgrounds       | 50-950 (11 shades)  |
-| `success`   | Positive feedback               | 50, 500, 600, 700   |
-| `warning`   | Alerts, warnings                | 50, 500, 600, 700   |
-| `error`     | Errors, critical states         | 50, 500, 600, 700   |
+| Category    | Usage                     | Tokens             |
+| ----------- | ------------------------- | ------------------ |
+| `primary`   | Main actions, links, CTA  | 50-950 (11 shades) |
+| `accent`    | Secondary highlighting    | 50-950 (11 shades) |
+| `secondary` | Text, neutral backgrounds | 50-950 (11 shades) |
+| `success`   | Positive feedback         | 50, 500, 600, 700  |
+| `warning`   | Alerts, warnings          | 50, 500, 600, 700  |
+| `error`     | Errors, critical states   | 50, 500, 600, 700  |
 
 ### Typography
 
 ```css
 /* Font families */
 --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
---font-heading: var(--font-heading-family), ui-sans-serif, system-ui, sans-serif;
+--font-heading:
+  var(--font-heading-family), ui-sans-serif, system-ui, sans-serif;
 --font-mono: var(--font-mono-family), ui-monospace, monospace;
 
 /* Sizes */
@@ -228,10 +229,10 @@ Dark mode uses the `.dark` class on the `<html>` element:
 
 /* Color scheme */
 html {
-	color-scheme: light;
+  color-scheme: light;
 }
 html.dark {
-	color-scheme: dark;
+  color-scheme: dark;
 }
 ```
 
@@ -240,16 +241,16 @@ html.dark {
 ```css
 /* Light styles (default) */
 .component {
-	--bg: var(--color-secondary-50);
-	--text: var(--color-secondary-900);
-	background-color: var(--bg);
-	color: var(--text);
+  --bg: var(--color-secondary-50);
+  --text: var(--color-secondary-900);
+  background-color: var(--bg);
+  color: var(--text);
 }
 
 /* Dark styles */
 :global(.dark) .component {
-	--bg: var(--color-secondary-800);
-	--text: var(--color-secondary-100);
+  --bg: var(--color-secondary-800);
+  --text: var(--color-secondary-100);
 }
 ```
 
@@ -258,21 +259,21 @@ html.dark {
 For colors with preserved hue:
 
 ```css
-:global(.dark) .alert[data-variant='success'] {
-	--alert-bg: oklch(from var(--color-success-500) 20% 0.05 h);
+:global(.dark) .alert[data-variant="success"] {
+  --alert-bg: oklch(from var(--color-success-500) 20% 0.05 h);
 }
 ```
 
 ### Standard Dark Mode Colors
 
-| Element        | Light           | Dark            |
-| -------------- | --------------- | --------------- |
-| Background     | `secondary-50`  | `secondary-900` |
-| Surface/Cards  | `white`         | `secondary-800` |
-| Primary text   | `secondary-900` | `secondary-100` |
-| Secondary text | `secondary-600` | `secondary-400` |
-| Borders        | `secondary-200` | `secondary-700` |
-| Primary actions| `primary-600`   | `primary-400`   |
+| Element         | Light           | Dark            |
+| --------------- | --------------- | --------------- |
+| Background      | `secondary-50`  | `secondary-900` |
+| Surface/Cards   | `white`         | `secondary-800` |
+| Primary text    | `secondary-900` | `secondary-100` |
+| Secondary text  | `secondary-600` | `secondary-400` |
+| Borders         | `secondary-200` | `secondary-700` |
+| Primary actions | `primary-600`   | `primary-400`   |
 
 ## Components
 
@@ -380,15 +381,15 @@ Always include:
 ```css
 /* Focus visible */
 :focus-visible {
-	@apply outline-2 outline-offset-2 outline-primary-500;
+  @apply outline-2 outline-offset-2 outline-primary-500;
 }
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-	* {
-		animation-duration: 0.01ms !important;
-		transition-duration: 0.01ms !important;
-	}
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 ```
 
@@ -443,7 +444,7 @@ pnpm build
 
 ## Audit and Quality
 
-- [CSS Audit Report](/audit/ecrin/css-audit-report) - Detailed audit report (Issue #41)
+- [CSS Audit Report](/projects/ecrin/audit/css-audit-report) - Detailed audit report (Issue #41)
 
 ## Resources
 

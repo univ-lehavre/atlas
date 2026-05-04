@@ -23,4 +23,3 @@ ECRIN enables researchers to:
 - [Design System](/projects/ecrin/find-an-expert/design-system) - Components and themes
 - [CSS Architecture](/projects/ecrin/find-an-expert/css-architecture) - Tailwind and styles
 - [Technical Audit](/projects/ecrin/audit/) - CSS and architecture audits
-- [API Reference](/api/@univ-lehavre/atlas-find-an-expert/) - TypeDoc documentation
