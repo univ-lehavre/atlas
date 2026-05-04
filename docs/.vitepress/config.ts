@@ -1,12 +1,12 @@
-import { defineConfig } from 'vitepress';
-import { withMermaid } from 'vitepress-plugin-mermaid';
-import apiSidebar from './data/api-sidebar.json';
+import { defineConfig } from "vitepress";
+import { withMermaid } from "vitepress-plugin-mermaid";
+import apiSidebar from "./data/api-sidebar.json";
 
 export default withMermaid(
   defineConfig({
-    title: 'Atlas',
-    description: 'Research Platform - Le Havre Normandie University',
-    base: '/atlas/',
+    title: "Atlas",
+    description: "Research Platform - Le Havre Normandie University",
+    base: "/atlas/",
     ignoreDeadLinks: [
       // Localhost links in infrastructure docs
       /^http:\/\/localhost/,
@@ -17,7 +17,6 @@ export default withMermaid(
       // Internal package documentation links
       /\.\/README/,
       /\.\/index/,
-      /\.\/CLAUDE/,
       // TypeDoc generated links
       /type-aliases\/index/,
       // TypeDoc _media folder links (README files copied with broken relative links)
@@ -46,365 +45,366 @@ export default withMermaid(
     themeConfig: {
       nav: [
         {
-          text: 'Guide',
+          text: "Guide",
           items: [
-            { text: 'Researchers', link: '/guide/researchers/' },
-            { text: 'Developers', link: '/guide/developers/' },
+            { text: "Researchers", link: "/guide/researchers/" },
+            { text: "Developers", link: "/guide/developers/" },
           ],
         },
         {
-          text: 'Projects',
+          text: "Projects",
           items: [
-            { text: 'Atlas', link: '/projects/atlas/' },
-            { text: 'ECRIN', link: '/projects/ecrin/' },
-            { text: 'AMARRE', link: '/projects/amarre/' },
-            { text: 'Citations', link: '/projects/citations/' },
-            { text: 'CRF', link: '/projects/crf/' },
-            { text: 'Microservices', link: '/projects/microservices/' },
+            { text: "Atlas", link: "/projects/atlas/" },
+            { text: "ECRIN", link: "/projects/ecrin/" },
+            { text: "AMARRE", link: "/projects/amarre/" },
+            { text: "Citations", link: "/projects/citations/" },
+            { text: "CRF", link: "/projects/crf/" },
+            { text: "Microservices", link: "/projects/microservices/" },
           ],
         },
-        { text: 'API', link: '/api/' },
+        { text: "API", link: "/api/" },
       ],
       sidebar: {
         // ECRIN
-        '/projects/ecrin/': [
+        "/projects/ecrin/": [
           {
-            text: 'ECRIN',
-            items: [{ text: 'Overview', link: '/projects/ecrin/' }],
+            text: "ECRIN",
+            items: [{ text: "Overview", link: "/projects/ecrin/" }],
           },
           {
-            text: 'Researcher Guide',
-            items: [{ text: 'Introduction', link: '/projects/ecrin/user/' }],
+            text: "Researcher Guide",
+            items: [{ text: "Introduction", link: "/projects/ecrin/user/" }],
           },
           {
-            text: 'Technical Documentation',
+            text: "Technical Documentation",
             items: [
-              { text: 'Overview', link: '/projects/ecrin/dev/' },
+              { text: "Overview", link: "/projects/ecrin/dev/" },
               {
-                text: 'Technical Setup',
-                link: '/projects/ecrin/find-an-expert/technical-setup',
+                text: "Technical Setup",
+                link: "/projects/ecrin/find-an-expert/technical-setup",
               },
               {
-                text: 'Appwrite Setup',
-                link: '/projects/ecrin/find-an-expert/appwrite-setup',
+                text: "Appwrite Setup",
+                link: "/projects/ecrin/find-an-expert/appwrite-setup",
               },
               {
-                text: 'Design System',
-                link: '/projects/ecrin/find-an-expert/design-system',
+                text: "Design System",
+                link: "/projects/ecrin/find-an-expert/design-system",
               },
               {
-                text: 'CSS Architecture',
-                link: '/projects/ecrin/find-an-expert/css-architecture',
+                text: "CSS Architecture",
+                link: "/projects/ecrin/find-an-expert/css-architecture",
               },
             ],
           },
           {
-            text: 'Audit',
+            text: "Audit",
             items: [
-              { text: 'ECRIN Audit', link: '/projects/ecrin/audit/' },
+              { text: "ECRIN Audit", link: "/projects/ecrin/audit/" },
               {
-                text: 'CSS Audit',
-                link: '/projects/ecrin/audit/css-audit-report',
+                text: "CSS Audit",
+                link: "/projects/ecrin/audit/css-audit-report",
               },
             ],
           },
         ],
         // Citations - guide chercheur et technique
-        '/projects/citations/': [
+        "/projects/citations/": [
           {
-            text: 'Citations',
-            items: [{ text: 'Overview', link: '/projects/citations/' }],
+            text: "Citations",
+            items: [{ text: "Overview", link: "/projects/citations/" }],
           },
           {
-            text: 'Researcher Guide',
+            text: "Researcher Guide",
             items: [
-              { text: 'Introduction', link: '/projects/citations/user/' },
+              { text: "Introduction", link: "/projects/citations/user/" },
               {
-                text: 'Verify Your Publications',
-                link: '/projects/citations/user/verify-publications',
+                text: "Verify Your Publications",
+                link: "/projects/citations/user/verify-publications",
               },
               {
-                text: 'Manage Your Career',
-                link: '/projects/citations/user/manage-career',
+                text: "Manage Your Career",
+                link: "/projects/citations/user/manage-career",
               },
               {
-                text: 'Expertise Profile',
-                link: '/projects/citations/user/expertise-profile',
+                text: "Expertise Profile",
+                link: "/projects/citations/user/expertise-profile",
               },
               {
-                text: 'Collaboration Network',
-                link: '/projects/citations/user/collaboration-network',
+                text: "Collaboration Network",
+                link: "/projects/citations/user/collaboration-network",
               },
               {
-                text: 'Data Sources',
-                link: '/projects/citations/user/sources',
+                text: "Data Sources",
+                link: "/projects/citations/user/sources",
               },
             ],
           },
           {
-            text: 'Technical Documentation',
+            text: "Technical Documentation",
             items: [
-              { text: 'Overview', link: '/projects/citations/dev/' },
+              { text: "Overview", link: "/projects/citations/dev/" },
               {
-                text: 'Architecture',
-                link: '/projects/citations/dev/architecture',
+                text: "Architecture",
+                link: "/projects/citations/dev/architecture",
               },
               {
-                text: 'Unified Schema',
-                link: '/projects/citations/dev/unified-schema',
+                text: "Unified Schema",
+                link: "/projects/citations/dev/unified-schema",
               },
               {
-                text: 'Unified Client',
-                link: '/projects/citations/dev/citations-client',
+                text: "Unified Client",
+                link: "/projects/citations/dev/citations-client",
               },
               {
-                text: 'OpenAPI Lifecycle',
-                link: '/projects/citations/dev/openapi-lifecycle',
+                text: "OpenAPI Lifecycle",
+                link: "/projects/citations/dev/openapi-lifecycle",
               },
               {
-                text: 'Rate Limiting',
-                link: '/projects/citations/dev/rate-limiting',
+                text: "Rate Limiting",
+                link: "/projects/citations/dev/rate-limiting",
               },
               {
-                text: 'OpenAPI Validator',
-                link: '/projects/citations/dev/openapi-validator',
+                text: "OpenAPI Validator",
+                link: "/projects/citations/dev/openapi-validator",
               },
             ],
           },
           {
-            text: 'Atlas Verify',
+            text: "Atlas Verify",
             items: [
               {
-                text: 'Author Verification',
-                link: '/projects/citations/dev/author-verification',
+                text: "Author Verification",
+                link: "/projects/citations/dev/author-verification",
               },
               {
-                text: 'Researcher Profile',
-                link: '/projects/citations/dev/researcher-profile',
+                text: "Researcher Profile",
+                link: "/projects/citations/dev/researcher-profile",
               },
               {
-                text: 'Databases',
-                link: '/projects/citations/dev/database-analysis',
+                text: "Databases",
+                link: "/projects/citations/dev/database-analysis",
               },
               {
-                text: 'Advanced Databases',
-                link: '/projects/citations/dev/advanced-databases',
+                text: "Advanced Databases",
+                link: "/projects/citations/dev/advanced-databases",
               },
             ],
           },
           {
-            text: 'Bibliographic Sources',
+            text: "Bibliographic Sources",
             items: [
-              { text: 'Overview', link: '/projects/citations/dev/sources/' },
+              { text: "Overview", link: "/projects/citations/dev/sources/" },
               {
-                text: 'Full Catalog',
-                link: '/projects/citations/dev/sources/catalog',
+                text: "Full Catalog",
+                link: "/projects/citations/dev/sources/catalog",
               },
               {
-                text: 'Entities Reference',
-                link: '/projects/citations/dev/sources/entities-reference',
+                text: "Entities Reference",
+                link: "/projects/citations/dev/sources/entities-reference",
               },
               {
-                text: 'OpenAlex',
-                link: '/projects/citations/dev/sources/openalex',
+                text: "OpenAlex",
+                link: "/projects/citations/dev/sources/openalex",
               },
               {
-                text: 'Crossref',
-                link: '/projects/citations/dev/sources/crossref',
+                text: "Crossref",
+                link: "/projects/citations/dev/sources/crossref",
               },
-              { text: 'HAL', link: '/projects/citations/dev/sources/hal' },
-              { text: 'ArXiv', link: '/projects/citations/dev/sources/arxiv' },
-              { text: 'ORCID', link: '/projects/citations/dev/sources/orcid' },
+              { text: "HAL", link: "/projects/citations/dev/sources/hal" },
+              { text: "ArXiv", link: "/projects/citations/dev/sources/arxiv" },
+              { text: "ORCID", link: "/projects/citations/dev/sources/orcid" },
               {
-                text: 'Versioning',
-                link: '/projects/citations/dev/sources/versioning',
+                text: "Versioning",
+                link: "/projects/citations/dev/sources/versioning",
               },
             ],
           },
           {
-            text: 'Audit',
+            text: "Audit",
             items: [
-              { text: 'Citations Audit', link: '/projects/citations/audit/' },
+              { text: "Citations Audit", link: "/projects/citations/audit/" },
             ],
           },
         ],
         // CRF - documentation technique
-        '/projects/crf/': [
+        "/projects/crf/": [
           {
-            text: 'CRF / REDCap',
+            text: "CRF / REDCap",
             items: [
-              { text: 'Documentation', link: '/projects/crf/' },
-              { text: 'API Explorer', link: '/projects/crf/api-explorer' },
+              { text: "Documentation", link: "/projects/crf/" },
+              { text: "API Explorer", link: "/projects/crf/api-explorer" },
             ],
           },
           {
-            text: 'API Reference',
+            text: "API Reference",
             items: [
               {
-                text: '@univ-lehavre/atlas-crf',
-                link: '/api/@univ-lehavre/atlas-crf/',
+                text: "@univ-lehavre/atlas-crf",
+                link: "/api/@univ-lehavre/atlas-crf/",
               },
               {
-                text: '@univ-lehavre/atlas-redcap-core',
-                link: '/api/@univ-lehavre/atlas-redcap-core/',
+                text: "@univ-lehavre/atlas-redcap-core",
+                link: "/api/@univ-lehavre/atlas-redcap-core/",
               },
               {
-                text: '@univ-lehavre/atlas-redcap-openapi',
-                link: '/api/@univ-lehavre/atlas-redcap-openapi/',
+                text: "@univ-lehavre/atlas-redcap-openapi",
+                link: "/api/@univ-lehavre/atlas-redcap-openapi/",
               },
             ],
           },
           {
-            text: 'Audit',
-            items: [{ text: 'Audit CRF', link: '/projects/crf/audit/' }],
+            text: "Audit",
+            items: [{ text: "Audit CRF", link: "/projects/crf/audit/" }],
           },
         ],
         // Atlas (monorepo)
-        '/projects/atlas/': [
+        "/projects/atlas/": [
           {
-            text: 'Atlas Monorepo',
-            items: [{ text: 'Overview', link: '/projects/atlas/' }],
+            text: "Atlas Monorepo",
+            items: [{ text: "Overview", link: "/projects/atlas/" }],
           },
           {
-            text: 'Audits',
+            text: "Audits",
             items: [
-              { text: 'Audit tools', link: '/projects/atlas/audit-tools' },
+              { text: "Audit tools", link: "/projects/atlas/audit-tools" },
               {
-                text: 'Documentation audit',
-                link: '/projects/atlas/documentation-audit',
+                text: "Documentation audit",
+                link: "/projects/atlas/documentation-audit",
               },
               {
-                text: 'Dependency audit',
-                link: '/projects/atlas/dependencies-audit',
+                text: "Dependency audit",
+                link: "/projects/atlas/dependencies-audit",
               },
-              { text: 'Technical debt', link: '/projects/atlas/technical-debt' },
+              {
+                text: "Technical debt",
+                link: "/projects/atlas/technical-debt",
+              },
             ],
           },
         ],
         // Microservices
-        '/projects/microservices/': [
+        "/projects/microservices/": [
           {
-            text: 'Microservices',
-            items: [
-              { text: 'Overview', link: '/projects/microservices/' },
-            ],
+            text: "Microservices",
+            items: [{ text: "Overview", link: "/projects/microservices/" }],
           },
           {
-            text: 'Installation Guide',
+            text: "Installation Guide",
             items: [
               {
-                text: 'Overview',
-                link: '/projects/microservices/installation/',
+                text: "Overview",
+                link: "/projects/microservices/installation/",
               },
               {
-                text: '0. Ubuntu Hardening',
-                link: '/projects/microservices/installation/00-hardening',
+                text: "0. Ubuntu Hardening",
+                link: "/projects/microservices/installation/00-hardening",
               },
               {
-                text: '1. System Preparation',
-                link: '/projects/microservices/installation/01-preparation',
+                text: "1. System Preparation",
+                link: "/projects/microservices/installation/01-preparation",
               },
               {
-                text: '2. K3s Core',
-                link: '/projects/microservices/installation/02-k3s-core',
+                text: "2. K3s Core",
+                link: "/projects/microservices/installation/02-k3s-core",
               },
               {
-                text: '3. Vault',
-                link: '/projects/microservices/installation/03-vault',
+                text: "3. Vault",
+                link: "/projects/microservices/installation/03-vault",
               },
               {
-                text: '4. Databases',
-                link: '/projects/microservices/installation/04-databases',
+                text: "4. Databases",
+                link: "/projects/microservices/installation/04-databases",
               },
               {
-                text: '5. Services',
-                link: '/projects/microservices/installation/05-services',
+                text: "5. Services",
+                link: "/projects/microservices/installation/05-services",
               },
               {
-                text: '6. DevOps',
-                link: '/projects/microservices/installation/06-devops',
+                text: "6. DevOps",
+                link: "/projects/microservices/installation/06-devops",
               },
               {
-                text: '7. Monitoring',
-                link: '/projects/microservices/installation/07-monitoring',
+                text: "7. Monitoring",
+                link: "/projects/microservices/installation/07-monitoring",
               },
               {
-                text: '8. Security',
-                link: '/projects/microservices/installation/08-security',
+                text: "8. Security",
+                link: "/projects/microservices/installation/08-security",
               },
               {
-                text: '9. Operations',
-                link: '/projects/microservices/installation/09-operations',
+                text: "9. Operations",
+                link: "/projects/microservices/installation/09-operations",
               },
             ],
           },
         ],
         // AMARRE
-        '/projects/amarre/': [
+        "/projects/amarre/": [
           {
-            text: 'AMARRE',
+            text: "AMARRE",
             items: [
-              { text: 'Introduction', link: '/projects/amarre/' },
+              { text: "Introduction", link: "/projects/amarre/" },
               {
-                text: 'Implementation',
-                link: '/projects/amarre/IMPLEMENTATION_GUIDE',
+                text: "Implementation",
+                link: "/projects/amarre/IMPLEMENTATION_GUIDE",
               },
               {
-                text: 'Architecture',
-                link: '/projects/amarre/ARCHITECTURE_DIAGRAMS',
+                text: "Architecture",
+                link: "/projects/amarre/ARCHITECTURE_DIAGRAMS",
               },
             ],
           },
         ],
         // Guide researchers
-        '/guide/researchers/': [
+        "/guide/researchers/": [
           {
-            text: 'Researcher Guide',
-            items: [{ text: 'Overview', link: '/guide/researchers/' }],
+            text: "Researcher Guide",
+            items: [{ text: "Overview", link: "/guide/researchers/" }],
           },
           {
-            text: 'Platforms',
+            text: "Platforms",
             items: [
-              { text: 'ECRIN', link: '/projects/ecrin/user/' },
-              { text: 'AMARRE', link: '/projects/amarre/' },
-              { text: 'Citations', link: '/projects/citations/user/' },
+              { text: "ECRIN", link: "/projects/ecrin/user/" },
+              { text: "AMARRE", link: "/projects/amarre/" },
+              { text: "Citations", link: "/projects/citations/user/" },
             ],
           },
         ],
         // Guide developers
-        '/guide/developers/': [
+        "/guide/developers/": [
           {
-            text: 'Technical Documentation',
+            text: "Technical Documentation",
             items: [
-              { text: 'Overview', link: '/guide/developers/' },
-              { text: 'Architecture', link: '/guide/developers/architecture' },
-              { text: 'CLI tools', link: '/guide/developers/cli' },
+              { text: "Overview", link: "/guide/developers/" },
+              { text: "Architecture", link: "/guide/developers/architecture" },
+              { text: "CLI tools", link: "/guide/developers/cli" },
               {
-                text: 'Infrastructure',
-                link: '/guide/developers/infrastructure',
+                text: "Infrastructure",
+                link: "/guide/developers/infrastructure",
               },
             ],
           },
           {
-            text: 'By project',
+            text: "By project",
             items: [
-              { text: 'ECRIN', link: '/projects/ecrin/dev/' },
-              { text: 'Citations', link: '/projects/citations/dev/' },
-              { text: 'CRF', link: '/projects/crf/' },
+              { text: "ECRIN", link: "/projects/ecrin/dev/" },
+              { text: "Citations", link: "/projects/citations/dev/" },
+              { text: "CRF", link: "/projects/crf/" },
             ],
           },
           {
-            text: 'Resources',
+            text: "Resources",
             items: [
-              { text: 'API', link: '/api/' },
-              { text: 'Audits', link: '/projects/atlas/audit-tools' },
+              { text: "API", link: "/api/" },
+              { text: "Audits", link: "/projects/atlas/audit-tools" },
             ],
           },
         ],
-        '/api/': apiSidebar,
+        "/api/": apiSidebar,
       },
       socialLinks: [
-        { icon: 'github', link: 'https://github.com/univ-lehavre/atlas' },
+        { icon: "github", link: "https://github.com/univ-lehavre/atlas" },
       ],
     },
   }),

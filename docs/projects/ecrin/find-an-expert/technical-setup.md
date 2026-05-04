@@ -83,7 +83,6 @@ talent-finder/
 │   ├── technical-setup.md   # This document
 │   ├── design-system.md     # Style guide
 │   └── appwrite-setup.md    # Appwrite configuration
-└── CLAUDE.md                # AI assistant instructions
 ```
 
 ## REST API
