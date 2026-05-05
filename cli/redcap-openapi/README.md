@@ -2,6 +2,8 @@
 
 Outils CLI et bibliothèque pour extraire, comparer et servir des spécifications OpenAPI REDCap.
 
+L’éditeur REDCap a donné son consentement à la publication de ce projet, qui est développé de manière indépendante et n’est pas affilié à REDCap ou à son éditeur, voir le [thread](https://redcap.vumc.org/community/post.php?id=270962&comment=277860) du forum de la communauté REDCap.
+
 ## About
 
 Ce package analyse le code source PHP de REDCap pour produire des spécifications OpenAPI, comparer des versions et détecter les changements d'API. Il expose aussi un serveur de documentation et une CLI `redcap` avec commandes `extract`, `compare` et `docs`.

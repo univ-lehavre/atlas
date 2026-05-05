@@ -1,18 +1,23 @@
 {
   "apiUrl": "http://localhost:8888/api/",
-  "generatedAt": "2026-01-23T12:29:10.473Z",
+  "generatedAt": "2026-01-01T00:00:00.000Z",
   "projects": [
     {
       "id": 1,
       "name": "Classic Database",
       "token": "3ED422AB16AFD8815A729EA57E56254B",
       "recordCount": 3,
+      "capabilities": {
+        "reportId": "3",
+        "surveyInstrument": "demographics",
+        "fileUploadField": "patient_document"
+      },
       "expected": {
         "metadata": 113,
         "instruments": 6,
         "hasEvents": false,
         "hasRepeatingForms": false,
-        "hasSurveys": false
+        "hasSurveys": true
       }
     },
     {
@@ -20,12 +25,17 @@
       "name": "Longitudinal Database (1 arm)",
       "token": "2E1DFDF3F8C17DB540FDCF4AF6ABA2F1",
       "recordCount": 2,
+      "capabilities": {
+        "reportId": "4",
+        "surveyInstrument": "demographics",
+        "fileUploadField": "patient_document"
+      },
       "expected": {
         "metadata": 90,
         "instruments": 8,
         "hasEvents": true,
         "hasRepeatingForms": false,
-        "hasSurveys": false
+        "hasSurveys": true
       }
     },
     {
@@ -33,12 +43,16 @@
       "name": "Basic Demography",
       "token": "4FF635F5D6984910DC2842F01DFA201B",
       "recordCount": 2,
+      "capabilities": {
+        "reportId": "5",
+        "surveyInstrument": "demographics"
+      },
       "expected": {
         "metadata": 15,
         "instruments": 1,
         "hasEvents": false,
         "hasRepeatingForms": false,
-        "hasSurveys": false
+        "hasSurveys": true
       }
     },
     {
@@ -46,12 +60,16 @@
       "name": "Repeating Instruments",
       "token": "05D2B58D2FA1B1F4F4D84B9537F0DE1E",
       "recordCount": 3,
+      "capabilities": {
+        "reportId": "6",
+        "surveyInstrument": "demographics"
+      },
       "expected": {
         "metadata": 36,
         "instruments": 5,
         "hasEvents": false,
         "hasRepeatingForms": true,
-        "hasSurveys": false
+        "hasSurveys": true
       }
     }
   ]

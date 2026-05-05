@@ -21,17 +21,17 @@ import { serve } from '../server/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_ROOT = join(__dirname, '../..');
-const SOURCE_PATH = join(PACKAGE_ROOT, 'sandbox/upstream/versions');
+const UPSTREAM_PATH = join(PACKAGE_ROOT, 'upstream');
 const SPECS_PATH = join(PACKAGE_ROOT, 'specs/versions');
 
 type Command = 'extract' | 'compare' | 'docs' | 'exit';
 
 async function runExtract(): Promise<void> {
-  const versions = getAvailableVersions(SOURCE_PATH);
+  const versions = getAvailableVersions(UPSTREAM_PATH);
 
   if (versions.length === 0) {
-    log.error('No REDCap versions found in sandbox/upstream/versions/');
-    log.info('Place REDCap source code in sandbox/upstream/versions/<version>/');
+    log.error('No REDCap ZIP files found in upstream/');
+    log.info('Place redcap<version>.zip files in upstream/ (e.g. upstream/redcap16.1.9.zip)');
     return;
   }
 
@@ -53,7 +53,7 @@ async function runExtract(): Promise<void> {
   try {
     const result = extract({
       version: version as string,
-      sourcePath: SOURCE_PATH,
+      upstreamPath: UPSTREAM_PATH,
       outputPath,
       onProgress: (msg) => s.message(msg),
     });

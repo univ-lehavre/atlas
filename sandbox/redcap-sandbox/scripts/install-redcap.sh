@@ -62,8 +62,13 @@ else
         exit 1
     fi
 
-    # Extract SQL (skip first line with textarea tag, stop at </textarea>)
-    sed -n "$((START_LINE + 1)),\$p" /tmp/redcap_install.html | sed '/<\/textarea>/,$d' > /tmp/redcap_install.sql
+    # Extract SQL from the textarea. REDCap may put the closing tag on the
+    # same line as the final statement, so line-oriented extraction can
+    # silently truncate the install SQL.
+    perl -0ne "print \$1 if /<textarea id='install-sql'[^>]*>(.*?)<\/textarea>/s" \
+      /tmp/redcap_install.html > /tmp/redcap_install.sql
+    perl -0pi -e 's/&lt;/</g; s/&gt;/>/g; s/&quot;/"/g; s/&#039;/'"'"'/g; s/&amp;/&/g' \
+      /tmp/redcap_install.sql
 
     SQL_LINES=$(wc -l < /tmp/redcap_install.sql)
     echo "   Extracted $SQL_LINES lines of SQL"
@@ -82,7 +87,7 @@ if [ -n "$EXISTING_TOKEN" ] && [ "$EXISTING_TOKEN" != "NULL" ]; then
     TOKEN="$EXISTING_TOKEN"
     echo "   Using existing token"
 else
-    TOKEN=$(openssl rand -hex 16 | tr 'a-f' 'A-F')
+    TOKEN="${REDCAP_API_TOKEN:-3ED422AB16AFD8815A729EA57E56254B}"
     docker exec docker-mariadb-1 mariadb -u redcap -predcap_password redcap -e "
     INSERT INTO redcap_user_rights (project_id, username, api_token, api_export, api_import, data_export_tool, data_import_tool, data_logging, user_rights, design, alerts, graphical, data_quality_design)
     VALUES (1, 'site_admin', '$TOKEN', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
@@ -92,7 +97,7 @@ fi
 
 # Save token to config file
 echo "# REDCap API Test Configuration" > "$CONFIG_DIR/.env.test"
-echo "# Generated on $(date)" >> "$CONFIG_DIR/.env.test"
+echo "# Generated on 2026-01-01T00:00:00.000Z" >> "$CONFIG_DIR/.env.test"
 echo "" >> "$CONFIG_DIR/.env.test"
 echo "REDCAP_API_URL=http://localhost:8888/api/" >> "$CONFIG_DIR/.env.test"
 echo "REDCAP_API_TOKEN=$TOKEN" >> "$CONFIG_DIR/.env.test"
@@ -104,7 +109,8 @@ VERSION=$(curl -s -X POST http://localhost:8888/api/ -d "token=$TOKEN" -d "conte
 if [ -n "$VERSION" ]; then
     echo "   REDCap version: $VERSION"
 else
-    echo "   Warning: Could not verify API access"
+    echo "   Error: Could not verify API access"
+    exit 1
 fi
 
 echo ""

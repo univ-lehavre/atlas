@@ -5,8 +5,10 @@
  * and generate a detailed OpenAPI 3.1.0 specification.
  */
 
-import { existsSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readdirSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
+import { tmpdir } from 'node:os';
+import { execSync } from 'node:child_process';
 import { stringify } from 'yaml';
 
 import {
@@ -23,60 +25,55 @@ export * from './types.js';
 export { generateOpenApiSpec } from './generator.js';
 
 /**
- * Find the versioned path for REDCap source
+ * Get available REDCap versions from ZIP files in the upstream directory.
+ * Expects files named `redcap<version>.zip` (e.g. `redcap16.1.9.zip`).
  */
-export function findVersionedPath(basePath: string, version: string): string | null {
-  const versionPath = join(basePath, version);
-
-  if (existsSync(versionPath)) {
-    const versionedName = `redcap_v${version}`;
-    const nestedPath = join(versionPath, versionedName);
-    if (existsSync(nestedPath)) {
-      return nestedPath;
-    }
-    return versionPath;
-  }
-
-  if (!existsSync(basePath)) {
-    return null;
-  }
-
-  const entries = readdirSync(basePath, { withFileTypes: true });
-  for (const entry of entries) {
-    if (entry.isDirectory() && !entry.name.startsWith('.')) {
-      const entryPath = join(basePath, entry.name);
-      const innerEntries = readdirSync(entryPath, { withFileTypes: true });
-      for (const inner of innerEntries) {
-        if (inner.isDirectory() && inner.name.startsWith('redcap_v')) {
-          return join(entryPath, inner.name);
-        }
-      }
-      return entryPath;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Get available REDCap versions from the source directory
- */
-export function getAvailableVersions(basePath: string): string[] {
-  if (!existsSync(basePath)) {
+export function getAvailableVersions(upstreamPath: string): string[] {
+  if (!existsSync(upstreamPath)) {
     return [];
   }
 
-  return readdirSync(basePath, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
-    .map((entry) => entry.name)
-    .sort();
+  return readdirSync(upstreamPath)
+    .filter((name) => /^redcap[\d.]+\.zip$/.test(name))
+    .map((name) => name.replace(/^redcap/, '').replace(/\.zip$/, ''))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+}
+
+/**
+ * Extract a REDCap ZIP to a temporary directory and return the versioned source path.
+ * The ZIP structure is expected to be `redcap/redcap_v<version>/`.
+ * The caller is responsible for cleaning up the returned `tmpRoot`.
+ */
+export function extractZip(
+  upstreamPath: string,
+  version: string
+): { sourcePath: string; tmpRoot: string } {
+  const zipPath = join(upstreamPath, `redcap${version}.zip`);
+  if (!existsSync(zipPath)) {
+    throw new Error(`ZIP not found: ${zipPath}`);
+  }
+
+  const tmpRoot = join(tmpdir(), `redcap-openapi-${version}-${Date.now()}`);
+  mkdirSync(tmpRoot, { recursive: true });
+
+  execSync(`unzip -q -o ${JSON.stringify(zipPath)} -d ${JSON.stringify(tmpRoot)}`);
+
+  const sourcePath = join(tmpRoot, 'redcap', `redcap_v${version}`);
+  if (!existsSync(sourcePath)) {
+    throw new Error(
+      `Expected path not found after extraction: ${sourcePath}\n` +
+        `Check that the ZIP contains redcap/redcap_v${version}/ at its root.`
+    );
+  }
+
+  return { sourcePath, tmpRoot };
 }
 
 export interface ExtractOptions {
   /** REDCap version to extract */
   version: string;
-  /** Base path to upstream/versions */
-  sourcePath: string;
+  /** Path to the upstream/ directory containing redcap<version>.zip files */
+  upstreamPath: string;
   /** Output path for the generated spec */
   outputPath: string;
   /** Callback for progress messages */
@@ -84,17 +81,14 @@ export interface ExtractOptions {
 }
 
 /**
- * Extract API information from REDCap source and generate OpenAPI spec
+ * Extract API information from REDCap source ZIP and generate OpenAPI spec
  */
 export function extract(options: ExtractOptions): ExtractorResult {
-  const { version, sourcePath, outputPath, onProgress } = options;
+  const { version, upstreamPath, outputPath, onProgress } = options;
   const log = onProgress ?? (() => {});
 
-  const versionedPath = findVersionedPath(sourcePath, version);
-  if (!versionedPath) {
-    throw new Error(`REDCap version ${version} not found in ${sourcePath}`);
-  }
-
+  log(`Extracting ZIP for REDCap v${version}...`);
+  const { sourcePath: versionedPath, tmpRoot } = extractZip(upstreamPath, version);
   log(`Parsing REDCap v${version} from ${versionedPath}`);
 
   // Parse all sources
@@ -143,6 +137,8 @@ export function extract(options: ExtractOptions): ExtractorResult {
 
   writeFileSync(outputPath, yamlOutput, 'utf-8');
   log(`Spec written to ${outputPath}`);
+
+  rmSync(tmpRoot, { recursive: true, force: true });
 
   return {
     contentTypes,
