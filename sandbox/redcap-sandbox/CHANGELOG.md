@@ -1,5 +1,13 @@
 # @univ-lehavre/atlas-redcap-sandbox
 
+## 1.0.5
+
+### Patch Changes
+
+- [#121](https://github.com/univ-lehavre/atlas/pull/121) [`c763add`](https://github.com/univ-lehavre/atlas/commit/c763addd36a484a0686c53e087138d31414cd214) Thanks [@chasset](https://github.com/chasset)! - Add REDCap 16.1.9 OpenAPI coverage and make the extractor read upstream REDCap ZIP archives.
+
+  Strengthen the REDCap sandbox contract fixtures and assertions so optional project capabilities, reports, surveys, uploads, XML exports, logs, mappings, and metadata imports are exercised with stricter checks.
+
 ## 1.0.4
 
 ### Patch Changes
