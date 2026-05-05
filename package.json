@@ -46,7 +46,7 @@
     "changeset:version": "changeset version && pnpm exec prettier --no-config --write '**/CHANGELOG.md'",
     "changeset:publish": "turbo build --filter='!./apps/**' && changeset publish",
     "release": "turbo build --filter='!./apps/**' && ./scripts/release/publish-packages.sh",
-    "others": "git -C . ls-files --others",
+    "others": "git -C . ls-files --others | grep -v -e 'node_modules' -e '.svelte-kit' ",
     "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json' 'apps/*/tests/baselines/*.json' 'docs/.vitepress/dist' 'docs/.vitepress/.temp' 'docs/.vitepress/vite-ssg-*.json'",
     "prepare": "lefthook install"
   },
