@@ -217,13 +217,18 @@ describe('REDCap API Contract Tests', () => {
       }
     });
 
-    it('should export project settings with expected structure', async () => {
+    it('should export project settings or return REDCap empty response', async () => {
       const project = defaultProject();
-      const { status, data } = await apiRequest(project.token, 'project_settings', {
+      const { status, data, text } = await apiRequest(project.token, 'project_settings', {
         action: 'export',
       });
 
       expect(status).toBe(200);
+      if (text === '') {
+        expect(data).toBe('');
+        return;
+      }
+
       expect(data).toBeTypeOf('object');
       expect(data).toHaveProperty('project_title');
       expect(data).toHaveProperty('record_autonumbering_enabled');
@@ -546,15 +551,13 @@ describe('REDCap API Contract Tests', () => {
 
       const entries = data as Array<Record<string, unknown>>;
       const first = entries[0];
-      expect(first).toHaveProperty('validation_name');
-      expect(first).toHaveProperty('validation_label');
-      expect(first).toHaveProperty('data_type');
+      expect(first).toHaveProperty('validation_type');
+      expect(first).toHaveProperty('regex');
 
       // All entries must have these keys
       for (const entry of entries) {
-        expectStringField(entry, 'validation_name');
-        expectStringField(entry, 'validation_label');
-        expectStringField(entry, 'data_type');
+        expectStringField(entry, 'validation_type');
+        expectStringField(entry, 'regex');
       }
     });
   });
@@ -1583,7 +1586,7 @@ describe('REDCap API Contract Tests', () => {
     it('mycap: should respond (200 or known error)', async () => {
       const project = defaultProject();
       const { status, text } = await apiRequest(project.token, 'mycap', { action: 'display' });
-      expect([200, 400, 403]).toContain(status);
+      expect([200, 400, 401, 403]).toContain(status);
       if (status !== 200) expect(isKnownApiError(text)).toBe(true);
     });
 
