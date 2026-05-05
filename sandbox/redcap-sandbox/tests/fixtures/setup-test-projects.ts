@@ -28,6 +28,13 @@ interface ProjectSetup {
   };
 }
 
+interface ProjectCapabilities {
+  reportId?: string;
+  surveyInstrument?: string;
+  surveyEvent?: string;
+  fileUploadField?: string;
+}
+
 // Test project configurations - based on actual REDCap template structures
 const TEST_PROJECTS: ProjectSetup[] = [
   {
@@ -173,6 +180,49 @@ function execMariaDB(sql: string): string {
   }
 }
 
+function sqlLiteral(value: number | string): string {
+  if (typeof value === 'number') return String(value);
+  return `'${value.replace(/\\/g, '\\\\').replace(/'/g, "''")}'`;
+}
+
+function tableExists(tableName: string): boolean {
+  const count = execMariaDB(`
+    SELECT COUNT(*)
+    FROM information_schema.tables
+    WHERE table_schema = DATABASE()
+      AND table_name = ${sqlLiteral(tableName)}
+  `);
+  return Number(count) > 0;
+}
+
+function getTableColumns(tableName: string): Set<string> {
+  try {
+    const rows = execMariaDB(`SHOW COLUMNS FROM ${tableName}`);
+    return new Set(
+      rows
+        .split('\n')
+        .map((row) => row.split('\t')[0])
+        .filter((column): column is string => Boolean(column))
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+function insertKnownColumns(tableName: string, values: Record<string, number | string>): boolean {
+  const columns = getTableColumns(tableName);
+  const entries = Object.entries(values).filter(([column]) => columns.has(column));
+
+  if (entries.length === 0) return false;
+
+  execMariaDB(`
+    INSERT INTO ${tableName}
+    (${entries.map(([column]) => column).join(', ')})
+    VALUES (${entries.map(([, value]) => sqlLiteral(value)).join(', ')})
+  `);
+  return true;
+}
+
 function generateToken(): string {
   const chars = 'ABCDEF0123456789';
   let token = '';
@@ -180,6 +230,142 @@ function generateToken(): string {
     token += chars[Math.floor(Math.random() * chars.length)];
   }
   return token;
+}
+
+async function getInstruments(
+  apiUrl: string,
+  token: string
+): Promise<Array<Record<string, unknown>>> {
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ token, content: 'instrument', format: 'json' }).toString(),
+  });
+  const data = await response.json();
+  return Array.isArray(data) ? (data as Array<Record<string, unknown>>) : [];
+}
+
+async function getMetadata(apiUrl: string, token: string): Promise<Array<Record<string, unknown>>> {
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ token, content: 'metadata', format: 'json' }).toString(),
+  });
+  const data = await response.json();
+  return Array.isArray(data) ? (data as Array<Record<string, unknown>>) : [];
+}
+
+async function ensureReportFixture(project: ProjectSetup): Promise<string | undefined> {
+  if (!tableExists('redcap_reports')) return undefined;
+
+  const existing = execMariaDB(`
+    SELECT report_id
+    FROM redcap_reports
+    WHERE project_id = ${project.id}
+    ORDER BY report_id
+    LIMIT 1
+  `);
+
+  if (existing) return existing.split('\n')[0];
+
+  const title = 'API Contract Test Report';
+
+  try {
+    insertKnownColumns('redcap_reports', {
+      project_id: project.id,
+      title,
+      report_order: 1,
+      user_access: 'ALL',
+      user_edit_access: 'ALL',
+      role_access: '',
+      role_edit_access: '',
+      fields: 'study_id,record_id,first_name,last_name',
+      ordering: '',
+      filtering_logic: '',
+    });
+
+    const created = execMariaDB(`
+      SELECT report_id
+      FROM redcap_reports
+      WHERE project_id = ${project.id}
+        AND title = ${sqlLiteral(title)}
+      ORDER BY report_id DESC
+      LIMIT 1
+    `);
+
+    return created ? created.split('\n')[0] : undefined;
+  } catch (error) {
+    console.warn(`  Could not create report fixture for project ${project.id}: ${String(error)}`);
+    return undefined;
+  }
+}
+
+async function ensureSurveyFixture(
+  apiUrl: string,
+  project: ProjectSetup,
+  token: string
+): Promise<Pick<ProjectCapabilities, 'surveyInstrument' | 'surveyEvent'>> {
+  if (!tableExists('redcap_surveys')) return {};
+
+  const instruments = await getInstruments(apiUrl, token);
+  const instrumentName = String(instruments[0]?.['instrument_name'] ?? '');
+  if (!instrumentName) return {};
+
+  try {
+    const projectColumns = getTableColumns('redcap_projects');
+    if (projectColumns.has('surveys_enabled')) {
+      execMariaDB(`
+        UPDATE redcap_projects
+        SET surveys_enabled = 1
+        WHERE project_id = ${project.id}
+      `);
+    }
+
+    const existing = execMariaDB(`
+      SELECT survey_id
+      FROM redcap_surveys
+      WHERE project_id = ${project.id}
+        AND form_name = ${sqlLiteral(instrumentName)}
+      LIMIT 1
+    `);
+
+    if (!existing) {
+      insertKnownColumns('redcap_surveys', {
+        project_id: project.id,
+        form_name: instrumentName,
+        title: 'API Contract Test Survey',
+        instructions: 'Survey fixture generated for API contract tests.',
+        acknowledgement: 'Thank you.',
+        question_by_section: 0,
+        survey_enabled: 1,
+        view_results: 0,
+        min_responses_view_results: 10,
+        check_diversity_view_results: 0,
+      });
+    }
+
+    return { surveyInstrument: instrumentName };
+  } catch (error) {
+    console.warn(`  Could not create survey fixture for project ${project.id}: ${String(error)}`);
+    return {};
+  }
+}
+
+async function detectProjectCapabilities(
+  apiUrl: string,
+  project: ProjectSetup,
+  token: string
+): Promise<ProjectCapabilities> {
+  const metadata = await getMetadata(apiUrl, token);
+  const fileUploadField = metadata.find((field) => field['field_type'] === 'file')?.['field_name'];
+  const reportId = await ensureReportFixture(project);
+  const survey = await ensureSurveyFixture(apiUrl, project, token);
+
+  return {
+    ...(reportId ? { reportId } : {}),
+    ...(survey.surveyInstrument ? survey : {}),
+    ...(fileUploadField ? { fileUploadField: String(fileUploadField) } : {}),
+  };
 }
 
 async function setupProjectToken(projectId: number): Promise<string> {
@@ -259,8 +445,8 @@ async function verifyProjectSetup(
     body: new URLSearchParams({ token, content: 'metadata', format: 'json' }).toString(),
   });
   const metadata = await metadataResponse.json();
-  details.metadataCount = Array.isArray(metadata) ? metadata.length : 0;
-  details.metadataExpected = expected.metadata;
+  details['metadataCount'] = Array.isArray(metadata) ? metadata.length : 0;
+  details['metadataExpected'] = expected.metadata;
 
   // Check instruments
   const instrumentsResponse = await fetch(apiUrl, {
@@ -269,8 +455,8 @@ async function verifyProjectSetup(
     body: new URLSearchParams({ token, content: 'instrument', format: 'json' }).toString(),
   });
   const instruments = await instrumentsResponse.json();
-  details.instrumentsCount = Array.isArray(instruments) ? instruments.length : 0;
-  details.instrumentsExpected = expected.instruments;
+  details['instrumentsCount'] = Array.isArray(instruments) ? instruments.length : 0;
+  details['instrumentsExpected'] = expected.instruments;
 
   // Check events (longitudinal)
   const eventsResponse = await fetch(apiUrl, {
@@ -280,8 +466,8 @@ async function verifyProjectSetup(
   });
   const eventsText = await eventsResponse.text();
   const hasEvents = !eventsText.includes('error') && eventsText !== '[]';
-  details.hasEvents = hasEvents;
-  details.hasEventsExpected = expected.hasEvents;
+  details['hasEvents'] = hasEvents;
+  details['hasEventsExpected'] = expected.hasEvents;
 
   // Check repeating forms
   const repeatingResponse = await fetch(apiUrl, {
@@ -296,15 +482,16 @@ async function verifyProjectSetup(
   const repeatingText = await repeatingResponse.text();
   const hasRepeating =
     !repeatingText.includes('error') && repeatingText !== '[]' && repeatingText !== '';
-  details.hasRepeatingForms = hasRepeating;
-  details.hasRepeatingFormsExpected = expected.hasRepeatingForms;
+  details['hasRepeatingForms'] = hasRepeating;
+  details['hasRepeatingFormsExpected'] = expected.hasRepeatingForms;
 
   // Determine pass/fail (allow some tolerance on metadata count)
-  const metadataTolerance = Math.abs((details.metadataCount as number) - expected.metadata) <= 10;
+  const metadataTolerance =
+    Math.abs((details['metadataCount'] as number) - expected.metadata) <= 10;
   const passed =
     metadataTolerance &&
-    details.instrumentsCount === expected.instruments &&
-    details.hasEvents === expected.hasEvents;
+    details['instrumentsCount'] === expected.instruments &&
+    details['hasEvents'] === expected.hasEvents;
 
   return { passed, details };
 }
@@ -316,6 +503,7 @@ async function main() {
 
   const apiUrl = 'http://localhost:8888/api/';
   const projectTokens: Record<number, string> = {};
+  const projectCapabilities: Record<number, ProjectCapabilities> = {};
 
   // Setup tokens for each test project
   console.log('Step 1: Creating API tokens...');
@@ -331,18 +519,31 @@ async function main() {
   for (const project of TEST_PROJECTS) {
     console.log(`  Project ${project.id}: ${project.name}`);
     const token = projectTokens[project.id];
+    if (!token) throw new Error(`Missing token for project ${project.id}`);
     const result = await importTestData(apiUrl, token, project.testData);
     console.log(`    Imported ${result.count} records (success: ${result.success})`);
   }
   console.log();
 
+  console.log('Step 3: Preparing optional API fixtures...');
+  for (const project of TEST_PROJECTS) {
+    console.log(`  Project ${project.id}: ${project.name}`);
+    const token = projectTokens[project.id];
+    if (!token) throw new Error(`Missing token for project ${project.id}`);
+    const capabilities = await detectProjectCapabilities(apiUrl, project, token);
+    projectCapabilities[project.id] = capabilities;
+    console.log(`    Capabilities: ${JSON.stringify(capabilities)}`);
+  }
+  console.log();
+
   // Verify setup
-  console.log('Step 3: Verifying project setup...');
+  console.log('Step 4: Verifying project setup...');
   const results: Array<{ project: string; passed: boolean; details: Record<string, unknown> }> = [];
 
   for (const project of TEST_PROJECTS) {
     console.log(`  Project ${project.id}: ${project.name}`);
     const token = projectTokens[project.id];
+    if (!token) throw new Error(`Missing token for project ${project.id}`);
     const verification = await verifyProjectSetup(apiUrl, token, project.expectedResponses);
 
     results.push({
@@ -353,19 +554,19 @@ async function main() {
 
     const icon = verification.passed ? '✓' : '✗';
     console.log(
-      `    ${icon} metadata: ${verification.details.metadataCount}/${project.expectedResponses.metadata}`
+      `    ${icon} metadata: ${String(verification.details['metadataCount'])}/${project.expectedResponses.metadata}`
     );
     console.log(
-      `    ${icon} instruments: ${verification.details.instrumentsCount}/${project.expectedResponses.instruments}`
+      `    ${icon} instruments: ${String(verification.details['instrumentsCount'])}/${project.expectedResponses.instruments}`
     );
     console.log(
-      `    ${icon} events: ${verification.details.hasEvents}/${project.expectedResponses.hasEvents}`
+      `    ${icon} events: ${String(verification.details['hasEvents'])}/${project.expectedResponses.hasEvents}`
     );
   }
   console.log();
 
   // Save fixtures configuration
-  console.log('Step 4: Saving fixtures configuration...');
+  console.log('Step 5: Saving fixtures configuration...');
 
   if (!existsSync(FIXTURES_DIR)) {
     mkdirSync(FIXTURES_DIR, { recursive: true });
@@ -377,9 +578,13 @@ async function main() {
     projects: TEST_PROJECTS.map((p) => ({
       id: p.id,
       name: p.name,
-      token: projectTokens[p.id],
+      token: projectTokens[p.id] ?? '',
       recordCount: p.testData.length,
-      expected: p.expectedResponses,
+      capabilities: projectCapabilities[p.id] ?? {},
+      expected: {
+        ...p.expectedResponses,
+        hasSurveys: Boolean(projectCapabilities[p.id]?.surveyInstrument),
+      },
     })),
   };
 
@@ -397,7 +602,7 @@ async function main() {
     ...TEST_PROJECTS.map((p) => `REDCAP_TOKEN_PROJECT_${p.id}=${projectTokens[p.id]}`),
     '',
     '# Default token (Classic Database)',
-    `REDCAP_API_TOKEN=${projectTokens[1]}`,
+    `REDCAP_API_TOKEN=${projectTokens[1] ?? ''}`,
     `REDCAP_PROJECT_ID=1`,
   ].join('\n');
 

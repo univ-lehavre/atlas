@@ -33,10 +33,10 @@ async function loadConfig(): Promise<{ url: string; token: string }> {
 
   for (const line of lines) {
     if (line.startsWith('REDCAP_API_URL=')) {
-      url = line.split('=')[1].trim();
+      url = line.split('=')[1]?.trim() ?? '';
     }
     if (line.startsWith('REDCAP_API_TOKEN=')) {
-      token = line.split('=')[1].trim();
+      token = line.split('=')[1]?.trim() ?? '';
     }
   }
 
