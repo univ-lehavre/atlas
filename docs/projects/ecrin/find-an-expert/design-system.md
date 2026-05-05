@@ -102,13 +102,13 @@ Vibrant teal for highlighting and calls to action.
 
 ```html
 <div class="card">
-	<h3>Card Title</h3>
-	<p>Card content</p>
+  <h3>Card Title</h3>
+  <p>Card content</p>
 </div>
 
 <div class="card-bordered">
-	<h3>Bordered Card</h3>
-	<p>With border instead of shadow</p>
+  <h3>Bordered Card</h3>
+  <p>With border instead of shadow</p>
 </div>
 ```
 
@@ -147,7 +147,7 @@ Vibrant teal for highlighting and calls to action.
 ```html
 <!-- Container with responsive padding -->
 <div class="container-app">
-	<!-- Content -->
+  <!-- Content -->
 </div>
 ```
 
@@ -161,8 +161,8 @@ Replace the hue value (currently `250` for blue):
 
 ```css
 @theme {
-	/* Change 250 to your desired hue (0-360) */
-	--color-primary-500: oklch(55% 0.15 YOUR_HUE);
+  /* Change 250 to your desired hue (0-360) */
+  --color-primary-500: oklch(55% 0.15 YOUR_HUE);
 }
 ```
 
@@ -181,7 +181,7 @@ Common hue values:
 
 ```css
 @theme {
-	--color-custom-500: oklch(55% 0.15 YOUR_HUE);
+  --color-custom-500: oklch(55% 0.15 YOUR_HUE);
 }
 ```
 
@@ -190,4 +190,4 @@ Then use with `bg-custom-500`, `text-custom-500`, etc.
 ## Related Documentation
 
 - [Tailwind CSS v4 Documentation](https://tailwindcss.com/docs)
-- [Code source](https://github.com/univ-lehavre/atlas/tree/main/packages/find-an-expert)
+- [Code source](https://github.com/univ-lehavre/atlas/tree/main/apps/find-an-expert)

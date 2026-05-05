@@ -84,19 +84,19 @@ async function loadExistingStats(outputPath: string): Promise<RepoStatsOutput | 
  * Names and versions are read dynamically from package.json.
  */
 const PACKAGE_PATHS = [
-  'packages/ecrin',
-  'packages/find-an-expert',
-  'packages/amarre',
-  'packages/crf',
+  'apps/ecrin',
+  'apps/find-an-expert',
+  'apps/amarre',
+  'services/crf',
   'packages/redcap-core',
-  'packages/redcap-openapi',
-  'packages/redcap-sandbox',
+  'cli/redcap-openapi',
+  'sandbox/redcap-sandbox',
   'packages/net',
   'packages/appwrite',
   'packages/auth',
   'packages/errors',
   'packages/validators',
-  'packages/shared-config',
+  'config/shared-config',
   'packages/logos',
 ] as const;
 

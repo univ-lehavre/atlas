@@ -295,9 +295,8 @@ Planned features:
 
 For issues or questions:
 
-1. Check the [automated-testing.agent.md](.github/agents/automated-testing.agent.md)
-2. Review existing tests for examples
-3. Create an issue with the `testing` label
+1. Review existing tests for examples
+2. Create an issue with the `testing` label
 
 ---
 

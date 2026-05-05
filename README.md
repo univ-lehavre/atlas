@@ -10,28 +10,28 @@
 
 | Package                           | Description                                      |
 | --------------------------------- | ------------------------------------------------ |
-| [ecrin](packages/ecrin)           | ECRIN module - researcher collaboration platform |
-| [amarre](packages/amarre)         | AMARRE module - research network visualization   |
-| [@univ-lehavre/crf](packages/crf) | CRF module - REDCap client, server and CLI       |
+| [ecrin](apps/ecrin)               | ECRIN module - researcher collaboration platform |
+| [amarre](apps/amarre)             | AMARRE module - research network visualization   |
+| [@univ-lehavre/crf](services/crf) | CRF module - REDCap client, server and CLI       |
 
 ### Sub-projects
 
-| Package                                                       | Parent Module | Description                                     |
-| ------------------------------------------------------------- | ------------- | ----------------------------------------------- |
-| [find-an-expert](packages/find-an-expert)                     | ECRIN         | Expertise discovery via publications and GitHub |
-| [@univ-lehavre/atlas-redcap-core](packages/redcap-core)       | CRF           | REDCap business logic with Effect               |
-| [@univ-lehavre/atlas-redcap-openapi](packages/redcap-openapi) | CRF           | OpenAPI extraction from REDCap                  |
+| Package                                                  | Parent Module | Description                                     |
+| -------------------------------------------------------- | ------------- | ----------------------------------------------- |
+| [find-an-expert](apps/find-an-expert)                    | ECRIN         | Expertise discovery via publications and GitHub |
+| [@univ-lehavre/atlas-redcap-core](packages/redcap-core)  | CRF           | REDCap business logic with Effect               |
+| [@univ-lehavre/atlas-redcap-openapi](cli/redcap-openapi) | CRF           | OpenAPI extraction from REDCap                  |
 
 ### Utility Sub-modules
 
-| Package                                                     | Description                                |
-| ----------------------------------------------------------- | ------------------------------------------ |
-| [@univ-lehavre/atlas-net](packages/net)                     | Network diagnostic utilities               |
-| [@univ-lehavre/atlas-appwrite](packages/appwrite)           | Shared Appwrite client                     |
-| [@univ-lehavre/atlas-auth](packages/auth)                   | Authentication service                     |
-| [@univ-lehavre/atlas-errors](packages/errors)               | Shared error classes                       |
-| [@univ-lehavre/atlas-validators](packages/validators)       | Validation utilities                       |
-| [@univ-lehavre/atlas-shared-config](packages/shared-config) | ESLint, TypeScript, Prettier configuration |
+| Package                                                   | Description                                |
+| --------------------------------------------------------- | ------------------------------------------ |
+| [@univ-lehavre/atlas-net](packages/net)                   | Network diagnostic utilities               |
+| [@univ-lehavre/atlas-appwrite](packages/appwrite)         | Shared Appwrite client                     |
+| [@univ-lehavre/atlas-auth](packages/auth)                 | Authentication service                     |
+| [@univ-lehavre/atlas-errors](packages/errors)             | Shared error classes                       |
+| [@univ-lehavre/atlas-validators](packages/validators)     | Validation utilities                       |
+| [@univ-lehavre/atlas-shared-config](config/shared-config) | ESLint, TypeScript, Prettier configuration |
 
 ## Institutional Projects
 
@@ -75,8 +75,8 @@ The Campus is a laureate of the "ExcellencES" call for projects of **France 2030
 
 - [Getting Started Guide](https://univ-lehavre.github.io/atlas/guide/)
 - [API Reference](https://univ-lehavre.github.io/atlas/api/)
-- [Documentation Audit](https://univ-lehavre.github.io/atlas/guide/audit/documentation-audit)
-- [ECRIN Audit](https://univ-lehavre.github.io/atlas/guide/audit/ecrin-audit)
+- [Documentation Audit](https://univ-lehavre.github.io/atlas/projects/atlas/documentation-audit)
+- [ECRIN Audit](https://univ-lehavre.github.io/atlas/projects/ecrin/audit/)
 
 ## Quick Start
 

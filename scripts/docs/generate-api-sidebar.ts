@@ -25,9 +25,44 @@ interface SidebarItem {
 
 // Package categories matching the current sidebar structure
 const PACKAGE_GROUPS: Record<string, string[]> = {
-  Applications: ['atlas-ecrin', 'atlas-find-an-expert', 'atlas-amarre'],
-  REDCap: ['atlas-crf', 'atlas-redcap-core', 'atlas-redcap-openapi', 'atlas-redcap-sandbox'],
-  Utilitaires: ['atlas-net', 'atlas-errors', 'atlas-validators', 'atlas-shared-config', 'atlas-logos'],
+  Applications: [
+    'atlas-ecrin',
+    'atlas-find-an-expert',
+    'atlas-amarre',
+    'atlas-dashboard',
+    'atlas-redcap-dashboard',
+  ],
+  REDCap: [
+    'atlas-crf',
+    'atlas-crf-cli',
+    'atlas-redcap-client',
+    'atlas-redcap-core',
+    'atlas-redcap-openapi',
+    'atlas-redcap-logs',
+    'atlas-redcap-sandbox',
+    'atlas-redcap-stats-cli',
+  ],
+  Bibliography: [
+    'atlas-openalex',
+    'atlas-openalex-cli',
+    'atlas-openalex-types',
+    'atlas-fetch-openalex',
+    'atlas-fetch-one-api-page',
+    'atlas-validate-openalex',
+    'atlas-researcher-profiles',
+    'atlas-researcher-profiles-cli',
+    'atlas-biblio-cli',
+  ],
+  Utilitaires: [
+    'atlas-net',
+    'atlas-net-cli',
+    'atlas-errors',
+    'atlas-validators',
+    'atlas-shared-config',
+    'atlas-logos',
+    'atlas-stats',
+    'atlas-stats-cli',
+  ],
   Appwrite: ['atlas-appwrite', 'atlas-auth'],
 };
 

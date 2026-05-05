@@ -698,4 +698,4 @@ These diagrams illustrate the progressive evolution of the AMARRE architecture:
 ---
 
 _Document generated on December 20, 2025_
-_Linked to document [Microservices Audit](/audit/amarre/)_
+_Linked to document [AMARRE documentation](/projects/amarre/)_

@@ -6,32 +6,18 @@ Atlas CRF provides a TypeScript client and HTTP server for interacting with the 
 
 ## Packages
 
-| Package | Description |
-|---------|-------------|
+| Package                   | Description                       |
+| ------------------------- | --------------------------------- |
 | `@univ-lehavre/atlas-crf` | Effect client + Hono server + CLI |
 
 ## Architecture
 
 ```
-packages/crf/
-├── specs/
-│   └── redcap.yaml              # OpenAPI 3.1.0 REDCap spec
-├── src/
-│   ├── redcap/                  # Effect client for REDCap
-│   │   ├── generated/types.ts   # Generated types (openapi-typescript)
-│   │   ├── brands.ts            # Branded types (RecordId, etc.)
-│   │   ├── client.ts            # Main client
-│   │   ├── errors.ts            # Typed errors
-│   │   └── index.ts
-│   ├── server/                  # HTTP microservice (Hono)
-│   │   ├── routes/              # health, project, records, users
-│   │   ├── middleware/          # rate-limit, validation
-│   │   └── index.ts
-│   ├── cli/                     # CLI tools
-│   │   ├── redcap/              # crf-redcap (connectivity test)
-│   │   └── server/              # crf-server (CRF server test)
-│   └── bin/                     # CLI entry points
-└── test/
+packages/redcap-core/       # Pure REDCap domain types, brands and validation
+packages/redcap-client/     # Effect client and generated REDCap API types
+services/crf/               # Hono HTTP microservice
+cli/crf/                    # crf-redcap and crf-server commands
+cli/redcap-openapi/         # OpenAPI extraction, comparison and documentation tools
 ```
 
 ## REDCap Client
@@ -39,23 +25,27 @@ packages/crf/
 ### Installation
 
 ```bash
-pnpm add @univ-lehavre/atlas-crf effect
+pnpm add @univ-lehavre/atlas-redcap-client effect
 ```
 
 ### Basic usage
 
 ```typescript
-import { Effect } from 'effect';
-import { createRedcapClient, RedcapUrl, RedcapToken } from '@univ-lehavre/atlas-crf';
+import { Effect } from "effect";
+import {
+  createRedcapClient,
+  RedcapUrl,
+  RedcapToken,
+} from "@univ-lehavre/atlas-redcap-client";
 
 const client = createRedcapClient({
-  url: RedcapUrl('https://redcap.example.com/api/'),
-  token: RedcapToken('YOUR_32_CHAR_HEXADECIMAL_TOKEN'),
+  url: RedcapUrl("https://redcap.example.com/api/"),
+  token: RedcapToken("YOUR_32_CHAR_HEXADECIMAL_TOKEN"),
 });
 
 // Export records
 const records = await Effect.runPromise(
-  client.exportRecords({ fields: ['record_id', 'name'] })
+  client.exportRecords({ fields: ["record_id", "name"] }),
 );
 
 // Project information
@@ -68,18 +58,22 @@ const instruments = await Effect.runPromise(client.listInstruments());
 ### Error handling
 
 ```typescript
-import { Effect, Match } from 'effect';
-import { RedcapError, RedcapNetworkError, RedcapAuthError } from '@univ-lehavre/atlas-crf';
+import { Effect, Match } from "effect";
+import {
+  RedcapError,
+  RedcapNetworkError,
+  RedcapAuthError,
+} from "@univ-lehavre/atlas-crf";
 
-const program = client.exportRecords({ fields: ['record_id'] }).pipe(
-  Effect.catchTag('RedcapAuthError', (error) => {
-    console.error('Invalid token:', error.message);
+const program = client.exportRecords({ fields: ["record_id"] }).pipe(
+  Effect.catchTag("RedcapAuthError", (error) => {
+    console.error("Invalid token:", error.message);
     return Effect.succeed([]);
   }),
-  Effect.catchTag('RedcapNetworkError', (error) => {
-    console.error('Network error:', error.message);
+  Effect.catchTag("RedcapNetworkError", (error) => {
+    console.error("Network error:", error.message);
     return Effect.succeed([]);
-  })
+  }),
 );
 ```
 
@@ -88,15 +82,15 @@ const program = client.exportRecords({ fields: ['record_id'] }).pipe(
 The client uses branded types for compile-time validation:
 
 ```typescript
-import { RecordId, RedcapUrl, RedcapToken } from '@univ-lehavre/atlas-crf';
+import { RecordId, RedcapUrl, RedcapToken } from "@univ-lehavre/atlas-crf";
 
 // These lines fail at compile time if the format is invalid
-const recordId = RecordId('123');                    // OK
-const url = RedcapUrl('https://redcap.example.com/api/');  // OK
-const token = RedcapToken('AAAABBBBCCCCDDDDEEEE11112222'); // 32 chars hex
+const recordId = RecordId("123"); // OK
+const url = RedcapUrl("https://redcap.example.com/api/"); // OK
+const token = RedcapToken("AAAABBBBCCCCDDDDEEEE11112222"); // 32 chars hex
 
 // Compilation error:
-const badToken = RedcapToken('too-short');  // ❌ Type error
+const badToken = RedcapToken("too-short"); // ❌ Type error
 ```
 
 ## HTTP Server
@@ -116,13 +110,13 @@ pnpm -F @univ-lehavre/atlas-crf start
 
 ### Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Service health |
-| GET | `/project` | Project information |
-| GET | `/records` | Export records |
-| POST | `/records` | Import records |
-| GET | `/users` | List of users |
+| Method | Endpoint   | Description         |
+| ------ | ---------- | ------------------- |
+| GET    | `/health`  | Service health      |
+| GET    | `/project` | Project information |
+| GET    | `/records` | Export records      |
+| POST   | `/records` | Import records      |
+| GET    | `/users`   | List of users       |
 
 ### Middleware
 
@@ -149,6 +143,7 @@ crf-redcap test --json
 ```
 
 Tests performed:
+
 1. REDCap version
 2. Project information
 3. List of instruments
@@ -179,16 +174,16 @@ The client supports different REDCap versions via adapters:
 
 ```typescript
 // Adapters handle API differences between versions
-import { createRedcapClient } from '@univ-lehavre/atlas-crf';
+import { createRedcapClient } from "@univ-lehavre/atlas-crf";
 
 const client = createRedcapClient({
-  url: RedcapUrl('https://redcap.example.com/api/'),
-  token: RedcapToken('...'),
-  version: '14.5.10',  // Optional, automatically detected
+  url: RedcapUrl("https://redcap.example.com/api/"),
+  token: RedcapToken("..."),
+  version: "14.5.10", // Optional, automatically detected
 });
 ```
 
 ## See also
 
-- [CLI Tools](./cli.md) - Complete CLI documentation
-- [Architecture](./architecture.md) - Effect patterns and ESLint
+- [CLI Tools](/guide/developers/cli) - Command line tooling overview
+- [Architecture](/guide/developers/architecture) - Effect patterns and ESLint

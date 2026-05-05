@@ -32,7 +32,7 @@ pnpm -F amarre lint     # ESLint
 
 ## Documentation
 
-- [ECRIN Audit](../../docs/guide/audit/ecrin-audit.md) - Functional cards analysis
+- [ECRIN Audit](../../docs/projects/ecrin/audit/) - Functional cards analysis
 
 ## Organization
 
@@ -47,15 +47,15 @@ Atlas is developed as part of two projects led by Le Havre Normandie University:
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
+    <img src="../../packages/logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
-    <img src="../logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="20">
+    <img src="../../packages/logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://eunicoast.eu/">
-    <img src="../logos/eunicoast.png" alt="EUNICoast" height="20">
+    <img src="../../packages/logos/eunicoast.png" alt="EUNICoast" height="20">
   </a>
 </p>
 
