@@ -35,6 +35,15 @@ interface ProjectCapabilities {
   fileUploadField?: string;
 }
 
+const GENERATED_AT = '2026-01-01T00:00:00.000Z';
+
+const PROJECT_TOKENS: Record<number, string> = {
+  1: '3ED422AB16AFD8815A729EA57E56254B',
+  2: '2E1DFDF3F8C17DB540FDCF4AF6ABA2F1',
+  5: '4FF635F5D6984910DC2842F01DFA201B',
+  12: '05D2B58D2FA1B1F4F4D84B9537F0DE1E',
+};
+
 // Test project configurations - based on actual REDCap template structures
 const TEST_PROJECTS: ProjectSetup[] = [
   {
@@ -223,15 +232,6 @@ function insertKnownColumns(tableName: string, values: Record<string, number | s
   return true;
 }
 
-function generateToken(): string {
-  const chars = 'ABCDEF0123456789';
-  let token = '';
-  for (let i = 0; i < 32; i++) {
-    token += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return token;
-}
-
 async function getInstruments(
   apiUrl: string,
   token: string
@@ -369,18 +369,18 @@ async function detectProjectCapabilities(
 }
 
 async function setupProjectToken(projectId: number): Promise<string> {
+  const token = PROJECT_TOKENS[projectId];
+  if (!token) throw new Error(`No deterministic API token configured for project ${projectId}`);
+
   // Check if token already exists
   const existing = execMariaDB(
     `SELECT api_token FROM redcap_user_rights WHERE project_id=${projectId} AND username='site_admin' AND api_token IS NOT NULL`
   );
 
-  if (existing && existing.length === 32) {
+  if (existing === token) {
     console.log(`  Token exists for project ${projectId}`);
     return existing;
   }
-
-  // Generate new token
-  const token = generateToken();
 
   // Insert or update user rights with token
   execMariaDB(`
@@ -574,7 +574,7 @@ async function main() {
 
   const fixturesConfig = {
     apiUrl,
-    generatedAt: new Date().toISOString(),
+    generatedAt: GENERATED_AT,
     projects: TEST_PROJECTS.map((p) => ({
       id: p.id,
       name: p.name,
@@ -588,13 +588,16 @@ async function main() {
     })),
   };
 
-  writeFileSync(join(FIXTURES_DIR, 'projects.json'), JSON.stringify(fixturesConfig, null, 2));
+  writeFileSync(
+    join(FIXTURES_DIR, 'projects.json'),
+    `${JSON.stringify(fixturesConfig, null, 2)}\n`
+  );
   console.log(`  Saved to: tests/fixtures/projects.json`);
 
   // Also update .env.test with all tokens
   const envContent = [
     '# REDCap API Test Configuration',
-    `# Generated on ${new Date().toISOString()}`,
+    `# Generated on ${GENERATED_AT}`,
     '',
     `REDCAP_API_URL=${apiUrl}`,
     '',
@@ -606,7 +609,7 @@ async function main() {
     `REDCAP_PROJECT_ID=1`,
   ].join('\n');
 
-  writeFileSync(join(CONFIG_DIR, '.env.test'), envContent);
+  writeFileSync(join(CONFIG_DIR, '.env.test'), `${envContent}\n`);
   console.log(`  Updated: docker/config/.env.test`);
 
   console.log();
@@ -622,4 +625,7 @@ async function main() {
   }
 }
 
-main().catch(console.error);
+main().catch((error: unknown) => {
+  console.error(error);
+  process.exitCode = 1;
+});
