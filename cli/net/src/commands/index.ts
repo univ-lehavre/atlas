@@ -27,6 +27,8 @@ import * as p from '@clack/prompts';
 import pc from 'picocolors';
 import { dnsResolve, tcpPing, tlsHandshake, checkInternet } from '@univ-lehavre/atlas-net';
 import { Hostname, Port, type DiagnosticStep } from '@univ-lehavre/atlas-net';
+import { detectCi, type CliContext } from '../config/context.js';
+import { formatStepCi, formatStepHuman } from '../output/steps.js';
 
 /** Package version - should match package.json */
 const VERSION = '0.6.0';
@@ -43,46 +45,6 @@ const ExitCode = {
 } as const;
 
 type ExitCode = (typeof ExitCode)[keyof typeof ExitCode];
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CLI Context
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface CliContext {
-  readonly ci: boolean;
-  readonly json: boolean;
-  readonly quiet: boolean;
-  readonly verbose: boolean;
-}
-
-const detectCi = (): boolean =>
-  !process.stdout.isTTY ||
-  Boolean(process.env['CI']) ||
-  Boolean(process.env['CONTINUOUS_INTEGRATION']) ||
-  Boolean(process.env['GITHUB_ACTIONS']);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Formatters
-// ─────────────────────────────────────────────────────────────────────────────
-
-const formatStepHuman = (step: DiagnosticStep): string => {
-  const icon =
-    step.status === 'ok'
-      ? pc.green('\u2713')
-      : step.status === 'error'
-        ? pc.red('\u2717')
-        : pc.dim('\u25CB');
-  const latency = step.latencyMs === undefined ? '' : pc.dim(` (${String(step.latencyMs)}ms)`);
-  const message = step.message ? pc.dim(` \u2192 ${step.message}`) : '';
-  return `${icon} ${step.name}${latency}${message}`;
-};
-
-const formatStepCi = (step: DiagnosticStep): string => {
-  const status = step.status.toUpperCase().padEnd(5);
-  const latency = step.latencyMs === undefined ? '' : ` ${String(step.latencyMs)}ms`;
-  const message = step.message ? ` - ${step.message}` : '';
-  return `[${status}] ${step.name}${latency}${message}`;
-};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Diagnostics Runner

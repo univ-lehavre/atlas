@@ -177,7 +177,7 @@
         "src/**/*.ts"
       ],
       "ignore": [
-        "src/redcap/commands.ts",
+        "src/commands/redcap/commands.ts",
         "src/shared/context.ts",
         "src/shared/terminal.ts"
       ]

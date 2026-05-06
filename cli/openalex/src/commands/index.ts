@@ -1,14 +1,14 @@
 import { Effect, Logger, LogLevel } from "effect";
 import { chain } from "lodash";
 
-import { cmd } from "./config.js";
+import { cmd } from "../config/args.js";
 import {
   searchAuthors,
   retrieve_articles,
   retrieve_articles_given_work_ids,
 } from "@univ-lehavre/atlas-openalex";
 import type { OpenalexSearchAuthorAffiliationResult } from "@univ-lehavre/atlas-openalex";
-import { multiple, log, finish, prepare, who, selection } from "./prompt.js";
+import { multiple, log, finish, prepare, who, selection } from "../prompts/index.js";
 
 const program = Effect.gen(function* () {
   // Saisie du nom du chercheur

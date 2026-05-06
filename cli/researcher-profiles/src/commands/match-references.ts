@@ -7,7 +7,7 @@
 import { spinner, log, outro } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either } from "effect";
-import { selectResearchers } from "./select-researchers.js";
+import { selectResearchers } from "../prompts/select-researchers.js";
 import { matchRow } from "./match-row.js";
 import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
 import { fetchResearchers } from "@univ-lehavre/atlas-researcher-profiles";

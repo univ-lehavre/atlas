@@ -25,7 +25,7 @@ import { Command, HelpDoc, Options, Span } from '@effect/cli';
 import { NodeContext, NodeRuntime } from '@effect/platform-node';
 import { Effect } from 'effect';
 import { serve } from '@hono/node-server';
-import { createCliContext, detectCi, ExitCode, intro, log, pc } from '../shared/index.js';
+import { createCliContext, detectCi, ExitCode, intro, log, pc } from '../../shared/index.js';
 
 /** Package version - should match package.json */
 const VERSION = '1.2.1';

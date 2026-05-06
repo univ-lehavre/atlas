@@ -3,7 +3,7 @@
  * Entry point for atlas-net CLI
  */
 
-import { main } from '../index.js';
+import { main } from '../commands/index.js';
 
 main().catch((error: unknown) => {
   console.error('Fatal error:', error);

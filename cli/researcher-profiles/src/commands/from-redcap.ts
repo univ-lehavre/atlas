@@ -13,7 +13,7 @@ import {
 } from "@univ-lehavre/atlas-researcher-profiles";
 import type { ResearcherRow } from "@univ-lehavre/atlas-researcher-profiles";
 import { processRow } from "./process-row.js";
-import { selectResearchers } from "./select-researchers.js";
+import { selectResearchers } from "../prompts/select-researchers.js";
 
 interface FromRedcapOptions {
   readonly redcapUrl: string;

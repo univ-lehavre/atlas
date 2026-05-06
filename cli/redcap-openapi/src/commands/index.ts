@@ -231,7 +231,7 @@ ${pc.dim('Press Ctrl+C to stop')}
   });
 }
 
-async function main(): Promise<void> {
+export async function main(): Promise<void> {
   const args = process.argv.slice(2);
 
   // Direct command execution
@@ -325,8 +325,3 @@ ${pc.bold('Examples:')}
 
   outro('Done!');
 }
-
-main().catch((error) => {
-  console.error(pc.red('Error:'), error);
-  process.exit(1);
-});

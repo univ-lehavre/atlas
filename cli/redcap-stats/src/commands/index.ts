@@ -3,136 +3,15 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 import { parseTokensCsv } from "@univ-lehavre/atlas-redcap-logs";
+import { parseArgs } from "../config/args.js";
+import { printHuman, summarizeStatus, type ProjectResult } from "../output/report.js";
 
-interface CliOptions {
-  readonly projectId: number | null;
-  readonly all: boolean;
-  readonly apiUrl: string | null;
-  readonly tokensFile: string;
-  readonly content: string;
-  readonly timeoutMs: number;
-  readonly showBody: boolean;
-  readonly json: boolean;
-}
-
-interface ProjectResult {
-  readonly projectId: number;
-  readonly status: number | null;
-  readonly statusText: string;
-  readonly ok: boolean;
-  readonly bodyPreview: string;
-  readonly error: string | null;
-}
-
-const DEFAULT_TOKENS_FILE = "redcap-token.csv";
-const DEFAULT_CONTENT = "log";
-const DEFAULT_TIMEOUT_MS = 12_000;
 const MAX_BODY_PREVIEW = 300;
 const ENV_FILES = ["apps/redcap-dashboard/.env", ".env"];
 const WORKSPACE_MARKER = "pnpm-workspace.yaml";
 
-const usage = (): string =>
-  `
-atlas-redcap-stats - tester les réponses HTTP REDCap par projet
-
-Usage:
-  atlas-redcap-stats --project <id> [options]
-  atlas-redcap-stats --all [options]
-
-Options:
-  --project <id>      Tester un seul project_id
-  --all               Tester tous les projects du CSV
-  --api-url <url>     URL REDCap API (sinon REDCAP_API_URL depuis env/.env)
-  --tokens-file <p>   Fichier CSV tokens (défaut: ${DEFAULT_TOKENS_FILE})
-  --content <name>    Valeur REDCap content (défaut: ${DEFAULT_CONTENT})
-  --timeout-ms <n>    Timeout HTTP en ms (défaut: ${String(DEFAULT_TIMEOUT_MS)})
-  --show-body         Affiche un extrait de body pour chaque projet
-  --json              Sortie JSON
-  -h, --help          Aide
-
-Exemples:
-  atlas-redcap-stats --project 25
-  atlas-redcap-stats --project 25 --show-body
-  atlas-redcap-stats --all --json
-`.trim();
-
 const fail = (message: string): never => {
   throw new Error(message);
-};
-
-const parseNumber = (value: string, label: string): number => {
-  const n = Number.parseInt(value, 10);
-  return Number.isNaN(n) ? fail(`${label} invalide: ${value}`) : n;
-};
-
-const parseArgs = (argv: readonly string[]): CliOptions => {
-  let projectId: number | null = null;
-  let all = false;
-  let apiUrl: string | null = null;
-  let tokensFile = DEFAULT_TOKENS_FILE;
-  let content = DEFAULT_CONTENT;
-  let timeoutMs = DEFAULT_TIMEOUT_MS;
-  let showBody = false;
-  let json = false;
-
-  for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i];
-
-    if (arg === "--project") {
-      const value = argv[i + 1] ?? fail("Argument manquant pour --project");
-      projectId = parseNumber(value, "project_id");
-      i += 1;
-    } else if (arg === "--all") {
-      all = true;
-    } else if (arg === "--api-url") {
-      apiUrl = (argv[i + 1] ?? fail("Argument manquant pour --api-url")).trim();
-      i += 1;
-    } else if (arg === "--tokens-file") {
-      tokensFile = (
-        argv[i + 1] ?? fail("Argument manquant pour --tokens-file")
-      ).trim();
-      i += 1;
-    } else if (arg === "--content") {
-      content = (
-        argv[i + 1] ?? fail("Argument manquant pour --content")
-      ).trim();
-      i += 1;
-    } else if (arg === "--timeout-ms") {
-      timeoutMs = parseNumber(
-        argv[i + 1] ?? fail("Argument manquant pour --timeout-ms"),
-        "timeout",
-      );
-      i += 1;
-    } else if (arg === "--show-body") {
-      showBody = true;
-    } else if (arg === "--json") {
-      json = true;
-    } else if (arg === "--help" || arg === "-h") {
-      console.log(usage());
-      process.exit(0);
-    } else {
-      fail(`Option inconnue: ${arg}`);
-    }
-  }
-
-  if (projectId === null && !all) {
-    fail("Tu dois fournir --project <id> ou --all");
-  }
-
-  if (projectId !== null && all) {
-    fail("Utilise soit --project, soit --all (pas les deux)");
-  }
-
-  return {
-    projectId,
-    all,
-    apiUrl,
-    tokensFile,
-    content,
-    timeoutMs,
-    showBody,
-    json,
-  };
 };
 
 const parseEnvLine = (line: string): [string, string] | null => {
@@ -223,15 +102,6 @@ const readTokens = async (
   return parseTokensCsv(raw);
 };
 
-const summarizeStatus = (
-  results: readonly ProjectResult[],
-): Record<string, number> =>
-  results.reduce<Record<string, number>>((acc, result) => {
-    const key = result.status === null ? "ERR" : String(result.status);
-    acc[key] = (acc[key] ?? 0) + 1;
-    return acc;
-  }, {});
-
 const fetchOne = async (
   apiUrl: string,
   content: string,
@@ -271,32 +141,6 @@ const fetchOne = async (
       error: error instanceof Error ? error.message : String(error),
     };
   }
-};
-
-const printHuman = (
-  results: readonly ProjectResult[],
-  showBody: boolean,
-): void => {
-  for (const result of results) {
-    if (result.status === null) {
-      console.log(
-        `[redcap] project ${String(result.projectId)}: ERROR ${result.error ?? "unknown"}`,
-      );
-      continue;
-    }
-
-    console.log(
-      `[redcap] project ${String(result.projectId)}: HTTP ${String(result.status)} ${result.statusText}`,
-    );
-
-    if (showBody && result.bodyPreview !== "") {
-      console.log(`  body: ${result.bodyPreview.replace(/\s+/g, " ").trim()}`);
-    }
-  }
-
-  const summary = summarizeStatus(results);
-  console.log("");
-  console.log(`Résumé: ${JSON.stringify(summary)}`);
 };
 
 const main = async (): Promise<void> => {

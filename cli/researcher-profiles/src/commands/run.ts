@@ -14,7 +14,7 @@ import type {
 import { fetchResearchers } from "@univ-lehavre/atlas-researcher-profiles";
 import { processRow } from "./process-row.js";
 import { matchRow } from "./match-row.js";
-import { selectResearchers } from "./select-researchers.js";
+import { selectResearchers } from "../prompts/select-researchers.js";
 
 export interface RunOptions {
   readonly redcapUrl: string;

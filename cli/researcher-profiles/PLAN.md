@@ -75,7 +75,7 @@ keywords?: KeywordEntry[];
   (dérivé des vecteurs TF-IDF + labels, lisible sans les embeddings)
 
 ### 6. Commande CLI
-**Fichier :** `cli/researcher-profiles/src/cli/match-researchers.ts`
+**Fichier :** `cli/researcher-profiles/src/commands/match-researchers.ts`
 
 ```
 atlas-researcher-profiles match-researchers [--top N] [--output json|table] [--complementarity] [--keywords] [--chart]

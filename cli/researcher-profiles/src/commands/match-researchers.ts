@@ -19,7 +19,7 @@ import {
   type ResearcherMatch,
   type ResearcherData,
 } from "@univ-lehavre/atlas-researcher-profiles";
-import { generateChart } from "./chart.js";
+import { generateChart } from "../output/chart.js";
 
 export interface MatchResearchersOptions {
   readonly redcapUrl: string;

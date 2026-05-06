@@ -21,7 +21,7 @@ import {
   outputJson,
   ExitCode,
   pc,
-} from '../shared/index.js';
+} from '../../shared/index.js';
 
 /**
  * Result of a single connectivity test.
