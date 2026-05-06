@@ -10,6 +10,7 @@ import {
   ensureStore,
   makeWorker,
   makeRateLimitedFetcher,
+  fetchAllPages,
 } from "./helpers.js";
 import { Store, type APIResponse, initialState } from "./store.js";
 
@@ -164,6 +165,43 @@ describe("helpers", () => {
         assertEquals(all.length, 0);
         const st = yield* store.current;
         assertEquals(st.page, 1);
+      }),
+  );
+
+  it.effect(
+    "fetchAllPages stops paginating when a malformed response arrives",
+    () =>
+      Effect.gen(function* () {
+        const store = yield* Effect.andThen(
+          Ref.make(initialState),
+          (s) => new Store<number>(s),
+        );
+
+        let call = 0;
+        const fetchPage = (q: Query) =>
+          Effect.sync((): APIResponse<number> => {
+            call += 1;
+            if (call === 1) {
+              return {
+                meta: { count: 30, page: 1, per_page: 10 },
+                results: [1, 2, 3],
+              };
+            }
+            return { not: "valid" } as unknown as APIResponse<number>;
+          });
+
+        const params: Query = { per_page: 10 };
+        const onPage = vi.fn();
+        const results = yield* fetchAllPages<number>(
+          store,
+          fetchPage,
+          params,
+          onPage,
+        );
+
+        expect(results).toEqual([1, 2, 3]);
+        expect(call).toBe(2);
+        expect(onPage).toHaveBeenCalledTimes(1);
       }),
   );
 

@@ -1,4 +1,23 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import type * as NodeAppwrite from 'node-appwrite';
+
+const noop = (): void => {
+  /* test stub */
+};
+
+const usersGetSpy = vi.hoisted(() => vi.fn());
+
+vi.mock('node-appwrite', async () => {
+  const actual = await vi.importActual<typeof NodeAppwrite>('node-appwrite');
+  class MockUsers {
+    get = usersGetSpy;
+  }
+  return {
+    ...actual,
+    Users: MockUsers,
+  };
+});
+
 import {
   SESSION_COOKIE,
   ADMIN_LABEL,
@@ -101,6 +120,51 @@ describe('AppwriteUserRepository', () => {
   it('should be instantiable with config', () => {
     const repo = new AppwriteUserRepository(mockConfig);
     expect(repo).toBeInstanceOf(AppwriteUserRepository);
+  });
+
+  describe('getById', () => {
+    let errorSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      usersGetSpy.mockReset();
+      errorSpy = vi.spyOn(console, 'error').mockImplementation(noop);
+    });
+
+    afterEach(() => {
+      errorSpy.mockRestore();
+    });
+
+    it('returns the user profile when Appwrite responds successfully', async () => {
+      usersGetSpy.mockResolvedValue({
+        $id: 'user-123',
+        email: 'alice@example.com',
+        labels: ['admin'],
+      });
+
+      const repo = new AppwriteUserRepository(mockConfig);
+      const result = await repo.getById('user-123');
+
+      expect(result).toEqual({
+        id: 'user-123',
+        email: 'alice@example.com',
+        labels: ['admin'],
+      });
+      expect(usersGetSpy).toHaveBeenCalledWith({ userId: 'user-123' });
+    });
+
+    it('returns a minimal profile and logs when Appwrite throws', async () => {
+      usersGetSpy.mockRejectedValue(new Error('user not found'));
+
+      const repo = new AppwriteUserRepository(mockConfig);
+      const result = await repo.getById('missing-user');
+
+      expect(result).toEqual({
+        id: 'missing-user',
+        email: null,
+        labels: [],
+      });
+      expect(errorSpy).toHaveBeenCalled();
+    });
   });
 });
 

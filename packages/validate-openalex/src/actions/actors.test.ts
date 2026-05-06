@@ -248,6 +248,36 @@ describe("actors", () => {
     ]);
   });
 
+  it("validates the ORCID prompt input through every branch of the inline validator", async () => {
+    await Effect.runPromise(insert_new_ORCID());
+
+    const lastCall = mocks.text.mock.calls.at(-1);
+    expect(lastCall).toBeDefined();
+    const validator = lastCall![2] as (
+      value: string | undefined,
+    ) => string | undefined;
+
+    expect(validator(undefined)).toBe("L’ORCID est requis");
+    expect(validator("")).toBe("L’ORCID est requis");
+    expect(validator("   ")).toBe("L’ORCID est requis");
+    expect(validator("not-an-orcid")).toBe(
+      "L’ORCID doit être au format 0000-0000-0000-0000",
+    );
+    expect(validator("0000-0001-2345-6789")).toBeUndefined();
+    expect(validator("https://orcid.org/0000-0001-2345-6789")).toBeUndefined();
+  });
+
+  it("uses the bare ORCID format and prefixes it with the canonical URL", async () => {
+    mocks.text.mockReturnValue(Effect.succeed("0000-0001-2345-6789"));
+
+    await Effect.runPromise(insert_new_ORCID());
+
+    expect(mocks.updateContextStore).toHaveBeenCalledWith({
+      type: "author",
+      id: "https://orcid.org/0000-0001-2345-6789",
+    });
+  });
+
   it("extends events from a selected alternative string", async () => {
     await Effect.runPromise(extendsEventsWithAlternativeStrings());
 
@@ -321,6 +351,24 @@ describe("actors", () => {
     expect(mocks.updateEventsStore).not.toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ entity: "work" })]),
     );
+  });
+
+  it("retrieves works by ORCID and skips reconfirmation when the author name was already rejected", async () => {
+    const rateLimiter = vi.fn((effect: Effect.Effect<unknown>) => effect);
+    mocks.getStatusOfAuthorDisplayNameAlternative.mockReturnValue("rejected");
+    mocks.getStatusOfWork.mockReturnValue(undefined);
+    mocks.searchWorksByORCID.mockReturnValue(Effect.succeed([makeWork()]));
+
+    await Effect.runPromise(retrieveWorksByORCID(rateLimiter));
+
+    expect(mocks.confirm).not.toHaveBeenCalled();
+    expect(mocks.updateEventsStore).toHaveBeenCalledWith([
+      expect.objectContaining({
+        entity: "work",
+        field: "id",
+        status: "rejected",
+      }),
+    ]);
   });
 
   it("retrieves works by ORCID and rejects a work when the author name is rejected", async () => {
