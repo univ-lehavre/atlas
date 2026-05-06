@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     coverage: coverageConfig({
-      thresholds: { statements: 90, branches: 82, functions: 90, lines: 90 },
+      thresholds: { statements: 90, branches: 90, functions: 90, lines: 90 },
     }),
   },
 });

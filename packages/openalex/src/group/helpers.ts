@@ -25,17 +25,17 @@ export function levenshtein(a: string, b: string): number {
   const dp: number[] = Array.from({ length: n + 1 }, (_, j) => j);
 
   for (let i = 1; i <= m; i++) {
-    let prev = dp[0] ?? 0;
+    let prev = dp[0]!;
     dp[0] = i;
     for (let j = 1; j <= n; j++) {
-      const temp = dp[j] ?? 0;
+      const temp = dp[j]!;
       const cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
-      dp[j] = Math.min((dp[j] ?? 0) + 1, (dp[j - 1] ?? 0) + 1, prev + cost);
+      dp[j] = Math.min(dp[j]! + 1, dp[j - 1]! + 1, prev + cost);
       prev = temp;
     }
   }
 
-  return dp[n] ?? 0;
+  return dp[n]!;
 }
 
 export function similarity(a: string, b: string): number {
@@ -79,11 +79,11 @@ export function groupByGenericIndices(
 
   const groupsIndices: number[][] = [];
   for (let i = 0; i < items.length; i++) {
-    const ai = norms[i] ?? "";
+    const ai = norms[i]!;
     let placed = false;
     for (const group of groupsIndices) {
-      const repIndex = group[0] ?? 0;
-      const bi = norms[repIndex] ?? "";
+      const repIndex = group[0]!;
+      const bi = norms[repIndex]!;
       if (comparator(ai, bi) >= threshold) {
         group.push(i);
         placed = true;
@@ -108,7 +108,7 @@ export function groupByGeneric(
     comparator,
     options,
   );
-  return groupsIndices.map((indices) => indices.map((i) => items[i] ?? ""));
+  return groupsIndices.map((indices) => indices.map((i) => items[i]!));
 }
 
 export function ngramsOf(s: string, n: number): Set<string> {
@@ -126,7 +126,7 @@ export function jaccard(a: Set<string>, b: Set<string>): number {
   let inter = 0;
   for (const x of a) if (b.has(x)) inter++;
   const union = a.size + b.size - inter;
-  return union === 0 ? 0 : inter / union;
+  return inter / union;
 }
 
 export function ngramSimilarity(
@@ -143,10 +143,7 @@ export function ngramSimilarity(
   });
   if (weights && weights.length === norms.length) {
     const totalW = weights.reduce((s, w) => s + w, 0) || 1;
-    return norms.reduce(
-      (acc, v, i) => acc + v * ((weights[i] ?? 0) / totalW),
-      0,
-    );
+    return norms.reduce((acc, v, i) => acc + (v * weights[i]!) / totalW, 0);
   }
   return norms.reduce((s, v) => s + v, 0) / norms.length;
 }
