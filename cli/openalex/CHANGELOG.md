@@ -1,5 +1,11 @@
 # @univ-lehavre/atlas-openalex-cli
 
+## 1.1.3
+
+### Patch Changes
+
+- [#123](https://github.com/univ-lehavre/atlas/pull/123) [`fa67ef8`](https://github.com/univ-lehavre/atlas/commit/fa67ef80e128e127f5bf602686f78f44ba02668f) Thanks [@chasset](https://github.com/chasset)! - Organize CLI source layout around bin, commands, config, prompts, and output adapters.
+
 ## 1.1.2
 
 ### Patch Changes

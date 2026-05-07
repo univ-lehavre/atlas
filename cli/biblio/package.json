@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-biblio-cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "CLI entry point for OpenAlex bibliographic data validation",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

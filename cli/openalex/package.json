@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-openalex-cli",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "CLI for OpenAlex researcher data curation",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
