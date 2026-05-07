@@ -78,6 +78,25 @@ describe("isPdfjsFontWarning", () => {
   });
 });
 
+describe("module-level console.warn override", () => {
+  // file-extractor swaps console.warn at import time. Calling it with each
+  // shape exercises both legs of the inline `if (isPdfjsFontWarning(...))`,
+  // even if we don't assert on the (mostly invisible) side effects.
+  it("accepts both filtered and unrelated warnings without throwing", () => {
+    expect(() => {
+      console.warn("Unable to load font data: foo");
+      console.warn("standardFontDataUrl problem");
+      console.warn("TT: undefined function");
+    }).not.toThrow();
+  });
+
+  it("forwards unrelated warnings to the original handler", () => {
+    expect(() => {
+      console.warn("plain unrelated warning");
+    }).not.toThrow();
+  });
+});
+
 describe("extractText", () => {
   it("decodes plain text buffers without invoking heavy parsers", async () => {
     const text = await Effect.runPromise(extractText(txtBuffer("hello world")));

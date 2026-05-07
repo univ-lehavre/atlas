@@ -1,11 +1,16 @@
 import { describe, it, expect } from "vitest";
 import { generateCombinedPdf } from "./pdf-generator.js";
 import { PDFDocument as PDFLibDocument } from "pdf-lib";
-import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+import type {
+  OpenAlexID,
+  WorksResult,
+} from "@univ-lehavre/atlas-openalex-types";
+
+const fakeOpenAlexId = (id: string): OpenAlexID => id as unknown as OpenAlexID;
 
 const work = (overrides: Partial<WorksResult> = {}): WorksResult =>
   ({
-    id: "W1",
+    id: fakeOpenAlexId("W1"),
     title: "Sample paper",
     display_name: "Sample paper",
     publication_year: 2024,
@@ -38,8 +43,8 @@ describe("generateCombinedPdf", () => {
 
   it("renders both verified and pending sections", async () => {
     const bytes = await generateCombinedPdf(
-      [work({ id: "W-final" as never })],
-      [work({ id: "W-pending" as never, publication_year: 0 })],
+      [work({ id: fakeOpenAlexId("W-final") })],
+      [work({ id: fakeOpenAlexId("W-pending"), publication_year: 0 })],
       "Researcher A",
     );
     expect(await isValidPdf(bytes)).toBe(true);
@@ -89,13 +94,13 @@ describe("generateCombinedPdf", () => {
         work({
           authorships: [
             { author: { id: "A1", display_name: "OnlyOne" } },
-          ] as never,
-          doi: null as never,
+          ] as WorksResult["authorships"],
+          doi: null,
         }),
         work({
-          authorships: [] as never,
+          authorships: [],
           publication_year: 0,
-          title: undefined as never,
+          title: "",
         }),
       ],
       [],

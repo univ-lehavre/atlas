@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Effect, Exit } from "effect";
+import type {
+  OpenAlexID,
+  WorksResult,
+} from "@univ-lehavre/atlas-openalex-types";
+import type { ResearcherData } from "../types.js";
 
 const mocks = vi.hoisted(() => ({
   exportRecords: vi.fn(),
@@ -157,18 +162,21 @@ describe("writeResearcherData", () => {
   });
 });
 
+const fakeWork = (id: string): WorksResult =>
+  ({ id: id as unknown as OpenAlexID }) as WorksResult;
+
 describe("writeFinalReferences", () => {
   it("computes pending references and writes pdf + json + record", async () => {
     mocks.generateCombinedPdf.mockResolvedValue(new Uint8Array([1, 2, 3]));
     mocks.importFile.mockReturnValue(Effect.void);
     mocks.importRecords.mockReturnValue(Effect.succeed({ count: 1 }));
 
-    const data = {
+    const data: ResearcherData = {
       fullnames: [],
       affiliations: [],
-      oa_references: [{ id: "W1" }, { id: "W2" }],
-      final_references: [{ id: "W1" }],
-    } as never;
+      oa_references: [fakeWork("W1"), fakeWork("W2")],
+      final_references: [fakeWork("W1")],
+    };
 
     await Effect.runPromise(
       writeFinalReferences(config, "u1", data, "Alice Doe"),

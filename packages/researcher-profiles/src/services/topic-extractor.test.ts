@@ -1,20 +1,22 @@
 import { describe, it, expect } from "vitest";
 import { extractNormalizedWorks } from "./topic-extractor.js";
 import type { ResearcherData } from "../types.js";
+import type {
+  KeywordEntry,
+  TopicEntry,
+  WorksResult,
+} from "@univ-lehavre/atlas-openalex-types";
 
 const makeWork = (
-  overrides: Partial<{
-    topics: unknown[];
-    keywords: unknown[];
-  }> = {},
-) =>
+  overrides: { topics?: TopicEntry[]; keywords?: KeywordEntry[] } = {},
+): WorksResult =>
   ({
     id: "W1",
     topics: overrides.topics,
     keywords: overrides.keywords,
-  }) as never;
+  }) as unknown as WorksResult;
 
-const makeTopic = (score: number, suffix = "1") => ({
+const makeTopic = (score: number, suffix = "1"): TopicEntry => ({
   id: `T${suffix}`,
   display_name: `Topic ${suffix}`,
   score,
@@ -23,8 +25,12 @@ const makeTopic = (score: number, suffix = "1") => ({
   domain: { id: `D${suffix}`, display_name: `Domain ${suffix}` },
 });
 
-const makeData = (works: unknown[]): ResearcherData =>
-  ({ final_references: works }) as never;
+const makeData = (works: readonly WorksResult[]): ResearcherData => ({
+  fullnames: [],
+  affiliations: [],
+  oa_references: [],
+  final_references: works,
+});
 
 describe("extractNormalizedWorks", () => {
   it("returns an empty array when there are no works", () => {

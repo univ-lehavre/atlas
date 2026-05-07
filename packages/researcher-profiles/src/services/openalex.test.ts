@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Effect, Exit } from "effect";
+import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
+import type {
+  AuthorsResult,
+  OpenAlexID,
+  WorksResult,
+} from "@univ-lehavre/atlas-openalex-types";
+import type { ResearcherRow } from "../types.js";
 
 const mocks = vi.hoisted(() => ({
   searchAuthorsByName: vi.fn(),
@@ -19,15 +26,28 @@ import {
   fetchWorksForAuthors,
 } from "./openalex.js";
 
-const config = {
+const config: OpenAlexConfig = {
   apiURL: "https://api.openalex.org",
   userAgent: "test/1.0",
-  rateLimit: { limit: 10, interval: "1 seconds" as const },
-  perPage: 25,
-} as never;
+};
 
-const author = (id: string) => ({ id, display_name: id }) as never;
-const work = (id: string) => ({ id, title: id }) as never;
+const author = (id: string): AuthorsResult =>
+  ({ id, display_name: id }) as AuthorsResult;
+
+const work = (id: string): WorksResult =>
+  ({ id: id as unknown as OpenAlexID, title: id }) as WorksResult;
+
+const makeRow = (overrides: Partial<ResearcherRow>): ResearcherRow => ({
+  userid: "u1",
+  first_name: "",
+  middle_name: "",
+  last_name: "",
+  orcid: "",
+  oa_imported_at: "",
+  oa_locked_at: "",
+  openalex_complete: "",
+  ...overrides,
+});
 
 beforeEach(() => {
   for (const fn of Object.values(mocks)) fn.mockReset();
@@ -37,12 +57,7 @@ describe("resolveAuthors", () => {
   it("queries by name only when ORCID is empty", async () => {
     mocks.searchAuthorsByName.mockReturnValue(Effect.succeed([author("A1")]));
 
-    const row = {
-      first_name: "Alice",
-      middle_name: "",
-      last_name: "Doe",
-      orcid: "",
-    } as never;
+    const row = makeRow({ first_name: "Alice", last_name: "Doe" });
 
     const result = await Effect.runPromise(resolveAuthors(row, config));
 
@@ -63,12 +78,12 @@ describe("resolveAuthors", () => {
       Effect.succeed([author("A2"), author("A3")]),
     );
 
-    const row = {
+    const row = makeRow({
       first_name: "Alice",
       middle_name: "B",
       last_name: "Doe",
       orcid: "0000-0001-2345-6789",
-    } as never;
+    });
 
     const result = await Effect.runPromise(resolveAuthors(row, config));
 
@@ -86,12 +101,7 @@ describe("resolveAuthors", () => {
   it("wraps fetch errors as OpenAlexSearchError", async () => {
     mocks.searchAuthorsByName.mockReturnValue(Effect.fail("boom"));
 
-    const row = {
-      first_name: "X",
-      middle_name: "",
-      last_name: "Y",
-      orcid: "",
-    } as never;
+    const row = makeRow({ first_name: "X", last_name: "Y" });
 
     const exit = await Effect.runPromiseExit(resolveAuthors(row, config));
     expect(Exit.isFailure(exit)).toBe(true);
@@ -147,15 +157,7 @@ describe("resolveAll", () => {
     mocks.searchWorksByAuthorID.mockReturnValue(Effect.succeed([work("W1")]));
 
     const result = await Effect.runPromise(
-      resolveAll(
-        {
-          first_name: "Alice",
-          middle_name: "",
-          last_name: "Doe",
-          orcid: "",
-        } as never,
-        config,
-      ),
+      resolveAll(makeRow({ first_name: "Alice", last_name: "Doe" }), config),
     );
 
     expect(result.authors).toEqual([author("A1")]);

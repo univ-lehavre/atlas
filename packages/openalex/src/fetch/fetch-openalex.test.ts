@@ -13,6 +13,14 @@ import { fetchAPI } from "./fetch-openalex.js";
 
 const mockFetch = vi.mocked(fetchOnePage);
 
+type FetchReturn = ReturnType<typeof fetchOnePage>;
+
+const succeedPage = <T>(data: T): FetchReturn =>
+  Effect.succeed({ data, rateLimit: undefined }) as FetchReturn;
+
+const failFetch = (cause: Error): FetchReturn =>
+  Effect.fail(cause as never) as FetchReturn;
+
 const provideConfig = <A, E>(
   effect: Effect.Effect<A, E, never>,
 ): Effect.Effect<A, E, never> =>
@@ -39,22 +47,16 @@ describe("fetchAPI", () => {
   it("paginates until all pages are fetched and returns the aggregated response", async () => {
     mockFetch
       .mockReturnValueOnce(
-        Effect.succeed({
-          data: {
-            meta: { count: 3, page: 1, per_page: 2 },
-            results: [{ id: "W1" }, { id: "W2" }],
-          },
-          rateLimit: undefined,
-        }) as never,
+        succeedPage({
+          meta: { count: 3, page: 1, per_page: 2 },
+          results: [{ id: "W1" }, { id: "W2" }],
+        }),
       )
       .mockReturnValueOnce(
-        Effect.succeed({
-          data: {
-            meta: { count: 3, page: 2, per_page: 2 },
-            results: [{ id: "W3" }],
-          },
-          rateLimit: undefined,
-        }) as never,
+        succeedPage({
+          meta: { count: 3, page: 2, per_page: 2 },
+          results: [{ id: "W3" }],
+        }),
       );
 
     const params: Query = { search: "ocean" };
@@ -69,10 +71,7 @@ describe("fetchAPI", () => {
 
   it("injects api_key in params when configured", async () => {
     mockFetch.mockReturnValue(
-      Effect.succeed({
-        data: { meta: { count: 0, page: 1, per_page: 10 }, results: [] },
-        rateLimit: undefined,
-      }) as never,
+      succeedPage({ meta: { count: 0, page: 1, per_page: 10 }, results: [] }),
     );
 
     const params: Query = { search: "x" };
@@ -98,13 +97,10 @@ describe("fetchAPI", () => {
   it("fails with a StatusError when more than 10 000 results are returned", async () => {
     const bigPage = Array.from({ length: 10001 }, (_, i) => ({ id: `W${i}` }));
     mockFetch.mockReturnValue(
-      Effect.succeed({
-        data: {
-          meta: { count: 20000, page: 1, per_page: 10001 },
-          results: bigPage,
-        },
-        rateLimit: undefined,
-      }) as never,
+      succeedPage({
+        meta: { count: 20000, page: 1, per_page: 10001 },
+        results: bigPage,
+      }),
     );
 
     const exit = await Effect.runPromiseExit(
@@ -118,9 +114,7 @@ describe("fetchAPI", () => {
   });
 
   it("wraps fetch errors as FetchError", async () => {
-    mockFetch.mockReturnValue(
-      Effect.fail(new Error("network down") as never) as never,
-    );
+    mockFetch.mockReturnValue(failFetch(new Error("network down")));
 
     const exit = await Effect.runPromiseExit(
       provideConfig(fetchAPI<unknown>(url, { search: "x" }, "works")),

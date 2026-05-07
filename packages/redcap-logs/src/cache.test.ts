@@ -58,7 +58,8 @@ describe("writeCache", () => {
   });
 
   it("writes JSON with savedAt and logs to the cache path", async () => {
-    mockWriteFile.mockResolvedValue();
+    // eslint-disable-next-line unicorn/no-useless-undefined -- writeFile resolves to void
+    mockWriteFile.mockResolvedValue(undefined);
 
     await writeCache([sampleLog]);
 

@@ -16,6 +16,8 @@ import {
 
 const mockFetch = vi.mocked(fetchOnePage);
 
+type FetchReturn = ReturnType<typeof fetchOnePage>;
+
 const provideConfig = <A, E>(
   effect: Effect.Effect<A, E, never>,
 ): Effect.Effect<A, E, never> =>
@@ -32,11 +34,11 @@ const provideConfig = <A, E>(
     ),
   );
 
-const emptyPage = () =>
+const emptyPage = (): FetchReturn =>
   Effect.succeed({
     data: { meta: { count: 0, page: 1, per_page: 5 }, results: [] },
     rateLimit: undefined,
-  }) as never;
+  }) as FetchReturn;
 
 beforeEach(() => {
   vi.clearAllMocks();

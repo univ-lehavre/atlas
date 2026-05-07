@@ -13,7 +13,7 @@ import { buildEmbeddingProfiles } from "./embedding-profile.js";
 
 const fakeVector = (length: number, fill = 0.5): Float32Array => {
   const out = new Float32Array(length);
-  for (let i = 0; i < length; i++) out[i] = fill;
+  out.fill(fill);
   return out;
 };
 

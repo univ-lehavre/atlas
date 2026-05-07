@@ -15,6 +15,20 @@ const REQUIRED_COLUMNS = [
   "orcid",
 ] as const;
 
+const ALL_COLUMNS = [
+  ...REQUIRED_COLUMNS,
+  "oa_imported_at",
+  "oa_locked_at",
+  "openalex_complete",
+] as const satisfies readonly (keyof ResearcherRow)[];
+
+export const cellOrEmpty = (value: string | undefined): string => value ?? "";
+
+export const toRow = (record: Record<string, string>): ResearcherRow =>
+  Object.fromEntries(
+    ALL_COLUMNS.map((col) => [col, cellOrEmpty(record[col])]),
+  ) as unknown as ResearcherRow;
+
 const ensureRequiredColumns = (
   records: readonly Record<string, string>[],
 ): Effect.Effect<readonly ResearcherRow[], CsvParseError> => {
@@ -32,18 +46,7 @@ const ensureRequiredColumns = (
           ),
         }),
       )
-    : Effect.succeed(
-        records.map((record) => ({
-          userid: record["userid"] ?? "",
-          last_name: record["last_name"] ?? "",
-          middle_name: record["middle_name"] ?? "",
-          first_name: record["first_name"] ?? "",
-          orcid: record["orcid"] ?? "",
-          oa_imported_at: record["oa_imported_at"] ?? "",
-          oa_locked_at: record["oa_locked_at"] ?? "",
-          openalex_complete: record["openalex_complete"] ?? "",
-        })),
-      );
+    : Effect.succeed(records.map(toRow));
 };
 
 /**

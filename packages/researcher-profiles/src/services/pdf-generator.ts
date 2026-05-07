@@ -33,22 +33,25 @@ const formatAuthorsChicago = (work: WorksResult): string => {
     const name = a.author.display_name ?? "";
     const parts = name.split(" ");
     if (parts.length < 2) return name;
-    const lastName = parts.at(-1) ?? "";
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length >= 2, so .at(-1) is defined
+    const lastName = parts.at(-1)!;
     const firstNames = parts.slice(0, -1).join(" ");
     return `${lastName}, ${firstNames}`;
   });
   if (authors.length === 0) return "";
-  if (authors.length === 1) return authors[0] ?? "";
-  return `${authors.slice(0, -1).join(", ")}, and ${authors.at(-1) ?? ""}`;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length === 1, so [0] is defined
+  if (authors.length === 1) return authors[0]!;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- length >= 2, so .at(-1) is defined
+  return `${authors.slice(0, -1).join(", ")}, and ${authors.at(-1)!}`;
 };
 
 const formatReferenceChicago = (work: WorksResult): string => {
   const authors = formatAuthorsChicago(work);
   const year =
     work.publication_year > 0 ? String(work.publication_year) : "n.d.";
-  const title = `"${work.title ?? work.display_name ?? ""}"`;
+  const title = `"${work.title}"`;
   const doi =
-    work.doi !== null && work.doi !== undefined && work.doi !== ""
+    work.doi !== null && work.doi !== ""
       ? `https://doi.org/${work.doi.replace(/^https?:\/\/doi\.org\//, "")}`
       : "";
   return [authors, title, year, doi].filter(Boolean).join(". ") + ".";

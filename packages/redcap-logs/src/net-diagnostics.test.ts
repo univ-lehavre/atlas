@@ -24,8 +24,8 @@ class FakeTlsSocket extends EventEmitter {
 }
 
 const refs = vi.hoisted(() => ({
-  tcp: { current: null as unknown as EventEmitter & Record<string, unknown> },
-  tls: { current: null as unknown as EventEmitter & Record<string, unknown> },
+  tcp: { current: null } as unknown as { current: FakeSocket },
+  tls: { current: null } as unknown as { current: FakeTlsSocket },
   lookup: vi.fn(),
 }));
 
@@ -56,8 +56,8 @@ const flush = async () => {
 };
 
 beforeEach(() => {
-  refs.tcp.current = new FakeSocket() as never;
-  refs.tls.current = new FakeTlsSocket() as never;
+  refs.tcp.current = new FakeSocket();
+  refs.tls.current = new FakeTlsSocket();
   // Prevent EventEmitter from throwing on unhandled 'error' events when
   // tests emit before listeners are attached or in addition to other listeners.
   refs.tcp.current.on("error", noop);
@@ -79,7 +79,7 @@ describe("diagnoseEndpointNetwork", () => {
   it("performs DNS, TCP and TLS probes for an https URL", async () => {
     refs.lookup.mockResolvedValue({ address: "1.2.3.4", family: 4 });
 
-    const tls = refs.tls.current as unknown as FakeTlsSocket;
+    const tls = refs.tls.current;
     tls.getPeerCertificate.mockReturnValue({
       subject: { CN: "redcap.example.org" },
       issuer: { CN: "Some CA" },
@@ -114,7 +114,7 @@ describe("diagnoseEndpointNetwork", () => {
 
   it("uses an explicit port from the URL", async () => {
     refs.lookup.mockResolvedValue({ address: "1.2.3.4", family: 4 });
-    const tls = refs.tls.current as unknown as FakeTlsSocket;
+    const tls = refs.tls.current;
     tls.getPeerCertificate.mockReturnValue({
       subject: {},
       issuer: {},
@@ -141,7 +141,7 @@ describe("diagnoseEndpointNetwork", () => {
 
   it("normalizes array CN values from peer certificates", async () => {
     refs.lookup.mockResolvedValue({ address: "1.2.3.4", family: 4 });
-    const tls = refs.tls.current as unknown as FakeTlsSocket;
+    const tls = refs.tls.current;
     tls.getPeerCertificate.mockReturnValue({
       subject: { CN: ["a.example.org", "b.example.org"] },
       issuer: { CN: ["CA-A", "CA-B"] },
@@ -186,7 +186,7 @@ describe("diagnoseEndpointNetwork", () => {
   it("reports DNS failure but still attempts TCP/TLS", async () => {
     refs.lookup.mockRejectedValue(new Error("ENOTFOUND"));
 
-    const tls = refs.tls.current as unknown as FakeTlsSocket;
+    const tls = refs.tls.current;
     tls.getPeerCertificate.mockReturnValue({
       subject: {},
       issuer: {},
@@ -211,7 +211,7 @@ describe("diagnoseEndpointNetwork", () => {
   it("reports DNS failure with non-Error rejection", async () => {
     refs.lookup.mockRejectedValue("dns broke");
 
-    const tls = refs.tls.current as unknown as FakeTlsSocket;
+    const tls = refs.tls.current;
     tls.getPeerCertificate.mockReturnValue({
       subject: {},
       issuer: {},
