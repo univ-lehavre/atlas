@@ -320,7 +320,7 @@ Each category has a strict responsibility boundary. Code placed in the wrong cat
 | `packages/` | Reusable domain logic and clients | Nothing in the monorepo | HTTP handlers, Svelte runtime, CLI prompts, terminal I/O                  |
 | `apps/`     | SvelteKit web applications        | `packages/`, `ui/`      | Business rules, reusable domain transformations, imports from another app |
 | `services/` | HTTP microservices                | `packages/`             | Business rules, data transformations, cross-service imports               |
-| `cli/`      | Command-line interaction          | `packages/`             | Business rules, HTTP routing, reusable transformations                    |
+| `cli/`      | Command-line adapters             | `packages/`             | Business rules, HTTP routing, reusable transformations                    |
 | `ui/`       | Shared Svelte components          | `packages/`             | Routes, server-only code, domain rules, CLI I/O                           |
 | `config/`   | Shared tooling configuration      | Nothing at runtime      | Executable or product runtime code                                        |
 | `sandbox/`  | Experiments and prototypes        | Anything needed locally | Shared production code, exported APIs, dependencies from shipped code     |
@@ -354,6 +354,14 @@ Each category has a strict responsibility boundary. Code placed in the wrong cat
 - **Style**: user interaction only — execution delegates to `packages/`
 - **No**: business logic, HTTP calls, data transformation
 - **Rule**: a CLI command should read its inputs, call a `packages/` function, and display the result
+- **Internal layout**:
+  - `src/bin/`: executable entry points only (`#!/usr/bin/env node`, runtime wiring, `process.exitCode`)
+  - `src/commands/`: command definitions and orchestration from parsed options to package calls
+  - `src/config/`: argument and environment parsing into typed configuration
+  - `src/prompts/`: interactive questions and cancellation handling
+  - `src/output/`: terminal, table, JSON, chart, and progress rendering
+- **Extraction rule**: any function that remains useful without `process.argv`, `process.env`, prompts, terminal output, or `process.exit` belongs in `packages/`, not in `cli/`
+- **Testing rule**: test CLI adapters by injecting dependencies and asserting parsed options, selected commands, output formatting, and error mapping; test domain decisions in `packages/`
 
 ### `ui/` — Shared Svelte Component Libraries
 

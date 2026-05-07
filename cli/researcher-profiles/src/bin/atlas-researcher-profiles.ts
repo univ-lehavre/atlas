@@ -3,7 +3,7 @@
  * Entry point for atlas-researcher-profiles CLI
  */
 
-import { main } from "../cli/index.js";
+import { main } from "../commands/index.js";
 
 main().catch((error: unknown) => {
   console.error("Fatal error:", error);

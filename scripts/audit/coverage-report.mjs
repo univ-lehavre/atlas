@@ -39,7 +39,7 @@ const pct = ({ covered, total }) => (total === 0 ? 100 : (covered / total) * 100
 const fmt = (value) => value.toFixed(1).padStart(6);
 
 const summarize = (coverage) => {
-  const summary = {
+  const metrics = {
     statements: empty(),
     branches: empty(),
     functions: empty(),
@@ -62,8 +62,8 @@ const summarize = (coverage) => {
     const lines = new Map();
 
     for (const [id, hits] of Object.entries(file.s ?? {})) {
-      summary.statements.total += 1;
-      if (hits > 0) summary.statements.covered += 1;
+      metrics.statements.total += 1;
+      if (hits > 0) metrics.statements.covered += 1;
       const line = file.statementMap?.[id]?.start?.line;
       if (line !== undefined) {
         lines.set(line, (lines.get(line) ?? false) || hits > 0);
@@ -71,29 +71,58 @@ const summarize = (coverage) => {
     }
 
     for (const hits of funcHits) {
-      summary.functions.total += 1;
-      if (hits > 0) summary.functions.covered += 1;
+      metrics.functions.total += 1;
+      if (hits > 0) metrics.functions.covered += 1;
     }
 
     for (const branchHits of Object.values(file.b ?? {})) {
       for (const hits of branchHits) {
-        summary.branches.total += 1;
-        if (hits > 0) summary.branches.covered += 1;
+        metrics.branches.total += 1;
+        if (hits > 0) metrics.branches.covered += 1;
       }
     }
 
     for (const covered of lines.values()) {
-      summary.lines.total += 1;
-      if (covered) summary.lines.covered += 1;
+      metrics.lines.total += 1;
+      if (covered) metrics.lines.covered += 1;
     }
   }
 
   return {
-    statements: pct(summary.statements),
-    branches: pct(summary.branches),
-    functions: pct(summary.functions),
-    lines: pct(summary.lines),
+    metrics,
+    statements: pct(metrics.statements),
+    branches: pct(metrics.branches),
+    functions: pct(metrics.functions),
+    lines: pct(metrics.lines),
     zeroFiles,
+  };
+};
+
+const summarizeRows = (rows) => {
+  const metrics = {
+    statements: empty(),
+    branches: empty(),
+    functions: empty(),
+    lines: empty(),
+  };
+
+  for (const row of rows) {
+    for (const key of Object.keys(metrics)) {
+      metrics[key].covered += row.metrics[key].covered;
+      metrics[key].total += row.metrics[key].total;
+    }
+  }
+
+  return {
+    dir: 'total',
+    name: `${rows.length} packages`,
+    metrics,
+    missing: false,
+    statements: pct(metrics.statements),
+    branches: pct(metrics.branches),
+    functions: pct(metrics.functions),
+    lines: pct(metrics.lines),
+    zeroFiles: rows.flatMap((row) => row.zeroFiles),
   };
 };
 
@@ -135,16 +164,7 @@ const missing = rows.filter((r) => r.missing);
 
 const SEPARATOR = dim('·'.repeat(DIR_COL + COL + 46));
 
-console.log(`Coverage target: ${target}%  (files with 0% stmts+funcs excluded)\n`);
-console.log('Dir'.padEnd(DIR_COL) + 'Package'.padEnd(COL), ' Stmts Branch  Funcs  Lines    Gap  Skipped');
-console.log('─'.repeat(DIR_COL + COL + 46));
-
-let lastDir = null;
-for (const row of covered) {
-  if (lastDir !== null && row.dir !== lastDir) {
-    console.log(SEPARATOR);
-  }
-  lastDir = row.dir;
+const printRow = (row) => {
   const lowest = Math.min(row.statements, row.branches, row.functions, row.lines);
   const gap = Math.max(0, target - lowest);
   const gapStr = gap === 0 ? green(fmt(0)) : gap > 20 ? red(fmt(gap)) : yellow(fmt(gap));
@@ -158,6 +178,24 @@ for (const row of covered) {
     gapStr,
     skipped
   );
+};
+
+console.log(`Coverage target: ${target}%  (files with 0% stmts+funcs excluded)\n`);
+console.log('Dir'.padEnd(DIR_COL) + 'Package'.padEnd(COL), ' Stmts Branch  Funcs  Lines    Gap  Skipped');
+console.log('─'.repeat(DIR_COL + COL + 46));
+
+let lastDir = null;
+for (const row of covered) {
+  if (lastDir !== null && row.dir !== lastDir) {
+    console.log(SEPARATOR);
+  }
+  lastDir = row.dir;
+  printRow(row);
+}
+
+if (covered.length > 0) {
+  console.log('─'.repeat(DIR_COL + COL + 46));
+  printRow(summarizeRows(covered));
 }
 
 if (missing.length > 0) {

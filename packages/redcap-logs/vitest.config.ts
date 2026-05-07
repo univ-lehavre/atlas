@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     coverage: coverageConfig({
-      thresholds: { statements: 55, branches: 55, functions: 50, lines: 55 },
+      thresholds: { statements: 90, branches: 90, functions: 90, lines: 90 },
     }),
   },
 });

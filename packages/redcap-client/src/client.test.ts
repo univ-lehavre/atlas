@@ -1,6 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Effect } from 'effect';
-import { createRedcapClient, RedcapUrl, RedcapToken, escapeFilterLogicValue } from './index.js';
+import {
+  createRedcapClient,
+  RedcapUrl,
+  RedcapToken,
+  escapeFilterLogicValue,
+  makeRedcapClientLayer,
+  RedcapClientService,
+} from './index.js';
 
 /**
  * Unit and integration tests for REDCap client.
@@ -360,6 +367,109 @@ describe('REDCap Client', () => {
       });
     });
 
+    describe('getExportFieldNames', () => {
+      it('returns the export field names', async () => {
+        const fieldNames = [
+          { original_field_name: 'age', export_field_name: 'age' },
+          { original_field_name: 'sex', export_field_name: 'sex' },
+        ];
+        const mockFetch = createMockFetch([{ ok: true, body: fieldNames }]);
+
+        const client = createRedcapClient(
+          { url: RedcapUrl(VALID_URL), token: RedcapToken(VALID_TOKEN) },
+          mockFetch
+        );
+
+        const result = await Effect.runPromise(client.getExportFieldNames());
+        expect(result).toHaveLength(2);
+        expect(result[0]?.export_field_name).toBe('age');
+      });
+    });
+
+    describe('getSurveyLink', () => {
+      it('returns the survey link as plain text', async () => {
+        const mockFetch = createMockFetch([
+          { ok: true, body: 'https://redcap.example.org/surveys/?s=ABC123', isText: true },
+        ]);
+
+        const client = createRedcapClient(
+          { url: RedcapUrl(VALID_URL), token: RedcapToken(VALID_TOKEN) },
+          mockFetch
+        );
+
+        const link = await Effect.runPromise(
+          client.getSurveyLink('REC-1' as never, 'survey1' as never)
+        );
+        expect(link).toContain('redcap.example.org');
+      });
+    });
+
+    describe('downloadPdf', () => {
+      it('returns the pdf as ArrayBuffer', async () => {
+        const buf = new TextEncoder().encode('%PDF-...').buffer;
+        const mockFetch = createMockFetch([{ ok: true, body: buf }]);
+
+        const client = createRedcapClient(
+          { url: RedcapUrl(VALID_URL), token: RedcapToken(VALID_TOKEN) },
+          mockFetch
+        );
+
+        const pdf = await Effect.runPromise(
+          client.downloadPdf('REC-1' as never, 'survey1' as never)
+        );
+        expect(pdf).toBeInstanceOf(ArrayBuffer);
+      });
+    });
+
+    describe('exportFile', () => {
+      it('returns the file content as ArrayBuffer', async () => {
+        const buf = new TextEncoder().encode('binary-content').buffer;
+        const mockFetch = createMockFetch([{ ok: true, body: buf }]);
+
+        const client = createRedcapClient(
+          { url: RedcapUrl(VALID_URL), token: RedcapToken(VALID_TOKEN) },
+          mockFetch
+        );
+
+        const file = await Effect.runPromise(client.exportFile('attachment', 'REC-1'));
+        expect(file).toBeInstanceOf(ArrayBuffer);
+      });
+    });
+
+    describe('importFile', () => {
+      it('uploads the file and resolves successfully', async () => {
+        const mockFetch = createMockFetch([{ ok: true, body: '' }]);
+
+        const client = createRedcapClient(
+          { url: RedcapUrl(VALID_URL), token: RedcapToken(VALID_TOKEN) },
+          mockFetch
+        );
+
+        await Effect.runPromise(
+          client.importFile('attachment', 'REC-1', 'file.bin', new Uint8Array([1, 2, 3]))
+        );
+
+        const lastCall = mockFetch.mock.calls.at(-1)!;
+        expect(lastCall[0]).toBe(VALID_URL);
+        expect(lastCall[1]?.method).toBe('POST');
+        expect(lastCall[1]?.body).toBeInstanceOf(FormData);
+      });
+
+      it('fails on HTTP error', async () => {
+        const mockFetch = createMockFetch([{ ok: false, status: 500, body: 'boom', isText: true }]);
+
+        const client = createRedcapClient(
+          { url: RedcapUrl(VALID_URL), token: RedcapToken(VALID_TOKEN) },
+          mockFetch
+        );
+
+        const exit = await Effect.runPromiseExit(
+          client.importFile('attachment', 'REC-1', 'file.bin', new Uint8Array([1]))
+        );
+        expect(exit._tag).toBe('Failure');
+      });
+    });
+
     describe('findUserIdByEmail', () => {
       it('should find user by email', async () => {
         const mockFetch = createMockFetch([
@@ -541,6 +651,52 @@ describe('REDCap Client', () => {
         const info = await Effect.runPromise(client.getProjectInfo());
         expect(info.project_id).toBe(3);
       });
+    });
+  });
+
+  describe('makeRedcapClientLayer', () => {
+    it('provides a RedcapClientService that proxies to the underlying client', async () => {
+      const mockFetch = createMockFetch([{ ok: true, body: '"15.0.0"', isText: true }]);
+      const layer = makeRedcapClientLayer(
+        { url: RedcapUrl(VALID_URL), token: RedcapToken(VALID_TOKEN) },
+        mockFetch
+      );
+
+      const program = Effect.gen(function* () {
+        const service = yield* RedcapClientService;
+        return yield* service.getVersion();
+      });
+
+      const version = await Effect.runPromise(Effect.provide(program, layer));
+      expect(version).toBe('15.0.0');
+    });
+  });
+
+  describe('Adapter feature flags', () => {
+    it.each(['15.5.32', '16.0.8'])('exposes getFeatures for version %s', async (versionStr) => {
+      const mockFetch = createMockFetch([
+        { ok: true, body: `"${versionStr}"`, isText: true },
+        { ok: true, body: { project_id: 1, project_title: 'Test' } },
+      ]);
+
+      const client = createRedcapClient(
+        { url: RedcapUrl(VALID_URL), token: RedcapToken(VALID_TOKEN) },
+        mockFetch
+      );
+
+      await Effect.runPromise(client.getProjectInfo());
+      // Trigger getFeatures via adapter access - re-import is fine because adapter cached
+      const adapters = await import('./adapters/index.js');
+      const adapter = await Effect.runPromise(
+        adapters.getAdapterEffect({
+          major: Number.parseInt(versionStr.split('.')[0]!, 10),
+          minor: 0,
+          patch: 0,
+        })
+      );
+      const features = adapter.getFeatures();
+      expect(features.repeatingInstruments).toBe(true);
+      expect(features.alerts).toBe(true);
     });
   });
 

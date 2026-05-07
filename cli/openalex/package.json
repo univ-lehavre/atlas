@@ -17,12 +17,12 @@
     "node": ">=24.0.0"
   },
   "bin": {
-    "atlas-openalex": "./dist/index.js"
+    "atlas-openalex": "./dist/bin/atlas-openalex.js"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node --env-file ../../.env dist/index.js",
+    "start": "node --env-file ../../.env dist/bin/atlas-openalex.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",

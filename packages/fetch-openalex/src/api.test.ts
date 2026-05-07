@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Effect } from "effect";
-import { fetchAPIResults } from "./api.js";
+import { Effect, Queue } from "effect";
+import { fetchAPIResults, fetchAPIQueue } from "./api.js";
 
 vi.mock("@univ-lehavre/atlas-fetch-one-api-page", () => ({
   fetchOnePage: vi.fn(),
@@ -68,5 +68,50 @@ describe("fetchAPIResults", () => {
     expect(url.toString()).toBe("https://api.openalex.org/works");
     expect(firstQuery).toMatchObject({ search: "ocean", per_page: 2, page: 1 });
     expect(userAgent).toBe("atlas-test/1.0");
+  });
+});
+
+describe("fetchAPIQueue", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns a store, queue, and worker that pages through the API and offers results to the queue", async () => {
+    mockFetch
+      .mockImplementationOnce(() =>
+        Effect.succeed({
+          data: {
+            meta: { count: 2, page: 1, per_page: 2 },
+            results: [{ id: "W1" }, { id: "W2" }],
+          },
+          rateLimit: undefined,
+        }),
+      )
+      .mockImplementationOnce(() =>
+        Effect.succeed({
+          data: {
+            meta: { count: 2, page: 2, per_page: 2 },
+            results: [],
+          },
+          rateLimit: undefined,
+        }),
+      );
+
+    const program = Effect.gen(function* () {
+      const { store, queue, worker } = yield* fetchAPIQueue<{ id: string }>({
+        apiURL: "https://api.openalex.org",
+        endpoint: "works",
+        userAgent: "atlas-test/1.0",
+        rateLimit: { limit: 1, interval: "1 seconds" },
+        fetchAPIOptions: { search: "ocean" },
+        perPage: 2,
+      });
+      yield* worker;
+      const drained = yield* Queue.takeAll(queue);
+      return { drained: [...drained], store };
+    });
+
+    const { drained } = await Effect.runPromise(Effect.scoped(program));
+    expect(drained).toEqual([{ id: "W1" }, { id: "W2" }]);
   });
 });

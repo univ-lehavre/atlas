@@ -61,6 +61,20 @@ describe("buildIntegrity", () => {
   );
 });
 
+describe("buildIntegrity nullish stringify", () => {
+  it.effect("falls back to empty string when data is not serializable", () =>
+    Effect.gen(function* () {
+      // json-stable-stringify returns undefined for top-level functions
+      const unserialisable = (() => undefined) as unknown;
+      const result = yield* buildIntegrity(unserialisable).pipe(
+        Effect.provideServiceEffect(ContextStore, Ref.make(ctx)),
+      );
+      expect(typeof result).toBe("string");
+      expect(result.length).toBeGreaterThan(0);
+    }),
+  );
+});
+
 describe("uniqueSorted", () => {
   it("returns empty array for empty input", () => {
     expect(uniqueSorted([])).toEqual([]);

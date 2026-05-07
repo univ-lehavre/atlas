@@ -35,6 +35,22 @@ describe("getWorksCount", () => {
     expect(result.institutionCount).toBe(2);
     expect(result.fromDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
+
+  it("falls back to default base URL when apiURL is not provided", async () => {
+    mockFetch.mockReturnValue(metaResponse(7));
+    await Effect.runPromise(getWorksCount(["I1"], { userAgent: "test/1.0" }));
+    const [url] = mockFetch.mock.calls[0]!;
+    expect((url as URL).toString()).toBe("https://api.openalex.org/works");
+  });
+
+  it("includes api_key in params when configured", async () => {
+    mockFetch.mockReturnValue(metaResponse(0));
+    await Effect.runPromise(
+      getWorksCount(["I1"], { ...config, apiKey: "secret" }),
+    );
+    const [, params] = mockFetch.mock.calls[0]!;
+    expect((params as Record<string, unknown>)["api_key"]).toBe("secret");
+  });
 });
 
 describe("getInstitutionStats", () => {
@@ -48,6 +64,39 @@ describe("getInstitutionStats", () => {
     expect(result.institutionCount).toBe(0);
     expect(result.articlesByYear).toContainEqual({ year: "before", count: 0 });
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("ignores group_by entries with non-numeric keys and future years", async () => {
+    const groupByResponse = Effect.succeed({
+      data: {
+        meta: { count: 3, db_response_time_ms: 5 },
+        group_by: [
+          { key: "unknown", key_display_name: "?", count: 999 },
+          {
+            key: String(new Date().getFullYear() + 100),
+            key_display_name: "future",
+            count: 1,
+          },
+          {
+            key: String(new Date().getFullYear()),
+            key_display_name: "current",
+            count: 4,
+          },
+        ],
+      },
+      rateLimit: undefined,
+    });
+
+    mockFetch
+      .mockReturnValueOnce(metaResponse(10))
+      .mockReturnValueOnce(groupByResponse)
+      .mockReturnValueOnce(metaResponse(2));
+
+    const result = await Effect.runPromise(getInstitutionStats(["I1"], config));
+    expect(result.articlesCount).toBe(4);
+    expect(result.articlesByYear.find((y) => y.year === "before")?.count).toBe(
+      0,
+    );
   });
 
   it("fetches stats in parallel and aggregates results", async () => {

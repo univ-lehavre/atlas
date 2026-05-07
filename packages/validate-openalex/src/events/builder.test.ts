@@ -134,4 +134,25 @@ describe("buildAuthorResultsPendingEvents", () => {
       expect(affiliationEvent?.label).toBe("Univ A");
     }),
   );
+
+  it.effect("handles authors without display_name_alternatives", () =>
+    Effect.gen(function* () {
+      const authors: AuthorsResult[] = [
+        {
+          id: "https://openalex.org/A1",
+          affiliations: [{ institution: { id: "I1", display_name: "Univ A" } }],
+        } as unknown as AuthorsResult,
+      ];
+      const events = yield* buildAuthorResultsPendingEvents(authors).pipe(
+        Effect.provideServiceEffect(ContextStore, Ref.make(ctxWithNamespace)),
+        Effect.provideServiceEffect(EventsStore, Ref.make([])),
+      );
+      const displayNameEvents = events.filter(
+        (e) => e.field === "display_name_alternatives",
+      );
+      expect(displayNameEvents).toHaveLength(0);
+      const affiliationEvent = events.find((e) => e.field === "affiliation");
+      expect(affiliationEvent?.value).toBe("I1");
+    }),
+  );
 });

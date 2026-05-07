@@ -37,7 +37,7 @@
     }
   },
   "bin": {
-    "redcap": "./dist/cli/index.js"
+    "redcap": "./dist/bin/redcap.js"
   },
   "files": [
     "dist",
@@ -49,10 +49,10 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "cli": "tsx src/cli/index.ts",
-    "extract": "tsx src/cli/index.ts extract",
-    "compare": "tsx src/cli/index.ts compare",
-    "docs": "tsx src/cli/index.ts docs",
+    "cli": "tsx src/bin/redcap.ts",
+    "extract": "tsx src/bin/redcap.ts extract",
+    "compare": "tsx src/bin/redcap.ts compare",
+    "docs": "tsx src/bin/redcap.ts docs",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",

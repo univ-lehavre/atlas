@@ -17,12 +17,12 @@
     "node": ">=24.0.0"
   },
   "bin": {
-    "atlas-biblio": "./dist/index.js"
+    "atlas-biblio": "./dist/bin/atlas-biblio.js"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "start": "node dist/index.js",
+    "start": "node dist/bin/atlas-biblio.js",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format": "prettier --write src",

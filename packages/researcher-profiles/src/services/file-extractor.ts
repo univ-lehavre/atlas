@@ -6,19 +6,17 @@
 import { Effect, Data } from "effect";
 
 // Suppress pdfjs font warnings globally — missing standard fonts don't affect text extraction
+export const isPdfjsFontWarning = (firstArg: unknown): boolean =>
+  typeof firstArg === "string" &&
+  (firstArg.includes("Unable to load font data") ||
+    firstArg.includes("standardFontDataUrl") ||
+    firstArg.startsWith("TT:"));
+
 const _origWarn = console.warn;
 
 console.warn = (...args: unknown[]) => {
-  const msg = typeof args[0] === "string" ? args[0] : "";
   // eslint-disable-next-line functional/no-conditional-statements -- early return for side-effect filter
-  if (
-    msg.includes("Unable to load font data") ||
-    msg.includes("standardFontDataUrl") ||
-    msg.startsWith("TT:")
-  ) {
-    return;
-  }
-
+  if (isPdfjsFontWarning(args[0])) return;
   _origWarn(...args);
 };
 

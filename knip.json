@@ -136,6 +136,10 @@
     "cli/researcher-profiles": {
       "project": [
         "src/**/*.ts"
+      ],
+      "ignoreBinaries": [
+        "perl",
+        "pandoc"
       ]
     },
     "cli/redcap-openapi": {
@@ -177,7 +181,7 @@
         "src/**/*.ts"
       ],
       "ignore": [
-        "src/redcap/commands.ts",
+        "src/commands/redcap/commands.ts",
         "src/shared/context.ts",
         "src/shared/terminal.ts"
       ]
