@@ -44,11 +44,11 @@ const sharedLabels = (
   const keysA = new Set(
     [...a.vector.keys()].filter((k) => k.startsWith(prefix)),
   );
-  return [...b.vector.keys()]
-    .filter((k) => keysA.has(k))
-    .toSorted((ka, kb) => (b.vector.get(kb) ?? 0) - (b.vector.get(ka) ?? 0))
+  return [...b.vector.entries()]
+    .filter(([k]) => keysA.has(k))
+    .toSorted(([, va], [, vb]) => vb - va)
     .slice(0, TOP_K)
-    .map((k) => resolveLabel(k, b.labels));
+    .map(([k]) => resolveLabel(k, b.labels));
 };
 
 const distinctLabels = (

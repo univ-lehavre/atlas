@@ -28,11 +28,11 @@ const workToText = (work: NormalizedWork): string =>
   ].join(", ");
 
 const meanPool = (vectors: Float32Array[]): Float32Array => {
-  const dim = vectors[0]?.length ?? 384;
+  const dim = vectors[0]!.length;
   const sums = Array.from<number>({ length: dim }).fill(0);
   for (const v of vectors) {
     for (let i = 0; i < dim; i++) {
-      sums[i] = (sums[i] ?? 0) + (v[i] ?? 0);
+      sums[i]! += v[i]!;
     }
   }
   return new Float32Array(sums.map((x) => x / vectors.length));
@@ -40,7 +40,7 @@ const meanPool = (vectors: Float32Array[]): Float32Array => {
 
 const l2Normalize = (v: Float32Array): Float32Array => {
   const norm = Math.sqrt([...v].reduce((s, x) => s + x * x, 0));
-  return norm === 0 ? v : v.map((x) => x / norm);
+  return v.map((x) => x / norm);
 };
 
 export const buildEmbeddingProfiles = async (
