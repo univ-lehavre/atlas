@@ -1,5 +1,13 @@
 # @univ-lehavre/atlas-researcher-profiles
 
+## 1.4.1
+
+### Patch Changes
+
+- [#123](https://github.com/univ-lehavre/atlas/pull/123) [`fa67ef8`](https://github.com/univ-lehavre/atlas/commit/fa67ef80e128e127f5bf602686f78f44ba02668f) Thanks [@chasset](https://github.com/chasset)! - Organize CLI source layout around bin, commands, config, prompts, and output adapters.
+
+- [#123](https://github.com/univ-lehavre/atlas/pull/123) [`3ba9bd4`](https://github.com/univ-lehavre/atlas/commit/3ba9bd46719b2090a1afb5cc2805c8d21ae330bb) Thanks [@chasset](https://github.com/chasset)! - Add `docs:pdf` npm script that compiles `ALGORITHMS.md` to PDF via pandoc/xelatex (with Unicode subscript substitution to handle glyphs Menlo lacks). The generated PDF is gitignored.
+
 ## 1.4.0
 
 ### Minor Changes
