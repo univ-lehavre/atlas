@@ -8,7 +8,14 @@ import {
   retrieve_articles_given_work_ids,
 } from "@univ-lehavre/atlas-openalex";
 import type { OpenalexSearchAuthorAffiliationResult } from "@univ-lehavre/atlas-openalex";
-import { multiple, log, finish, prepare, who, selection } from "../prompts/index.js";
+import {
+  multiple,
+  log,
+  finish,
+  prepare,
+  who,
+  selection,
+} from "../prompts/index.js";
 
 const program = Effect.gen(function* () {
   // Saisie du nom du chercheur

@@ -4,7 +4,11 @@ import path from "node:path";
 import process from "node:process";
 import { parseTokensCsv } from "@univ-lehavre/atlas-redcap-logs";
 import { parseArgs } from "../config/args.js";
-import { printHuman, summarizeStatus, type ProjectResult } from "../output/report.js";
+import {
+  printHuman,
+  summarizeStatus,
+  type ProjectResult,
+} from "../output/report.js";
 
 const MAX_BODY_PREVIEW = 300;
 const ENV_FILES = ["apps/redcap-dashboard/.env", ".env"];

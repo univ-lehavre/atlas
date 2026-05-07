@@ -30,7 +30,9 @@ export const parseArgs = (argv: readonly string[]): CliOptions => {
       token = (argv[i + 1] ?? fail("Argument manquant pour --token")).trim();
       i += 1;
     } else if (arg === "--period") {
-      const value = (argv[i + 1] ?? fail("Argument manquant pour --period")).trim();
+      const value = (
+        argv[i + 1] ?? fail("Argument manquant pour --period")
+      ).trim();
       if (!isPeriod(value)) {
         fail(`Période invalide: ${value}. Valeurs: day, week, month, quarter`);
       }
@@ -50,7 +52,10 @@ export const parseArgs = (argv: readonly string[]): CliOptions => {
   return { token, period, force, json, help };
 };
 
-export const requireValue = <T>(value: T | null | undefined, message: string): T => {
+export const requireValue = <T>(
+  value: T | null | undefined,
+  message: string,
+): T => {
   if (value === null || value === undefined) {
     fail(message);
   }
