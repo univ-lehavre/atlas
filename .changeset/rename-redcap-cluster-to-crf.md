@@ -5,9 +5,9 @@
 "@univ-lehavre/atlas-crf": major
 "@univ-lehavre/atlas-crf-cli": major
 "@univ-lehavre/atlas-researcher-profiles": major
-"@univ-lehavre/atlas-redcap-openapi": patch
-"@univ-lehavre/atlas-redcap-stats-cli": patch
-"@univ-lehavre/atlas-redcap-dashboard": patch
+"@univ-lehavre/atlas-crf-openapi": patch
+"@univ-lehavre/atlas-crf-stats-cli": patch
+"@univ-lehavre/atlas-crf-dashboard": patch
 "@univ-lehavre/atlas-amarre": patch
 "@univ-lehavre/atlas-ecrin": patch
 "@univ-lehavre/atlas-researcher-profiles-cli": patch

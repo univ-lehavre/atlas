@@ -1,7 +1,7 @@
 ---
 "@univ-lehavre/atlas-citation-types": major
-"@univ-lehavre/atlas-fetch-openalex": major
-"@univ-lehavre/atlas-validate-openalex": major
+"@univ-lehavre/atlas-citation-fetch": major
+"@univ-lehavre/atlas-citation-validate": major
 "@univ-lehavre/atlas-researcher-profiles": major
 "@univ-lehavre/atlas-biblio-cli": patch
 "@univ-lehavre/atlas-researcher-profiles-cli": patch
