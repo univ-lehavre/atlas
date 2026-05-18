@@ -1,5 +1,5 @@
 import * as Plot from '@observablehq/plot';
-import type { MonthlyPoint } from '@univ-lehavre/atlas-redcap-logs';
+import type { MonthlyPoint } from '@univ-lehavre/atlas-crf-logs';
 
 const WIDTH = 900;
 

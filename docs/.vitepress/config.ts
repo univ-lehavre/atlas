@@ -246,8 +246,8 @@ export default withMermaid(
                 link: "/api/@univ-lehavre/atlas-crf/",
               },
               {
-                text: "@univ-lehavre/atlas-redcap-core",
-                link: "/api/@univ-lehavre/atlas-redcap-core/",
+                text: "@univ-lehavre/atlas-crf-core",
+                link: "/api/@univ-lehavre/atlas-crf-core/",
               },
               {
                 text: "@univ-lehavre/atlas-redcap-openapi",

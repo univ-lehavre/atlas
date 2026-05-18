@@ -3,7 +3,7 @@ import { generateGraph } from '$lib/graph';
 import { REDCAP_API_TOKEN, REDCAP_URL } from '$env/static/private';
 import Graph from 'graphology';
 
-export const fetchRecordsFromRedcap = async (params: Record<string, string>) => {
+export const fetchRecordsFromCrf = async (params: Record<string, string>) => {
   const requestData = { token: REDCAP_API_TOKEN, ...params } as Record<string, string>;
   const DATA = new URLSearchParams(requestData).toString();
   const response = await fetch(REDCAP_URL, {
@@ -31,7 +31,7 @@ export const fetchGraphForRecord = async (recordId: string) => {
     exportDataAccessGroups: 'false',
     returnFormat: 'json',
   };
-  const data: EAV[] = await fetchRecordsFromRedcap(params);
+  const data: EAV[] = await fetchRecordsFromCrf(params);
   const graph: Graph = generateGraph(data);
   return graph;
 };
@@ -50,7 +50,7 @@ export const fetchGlobalGraph = async () => {
     exportDataAccessGroups: 'false',
     returnFormat: 'json',
   };
-  const data: EAV[] = await fetchRecordsFromRedcap(params);
+  const data: EAV[] = await fetchRecordsFromCrf(params);
   const graph: Graph = generateGraph(data);
   return graph;
 };

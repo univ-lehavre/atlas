@@ -1,11 +1,6 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import {
-  enrichLogs,
-  isCacheStale,
-  parseTokensCsv,
-  readCache,
-} from '@univ-lehavre/atlas-redcap-logs';
+import { enrichLogs, isCacheStale, parseTokensCsv, readCache } from '@univ-lehavre/atlas-crf-logs';
 
 type ProjectStatus = 'OK' | 'WARN' | 'ERROR';
 

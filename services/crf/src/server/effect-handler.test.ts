@@ -2,12 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { Effect } from 'effect';
 import { Hono } from 'hono';
 import { runEffect, runEffectRaw } from './effect-handler.js';
-import {
-  RedcapHttpError,
-  RedcapApiError,
-  RedcapNetworkError,
-} from '@univ-lehavre/atlas-redcap-client';
-import { VersionParseError, UnsupportedVersionError } from '@univ-lehavre/atlas-redcap-client';
+import { CrfHttpError, CrfApiError, CrfNetworkError } from '@univ-lehavre/atlas-crf-client';
+import { VersionParseError, UnsupportedVersionError } from '@univ-lehavre/atlas-crf-client';
 
 /**
  * Tests for Effect-to-Hono response handler
@@ -39,11 +35,11 @@ describe('Effect Handler', () => {
       expect(body).toEqual({ data: [1, 2, 3] });
     });
 
-    it('should handle RedcapHttpError', async () => {
+    it('should handle CrfHttpError', async () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new RedcapHttpError({ status: 401, statusText: 'Unauthorized' })))
+        runEffect(c, Effect.fail(new CrfHttpError({ status: 401, statusText: 'Unauthorized' })))
       );
 
       const res = await app.request('/test');
@@ -51,15 +47,15 @@ describe('Effect Handler', () => {
 
       expect(res.status).toBe(401);
       expect(body.data).toBeNull();
-      expect(body.error.code).toBe('redcap_http_error');
+      expect(body.error.code).toBe('crf_http_error');
       expect(body.error.message).toContain('401');
     });
 
-    it('should handle RedcapHttpError with 404', async () => {
+    it('should handle CrfHttpError with 404', async () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new RedcapHttpError({ status: 404, statusText: 'Not Found' })))
+        runEffect(c, Effect.fail(new CrfHttpError({ status: 404, statusText: 'Not Found' })))
       );
 
       const res = await app.request('/test');
@@ -67,11 +63,11 @@ describe('Effect Handler', () => {
       expect(res.status).toBe(404);
     });
 
-    it('should handle RedcapHttpError with 500', async () => {
+    it('should handle CrfHttpError with 500', async () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new RedcapHttpError({ status: 500, statusText: 'Server Error' })))
+        runEffect(c, Effect.fail(new CrfHttpError({ status: 500, statusText: 'Server Error' })))
       );
 
       const res = await app.request('/test');
@@ -79,11 +75,11 @@ describe('Effect Handler', () => {
       expect(res.status).toBe(500);
     });
 
-    it('should handle RedcapApiError', async () => {
+    it('should handle CrfApiError', async () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new RedcapApiError({ error: 'Invalid token' })))
+        runEffect(c, Effect.fail(new CrfApiError({ error: 'Invalid token' })))
       );
 
       const res = await app.request('/test');
@@ -91,17 +87,17 @@ describe('Effect Handler', () => {
 
       expect(res.status).toBe(400);
       expect(body.data).toBeNull();
-      expect(body.error.code).toBe('redcap_api_error');
+      expect(body.error.code).toBe('crf_api_error');
       expect(body.error.message).toBe('Invalid token');
     });
 
-    it('should handle RedcapApiError with custom code', async () => {
+    it('should handle CrfApiError with custom code', async () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
         runEffect(
           c,
-          Effect.fail(new RedcapApiError({ error: 'User not found', code: 'user_not_found' }))
+          Effect.fail(new CrfApiError({ error: 'User not found', code: 'user_not_found' }))
         )
       );
 
@@ -112,11 +108,11 @@ describe('Effect Handler', () => {
       expect(body.error.code).toBe('user_not_found');
     });
 
-    it('should handle RedcapNetworkError', async () => {
+    it('should handle CrfNetworkError', async () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new RedcapNetworkError({ cause: 'ECONNREFUSED' })))
+        runEffect(c, Effect.fail(new CrfNetworkError({ cause: 'ECONNREFUSED' })))
       );
 
       const res = await app.request('/test');
@@ -209,7 +205,7 @@ describe('Effect Handler', () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffectRaw(c, Effect.fail(new RedcapNetworkError({ cause: 'timeout' })))
+        runEffectRaw(c, Effect.fail(new CrfNetworkError({ cause: 'timeout' })))
       );
 
       const res = await app.request('/test');
@@ -226,12 +222,12 @@ describe('Effect Handler', () => {
 
       // Test 400 range
       app.get('/400', (c) =>
-        runEffect(c, Effect.fail(new RedcapHttpError({ status: 400, statusText: 'Bad Request' })))
+        runEffect(c, Effect.fail(new CrfHttpError({ status: 400, statusText: 'Bad Request' })))
       );
 
       // Test 500 range
       app.get('/500', (c) =>
-        runEffect(c, Effect.fail(new RedcapHttpError({ status: 502, statusText: 'Bad Gateway' })))
+        runEffect(c, Effect.fail(new CrfHttpError({ status: 502, statusText: 'Bad Gateway' })))
       );
 
       const res400 = await app.request('/400');
@@ -246,7 +242,7 @@ describe('Effect Handler', () => {
 
       // Status outside 400-599 range should map to 502
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new RedcapHttpError({ status: 200, statusText: 'Unexpected' })))
+        runEffect(c, Effect.fail(new CrfHttpError({ status: 200, statusText: 'Unexpected' })))
       );
 
       const res = await app.request('/test');

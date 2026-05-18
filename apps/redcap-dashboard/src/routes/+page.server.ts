@@ -3,7 +3,7 @@ import {
   computeMonthlyCalendar,
   readCache,
   type MonthlyPoint,
-} from '@univ-lehavre/atlas-redcap-logs';
+} from '@univ-lehavre/atlas-crf-logs';
 import { applyPatches } from '$lib/patches.js';
 
 export const load = async (): Promise<{ monthly: MonthlyPoint[]; cachedAt: number | null }> => {

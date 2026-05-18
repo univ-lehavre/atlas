@@ -2,7 +2,7 @@
 
 Dashboard SvelteKit pour collecter, actualiser et visualiser les logs d'audit REDCap.
 
-L'application consomme `@univ-lehavre/atlas-redcap-logs` pour lire les tokens projet, récupérer les logs REDCap, les enrichir et calculer des agrégations calendaires. Elle affiche des statistiques mensuelles et fournit une page d'actualisation avec progression, dates et statut détaillé.
+L'application consomme `@univ-lehavre/atlas-crf-logs` pour lire les tokens projet, récupérer les logs REDCap, les enrichir et calculer des agrégations calendaires. Elle affiche des statistiques mensuelles et fournit une page d'actualisation avec progression, dates et statut détaillé.
 
 Il affiche 4 graphiques:
 
@@ -23,7 +23,7 @@ Il propose aussi une page dédiée à l’actualisation: `/actualisation` (spinn
 
 - Node.js `>= 24`
 - `pnpm`
-- Monorepo Atlas cloné (ce package dépend de `@univ-lehavre/atlas-redcap-logs`)
+- Monorepo Atlas cloné (ce package dépend de `@univ-lehavre/atlas-crf-logs`)
 
 ## Installation
 

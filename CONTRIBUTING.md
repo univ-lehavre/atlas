@@ -245,8 +245,8 @@ type(scope): description
 | `dashboard` | apps/atlas-dashboard                                  |
 | `ecrin`     | apps/ecrin                                            |
 | `find`      | apps/find-an-expert                                   |
-| `redcap`    | apps/redcap-dashboard, packages/redcap-\*             |
-| `crf`       | services/crf, cli/crf                                 |
+| `crf`       | services/crf, cli/crf, packages/crf-\*                |
+| `redcap`    | apps/redcap-dashboard (until PR 4)                    |
 | `net`       | packages/net, cli/net                                 |
 | `citation` | packages/citation*, cli/citation                       |
 | `profiles`  | packages/researcher-profiles, cli/researcher-profiles |
@@ -285,11 +285,11 @@ atlas/
 │   ├── citation-fetch/      # OpenAlex citation graph API client
 │   ├── citation-types/      # OpenAlex citation graph type definitions
 │   ├── citation-validate/   # OpenAlex citation graph data validation
+│   ├── crf-client/          # Clinical research form (CRF / REDCap) HTTP client
+│   ├── crf-core/            # CRF / REDCap domain types & adapters
+│   ├── crf-logs/            # CRF / REDCap audit log types
 │   ├── fetch-one-api-page/  # Paginated API fetching
 │   ├── net/                 # Network utilities
-│   ├── redcap-client/       # REDCap HTTP client
-│   ├── redcap-core/         # REDCap domain types & adapters
-│   ├── redcap-logs/         # REDCap audit log types
 │   ├── researcher-profiles/ # Researcher profile generation
 │   └── validators/          # Shared validation utilities
 │

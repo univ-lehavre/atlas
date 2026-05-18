@@ -1,13 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { checkAccountPushed, pushAccountToRedcap } from './accountService';
+import { checkAccountPushed, pushAccountToCrf } from './accountService';
 import type { Fetch } from '$lib/types';
 
-// Mock fetchRedcap
-vi.mock('$lib/redcap/server', () => ({ fetchRedcap: vi.fn() }));
+// Mock fetchCrf
+vi.mock('$lib/crf/server', () => ({ fetchCrf: vi.fn() }));
 
-import { fetchRedcap } from '$lib/redcap/server';
+import { fetchCrf } from '$lib/crf/server';
 
-const mockFetchRedcap = vi.mocked(fetchRedcap);
+const mockFetchCrf = vi.mocked(fetchCrf);
 
 describe('accountService', () => {
   const mockFetch: Fetch = vi.fn();
@@ -22,9 +22,7 @@ describe('accountService', () => {
     const email = 'test@example.com';
 
     it('should return all true when user exists with matching id, email and is active', async () => {
-      mockFetchRedcap.mockResolvedValue([
-        { id: 'user-123', mail: 'test@example.com', active: 'Oui' },
-      ]);
+      mockFetchCrf.mockResolvedValue([{ id: 'user-123', mail: 'test@example.com', active: 'Oui' }]);
 
       const result = await checkAccountPushed(token, id, email, mockFetch);
 
@@ -37,9 +35,7 @@ describe('accountService', () => {
     });
 
     it('should return isActive true when active is "1"', async () => {
-      mockFetchRedcap.mockResolvedValue([
-        { id: 'user-123', mail: 'test@example.com', active: '1' },
-      ]);
+      mockFetchCrf.mockResolvedValue([{ id: 'user-123', mail: 'test@example.com', active: '1' }]);
 
       const result = await checkAccountPushed(token, id, email, mockFetch);
 
@@ -47,7 +43,7 @@ describe('accountService', () => {
     });
 
     it('should return hasPushedEmail false when email does not match', async () => {
-      mockFetchRedcap.mockResolvedValue([
+      mockFetchCrf.mockResolvedValue([
         { id: 'user-123', mail: 'other@example.com', active: 'Oui' },
       ]);
 
@@ -62,9 +58,7 @@ describe('accountService', () => {
     });
 
     it('should return hasPushedID false when id does not match', async () => {
-      mockFetchRedcap.mockResolvedValue([
-        { id: 'other-id', mail: 'test@example.com', active: 'Oui' },
-      ]);
+      mockFetchCrf.mockResolvedValue([{ id: 'other-id', mail: 'test@example.com', active: 'Oui' }]);
 
       const result = await checkAccountPushed(token, id, email, mockFetch);
 
@@ -77,7 +71,7 @@ describe('accountService', () => {
     });
 
     it('should return all false when user does not exist', async () => {
-      mockFetchRedcap.mockResolvedValue([]);
+      mockFetchCrf.mockResolvedValue([]);
 
       const result = await checkAccountPushed(token, id, email, mockFetch);
 
@@ -90,21 +84,19 @@ describe('accountService', () => {
     });
 
     it('should return isActive false when active is not "Oui" or "1"', async () => {
-      mockFetchRedcap.mockResolvedValue([
-        { id: 'user-123', mail: 'test@example.com', active: 'Non' },
-      ]);
+      mockFetchCrf.mockResolvedValue([{ id: 'user-123', mail: 'test@example.com', active: 'Non' }]);
 
       const result = await checkAccountPushed(token, id, email, mockFetch);
 
       expect(result.isActive).toBe(false);
     });
 
-    it('should call fetchRedcap with correct parameters', async () => {
-      mockFetchRedcap.mockResolvedValue([]);
+    it('should call fetchCrf with correct parameters', async () => {
+      mockFetchCrf.mockResolvedValue([]);
 
       await checkAccountPushed(token, id, email, mockFetch);
 
-      expect(mockFetchRedcap).toHaveBeenCalledWith(mockFetch, {
+      expect(mockFetchCrf).toHaveBeenCalledWith(mockFetch, {
         token,
         'records[0]': id,
         fields: 'id,mail,active',
@@ -123,23 +115,23 @@ describe('accountService', () => {
     });
   });
 
-  describe('pushAccountToRedcap', () => {
-    it('should return the count from fetchRedcap', async () => {
+  describe('pushAccountToCrf', () => {
+    it('should return the count from fetchCrf', async () => {
       const payload = { id: 'user-123', mail: 'test@example.com' };
-      mockFetchRedcap.mockResolvedValue({ count: 1 });
+      mockFetchCrf.mockResolvedValue({ count: 1 });
 
-      const result = await pushAccountToRedcap(token, payload, mockFetch);
+      const result = await pushAccountToCrf(token, payload, mockFetch);
 
       expect(result).toEqual({ count: 1 });
     });
 
-    it('should call fetchRedcap with correct parameters', async () => {
+    it('should call fetchCrf with correct parameters', async () => {
       const payload = { id: 'user-123', mail: 'test@example.com' };
-      mockFetchRedcap.mockResolvedValue({ count: 1 });
+      mockFetchCrf.mockResolvedValue({ count: 1 });
 
-      await pushAccountToRedcap(token, payload, mockFetch);
+      await pushAccountToCrf(token, payload, mockFetch);
 
-      expect(mockFetchRedcap).toHaveBeenCalledWith(mockFetch, {
+      expect(mockFetchCrf).toHaveBeenCalledWith(mockFetch, {
         token,
         content: 'record',
         action: 'import',
@@ -155,21 +147,21 @@ describe('accountService', () => {
 
     it('should handle empty payload', async () => {
       const payload = {};
-      mockFetchRedcap.mockResolvedValue({ count: 0 });
+      mockFetchCrf.mockResolvedValue({ count: 0 });
 
-      const result = await pushAccountToRedcap(token, payload, mockFetch);
+      const result = await pushAccountToCrf(token, payload, mockFetch);
 
       expect(result).toEqual({ count: 0 });
     });
 
     it('should handle array payload', async () => {
       const payload = [{ id: 'user-1' }, { id: 'user-2' }];
-      mockFetchRedcap.mockResolvedValue({ count: 2 });
+      mockFetchCrf.mockResolvedValue({ count: 2 });
 
-      const result = await pushAccountToRedcap(token, payload, mockFetch);
+      const result = await pushAccountToCrf(token, payload, mockFetch);
 
       expect(result).toEqual({ count: 2 });
-      expect(mockFetchRedcap).toHaveBeenCalledWith(
+      expect(mockFetchCrf).toHaveBeenCalledWith(
         mockFetch,
         expect.objectContaining({ data: JSON.stringify(payload) })
       );

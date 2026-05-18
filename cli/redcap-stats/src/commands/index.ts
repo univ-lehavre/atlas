@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { parseTokensCsv } from "@univ-lehavre/atlas-redcap-logs";
+import { parseTokensCsv } from "@univ-lehavre/atlas-crf-logs";
 import { parseArgs } from "../config/args.js";
 import {
   printHuman,

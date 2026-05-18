@@ -2,7 +2,7 @@
 
 This package provides two CLI tools for interacting with REDCap:
 
-- **crf-redcap** - Test REDCap API connectivity
+- **crf-api** - Test REDCap API connectivity
 - **crf-server** - Start the CRF HTTP microservice
 
 ## Installation
@@ -14,20 +14,20 @@ pnpm add @univ-lehavre/atlas-crf
 Or run directly with npx:
 
 ```bash
-npx crf-redcap --help
+npx crf-api --help
 npx crf-server --help
 ```
 
 ---
 
-## crf-redcap
+## crf-api
 
 Tests connectivity to a REDCap instance by running a series of API calls.
 
 ### Usage
 
 ```bash
-crf-redcap [options]
+crf-api [options]
 ```
 
 ### Options
@@ -64,16 +64,16 @@ crf-redcap [options]
 # Using environment variables
 export REDCAP_API_URL=https://redcap.example.com/api
 export REDCAP_API_TOKEN=your-api-token
-crf-redcap
+crf-api
 
 # Override with flags
-crf-redcap --url https://other.com/api --token your-token
+crf-api --url https://other.com/api --token your-token
 
 # CI mode with JSON output
-crf-redcap --ci --json
+crf-api --ci --json
 
 # Generate shell completions
-crf-redcap --completions bash > ~/.bash_completion.d/crf-redcap
+crf-api --completions bash > ~/.bash_completion.d/crf-api
 ```
 
 ### Tests Performed
@@ -173,7 +173,7 @@ Both CLI tools support CI mode with:
 ```yaml
 - name: Test REDCap connectivity
   run: |
-    npx crf-redcap --ci --json > results.json
+    npx crf-api --ci --json > results.json
   env:
     REDCAP_API_URL: ${{ secrets.REDCAP_API_URL }}
     REDCAP_API_TOKEN: ${{ secrets.REDCAP_API_TOKEN }}
@@ -187,14 +187,14 @@ Generate shell completions with:
 
 ```bash
 # Bash
-crf-redcap --completions bash > ~/.bash_completion.d/crf-redcap
+crf-api --completions bash > ~/.bash_completion.d/crf-api
 crf-server --completions bash > ~/.bash_completion.d/crf-server
 
 # Zsh
-crf-redcap --completions zsh > ~/.zfunc/_crf-redcap
+crf-api --completions zsh > ~/.zfunc/_crf-api
 crf-server --completions zsh > ~/.zfunc/_crf-server
 
 # Fish
-crf-redcap --completions fish > ~/.config/fish/completions/crf-redcap.fish
+crf-api --completions fish > ~/.config/fish/completions/crf-api.fish
 crf-server --completions fish > ~/.config/fish/completions/crf-server.fish
 ```

@@ -20,7 +20,7 @@ export const SuccessResponseOpenAPI = {
 };
 
 // Validation patterns
-export const REDCAP_NAME_PATTERN = /^[\w,]*$/;
+export const CRF_NAME_PATTERN = /^[\w,]*$/;
 export const INSTRUMENT_NAME_PATTERN = /^[a-z][a-z0-9_]*$/;
 export const RECORD_ID_PATTERN = /^[a-z0-9]{20,}$/i;
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/;

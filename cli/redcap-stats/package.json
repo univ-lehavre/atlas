@@ -32,7 +32,7 @@
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
-    "@univ-lehavre/atlas-redcap-logs": "workspace:*"
+    "@univ-lehavre/atlas-crf-logs": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",

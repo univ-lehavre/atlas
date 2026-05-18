@@ -13,8 +13,8 @@ import type { CitationConfig } from "@univ-lehavre/atlas-citation-fetch";
 import { fetchResearchers } from "@univ-lehavre/atlas-researcher-profiles";
 
 interface MatchReferencesOptions {
-  readonly redcapUrl: string;
-  readonly redcapToken: string;
+  readonly crfUrl: string;
+  readonly crfToken: string;
   readonly threshold: number;
   readonly citationUserAgent: string;
   readonly citationApiKey?: string;
@@ -25,7 +25,7 @@ interface MatchReferencesOptions {
 export const matchReferencesCommand = async (
   opts: MatchReferencesOptions,
 ): Promise<void> => {
-  const redcapConfig = { url: opts.redcapUrl, token: opts.redcapToken };
+  const crfConfig = { url: opts.crfUrl, token: opts.crfToken };
   const citationConfig: CitationConfig = {
     userAgent: opts.citationUserAgent,
     apiKey: opts.citationApiKey,
@@ -36,7 +36,7 @@ export const matchReferencesCommand = async (
   s.start("Fetching researchers from REDCap…");
 
   const fetchResult = await Effect.runPromise(
-    Effect.either(fetchResearchers(redcapConfig)),
+    Effect.either(fetchResearchers(crfConfig)),
   );
 
   if (Either.isLeft(fetchResult)) {
@@ -85,7 +85,7 @@ export const matchReferencesCommand = async (
     );
 
     const status = await matchRow(row, {
-      redcap: redcapConfig,
+      redcap: crfConfig,
       openAlex: citationConfig,
       threshold: opts.threshold,
     });

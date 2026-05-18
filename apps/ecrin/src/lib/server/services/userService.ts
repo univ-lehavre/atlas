@@ -1,5 +1,5 @@
 import { REDCAP_API_TOKEN } from '$env/static/private';
-import { fetchRedcap } from '$lib/redcap/server';
+import { fetchCrf } from '$lib/crf/server';
 import type { Fetch } from '$lib/types';
 import { transformToName } from '../../transformers/build-name';
 
@@ -10,9 +10,7 @@ interface Contact {
   middle_name: string;
 }
 
-export const listUsersFromRedcap = async (
-  fetch: Fetch
-): Promise<{ id: string; name: string }[]> => {
+export const listUsersFromCrf = async (fetch: Fetch): Promise<{ id: string; name: string }[]> => {
   const requestData = {
     token: REDCAP_API_TOKEN,
     content: 'record',
@@ -31,7 +29,7 @@ export const listUsersFromRedcap = async (
     exportDataAccessGroups: 'false',
     returnFormat: 'json',
   };
-  const contacts = await fetchRedcap<Contact[]>(fetch, requestData);
+  const contacts = await fetchCrf<Contact[]>(fetch, requestData);
   const result = contacts.map((item) => ({
     id: item.id,
     name: transformToName(item.first_name, item.middle_name, item.last_name),
@@ -57,7 +55,7 @@ export const fetchUserId = async (fetch: Fetch, email: string): Promise<string |
     returnFormat: 'json',
     filterLogic: `[mail] = "${email}"`,
   };
-  const contacts = await fetchRedcap<{ id: string }[]>(fetch, requestData);
+  const contacts = await fetchCrf<{ id: string }[]>(fetch, requestData);
   const result = contacts.length === 1 ? contacts[0].id : null;
   return result;
 };

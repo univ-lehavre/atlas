@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { listUsersFromRedcap } from '$lib/server/services/userService';
+import { listUsersFromCrf } from '$lib/server/services/userService';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = async ({ locals, fetch }) => {
@@ -11,7 +11,7 @@ export const GET: RequestHandler = async ({ locals, fetch }) => {
       );
     }
 
-    const users = await listUsersFromRedcap(fetch);
+    const users = await listUsersFromCrf(fetch);
 
     return json({ data: users, error: null });
   } catch (error: unknown) {

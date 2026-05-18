@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { applyPatches } from './patches.js';
-import type { RedcapLogEntry } from '@univ-lehavre/atlas-redcap-logs';
+import type { CrfLogEntry } from '@univ-lehavre/atlas-crf-logs';
 
-const makeEntry = (date: Date): RedcapLogEntry =>
-  ({ timestamp: date }) as unknown as RedcapLogEntry;
+const makeEntry = (date: Date): CrfLogEntry => ({ timestamp: date }) as unknown as CrfLogEntry;
 
 describe('applyPatches', () => {
   it('keeps entries not in excluded dates', () => {

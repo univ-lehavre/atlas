@@ -1,4 +1,4 @@
-import type { RedcapLogEntry } from '@univ-lehavre/atlas-redcap-logs';
+import type { CrfLogEntry } from '@univ-lehavre/atlas-crf-logs';
 
 // Patch : exclure les logs du 7 et 8 avril 2026 (données corrompues)
 const EXCLUDED: { year: number; month: number; day: number }[] = [
@@ -6,7 +6,7 @@ const EXCLUDED: { year: number; month: number; day: number }[] = [
   { year: 2026, month: 3, day: 8 },
 ];
 
-export const applyPatches = (entries: readonly RedcapLogEntry[]): RedcapLogEntry[] =>
+export const applyPatches = (entries: readonly CrfLogEntry[]): CrfLogEntry[] =>
   entries.filter((e) => {
     const d = e.timestamp;
     return !EXCLUDED.some(

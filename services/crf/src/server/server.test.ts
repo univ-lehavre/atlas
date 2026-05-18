@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { validationErrorHook } from './middleware/validation.js';
 import {
   ErrorResponseSchema,
-  REDCAP_NAME_PATTERN,
+  CRF_NAME_PATTERN,
   INSTRUMENT_NAME_PATTERN,
   RECORD_ID_PATTERN,
   EMAIL_PATTERN,
@@ -104,20 +104,20 @@ describe('Server Module', () => {
   });
 
   describe('Schema Patterns', () => {
-    describe('REDCAP_NAME_PATTERN', () => {
+    describe('CRF_NAME_PATTERN', () => {
       it('should match valid REDCap field names', () => {
-        expect(REDCAP_NAME_PATTERN.test('field_name')).toBe(true);
-        expect(REDCAP_NAME_PATTERN.test('record_id')).toBe(true);
-        expect(REDCAP_NAME_PATTERN.test('field1,field2')).toBe(true);
-        expect(REDCAP_NAME_PATTERN.test('abc123')).toBe(true);
-        expect(REDCAP_NAME_PATTERN.test('')).toBe(true); // Empty is valid (optional)
+        expect(CRF_NAME_PATTERN.test('field_name')).toBe(true);
+        expect(CRF_NAME_PATTERN.test('record_id')).toBe(true);
+        expect(CRF_NAME_PATTERN.test('field1,field2')).toBe(true);
+        expect(CRF_NAME_PATTERN.test('abc123')).toBe(true);
+        expect(CRF_NAME_PATTERN.test('')).toBe(true); // Empty is valid (optional)
       });
 
       it('should reject invalid characters', () => {
-        expect(REDCAP_NAME_PATTERN.test('field-name')).toBe(false);
-        expect(REDCAP_NAME_PATTERN.test('field.name')).toBe(false);
-        expect(REDCAP_NAME_PATTERN.test('field name')).toBe(false);
-        expect(REDCAP_NAME_PATTERN.test('field@name')).toBe(false);
+        expect(CRF_NAME_PATTERN.test('field-name')).toBe(false);
+        expect(CRF_NAME_PATTERN.test('field.name')).toBe(false);
+        expect(CRF_NAME_PATTERN.test('field name')).toBe(false);
+        expect(CRF_NAME_PATTERN.test('field@name')).toBe(false);
       });
     });
 

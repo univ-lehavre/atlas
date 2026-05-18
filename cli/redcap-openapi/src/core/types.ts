@@ -2,11 +2,11 @@
  * Core types for REDCap OpenAPI extraction
  *
  * These types represent the parsed structures from REDCap PHP source code.
- * Re-exports common types from @univ-lehavre/atlas-redcap-core.
+ * Re-exports common types from @univ-lehavre/atlas-crf-core.
  */
 
 // Re-export from redcap-core
-export type { ApiAction, ApiPermission } from '@univ-lehavre/atlas-redcap-core';
+export type { ApiAction, ApiPermission } from '@univ-lehavre/atlas-crf-core';
 
 export {
   CONTENT_KEY_MAPPING,
@@ -24,7 +24,7 @@ export {
   CONTENT_TYPE_ACTIONS,
   getActionsForContentType,
   isActionAvailable,
-} from '@univ-lehavre/atlas-redcap-core';
+} from '@univ-lehavre/atlas-crf-core';
 
 /** Parameter type in API documentation */
 export type ParameterType = 'string' | 'integer' | 'boolean' | 'array' | 'object';

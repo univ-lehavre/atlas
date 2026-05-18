@@ -37,7 +37,7 @@ OPENALEX_USER_AGENT="mailto:contact@example.com" \
 atlas-researcher-profiles from-csv researchers.csv
 ```
 
-### `from-redcap`
+### `from-crf`
 
 Fetches researchers directly from the REDCap instrument `references_openalex`, then resolves and writes their works back to the same instrument.
 
@@ -45,7 +45,7 @@ Fetches researchers directly from the REDCap instrument `references_openalex`, t
 REDCAP_API_URL=https://redcap.example.com/api/ \
 REDCAP_API_TOKEN=XXXX \
 OPENALEX_USER_AGENT="mailto:contact@example.com" \
-atlas-researcher-profiles from-redcap
+atlas-researcher-profiles from-crf
 ```
 
 ## REDCap instrument
@@ -73,6 +73,6 @@ import {
 import type {
   ResearcherRow,
   OaReferencesRecord,
-  RedcapConnectionConfig,
+  CrfConnectionConfig,
 } from '@univ-lehavre/atlas-researcher-profiles';
 ```

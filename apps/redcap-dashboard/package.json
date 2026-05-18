@@ -33,6 +33,6 @@
   },
   "dependencies": {
     "@observablehq/plot": "^0.6.17",
-    "@univ-lehavre/atlas-redcap-logs": "workspace:*"
+    "@univ-lehavre/atlas-crf-logs": "workspace:*"
   }
 }

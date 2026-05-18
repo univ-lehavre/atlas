@@ -459,9 +459,9 @@ importers:
       '@observablehq/plot':
         specifier: ^0.6.17
         version: 0.6.17
-      '@univ-lehavre/atlas-redcap-logs':
+      '@univ-lehavre/atlas-crf-logs':
         specifier: workspace:*
-        version: link:../../packages/redcap-logs
+        version: link:../../packages/crf-logs
     devDependencies:
       '@sveltejs/adapter-node':
         specifier: ^5.5.4
@@ -661,9 +661,9 @@ importers:
       '@univ-lehavre/atlas-crf':
         specifier: workspace:*
         version: link:../../services/crf
-      '@univ-lehavre/atlas-redcap-client':
+      '@univ-lehavre/atlas-crf-client':
         specifier: workspace:*
-        version: link:../../packages/redcap-client
+        version: link:../../packages/crf-client
       effect:
         specifier: '>=3.21.2'
         version: 3.21.2
@@ -753,9 +753,9 @@ importers:
       '@clack/prompts':
         specifier: ^1.2.0
         version: 1.2.0
-      '@univ-lehavre/atlas-redcap-core':
+      '@univ-lehavre/atlas-crf-core':
         specifier: workspace:*
-        version: link:../../packages/redcap-core
+        version: link:../../packages/crf-core
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
@@ -787,9 +787,9 @@ importers:
 
   cli/redcap-stats:
     dependencies:
-      '@univ-lehavre/atlas-redcap-logs':
+      '@univ-lehavre/atlas-crf-logs':
         specifier: workspace:*
-        version: link:../../packages/redcap-logs
+        version: link:../../packages/crf-logs
     devDependencies:
       '@types/node':
         specifier: ^25.6.0
@@ -1151,6 +1151,86 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
+  packages/crf-client:
+    dependencies:
+      '@univ-lehavre/atlas-crf-core':
+        specifier: workspace:*
+        version: link:../crf-core
+      '@univ-lehavre/atlas-net':
+        specifier: workspace:*
+        version: link:../net
+      effect:
+        specifier: '>=3.21.2'
+        version: 3.21.2
+    devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.2.1
+        version: 10.2.1(jiti@2.6.1)
+      openapi-typescript:
+        specifier: ^7.13.0
+        version: 7.13.0(typescript@6.0.3)
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/crf-core:
+    dependencies:
+      effect:
+        specifier: '>=3.21.2'
+        version: 3.21.2
+    devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.2.1
+        version: 10.2.1(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/crf-logs:
+    devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.2.1
+        version: 10.2.1(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/errors:
     dependencies:
       '@sveltejs/kit':
@@ -1241,86 +1321,6 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
-  packages/redcap-client:
-    dependencies:
-      '@univ-lehavre/atlas-net':
-        specifier: workspace:*
-        version: link:../net
-      '@univ-lehavre/atlas-redcap-core':
-        specifier: workspace:*
-        version: link:../redcap-core
-      effect:
-        specifier: '>=3.21.2'
-        version: 3.21.2
-    devDependencies:
-      '@types/node':
-        specifier: ^25.6.0
-        version: 25.6.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../config/shared-config
-      eslint:
-        specifier: ^10.2.1
-        version: 10.2.1(jiti@2.6.1)
-      openapi-typescript:
-        specifier: ^7.13.0
-        version: 7.13.0(typescript@6.0.3)
-      prettier:
-        specifier: ^3.8.3
-        version: 3.8.3
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.5
-        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-
-  packages/redcap-core:
-    dependencies:
-      effect:
-        specifier: '>=3.21.2'
-        version: 3.21.2
-    devDependencies:
-      '@types/node':
-        specifier: ^25.6.0
-        version: 25.6.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../config/shared-config
-      eslint:
-        specifier: ^10.2.1
-        version: 10.2.1(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.3
-        version: 3.8.3
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.5
-        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-
-  packages/redcap-logs:
-    devDependencies:
-      '@types/node':
-        specifier: ^25.6.0
-        version: 25.6.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../config/shared-config
-      eslint:
-        specifier: ^10.2.1
-        version: 10.2.1(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.3
-        version: 3.8.3
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.5
-        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-
   packages/researcher-profiles:
     dependencies:
       '@napi-rs/canvas':
@@ -1332,9 +1332,9 @@ importers:
       '@univ-lehavre/atlas-citation-types':
         specifier: workspace:*
         version: link:../citation-types
-      '@univ-lehavre/atlas-redcap-client':
+      '@univ-lehavre/atlas-crf-client':
         specifier: workspace:*
-        version: link:../redcap-client
+        version: link:../crf-client
       '@xenova/transformers':
         specifier: ^2.17.2
         version: 2.17.2
@@ -1448,9 +1448,9 @@ importers:
       '@hono/standard-validator':
         specifier: ^0.2.2
         version: 0.2.2(@standard-schema/spec@1.1.0)(hono@4.12.15)
-      '@univ-lehavre/atlas-redcap-client':
+      '@univ-lehavre/atlas-crf-client':
         specifier: workspace:*
-        version: link:../../packages/redcap-client
+        version: link:../../packages/crf-client
       effect:
         specifier: '>=3.21.2'
         version: 3.21.2

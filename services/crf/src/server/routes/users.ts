@@ -2,8 +2,8 @@ import { Hono } from 'hono';
 import { Schema as S } from 'effect';
 import { resolver, validator, describeRoute } from 'hono-openapi';
 import { Effect, pipe } from 'effect';
-import { RedcapApiError } from '@univ-lehavre/atlas-redcap-client';
-import { redcap } from '../redcap.js';
+import { CrfApiError } from '@univ-lehavre/atlas-crf-client';
+import { client } from '../client.js';
 import { runEffect } from '../effect-handler.js';
 import { validationErrorHook } from '../middleware/validation.js';
 import { ErrorResponseSchema, EMAIL_PATTERN } from '../schemas.js';
@@ -59,11 +59,11 @@ users.get(
     return runEffect(
       c,
       pipe(
-        redcap.findUserIdByEmail(email),
+        client.findUserIdByEmail(email),
         Effect.flatMap((result) =>
           result !== null && result !== ''
             ? Effect.succeed({ userId: result })
-            : Effect.fail(new RedcapApiError({ error: 'User not found', code: 'user_not_found' }))
+            : Effect.fail(new CrfApiError({ error: 'User not found', code: 'user_not_found' }))
         )
       )
     );

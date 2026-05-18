@@ -1,4 +1,4 @@
-import { fetchRedcap } from '$lib/redcap/server';
+import { fetchCrf } from '$lib/crf/server';
 import type { Fetch } from '$lib/types';
 
 export interface CheckAccountPushed {
@@ -30,10 +30,7 @@ export const checkAccountPushed = async (
     exportDataAccessGroups: 'false',
     returnFormat: 'json',
   } as const;
-  const user = await fetchRedcap<{ id: string; mail: string; active: string }[]>(
-    fetch,
-    requestData
-  );
+  const user = await fetchCrf<{ id: string; mail: string; active: string }[]>(fetch, requestData);
   const hasPushedID = user.length > 0 && user[0].id === id;
   const hasPushedEmail = user.length > 0 && user[0].mail === email;
   const hasPushedAccount = hasPushedID && hasPushedEmail;
@@ -41,7 +38,7 @@ export const checkAccountPushed = async (
   return { hasPushedID, hasPushedEmail, hasPushedAccount, isActive };
 };
 
-export const pushAccountToRedcap = async (token: string, payload: unknown, fetch: Fetch) => {
+export const pushAccountToCrf = async (token: string, payload: unknown, fetch: Fetch) => {
   const requestData = {
     token,
     content: 'record',
@@ -54,6 +51,6 @@ export const pushAccountToRedcap = async (token: string, payload: unknown, fetch
     returnContent: 'count',
     returnFormat: 'json',
   } as const;
-  const result = await fetchRedcap<{ count: number }>(fetch, requestData);
+  const result = await fetchCrf<{ count: number }>(fetch, requestData);
   return result;
 };

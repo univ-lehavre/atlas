@@ -5,7 +5,7 @@ export default [
     tsconfigRootDir: import.meta.dirname,
     architectureCategory: "packages",
     workspaceModules: [
-      "@univ-lehavre/atlas-redcap-client",
+      "@univ-lehavre/atlas-crf-client",
       "@univ-lehavre/atlas-citation-fetch",
       "@univ-lehavre/atlas-citation-types",
     ],

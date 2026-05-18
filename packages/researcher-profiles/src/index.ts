@@ -12,8 +12,8 @@ export {
   CsvParseError,
   CsvReadError,
   CitationSearchError,
-  RedcapWriteError,
-  RedcapFetchError,
+  CrfWriteError,
+  CrfFetchError,
 } from "./errors.js";
 
 export { daysUntilNextUpdate } from "./utils.js";
@@ -30,13 +30,13 @@ export {
 } from "./services/citation.js";
 
 export {
-  type RedcapConnectionConfig,
+  type CrfConnectionConfig,
   fetchResearchers,
   fetchResearcherData,
   writeResearcherData,
   writeFinalReferences,
   downloadPublicationsFile,
-} from "./services/redcap.js";
+} from "./services/crf.js";
 
 export { extractText } from "./services/file-extractor.js";
 

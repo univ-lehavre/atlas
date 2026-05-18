@@ -3,7 +3,7 @@ import {
   computeCalendar,
   readCache,
   type Granularity,
-} from '@univ-lehavre/atlas-redcap-logs';
+} from '@univ-lehavre/atlas-crf-logs';
 import { json } from '@sveltejs/kit';
 import { applyPatches } from '$lib/patches.js';
 

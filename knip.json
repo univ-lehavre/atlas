@@ -11,7 +11,7 @@
         "src/**/*.ts"
       ]
     },
-    "packages/redcap-core": {
+    "packages/crf-core": {
       "project": [
         "src/**/*.ts"
       ]
@@ -101,7 +101,7 @@
       "ignore": [
         "src/lib/ui/Button.svelte",
         "src/lib/ui/TakeTheSurvey.svelte",
-        "src/lib/redcap/index.ts"
+        "src/lib/crf/index.ts"
       ],
       "ignoreDependencies": [
         "@univ-lehavre/atlas-logos",
@@ -158,7 +158,7 @@
         "tests/**/*.ts"
       ]
     },
-    "packages/redcap-client": {
+    "packages/crf-client": {
       "project": [
         "src/**/*.ts"
       ],
@@ -181,7 +181,7 @@
         "src/**/*.ts"
       ],
       "ignore": [
-        "src/commands/redcap/commands.ts",
+        "src/commands/api/commands.ts",
         "src/shared/context.ts",
         "src/shared/terminal.ts"
       ]

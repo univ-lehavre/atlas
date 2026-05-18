@@ -10,8 +10,8 @@ import {
   writeCache,
   isCacheStale,
   diagnoseEndpointNetwork,
-} from '@univ-lehavre/atlas-redcap-logs';
-import type { RawLog, ProjectToken } from '@univ-lehavre/atlas-redcap-logs';
+} from '@univ-lehavre/atlas-crf-logs';
+import type { RawLog, ProjectToken } from '@univ-lehavre/atlas-crf-logs';
 
 type CacheFile = Awaited<ReturnType<typeof readCache>>;
 type RefreshStage =

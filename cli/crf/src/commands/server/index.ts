@@ -92,15 +92,15 @@ const command = Command.make(
       });
 
       // Check required environment variables
-      const redcapUrl = process.env['REDCAP_API_URL'];
-      const redcapToken = process.env['REDCAP_API_TOKEN'];
+      const crfUrl = process.env['REDCAP_API_URL'];
+      const crfToken = process.env['REDCAP_API_TOKEN'];
 
-      if (!redcapUrl) {
+      if (!crfUrl) {
         log.error(ctx, 'REDCAP_API_URL environment variable is required');
         return yield* Effect.fail(ExitCode.InvalidConfig);
       }
 
-      if (!redcapToken) {
+      if (!crfToken) {
         log.error(ctx, 'REDCAP_API_TOKEN environment variable is required');
         return yield* Effect.fail(ExitCode.InvalidConfig);
       }

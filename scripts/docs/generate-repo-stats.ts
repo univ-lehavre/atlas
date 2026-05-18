@@ -88,7 +88,7 @@ const PACKAGE_PATHS = [
   'apps/find-an-expert',
   'apps/amarre',
   'services/crf',
-  'packages/redcap-core',
+  'packages/crf-core',
   'cli/redcap-openapi',
   'sandbox/redcap-sandbox',
   'packages/net',

@@ -22,8 +22,8 @@ import {
 import { generateChart } from "../output/chart.js";
 
 export interface MatchResearchersOptions {
-  readonly redcapUrl: string;
-  readonly redcapToken: string;
+  readonly crfUrl: string;
+  readonly crfToken: string;
   readonly top?: number;
   readonly output: "table" | "json";
   readonly sortBy: "similarity" | "complementarity";
@@ -99,7 +99,7 @@ function printTable(matches: ResearcherMatch[], top: number): void {
 export const matchResearchers = async (
   opts: MatchResearchersOptions,
 ): Promise<void> => {
-  const redcapConfig = { url: opts.redcapUrl, token: opts.redcapToken };
+  const crfConfig = { url: opts.crfUrl, token: opts.crfToken };
   const top = opts.top ?? 20;
 
   // 1. Fetch researcher list
@@ -107,7 +107,7 @@ export const matchResearchers = async (
   s.start("Fetching researchers from REDCap…");
 
   const fetchResult = await Effect.runPromise(
-    Effect.either(fetchResearchers(redcapConfig)),
+    Effect.either(fetchResearchers(crfConfig)),
   );
 
   if (Either.isLeft(fetchResult)) {
@@ -129,7 +129,7 @@ export const matchResearchers = async (
   s2.start(`Fetching oa_data (0/${String(researchers.length)})…`);
 
   const rawData = await fetchAllData(
-    redcapConfig,
+    crfConfig,
     researchers.map((r) => r.userid),
     (done, total) =>
       s2.message(`Fetching oa_data (${String(done)}/${String(total)})…`),

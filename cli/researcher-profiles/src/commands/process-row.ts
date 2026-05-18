@@ -35,7 +35,7 @@ import {
   type ResearcherData,
 } from "@univ-lehavre/atlas-researcher-profiles";
 
-interface RedcapConfig {
+interface CrfConfig {
   readonly url: string;
   readonly token: string;
 }
@@ -128,7 +128,7 @@ const fetchWorks = async (
 
 export const processRow = async (
   row: ResearcherRow,
-  redcapConfig: RedcapConfig,
+  crfConfig: CrfConfig,
   citationConfig: CitationConfig,
   onRateLimit?: (info: RateLimitInfo) => void,
   batch?: boolean,
@@ -144,7 +144,7 @@ export const processRow = async (
 
   // Fetch existing oa_data once
   const dataResult = await Effect.runPromise(
-    Effect.either(fetchResearcherData(redcapConfig, row.userid)),
+    Effect.either(fetchResearcherData(crfConfig, row.userid)),
   );
   if (Either.isLeft(dataResult)) {
     log.error(`[${label}] Failed to fetch oa_data`);
@@ -354,7 +354,7 @@ export const processRow = async (
   writeSpinner.start(`[${label}] Writing to REDCap…`);
 
   const writeResult = await Effect.runPromise(
-    Effect.either(writeResearcherData(redcapConfig, row.userid, updatedData)),
+    Effect.either(writeResearcherData(crfConfig, row.userid, updatedData)),
   );
 
   if (Either.isLeft(writeResult)) {

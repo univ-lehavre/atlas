@@ -134,7 +134,7 @@ Plan détaillé pour ajouter la couche "Sec" au pipeline existant (CI GitHub Act
 ### 5.2 CODEOWNERS
 
 - [ ] Créer `.github/CODEOWNERS`
-- [ ] Owners obligatoires sur : `packages/auth/`, `packages/redcap-client/`, `packages/redcap-core/`, `services/crf/`, `.github/workflows/`, `SECURITY.md`, `package.json` racine
+- [ ] Owners obligatoires sur : `packages/auth/`, `packages/crf-client/`, `packages/crf-core/`, `services/crf/`, `.github/workflows/`, `SECURITY.md`, `package.json` racine
 - [ ] Au minimum : `@pierre-olivier.chasset`, idéalement un second mainteneur pour le bus-factor
 
 ### 5.3 Branch protection sur `main`

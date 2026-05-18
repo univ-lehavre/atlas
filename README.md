@@ -19,7 +19,7 @@
 | Package                                                  | Parent Module | Description                                     |
 | -------------------------------------------------------- | ------------- | ----------------------------------------------- |
 | [find-an-expert](apps/find-an-expert)                    | ECRIN         | Expertise discovery via publications and GitHub |
-| [@univ-lehavre/atlas-redcap-core](packages/redcap-core)  | CRF           | REDCap business logic with Effect               |
+| [@univ-lehavre/atlas-crf-core](packages/crf-core)  | CRF           | REDCap business logic with Effect               |
 | [@univ-lehavre/atlas-redcap-openapi](cli/redcap-openapi) | CRF           | OpenAPI extraction from REDCap                  |
 
 ### Utility Sub-modules
@@ -83,20 +83,20 @@ The Campus is a laureate of the "ExcellencES" call for projects of **France 2030
 ### Using the REDCap API Client
 
 ```bash
-pnpm add @univ-lehavre/atlas-redcap-core effect
+pnpm add @univ-lehavre/atlas-crf-core effect
 ```
 
 ```typescript
 import { Effect } from "effect";
 import {
-  createRedcapClient,
-  RedcapUrl,
-  RedcapToken,
-} from "@univ-lehavre/atlas-redcap-core";
+  createCrfClient,
+  CrfUrl,
+  CrfToken,
+} from "@univ-lehavre/atlas-crf-core";
 
-const client = createRedcapClient({
-  url: RedcapUrl("https://redcap.example.com/api/"),
-  token: RedcapToken("YOUR_32_CHAR_HEXADECIMAL_TOKEN"),
+const client = createCrfClient({
+  url: CrfUrl("https://redcap.example.com/api/"),
+  token: CrfToken("YOUR_32_CHAR_HEXADECIMAL_TOKEN"),
 });
 
 const records = await Effect.runPromise(

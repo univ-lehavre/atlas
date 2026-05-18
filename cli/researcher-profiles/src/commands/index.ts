@@ -2,14 +2,14 @@
  * CLI entry point for atlas-researcher-profiles.
  *
  * Commands:
- *   from-redcap      — resolve OpenAlex works from REDCap researchers
+ *   from-crf      — resolve OpenAlex works from REDCap researchers
  *   match-references — match publications file against oa_references (default)
  */
 
 import { intro, log } from "@clack/prompts";
 import pc from "picocolors";
 import { run } from "./run.js";
-import { fromRedcap } from "./from-redcap.js";
+import { fromCrf } from "./from-crf.js";
 import { matchReferencesCommand } from "./match-references.js";
 import { matchResearchers } from "./match-researchers.js";
 
@@ -25,7 +25,7 @@ Resolve OpenAlex works for researchers and write results to REDCap.
 
 ${pc.bold("Usage:")}
   atlas-researcher-profiles [match-references] [--threshold N]
-  atlas-researcher-profiles from-redcap [--batch]
+  atlas-researcher-profiles from-crf [--batch]
   atlas-researcher-profiles match-researchers [--top N] [--output json|table] [--complementarity]
 
 ${pc.bold("Options:")}
@@ -59,24 +59,20 @@ export const main = async (): Promise<void> => {
     return;
   }
 
-  const knownCommands = [
-    "from-redcap",
-    "match-references",
-    "match-researchers",
-  ];
+  const knownCommands = ["from-crf", "match-references", "match-researchers"];
   if (command !== undefined && !knownCommands.includes(command)) {
     log.error(`Unknown command: ${pc.bold(command)}`);
     printHelp();
     process.exit(1);
   }
 
-  const redcapUrl = getEnv("REDCAP_API_URL");
-  const redcapToken = getEnv("REDCAP_API_TOKEN");
+  const crfUrl = getEnv("REDCAP_API_URL");
+  const crfToken = getEnv("REDCAP_API_TOKEN");
   const citationUserAgent =
     getEnv("OPENALEX_USER_AGENT") || "atlas-researcher-profiles/1.0.0";
   const citationApiKey = getEnv("OPENALEX_API_TOKEN") || undefined;
 
-  if (redcapUrl === "" || redcapToken === "") {
+  if (crfUrl === "" || crfToken === "") {
     log.error(
       "Missing required environment variables: REDCAP_API_URL and REDCAP_API_TOKEN",
     );
@@ -86,8 +82,8 @@ export const main = async (): Promise<void> => {
   const allArgs = new Set(process.argv.slice(2));
   const batch = allArgs.has("--batch") || allArgs.has("--yes");
   const opts = {
-    redcapUrl,
-    redcapToken,
+    crfUrl,
+    crfToken,
     citationUserAgent,
     citationApiKey,
     batch,
@@ -98,8 +94,8 @@ export const main = async (): Promise<void> => {
 
   if (command === undefined) {
     await run({
-      redcapUrl,
-      redcapToken,
+      crfUrl,
+      crfToken,
       citationUserAgent,
       citationApiKey,
       threshold: DEFAULT_THRESHOLD,
@@ -108,18 +104,18 @@ export const main = async (): Promise<void> => {
     return;
   }
 
-  if (command === "from-redcap") {
+  if (command === "from-crf") {
     const args = process.argv.slice(3);
     const knownFlags = new Set(["--batch", "--yes"]);
     const unknownArgs = args.filter((a) => !knownFlags.has(a));
     if (unknownArgs.length > 0) {
       log.error(
-        `Unknown option(s) for from-redcap: ${unknownArgs.map((a) => pc.bold(a)).join(", ")}`,
+        `Unknown option(s) for from-crf: ${unknownArgs.map((a) => pc.bold(a)).join(", ")}`,
       );
-      log.message(`Usage: atlas-researcher-profiles from-redcap [--batch]`);
+      log.message(`Usage: atlas-researcher-profiles from-crf [--batch]`);
       process.exit(1);
     }
-    await fromRedcap(opts);
+    await fromCrf(opts);
     return;
   }
 
@@ -169,8 +165,8 @@ export const main = async (): Promise<void> => {
       process.exit(1);
     }
     await matchResearchers({
-      redcapUrl,
-      redcapToken,
+      crfUrl,
+      crfToken,
       top,
       output: outputArg,
       sortBy,
@@ -217,8 +213,8 @@ export const main = async (): Promise<void> => {
       return v;
     })();
     await matchReferencesCommand({
-      redcapUrl,
-      redcapToken,
+      crfUrl,
+      crfToken,
       threshold,
       citationUserAgent,
       citationApiKey,

@@ -32,13 +32,13 @@ const PACKAGE_GROUPS: Record<string, string[]> = {
     'atlas-dashboard',
     'atlas-redcap-dashboard',
   ],
-  REDCap: [
+  CRF: [
     'atlas-crf',
     'atlas-crf-cli',
-    'atlas-redcap-client',
-    'atlas-redcap-core',
+    'atlas-crf-client',
+    'atlas-crf-core',
+    'atlas-crf-logs',
     'atlas-redcap-openapi',
-    'atlas-redcap-logs',
     'atlas-redcap-sandbox',
     'atlas-redcap-stats-cli',
   ],

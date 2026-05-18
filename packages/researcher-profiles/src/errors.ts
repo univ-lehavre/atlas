@@ -20,11 +20,11 @@ export class CitationSearchError extends Data.TaggedError(
   readonly cause: unknown;
 }> {}
 
-export class RedcapWriteError extends Data.TaggedError("RedcapWriteError")<{
+export class CrfWriteError extends Data.TaggedError("CrfWriteError")<{
   readonly userid: string;
   readonly cause: unknown;
 }> {}
 
-export class RedcapFetchError extends Data.TaggedError("RedcapFetchError")<{
+export class CrfFetchError extends Data.TaggedError("CrfFetchError")<{
   readonly cause: unknown;
 }> {}

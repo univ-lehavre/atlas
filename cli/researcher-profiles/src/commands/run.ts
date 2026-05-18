@@ -17,8 +17,8 @@ import { matchRow } from "./match-row.js";
 import { selectResearchers } from "../prompts/select-researchers.js";
 
 export interface RunOptions {
-  readonly redcapUrl: string;
-  readonly redcapToken: string;
+  readonly crfUrl: string;
+  readonly crfToken: string;
   readonly citationUserAgent: string;
   readonly citationApiKey?: string;
   readonly threshold: number;
@@ -39,7 +39,7 @@ const showQuota = (
 };
 
 export const run = async (opts: RunOptions): Promise<void> => {
-  const redcapConfig = { url: opts.redcapUrl, token: opts.redcapToken };
+  const crfConfig = { url: opts.crfUrl, token: opts.crfToken };
   const citationConfig: CitationConfig = {
     userAgent: opts.citationUserAgent,
     ...(opts.citationApiKey !== undefined
@@ -52,7 +52,7 @@ export const run = async (opts: RunOptions): Promise<void> => {
   s.start("Fetching researchers from REDCap…");
 
   const fetchResult = await Effect.runPromise(
-    Effect.either(fetchResearchers(redcapConfig)),
+    Effect.either(fetchResearchers(crfConfig)),
   );
 
   if (Either.isLeft(fetchResult)) {
@@ -101,7 +101,7 @@ export const run = async (opts: RunOptions): Promise<void> => {
 
     const processStatus = await processRow(
       row,
-      redcapConfig,
+      crfConfig,
       citationConfig,
       (q) => {
         lastQuota = q;
@@ -111,7 +111,7 @@ export const run = async (opts: RunOptions): Promise<void> => {
     );
 
     const matchStatus = await matchRow(row, {
-      redcap: redcapConfig,
+      redcap: crfConfig,
       openAlex: citationConfig,
       threshold: opts.threshold,
     });
