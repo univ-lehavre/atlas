@@ -1,0 +1,60 @@
+{
+  "generated_at": "2026-05-18T15:17:20.511Z",
+  "description": "Atlas REDCap test fixtures — fake-named, REDCap-importable data dictionaries pour les tests d'intégration des packages consommant l'API REDCap.",
+  "projects": [
+    {
+      "project_id": 127,
+      "output_csv": "atlas-amarre-v1.csv",
+      "project_title": "AMARRE (v1)",
+      "used_by": ["apps/amarre"],
+      "description": "AMARRE — workflow d'appel à candidature multi-étapes (Contact → Form → Composante/Labo/Encadrant → Validation → triple peer-review).",
+      "instruments": [
+        "Contact",
+        "Form",
+        "Composante",
+        "Labo",
+        "Encadrant",
+        "Validation Finale",
+        "Admin",
+        "Dossier",
+        "Reviewer 1",
+        "Reviewer 2",
+        "Reviewer 3"
+      ],
+      "fields_count": 118,
+      "fake_substitutions": 46
+    },
+    {
+      "project_id": 136,
+      "output_csv": "atlas-ecrin-v2-alpha.csv",
+      "project_title": "ECRIN (v2-alpha)",
+      "used_by": ["apps/ecrin"],
+      "description": "ECRIN v2-alpha — référentiel chercheurs avec ORCID, contacts et données institutionnelles (schéma de production actuel).",
+      "instruments": [
+        "Contact",
+        "Researcher Profile",
+        "Research Questions",
+        "Publications",
+        "Project Proposal",
+        "OpenAlex"
+      ],
+      "fields_count": 55,
+      "fake_substitutions": 14
+    },
+    {
+      "project_id": 106,
+      "output_csv": "atlas-ecrin-v1-beta.csv",
+      "project_title": "ECRIN (v1-beta)",
+      "used_by": ["packages/researcher-profiles", "cli/researcher-profiles"],
+      "description": "ECRIN v1-beta — schéma chercheurs avec champs `orcid` et `openalex_complete` requis par `ResearcherRow` (packages/researcher-profiles).",
+      "instruments": [
+        "Contact",
+        "Overview",
+        "About You",
+        "Your Upcoming Project"
+      ],
+      "fields_count": 36,
+      "fake_substitutions": 3
+    }
+  ]
+}

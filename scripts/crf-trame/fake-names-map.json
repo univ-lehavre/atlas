@@ -1,0 +1,35 @@
+{
+  "$schema": "JSON config for crf-trame fake-names substitution",
+  "description": "Deterministic mapping from identifying terms (ULHN, labs, etc.) to fake but plausible alternatives. Substitution is case-insensitive on the LHS but preserves a consistent casing on the RHS. Each row pair is applied; the longest LHS is tried first to avoid prefix collisions.",
+  "replacements": [
+    {
+      "from": "Université Le Havre Normandie",
+      "to": "Université Atlas de Test"
+    },
+    {
+      "from": "Universite Le Havre Normandie",
+      "to": "Universite Atlas de Test"
+    },
+    { "from": "University of Le Havre", "to": "University of Atlas Test" },
+    { "from": "Le Havre Normandie", "to": "Atlas Normandy" },
+    { "from": "ULHN", "to": "UAT" },
+    { "from": "ulhn", "to": "uat" },
+    { "from": "ULH", "to": "UAT" },
+    { "from": "Le Havre", "to": "Atlas Test City" },
+    { "from": "LMAH", "to": "AlphaLab" },
+    { "from": "LITIS", "to": "BetaLab" },
+    { "from": "GREAH", "to": "GammaLab" },
+    { "from": "LOMC", "to": "DeltaLab" },
+    { "from": "URCOM", "to": "EpsilonLab" },
+    { "from": "CIRTAI", "to": "ZetaLab" },
+    { "from": "IDEES", "to": "EtaLab" },
+    { "from": "CERIIM", "to": "KappaLab" },
+    { "from": "NIMEC", "to": "ThetaLab" },
+    { "from": "EDEHN", "to": "IotaLab" }
+  ],
+  "patterns": {
+    "emails": { "enabled": true, "replacement": "contact@test.example.org" },
+    "frenchPhones": { "enabled": true, "replacement": "+33 1 23 45 67 89" },
+    "urls": { "enabled": false }
+  }
+}
