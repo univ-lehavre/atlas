@@ -1,0 +1,59 @@
+# @univ-lehavre/atlas-redcap-dashboard
+
+## 1.0.1
+
+### Patch Changes
+
+- [#113](https://github.com/univ-lehavre/atlas/pull/113) [`6f6e5db`](https://github.com/univ-lehavre/atlas/commit/6f6e5db80769bf9b375510e37c5ed0dba2f3c310) Thanks [@chasset](https://github.com/chasset)! - Document code units with accurate README summaries.
+
+- Updated dependencies [[`6f6e5db`](https://github.com/univ-lehavre/atlas/commit/6f6e5db80769bf9b375510e37c5ed0dba2f3c310)]:
+  - @univ-lehavre/atlas-redcap-logs@1.0.1
+
+## 1.0.0
+
+### Major Changes
+
+- [`885539b`](https://github.com/univ-lehavre/atlas/commit/885539b9ba8c013680cb9784ccf8d124c8b73ce4) Thanks [@chasset](https://github.com/chasset)! - Bump all packages to v1.0.0 — stabilisation des API publiques.
+
+### Patch Changes
+
+- Updated dependencies [[`885539b`](https://github.com/univ-lehavre/atlas/commit/885539b9ba8c013680cb9784ccf8d124c8b73ce4)]:
+  - @univ-lehavre/atlas-redcap-logs@1.0.0
+
+## 0.2.3
+
+### Patch Changes
+
+- [#109](https://github.com/univ-lehavre/atlas/pull/109) [`2373654`](https://github.com/univ-lehavre/atlas/commit/2373654c0267e728c87807786b4b311cae29b4ec) Thanks [@chasset](https://github.com/chasset)! - Mise à jour des dépendances (minor/patch) : svelte, vite, vitest, typescript, eslint, prettier, effect, @sveltejs/kit, appwrite, knip, turbo, lefthook, et autres.
+
+- Updated dependencies [[`2373654`](https://github.com/univ-lehavre/atlas/commit/2373654c0267e728c87807786b4b311cae29b4ec)]:
+  - @univ-lehavre/atlas-redcap-logs@0.3.2
+
+## 0.2.2
+
+### Patch Changes
+
+- Updated dependencies [[`35dec18`](https://github.com/univ-lehavre/atlas/commit/35dec1802d501625c14f4f83e167e881040b1f19)]:
+  - @univ-lehavre/atlas-redcap-logs@0.3.1
+
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [[`02f3bdc`](https://github.com/univ-lehavre/atlas/commit/02f3bdcf6777f5ebd4fd730020f3d4e87cbc247e)]:
+  - @univ-lehavre/atlas-redcap-logs@0.3.0
+
+## 0.2.0
+
+### Minor Changes
+
+- [#97](https://github.com/univ-lehavre/atlas/pull/97) [`99cec7f`](https://github.com/univ-lehavre/atlas/commit/99cec7f077aedbb10fc217a87ed7d4055d9cbf7d) Thanks [@chasset](https://github.com/chasset)! - **`atlas-redcap-dashboard` — Initial release.** SvelteKit dashboard for REDCap log statistics.
+
+  **`atlas-redcap-logs`** — Add `Granularity` type and `computeCalendar(granularity, entries)` supporting day, week, month, and quarter aggregations.
+
+  **`atlas-redcap-dashboard`** — Add `/api/stats?granularity=` endpoint, replace Y-scale selector with aggregation selector, patch out April 7–8 2026 log entries.
+
+### Patch Changes
+
+- Updated dependencies [[`754e9e0`](https://github.com/univ-lehavre/atlas/commit/754e9e0c3a1dd199bc933585496c53c2202a7ed1), [`99cec7f`](https://github.com/univ-lehavre/atlas/commit/99cec7f077aedbb10fc217a87ed7d4055d9cbf7d)]:
+  - @univ-lehavre/atlas-redcap-logs@0.2.0

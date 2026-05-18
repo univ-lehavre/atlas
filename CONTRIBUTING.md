@@ -245,8 +245,7 @@ type(scope): description
 | `dashboard` | apps/atlas-dashboard                                  |
 | `ecrin`     | apps/ecrin                                            |
 | `find`      | apps/find-an-expert                                   |
-| `crf`       | services/crf, cli/crf, packages/crf-\*                |
-| `redcap`    | apps/redcap-dashboard (until PR 4)                    |
+| `crf`       | services/crf, cli/crf*, packages/crf-\*, apps/crf-dashboard, sandbox/crf-sandbox |
 | `net`       | packages/net, cli/net                                 |
 | `citation` | packages/citation*, cli/citation                       |
 | `profiles`  | packages/researcher-profiles, cli/researcher-profiles |
@@ -273,9 +272,9 @@ atlas/
 ├── apps/                    # SvelteKit web applications
 │   ├── amarre/              # Survey management app
 │   ├── atlas-dashboard/     # Main dashboard
+│   ├── crf-dashboard/       # Clinical research form (CRF / REDCap) dashboard
 │   ├── ecrin/               # ECRIN portal
-│   ├── find-an-expert/      # Researcher discovery app
-│   └── redcap-dashboard/    # REDCap dashboard
+│   └── find-an-expert/      # Researcher discovery app
 │
 ├── packages/                # Shared libraries
 │   ├── auth/                # Authentication helpers
@@ -301,9 +300,9 @@ atlas/
 │   ├── biblio/              # Bibliography CLI
 │   ├── citation/            # OpenAlex citation graph CLI
 │   ├── crf/                 # CRF management CLI
+│   ├── crf-openapi/         # CRF (REDCap) OpenAPI spec generator
+│   ├── crf-stats/           # CRF (REDCap) statistics CLI
 │   ├── net/                 # Network diagnostics CLI
-│   ├── redcap-openapi/      # REDCap OpenAPI spec generator
-│   ├── redcap-stats/        # REDCap statistics CLI
 │   └── researcher-profiles/ # Researcher profile CLI
 │
 ├── config/

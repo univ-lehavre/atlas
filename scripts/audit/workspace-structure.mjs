@@ -12,7 +12,7 @@ const ROOTS = [
   "services",
   "ui",
 ];
-const NO_CLI_SUFFIX_ALLOWED = new Set(["@univ-lehavre/atlas-redcap-openapi"]);
+const NO_CLI_SUFFIX_ALLOWED = new Set(["@univ-lehavre/atlas-crf-openapi"]);
 // TODO: migrate src/prompt/ to cli/biblio — @clack/prompts belongs in cli/
 const CLI_IO_MIGRATION_PENDING = new Set([
   "@univ-lehavre/atlas-citation-validate",

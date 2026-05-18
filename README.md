@@ -20,7 +20,7 @@
 | -------------------------------------------------------- | ------------- | ----------------------------------------------- |
 | [find-an-expert](apps/find-an-expert)                    | ECRIN         | Expertise discovery via publications and GitHub |
 | [@univ-lehavre/atlas-crf-core](packages/crf-core)  | CRF           | REDCap business logic with Effect               |
-| [@univ-lehavre/atlas-redcap-openapi](cli/redcap-openapi) | CRF           | OpenAPI extraction from REDCap                  |
+| [@univ-lehavre/atlas-crf-openapi](cli/crf-openapi) | CRF           | OpenAPI extraction from REDCap                  |
 
 ### Utility Sub-modules
 

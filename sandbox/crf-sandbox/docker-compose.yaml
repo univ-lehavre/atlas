@@ -1,0 +1,91 @@
+# REDCap Development Server
+#
+# Prerequisites:
+# 1. Place REDCap source code in ../redcap-openapi/upstream/versions/14.5.10/
+# 2. Database config is in docker/config/database.php
+#
+# Usage:
+#   docker compose up -d
+#
+# Access:
+#   - REDCap: http://localhost:8080
+#   - phpMyAdmin: http://localhost:8081
+#
+# Default credentials:
+#   - MySQL root: redcap_root_password
+#   - MySQL user: redcap / redcap_password
+#   - REDCap admin: Created during install wizard
+
+services:
+  redcap:
+    image: php:8.2-apache
+    container_name: redcap-app
+    ports:
+      - '8080:80'
+    volumes:
+      - ../redcap-openapi/upstream:/var/www/html
+      - ./docker/php.ini:/usr/local/etc/php/conf.d/redcap.ini:ro
+    environment:
+      - APACHE_DOCUMENT_ROOT=/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost/']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    command: >
+      bash -c "
+        docker-php-ext-install mysqli pdo pdo_mysql &&
+        apt-get update && apt-get install -y libzip-dev libpng-dev libjpeg-dev libfreetype6-dev &&
+        docker-php-ext-configure gd --with-freetype --with-jpeg &&
+        docker-php-ext-install gd zip &&
+        a2enmod rewrite &&
+        apache2-foreground
+      "
+    networks:
+      - redcap-network
+
+  db:
+    image: mysql:8.0
+    container_name: redcap-db
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: redcap_root_password
+      MYSQL_DATABASE: redcap
+      MYSQL_USER: redcap
+      MYSQL_PASSWORD: redcap_password
+    volumes:
+      - redcap-db-data:/var/lib/mysql
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-predcap_root_password']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - redcap-network
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: redcap-phpmyadmin
+    ports:
+      - '8081:80'
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: redcap_root_password
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - redcap-network
+
+volumes:
+  redcap-db-data:
+
+networks:
+  redcap-network:
+    driver: bridge

@@ -30,7 +30,7 @@ const PACKAGE_GROUPS: Record<string, string[]> = {
     'atlas-find-an-expert',
     'atlas-amarre',
     'atlas-dashboard',
-    'atlas-redcap-dashboard',
+    'atlas-crf-dashboard',
   ],
   CRF: [
     'atlas-crf',
@@ -38,9 +38,9 @@ const PACKAGE_GROUPS: Record<string, string[]> = {
     'atlas-crf-client',
     'atlas-crf-core',
     'atlas-crf-logs',
-    'atlas-redcap-openapi',
-    'atlas-redcap-sandbox',
-    'atlas-redcap-stats-cli',
+    'atlas-crf-openapi',
+    'atlas-crf-sandbox',
+    'atlas-crf-stats-cli',
   ],
   Bibliography: [
     'atlas-citation',

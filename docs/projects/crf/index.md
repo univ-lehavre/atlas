@@ -17,7 +17,7 @@ packages/crf-core/       # Pure REDCap domain types, brands and validation
 packages/crf-client/     # Effect client and generated REDCap API types
 services/crf/               # Hono HTTP microservice
 cli/crf/                    # crf-redcap and crf-server commands
-cli/redcap-openapi/         # OpenAPI extraction, comparison and documentation tools
+cli/crf-openapi/         # OpenAPI extraction, comparison and documentation tools
 ```
 
 ## REDCap Client

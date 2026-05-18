@@ -63,7 +63,7 @@ README coverage is good across the monorepo. The root README links to the active
 | AMARRE             | `apps/amarre`          |
 | Find an Expert     | `apps/find-an-expert`  |
 | CRF service        | `services/crf`         |
-| REDCap OpenAPI CLI | `cli/redcap-openapi`   |
+| REDCap OpenAPI CLI | `cli/crf-openapi`   |
 | Shared config      | `config/shared-config` |
 
 The application README files use logos from `packages/logos/` when rendered from GitHub, while VitePress uses the curated public copies in `docs/public/logos/`.

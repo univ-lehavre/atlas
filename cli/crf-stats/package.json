@@ -1,0 +1,48 @@
+{
+  "name": "@univ-lehavre/atlas-crf-stats-cli",
+  "version": "1.0.3",
+  "description": "CLI to test CRF (REDCap) project tokens and inspect API responses",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "cli/crf-stats"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "atlas-crf-stats": "./dist/bin/atlas-crf-stats.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/bin/atlas-crf-stats.js",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage --passWithNoTests"
+  },
+  "dependencies": {
+    "@univ-lehavre/atlas-crf-logs": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "eslint": "^10.2.1",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

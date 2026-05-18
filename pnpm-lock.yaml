@@ -248,6 +248,55 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
+  apps/crf-dashboard:
+    dependencies:
+      '@observablehq/plot':
+        specifier: ^0.6.17
+        version: 0.6.17
+      '@univ-lehavre/atlas-crf-logs':
+        specifier: workspace:*
+        version: link:../../packages/crf-logs
+    devDependencies:
+      '@sveltejs/adapter-node':
+        specifier: ^5.5.4
+        version: 5.5.4(@sveltejs/kit@2.58.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.5)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))(svelte@5.55.5)(typescript@6.0.3)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))
+      '@sveltejs/kit':
+        specifier: '>=2.58.0'
+        version: 2.58.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.5)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))(svelte@5.55.5)(typescript@6.0.3)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+      '@sveltejs/vite-plugin-svelte':
+        specifier: ^7.0.0
+        version: 7.0.0(svelte@5.55.5)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.2.1
+        version: 10.2.1(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
+      prettier-plugin-svelte:
+        specifier: ^3.5.1
+        version: 3.5.1(prettier@3.8.3)(svelte@5.55.5)
+      svelte:
+        specifier: ^5.55.5
+        version: 5.55.5
+      svelte-check:
+        specifier: ^4.4.6
+        version: 4.4.6(picomatch@4.0.4)(svelte@5.55.5)(typescript@6.0.3)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vite:
+        specifier: ^8.0.10
+        version: 8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+
   apps/ecrin:
     dependencies:
       '@sigma/node-border':
@@ -454,55 +503,6 @@ importers:
         specifier: ^0.1.0
         version: 0.1.0(vitest@4.1.5)
 
-  apps/redcap-dashboard:
-    dependencies:
-      '@observablehq/plot':
-        specifier: ^0.6.17
-        version: 0.6.17
-      '@univ-lehavre/atlas-crf-logs':
-        specifier: workspace:*
-        version: link:../../packages/crf-logs
-    devDependencies:
-      '@sveltejs/adapter-node':
-        specifier: ^5.5.4
-        version: 5.5.4(@sveltejs/kit@2.58.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.5)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))(svelte@5.55.5)(typescript@6.0.3)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))
-      '@sveltejs/kit':
-        specifier: '>=2.58.0'
-        version: 2.58.0(@sveltejs/vite-plugin-svelte@7.0.0(svelte@5.55.5)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)))(svelte@5.55.5)(typescript@6.0.3)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-      '@sveltejs/vite-plugin-svelte':
-        specifier: ^7.0.0
-        version: 7.0.0(svelte@5.55.5)(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-      '@types/node':
-        specifier: ^25.6.0
-        version: 25.6.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../config/shared-config
-      eslint:
-        specifier: ^10.2.1
-        version: 10.2.1(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.3
-        version: 3.8.3
-      prettier-plugin-svelte:
-        specifier: ^3.5.1
-        version: 3.5.1(prettier@3.8.3)(svelte@5.55.5)
-      svelte:
-        specifier: ^5.55.5
-        version: 5.55.5
-      svelte-check:
-        specifier: ^4.4.6
-        version: 4.4.6(picomatch@4.0.4)(svelte@5.55.5)(typescript@6.0.3)
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vite:
-        specifier: ^8.0.10
-        version: 8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3)
-      vitest:
-        specifier: ^4.1.5
-        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-
   cli/atlas-stats:
     dependencies:
       '@clack/prompts':
@@ -690,6 +690,68 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
+  cli/crf-openapi:
+    dependencies:
+      '@clack/prompts':
+        specifier: ^1.2.0
+        version: 1.2.0
+      '@univ-lehavre/atlas-crf-core':
+        specifier: workspace:*
+        version: link:../../packages/crf-core
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
+      yaml:
+        specifier: ^2.8.3
+        version: 2.8.3
+    devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.2.1
+        version: 10.2.1(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
+      tsx:
+        specifier: ^4.21.0
+        version: 4.21.0
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+
+  cli/crf-stats:
+    dependencies:
+      '@univ-lehavre/atlas-crf-logs':
+        specifier: workspace:*
+        version: link:../../packages/crf-logs
+    devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.2.1
+        version: 10.2.1(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+
   cli/net:
     dependencies:
       '@clack/prompts':
@@ -728,68 +790,6 @@ importers:
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
-    devDependencies:
-      '@types/node':
-        specifier: ^25.6.0
-        version: 25.6.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../config/shared-config
-      eslint:
-        specifier: ^10.2.1
-        version: 10.2.1(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.3
-        version: 3.8.3
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.5
-        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-
-  cli/redcap-openapi:
-    dependencies:
-      '@clack/prompts':
-        specifier: ^1.2.0
-        version: 1.2.0
-      '@univ-lehavre/atlas-crf-core':
-        specifier: workspace:*
-        version: link:../../packages/crf-core
-      picocolors:
-        specifier: ^1.1.1
-        version: 1.1.1
-      yaml:
-        specifier: ^2.8.3
-        version: 2.8.3
-    devDependencies:
-      '@types/node':
-        specifier: ^25.6.0
-        version: 25.6.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../config/shared-config
-      eslint:
-        specifier: ^10.2.1
-        version: 10.2.1(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.3
-        version: 3.8.3
-      tsx:
-        specifier: ^4.21.0
-        version: 4.21.0
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.5
-        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-
-  cli/redcap-stats:
-    dependencies:
-      '@univ-lehavre/atlas-crf-logs':
-        specifier: workspace:*
-        version: link:../../packages/crf-logs
     devDependencies:
       '@types/node':
         specifier: ^25.6.0
@@ -1416,7 +1416,7 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
-  sandbox/redcap-sandbox:
+  sandbox/crf-sandbox:
     devDependencies:
       '@types/node':
         specifier: ^25.6.0

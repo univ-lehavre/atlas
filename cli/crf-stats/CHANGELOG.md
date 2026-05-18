@@ -1,0 +1,79 @@
+# @univ-lehavre/atlas-redcap-stats-cli
+
+## 1.0.3
+
+### Patch Changes
+
+- [#123](https://github.com/univ-lehavre/atlas/pull/123) [`fa67ef8`](https://github.com/univ-lehavre/atlas/commit/fa67ef80e128e127f5bf602686f78f44ba02668f) Thanks [@chasset](https://github.com/chasset)! - Organize CLI source layout around bin, commands, config, prompts, and output adapters.
+
+## 1.0.2
+
+### Patch Changes
+
+- [#115](https://github.com/univ-lehavre/atlas/pull/115) [`eae5e1c`](https://github.com/univ-lehavre/atlas/commit/eae5e1c54e7e231acd9566221dd1926983e920ea) Thanks [@chasset](https://github.com/chasset)! - Add `architectureCategory` option to ESLint presets in `shared-config` to enforce per-category import restrictions at lint time. All workspace packages receive their category assignment, enabling detection of CLI I/O in `packages/` and `*-cli` imports in `apps/` and `services/`. Normalize dependency specifiers and add `audit:dep-versions` script.
+
+- Updated dependencies []:
+  - @univ-lehavre/atlas-redcap-logs@1.0.1
+
+## 1.0.1
+
+### Patch Changes
+
+- [#113](https://github.com/univ-lehavre/atlas/pull/113) [`6f6e5db`](https://github.com/univ-lehavre/atlas/commit/6f6e5db80769bf9b375510e37c5ed0dba2f3c310) Thanks [@chasset](https://github.com/chasset)! - Document code units with accurate README summaries.
+
+- Updated dependencies [[`6f6e5db`](https://github.com/univ-lehavre/atlas/commit/6f6e5db80769bf9b375510e37c5ed0dba2f3c310)]:
+  - @univ-lehavre/atlas-redcap-logs@1.0.1
+
+## 1.0.0
+
+### Major Changes
+
+- [`885539b`](https://github.com/univ-lehavre/atlas/commit/885539b9ba8c013680cb9784ccf8d124c8b73ce4) Thanks [@chasset](https://github.com/chasset)! - Bump all packages to v1.0.0 — stabilisation des API publiques.
+
+### Patch Changes
+
+- Updated dependencies [[`885539b`](https://github.com/univ-lehavre/atlas/commit/885539b9ba8c013680cb9784ccf8d124c8b73ce4)]:
+  - @univ-lehavre/atlas-redcap-logs@1.0.0
+
+## 0.2.3
+
+### Patch Changes
+
+- [#109](https://github.com/univ-lehavre/atlas/pull/109) [`2373654`](https://github.com/univ-lehavre/atlas/commit/2373654c0267e728c87807786b4b311cae29b4ec) Thanks [@chasset](https://github.com/chasset)! - Mise à jour des dépendances (minor/patch) : svelte, vite, vitest, typescript, eslint, prettier, effect, @sveltejs/kit, appwrite, knip, turbo, lefthook, et autres.
+
+- Updated dependencies [[`2373654`](https://github.com/univ-lehavre/atlas/commit/2373654c0267e728c87807786b4b311cae29b4ec)]:
+  - @univ-lehavre/atlas-redcap-logs@0.3.2
+
+## 0.2.2
+
+### Patch Changes
+
+- [#103](https://github.com/univ-lehavre/atlas/pull/103) [`35dec18`](https://github.com/univ-lehavre/atlas/commit/35dec1802d501625c14f4f83e167e881040b1f19) Thanks [@chasset](https://github.com/chasset)! - Align dependency updates across the workspace packages, replace the license audit implementation at the root, and remove deprecated `@types/json-stable-stringify` from `@univ-lehavre/atlas-validate-openalex`.
+
+- Updated dependencies [[`35dec18`](https://github.com/univ-lehavre/atlas/commit/35dec1802d501625c14f4f83e167e881040b1f19)]:
+  - @univ-lehavre/atlas-redcap-logs@0.3.1
+
+## 0.2.1
+
+### Patch Changes
+
+- [#100](https://github.com/univ-lehavre/atlas/pull/100) [`aced246`](https://github.com/univ-lehavre/atlas/commit/aced24617bdc0839a40d8a52e69d6222e96b609a) Thanks [@chasset](https://github.com/chasset)! - Move REDCap tooling packages into the unified `cli/*` layout.
+  - relocate `atlas-redcap-openapi` from `tools/dev/redcap-openapi` to `cli/redcap-openapi`
+  - relocate `atlas-redcap-stats-cli` from `tools/cli-redcap-stats` to `cli/redcap-stats`
+  - update workspace and tooling references (pnpm lockfile, TypeDoc, Knip, package metadata)
+
+- Updated dependencies [[`02f3bdc`](https://github.com/univ-lehavre/atlas/commit/02f3bdcf6777f5ebd4fd730020f3d4e87cbc247e)]:
+  - @univ-lehavre/atlas-redcap-logs@0.3.0
+
+## 0.2.0
+
+### Minor Changes
+
+- [#97](https://github.com/univ-lehavre/atlas/pull/97) [`754e9e0`](https://github.com/univ-lehavre/atlas/commit/754e9e0c3a1dd199bc933585496c53c2202a7ed1) Thanks [@chasset](https://github.com/chasset)! - **`atlas-redcap-stats-cli` — Initial release.** New CLI package to inspect REDCap project token and API health.
+
+  **`atlas-redcap-logs`** — Switch cache to current working directory, write human-readable JSON cache files, improve action-category detection (French labels), simplify user categories to "loggé"/"enquêté", estimate surveyed users from survey/record identifiers, add calendar-month aggregations.
+
+### Patch Changes
+
+- Updated dependencies [[`754e9e0`](https://github.com/univ-lehavre/atlas/commit/754e9e0c3a1dd199bc933585496c53c2202a7ed1), [`99cec7f`](https://github.com/univ-lehavre/atlas/commit/99cec7f077aedbb10fc217a87ed7d4055d9cbf7d)]:
+  - @univ-lehavre/atlas-redcap-logs@0.2.0

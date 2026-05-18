@@ -1,0 +1,54 @@
+# @univ-lehavre/atlas-crf-stats-cli
+
+CLI de test des réponses HTTP REDCap par projet.
+
+La commande lit un fichier `redcap-token.csv`, résout l'URL API depuis les options ou l'environnement, puis teste un projet précis ou tous les projets du CSV. Elle peut changer le `content` REDCap interrogé, appliquer un timeout, afficher un extrait de corps HTTP et produire une sortie JSON.
+
+## Installation (monorepo)
+
+```bash
+pnpm install
+```
+
+## Usage
+
+### Test one project
+
+```bash
+pnpm --filter @univ-lehavre/atlas-crf-stats-cli build
+node cli/crf-stats/dist/bin/atlas-crf-stats.js --project 25
+```
+
+### Test all projects
+
+```bash
+node cli/crf-stats/dist/bin/atlas-crf-stats.js --all
+```
+
+## Options
+
+- `--project <id>`: test a single `project_id`
+- `--all`: test all projects from the CSV
+- `--api-url <url>`: override REDCap API URL
+- `--tokens-file <path>`: override CSV path (default: `redcap-token.csv`)
+- `--content <name>`: REDCap content to test (default: `log`)
+- `--timeout-ms <n>`: HTTP timeout in ms (default: `12000`)
+- `--show-body`: display a response body preview
+- `--json`: JSON output
+
+## `REDCAP_API_URL` resolution
+
+Priority order:
+
+1. `--api-url`
+2. `REDCAP_API_URL` environment variable
+3. `apps/crf-dashboard/.env`
+4. root `.env`
+
+## Example output
+
+```text
+[redcap] project 25: HTTP 403 Forbidden
+
+Summary: {"403":1}
+```

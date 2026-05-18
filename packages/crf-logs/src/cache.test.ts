@@ -32,7 +32,7 @@ describe("readCache", () => {
 
     expect(result).toEqual(cacheContent);
     expect(mockReadFile).toHaveBeenCalledWith(
-      expect.stringContaining(".redcap-stats.json"),
+      expect.stringContaining(".crf-stats.json"),
       "utf8",
     );
   });
@@ -65,7 +65,7 @@ describe("writeCache", () => {
 
     expect(mockWriteFile).toHaveBeenCalledOnce();
     const [path, content, encoding] = mockWriteFile.mock.calls[0]!;
-    expect(path).toEqual(expect.stringContaining(".redcap-stats.json"));
+    expect(path).toEqual(expect.stringContaining(".crf-stats.json"));
     expect(encoding).toBe("utf8");
     const parsed = JSON.parse(content as string);
     expect(parsed.savedAt).toBe(Date.now());

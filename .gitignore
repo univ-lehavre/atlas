@@ -57,6 +57,7 @@ rocketchat-k3s-roadmap.pdf
 *.traineddata
 CLAUDE.md
 *-token.csv
+apps/crf-dashboard/.crf-stats.json
 apps/redcap-dashboard/.redcap-stats.json
 .atlas-stats.json
 cli/researcher-profiles/matches.html
