@@ -5,8 +5,8 @@
 import { spinner, log, outro } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either } from "effect";
-import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
-import type { RateLimitInfo } from "@univ-lehavre/atlas-fetch-openalex";
+import type { CitationConfig } from "@univ-lehavre/atlas-citation-fetch";
+import type { RateLimitInfo } from "@univ-lehavre/atlas-citation-fetch";
 import {
   fetchResearchers,
   daysUntilNextUpdate,
@@ -18,8 +18,8 @@ import { selectResearchers } from "../prompts/select-researchers.js";
 interface FromRedcapOptions {
   readonly redcapUrl: string;
   readonly redcapToken: string;
-  readonly openAlexUserAgent: string;
-  readonly openAlexApiKey?: string;
+  readonly citationUserAgent: string;
+  readonly citationApiKey?: string;
   readonly batch?: boolean;
 }
 
@@ -48,10 +48,10 @@ export const fromRedcap = async (
     url: opts.redcapUrl,
     token: opts.redcapToken,
   };
-  const openAlexConfig: OpenAlexConfig = {
-    userAgent: opts.openAlexUserAgent,
-    ...(opts.openAlexApiKey !== undefined
-      ? { apiKey: opts.openAlexApiKey }
+  const citationConfig: CitationConfig = {
+    userAgent: opts.citationUserAgent,
+    ...(opts.citationApiKey !== undefined
+      ? { apiKey: opts.citationApiKey }
       : {}),
   };
 
@@ -123,7 +123,7 @@ export const fromRedcap = async (
     const status = await processRow(
       row,
       redcapConfig,
-      openAlexConfig,
+      citationConfig,
       (q) => {
         lastQuota = q;
         totalCredits += q.creditsUsed;

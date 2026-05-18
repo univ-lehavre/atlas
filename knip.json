@@ -46,12 +46,12 @@
         "src/**/*.ts"
       ]
     },
-    "packages/fetch-openalex": {
+    "packages/citation-fetch": {
       "project": [
         "src/**/*.ts"
       ]
     },
-    "packages/validate-openalex": {
+    "packages/citation-validate": {
       "project": [
         "src/**/*.ts"
       ],
@@ -59,7 +59,7 @@
         "src/oa/index.ts"
       ]
     },
-    "packages/openalex": {
+    "packages/citation": {
       "project": [
         "src/**/*.ts"
       ],
@@ -75,7 +75,7 @@
         "uuid"
       ]
     },
-    "cli/openalex": {
+    "cli/citation": {
       "project": [
         "src/**/*.ts"
       ]

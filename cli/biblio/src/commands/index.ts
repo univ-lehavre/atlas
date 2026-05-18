@@ -22,7 +22,7 @@ import {
   type EventsStore,
   type IEvent,
   type MetricsStore,
-} from "@univ-lehavre/atlas-validate-openalex";
+} from "@univ-lehavre/atlas-citation-validate";
 import type { ORCID } from "@univ-lehavre/atlas-citation-types";
 import { NodeRuntime } from "@effect/platform-node";
 import { DevTools } from "@effect/experimental";

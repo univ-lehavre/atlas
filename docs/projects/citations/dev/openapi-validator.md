@@ -198,7 +198,7 @@ const program = Effect.gen(function* () {
 ### Integration in a source package
 
 ```typescript
-// packages/openalex/scripts/validate-spec.ts
+// packages/citation/scripts/validate-spec.ts
 import { validate } from '@univ-lehavre/atlas-openapi-validator';
 import { Effect } from 'effect';
 

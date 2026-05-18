@@ -11,7 +11,7 @@ export {
 export {
   CsvParseError,
   CsvReadError,
-  OpenAlexSearchError,
+  CitationSearchError,
   RedcapWriteError,
   RedcapFetchError,
 } from "./errors.js";
@@ -27,7 +27,7 @@ export {
   resolveAuthors,
   fetchWorksForAuthors,
   resolveAll,
-} from "./services/openalex.js";
+} from "./services/citation.js";
 
 export {
   type RedcapConnectionConfig,

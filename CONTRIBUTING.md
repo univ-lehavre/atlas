@@ -248,7 +248,7 @@ type(scope): description
 | `redcap`    | apps/redcap-dashboard, packages/redcap-\*             |
 | `crf`       | services/crf, cli/crf                                 |
 | `net`       | packages/net, cli/net                                 |
-| `openalex`  | packages/openalex*, packages/fetch-*                  |
+| `citation` | packages/citation*, cli/citation                       |
 | `profiles`  | packages/researcher-profiles, cli/researcher-profiles |
 | `deps`      | Dependencies                                          |
 | `config`    | Configuration                                         |
@@ -281,28 +281,29 @@ atlas/
 │   ├── appwrite/            # Appwrite client utilities
 │   ├── auth/                # Authentication helpers
 │   ├── errors/              # Shared error types
+│   ├── citation/            # OpenAlex citation graph domain logic
+│   ├── citation-fetch/      # OpenAlex citation graph API client
+│   ├── citation-types/      # OpenAlex citation graph type definitions
+│   ├── citation-validate/   # OpenAlex citation graph data validation
 │   ├── fetch-one-api-page/  # Paginated API fetching
-│   ├── fetch-openalex/      # OpenAlex API client
 │   ├── net/                 # Network utilities
-│   ├── citation-types/      # OpenAlex type definitions
-│   ├── openalex/            # OpenAlex domain logic
 │   ├── redcap-client/       # REDCap HTTP client
 │   ├── redcap-core/         # REDCap domain types & adapters
 │   ├── redcap-logs/         # REDCap audit log types
 │   ├── researcher-profiles/ # Researcher profile generation
-│   ├── validate-openalex/   # OpenAlex data validation
 │   └── validators/          # Shared validation utilities
 │
 ├── services/                # Backend microservices
 │   └── crf/                 # CRF HTTP service (Hono)
 │
 ├── cli/                     # Command-line tools
+│   ├── atlas-stats/         # Atlas statistics CLI
 │   ├── biblio/              # Bibliography CLI
+│   ├── citation/            # OpenAlex citation graph CLI
 │   ├── crf/                 # CRF management CLI
 │   ├── net/                 # Network diagnostics CLI
 │   ├── redcap-openapi/      # REDCap OpenAPI spec generator
 │   ├── redcap-stats/        # REDCap statistics CLI
-│   ├── atlas-stats/         # Atlas statistics CLI
 │   └── researcher-profiles/ # Researcher profile CLI
 │
 ├── config/
@@ -392,7 +393,7 @@ If a check produces a false positive for a legitimate transitional state, add th
 ```js
 // Packages temporarily exempt from CLI I/O source checks
 const CLI_IO_MIGRATION_PENDING = new Set([
-  "@univ-lehavre/atlas-validate-openalex",
+  "@univ-lehavre/atlas-citation-validate",
 ]);
 ```
 

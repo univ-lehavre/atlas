@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
-import { getWorksCount } from '$lib/server/openalex';
+import { getWorksCount } from '$lib/server/citation';
 import { mapErrorToResponse } from '$lib/server/http';
 
 /** Maximum number of institutions allowed in a single request */

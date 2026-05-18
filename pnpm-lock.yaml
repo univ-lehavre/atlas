@@ -359,12 +359,12 @@ importers:
       '@univ-lehavre/atlas-appwrite':
         specifier: workspace:*
         version: link:../../packages/appwrite
+      '@univ-lehavre/atlas-citation-fetch':
+        specifier: workspace:*
+        version: link:../../packages/citation-fetch
       '@univ-lehavre/atlas-errors':
         specifier: workspace:*
         version: link:../../packages/errors
-      '@univ-lehavre/atlas-fetch-openalex':
-        specifier: workspace:*
-        version: link:../../packages/fetch-openalex
       '@univ-lehavre/atlas-logos':
         specifier: workspace:*
         version: link:../../packages/logos
@@ -554,9 +554,9 @@ importers:
       '@univ-lehavre/atlas-citation-types':
         specifier: workspace:*
         version: link:../../packages/citation-types
-      '@univ-lehavre/atlas-validate-openalex':
+      '@univ-lehavre/atlas-citation-validate':
         specifier: workspace:*
-        version: link:../../packages/validate-openalex
+        version: link:../../packages/citation-validate
       effect:
         specifier: '>=3.21.2'
         version: 3.21.2
@@ -564,6 +564,52 @@ importers:
       '@types/node':
         specifier: ^25.6.0
         version: 25.6.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.2.1
+        version: 10.2.1(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+
+  cli/citation:
+    dependencies:
+      '@clack/prompts':
+        specifier: ^1.2.0
+        version: 1.2.0
+      '@univ-lehavre/atlas-citation':
+        specifier: workspace:*
+        version: link:../../packages/citation
+      effect:
+        specifier: '>=3.21.2'
+        version: 3.21.2
+      lodash:
+        specifier: '>=4.18.1'
+        version: 4.18.1
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
+      yargs:
+        specifier: ^18.0.0
+        version: 18.0.0
+    devDependencies:
+      '@types/lodash':
+        specifier: ^4.17.24
+        version: 4.17.24
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      '@types/yargs':
+        specifier: ^17.0.35
+        version: 17.0.35
       '@univ-lehavre/atlas-shared-config':
         specifier: workspace:*
         version: link:../../config/shared-config
@@ -702,52 +748,6 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
-  cli/openalex:
-    dependencies:
-      '@clack/prompts':
-        specifier: ^1.2.0
-        version: 1.2.0
-      '@univ-lehavre/atlas-openalex':
-        specifier: workspace:*
-        version: link:../../packages/openalex
-      effect:
-        specifier: '>=3.21.2'
-        version: 3.21.2
-      lodash:
-        specifier: '>=4.18.1'
-        version: 4.18.1
-      picocolors:
-        specifier: ^1.1.1
-        version: 1.1.1
-      yargs:
-        specifier: ^18.0.0
-        version: 18.0.0
-    devDependencies:
-      '@types/lodash':
-        specifier: ^4.17.24
-        version: 4.17.24
-      '@types/node':
-        specifier: ^25.6.0
-        version: 25.6.0
-      '@types/yargs':
-        specifier: ^17.0.35
-        version: 17.0.35
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../config/shared-config
-      eslint:
-        specifier: ^10.2.1
-        version: 10.2.1(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.3
-        version: 3.8.3
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.5
-        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-
   cli/redcap-openapi:
     dependencies:
       '@clack/prompts':
@@ -815,12 +815,12 @@ importers:
       '@clack/prompts':
         specifier: ^1.2.0
         version: 1.2.0
+      '@univ-lehavre/atlas-citation-fetch':
+        specifier: workspace:*
+        version: link:../../packages/citation-fetch
       '@univ-lehavre/atlas-citation-types':
         specifier: workspace:*
         version: link:../../packages/citation-types
-      '@univ-lehavre/atlas-fetch-openalex':
-        specifier: workspace:*
-        version: link:../../packages/fetch-openalex
       '@univ-lehavre/atlas-researcher-profiles':
         specifier: workspace:*
         version: link:../../packages/researcher-profiles
@@ -1000,12 +1000,138 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
+  packages/citation:
+    dependencies:
+      '@duckdb/node-api':
+        specifier: ^1.3.4-alpha.27
+        version: 1.3.4-alpha.27
+      '@effect/experimental':
+        specifier: ^0.60.0
+        version: 0.60.0(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2)
+      '@effect/platform-node':
+        specifier: ^0.106.0
+        version: 0.106.0(@effect/cluster@0.58.2(@effect/platform@0.96.1(effect@3.21.2))(@effect/rpc@0.75.1(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.51.1(@effect/experimental@0.60.0(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/workflow@0.18.0(@effect/experimental@0.60.0(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.96.1(effect@3.21.2))(@effect/rpc@0.75.1(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.96.1(effect@3.21.2))(@effect/rpc@0.75.1(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.51.1(@effect/experimental@0.60.0(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(effect@3.21.2)
+      '@univ-lehavre/atlas-fetch-one-api-page':
+        specifier: workspace:*
+        version: link:../fetch-one-api-page
+      '@xenova/transformers':
+        specifier: ^2.17.2
+        version: 2.17.2
+      effect:
+        specifier: '>=3.21.2'
+        version: 3.21.2
+      uuid:
+        specifier: ^14.0.0
+        version: 14.0.0
+    devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.2.1
+        version: 10.2.1(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/citation-fetch:
+    dependencies:
+      '@univ-lehavre/atlas-citation-types':
+        specifier: workspace:*
+        version: link:../citation-types
+      '@univ-lehavre/atlas-fetch-one-api-page':
+        specifier: workspace:*
+        version: link:../fetch-one-api-page
+      effect:
+        specifier: '>=3.21.2'
+        version: 3.21.2
+    devDependencies:
+      '@effect/vitest':
+        specifier: ^0.29.0
+        version: 0.29.0(effect@3.21.2)(vitest@4.1.5)
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.2.1
+        version: 10.2.1(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+
   packages/citation-types:
     dependencies:
       effect:
         specifier: '>=3.21.2'
         version: 3.21.2
     devDependencies:
+      '@types/node':
+        specifier: ^25.6.0
+        version: 25.6.0
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.2.1
+        version: 10.2.1(jiti@2.6.1)
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.5
+        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
+
+  packages/citation-validate:
+    dependencies:
+      '@clack/prompts':
+        specifier: ^1.2.0
+        version: 1.2.0
+      '@univ-lehavre/atlas-citation-fetch':
+        specifier: workspace:*
+        version: link:../citation-fetch
+      '@univ-lehavre/atlas-citation-types':
+        specifier: workspace:*
+        version: link:../citation-types
+      '@univ-lehavre/atlas-fetch-one-api-page':
+        specifier: workspace:*
+        version: link:../fetch-one-api-page
+      effect:
+        specifier: '>=3.21.2'
+        version: 3.21.2
+      json-stable-stringify:
+        specifier: ^1.3.0
+        version: 1.3.0
+      picocolors:
+        specifier: ^1.1.1
+        version: 1.1.1
+      uuid:
+        specifier: ^14.0.0
+        version: 14.0.0
+    devDependencies:
+      '@effect/vitest':
+        specifier: ^0.29.0
+        version: 0.29.0(effect@3.21.2)(vitest@4.1.5)
       '@types/node':
         specifier: ^25.6.0
         version: 25.6.0
@@ -1084,40 +1210,6 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
 
-  packages/fetch-openalex:
-    dependencies:
-      '@univ-lehavre/atlas-citation-types':
-        specifier: workspace:*
-        version: link:../citation-types
-      '@univ-lehavre/atlas-fetch-one-api-page':
-        specifier: workspace:*
-        version: link:../fetch-one-api-page
-      effect:
-        specifier: '>=3.21.2'
-        version: 3.21.2
-    devDependencies:
-      '@effect/vitest':
-        specifier: ^0.29.0
-        version: 0.29.0(effect@3.21.2)(vitest@4.1.5)
-      '@types/node':
-        specifier: ^25.6.0
-        version: 25.6.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../config/shared-config
-      eslint:
-        specifier: ^10.2.1
-        version: 10.2.1(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.3
-        version: 3.8.3
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.5
-        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-
   packages/logos:
     devDependencies:
       vitest:
@@ -1129,49 +1221,6 @@ importers:
       effect:
         specifier: '>=3.21.2'
         version: 3.21.2
-    devDependencies:
-      '@types/node':
-        specifier: ^25.6.0
-        version: 25.6.0
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../config/shared-config
-      eslint:
-        specifier: ^10.2.1
-        version: 10.2.1(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.3
-        version: 3.8.3
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.5
-        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-
-  packages/openalex:
-    dependencies:
-      '@duckdb/node-api':
-        specifier: ^1.3.4-alpha.27
-        version: 1.3.4-alpha.27
-      '@effect/experimental':
-        specifier: ^0.60.0
-        version: 0.60.0(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2)
-      '@effect/platform-node':
-        specifier: ^0.106.0
-        version: 0.106.0(@effect/cluster@0.58.2(@effect/platform@0.96.1(effect@3.21.2))(@effect/rpc@0.75.1(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.51.1(@effect/experimental@0.60.0(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/workflow@0.18.0(@effect/experimental@0.60.0(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.96.1(effect@3.21.2))(@effect/rpc@0.75.1(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.96.1(effect@3.21.2))(@effect/rpc@0.75.1(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/sql@0.51.1(@effect/experimental@0.60.0(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.96.1(effect@3.21.2))(effect@3.21.2))(effect@3.21.2)
-      '@univ-lehavre/atlas-fetch-one-api-page':
-        specifier: workspace:*
-        version: link:../fetch-one-api-page
-      '@xenova/transformers':
-        specifier: ^2.17.2
-        version: 2.17.2
-      effect:
-        specifier: '>=3.21.2'
-        version: 3.21.2
-      uuid:
-        specifier: ^14.0.0
-        version: 14.0.0
     devDependencies:
       '@types/node':
         specifier: ^25.6.0
@@ -1277,12 +1326,12 @@ importers:
       '@napi-rs/canvas':
         specifier: ^0.1.100
         version: 0.1.100
+      '@univ-lehavre/atlas-citation-fetch':
+        specifier: workspace:*
+        version: link:../citation-fetch
       '@univ-lehavre/atlas-citation-types':
         specifier: workspace:*
         version: link:../citation-types
-      '@univ-lehavre/atlas-fetch-openalex':
-        specifier: workspace:*
-        version: link:../fetch-openalex
       '@univ-lehavre/atlas-redcap-client':
         specifier: workspace:*
         version: link:../redcap-client
@@ -1326,55 +1375,6 @@ importers:
       '@types/pdfkit':
         specifier: ^0.17.6
         version: 0.17.6
-      '@univ-lehavre/atlas-shared-config':
-        specifier: workspace:*
-        version: link:../../config/shared-config
-      eslint:
-        specifier: ^10.2.1
-        version: 10.2.1(jiti@2.6.1)
-      prettier:
-        specifier: ^3.8.3
-        version: 3.8.3
-      typescript:
-        specifier: ^6.0.3
-        version: 6.0.3
-      vitest:
-        specifier: ^4.1.5
-        version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(jsdom@29.1.0(@noble/hashes@1.8.0))(vite@8.0.10(@types/node@25.6.0)(esbuild@0.27.2)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
-
-  packages/validate-openalex:
-    dependencies:
-      '@clack/prompts':
-        specifier: ^1.2.0
-        version: 1.2.0
-      '@univ-lehavre/atlas-citation-types':
-        specifier: workspace:*
-        version: link:../citation-types
-      '@univ-lehavre/atlas-fetch-one-api-page':
-        specifier: workspace:*
-        version: link:../fetch-one-api-page
-      '@univ-lehavre/atlas-fetch-openalex':
-        specifier: workspace:*
-        version: link:../fetch-openalex
-      effect:
-        specifier: '>=3.21.2'
-        version: 3.21.2
-      json-stable-stringify:
-        specifier: ^1.3.0
-        version: 1.3.0
-      picocolors:
-        specifier: ^1.1.1
-        version: 1.1.1
-      uuid:
-        specifier: ^14.0.0
-        version: 14.0.0
-    devDependencies:
-      '@effect/vitest':
-        specifier: ^0.29.0
-        version: 0.29.0(effect@3.21.2)(vitest@4.1.5)
-      '@types/node':
-        specifier: ^25.6.0
-        version: 25.6.0
       '@univ-lehavre/atlas-shared-config':
         specifier: workspace:*
         version: link:../../config/shared-config

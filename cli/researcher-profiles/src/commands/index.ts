@@ -72,9 +72,9 @@ export const main = async (): Promise<void> => {
 
   const redcapUrl = getEnv("REDCAP_API_URL");
   const redcapToken = getEnv("REDCAP_API_TOKEN");
-  const openAlexUserAgent =
+  const citationUserAgent =
     getEnv("OPENALEX_USER_AGENT") || "atlas-researcher-profiles/1.0.0";
-  const openAlexApiKey = getEnv("OPENALEX_API_TOKEN") || undefined;
+  const citationApiKey = getEnv("OPENALEX_API_TOKEN") || undefined;
 
   if (redcapUrl === "" || redcapToken === "") {
     log.error(
@@ -88,8 +88,8 @@ export const main = async (): Promise<void> => {
   const opts = {
     redcapUrl,
     redcapToken,
-    openAlexUserAgent,
-    openAlexApiKey,
+    citationUserAgent,
+    citationApiKey,
     batch,
   };
 
@@ -100,8 +100,8 @@ export const main = async (): Promise<void> => {
     await run({
       redcapUrl,
       redcapToken,
-      openAlexUserAgent,
-      openAlexApiKey,
+      citationUserAgent,
+      citationApiKey,
       threshold: DEFAULT_THRESHOLD,
       batch,
     });
@@ -220,8 +220,8 @@ export const main = async (): Promise<void> => {
       redcapUrl,
       redcapToken,
       threshold,
-      openAlexUserAgent,
-      openAlexApiKey,
+      citationUserAgent,
+      citationApiKey,
     });
     return;
   }

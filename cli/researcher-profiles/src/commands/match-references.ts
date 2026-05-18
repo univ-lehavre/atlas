@@ -9,15 +9,15 @@ import pc from "picocolors";
 import { Effect, Either } from "effect";
 import { selectResearchers } from "../prompts/select-researchers.js";
 import { matchRow } from "./match-row.js";
-import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
+import type { CitationConfig } from "@univ-lehavre/atlas-citation-fetch";
 import { fetchResearchers } from "@univ-lehavre/atlas-researcher-profiles";
 
 interface MatchReferencesOptions {
   readonly redcapUrl: string;
   readonly redcapToken: string;
   readonly threshold: number;
-  readonly openAlexUserAgent: string;
-  readonly openAlexApiKey?: string;
+  readonly citationUserAgent: string;
+  readonly citationApiKey?: string;
   /** If provided, skip the interactive prompt and process only these userids. */
   readonly userids?: readonly string[];
 }
@@ -26,9 +26,9 @@ export const matchReferencesCommand = async (
   opts: MatchReferencesOptions,
 ): Promise<void> => {
   const redcapConfig = { url: opts.redcapUrl, token: opts.redcapToken };
-  const openAlexConfig: OpenAlexConfig = {
-    userAgent: opts.openAlexUserAgent,
-    apiKey: opts.openAlexApiKey,
+  const citationConfig: CitationConfig = {
+    userAgent: opts.citationUserAgent,
+    apiKey: opts.citationApiKey,
   };
 
   // Fetch researchers
@@ -86,7 +86,7 @@ export const matchReferencesCommand = async (
 
     const status = await matchRow(row, {
       redcap: redcapConfig,
-      openAlex: openAlexConfig,
+      openAlex: citationConfig,
       threshold: opts.threshold,
     });
 

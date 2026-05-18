@@ -43,9 +43,9 @@ assets/source/
 # Upstream sources (REDCap, etc.)
 **/upstream/
 
-# DuckDB (packages/openalex)
-packages/openalex/*.db
-packages/openalex/*.wal
+# DuckDB (packages/citation)
+packages/citation/*.db
+packages/citation/*.wal
 
 # Logs
 *.log

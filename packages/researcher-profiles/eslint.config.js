@@ -6,7 +6,7 @@ export default [
     architectureCategory: "packages",
     workspaceModules: [
       "@univ-lehavre/atlas-redcap-client",
-      "@univ-lehavre/atlas-fetch-openalex",
+      "@univ-lehavre/atlas-citation-fetch",
       "@univ-lehavre/atlas-citation-types",
     ],
   }),

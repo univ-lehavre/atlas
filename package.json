@@ -60,7 +60,7 @@
       "limit": "100 KB"
     },
     {
-      "path": "packages/fetch-openalex/dist/**/*.js",
+      "path": "packages/citation-fetch/dist/**/*.js",
       "limit": "140 KB"
     },
     {
@@ -68,7 +68,7 @@
       "limit": "230 KB"
     },
     {
-      "path": "packages/openalex/dist/**/*.js",
+      "path": "packages/citation/dist/**/*.js",
       "limit": "250 KB"
     },
     {
@@ -76,7 +76,7 @@
       "limit": "260 KB"
     },
     {
-      "path": "packages/validate-openalex/dist/**/*.js",
+      "path": "packages/citation-validate/dist/**/*.js",
       "limit": "700 KB"
     },
     {
@@ -111,9 +111,9 @@
       "packages/auth",
       "packages/citation-types",
       "packages/fetch-one-api-page",
-      "packages/fetch-openalex",
-      "packages/validate-openalex",
-      "packages/openalex",
+      "packages/citation-fetch",
+      "packages/citation-validate",
+      "packages/citation",
       "services/crf",
       "cli/redcap-openapi",
       "cli/biblio",

@@ -54,7 +54,7 @@ packages/{source}/
 
 ## Detailed Packages
 
-### @univ-lehavre/atlas-openalex
+### @univ-lehavre/atlas-citation
 
 **API:** `https://api.openalex.org`
 
@@ -121,7 +121,7 @@ TypeScript types are generated from OpenAPI specs with `openapi-typescript`:
 
 ```bash
 # Generate types for a package
-pnpm -F @univ-lehavre/atlas-openalex generate:types
+pnpm -F @univ-lehavre/atlas-citation generate:types
 ```
 
 The script generates `src/client/generated/types.ts` from `specs/current.yaml`.
@@ -153,13 +153,13 @@ interface OpenAlexClient {
 }
 
 // Factory
-export const createOpenAlexClient = (config: OpenAlexConfig): OpenAlexClient => {
+export const createOpenAlexClient = (config: CitationConfig): OpenAlexClient => {
   // Implementation
 };
 
 // Layer for dependency injection
 export const makeOpenAlexClientLayer = (
-  config: OpenAlexConfig
+  config: CitationConfig
 ): Layer.Layer<OpenAlexClientService> =>
   Layer.succeed(OpenAlexClientService, createOpenAlexClient(config));
 ```

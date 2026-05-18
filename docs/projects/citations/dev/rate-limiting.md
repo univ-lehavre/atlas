@@ -76,7 +76,7 @@ const rateLimitRetrySchedule = pipe(
 ### Check quotas
 
 ```typescript
-import { createOpenAlexClient } from '@univ-lehavre/atlas-openalex';
+import { createOpenAlexClient } from '@univ-lehavre/atlas-citation';
 
 const client = createOpenAlexClient({ apiKey: '...' });
 

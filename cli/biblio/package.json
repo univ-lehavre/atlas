@@ -39,7 +39,7 @@
     "@effect/rpc": "^0.75.1",
     "@effect/sql": "^0.51.1",
     "@univ-lehavre/atlas-citation-types": "workspace:*",
-    "@univ-lehavre/atlas-validate-openalex": "workspace:*",
+    "@univ-lehavre/atlas-citation-validate": "workspace:*",
     "effect": "^3.21.2"
   },
   "devDependencies": {

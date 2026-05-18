@@ -15,7 +15,7 @@ const ROOTS = [
 const NO_CLI_SUFFIX_ALLOWED = new Set(["@univ-lehavre/atlas-redcap-openapi"]);
 // TODO: migrate src/prompt/ to cli/biblio — @clack/prompts belongs in cli/
 const CLI_IO_MIGRATION_PENDING = new Set([
-  "@univ-lehavre/atlas-validate-openalex",
+  "@univ-lehavre/atlas-citation-validate",
 ]);
 
 // Deps that belong in cli/, never in packages/ dependencies

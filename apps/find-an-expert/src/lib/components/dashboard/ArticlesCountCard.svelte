@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ArticlesCountCard as BaseArticlesCountCard } from '$lib/ui';
   import { useI18n } from '$lib/content';
-  import type { TInstitution } from '$lib/server/openalex';
+  import type { TInstitution } from '$lib/server/citation';
 
   /**
    * ArticlesCountCard - Pre-configured articles count card with i18n labels.

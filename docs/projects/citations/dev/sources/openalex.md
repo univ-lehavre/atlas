@@ -410,7 +410,7 @@ atlas-openapi-validator validate specs/alpha/openalex-2025-01-24.yaml \
 import { Effect, Context, Data } from 'effect';
 
 // Configuration
-interface OpenAlexConfig {
+interface CitationConfig {
   apiKey?: string;
   userAgent?: string;
 }

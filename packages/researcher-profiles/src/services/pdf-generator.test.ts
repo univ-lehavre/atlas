@@ -6,11 +6,11 @@ import type {
   WorksResult,
 } from "@univ-lehavre/atlas-citation-types";
 
-const fakeOpenAlexId = (id: string): CitationID => id as unknown as CitationID;
+const fakeCitationId = (id: string): CitationID => id as unknown as CitationID;
 
 const work = (overrides: Partial<WorksResult> = {}): WorksResult =>
   ({
-    id: fakeOpenAlexId("W1"),
+    id: fakeCitationId("W1"),
     title: "Sample paper",
     display_name: "Sample paper",
     publication_year: 2024,
@@ -43,8 +43,8 @@ describe("generateCombinedPdf", () => {
 
   it("renders both verified and pending sections", async () => {
     const bytes = await generateCombinedPdf(
-      [work({ id: fakeOpenAlexId("W-final") })],
-      [work({ id: fakeOpenAlexId("W-pending"), publication_year: 0 })],
+      [work({ id: fakeCitationId("W-final") })],
+      [work({ id: fakeCitationId("W-pending"), publication_year: 0 })],
       "Researcher A",
     );
     expect(await isValidPdf(bytes)).toBe(true);
