@@ -1,0 +1,61 @@
+# Gitleaks configuration for Atlas.
+# Documentation: https://github.com/gitleaks/gitleaks#configuration
+#
+# Inherits the default rules then adds patterns specific to Atlas:
+#   - REDCap project tokens (32-char uppercase hex)
+#   - REDCap token CSVs at repo root
+#   - Generic high-entropy 32-char hex tokens in known places
+#
+# Whitelists:
+#   - Test fixtures and example files (`.env.example`, sandbox docker
+#     `.env.test`) intentionally contain look-alike values.
+#   - `redcap-token.csv` is gitignored and never tracked, but we still
+#     blacklist its path defensively.
+
+[extend]
+useDefault = true
+
+# ---------------------------------------------------------------------------
+# Custom rules
+# ---------------------------------------------------------------------------
+
+[[rules]]
+id = "redcap-api-token"
+description = "REDCap API project token (32-char uppercase hex)"
+regex = '''[A-F0-9]{32}'''
+keywords = ["redcap", "REDCAP_API_TOKEN", "redcap_token"]
+entropy = 3.0
+
+[[rules]]
+id = "redcap-token-csv"
+description = "REDCap token CSV row (project_id,token)"
+regex = '''^\s*\d+\s*,\s*[A-F0-9]{32}'''
+keywords = ["redcap", "token"]
+
+# ---------------------------------------------------------------------------
+# Allowlist
+# ---------------------------------------------------------------------------
+
+[allowlist]
+paths = [
+  # Generated / template files that mimic tokens for documentation
+  '''\.env\.example$''',
+  '''\.env\.[a-z]+\.example$''',
+  '''sandbox/crf-sandbox/docker/config/\.env\.test$''',
+  '''sandbox/crf-sandbox/docker/config/\.env\.test\.example$''',
+  # Workspace-locked CSV containing project tokens — never tracked but
+  # defended in depth.
+  '''^redcap-token\.csv$''',
+  # Test fixtures with synthetic data
+  '''sandbox/crf-sandbox/tests/fixtures/.*''',
+  '''packages/.*/src/.*\.test\.ts$''',
+  '''packages/.*/src/.*\.spec\.ts$''',
+]
+
+# Common test fixtures (e.g. 32-char hex that aren't real tokens)
+regexes = [
+  # Vitest / unit-test placeholders frequently use AAAA... or 1234... patterns
+  '''^[A-Z0]{32}$''',
+  # SHA hashes (40 chars) are NOT secrets
+  '''^[a-f0-9]{40}$''',
+]

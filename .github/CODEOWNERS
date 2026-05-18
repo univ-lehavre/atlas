@@ -1,0 +1,49 @@
+# Atlas CODEOWNERS
+# Reference: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Code owners listed here are automatically requested for review on PRs
+# touching the matched paths. Combined with branch protection requiring
+# CODEOWNERS review, this ensures the right person is consulted on
+# security-sensitive areas (auth, CRF/REDCap client, CI/CD, etc.).
+#
+# Note: bus-factor is currently 1. To strengthen review coverage, add
+# secondary maintainers to the high-risk paths below.
+
+# ---------------------------------------------------------------------------
+# Default owner (catch-all)
+# ---------------------------------------------------------------------------
+*                                       @chasset
+
+# ---------------------------------------------------------------------------
+# Security-sensitive areas — require explicit review
+# ---------------------------------------------------------------------------
+
+# Authentication & session handling
+/packages/auth/                         @chasset
+/packages/baas/                         @chasset
+
+# REDCap API client (handles tokens, data export/import)
+/packages/crf-client/                   @chasset
+/packages/crf-core/                     @chasset
+/services/crf/                          @chasset
+
+# CI/CD workflows
+/.github/workflows/                     @chasset
+/.github/dependabot.yml                 @chasset
+/.github/CODEOWNERS                     @chasset
+/scripts/release/                       @chasset
+
+# Security & policy documents
+/SECURITY.md                            @chasset
+/.gitleaks.toml                         @chasset
+/lefthook.yml                           @chasset
+
+# Workspace root (publish config, overrides, scripts)
+/package.json                           @chasset
+/pnpm-workspace.yaml                    @chasset
+/pnpm-lock.yaml                         @chasset
+/.npmrc                                 @chasset
+
+# Test fixtures with potentially sensitive REDCap schema
+/fixtures/crf-projects/                 @chasset
+/scripts/crf-trame/                     @chasset

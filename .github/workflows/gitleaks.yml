@@ -1,0 +1,44 @@
+name: Gitleaks
+
+# Détecte les secrets potentiellement committés (tokens REDCap, clés
+# Appwrite, clés GitHub App, etc.). Couvre l'historique complet de la PR ;
+# le pre-commit hook lefthook scanne uniquement les fichiers stagés.
+#
+# Configuration : .gitleaks.toml (à la racine).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Nécessaire pour signaler les findings dans le summary de la PR
+  pull-requests: write
+
+concurrency:
+  group: gitleaks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Scan for secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # Fetch full history so gitleaks can scan all commits on a PR
+          fetch-depth: 0
+
+      - name: Run gitleaks
+        # Pinned by SHA per the supply-chain hardening policy (see TODO.md
+        # Phase 4.1). Update via Dependabot.
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          # GITHUB_TOKEN is needed by the action to comment on PRs.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use the project config rather than the action's defaults so the
+          # custom REDCap token rules are picked up.
+          GITLEAKS_CONFIG: .gitleaks.toml

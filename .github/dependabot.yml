@@ -1,0 +1,111 @@
+# Dependabot keeps the dependencies fresh and the GitHub Actions pinned by SHA
+# up-to-date (re-pins to the latest SHA when a version is released).
+# Reference: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+
+version: 2
+
+updates:
+  # ---------------------------------------------------------------------------
+  # npm — workspace root (covers all pnpm workspaces)
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "automation"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      # Group minor + patch updates by category to reduce PR churn.
+      # Major updates open separate PRs (Dependabot default).
+      effect:
+        applies-to: version-updates
+        patterns:
+          - "effect"
+          - "@effect/*"
+        update-types:
+          - "minor"
+          - "patch"
+      sveltekit:
+        applies-to: version-updates
+        patterns:
+          - "@sveltejs/*"
+          - "svelte"
+          - "svelte-*"
+        update-types:
+          - "minor"
+          - "patch"
+      vitest:
+        applies-to: version-updates
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+        update-types:
+          - "minor"
+          - "patch"
+      typescript-tooling:
+        applies-to: version-updates
+        patterns:
+          - "typescript"
+          - "tsx"
+          - "tsup"
+          - "typedoc"
+          - "typedoc-*"
+          - "@types/*"
+        update-types:
+          - "minor"
+          - "patch"
+      eslint-prettier:
+        applies-to: version-updates
+        patterns:
+          - "eslint"
+          - "eslint-*"
+          - "@typescript-eslint/*"
+          - "prettier"
+          - "prettier-*"
+        update-types:
+          - "minor"
+          - "patch"
+      vitepress:
+        applies-to: version-updates
+        patterns:
+          - "vitepress"
+          - "vitepress-*"
+          - "@modyfi/vite-plugin-yaml"
+        update-types:
+          - "minor"
+          - "patch"
+      # Catch-all for the rest (otherwise Dependabot opens 1 PR per dep).
+      misc:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Security updates always open standalone PRs even with grouping.
+
+  # ---------------------------------------------------------------------------
+  # GitHub Actions — keep pinned SHAs current with version bumps
+  # ---------------------------------------------------------------------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 5
+    labels:
+      - "github-actions"
+      - "automation"
+    commit-message:
+      prefix: "ci"
+      include: "scope"

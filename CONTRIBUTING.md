@@ -398,6 +398,45 @@ const CLI_IO_MIGRATION_PENDING = new Set([
 
 Document the reason in a comment and open a tracking issue to remove the exemption once the migration is done.
 
-## Questions?
+## Code of Conduct
 
-- Open an [issue](https://github.com/univ-lehavre/atlas/issues) to report a bug
+Atlas adopts the [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+By participating in this project (issues, PRs, discussions, etc.), you agree
+to abide by its terms.
+
+In short:
+
+- Be respectful and inclusive
+- Welcome constructive criticism gracefully
+- Show empathy towards other community members
+- No harassment, discrimination, or trolling
+
+Report unacceptable behavior to: `redcap-support@univ-lehavre.fr` (or the
+DPO of Université Le Havre Normandie for misconduct involving personal
+data). All reports are handled confidentially.
+
+## Contributor License Agreement (CLA)
+
+By contributing to Atlas, you confirm that:
+
+1. **Originality** : The contribution is your original work, or you have
+   permission to submit it under the same terms.
+2. **License grant** : Your contributions are licensed under the [MIT
+   License](LICENSE), the same license as the rest of the project.
+3. **Patent grant** : If your contribution embodies a patentable invention,
+   you grant a non-exclusive, royalty-free patent license to all users of
+   Atlas, as defined by the patent clause of the Apache License 2.0
+   (referenced here for clarity even though Atlas uses MIT).
+4. **No warranty** : Contributions are provided "as is" without warranty.
+
+You retain copyright on your contributions. Atlas does not claim ownership.
+
+No paperwork is required: opening a PR constitutes acceptance of these
+terms (DCO-style sign-off via the commit author identity).
+
+## Security
+
+**Do not open a public issue for a security vulnerability.** See
+[SECURITY.md](SECURITY.md) for the responsible disclosure process and the
+canal de signalement.
+

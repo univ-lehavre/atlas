@@ -1,5 +1,6 @@
 import { Effect } from 'effect';
 import { OPENALEX_API_TOKEN } from '$env/static/private';
+import { env as dynamicEnv } from '$env/dynamic/private';
 import {
   searchInstitutions as searchInstitutionsEffect,
   getWorksCount as getWorksCountEffect,
@@ -10,8 +11,14 @@ import {
   type InstitutionStatsResult,
 } from '@univ-lehavre/atlas-citation-fetch';
 
+// OpenAlex ToS asks consumers in the "polite pool" to identify themselves
+// via a User-Agent containing a contact (mailto or URL). We accept a
+// config from env so the institutional mailto isn't hardcoded in a
+// public repository.
+const DEFAULT_USER_AGENT = 'find-an-expert/1.0 (https://github.com/univ-lehavre/atlas)';
+
 const getConfig = (): CitationConfig => ({
-  userAgent: 'find-an-expert (https://github.com/univ-lehavre/atlas)',
+  userAgent: dynamicEnv.OPENALEX_USER_AGENT || DEFAULT_USER_AGENT,
   apiKey: OPENALEX_API_TOKEN || undefined,
 });
 
