@@ -59,6 +59,9 @@ CLAUDE.md
 *-token.csv
 apps/crf-dashboard/.crf-stats.json
 apps/redcap-dashboard/.redcap-stats.json
+
+# Exported CRF/REDCap data dictionaries (potentially sensitive: field labels, branching logic)
+data-dictionaries/
 .atlas-stats.json
 cli/researcher-profiles/matches.html
 cli/researcher-profiles/ALGORITHMS.pdf
