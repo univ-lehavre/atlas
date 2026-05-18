@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-crf-logs",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "Clinical research form (CRF / REDCap) audit log fetching, enrichment and rolling-window analytics",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

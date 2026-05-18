@@ -1,5 +1,146 @@
 # @univ-lehavre/ecrin
 
+## 3.0.0
+
+### Major Changes
+
+- [#125](https://github.com/univ-lehavre/atlas/pull/125) [`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3) Thanks [@chasset](https://github.com/chasset)! - Renommage du package Appwrite en `baas` (Backend-as-a-Service) pour retirer la marque Appwrite des identifiants publics du monorepo. Fin de la migration anti-marque (PR 1 citation-types, PR 2 cluster citation, PR 3 cluster crf).
+
+  **Package renommé (npm + dossier + workspace)**
+
+  | Avant (npm)                    | Après (npm)                |
+  | ------------------------------ | -------------------------- |
+  | `@univ-lehavre/atlas-appwrite` | `@univ-lehavre/atlas-baas` |
+
+  **Identifiants publics renommés**
+
+  Types et erreurs :
+  - `AppwriteConfig` → `BaasConfig`
+
+  Classes et fonctions :
+  - `AppwriteUserRepository` → `BaasUserRepository`
+  - `AppwriteCurrentConsentRepository` → `BaasCurrentConsentRepository`
+  - `AppwriteConsentEventRepository` → `BaasConsentEventRepository`
+  - `MockAppwriteUserRepository` → `MockBaasUserRepository`
+  - `checkAppwrite` / `checkAppwriteDatabase` / `checkAppwriteEndpoint` → `checkBaas*`
+  - `isAppwriteAuthError` → `isBaasAuthError`
+  - `mapAppwriteUserToProfile` → `mapBaasUserToProfile`
+  - `serviceAppwrite` → `serviceBaas`
+
+  Schémas et clés de config :
+  - `appwriteDatetime` (zod schema) → `baasDatetime`
+  - Clé `appwrite` dans `AuthConfig` → `baas`
+  - `NodeAppwrite` (alias d'import du SDK) → `BaasSdk`
+
+  Codes d'état et traductions :
+  - `'appwrite_unavailable'` (string code) → `'baas_unavailable'`
+  - `appwriteUnavailable`, `appwriteUnavailableTitle`, `appwriteUnavailableDescription` (clés i18n) → `baas*`
+  - `brand.appwrite` (clé d'objet) → `brand.baas`
+  - `name: 'appwrite'` (service health) → `name: 'baas'`
+
+  **Dossiers / fichiers renommés**
+
+  | Avant                                                  | Après                                      |
+  | ------------------------------------------------------ | ------------------------------------------ |
+  | `packages/appwrite/`                                   | `packages/baas/`                           |
+  | `apps/amarre/src/lib/server/appwrite/`                 | `apps/amarre/src/lib/server/baas/`         |
+  | `apps/ecrin/src/lib/appwrite/`                         | `apps/ecrin/src/lib/baas/`                 |
+  | `apps/find-an-expert/src/lib/server/appwrite/`         | `apps/find-an-expert/src/lib/server/baas/` |
+  | `.env.dev.appwrite.example`                            | `.env.dev.baas.example`                    |
+  | `.env.prod.appwrite.example`                           | `.env.prod.baas.example`                   |
+  | `docs/projects/ecrin/find-an-expert/appwrite-setup.md` | `.../baas-setup.md`                        |
+
+  **Conservé (texte descriptif uniquement)**
+  - Dépendances npm tierces : `appwrite`, `node-appwrite`
+  - Classe `AppwriteException` (du SDK officiel)
+  - URLs Appwrite Cloud (`cloud.appwrite.io`)
+  - Variables d'environnement `APPWRITE_*`, `PUBLIC_APPWRITE_*` (conventions choisies/imposées par les apps consommant le SDK)
+  - Mots-clés npm `"appwrite"` (discoverability)
+  - Messages d'erreur, JSDoc, libellés utilisateur
+
+  **Migration locale requise**
+
+  Les fichiers d'environnement locaux (gitignored) doivent être renommés :
+
+  ```bash
+  mv .env.dev.appwrite .env.dev.baas
+  mv .env.prod.appwrite .env.prod.baas
+  ```
+
+  **Migration côté consommateur**
+
+  ```diff
+  - import { createAdminClient, type AppwriteConfig } from '@univ-lehavre/atlas-appwrite';
+  + import { createAdminClient, type BaasConfig } from '@univ-lehavre/atlas-baas';
+  ```
+
+  ```diff
+  - const auth = createAuthService({ appwrite: { ... }, ... });
+  + const auth = createAuthService({ baas: { ... }, ... });
+  ```
+
+### Patch Changes
+
+- [#125](https://github.com/univ-lehavre/atlas/pull/125) [`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3) Thanks [@chasset](https://github.com/chasset)! - Renommage du cluster REDCap (packages internes) en cluster `crf` pour retirer la marque REDCap des identifiants publics du monorepo. Suite de la migration commencée avec `citation-types` et le cluster `citation`.
+
+  **Packages renommés (npm + dossiers + workspace)**
+
+  | Avant (npm)                         | Après (npm)                      |
+  | ----------------------------------- | -------------------------------- |
+  | `@univ-lehavre/atlas-redcap-core`   | `@univ-lehavre/atlas-crf-core`   |
+  | `@univ-lehavre/atlas-redcap-client` | `@univ-lehavre/atlas-crf-client` |
+  | `@univ-lehavre/atlas-redcap-logs`   | `@univ-lehavre/atlas-crf-logs`   |
+
+  Les packages restants nommés `redcap-*` (apps/redcap-dashboard, cli/redcap-openapi, cli/redcap-stats, sandbox/redcap-sandbox) seront traités dans la PR 4.
+
+  **Identifiants publics renommés (PascalCase, ~798 occurrences)**
+
+  Toutes les classes/types/erreurs avec préfixe `Redcap` → `Crf` :
+  - `RedcapClient` → `CrfClient`, `RedcapClientError` → `CrfClientError`, `RedcapClientService` → `CrfClientService`
+  - `RedcapConfig` → `CrfConfig`, `RedcapConnectionConfig` → `CrfConnectionConfig`
+  - `RedcapAdapter` → `CrfAdapter`, `RedcapFeatures` → `CrfFeatures`
+  - `RedcapToken` / `RedcapTokenType` / `RedcapUrl` / `RedcapUrlType` (brands) → `Crf*` correspondants
+  - `RedcapApiError`, `RedcapHttpError`, `RedcapNetworkError`, `RedcapFetchError`, `RedcapError`, `RedcapWriteError` → `Crf*`
+  - `RedcapLogEntry` → `CrfLogEntry`
+  - Fonctions : `createRedcapClient`, `makeRedcapClient`, `makeRedcapClientLayer`, `isRedcapErrorResponse`, `isValidRedcapName`, `checkRedcapServer` → `*Crf*`
+
+  **Variables / champs**
+  - `redcapApiToken`, `redcapApiUrl`, `redcapConfig`, `redcapResult`, `redcapToken`, `redcapUrl` → `crf*`
+  - `REDCAP_NAME_PATTERN` / `REDCAP_TOKEN_PATTERN` → `CRF_*`
+  - Codes d'erreur HTTP : `redcap_http_error` → `crf_http_error`, `redcap_api_error` → `crf_api_error`, `redcap_error` → `crf_error`
+  - Variable exportée dans `services/crf/src/server/client.ts` : `redcap` → `client`
+
+  **Sous-commandes CLI**
+  - `cli/researcher-profiles` : `from-redcap` → `from-crf`
+  - `cli/crf` : `crf-redcap` → `crf-api`
+
+  **Dossiers / fichiers renommés**
+
+  | Avant                                                 | Après                                              |
+  | ----------------------------------------------------- | -------------------------------------------------- |
+  | `apps/amarre/src/lib/server/redcap/`                  | `apps/amarre/src/lib/server/crf/`                  |
+  | `apps/ecrin/src/lib/redcap/`                          | `apps/ecrin/src/lib/crf/`                          |
+  | `cli/crf/src/commands/redcap/`                        | `cli/crf/src/commands/api/`                        |
+  | `services/crf/src/server/redcap.ts`                   | `services/crf/src/server/client.ts`                |
+  | `cli/researcher-profiles/src/commands/from-redcap.ts` | `cli/researcher-profiles/src/commands/from-crf.ts` |
+
+  **Conservé (texte descriptif uniquement)**
+  - Variables d'environnement (`REDCAP_API_TOKEN`, `REDCAP_API_URL`, `REDCAP_URL`, `PUBLIC_REDCAP_URL`)
+  - Champs de données REDCap natifs (`redcap_event_name`, `redcap_repeat_instance`, `redcap_repeat_instrument`, `redcap_v`, `redcap16`)
+  - URLs (`redcap.example.com`, `projectredcap.org`)
+  - Messages d'erreur, JSDoc, libellés utilisateur mentionnant REDCap
+  - `apps/redcap-dashboard/.redcap-stats.json` (entrée `.gitignore`, sera traitée en PR 4)
+
+  **Migration côté consommateur**
+
+  ```diff
+  - import { type RedcapClient, createRedcapClient } from '@univ-lehavre/atlas-redcap-client';
+  + import { type CrfClient, createCrfClient } from '@univ-lehavre/atlas-crf-client';
+  ```
+
+- Updated dependencies [[`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3)]:
+  - @univ-lehavre/atlas-baas@2.0.0
+
 ## 2.0.7
 
 ### Patch Changes
