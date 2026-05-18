@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-citation-fetch",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "description": "Paginated fetch client for the OpenAlex citation graph API with rate limiting and queue-based state",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

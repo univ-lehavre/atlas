@@ -1,5 +1,135 @@
 # @univ-lehavre/atlas-researcher-profiles
 
+## 1.4.2
+
+### Patch Changes
+
+- [#125](https://github.com/univ-lehavre/atlas/pull/125) [`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3) Thanks [@chasset](https://github.com/chasset)! - Renommage du cluster OpenAlex en cluster `citation` pour retirer la marque OpenAlex des identifiants publics du monorepo (suite de la migration commencée avec `citation-types`).
+
+  **Packages renommés**
+
+  | Avant (npm)                             | Après (npm)                             |
+  | --------------------------------------- | --------------------------------------- |
+  | `@univ-lehavre/atlas-fetch-openalex`    | `@univ-lehavre/atlas-citation-fetch`    |
+  | `@univ-lehavre/atlas-openalex`          | `@univ-lehavre/atlas-citation`          |
+  | `@univ-lehavre/atlas-validate-openalex` | `@univ-lehavre/atlas-citation-validate` |
+  | `@univ-lehavre/atlas-openalex-cli`      | `@univ-lehavre/atlas-citation-cli`      |
+
+  Les anciens packages npm seront dépréciés vers les nouveaux noms.
+
+  **Bin renommé**
+  - `atlas-openalex` → `atlas-citation` (dans `@univ-lehavre/atlas-citation-cli`)
+
+  **Identifiants publics renommés**
+  - Types : `OpenAlexConfig` → `CitationConfig`, `OpenalexResponse` → `CitationResponse`, `OpenalexSearchAuthorAffiliationResult` → `CitationSearchAuthorAffiliationResult`
+  - Erreurs : `OpenAlexSearchError` (exporté par `@univ-lehavre/atlas-researcher-profiles`) → `CitationSearchError`
+  - Champs : `openalex_api_url` → `citation_api_url`, `openalex_api_key` → `citation_api_key`
+  - Fichiers : `fetch-openalex.ts`, `fetch-openalex-entities.ts`, `types/openalex.ts` → `fetch-citation.ts`, `fetch-citation-entities.ts`, `types/citation.ts`
+  - Apps : `apps/find-an-expert/src/lib/server/openalex/` → `apps/find-an-expert/src/lib/server/citation/`
+
+  **Conservé (texte descriptif uniquement)**
+  - URLs d'API (`https://openalex.org/...`) — réelle adresse d'API tierce
+  - Messages d'erreur et JSDoc mentionnant "OpenAlex" — texte explicatif
+  - Variables d'environnement `OPENALEX_*` — convention imposée par le service tiers
+
+  **Migration côté consommateur**
+
+  ```diff
+  - import { type OpenAlexConfig } from '@univ-lehavre/atlas-fetch-openalex';
+  + import { type CitationConfig } from '@univ-lehavre/atlas-citation-fetch';
+  ```
+
+  ```diff
+  - import { type OpenalexSearchAuthorAffiliationResult } from '@univ-lehavre/atlas-openalex';
+  + import { type CitationSearchAuthorAffiliationResult } from '@univ-lehavre/atlas-citation';
+  ```
+
+  **Note sur `@univ-lehavre/atlas-find-an-expert`** : l'app n'est pas publiée sur npm, mais reçoit un bump major car ses imports et la structure de ses dossiers `lib/server/citation/` changent — utile pour le suivi changelog interne.
+
+- [#125](https://github.com/univ-lehavre/atlas/pull/125) [`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3) Thanks [@chasset](https://github.com/chasset)! - Renommage du package `@univ-lehavre/atlas-openalex-types` en `@univ-lehavre/atlas-citation-types` pour retirer toute référence à une marque tierce dans les identifiants publics.
+
+  **Breaking changes — `@univ-lehavre/atlas-citation-types`**
+  - Le package npm s'appelle désormais `@univ-lehavre/atlas-citation-types`. L'ancien `@univ-lehavre/atlas-openalex-types` sera déprécié.
+  - Renommages d'exports :
+    - `OpenAlexID` → `CitationID` (type brandé)
+    - `asOpenAlexID` → `asCitationID` (constructeur brandé)
+    - `OpenalexResponse` → `CitationResponse` (wrapper de réponse paginée)
+    - `FetchOpenAlexAPIOptions` → `FetchCitationAPIOptions` (options de requête)
+  - Les URLs validées (`https://openalex.org/...`) et les messages d'erreur restent inchangés — la marque OpenAlex est mentionnée uniquement dans le texte descriptif (README, JSDoc, messages), jamais dans les identifiants.
+
+  **Migration côté consommateur**
+
+  ```diff
+  - import { asOpenAlexID, type OpenAlexID } from '@univ-lehavre/atlas-openalex-types';
+  + import { asCitationID, type CitationID } from '@univ-lehavre/atlas-citation-types';
+  ```
+
+  **Consommateurs impactés**
+  - `@univ-lehavre/atlas-fetch-openalex`, `@univ-lehavre/atlas-validate-openalex`, `@univ-lehavre/atlas-researcher-profiles` : imports et identifiants dérivés (`get*OpenAlexID*` → `get*CitationID*`) mis à jour.
+  - `@univ-lehavre/atlas-biblio-cli`, `@univ-lehavre/atlas-researcher-profiles-cli` : imports mis à jour, surface CLI inchangée.
+
+- [#125](https://github.com/univ-lehavre/atlas/pull/125) [`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3) Thanks [@chasset](https://github.com/chasset)! - Renommage du cluster REDCap (packages internes) en cluster `crf` pour retirer la marque REDCap des identifiants publics du monorepo. Suite de la migration commencée avec `citation-types` et le cluster `citation`.
+
+  **Packages renommés (npm + dossiers + workspace)**
+
+  | Avant (npm)                         | Après (npm)                      |
+  | ----------------------------------- | -------------------------------- |
+  | `@univ-lehavre/atlas-redcap-core`   | `@univ-lehavre/atlas-crf-core`   |
+  | `@univ-lehavre/atlas-redcap-client` | `@univ-lehavre/atlas-crf-client` |
+  | `@univ-lehavre/atlas-redcap-logs`   | `@univ-lehavre/atlas-crf-logs`   |
+
+  Les packages restants nommés `redcap-*` (apps/redcap-dashboard, cli/redcap-openapi, cli/redcap-stats, sandbox/redcap-sandbox) seront traités dans la PR 4.
+
+  **Identifiants publics renommés (PascalCase, ~798 occurrences)**
+
+  Toutes les classes/types/erreurs avec préfixe `Redcap` → `Crf` :
+  - `RedcapClient` → `CrfClient`, `RedcapClientError` → `CrfClientError`, `RedcapClientService` → `CrfClientService`
+  - `RedcapConfig` → `CrfConfig`, `RedcapConnectionConfig` → `CrfConnectionConfig`
+  - `RedcapAdapter` → `CrfAdapter`, `RedcapFeatures` → `CrfFeatures`
+  - `RedcapToken` / `RedcapTokenType` / `RedcapUrl` / `RedcapUrlType` (brands) → `Crf*` correspondants
+  - `RedcapApiError`, `RedcapHttpError`, `RedcapNetworkError`, `RedcapFetchError`, `RedcapError`, `RedcapWriteError` → `Crf*`
+  - `RedcapLogEntry` → `CrfLogEntry`
+  - Fonctions : `createRedcapClient`, `makeRedcapClient`, `makeRedcapClientLayer`, `isRedcapErrorResponse`, `isValidRedcapName`, `checkRedcapServer` → `*Crf*`
+
+  **Variables / champs**
+  - `redcapApiToken`, `redcapApiUrl`, `redcapConfig`, `redcapResult`, `redcapToken`, `redcapUrl` → `crf*`
+  - `REDCAP_NAME_PATTERN` / `REDCAP_TOKEN_PATTERN` → `CRF_*`
+  - Codes d'erreur HTTP : `redcap_http_error` → `crf_http_error`, `redcap_api_error` → `crf_api_error`, `redcap_error` → `crf_error`
+  - Variable exportée dans `services/crf/src/server/client.ts` : `redcap` → `client`
+
+  **Sous-commandes CLI**
+  - `cli/researcher-profiles` : `from-redcap` → `from-crf`
+  - `cli/crf` : `crf-redcap` → `crf-api`
+
+  **Dossiers / fichiers renommés**
+
+  | Avant                                                 | Après                                              |
+  | ----------------------------------------------------- | -------------------------------------------------- |
+  | `apps/amarre/src/lib/server/redcap/`                  | `apps/amarre/src/lib/server/crf/`                  |
+  | `apps/ecrin/src/lib/redcap/`                          | `apps/ecrin/src/lib/crf/`                          |
+  | `cli/crf/src/commands/redcap/`                        | `cli/crf/src/commands/api/`                        |
+  | `services/crf/src/server/redcap.ts`                   | `services/crf/src/server/client.ts`                |
+  | `cli/researcher-profiles/src/commands/from-redcap.ts` | `cli/researcher-profiles/src/commands/from-crf.ts` |
+
+  **Conservé (texte descriptif uniquement)**
+  - Variables d'environnement (`REDCAP_API_TOKEN`, `REDCAP_API_URL`, `REDCAP_URL`, `PUBLIC_REDCAP_URL`)
+  - Champs de données REDCap natifs (`redcap_event_name`, `redcap_repeat_instance`, `redcap_repeat_instrument`, `redcap_v`, `redcap16`)
+  - URLs (`redcap.example.com`, `projectredcap.org`)
+  - Messages d'erreur, JSDoc, libellés utilisateur mentionnant REDCap
+  - `apps/redcap-dashboard/.redcap-stats.json` (entrée `.gitignore`, sera traitée en PR 4)
+
+  **Migration côté consommateur**
+
+  ```diff
+  - import { type RedcapClient, createRedcapClient } from '@univ-lehavre/atlas-redcap-client';
+  + import { type CrfClient, createCrfClient } from '@univ-lehavre/atlas-crf-client';
+  ```
+
+- Updated dependencies [[`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3), [`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3), [`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3)]:
+  - @univ-lehavre/atlas-citation-fetch@2.0.0
+  - @univ-lehavre/atlas-researcher-profiles@2.0.0
+  - @univ-lehavre/atlas-citation-types@4.0.0
+
 ## 1.4.1
 
 ### Patch Changes

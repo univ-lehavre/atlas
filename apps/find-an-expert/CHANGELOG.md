@@ -1,5 +1,132 @@
 # @univ-lehavre/atlas-find-an-expert
 
+## 2.0.0
+
+### Major Changes
+
+- [#125](https://github.com/univ-lehavre/atlas/pull/125) [`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3) Thanks [@chasset](https://github.com/chasset)! - Renommage du package Appwrite en `baas` (Backend-as-a-Service) pour retirer la marque Appwrite des identifiants publics du monorepo. Fin de la migration anti-marque (PR 1 citation-types, PR 2 cluster citation, PR 3 cluster crf).
+
+  **Package renommé (npm + dossier + workspace)**
+
+  | Avant (npm)                    | Après (npm)                |
+  | ------------------------------ | -------------------------- |
+  | `@univ-lehavre/atlas-appwrite` | `@univ-lehavre/atlas-baas` |
+
+  **Identifiants publics renommés**
+
+  Types et erreurs :
+  - `AppwriteConfig` → `BaasConfig`
+
+  Classes et fonctions :
+  - `AppwriteUserRepository` → `BaasUserRepository`
+  - `AppwriteCurrentConsentRepository` → `BaasCurrentConsentRepository`
+  - `AppwriteConsentEventRepository` → `BaasConsentEventRepository`
+  - `MockAppwriteUserRepository` → `MockBaasUserRepository`
+  - `checkAppwrite` / `checkAppwriteDatabase` / `checkAppwriteEndpoint` → `checkBaas*`
+  - `isAppwriteAuthError` → `isBaasAuthError`
+  - `mapAppwriteUserToProfile` → `mapBaasUserToProfile`
+  - `serviceAppwrite` → `serviceBaas`
+
+  Schémas et clés de config :
+  - `appwriteDatetime` (zod schema) → `baasDatetime`
+  - Clé `appwrite` dans `AuthConfig` → `baas`
+  - `NodeAppwrite` (alias d'import du SDK) → `BaasSdk`
+
+  Codes d'état et traductions :
+  - `'appwrite_unavailable'` (string code) → `'baas_unavailable'`
+  - `appwriteUnavailable`, `appwriteUnavailableTitle`, `appwriteUnavailableDescription` (clés i18n) → `baas*`
+  - `brand.appwrite` (clé d'objet) → `brand.baas`
+  - `name: 'appwrite'` (service health) → `name: 'baas'`
+
+  **Dossiers / fichiers renommés**
+
+  | Avant                                                  | Après                                      |
+  | ------------------------------------------------------ | ------------------------------------------ |
+  | `packages/appwrite/`                                   | `packages/baas/`                           |
+  | `apps/amarre/src/lib/server/appwrite/`                 | `apps/amarre/src/lib/server/baas/`         |
+  | `apps/ecrin/src/lib/appwrite/`                         | `apps/ecrin/src/lib/baas/`                 |
+  | `apps/find-an-expert/src/lib/server/appwrite/`         | `apps/find-an-expert/src/lib/server/baas/` |
+  | `.env.dev.appwrite.example`                            | `.env.dev.baas.example`                    |
+  | `.env.prod.appwrite.example`                           | `.env.prod.baas.example`                   |
+  | `docs/projects/ecrin/find-an-expert/appwrite-setup.md` | `.../baas-setup.md`                        |
+
+  **Conservé (texte descriptif uniquement)**
+  - Dépendances npm tierces : `appwrite`, `node-appwrite`
+  - Classe `AppwriteException` (du SDK officiel)
+  - URLs Appwrite Cloud (`cloud.appwrite.io`)
+  - Variables d'environnement `APPWRITE_*`, `PUBLIC_APPWRITE_*` (conventions choisies/imposées par les apps consommant le SDK)
+  - Mots-clés npm `"appwrite"` (discoverability)
+  - Messages d'erreur, JSDoc, libellés utilisateur
+
+  **Migration locale requise**
+
+  Les fichiers d'environnement locaux (gitignored) doivent être renommés :
+
+  ```bash
+  mv .env.dev.appwrite .env.dev.baas
+  mv .env.prod.appwrite .env.prod.baas
+  ```
+
+  **Migration côté consommateur**
+
+  ```diff
+  - import { createAdminClient, type AppwriteConfig } from '@univ-lehavre/atlas-appwrite';
+  + import { createAdminClient, type BaasConfig } from '@univ-lehavre/atlas-baas';
+  ```
+
+  ```diff
+  - const auth = createAuthService({ appwrite: { ... }, ... });
+  + const auth = createAuthService({ baas: { ... }, ... });
+  ```
+
+- [#125](https://github.com/univ-lehavre/atlas/pull/125) [`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3) Thanks [@chasset](https://github.com/chasset)! - Renommage du cluster OpenAlex en cluster `citation` pour retirer la marque OpenAlex des identifiants publics du monorepo (suite de la migration commencée avec `citation-types`).
+
+  **Packages renommés**
+
+  | Avant (npm)                             | Après (npm)                             |
+  | --------------------------------------- | --------------------------------------- |
+  | `@univ-lehavre/atlas-fetch-openalex`    | `@univ-lehavre/atlas-citation-fetch`    |
+  | `@univ-lehavre/atlas-openalex`          | `@univ-lehavre/atlas-citation`          |
+  | `@univ-lehavre/atlas-validate-openalex` | `@univ-lehavre/atlas-citation-validate` |
+  | `@univ-lehavre/atlas-openalex-cli`      | `@univ-lehavre/atlas-citation-cli`      |
+
+  Les anciens packages npm seront dépréciés vers les nouveaux noms.
+
+  **Bin renommé**
+  - `atlas-openalex` → `atlas-citation` (dans `@univ-lehavre/atlas-citation-cli`)
+
+  **Identifiants publics renommés**
+  - Types : `OpenAlexConfig` → `CitationConfig`, `OpenalexResponse` → `CitationResponse`, `OpenalexSearchAuthorAffiliationResult` → `CitationSearchAuthorAffiliationResult`
+  - Erreurs : `OpenAlexSearchError` (exporté par `@univ-lehavre/atlas-researcher-profiles`) → `CitationSearchError`
+  - Champs : `openalex_api_url` → `citation_api_url`, `openalex_api_key` → `citation_api_key`
+  - Fichiers : `fetch-openalex.ts`, `fetch-openalex-entities.ts`, `types/openalex.ts` → `fetch-citation.ts`, `fetch-citation-entities.ts`, `types/citation.ts`
+  - Apps : `apps/find-an-expert/src/lib/server/openalex/` → `apps/find-an-expert/src/lib/server/citation/`
+
+  **Conservé (texte descriptif uniquement)**
+  - URLs d'API (`https://openalex.org/...`) — réelle adresse d'API tierce
+  - Messages d'erreur et JSDoc mentionnant "OpenAlex" — texte explicatif
+  - Variables d'environnement `OPENALEX_*` — convention imposée par le service tiers
+
+  **Migration côté consommateur**
+
+  ```diff
+  - import { type OpenAlexConfig } from '@univ-lehavre/atlas-fetch-openalex';
+  + import { type CitationConfig } from '@univ-lehavre/atlas-citation-fetch';
+  ```
+
+  ```diff
+  - import { type OpenalexSearchAuthorAffiliationResult } from '@univ-lehavre/atlas-openalex';
+  + import { type CitationSearchAuthorAffiliationResult } from '@univ-lehavre/atlas-citation';
+  ```
+
+  **Note sur `@univ-lehavre/atlas-find-an-expert`** : l'app n'est pas publiée sur npm, mais reçoit un bump major car ses imports et la structure de ses dossiers `lib/server/citation/` changent — utile pour le suivi changelog interne.
+
+### Patch Changes
+
+- Updated dependencies [[`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3), [`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3), [`c616cab`](https://github.com/univ-lehavre/atlas/commit/c616cabd29561b50e2dac26bedd489378bee65b3)]:
+  - @univ-lehavre/atlas-baas@2.0.0
+  - @univ-lehavre/atlas-citation-fetch@2.0.0
+
 ## 1.0.3
 
 ### Patch Changes
