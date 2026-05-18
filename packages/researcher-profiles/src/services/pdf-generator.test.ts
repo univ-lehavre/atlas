@@ -2,11 +2,11 @@ import { describe, it, expect } from "vitest";
 import { generateCombinedPdf } from "./pdf-generator.js";
 import { PDFDocument as PDFLibDocument } from "pdf-lib";
 import type {
-  OpenAlexID,
+  CitationID,
   WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 
-const fakeOpenAlexId = (id: string): OpenAlexID => id as unknown as OpenAlexID;
+const fakeOpenAlexId = (id: string): CitationID => id as unknown as CitationID;
 
 const work = (overrides: Partial<WorksResult> = {}): WorksResult =>
   ({

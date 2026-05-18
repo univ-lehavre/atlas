@@ -3,7 +3,7 @@ import { Effect, Ref } from "effect";
 import { hasPending, hasORCID } from "./tester.js";
 import { EventsStore } from "../store/init.js";
 import type { IEvent } from "./types.js";
-import type { OpenAlexID, ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { CitationID, ORCID } from "@univ-lehavre/atlas-citation-types";
 
 const orcid = "0000-0001-2345-6789" as unknown as ORCID;
 
@@ -13,7 +13,7 @@ const makeEvent = (overrides: Partial<IEvent> = {}): IEvent => ({
   dataIntegrity: "hash",
   hasBeenExtendedAt: "never",
   status: "pending",
-  from: "A1" as unknown as OpenAlexID,
+  from: "A1" as unknown as CitationID,
   id: orcid,
   entity: "author",
   field: "affiliation",

@@ -1,4 +1,4 @@
-import type { OpenAlexID, ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { CitationID, ORCID } from "@univ-lehavre/atlas-citation-types";
 
 type Status = "pending" | "accepted" | "rejected";
 
@@ -22,8 +22,8 @@ interface IEventMeta {
 }
 
 interface IEventData {
-  /** Source des données : OpenAlexID */
-  from: OpenAlexID;
+  /** Source des données : CitationID */
+  from: CitationID;
   /** ORCID, ROR, DOI relatif à l'entité définie */
   id: ORCID;
   entity: IEntity;

@@ -7,7 +7,7 @@ export default [
     workspaceModules: [
       "@univ-lehavre/atlas-redcap-client",
       "@univ-lehavre/atlas-fetch-openalex",
-      "@univ-lehavre/atlas-openalex-types",
+      "@univ-lehavre/atlas-citation-types",
     ],
   }),
   // Computational/mathematical services need reduce and mutable accumulators

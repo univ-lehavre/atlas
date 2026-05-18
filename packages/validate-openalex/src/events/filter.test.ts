@@ -8,7 +8,7 @@ import {
   removeDuplicates,
   filterAcceptedAuthorDisplayNameAlternatives,
 } from "./filter.js";
-import type { ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { ORCID } from "@univ-lehavre/atlas-citation-types";
 
 const makeEvent = (overrides: Partial<IEvent> = {}): IEvent =>
   ({

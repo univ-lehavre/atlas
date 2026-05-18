@@ -1,8 +1,8 @@
-export { asORCID, asOpenAlexID } from "./setter.js";
-export type { ORCID, OpenAlexID } from "./branded.js";
+export { asORCID, asCitationID } from "./setter.js";
+export type { ORCID, CitationID } from "./branded.js";
 export type {
   AuthorsResult,
-  OpenalexResponse,
+  CitationResponse,
   AffiliationsResult,
   WorksResult,
   TopicEntry,
@@ -12,4 +12,4 @@ export type {
   AuthorshipInstitution,
   RateLimitInfo,
 } from "./api-results.js";
-export type { FetchOpenAlexAPIOptions } from "./api-parameters.js";
+export type { FetchCitationAPIOptions } from "./api-parameters.js";

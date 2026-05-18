@@ -1,5 +1,5 @@
 import { Effect, RateLimiter, Queue, Ref } from "effect";
-import type { FetchOpenAlexAPIOptions } from "@univ-lehavre/atlas-openalex-types";
+import type { FetchCitationAPIOptions } from "@univ-lehavre/atlas-citation-types";
 import type {
   FetchError,
   ResponseParseError,
@@ -18,7 +18,7 @@ interface FetchAPIMinimalConfigBase {
   readonly rateLimit: RateLimiter.RateLimiter.Options;
   readonly apiURL: string;
   readonly endpoint: string;
-  readonly fetchAPIOptions: FetchOpenAlexAPIOptions;
+  readonly fetchAPIOptions: FetchCitationAPIOptions;
   readonly perPage: number;
   readonly maxPages?: number;
 }

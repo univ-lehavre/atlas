@@ -5,7 +5,7 @@ import { updateContextStore, updateEventsStore } from "./updater.js";
 import { EventsStore, ContextStore } from "./init.js";
 import type { IEvent } from "../events/types.js";
 import type { IContext } from "../context/types.js";
-import type { OpenAlexID, ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { CitationID, ORCID } from "@univ-lehavre/atlas-citation-types";
 
 vi.mock("../store/index.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../store/index.js")>();
@@ -20,7 +20,7 @@ const makeEvent = (overrides: Partial<IEvent> = {}): IEvent => ({
   dataIntegrity: "hash-default",
   hasBeenExtendedAt: "never",
   status: "pending",
-  from: "A1" as unknown as OpenAlexID,
+  from: "A1" as unknown as CitationID,
   id: orcid,
   entity: "author",
   field: "affiliation",

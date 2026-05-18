@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@univ-lehavre/atlas-fetch-one-api-page": "workspace:*",
-    "@univ-lehavre/atlas-openalex-types": "workspace:*",
+    "@univ-lehavre/atlas-citation-types": "workspace:*",
     "effect": "^3.21.2"
   },
   "devDependencies": {

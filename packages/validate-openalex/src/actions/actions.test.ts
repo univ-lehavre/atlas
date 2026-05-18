@@ -17,12 +17,12 @@ const mocks = vi.hoisted(() => ({
   hasAcceptedAuthorAffiliations: vi.fn(),
   hasAcceptedAuthorDisplayNameAlternatives: vi.fn(),
   hasAcceptedInstitutionDisplayNameAlternatives: vi.fn(),
-  hasAcceptedOpenAlexIDs: vi.fn(),
+  hasAcceptedCitationIDs: vi.fn(),
   hasAcceptedWorks: vi.fn(),
   listAcceptedAuthorAffiliations: vi.fn(),
   listAcceptedAuthorDisplayNameAlternatives: vi.fn(),
   listAcceptedInstitutionDisplayNameAlternatives: vi.fn(),
-  listAcceptedOpenAlexIDs: vi.fn(),
+  listAcceptedCitationIDs: vi.fn(),
   listAcceptedWorks: vi.fn(),
 }));
 
@@ -51,7 +51,7 @@ vi.mock("../events/index.js", () => ({
     mocks.hasAcceptedAuthorDisplayNameAlternatives,
   hasAcceptedInstitutionDisplayNameAlternatives:
     mocks.hasAcceptedInstitutionDisplayNameAlternatives,
-  hasAcceptedOpenAlexIDs: mocks.hasAcceptedOpenAlexIDs,
+  hasAcceptedCitationIDs: mocks.hasAcceptedCitationIDs,
   hasAcceptedWorks: mocks.hasAcceptedWorks,
 }));
 
@@ -61,7 +61,7 @@ vi.mock("../prompt/index.js", () => ({
     mocks.listAcceptedAuthorDisplayNameAlternatives,
   listAcceptedInstitutionDisplayNameAlternatives:
     mocks.listAcceptedInstitutionDisplayNameAlternatives,
-  listAcceptedOpenAlexIDs: mocks.listAcceptedOpenAlexIDs,
+  listAcceptedCitationIDs: mocks.listAcceptedCitationIDs,
   listAcceptedWorks: mocks.listAcceptedWorks,
 }));
 
@@ -87,7 +87,7 @@ describe("actions registry", () => {
     mocks.listAcceptedInstitutionDisplayNameAlternatives.mockReturnValue(
       Effect.void,
     );
-    mocks.listAcceptedOpenAlexIDs.mockReturnValue(Effect.void);
+    mocks.listAcceptedCitationIDs.mockReturnValue(Effect.void);
     mocks.listAcceptedWorks.mockReturnValue(Effect.void);
   });
 
@@ -128,7 +128,7 @@ describe("actions registry", () => {
     );
     expect(mocks.hasAuthorAlternativeStrings).toHaveBeenCalled();
     expect(mocks.hasAcceptedValues).toHaveBeenCalled();
-    expect(mocks.hasAcceptedOpenAlexIDs).toHaveBeenCalled();
+    expect(mocks.hasAcceptedCitationIDs).toHaveBeenCalled();
     expect(mocks.hasAcceptedWorks).toHaveBeenCalled();
   });
 
@@ -149,7 +149,7 @@ describe("actions registry", () => {
     expect(mocks.retrieveWorksByORCID).toHaveBeenCalledWith(undefined);
     expect(mocks.extendsToWorks).toHaveBeenCalledWith(undefined);
     expect(mocks.retrieveWorksByDOI).toHaveBeenCalledWith(undefined);
-    expect(mocks.listAcceptedOpenAlexIDs).toHaveBeenCalled();
+    expect(mocks.listAcceptedCitationIDs).toHaveBeenCalled();
     expect(mocks.listAcceptedAuthorDisplayNameAlternatives).toHaveBeenCalled();
     expect(mocks.listAcceptedAuthorAffiliations).toHaveBeenCalled();
     expect(

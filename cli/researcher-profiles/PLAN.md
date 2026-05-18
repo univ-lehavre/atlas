@@ -7,7 +7,7 @@ Pour la documentation des algorithmes, voir [ALGORITHMS.md](ALGORITHMS.md).
 ## Étapes
 
 ### 0. Étendre les types OpenAlex
-**Fichier :** `packages/openalex-types/src/api-results.ts`
+**Fichier :** `packages/citation-types/src/api-results.ts`
 
 Ajouter `TopicEntry` et `KeywordEntry`, les déclarer optionnels sur `WorksResult` :
 ```ts

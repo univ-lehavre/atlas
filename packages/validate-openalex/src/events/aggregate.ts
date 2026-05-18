@@ -1,5 +1,5 @@
 import type { IEvent } from "./types.js";
-import type { ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { ORCID } from "@univ-lehavre/atlas-citation-types";
 import color from "picocolors";
 import { log } from "@clack/prompts";
 

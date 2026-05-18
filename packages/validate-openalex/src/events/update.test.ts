@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { updateNewEventsWithExistingMetadata } from "./update.js";
 import type { IEvent } from "./types.js";
-import type { OpenAlexID, ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { CitationID, ORCID } from "@univ-lehavre/atlas-citation-types";
 
 const makeEvent = (overrides: Partial<IEvent> = {}): IEvent => ({
   createdAt: "2024-01-01",
@@ -9,7 +9,7 @@ const makeEvent = (overrides: Partial<IEvent> = {}): IEvent => ({
   dataIntegrity: "hash",
   hasBeenExtendedAt: "never",
   status: "pending",
-  from: "A1" as unknown as OpenAlexID,
+  from: "A1" as unknown as CitationID,
   id: "0000" as unknown as ORCID,
   entity: "author",
   field: "affiliation",

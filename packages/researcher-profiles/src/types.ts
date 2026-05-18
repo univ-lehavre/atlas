@@ -2,7 +2,7 @@
  * Domain types for researcher-profiles CLI.
  */
 
-import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+import type { WorksResult } from "@univ-lehavre/atlas-citation-types";
 
 /**
  * A researcher record, sourced from REDCap.

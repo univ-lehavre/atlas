@@ -16,7 +16,7 @@ import {
 } from "@univ-lehavre/atlas-researcher-profiles";
 import { extractText } from "@univ-lehavre/atlas-researcher-profiles";
 import { matchReferences } from "@univ-lehavre/atlas-researcher-profiles";
-import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+import type { WorksResult } from "@univ-lehavre/atlas-citation-types";
 import {
   searchWorksByDOI,
   type OpenAlexConfig,

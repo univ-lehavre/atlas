@@ -3,7 +3,7 @@ import { Effect, Ref } from "effect";
 import { buildIntegrity, uniqueSorted } from "./index.js";
 import { ContextStore } from "../store/init.js";
 import type { IContext } from "../context/types.js";
-import type { ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { ORCID } from "@univ-lehavre/atlas-citation-types";
 
 const ctx: IContext = {
   type: "author",

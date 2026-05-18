@@ -8,9 +8,9 @@ import {
 import type {
   WorksResult,
   AuthorsResult,
-  OpenAlexID,
+  CitationID,
   ORCID,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 import { ContextStore, EventsStore } from "../store/init.js";
 import type { IContext } from "../context/types.js";
 
@@ -71,7 +71,7 @@ describe("buildEvent", () => {
     () =>
       Effect.gen(function* () {
         const partial = {
-          from: "A1" as unknown as OpenAlexID,
+          from: "A1" as unknown as CitationID,
           id: orcid,
           entity: "author" as const,
           field: "affiliation" as const,

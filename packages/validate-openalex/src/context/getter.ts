@@ -1,6 +1,6 @@
 import { Effect, Ref } from "effect";
 import { ContextStore } from "../store/index.js";
-import type { ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { ORCID } from "@univ-lehavre/atlas-citation-types";
 import type { IContext } from "./types.js";
 
 const getContext = (): Effect.Effect<IContext, never, ContextStore> =>

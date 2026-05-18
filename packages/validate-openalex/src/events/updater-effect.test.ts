@@ -4,7 +4,7 @@ import { vi } from "vitest";
 import { updateEventsStoreBasedOnAcceptedValues } from "./updater-effect.js";
 import { EventsStore, ContextStore } from "../store/init.js";
 import type { IEvent } from "./types.js";
-import type { OpenAlexID, ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { CitationID, ORCID } from "@univ-lehavre/atlas-citation-types";
 import type { IContext } from "../context/types.js";
 
 vi.mock("../store/saver.js", async (importOriginal) => {
@@ -20,7 +20,7 @@ const makeEvent = (overrides: Partial<IEvent> = {}): IEvent => ({
   dataIntegrity: "hash",
   hasBeenExtendedAt: "never",
   status: "pending",
-  from: "A1" as unknown as OpenAlexID,
+  from: "A1" as unknown as CitationID,
   id: orcid,
   entity: "author",
   field: "affiliation",

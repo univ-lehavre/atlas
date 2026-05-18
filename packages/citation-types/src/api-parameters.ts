@@ -1,4 +1,4 @@
-interface FetchOpenAlexAPIOptions {
+interface FetchCitationAPIOptions {
   filter?: string;
   search?: string;
   sort?: string;
@@ -11,4 +11,4 @@ interface FetchOpenAlexAPIOptions {
   api_key?: string;
 }
 
-export type { FetchOpenAlexAPIOptions };
+export type { FetchCitationAPIOptions };

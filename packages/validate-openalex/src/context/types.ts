@@ -1,4 +1,4 @@
-import type { ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { ORCID } from "@univ-lehavre/atlas-citation-types";
 import type { IEntity } from "../events/types.js";
 
 type IContextType = IEntity | "none";

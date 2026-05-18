@@ -3,7 +3,7 @@ import { Effect, Ref } from "effect";
 import { getContext, isAuthorContext, getORCID } from "./getter.js";
 import { ContextStore } from "../store/init.js";
 import type { IContext } from "./types.js";
-import type { ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { ORCID } from "@univ-lehavre/atlas-citation-types";
 
 const orcid = "0000-0001-2345-6789" as unknown as ORCID;
 

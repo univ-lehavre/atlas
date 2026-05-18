@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { Effect, Exit } from "effect";
 import type {
-  OpenAlexID,
+  CitationID,
   WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 import type { ResearcherData } from "../types.js";
 
 const mocks = vi.hoisted(() => ({
@@ -163,7 +163,7 @@ describe("writeResearcherData", () => {
 });
 
 const fakeWork = (id: string): WorksResult =>
-  ({ id: id as unknown as OpenAlexID }) as WorksResult;
+  ({ id: id as unknown as CitationID }) as WorksResult;
 
 describe("writeFinalReferences", () => {
   it("computes pending references and writes pdf + json + record", async () => {

@@ -17,14 +17,14 @@ import {
   hasAcceptedAuthorAffiliations,
   hasAcceptedAuthorDisplayNameAlternatives,
   hasAcceptedInstitutionDisplayNameAlternatives,
-  hasAcceptedOpenAlexIDs,
+  hasAcceptedCitationIDs,
   hasAcceptedWorks,
 } from "../events/index.js";
 import {
   listAcceptedAuthorAffiliations,
   listAcceptedAuthorDisplayNameAlternatives,
   listAcceptedInstitutionDisplayNameAlternatives,
-  listAcceptedOpenAlexIDs,
+  listAcceptedCitationIDs,
   listAcceptedWorks,
 } from "../prompt/index.js";
 
@@ -109,8 +109,8 @@ const actions: Action[] = [
   },
   {
     name: "Lister les identifiants OpenAlex de ce chercheur",
-    visible: [() => hasAcceptedOpenAlexIDs()],
-    action: () => listAcceptedOpenAlexIDs(),
+    visible: [() => hasAcceptedCitationIDs()],
+    action: () => listAcceptedCitationIDs(),
   },
   {
     name: "Lister les formes imprimées de ce chercheur",

@@ -6,9 +6,9 @@ import type {
 import type {
   AuthorsResult,
   WorksResult,
-  FetchOpenAlexAPIOptions,
-} from "@univ-lehavre/atlas-openalex-types";
-import type { ORCID } from "@univ-lehavre/atlas-openalex-types";
+  FetchCitationAPIOptions,
+} from "@univ-lehavre/atlas-citation-types";
+import type { ORCID } from "@univ-lehavre/atlas-citation-types";
 import { fetchAPIResults } from "./api.js";
 import type { FetchAPIMinimalConfig } from "./helpers.js";
 import type { OpenAlexConfig } from "./institutions.js";
@@ -20,7 +20,7 @@ const DEFAULT_PER_PAGE = 100;
 
 const buildConfig = (
   endpoint: string,
-  fetchAPIOptions: FetchOpenAlexAPIOptions,
+  fetchAPIOptions: FetchCitationAPIOptions,
   config: OpenAlexConfig,
   onRateLimit?: FetchAPIMinimalConfig["onRateLimit"],
   onPage?: FetchAPIMinimalConfig["onPage"],

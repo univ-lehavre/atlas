@@ -15,7 +15,7 @@ import type {
 import type {
   AuthorsResult,
   WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 import { Effect } from "effect";
 import { OpenAlexSearchError } from "../errors.js";
 import type { ResearcherRow } from "../types.js";

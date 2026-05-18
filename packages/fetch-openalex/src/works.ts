@@ -4,7 +4,7 @@ import type {
   ResponseParseError,
 } from "@univ-lehavre/atlas-fetch-one-api-page";
 import { fetchOnePage } from "@univ-lehavre/atlas-fetch-one-api-page";
-import type { RateLimitInfo } from "@univ-lehavre/atlas-openalex-types";
+import type { RateLimitInfo } from "@univ-lehavre/atlas-citation-types";
 import type { OpenAlexConfig } from "./institutions.js";
 
 const OPENALEX_BASE_URL = "https://api.openalex.org";

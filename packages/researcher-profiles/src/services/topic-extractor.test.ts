@@ -5,7 +5,7 @@ import type {
   KeywordEntry,
   TopicEntry,
   WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 
 const makeWork = (
   overrides: { topics?: TopicEntry[]; keywords?: KeywordEntry[] } = {},

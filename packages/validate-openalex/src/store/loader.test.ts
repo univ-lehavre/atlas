@@ -7,7 +7,7 @@ import { loadStores } from "./loader.js";
 import { EventsStore, ContextStore } from "./init.js";
 import type { IEvent } from "../events/types.js";
 import type { IContext } from "../context/types.js";
-import type { OpenAlexID, ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { CitationID, ORCID } from "@univ-lehavre/atlas-citation-types";
 
 const orcid = "0000-0001-2345-6789" as unknown as ORCID;
 
@@ -24,7 +24,7 @@ const makeEvent = (overrides: Partial<IEvent> = {}): IEvent => ({
   dataIntegrity: "hash",
   hasBeenExtendedAt: "never",
   status: "pending",
-  from: "A1" as unknown as OpenAlexID,
+  from: "A1" as unknown as CitationID,
   id: orcid,
   entity: "author",
   field: "affiliation",

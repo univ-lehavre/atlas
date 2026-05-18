@@ -3,9 +3,9 @@ import { Effect, Exit } from "effect";
 import type { OpenAlexConfig } from "@univ-lehavre/atlas-fetch-openalex";
 import type {
   AuthorsResult,
-  OpenAlexID,
+  CitationID,
   WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 import type { ResearcherRow } from "../types.js";
 
 const mocks = vi.hoisted(() => ({
@@ -35,7 +35,7 @@ const author = (id: string): AuthorsResult =>
   ({ id, display_name: id }) as AuthorsResult;
 
 const work = (id: string): WorksResult =>
-  ({ id: id as unknown as OpenAlexID, title: id }) as WorksResult;
+  ({ id: id as unknown as CitationID, title: id }) as WorksResult;
 
 const makeRow = (overrides: Partial<ResearcherRow>): ResearcherRow => ({
   userid: "u1",

@@ -5,13 +5,13 @@ import { getEventData, getEvents } from "./getter-effect.js";
 import { buildIntegrity } from "../tools/index.js";
 import type { IEvent } from "./types.js";
 import { updateNewEventsWithExistingMetadata } from "./index.js";
-import { asOpenAlexID } from "@univ-lehavre/atlas-openalex-types";
+import { asCitationID } from "@univ-lehavre/atlas-citation-types";
 import type {
   AuthorsResult,
   IInstitution,
   ORCID,
   WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 
 const buildEvent = (
   partial: Omit<
@@ -55,7 +55,7 @@ const buildAuthorResultsPendingEvents = (
     const orcid: ORCID = yield* getORCID();
     if (!orcid) throw new Error("No orcid in context");
     for (const author of authors) {
-      const openalexID = asOpenAlexID(author.id);
+      const openalexID = asCitationID(author.id);
       // Traitement des données personnelles de l'auteur
       for (const display_name_alternative of author.display_name_alternatives ??
         []) {

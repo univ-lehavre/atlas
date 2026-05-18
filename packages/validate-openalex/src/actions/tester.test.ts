@@ -10,7 +10,7 @@ import {
 } from "./tester.js";
 import { EventsStore, ContextStore } from "../store/init.js";
 import type { IEvent } from "../events/types.js";
-import type { OpenAlexID, ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { CitationID, ORCID } from "@univ-lehavre/atlas-citation-types";
 import type { IContext } from "../context/types.js";
 
 const orcid = "0000-0001-2345-6789" as unknown as ORCID;
@@ -21,7 +21,7 @@ const makeEvent = (overrides: Partial<IEvent> = {}): IEvent => ({
   dataIntegrity: "hash",
   hasBeenExtendedAt: "never",
   status: "pending",
-  from: "A1" as unknown as OpenAlexID,
+  from: "A1" as unknown as CitationID,
   id: orcid,
   entity: "author",
   field: "affiliation",
@@ -152,13 +152,13 @@ describe("hasAcceptedValues", () => {
             entity: "author",
             field: "affiliation",
             status: "accepted",
-            from: "A1" as unknown as OpenAlexID,
+            from: "A1" as unknown as CitationID,
           }),
           makeEvent({
             entity: "author",
             field: "display_name_alternatives",
             status: "accepted",
-            from: "A1" as unknown as OpenAlexID,
+            from: "A1" as unknown as CitationID,
           }),
         ];
         const result = yield* provideStores(
@@ -177,7 +177,7 @@ describe("hasAcceptedValues", () => {
           entity: "author",
           field: "affiliation",
           status: "accepted",
-          from: "A1" as unknown as OpenAlexID,
+          from: "A1" as unknown as CitationID,
         }),
       ];
       const ctx: IContext = {
@@ -213,13 +213,13 @@ describe("hasAcceptedValues", () => {
             entity: "author",
             field: "affiliation",
             status: "accepted",
-            from: "A1" as unknown as OpenAlexID,
+            from: "A1" as unknown as CitationID,
           }),
           makeEvent({
             entity: "author",
             field: "display_name_alternatives",
             status: "accepted",
-            from: "A2" as unknown as OpenAlexID,
+            from: "A2" as unknown as CitationID,
           }),
         ];
         const result = yield* provideStores(

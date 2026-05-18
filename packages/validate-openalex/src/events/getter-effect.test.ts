@@ -16,12 +16,12 @@ import {
   hasAcceptedAuthorInstitutions,
   getAcceptedInstitutionDisplayNameAlternatives,
   hasAcceptedInstitutionDisplayNameAlternatives,
-  hasAcceptedOpenAlexIDs,
+  hasAcceptedCitationIDs,
   hasAcceptedWorks,
 } from "./getter.js";
 import { EventsStore, ContextStore } from "../store/init.js";
 import type { IEvent } from "./types.js";
-import type { OpenAlexID, ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { CitationID, ORCID } from "@univ-lehavre/atlas-citation-types";
 import type { IContext } from "../context/types.js";
 
 const orcid = "0000-0001-2345-6789" as unknown as ORCID;
@@ -32,7 +32,7 @@ const makeEvent = (overrides: Partial<IEvent> = {}): IEvent => ({
   dataIntegrity: "hash",
   hasBeenExtendedAt: "never",
   status: "pending",
-  from: "A1" as unknown as OpenAlexID,
+  from: "A1" as unknown as CitationID,
   id: orcid,
   entity: "author",
   field: "affiliation",
@@ -495,12 +495,12 @@ describe("hasAcceptedInstitutionDisplayNameAlternatives", () => {
   );
 });
 
-describe("hasAcceptedOpenAlexIDs", () => {
+describe("hasAcceptedCitationIDs", () => {
   it.effect(
     "returns true when affiliation and display_name_alternatives share same accepted from",
     () =>
       Effect.gen(function* () {
-        const from = "A1" as unknown as OpenAlexID;
+        const from = "A1" as unknown as CitationID;
         const events = [
           makeEvent({
             entity: "author",
@@ -518,7 +518,7 @@ describe("hasAcceptedOpenAlexIDs", () => {
         const result = yield* provideStores(
           events,
           makeContext(),
-          hasAcceptedOpenAlexIDs(),
+          hasAcceptedCitationIDs(),
         );
         expect(result).toBe(true);
       }),
@@ -529,7 +529,7 @@ describe("hasAcceptedOpenAlexIDs", () => {
       const result = yield* provideStores(
         [],
         makeContext({ id: undefined, type: "none" }),
-        hasAcceptedOpenAlexIDs(),
+        hasAcceptedCitationIDs(),
       );
       expect(result).toBe(false);
     }),

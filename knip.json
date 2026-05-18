@@ -36,7 +36,7 @@
         "src/**/*.ts"
       ]
     },
-    "packages/openalex-types": {
+    "packages/citation-types": {
       "project": [
         "src/**/*.ts"
       ]

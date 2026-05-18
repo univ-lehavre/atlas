@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Effect, Either } from "effect";
 import fs from "node:fs";
 import type {
-  OpenAlexID,
+  CitationID,
   ORCID,
   WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 import type { IContext } from "../context/types.js";
 import type { IEvent } from "../events/types.js";
 
@@ -30,7 +30,7 @@ const mocks = vi.hoisted(() => ({
   buildReference: vi.fn(),
   getEvents: vi.fn(),
   getManyEvent: vi.fn(),
-  getOpenAlexIDs: vi.fn(),
+  getCitationIDs: vi.fn(),
   getStatusOfAffiliation: vi.fn(),
   getStatusOfAuthorDisplayNameAlternative: vi.fn(),
   getStatusOfWork: vi.fn(),
@@ -80,7 +80,7 @@ vi.mock("../events/index.js", () => ({
   buildReference: mocks.buildReference,
   getEvents: mocks.getEvents,
   getManyEvent: mocks.getManyEvent,
-  getOpenAlexIDs: mocks.getOpenAlexIDs,
+  getCitationIDs: mocks.getCitationIDs,
   getStatusOfAffiliation: mocks.getStatusOfAffiliation,
   getStatusOfAuthorDisplayNameAlternative:
     mocks.getStatusOfAuthorDisplayNameAlternative,
@@ -110,7 +110,7 @@ import {
 } from "./actors.js";
 
 const orcid = "https://orcid.org/0000-0001-2345-6789" as unknown as ORCID;
-const openAlexId = "https://openalex.org/A123" as unknown as OpenAlexID;
+const openAlexId = "https://openalex.org/A123" as unknown as CitationID;
 
 const context: IContext = {
   type: "author",
@@ -182,7 +182,7 @@ describe("actors", () => {
     mocks.buildReference.mockReturnValue("A paper");
     mocks.getEvents.mockReturnValue(Effect.succeed([]));
     mocks.getManyEvent.mockReturnValue(Effect.succeed([makeEvent()]));
-    mocks.getOpenAlexIDs.mockReturnValue([openAlexId]);
+    mocks.getCitationIDs.mockReturnValue([openAlexId]);
     mocks.getStatusOfAffiliation.mockReturnValue(undefined);
     mocks.getStatusOfAuthorDisplayNameAlternative.mockReturnValue("accepted");
     mocks.getStatusOfWork.mockReturnValue("accepted");

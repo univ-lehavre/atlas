@@ -1,13 +1,13 @@
 import type {
   AuthorshipInstitution,
-  OpenAlexID,
+  CitationID,
   WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 import { Either } from "effect";
 
 export const getAffiliationLabel = (
   affiliation: WorksResult,
-  id: OpenAlexID,
+  id: CitationID,
 ): Either.Either<string, Error> => {
   const affiliationFound: AuthorshipInstitution | undefined =
     affiliation.authorships

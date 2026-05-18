@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { matchReferences, type MatchResult } from "./reference-matcher.js";
-import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+import type { WorksResult } from "@univ-lehavre/atlas-citation-types";
 
 const makeWork = (title: string, id = "W1"): WorksResult =>
   ({

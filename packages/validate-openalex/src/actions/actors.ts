@@ -3,7 +3,7 @@ import { getContext, getORCID } from "../context/index.js";
 import { setEventsStore } from "../store/setter.js";
 import { getAuthorAlternativeStrings } from "./tester.js";
 import { text, select, events2options, confirm } from "../prompt/index.js";
-import { asOpenAlexID, asORCID } from "@univ-lehavre/atlas-openalex-types";
+import { asCitationID, asORCID } from "@univ-lehavre/atlas-citation-types";
 import {
   searchAuthorByName,
   searchAuthorByORCID,
@@ -23,7 +23,7 @@ import {
   buildReference,
   getEvents,
   getManyEvent,
-  getOpenAlexIDs,
+  getCitationIDs,
   getStatusOfAffiliation,
   getStatusOfAuthorDisplayNameAlternative,
   getStatusOfWork,
@@ -33,10 +33,10 @@ import {
 } from "../events/index.js";
 import type {
   AuthorsResult,
-  OpenAlexID,
+  CitationID,
   ORCID,
   WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 import type { IEvent, Status } from "../events/types.js";
 import type { IContext } from "../context/types.js";
 import { log } from "@clack/prompts";
@@ -156,7 +156,7 @@ const removeAuthorPendings = (): Effect.Effect<
 
 const checkWork = (
   orcid: ORCID,
-  authorOpenalexID: OpenAlexID,
+  authorOpenalexID: CitationID,
   work: WorksResult,
 ): Effect.Effect<
   void,
@@ -302,7 +302,7 @@ const extendsToWorks = (
     if (rateLimiter === undefined) throw new Error("RateLimiter is required");
     const { id }: IContext = yield* getContext();
     if (id === undefined) return;
-    const openalexIDs: OpenAlexID[] = getOpenAlexIDs(id, yield* getEvents());
+    const openalexIDs: CitationID[] = getCitationIDs(id, yield* getEvents());
     for (const authorOpenalexID of openalexIDs) {
       log.message(
         `Recherche des publications pour l’identifiant OpenAlex ${authorOpenalexID}`,
@@ -336,7 +336,7 @@ export const retrieveWorksByORCID = (
         (auth) => auth.author.orcid === id,
       );
       if (authorship === undefined) continue;
-      const authorOpenalexID = asOpenAlexID(authorship.author.id);
+      const authorOpenalexID = asCitationID(authorship.author.id);
       yield* checkWork(id, authorOpenalexID, work);
     }
   });
@@ -367,7 +367,7 @@ const retrieveWorksByDOI = (rateLimiter: RateLimiter.RateLimiter | undefined) =>
           (auth) => auth.author.orcid === id,
         );
         if (authorship === undefined) continue;
-        const authorOpenalexID = asOpenAlexID(authorship.author.id);
+        const authorOpenalexID = asCitationID(authorship.author.id);
         yield* checkWork(id, authorOpenalexID, work);
       }
     }

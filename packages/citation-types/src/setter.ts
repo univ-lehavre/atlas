@@ -1,5 +1,5 @@
 import { Brand } from "effect";
-import type { OpenAlexID, ORCID } from "./branded.js";
+import type { CitationID, ORCID } from "./branded.js";
 
 /**
  * Branded constructor for ORCID identifiers.
@@ -27,10 +27,10 @@ const asORCID = Brand.refined<ORCID>(
  *
  * @example
  * ```typescript
- * const id = asOpenAlexID("https://openalex.org/W2741809807");
+ * const id = asCitationID("https://openalex.org/W2741809807");
  * ```
  */
-const asOpenAlexID = Brand.refined<OpenAlexID>(
+const asCitationID = Brand.refined<CitationID>(
   (s) =>
     s.length > 0 &&
     s.startsWith("https://openalex.org/") &&
@@ -38,4 +38,4 @@ const asOpenAlexID = Brand.refined<OpenAlexID>(
   (s) => Brand.error(`Invalid OpenAlex ID format: ${s}`),
 );
 
-export { asORCID, asOpenAlexID };
+export { asORCID, asCitationID };

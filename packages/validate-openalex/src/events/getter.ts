@@ -1,10 +1,10 @@
 import color from "picocolors";
 import { uniqueSorted } from "../tools/index.js";
 import {
-  asOpenAlexID,
-  type OpenAlexID,
+  asCitationID,
+  type CitationID,
   type ORCID,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 import type { IEntity, IEvent, IField, Status } from "./types.js";
 import { Effect } from "effect";
 import type { IContext } from "../context/types.js";
@@ -73,9 +73,9 @@ const outerLeft = <T>(arr1: T[], arr2: T[]): T[] => {
  *
  * @example
  * // returns ['A1', 'A2'] if both appear in accepted affiliation and display_name_alternatives events
- * getOpenAlexIDs('0000-0001-2345-6789', events);
+ * getCitationIDs('0000-0001-2345-6789', events);
  */
-const getOpenAlexIDs = (orcid: ORCID, events: IEvent[]): OpenAlexID[] => {
+const getCitationIDs = (orcid: ORCID, events: IEvent[]): CitationID[] => {
   if (events.length === 0) return [];
 
   const affiliations = events
@@ -98,7 +98,7 @@ const getOpenAlexIDs = (orcid: ORCID, events: IEvent[]): OpenAlexID[] => {
     )
     .map((e) => e.from);
 
-  const intersectIDs: OpenAlexID[] = intersect<OpenAlexID>(
+  const intersectIDs: CitationID[] = intersect<CitationID>(
     affiliations,
     display_name_alternatives,
   );
@@ -113,17 +113,17 @@ const getOpenAlexIDs = (orcid: ORCID, events: IEvent[]): OpenAlexID[] => {
     )
     .map((e) => e.from);
 
-  const unionIDs: OpenAlexID[] = union<OpenAlexID>(intersectIDs, works);
+  const unionIDs: CitationID[] = union<CitationID>(intersectIDs, works);
 
-  const uniques: OpenAlexID[] = uniqueSorted<OpenAlexID>(unionIDs);
+  const uniques: CitationID[] = uniqueSorted<CitationID>(unionIDs);
 
   return uniques;
 };
 
-export const getPendingOpenAlexIDs = (
+export const getPendingCitationIDs = (
   orcid: ORCID,
   events: IEvent[],
-): OpenAlexID[] => {
+): CitationID[] => {
   if (events.length === 0) return [];
 
   const affiliations = events
@@ -146,21 +146,21 @@ export const getPendingOpenAlexIDs = (
     )
     .map((e) => e.from);
 
-  const unionIDs: OpenAlexID[] = union<OpenAlexID>(
+  const unionIDs: CitationID[] = union<CitationID>(
     affiliations,
     display_name_alternatives,
   );
-  const accepted = getOpenAlexIDs(orcid, events);
-  const outer = outerRight<OpenAlexID>(accepted, unionIDs);
-  const uniques: OpenAlexID[] = uniqueSorted<OpenAlexID>(outer);
+  const accepted = getCitationIDs(orcid, events);
+  const outer = outerRight<CitationID>(accepted, unionIDs);
+  const uniques: CitationID[] = uniqueSorted<CitationID>(outer);
 
   return uniques;
 };
 
-export const getRejectedOpenAlexIDs = (
+export const getRejectedCitationIDs = (
   orcid: ORCID,
   events: IEvent[],
-): OpenAlexID[] => {
+): CitationID[] => {
   if (events.length === 0) return [];
 
   const affiliations = events
@@ -179,15 +179,15 @@ export const getRejectedOpenAlexIDs = (
     )
     .map((e) => e.from);
 
-  const unionIDs: OpenAlexID[] = union<OpenAlexID>(
+  const unionIDs: CitationID[] = union<CitationID>(
     affiliations,
     display_name_alternatives,
   );
-  const accepted = getOpenAlexIDs(orcid, events);
-  const pending = getPendingOpenAlexIDs(orcid, events);
-  const acceptedOrPending = union<OpenAlexID>(accepted, pending);
-  const outer = outerRight<OpenAlexID>(acceptedOrPending, unionIDs);
-  const uniques: OpenAlexID[] = uniqueSorted<OpenAlexID>(outer);
+  const accepted = getCitationIDs(orcid, events);
+  const pending = getPendingCitationIDs(orcid, events);
+  const acceptedOrPending = union<CitationID>(accepted, pending);
+  const outer = outerRight<CitationID>(acceptedOrPending, unionIDs);
+  const uniques: CitationID[] = uniqueSorted<CitationID>(outer);
 
   return uniques;
 };
@@ -311,12 +311,12 @@ const getAcceptedWorks = (
   return works;
 };
 
-export const hasAcceptedOpenAlexIDs = () =>
+export const hasAcceptedCitationIDs = () =>
   Effect.gen(function* () {
     const { id }: IContext = yield* getContext();
     const events: IEvent[] = yield* getEvents();
     if (!id) return false;
-    const ids = getOpenAlexIDs(id, events);
+    const ids = getCitationIDs(id, events);
     return ids.length > 0;
   });
 
@@ -367,7 +367,7 @@ const getStatuses = (
   return status;
 };
 
-const getOpenAlexIDByStatus = (orcid: ORCID, events: IEvent[]) => {
+const getCitationIDByStatus = (orcid: ORCID, events: IEvent[]) => {
   const statuses = events
     .filter(
       (e) =>
@@ -384,14 +384,14 @@ const getOpenAlexIDByStatus = (orcid: ORCID, events: IEvent[]) => {
       field: e.field,
     }));
 
-  // Pour attribuer un statut global à chaque OpenAlexID, on utilise la règle suivante :
-  // - Si un OpenAlexID a au moins un statut "accepted", pour les fields "affiliation" ou "display_name_alternatives" de l’entité "author", alors son statut global est "accepted".
+  // Pour attribuer un statut global à chaque CitationID, on utilise la règle suivante :
+  // - Si un CitationID a au moins un statut "accepted", pour les fields "affiliation" ou "display_name_alternatives" de l’entité "author", alors son statut global est "accepted".
   // - Sinon, s’il a au moins un statut "pending" pour ces mêmes fields, alors son statut global est "pending".
   // - Sinon, s’il a au moins un statut "rejected" pour ces mêmes fields, alors son statut global est "rejected".
-  // - Si un OpenAlexID n’a que des statuts pour d’autres fields ou entités, on l’ignore.
+  // - Si un CitationID n’a que des statuts pour d’autres fields ou entités, on l’ignore.
   // On ignore les events qui ne concernent pas l’entité "author" et les fields "affiliation" ou "display_name_alternatives"
 
-  // pour chaque OpenAlexID, on vérifie si les couples ("affiliation" et "display_name_alternatives") existent avec un même statut "accepted" ou "pending"
+  // pour chaque CitationID, on vérifie si les couples ("affiliation" et "display_name_alternatives") existent avec un même statut "accepted" ou "pending"
   const grouped: { [key: string]: Set<string> } = {};
   statuses.forEach(({ openalexID, status, entity, field }) => {
     if (!grouped[openalexID]) {
@@ -400,7 +400,7 @@ const getOpenAlexIDByStatus = (orcid: ORCID, events: IEvent[]) => {
     grouped[openalexID].add(`${entity}|${field}|${status}`);
   });
 
-  const result: Map<OpenAlexID, Status> = new Map();
+  const result: Map<CitationID, Status> = new Map();
 
   Object.keys(grouped).forEach((openalexID) => {
     const statusSet = grouped[openalexID];
@@ -422,13 +422,13 @@ const getOpenAlexIDByStatus = (orcid: ORCID, events: IEvent[]) => {
     const hasRejectedWork = statusSet.has("work|id|rejected");
 
     if (hasAcceptedAffiliation && hasAcceptedDisplayName && hasAcceptedWork) {
-      result.set(asOpenAlexID(openalexID), "accepted");
+      result.set(asCitationID(openalexID), "accepted");
     } else if (
       hasPendingAffiliation &&
       hasPendingDisplayName &&
       hasPendingWork
     ) {
-      result.set(asOpenAlexID(openalexID), "pending");
+      result.set(asCitationID(openalexID), "pending");
     } else if (
       hasPendingAffiliation ||
       hasPendingDisplayName ||
@@ -437,16 +437,16 @@ const getOpenAlexIDByStatus = (orcid: ORCID, events: IEvent[]) => {
       hasAcceptedDisplayName ||
       hasAcceptedWork
     ) {
-      result.set(asOpenAlexID(openalexID), "pending");
+      result.set(asCitationID(openalexID), "pending");
     } else if (
       hasRejectedAffiliation ||
       hasRejectedDisplayName ||
       hasRejectedWork
     ) {
-      result.set(asOpenAlexID(openalexID), "rejected");
+      result.set(asCitationID(openalexID), "rejected");
     } else {
       throw new Error(
-        `Unexpected status combination for OpenAlexID ${openalexID} : ${Array.from(statusSet).join(", ")}`,
+        `Unexpected status combination for CitationID ${openalexID} : ${Array.from(statusSet).join(", ")}`,
       );
     }
   });
@@ -454,10 +454,10 @@ const getOpenAlexIDByStatus = (orcid: ORCID, events: IEvent[]) => {
   return result;
 };
 
-const getOpenAlexIDByStatusDashboard = (orcid: ORCID, events: IEvent[]) => {
-  const accepted = getOpenAlexIDs(orcid, events).length;
-  const pending = getPendingOpenAlexIDs(orcid, events).length;
-  const rejected = getRejectedOpenAlexIDs(orcid, events).length;
+const getCitationIDByStatusDashboard = (orcid: ORCID, events: IEvent[]) => {
+  const accepted = getCitationIDs(orcid, events).length;
+  const pending = getPendingCitationIDs(orcid, events).length;
+  const rejected = getRejectedCitationIDs(orcid, events).length;
 
   const maxDigits = 4;
 
@@ -589,12 +589,12 @@ const getStatusesByValue = (
   return status;
 };
 
-const getOpenAlexIDsBasedOnAcceptedWorks = (
+const getCitationIDsBasedOnAcceptedWorks = (
   orcid: ORCID,
   events: IEvent[],
-): OpenAlexID[] => {
+): CitationID[] => {
   if (events.length === 0) return [];
-  const works: OpenAlexID[] = events
+  const works: CitationID[] = events
     .filter(
       (e) =>
         e.id === orcid &&
@@ -603,7 +603,7 @@ const getOpenAlexIDsBasedOnAcceptedWorks = (
         e.status === "accepted",
     )
     .map((e) => e.from);
-  const uniques: OpenAlexID[] = uniqueSorted<OpenAlexID>(works);
+  const uniques: CitationID[] = uniqueSorted<CitationID>(works);
   return uniques;
 };
 
@@ -692,10 +692,10 @@ export {
   getAcceptedAuthorInstitutions,
   getAcceptedInstitutionDisplayNameAlternatives,
   getGlobalStatuses,
-  getOpenAlexIDs,
-  getOpenAlexIDByStatus,
-  getOpenAlexIDByStatusDashboard,
-  getOpenAlexIDsBasedOnAcceptedWorks,
+  getCitationIDs,
+  getCitationIDByStatus,
+  getCitationIDByStatusDashboard,
+  getCitationIDsBasedOnAcceptedWorks,
   getStatuses,
   getStatusesByValue,
   getStatusOfAffiliation,

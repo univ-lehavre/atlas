@@ -1,4 +1,4 @@
-import type { OpenAlexID } from "./branded.js";
+import type { CitationID } from "./branded.js";
 
 interface IInstitution {
   id: string;
@@ -26,7 +26,7 @@ interface AuthorsResult {
 }
 
 interface AuthorshipInstitution {
-  id: OpenAlexID;
+  id: CitationID;
   display_name: string;
   ror: string;
   country_code: string;
@@ -36,7 +36,7 @@ interface AuthorshipInstitution {
 
 interface AffiliationAuthorshipResult {
   raw_affiliation_string: string;
-  institution_ids: OpenAlexID[];
+  institution_ids: CitationID[];
 }
 
 interface Authorship {
@@ -73,7 +73,7 @@ interface KeywordEntry {
 }
 
 interface WorksResult {
-  id: OpenAlexID;
+  id: CitationID;
   doi: string | null;
   title: string;
   display_name: string;
@@ -84,7 +84,7 @@ interface WorksResult {
   keywords?: KeywordEntry[];
 }
 
-interface OpenalexResponse<T> {
+interface CitationResponse<T> {
   meta: {
     count: number;
     page: number;
@@ -102,7 +102,7 @@ interface RateLimitInfo {
 
 export type {
   AuthorsResult,
-  OpenalexResponse,
+  CitationResponse,
   AffiliationsResult,
   WorksResult,
   TopicEntry,

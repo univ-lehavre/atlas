@@ -2,12 +2,12 @@ import { Effect } from "effect";
 import { getContext } from "../context/index.js";
 import {
   getEvents,
-  getOpenAlexIDs,
+  getCitationIDs,
   hasPending,
   isInteresting,
 } from "../events/index.js";
 import { ContextStore, EventsStore } from "../store/index.js";
-import type { ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { ORCID } from "@univ-lehavre/atlas-citation-types";
 import type { IEntity, IField, IEvent } from "../events/types.js";
 import type { IContext } from "../context/types.js";
 
@@ -49,7 +49,7 @@ const hasAcceptedValues = (): Effect.Effect<
     if (type !== "author") return false;
     if (id === undefined) return false;
     const events: IEvent[] = yield* getEvents();
-    return getOpenAlexIDs(id, events).length > 0;
+    return getCitationIDs(id, events).length > 0;
   });
 
 const filterAuthorAlternativeStringsToExtend = (

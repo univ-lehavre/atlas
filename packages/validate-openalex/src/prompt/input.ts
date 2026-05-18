@@ -21,7 +21,7 @@ import {
   getAcceptedInstitutionDisplayNameAlternatives,
   getAcceptedWorks,
   getEvents,
-  getOpenAlexIDs,
+  getCitationIDs,
 } from "../events/index.js";
 import type { IEvent } from "../events/types.js";
 
@@ -117,12 +117,12 @@ const taskLog = (title: string, list: string[]) => {
   }
 };
 
-export const listAcceptedOpenAlexIDs = () =>
+export const listAcceptedCitationIDs = () =>
   Effect.gen(function* () {
     const { id }: IContext = yield* getContext();
     if (!id) return;
     const events: IEvent[] = yield* getEvents();
-    const openAlexIDs: string[] = getOpenAlexIDs(id, events);
+    const openAlexIDs: string[] = getCitationIDs(id, events);
     yield* autocompleteMultiselect(
       "Identifiants OpenAlex acceptés (appuyez sur entrée pour continuer)",
       false,

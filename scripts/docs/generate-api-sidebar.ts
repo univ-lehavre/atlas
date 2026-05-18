@@ -45,7 +45,7 @@ const PACKAGE_GROUPS: Record<string, string[]> = {
   Bibliography: [
     'atlas-openalex',
     'atlas-openalex-cli',
-    'atlas-openalex-types',
+    'atlas-citation-types',
     'atlas-fetch-openalex',
     'atlas-fetch-one-api-page',
     'atlas-validate-openalex',

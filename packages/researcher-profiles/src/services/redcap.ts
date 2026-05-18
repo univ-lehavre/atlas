@@ -7,7 +7,7 @@ import {
   RedcapUrl,
   RedcapToken,
 } from "@univ-lehavre/atlas-redcap-client";
-import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+import type { WorksResult } from "@univ-lehavre/atlas-citation-types";
 import { Effect, Either } from "effect";
 import { RedcapFetchError, RedcapWriteError } from "../errors.js";
 import type { ResearcherRow, ResearcherData } from "../types.js";

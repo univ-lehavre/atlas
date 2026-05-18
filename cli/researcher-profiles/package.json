@@ -38,7 +38,7 @@
   "dependencies": {
     "@clack/prompts": "^1.2.0",
     "@univ-lehavre/atlas-fetch-openalex": "workspace:*",
-    "@univ-lehavre/atlas-openalex-types": "workspace:*",
+    "@univ-lehavre/atlas-citation-types": "workspace:*",
     "@univ-lehavre/atlas-researcher-profiles": "workspace:*",
     "effect": "^3.21.2",
     "picocolors": "^1.1.1"

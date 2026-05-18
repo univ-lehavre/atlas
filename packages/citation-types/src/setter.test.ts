@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { asOpenAlexID, asORCID } from "./setter.js";
+import { asCitationID, asORCID } from "./setter.js";
 
 describe("asORCID", () => {
   it("accepts bare ORCID format", () => {
@@ -29,32 +29,32 @@ describe("asORCID", () => {
   });
 });
 
-describe("asOpenAlexID", () => {
+describe("asCitationID", () => {
   it("accepts valid OpenAlex work ID", () => {
     expect(() =>
-      asOpenAlexID("https://openalex.org/W2741809807"),
+      asCitationID("https://openalex.org/W2741809807"),
     ).not.toThrow();
   });
 
   it("accepts valid OpenAlex author ID", () => {
     expect(() =>
-      asOpenAlexID("https://openalex.org/A1234567890"),
+      asCitationID("https://openalex.org/A1234567890"),
     ).not.toThrow();
   });
 
   it("rejects empty string", () => {
-    expect(() => asOpenAlexID("")).toThrow();
+    expect(() => asCitationID("")).toThrow();
   });
 
   it("rejects bare ID without base URL", () => {
-    expect(() => asOpenAlexID("W2741809807")).toThrow();
+    expect(() => asCitationID("W2741809807")).toThrow();
   });
 
   it("rejects wrong base URL", () => {
-    expect(() => asOpenAlexID("https://example.com/W2741809807")).toThrow();
+    expect(() => asCitationID("https://example.com/W2741809807")).toThrow();
   });
 
   it("rejects lowercase letter prefix", () => {
-    expect(() => asOpenAlexID("https://openalex.org/w2741809807")).toThrow();
+    expect(() => asCitationID("https://openalex.org/w2741809807")).toThrow();
   });
 });

@@ -15,7 +15,7 @@ import { Effect, Either, Logger, LogLevel } from "effect";
 import type {
   AuthorsResult,
   WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 import type {
   OpenAlexConfig,
   RateLimitInfo,

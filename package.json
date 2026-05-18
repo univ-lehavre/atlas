@@ -109,7 +109,7 @@
       "packages/validators",
       "packages/appwrite",
       "packages/auth",
-      "packages/openalex-types",
+      "packages/citation-types",
       "packages/fetch-one-api-page",
       "packages/fetch-openalex",
       "packages/validate-openalex",

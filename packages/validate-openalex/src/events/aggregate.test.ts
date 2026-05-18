@@ -1,7 +1,7 @@
 import { it, describe, expect, vi } from "@effect/vitest";
 import { aggregateEvents, print_aggregate } from "./aggregate.js";
 import type { IEvent } from "./types.js";
-import type { ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { ORCID } from "@univ-lehavre/atlas-citation-types";
 
 describe("aggregateEvents", () => {
   it("returns empty map when no events match the orcid", () => {

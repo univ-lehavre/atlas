@@ -284,8 +284,8 @@ atlas/
 │   ├── fetch-one-api-page/  # Paginated API fetching
 │   ├── fetch-openalex/      # OpenAlex API client
 │   ├── net/                 # Network utilities
+│   ├── citation-types/      # OpenAlex type definitions
 │   ├── openalex/            # OpenAlex domain logic
-│   ├── openalex-types/      # OpenAlex type definitions
 │   ├── redcap-client/       # REDCap HTTP client
 │   ├── redcap-core/         # REDCap domain types & adapters
 │   ├── redcap-logs/         # REDCap audit log types

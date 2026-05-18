@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
   getContext: vi.fn(),
   hasEventsForThisORCID: vi.fn(),
   getEvents: vi.fn(),
-  getOpenAlexIDs: vi.fn(),
+  getCitationIDs: vi.fn(),
   getAcceptedAuthorAffiliations: vi.fn(),
   getAcceptedAuthorDisplayNameAlternatives: vi.fn(),
   getAcceptedInstitutionDisplayNameAlternatives: vi.fn(),
@@ -41,7 +41,7 @@ vi.mock("../actions/index.js", () => ({
 
 vi.mock("../events/index.js", () => ({
   getEvents: mocks.getEvents,
-  getOpenAlexIDs: mocks.getOpenAlexIDs,
+  getCitationIDs: mocks.getCitationIDs,
   getAcceptedAuthorAffiliations: mocks.getAcceptedAuthorAffiliations,
   getAcceptedAuthorDisplayNameAlternatives:
     mocks.getAcceptedAuthorDisplayNameAlternatives,
@@ -57,7 +57,7 @@ import {
   listAcceptedAuthorAffiliations,
   listAcceptedAuthorDisplayNameAlternatives,
   listAcceptedInstitutionDisplayNameAlternatives,
-  listAcceptedOpenAlexIDs,
+  listAcceptedCitationIDs,
   listAcceptedWorks,
   multiselect,
   print_title,
@@ -85,7 +85,7 @@ describe("prompt input wrappers", () => {
     );
     mocks.hasEventsForThisORCID.mockReturnValue(Effect.succeed(true));
     mocks.getEvents.mockReturnValue(Effect.succeed([]));
-    mocks.getOpenAlexIDs.mockReturnValue(["A2", "A1"]);
+    mocks.getCitationIDs.mockReturnValue(["A2", "A1"]);
     mocks.getAcceptedAuthorAffiliations.mockReturnValue(Effect.succeed(["I1"]));
     mocks.getAcceptedAuthorDisplayNameAlternatives.mockReturnValue(
       Effect.succeed(["Ada"]),
@@ -194,7 +194,7 @@ describe("prompt input wrappers", () => {
   });
 
   it("lists accepted OpenAlex ids for the current context", async () => {
-    await Effect.runPromise(listAcceptedOpenAlexIDs());
+    await Effect.runPromise(listAcceptedCitationIDs());
 
     expect(mocks.autocompleteMultiselect).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -214,7 +214,7 @@ describe("prompt input wrappers", () => {
       }),
     );
 
-    await Effect.runPromise(listAcceptedOpenAlexIDs());
+    await Effect.runPromise(listAcceptedCitationIDs());
 
     expect(mocks.getEvents).not.toHaveBeenCalled();
   });

@@ -1,13 +1,13 @@
 {
-  "name": "@univ-lehavre/atlas-openalex-types",
+  "name": "@univ-lehavre/atlas-citation-types",
   "version": "3.1.6",
-  "description": "TypeScript types and branded types for the OpenAlex API",
+  "description": "TypeScript types and branded types for the OpenAlex citation graph API",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/univ-lehavre/atlas.git",
-    "directory": "packages/openalex-types"
+    "directory": "packages/citation-types"
   },
   "bugs": {
     "url": "https://github.com/univ-lehavre/atlas/issues"

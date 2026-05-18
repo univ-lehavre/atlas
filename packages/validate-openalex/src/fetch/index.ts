@@ -17,7 +17,7 @@ import type {
   ORCID,
   AuthorsResult,
   WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 
 const buildConfig = (env: EnvConfig): OpenAlexConfig => ({
   userAgent: env.userAgent,

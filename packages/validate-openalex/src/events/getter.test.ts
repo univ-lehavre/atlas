@@ -4,10 +4,10 @@ import {
   union,
   outerLeft,
   outerRight,
-  getOpenAlexIDs,
-  getPendingOpenAlexIDs,
-  getRejectedOpenAlexIDs,
-  getOpenAlexIDsBasedOnAcceptedWorks,
+  getCitationIDs,
+  getPendingCitationIDs,
+  getRejectedCitationIDs,
+  getCitationIDsBasedOnAcceptedWorks,
   getStatusOfAuthorDisplayNameAlternative,
   getStatusOfAffiliation,
   getStatusOfWork,
@@ -15,13 +15,13 @@ import {
   getAcceptedWorks,
   getStatuses,
   getStatusesByValue,
-  getOpenAlexIDByStatus,
-  getOpenAlexIDByStatusDashboard,
+  getCitationIDByStatus,
+  getCitationIDByStatusDashboard,
   getGlobalStatuses,
   getStatusOfInstitutionAlternativesStrings,
 } from "./getter.js";
 import type { IEvent } from "./types.js";
-import type { OpenAlexID, ORCID } from "@univ-lehavre/atlas-openalex-types";
+import type { CitationID, ORCID } from "@univ-lehavre/atlas-citation-types";
 
 const orcid = "0000-0001-2345-6789" as unknown as ORCID;
 const otherOrcid = "0000-0001-9999-0000" as unknown as ORCID;
@@ -32,7 +32,7 @@ const makeEvent = (overrides: Partial<IEvent> = {}): IEvent => ({
   dataIntegrity: "hash",
   hasBeenExtendedAt: "never",
   status: "pending",
-  from: "A1" as unknown as OpenAlexID,
+  from: "A1" as unknown as CitationID,
   id: orcid,
   entity: "author",
   field: "affiliation",
@@ -89,9 +89,9 @@ describe("outerRight", () => {
   });
 });
 
-describe("getOpenAlexIDs", () => {
+describe("getCitationIDs", () => {
   it("returns empty array when events is empty", () => {
-    expect(getOpenAlexIDs(orcid, [])).toEqual([]);
+    expect(getCitationIDs(orcid, [])).toEqual([]);
   });
 
   it("returns intersection of accepted affiliations and display_name_alternatives, union accepted works", () => {
@@ -100,24 +100,24 @@ describe("getOpenAlexIDs", () => {
         entity: "author",
         field: "affiliation",
         status: "accepted",
-        from: "A1" as unknown as OpenAlexID,
+        from: "A1" as unknown as CitationID,
       }),
       makeEvent({
         entity: "author",
         field: "display_name_alternatives",
         status: "accepted",
-        from: "A1" as unknown as OpenAlexID,
+        from: "A1" as unknown as CitationID,
       }),
       makeEvent({
         entity: "work",
         field: "id",
         status: "accepted",
-        from: "W1" as unknown as OpenAlexID,
+        from: "W1" as unknown as CitationID,
       }),
     ];
-    const result = getOpenAlexIDs(orcid, events);
-    expect(result).toContain("A1" as unknown as OpenAlexID);
-    expect(result).toContain("W1" as unknown as OpenAlexID);
+    const result = getCitationIDs(orcid, events);
+    expect(result).toContain("A1" as unknown as CitationID);
+    expect(result).toContain("W1" as unknown as CitationID);
   });
 
   it("returns empty if affiliation and display_name_alternatives do not intersect and no accepted works", () => {
@@ -126,23 +126,23 @@ describe("getOpenAlexIDs", () => {
         entity: "author",
         field: "affiliation",
         status: "accepted",
-        from: "A1" as unknown as OpenAlexID,
+        from: "A1" as unknown as CitationID,
       }),
       makeEvent({
         entity: "author",
         field: "display_name_alternatives",
         status: "accepted",
-        from: "A2" as unknown as OpenAlexID,
+        from: "A2" as unknown as CitationID,
       }),
     ];
-    const result = getOpenAlexIDs(orcid, events);
+    const result = getCitationIDs(orcid, events);
     expect(result).toEqual([]);
   });
 });
 
-describe("getPendingOpenAlexIDs", () => {
+describe("getPendingCitationIDs", () => {
   it("returns empty array when events is empty", () => {
-    expect(getPendingOpenAlexIDs(orcid, [])).toEqual([]);
+    expect(getPendingCitationIDs(orcid, [])).toEqual([]);
   });
 
   it("returns IDs pending but not accepted", () => {
@@ -151,36 +151,36 @@ describe("getPendingOpenAlexIDs", () => {
         entity: "author",
         field: "affiliation",
         status: "pending",
-        from: "A1" as unknown as OpenAlexID,
+        from: "A1" as unknown as CitationID,
       }),
       makeEvent({
         entity: "author",
         field: "display_name_alternatives",
         status: "pending",
-        from: "A1" as unknown as OpenAlexID,
+        from: "A1" as unknown as CitationID,
       }),
       makeEvent({
         entity: "author",
         field: "affiliation",
         status: "accepted",
-        from: "A2" as unknown as OpenAlexID,
+        from: "A2" as unknown as CitationID,
       }),
       makeEvent({
         entity: "author",
         field: "display_name_alternatives",
         status: "accepted",
-        from: "A2" as unknown as OpenAlexID,
+        from: "A2" as unknown as CitationID,
       }),
     ];
-    const result = getPendingOpenAlexIDs(orcid, events);
-    expect(result).toContain("A1" as unknown as OpenAlexID);
-    expect(result).not.toContain("A2" as unknown as OpenAlexID);
+    const result = getPendingCitationIDs(orcid, events);
+    expect(result).toContain("A1" as unknown as CitationID);
+    expect(result).not.toContain("A2" as unknown as CitationID);
   });
 });
 
-describe("getRejectedOpenAlexIDs", () => {
+describe("getRejectedCitationIDs", () => {
   it("returns empty array when events is empty", () => {
-    expect(getRejectedOpenAlexIDs(orcid, [])).toEqual([]);
+    expect(getRejectedCitationIDs(orcid, [])).toEqual([]);
   });
 
   it("returns IDs that are neither accepted nor pending", () => {
@@ -189,23 +189,23 @@ describe("getRejectedOpenAlexIDs", () => {
         entity: "author",
         field: "affiliation",
         status: "rejected",
-        from: "A3" as unknown as OpenAlexID,
+        from: "A3" as unknown as CitationID,
       }),
       makeEvent({
         entity: "author",
         field: "display_name_alternatives",
         status: "rejected",
-        from: "A3" as unknown as OpenAlexID,
+        from: "A3" as unknown as CitationID,
       }),
     ];
-    const result = getRejectedOpenAlexIDs(orcid, events);
-    expect(result).toContain("A3" as unknown as OpenAlexID);
+    const result = getRejectedCitationIDs(orcid, events);
+    expect(result).toContain("A3" as unknown as CitationID);
   });
 });
 
-describe("getOpenAlexIDsBasedOnAcceptedWorks", () => {
+describe("getCitationIDsBasedOnAcceptedWorks", () => {
   it("returns empty array when events is empty", () => {
-    expect(getOpenAlexIDsBasedOnAcceptedWorks(orcid, [])).toEqual([]);
+    expect(getCitationIDsBasedOnAcceptedWorks(orcid, [])).toEqual([]);
   });
 
   it("returns from values of accepted work events", () => {
@@ -214,18 +214,18 @@ describe("getOpenAlexIDsBasedOnAcceptedWorks", () => {
         entity: "work",
         field: "id",
         status: "accepted",
-        from: "W1" as unknown as OpenAlexID,
+        from: "W1" as unknown as CitationID,
       }),
       makeEvent({
         entity: "work",
         field: "id",
         status: "pending",
-        from: "W2" as unknown as OpenAlexID,
+        from: "W2" as unknown as CitationID,
       }),
     ];
-    const result = getOpenAlexIDsBasedOnAcceptedWorks(orcid, events);
-    expect(result).toContain("W1" as unknown as OpenAlexID);
-    expect(result).not.toContain("W2" as unknown as OpenAlexID);
+    const result = getCitationIDsBasedOnAcceptedWorks(orcid, events);
+    expect(result).toContain("W1" as unknown as CitationID);
+    expect(result).not.toContain("W2" as unknown as CitationID);
   });
 });
 
@@ -446,11 +446,11 @@ describe("getStatusesByValue", () => {
   });
 });
 
-describe("getOpenAlexIDByStatus", () => {
-  const validID = "https://openalex.org/A1234567890" as unknown as OpenAlexID;
+describe("getCitationIDByStatus", () => {
+  const validID = "https://openalex.org/A1234567890" as unknown as CitationID;
 
   it("returns empty map when events is empty", () => {
-    const result = getOpenAlexIDByStatus(orcid, []);
+    const result = getCitationIDByStatus(orcid, []);
     expect(result.size).toBe(0);
   });
 
@@ -475,7 +475,7 @@ describe("getOpenAlexIDByStatus", () => {
         from: validID,
       }),
     ];
-    const result = getOpenAlexIDByStatus(orcid, events);
+    const result = getCitationIDByStatus(orcid, events);
     expect(result.get(validID)).toBe("accepted");
   });
 
@@ -494,7 +494,7 @@ describe("getOpenAlexIDByStatus", () => {
         from: validID,
       }),
     ];
-    const result = getOpenAlexIDByStatus(orcid, events);
+    const result = getCitationIDByStatus(orcid, events);
     expect(result.get(validID)).toBe("pending");
   });
 
@@ -513,7 +513,7 @@ describe("getOpenAlexIDByStatus", () => {
         from: validID,
       }),
     ];
-    const result = getOpenAlexIDByStatus(orcid, events);
+    const result = getCitationIDByStatus(orcid, events);
     expect(result.get(validID)).toBe("rejected");
   });
 
@@ -538,20 +538,20 @@ describe("getOpenAlexIDByStatus", () => {
         from: validID,
       }),
     ];
-    const result = getOpenAlexIDByStatus(orcid, events);
+    const result = getCitationIDByStatus(orcid, events);
     expect(result.get(validID)).toBe("pending");
   });
 });
 
-describe("getOpenAlexIDByStatusDashboard", () => {
+describe("getCitationIDByStatusDashboard", () => {
   it("returns null when no events match the orcid", () => {
     // When all counts are 0, returns null
-    const result = getOpenAlexIDByStatusDashboard(orcid, []);
+    const result = getCitationIDByStatusDashboard(orcid, []);
     expect(result).toBeNull();
   });
 
   it("returns non-null string when events exist", () => {
-    const validID = "https://openalex.org/A1234567890" as unknown as OpenAlexID;
+    const validID = "https://openalex.org/A1234567890" as unknown as CitationID;
     const events: IEvent[] = [
       makeEvent({
         entity: "author",
@@ -566,7 +566,7 @@ describe("getOpenAlexIDByStatusDashboard", () => {
         from: validID,
       }),
     ];
-    const result = getOpenAlexIDByStatusDashboard(orcid, events);
+    const result = getCitationIDByStatusDashboard(orcid, events);
     expect(result).not.toBeNull();
     expect(typeof result).toBe("string");
   });
