@@ -15,7 +15,7 @@ This page defines naming and layout conventions used across the monorepo.
 
 - `apps/<name>` -> `package.json.name = @univ-lehavre/atlas-<name>`
 - `cli/<name>` directories must **not** end with `-cli`
-- CLI package names should end with `-cli` (exception: `@univ-lehavre/atlas-redcap-openapi`)
+- CLI package names should end with `-cli` (exception: `@univ-lehavre/atlas-crf-openapi`)
 - If `repository.directory` is set, it must match the real workspace path
 
 ## Validation

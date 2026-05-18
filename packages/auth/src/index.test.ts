@@ -2,20 +2,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
 import { ID } from 'node-appwrite';
 
-vi.mock('@univ-lehavre/atlas-appwrite', () => ({
+vi.mock('@univ-lehavre/atlas-baas', () => ({
   createAdminClient: vi.fn(),
   createSessionClient: vi.fn(),
   SESSION_COOKIE: 'atlas-session',
 }));
 
-import { createAdminClient, createSessionClient } from '@univ-lehavre/atlas-appwrite';
+import { createAdminClient, createSessionClient } from '@univ-lehavre/atlas-baas';
 import { createAuthService, type AuthConfig } from './index.js';
 
 const mockCreateAdminClient = vi.mocked(createAdminClient);
 const mockCreateSessionClient = vi.mocked(createSessionClient);
 
 const baseConfig: AuthConfig = {
-  appwrite: { endpoint: 'http://appwrite', projectId: 'proj', apiKey: 'key' },
+  baas: { endpoint: 'http://appwrite', projectId: 'proj', apiKey: 'key' },
   loginUrl: 'https://app.example.com',
   domainValidation: { allowedDomainsRegexp: String.raw`^.+@example\.com$` },
 };

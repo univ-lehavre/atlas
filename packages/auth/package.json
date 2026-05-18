@@ -53,7 +53,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@univ-lehavre/atlas-appwrite": "workspace:*",
+    "@univ-lehavre/atlas-baas": "workspace:*",
     "@univ-lehavre/atlas-errors": "workspace:*",
     "@univ-lehavre/atlas-validators": "workspace:*",
     "node-appwrite": "^24.0.0"

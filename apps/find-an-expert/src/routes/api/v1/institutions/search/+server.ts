@@ -1,7 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 
-import { searchInstitutions } from '$lib/server/openalex';
+import { searchInstitutions } from '$lib/server/citation';
 import { mapErrorToResponse } from '$lib/server/http';
 
 /**

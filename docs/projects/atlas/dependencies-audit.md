@@ -235,11 +235,11 @@ graph TD
 | `amarre`                             | SvelteKit app        | 2.0.0   | svelte, luxon, zod                  |
 | `ecrin`                              | SvelteKit app        | 2.0.0   | svelte, sigma, graphology           |
 | `@univ-lehavre/crf`                  | REDCap client/server | 1.3.0   | effect, hono                        |
-| `@univ-lehavre/atlas-redcap-openapi` | OpenAPI extraction   | 1.3.0   | yaml, @clack/prompts                |
-| `@univ-lehavre/atlas-redcap-core`    | Domain logic         | 1.1.0   | effect                              |
+| `@univ-lehavre/atlas-crf-openapi` | OpenAPI extraction   | 1.3.0   | yaml, @clack/prompts                |
+| `@univ-lehavre/atlas-crf-core`    | Domain logic         | 1.1.0   | effect                              |
 | `@univ-lehavre/atlas-net`            | Network utilities    | 0.7.0   | effect, @effect/\*                  |
 | `@univ-lehavre/atlas-shared-config`  | Config               | 0.3.0   | typescript-eslint, eslint-plugin-\* |
-| `@univ-lehavre/atlas-appwrite`       | Appwrite utils       | 0.2.0   | node-appwrite                       |
+| `@univ-lehavre/atlas-baas`       | Appwrite utils       | 0.2.0   | node-appwrite                       |
 | `@univ-lehavre/atlas-auth`           | Auth service         | 0.2.0   | node-appwrite                       |
 | `@univ-lehavre/atlas-errors`         | Error classes        | 0.2.0   | -                                   |
 | `@univ-lehavre/atlas-validators`     | Validation           | 0.2.0   | -                                   |

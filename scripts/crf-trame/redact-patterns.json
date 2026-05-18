@@ -1,0 +1,31 @@
+{
+  "$schema": "JSON config for crf-trame anonymization",
+  "description": "Liste des termes à anonymiser dans les data dictionaries exportés. Ajouter ici tout nom de labo, équipe, ou personne. Insensible à la casse, supports normalisation Unicode (accents).",
+  "institutions": [
+    "Université Le Havre Normandie",
+    "Universite Le Havre Normandie",
+    "University of Le Havre",
+    "ULHN",
+    "ULH",
+    "Le Havre Normandie",
+    "Le Havre"
+  ],
+  "labs": [
+    "LMAH",
+    "LITIS",
+    "GREAH",
+    "LOMC",
+    "URCOM",
+    "CIRTAI",
+    "IDEES",
+    "CERIIM",
+    "NIMEC",
+    "EDEHN"
+  ],
+  "redactionLabel": "[REDACTED]",
+  "alsoRedact": {
+    "emails": true,
+    "frenchPhones": true,
+    "urls": false
+  }
+}

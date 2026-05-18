@@ -1,4 +1,4 @@
-import { getAllowedEmailsToSubscribe } from '$lib/appwrite/server/database';
+import { getAllowedEmailsToSubscribe } from '$lib/baas/server/database';
 
 /**
  * Checks if an email domain is in the allowed alliance list.

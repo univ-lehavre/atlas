@@ -141,7 +141,7 @@ packages/
 | Package | Source | Description |
 |---------|--------|-------------|
 | `@univ-lehavre/atlas-openapi-validator` | - | OpenAPI spec validation |
-| `@univ-lehavre/atlas-openalex` | [OpenAlex](https://openalex.org) | 240M+ academic publications |
+| `@univ-lehavre/atlas-citation` | [OpenAlex](https://openalex.org) | 240M+ academic publications |
 | `@univ-lehavre/atlas-crossref` | [Crossref](https://crossref.org) | DOI metadata |
 | `@univ-lehavre/atlas-hal` | [HAL](https://hal.science) | French open archive |
 | `@univ-lehavre/atlas-arxiv` | [ArXiv](https://arxiv.org) | Scientific preprints |

@@ -7,7 +7,7 @@ vi.mock('node-appwrite', () => ({ ID: { unique: vi.fn(() => 'unique-id') } }));
 
 vi.mock('$env/static/public', () => ({ PUBLIC_LOGIN_URL: 'https://example.com' }));
 
-vi.mock('$lib/appwrite/server', () => ({
+vi.mock('$lib/baas/server', () => ({
   createAdminClient: vi.fn(),
   createSessionClient: vi.fn(),
 }));
@@ -23,7 +23,7 @@ vi.mock('$lib/validators/server/auth', () => ({
 vi.mock('$lib/constants', () => ({ SESSION_COOKIE: 'session' }));
 
 import { ID } from 'node-appwrite';
-import { createAdminClient, createSessionClient } from '$lib/appwrite/server';
+import { createAdminClient, createSessionClient } from '$lib/baas/server';
 import { fetchUserId } from '$lib/server/services/userService';
 import {
   validateMagicUrlLogin,

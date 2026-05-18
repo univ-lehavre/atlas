@@ -130,7 +130,7 @@ Integrate with **find-an-expert** to:
 ```typescript
 // Backend services
 surveysService.getSurveyUrl(); // Generates link to REDCap survey
-accountService.pushAccountToRedcap(); // Syncs account with REDCap
+accountService.pushAccountToCrf(); // Syncs account with REDCap
 authService.signupWithEmail(); // Email registration
 ```
 

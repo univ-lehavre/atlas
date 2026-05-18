@@ -8,7 +8,7 @@
 
 import PDFDocument from "pdfkit";
 import { PDFDocument as PDFLibDocument } from "pdf-lib";
-import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+import type { WorksResult } from "@univ-lehavre/atlas-citation-types";
 
 export interface PdfDebugInfo {
   /** All unique OpenAlex author profiles resolved for this researcher */

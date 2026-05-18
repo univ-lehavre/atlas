@@ -87,7 +87,7 @@ export default withMermaid(
               },
               {
                 text: "Appwrite Setup",
-                link: "/projects/ecrin/find-an-expert/appwrite-setup",
+                link: "/projects/ecrin/find-an-expert/baas-setup",
               },
               {
                 text: "Design System",
@@ -246,12 +246,12 @@ export default withMermaid(
                 link: "/api/@univ-lehavre/atlas-crf/",
               },
               {
-                text: "@univ-lehavre/atlas-redcap-core",
-                link: "/api/@univ-lehavre/atlas-redcap-core/",
+                text: "@univ-lehavre/atlas-crf-core",
+                link: "/api/@univ-lehavre/atlas-crf-core/",
               },
               {
-                text: "@univ-lehavre/atlas-redcap-openapi",
-                link: "/api/@univ-lehavre/atlas-redcap-openapi/",
+                text: "@univ-lehavre/atlas-crf-openapi",
+                link: "/api/@univ-lehavre/atlas-crf-openapi/",
               },
             ],
           },

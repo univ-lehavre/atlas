@@ -2,36 +2,36 @@ import { Hono } from 'hono';
 import { Schema as S } from 'effect';
 import { resolver, validator, describeRoute } from 'hono-openapi';
 import { Effect, pipe } from 'effect';
-import { RecordId, InstrumentName, RedcapApiError } from '@univ-lehavre/atlas-redcap-client';
-import { redcap } from '../redcap.js';
+import { RecordId, InstrumentName, CrfApiError } from '@univ-lehavre/atlas-crf-client';
+import { client } from '../client.js';
 import { runEffect, runEffectRaw } from '../effect-handler.js';
 import { validationErrorHook } from '../middleware/validation.js';
 import {
   ErrorResponseSchema,
   SuccessResponseOpenAPI,
-  REDCAP_NAME_PATTERN,
+  CRF_NAME_PATTERN,
   INSTRUMENT_NAME_PATTERN,
 } from '../schemas.js';
 
-const parseRecordId = (value: string | undefined): Effect.Effect<RecordId, RedcapApiError> =>
+const parseRecordId = (value: string | undefined): Effect.Effect<RecordId, CrfApiError> =>
   value === undefined
-    ? Effect.fail(new RedcapApiError({ error: 'Missing record ID' }))
+    ? Effect.fail(new CrfApiError({ error: 'Missing record ID' }))
     : Effect.try({
         try: () => RecordId(value),
-        catch: () => new RedcapApiError({ error: `Invalid record ID: "${value}"` }),
+        catch: () => new CrfApiError({ error: `Invalid record ID: "${value}"` }),
       });
 
-const parseInstrumentName = (value: string): Effect.Effect<InstrumentName, RedcapApiError> =>
+const parseInstrumentName = (value: string): Effect.Effect<InstrumentName, CrfApiError> =>
   Effect.try({
     try: () => InstrumentName(value),
-    catch: () => new RedcapApiError({ error: `Invalid instrument name: "${value}"` }),
+    catch: () => new CrfApiError({ error: `Invalid instrument name: "${value}"` }),
   });
 
 const records = new Hono();
 
 const ExportQuerySchema = S.Struct({
-  fields: S.optional(S.String.pipe(S.pattern(REDCAP_NAME_PATTERN))),
-  forms: S.optional(S.String.pipe(S.pattern(REDCAP_NAME_PATTERN))),
+  fields: S.optional(S.String.pipe(S.pattern(CRF_NAME_PATTERN))),
+  forms: S.optional(S.String.pipe(S.pattern(CRF_NAME_PATTERN))),
   filterLogic: S.optional(S.String),
   rawOrLabel: S.optional(S.Literal('raw', 'label')),
 }).annotations({
@@ -86,7 +86,7 @@ records.get(
 
     return runEffect(
       c,
-      redcap.exportRecords({
+      client.exportRecords({
         ...(query.fields === undefined ? {} : { fields: query.fields.split(',') }),
         ...(query.forms === undefined ? {} : { forms: query.forms.split(',') }),
         ...(query.filterLogic === undefined ? {} : { filterLogic: query.filterLogic }),
@@ -124,7 +124,7 @@ records.put(
 
     return runEffect(
       c,
-      redcap.importRecords(
+      client.importRecords(
         body.records,
         body.overwriteBehavior === undefined ? {} : { overwriteBehavior: body.overwriteBehavior }
       )
@@ -173,7 +173,7 @@ records.get(
         Effect.all([parseRecordId(rawRecordId), parseInstrumentName(rawInstrument)]),
         Effect.flatMap(([recordId, instrument]) =>
           pipe(
-            redcap.downloadPdf(recordId, instrument),
+            client.downloadPdf(recordId, instrument),
             Effect.map(
               (pdfBuffer) =>
                 new Response(pdfBuffer, {
@@ -229,7 +229,7 @@ records.get(
       c,
       pipe(
         Effect.all([parseRecordId(rawRecordId), parseInstrumentName(rawInstrument)]),
-        Effect.flatMap(([recordId, instrument]) => redcap.getSurveyLink(recordId, instrument)),
+        Effect.flatMap(([recordId, instrument]) => client.getSurveyLink(recordId, instrument)),
         Effect.map((url) => ({ url }))
       )
     );

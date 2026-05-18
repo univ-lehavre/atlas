@@ -16,9 +16,9 @@
    */
   interface ConnectivityContent {
     /** Appwrite unavailable title */
-    appwriteUnavailableTitle: string;
+    baasUnavailableTitle: string;
     /** Appwrite unavailable description */
-    appwriteUnavailableDescription: string;
+    baasUnavailableDescription: string;
     /** No internet title */
     noInternetTitle: string;
     /** No internet description */
@@ -29,7 +29,7 @@
 
   interface Props {
     /** Type of connectivity error */
-    error: 'appwrite_unavailable' | 'no_internet';
+    error: 'baas_unavailable' | 'no_internet';
     /** Content for the banner (required) */
     content: ConnectivityContent;
   }
@@ -37,14 +37,11 @@
   let { error, content }: Props = $props();
 
   const messages = $derived<
-    Record<
-      'appwrite_unavailable' | 'no_internet',
-      { title: string; description: string; icon: string }
-    >
+    Record<'baas_unavailable' | 'no_internet', { title: string; description: string; icon: string }>
   >({
-    appwrite_unavailable: {
-      title: content.appwriteUnavailableTitle,
-      description: content.appwriteUnavailableDescription,
+    baas_unavailable: {
+      title: content.baasUnavailableTitle,
+      description: content.baasUnavailableDescription,
       icon: 'lucide:server-off',
     },
     no_internet: {

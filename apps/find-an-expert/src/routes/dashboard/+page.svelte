@@ -20,7 +20,7 @@
     setPalette,
     setFont,
   } from '$lib/stores';
-  import type { TInstitution } from '$lib/server/openalex';
+  import type { TInstitution } from '$lib/server/citation';
   import { useI18n } from '$lib/content';
 
   const themeStore = createThemeStore();
@@ -33,7 +33,7 @@
   let selectedOrganizations = $state<TInstitution[]>([]);
 
   /** Whether user has granted consent for OpenAlex (shared between components) */
-  let hasOpenAlexConsent = $state(false);
+  let hasCitationConsent = $state(false);
 
   /** Toggle palette between fixed (saved) and random */
   const togglePaletteMode = (): void => {
@@ -111,19 +111,19 @@
 
     <Grid cols={2} gap="lg">
       <!-- Consent Status Card (shown first if not granted) -->
-      {#if !hasOpenAlexConsent}
-        <ConsentStatusCard userEmail={data.user?.email} bind:hasConsent={hasOpenAlexConsent} />
+      {#if !hasCitationConsent}
+        <ConsentStatusCard userEmail={data.user?.email} bind:hasConsent={hasCitationConsent} />
       {/if}
 
       <!-- Research Organization Search Card -->
-      <ResearchOrganizationSearch bind:selectedOrganizations hasConsent={hasOpenAlexConsent} />
+      <ResearchOrganizationSearch bind:selectedOrganizations hasConsent={hasCitationConsent} />
 
       <!-- Articles Count Card -->
-      <ArticlesCountCard {selectedOrganizations} hasConsent={hasOpenAlexConsent} />
+      <ArticlesCountCard {selectedOrganizations} hasConsent={hasCitationConsent} />
 
       <!-- Consent Status Card (shown after research cards if granted) -->
-      {#if hasOpenAlexConsent}
-        <ConsentStatusCard userEmail={data.user?.email} bind:hasConsent={hasOpenAlexConsent} />
+      {#if hasCitationConsent}
+        <ConsentStatusCard userEmail={data.user?.email} bind:hasConsent={hasCitationConsent} />
       {/if}
 
       <!-- Profile Card -->

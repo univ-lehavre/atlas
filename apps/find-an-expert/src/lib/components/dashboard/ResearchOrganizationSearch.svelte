@@ -1,7 +1,7 @@
 <script lang="ts">
   import { ResearchOrganizationSearch as BaseResearchOrganizationSearch } from '$lib/ui';
   import { useI18n } from '$lib/content';
-  import type { TInstitution } from '$lib/server/openalex';
+  import type { TInstitution } from '$lib/server/citation';
 
   /**
    * ResearchOrganizationSearch - Pre-configured organization search with i18n labels.

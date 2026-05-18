@@ -1,7 +1,7 @@
 import { Effect, Match, pipe } from 'effect';
 import type { Context } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import { type RedcapClientError } from '@univ-lehavre/atlas-redcap-client';
+import { type CrfClientError } from '@univ-lehavre/atlas-crf-client';
 
 interface ErrorResponse {
   readonly data: null;
@@ -15,25 +15,25 @@ const toContentfulStatus = (status: number): ContentfulStatusCode =>
   (status >= 400 && status < 600 ? status : 502) as ContentfulStatusCode;
 
 const mapErrorToResponse = (
-  error: RedcapClientError
+  error: CrfClientError
 ): { readonly body: ErrorResponse; readonly status: ContentfulStatusCode } =>
   pipe(
     Match.value(error),
-    Match.tag('RedcapHttpError', (e) => ({
+    Match.tag('CrfHttpError', (e) => ({
       body: {
         data: null,
-        error: { code: 'redcap_http_error', message: e.message },
+        error: { code: 'crf_http_error', message: e.message },
       },
       status: toContentfulStatus(e.status),
     })),
-    Match.tag('RedcapApiError', (e) => ({
+    Match.tag('CrfApiError', (e) => ({
       body: {
         data: null,
-        error: { code: e.code ?? 'redcap_api_error', message: e.message },
+        error: { code: e.code ?? 'crf_api_error', message: e.message },
       },
       status: toContentfulStatus(400),
     })),
-    Match.tag('RedcapNetworkError', () => ({
+    Match.tag('CrfNetworkError', () => ({
       body: {
         data: null,
         error: { code: 'network_error', message: 'Failed to connect to REDCap' },
@@ -62,7 +62,7 @@ const mapErrorToResponse = (
  */
 export const runEffect = <A>(
   c: Context,
-  effect: Effect.Effect<A, RedcapClientError>
+  effect: Effect.Effect<A, CrfClientError>
 ): Promise<Response> =>
   pipe(
     effect,
@@ -79,7 +79,7 @@ export const runEffect = <A>(
  */
 export const runEffectRaw = <A extends Response>(
   c: Context,
-  effect: Effect.Effect<A, RedcapClientError>
+  effect: Effect.Effect<A, CrfClientError>
 ): Promise<Response> =>
   pipe(
     effect,

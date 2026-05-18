@@ -1,4 +1,4 @@
-import { createAdminClient } from '$lib/server/appwrite';
+import { createAdminClient } from '$lib/server/baas';
 import type { UserRepository, TUser } from './types';
 import type { Models } from 'node-appwrite';
 
@@ -6,7 +6,7 @@ import type { Models } from 'node-appwrite';
  * Appwrite implementation of the UserRepository interface.
  * Fetches user data from Appwrite Users API.
  */
-export class AppwriteUserRepository implements UserRepository {
+export class BaasUserRepository implements UserRepository {
   /**
    * Retrieves a user by their ID from Appwrite.
    * @param userId - The unique identifier of the user
@@ -25,7 +25,7 @@ export class AppwriteUserRepository implements UserRepository {
         labels: user.labels ?? [],
       };
     } catch (error) {
-      console.error('AppwriteUserRepository.getById error', error);
+      console.error('BaasUserRepository.getById error', error);
       return { id: userId, email: null, labels: [] };
     }
   }

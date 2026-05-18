@@ -22,7 +22,7 @@
     statusHealthy: ui.health.status.healthy,
     statusDegraded: ui.health.status.degraded,
     statusUnhealthy: ui.health.status.unhealthy,
-    serviceAppwrite: ui.health.services.appwrite,
+    serviceBaas: ui.health.services.baas,
     serviceInternet: ui.health.services.internet,
     checkedLabel: ui.health.checked,
     apiKeyLabel: ui.health.apiKey,

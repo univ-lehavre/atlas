@@ -3,7 +3,7 @@ layout: page
 sidebar: false
 ---
 
-<RedcapApiExplorer />
+<CrfApiExplorer />
 
 ::: details About this specification
 

@@ -5,9 +5,9 @@ export default [
     tsconfigRootDir: import.meta.dirname,
     architectureCategory: "packages",
     workspaceModules: [
-      "@univ-lehavre/atlas-redcap-client",
-      "@univ-lehavre/atlas-fetch-openalex",
-      "@univ-lehavre/atlas-openalex-types",
+      "@univ-lehavre/atlas-crf-client",
+      "@univ-lehavre/atlas-citation-fetch",
+      "@univ-lehavre/atlas-citation-types",
     ],
   }),
   // Computational/mathematical services need reduce and mutable accumulators

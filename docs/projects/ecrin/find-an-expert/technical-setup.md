@@ -7,7 +7,7 @@ tags: [installation, development, setup, nodejs, sveltekit]
 
 # Technical Setup
 
-> **See also**: [Appwrite Setup](appwrite-setup.md) | [Design System](design-system.md)
+> **See also**: [Appwrite Setup](baas-setup.md) | [Design System](design-system.md)
 
 ## Tech Stack
 
@@ -23,7 +23,7 @@ tags: [installation, development, setup, nodejs, sveltekit]
 
 - Node.js 24+
 - pnpm 10+
-- An Appwrite instance for authentication (see [Appwrite Setup](appwrite-setup.md))
+- An Appwrite instance for authentication (see [Appwrite Setup](baas-setup.md))
 
 ## Installation
 
@@ -82,7 +82,7 @@ talent-finder/
 ├── docs/
 │   ├── technical-setup.md   # This document
 │   ├── design-system.md     # Style guide
-│   └── appwrite-setup.md    # Appwrite configuration
+│   └── baas-setup.md    # Appwrite configuration
 ```
 
 ## REST API

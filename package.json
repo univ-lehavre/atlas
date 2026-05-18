@@ -33,7 +33,7 @@
     "audit:structure": "node scripts/audit/workspace-structure.mjs",
     "audit:duplicates": "jscpd --pattern \"packages/*/src/**/*.ts\" --pattern \"apps/*/src/**/*.ts\" --pattern \"services/*/src/**/*.ts\"",
     "audit:size": "size-limit",
-    "audit:versions": "taze -r --ignore-paths cli/redcap-openapi/upstream",
+    "audit:versions": "taze -r --ignore-paths cli/crf-openapi/upstream",
     "audit:dep-versions": "node scripts/audit/dep-versions.mjs",
     "ci:audit": "pnpm audit:security && pnpm audit:licenses && pnpm audit:unused && pnpm audit:structure && pnpm audit:duplicates && pnpm audit:size && pnpm audit:dep-versions",
     "stats:generate": "tsx scripts/docs/generate-repo-stats.ts",
@@ -46,6 +46,9 @@
     "changeset:version": "changeset version && pnpm exec prettier --no-config --write '**/CHANGELOG.md'",
     "changeset:publish": "turbo build --filter='!./apps/**' && changeset publish",
     "release": "turbo build --filter='!./apps/**' && ./scripts/release/publish-packages.sh",
+    "release:deprecate-renamed": "./scripts/release/deprecate-renamed-packages.sh",
+    "crf:dictionaries:export": "tsx scripts/crf-trame/export-data-dictionaries.ts",
+    "crf:fixtures:generate": "tsx scripts/crf-trame/generate-test-fixtures.ts",
     "others": "git -C . ls-files --others | grep -v -e 'node_modules' -e '.svelte-kit' ",
     "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json' 'apps/*/tests/baselines/*.json' 'docs/.vitepress/dist' 'docs/.vitepress/.temp' 'docs/.vitepress/vite-ssg-*.json'",
     "prepare": "lefthook install"
@@ -60,7 +63,7 @@
       "limit": "100 KB"
     },
     {
-      "path": "packages/fetch-openalex/dist/**/*.js",
+      "path": "packages/citation-fetch/dist/**/*.js",
       "limit": "140 KB"
     },
     {
@@ -68,19 +71,19 @@
       "limit": "230 KB"
     },
     {
-      "path": "packages/openalex/dist/**/*.js",
+      "path": "packages/citation/dist/**/*.js",
       "limit": "250 KB"
     },
     {
-      "path": "packages/redcap-client/dist/**/*.js",
+      "path": "packages/crf-client/dist/**/*.js",
       "limit": "260 KB"
     },
     {
-      "path": "packages/validate-openalex/dist/**/*.js",
+      "path": "packages/citation-validate/dist/**/*.js",
       "limit": "700 KB"
     },
     {
-      "path": "packages/redcap-core/dist/**/*.js",
+      "path": "packages/crf-core/dist/**/*.js",
       "limit": "750 KB"
     }
   ],
@@ -102,20 +105,20 @@
   },
   "typedocOptions": {
     "entryPoints": [
-      "packages/redcap-client",
+      "packages/crf-client",
       "packages/net",
-      "packages/redcap-core",
+      "packages/crf-core",
       "packages/errors",
       "packages/validators",
-      "packages/appwrite",
+      "packages/baas",
       "packages/auth",
-      "packages/openalex-types",
+      "packages/citation-types",
       "packages/fetch-one-api-page",
-      "packages/fetch-openalex",
-      "packages/validate-openalex",
-      "packages/openalex",
+      "packages/citation-fetch",
+      "packages/citation-validate",
+      "packages/citation",
       "services/crf",
-      "cli/redcap-openapi",
+      "cli/crf-openapi",
       "cli/biblio",
       "packages/researcher-profiles",
       "cli/crf",
@@ -143,7 +146,9 @@
     "@commitlint/config-conventional": "^20.5.0",
     "@modyfi/vite-plugin-yaml": "^1.1.1",
     "@size-limit/file": "^12.1.0",
+    "@univ-lehavre/atlas-crf-client": "workspace:*",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "effect": "^3.21.2",
     "@vitest/coverage-v8": "^4.1.5",
     "chart.js": "^4.5.1",
     "cytoscape": "^3.33.2",
@@ -175,7 +180,9 @@
       "@sveltejs/kit": ">=2.58.0",
       "@xmldom/xmldom": ">=0.9.10",
       "defu": ">=6.1.7",
+      "devalue": ">=5.8.1",
       "effect": ">=3.21.2",
+      "fast-uri": ">=3.1.2",
       "fast-xml-parser": ">=5.7.2",
       "flatted": ">=3.4.2",
       "lodash": ">=4.18.1",

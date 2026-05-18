@@ -1,0 +1,81 @@
+{
+  "name": "@univ-lehavre/atlas-crf-openapi",
+  "version": "1.5.1",
+  "description": "Clinical research form (CRF / REDCap) source analysis, OpenAPI spec extraction, and API documentation tools",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "cli/crf-openapi"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/cli/crf-openapi#readme",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./extractor": {
+      "types": "./dist/extractor/index.d.ts",
+      "import": "./dist/extractor/index.js"
+    },
+    "./comparator": {
+      "types": "./dist/comparator/index.d.ts",
+      "import": "./dist/comparator/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
+    }
+  },
+  "bin": {
+    "crf-openapi": "./dist/bin/crf-openapi.js"
+  },
+  "files": [
+    "dist",
+    "specs"
+  ],
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "cli": "tsx src/bin/crf-openapi.ts",
+    "extract": "tsx src/bin/crf-openapi.ts extract",
+    "compare": "tsx src/bin/crf-openapi.ts compare",
+    "docs": "tsx src/bin/crf-openapi.ts docs",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write src",
+    "format:check": "prettier --check src",
+    "test": "vitest run --passWithNoTests",
+    "test:coverage": "vitest run --coverage --passWithNoTests"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.2.0",
+    "@univ-lehavre/atlas-crf-core": "workspace:*",
+    "picocolors": "^1.1.1",
+    "yaml": "^2.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "eslint": "^10.2.1",
+    "prettier": "^3.8.3",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

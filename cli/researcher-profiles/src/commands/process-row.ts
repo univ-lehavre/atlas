@@ -15,11 +15,11 @@ import { Effect, Either, Logger, LogLevel } from "effect";
 import type {
   AuthorsResult,
   WorksResult,
-} from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-types";
 import type {
-  OpenAlexConfig,
+  CitationConfig,
   RateLimitInfo,
-} from "@univ-lehavre/atlas-fetch-openalex";
+} from "@univ-lehavre/atlas-citation-fetch";
 import {
   resolveAuthors,
   fetchWorksForAuthors,
@@ -35,7 +35,7 @@ import {
   type ResearcherData,
 } from "@univ-lehavre/atlas-researcher-profiles";
 
-interface RedcapConfig {
+interface CrfConfig {
   readonly url: string;
   readonly token: string;
 }
@@ -75,7 +75,7 @@ const fetchWorks = async (
   chosenAuthors: readonly Pick<AuthorsResult, "id">[],
   label: string,
   researcher: string,
-  openAlexConfig: OpenAlexConfig,
+  citationConfig: CitationConfig,
   onRateLimit?: (info: RateLimitInfo) => void,
 ): Promise<Either.Either<readonly WorksResult[], unknown>> => {
   const worksSpinner = spinner();
@@ -92,7 +92,7 @@ const fetchWorks = async (
         silenced(
           fetchWorksForAuthors(
             chosenAuthors as readonly AuthorsResult[],
-            openAlexConfig,
+            citationConfig,
             researcher,
             (authorIndex, authorTotal, page, pageTotal) => {
               pagesPerAuthor.set(authorIndex, page);
@@ -128,8 +128,8 @@ const fetchWorks = async (
 
 export const processRow = async (
   row: ResearcherRow,
-  redcapConfig: RedcapConfig,
-  openAlexConfig: OpenAlexConfig,
+  crfConfig: CrfConfig,
+  citationConfig: CitationConfig,
   onRateLimit?: (info: RateLimitInfo) => void,
   batch?: boolean,
 ): Promise<"ok" | "skipped" | "error"> => {
@@ -144,7 +144,7 @@ export const processRow = async (
 
   // Fetch existing oa_data once
   const dataResult = await Effect.runPromise(
-    Effect.either(fetchResearcherData(redcapConfig, row.userid)),
+    Effect.either(fetchResearcherData(crfConfig, row.userid)),
   );
   if (Either.isLeft(dataResult)) {
     log.error(`[${label}] Failed to fetch oa_data`);
@@ -178,7 +178,7 @@ export const processRow = async (
 
     const authorsResult: Either.Either<ResolveAuthorsResult, unknown> =
       await Effect.runPromise(
-        Effect.either(silenced(resolveAuthors(row, openAlexConfig))),
+        Effect.either(silenced(resolveAuthors(row, citationConfig))),
       );
 
     if (Either.isLeft(authorsResult)) {
@@ -207,7 +207,7 @@ export const processRow = async (
       allAuthors,
       label,
       researcher,
-      openAlexConfig,
+      citationConfig,
       onRateLimit,
     );
 
@@ -302,7 +302,7 @@ export const processRow = async (
       allAuthorIdsForFetch.map((id) => ({ id })),
       label,
       researcher,
-      openAlexConfig,
+      citationConfig,
       onRateLimit,
     );
 
@@ -354,7 +354,7 @@ export const processRow = async (
   writeSpinner.start(`[${label}] Writing to REDCap…`);
 
   const writeResult = await Effect.runPromise(
-    Effect.either(writeResearcherData(redcapConfig, row.userid, updatedData)),
+    Effect.either(writeResearcherData(crfConfig, row.userid, updatedData)),
   );
 
   if (Either.isLeft(writeResult)) {

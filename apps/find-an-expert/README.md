@@ -32,7 +32,7 @@ pnpm -F find-an-expert lint     # ESLint
 ## Documentation
 
 - [Technical Setup](../../docs/projects/ecrin/find-an-expert/technical-setup.md)
-- [Appwrite Setup](../../docs/projects/ecrin/find-an-expert/appwrite-setup.md)
+- [Appwrite Setup](../../docs/projects/ecrin/find-an-expert/baas-setup.md)
 - [Design System](../../docs/projects/ecrin/find-an-expert/design-system.md)
 - [CSS Architecture](../../docs/projects/ecrin/find-an-expert/css-architecture.md)
 

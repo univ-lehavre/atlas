@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Schema as S, Effect, pipe } from 'effect';
 import { resolver, describeRoute, type ResponsesWithResolver } from 'hono-openapi';
-import { redcap } from '../redcap.js';
+import { client } from '../client.js';
 import { runEffect } from '../effect-handler.js';
 import { ErrorResponseSchema, SuccessResponseOpenAPI } from '../schemas.js';
 
@@ -34,7 +34,7 @@ project.get(
     runEffect(
       c,
       pipe(
-        redcap.getVersion(),
+        client.getVersion(),
         Effect.map((version) => ({ version }))
       )
     )
@@ -48,7 +48,7 @@ project.get(
     description: 'Get information about the REDCap project',
     responses: projectResponses('Project info retrieved successfully'),
   }),
-  (c) => runEffect(c, redcap.getProjectInfo())
+  (c) => runEffect(c, client.getProjectInfo())
 );
 
 project.get(
@@ -59,7 +59,7 @@ project.get(
     description: 'Get all instruments (forms) in the project',
     responses: projectResponses('Instruments retrieved successfully'),
   }),
-  (c) => runEffect(c, redcap.getInstruments())
+  (c) => runEffect(c, client.getInstruments())
 );
 
 project.get(
@@ -70,7 +70,7 @@ project.get(
     description: 'Get all fields (data dictionary) from the project',
     responses: projectResponses('Fields retrieved successfully'),
   }),
-  (c) => runEffect(c, redcap.getFields())
+  (c) => runEffect(c, client.getFields())
 );
 
 project.get(
@@ -81,7 +81,7 @@ project.get(
     description: 'Get export field name mappings (useful for checkbox fields)',
     responses: projectResponses('Export field names retrieved successfully'),
   }),
-  (c) => runEffect(c, redcap.getExportFieldNames())
+  (c) => runEffect(c, client.getExportFieldNames())
 );
 
 export { project };

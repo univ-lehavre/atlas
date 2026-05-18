@@ -39,9 +39,9 @@
   },
   "dependencies": {
     "@napi-rs/canvas": "^0.1.100",
-    "@univ-lehavre/atlas-fetch-openalex": "workspace:*",
-    "@univ-lehavre/atlas-openalex-types": "workspace:*",
-    "@univ-lehavre/atlas-redcap-client": "workspace:*",
+    "@univ-lehavre/atlas-citation-fetch": "workspace:*",
+    "@univ-lehavre/atlas-citation-types": "workspace:*",
+    "@univ-lehavre/atlas-crf-client": "workspace:*",
     "@xenova/transformers": "^2.17.2",
     "@xmldom/xmldom": ">=0.9.10",
     "csv-parse": "^6.2.1",

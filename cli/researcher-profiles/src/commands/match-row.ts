@@ -16,11 +16,11 @@ import {
 } from "@univ-lehavre/atlas-researcher-profiles";
 import { extractText } from "@univ-lehavre/atlas-researcher-profiles";
 import { matchReferences } from "@univ-lehavre/atlas-researcher-profiles";
-import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+import type { WorksResult } from "@univ-lehavre/atlas-citation-types";
 import {
   searchWorksByDOI,
-  type OpenAlexConfig,
-} from "@univ-lehavre/atlas-fetch-openalex";
+  type CitationConfig,
+} from "@univ-lehavre/atlas-citation-fetch";
 import type {
   ResearcherRow,
   PdfDebugInfo,
@@ -31,7 +31,7 @@ const silenced = <A, E>(effect: Effect.Effect<A, E>): Effect.Effect<A, E> =>
 
 export interface MatchRowConfig {
   readonly redcap: { readonly url: string; readonly token: string };
-  readonly openAlex: OpenAlexConfig;
+  readonly openAlex: CitationConfig;
   readonly threshold: number;
 }
 

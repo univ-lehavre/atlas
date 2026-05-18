@@ -2,11 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SessionError } from '@univ-lehavre/atlas-errors';
 import { AppwriteException } from 'node-appwrite';
 
-vi.mock('@univ-lehavre/atlas-appwrite', () => ({
+vi.mock('@univ-lehavre/atlas-baas', () => ({
   createSessionClient: vi.fn(),
 }));
 
-import { createSessionClient } from '@univ-lehavre/atlas-appwrite';
+import { createSessionClient } from '@univ-lehavre/atlas-baas';
 import {
   isExpectedAuthError,
   isNetworkError,
@@ -17,7 +17,7 @@ import type { Cookies } from '@sveltejs/kit';
 
 const mockCreateSessionClient = vi.mocked(createSessionClient);
 const mockCookies = {} as Cookies;
-const config = { appwrite: { endpoint: 'http://appwrite', projectId: 'proj' } };
+const config = { baas: { endpoint: 'http://appwrite', projectId: 'proj' } };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -115,7 +115,7 @@ describe('extractSession', () => {
 
     const result = await extractSession(config, mockCookies);
 
-    expect(result.connectivityError).toBe('appwrite_unavailable');
+    expect(result.connectivityError).toBe('baas_unavailable');
     expect(result.session).toBeUndefined();
   });
 
@@ -170,7 +170,7 @@ describe('createSessionHandle', () => {
       resolve: vi.fn().mockResolvedValue(new Response()),
     });
 
-    expect(locals['connectivityError']).toBe('appwrite_unavailable');
+    expect(locals['connectivityError']).toBe('baas_unavailable');
     expect(locals['userId']).toBeUndefined();
   });
 });

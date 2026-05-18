@@ -1,0 +1,70 @@
+{
+  "name": "@univ-lehavre/atlas-baas",
+  "version": "1.0.2",
+  "description": "Shared Backend-as-a-Service (Appwrite) client utilities for Atlas applications",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "packages/baas"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/baas#readme",
+  "keywords": [
+    "appwrite",
+    "client",
+    "sveltekit"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@univ-lehavre/atlas-errors": "workspace:*",
+    "node-appwrite": "^24.0.0"
+  },
+  "peerDependencies": {
+    "@sveltejs/kit": "^2.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@sveltejs/kit": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@sveltejs/kit": "^2.58.0",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "eslint": "^10.2.1",
+    "prettier": "^3.8.3",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

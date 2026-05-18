@@ -5,7 +5,7 @@
 
 // eslint-disable-next-line n/no-missing-import -- fuse.js is a valid CJS/ESM package
 import Fuse from "fuse.js";
-import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+import type { WorksResult } from "@univ-lehavre/atlas-citation-types";
 
 export interface MatchResult {
   readonly work: WorksResult;

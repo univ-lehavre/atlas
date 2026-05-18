@@ -1,5 +1,5 @@
 import type { Fetch } from '$lib/types';
-import { fetchRedcapJSON, fetchRedcapText, fetchRedcapBuffer } from '$lib/server/redcap';
+import { fetchCrfJSON, fetchCrfText, fetchCrfBuffer } from '$lib/server/crf';
 import { ID } from 'node-appwrite';
 import type { TUser } from '$lib/types/api/user';
 import type { SurveyRequestItem } from '$lib/types/api/surveys';
@@ -20,7 +20,7 @@ export const getSurveyUrl = async (
   instrument: string,
   context: { fetch: Fetch }
 ): Promise<string> => {
-  const result = await fetchRedcapText({ content: 'surveyLink', instrument, record }, context);
+  const result = await fetchCrfText({ content: 'surveyLink', instrument, record }, context);
   return result;
 };
 
@@ -36,7 +36,7 @@ export const downloadSurvey = async (
     exportCheckboxLabel: 'true',
     forms: 'form,validation_finale',
   };
-  const result = await fetchRedcapJSON<unknown>(requestData, context);
+  const result = await fetchCrfJSON<unknown>(requestData, context);
   return result;
 };
 
@@ -58,7 +58,7 @@ export const newRequest = async (user: TUser, { fetch }: { fetch: Fetch }) => {
     data: JSON.stringify(payload),
     returnContent: 'count',
   };
-  const result = await fetchRedcapJSON<{ count: number }>(requestData, { fetch });
+  const result = await fetchCrfJSON<{ count: number }>(requestData, { fetch });
   return result;
 };
 
@@ -85,7 +85,7 @@ const listRequestsWithCode = async (
       'validation_finale_complete',
     ].join(','),
   };
-  const result = await fetchRedcapJSON<SurveyRequestItem[]>(requestData, { fetch });
+  const result = await fetchCrfJSON<SurveyRequestItem[]>(requestData, { fetch });
   return result;
 };
 
@@ -104,7 +104,7 @@ const listRequestsWithLabel = async (
     ].join(','),
     rawOrLabel: 'label',
   };
-  const result = await fetchRedcapJSON<SurveyRequestItem[]>(requestData, { fetch });
+  const result = await fetchCrfJSON<SurveyRequestItem[]>(requestData, { fetch });
   return result;
 };
 
@@ -148,7 +148,7 @@ export const fetchUserId = async (
     returnFormat: 'json',
     filterLogic: `[email] = "${escapeFilterLogicValue(email)}"`,
   };
-  const contacts: contactId[] = await fetchRedcapJSON<contactId[]>(requestData, { fetch });
+  const contacts: contactId[] = await fetchCrfJSON<contactId[]>(requestData, { fetch });
   const result = contacts.length > 0 && contacts[0]?.userid ? contacts[0].userid : null;
   return result;
 };
@@ -170,6 +170,6 @@ export const downloadSurveyPdf = async (
     instrument: 'form',
     returnFormat: 'json',
   };
-  const result = await fetchRedcapBuffer(requestData, context);
+  const result = await fetchCrfBuffer(requestData, context);
   return result;
 };

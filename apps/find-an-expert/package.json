@@ -45,9 +45,9 @@
   },
   "dependencies": {
     "@iconify/svelte": "^5.2.1",
-    "@univ-lehavre/atlas-appwrite": "workspace:*",
+    "@univ-lehavre/atlas-baas": "workspace:*",
     "@univ-lehavre/atlas-errors": "workspace:*",
-    "@univ-lehavre/atlas-fetch-openalex": "workspace:*",
+    "@univ-lehavre/atlas-citation-fetch": "workspace:*",
     "@univ-lehavre/atlas-logos": "workspace:*",
     "@univ-lehavre/atlas-validators": "workspace:*",
     "effect": "^3.21.2",

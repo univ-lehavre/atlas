@@ -40,7 +40,7 @@
     "vitest": "^4.1.5"
   },
   "dependencies": {
-    "@univ-lehavre/atlas-appwrite": "workspace:*",
+    "@univ-lehavre/atlas-baas": "workspace:*",
     "@univ-lehavre/atlas-errors": "workspace:*",
     "@univ-lehavre/atlas-logos": "workspace:*",
     "@univ-lehavre/atlas-validators": "workspace:*",

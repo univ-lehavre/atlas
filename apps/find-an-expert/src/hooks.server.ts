@@ -2,7 +2,7 @@ import type { Handle } from '@sveltejs/kit';
 import { AppwriteException } from 'node-appwrite';
 
 import { SessionError } from '$lib/server/http';
-import { createSessionClient } from '$lib/server/appwrite';
+import { createSessionClient } from '$lib/server/baas';
 
 /**
  * Checks if an error is an expected authentication error.
@@ -58,7 +58,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   } catch (error: unknown) {
     if (isNetworkError(error)) {
       // Set connectivity error flag for the request
-      event.locals.connectivityError = 'appwrite_unavailable';
+      event.locals.connectivityError = 'baas_unavailable';
 
       // Rate-limit logging to avoid spam
       const now = Date.now();

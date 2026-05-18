@@ -252,7 +252,7 @@ export interface HealthContent {
       unhealthy: string;
     };
     services: {
-      appwrite: string;
+      baas: string;
       internet: string;
     };
     checked: string;
@@ -264,7 +264,7 @@ export interface HealthContent {
   };
   /** Connectivity banner */
   connectivity: {
-    appwriteUnavailable: {
+    baasUnavailable: {
       title: string;
       description: string;
     };
@@ -430,7 +430,7 @@ export interface UIContent {
   };
   /** Connectivity banner */
   connectivity: {
-    appwriteUnavailable: {
+    baasUnavailable: {
       title: string;
       description: string;
     };
@@ -481,7 +481,7 @@ export interface UIContent {
       unhealthy: string;
     };
     services: {
-      appwrite: string;
+      baas: string;
       internet: string;
     };
     checked: string;

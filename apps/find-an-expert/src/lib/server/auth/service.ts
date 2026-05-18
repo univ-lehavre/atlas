@@ -3,7 +3,7 @@ import { ID, type Models } from 'node-appwrite';
 
 import { SESSION_COOKIE } from '$lib/constants';
 import { PUBLIC_LOGIN_URL } from '$env/static/public';
-import { createAdminClient, createSessionClient } from '$lib/server/appwrite';
+import { createAdminClient, createSessionClient } from '$lib/server/baas';
 import { validateMagicUrlLogin, validateSignupEmail, validateUserId } from './validators';
 
 /**

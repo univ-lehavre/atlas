@@ -8,19 +8,19 @@ import { spinner, log, outro } from "@clack/prompts";
 import pc from "picocolors";
 import { Effect, Either } from "effect";
 import type {
-  OpenAlexConfig,
+  CitationConfig,
   RateLimitInfo,
-} from "@univ-lehavre/atlas-fetch-openalex";
+} from "@univ-lehavre/atlas-citation-fetch";
 import { fetchResearchers } from "@univ-lehavre/atlas-researcher-profiles";
 import { processRow } from "./process-row.js";
 import { matchRow } from "./match-row.js";
 import { selectResearchers } from "../prompts/select-researchers.js";
 
 export interface RunOptions {
-  readonly redcapUrl: string;
-  readonly redcapToken: string;
-  readonly openAlexUserAgent: string;
-  readonly openAlexApiKey?: string;
+  readonly crfUrl: string;
+  readonly crfToken: string;
+  readonly citationUserAgent: string;
+  readonly citationApiKey?: string;
   readonly threshold: number;
   readonly batch?: boolean;
 }
@@ -39,11 +39,11 @@ const showQuota = (
 };
 
 export const run = async (opts: RunOptions): Promise<void> => {
-  const redcapConfig = { url: opts.redcapUrl, token: opts.redcapToken };
-  const openAlexConfig: OpenAlexConfig = {
-    userAgent: opts.openAlexUserAgent,
-    ...(opts.openAlexApiKey !== undefined
-      ? { apiKey: opts.openAlexApiKey }
+  const crfConfig = { url: opts.crfUrl, token: opts.crfToken };
+  const citationConfig: CitationConfig = {
+    userAgent: opts.citationUserAgent,
+    ...(opts.citationApiKey !== undefined
+      ? { apiKey: opts.citationApiKey }
       : {}),
   };
 
@@ -52,7 +52,7 @@ export const run = async (opts: RunOptions): Promise<void> => {
   s.start("Fetching researchers from REDCap…");
 
   const fetchResult = await Effect.runPromise(
-    Effect.either(fetchResearchers(redcapConfig)),
+    Effect.either(fetchResearchers(crfConfig)),
   );
 
   if (Either.isLeft(fetchResult)) {
@@ -101,8 +101,8 @@ export const run = async (opts: RunOptions): Promise<void> => {
 
     const processStatus = await processRow(
       row,
-      redcapConfig,
-      openAlexConfig,
+      crfConfig,
+      citationConfig,
       (q) => {
         lastQuota = q;
         totalCredits += q.creditsUsed;
@@ -111,8 +111,8 @@ export const run = async (opts: RunOptions): Promise<void> => {
     );
 
     const matchStatus = await matchRow(row, {
-      redcap: redcapConfig,
-      openAlex: openAlexConfig,
+      redcap: crfConfig,
+      openAlex: citationConfig,
       threshold: opts.threshold,
     });
 

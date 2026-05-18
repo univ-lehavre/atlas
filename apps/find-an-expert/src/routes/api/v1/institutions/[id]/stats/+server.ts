@@ -1,6 +1,6 @@
 import type { RequestHandler } from './$types';
 import { json } from '@sveltejs/kit';
-import { getInstitutionStats } from '$lib/server/openalex';
+import { getInstitutionStats } from '$lib/server/citation';
 import { mapErrorToResponse } from '$lib/server/http';
 
 /**

@@ -15,7 +15,7 @@ export const fr: HealthContent = {
     refreshLabel: 'Actualiser le statut',
     status: commonLabels.statusLabels,
     services: {
-      appwrite: brand.appwrite,
+      baas: brand.baas,
       internet: 'Internet',
     },
     checked: 'Vérifié',
@@ -26,7 +26,7 @@ export const fr: HealthContent = {
     missing: 'Manquant',
   },
   connectivity: {
-    appwriteUnavailable: {
+    baasUnavailable: {
       title: "Serveur d'authentification indisponible",
       description:
         "Impossible de se connecter au serveur d'authentification. Certaines fonctionnalités peuvent ne pas fonctionner correctement.",

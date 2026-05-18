@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Icon, LoadingSpinner, Alert } from '$lib/ui';
-  import type { TInstitution, TInstitutionStatsResponse } from '$lib/server/openalex';
+  import type { TInstitution, TInstitutionStatsResponse } from '$lib/server/citation';
 
   /**
    * ArticlesCountCard - Card displaying article statistics for selected organizations.

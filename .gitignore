@@ -9,6 +9,8 @@ build/
 # Environment files
 .env
 .env.local
+.env.dev.baas
+.env.prod.baas
 .env.dev.appwrite
 .env.prod.appwrite
 
@@ -43,9 +45,9 @@ assets/source/
 # Upstream sources (REDCap, etc.)
 **/upstream/
 
-# DuckDB (packages/openalex)
-packages/openalex/*.db
-packages/openalex/*.wal
+# DuckDB (packages/citation)
+packages/citation/*.db
+packages/citation/*.wal
 
 # Logs
 *.log
@@ -55,7 +57,11 @@ rocketchat-k3s-roadmap.pdf
 *.traineddata
 CLAUDE.md
 *-token.csv
+apps/crf-dashboard/.crf-stats.json
 apps/redcap-dashboard/.redcap-stats.json
+
+# Exported CRF/REDCap data dictionaries (potentially sensitive: field labels, branching logic)
+data-dictionaries/
 .atlas-stats.json
 cli/researcher-profiles/matches.html
 cli/researcher-profiles/ALGORITHMS.pdf

@@ -14,7 +14,7 @@
     "node": ">=24.0.0"
   },
   "bin": {
-    "crf-redcap": "./dist/bin/crf-redcap.js",
+    "crf-redcap": "./dist/bin/crf-api.js",
     "crf-server": "./dist/bin/crf-server.js"
   },
   "files": [
@@ -43,7 +43,7 @@
     "@effect/sql": "^0.51.1",
     "@hono/node-server": "^2.0.0",
     "@univ-lehavre/atlas-crf": "workspace:*",
-    "@univ-lehavre/atlas-redcap-client": "workspace:*",
+    "@univ-lehavre/atlas-crf-client": "workspace:*",
     "effect": "^3.21.2",
     "picocolors": "^1.1.1"
   },

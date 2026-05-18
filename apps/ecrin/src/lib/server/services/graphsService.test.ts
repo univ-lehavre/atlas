@@ -5,7 +5,7 @@ import Graph from 'graphology';
 vi.mock('$lib/graph', () => ({ generateGraph: vi.fn() }));
 
 import { generateGraph } from '$lib/graph';
-import { fetchRecordsFromRedcap, fetchGraphForRecord, fetchGlobalGraph } from './graphsService';
+import { fetchRecordsFromCrf, fetchGraphForRecord, fetchGlobalGraph } from './graphsService';
 
 const mockGenerateGraph = vi.mocked(generateGraph);
 
@@ -17,7 +17,7 @@ describe('graphsService', () => {
     global.fetch = mockFetch;
   });
 
-  describe('fetchRecordsFromRedcap', () => {
+  describe('fetchRecordsFromCrf', () => {
     it('should fetch records from REDCap API', async () => {
       const mockData = [
         { record: '1', field_name: 'name', value: 'John' },
@@ -25,7 +25,7 @@ describe('graphsService', () => {
       ];
       mockFetch.mockResolvedValue({ json: vi.fn().mockResolvedValue(mockData) });
 
-      const result = await fetchRecordsFromRedcap({ content: 'record' });
+      const result = await fetchRecordsFromCrf({ content: 'record' });
 
       expect(result).toEqual(mockData);
       expect(mockFetch).toHaveBeenCalledWith('https://redcap.example.com/api/', {
@@ -41,7 +41,7 @@ describe('graphsService', () => {
     it('should merge params with token', async () => {
       mockFetch.mockResolvedValue({ json: vi.fn().mockResolvedValue([]) });
 
-      await fetchRecordsFromRedcap({ content: 'record', format: 'json' });
+      await fetchRecordsFromCrf({ content: 'record', format: 'json' });
 
       const callBody = mockFetch.mock.calls[0][1].body;
       expect(callBody).toContain('content=record');

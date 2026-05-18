@@ -15,15 +15,15 @@ import {
   select,
   getGlobalStatuses,
   getStatusesByValue,
-  getOpenAlexIDByStatusDashboard,
+  getCitationIDByStatusDashboard,
   provideMetricsStore,
   type Action,
   type ContextStore,
   type EventsStore,
   type IEvent,
   type MetricsStore,
-} from "@univ-lehavre/atlas-validate-openalex";
-import type { ORCID } from "@univ-lehavre/atlas-openalex-types";
+} from "@univ-lehavre/atlas-citation-validate";
+import type { ORCID } from "@univ-lehavre/atlas-citation-types";
 import { NodeRuntime } from "@effect/platform-node";
 import { DevTools } from "@effect/experimental";
 import type { ConfigError } from "effect/ConfigError";
@@ -45,7 +45,7 @@ const dashboard = (): Effect.Effect<void, Error, ContextStore | EventsStore> =>
     const events: IEvent[] = yield* getEvents();
     const board: string[] = [];
 
-    const authors: string | null = getOpenAlexIDByStatusDashboard(
+    const authors: string | null = getCitationIDByStatusDashboard(
       orcid,
       events,
     );

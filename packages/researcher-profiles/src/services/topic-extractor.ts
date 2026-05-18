@@ -1,4 +1,4 @@
-import type { WorksResult } from "@univ-lehavre/atlas-openalex-types";
+import type { WorksResult } from "@univ-lehavre/atlas-citation-types";
 import type { ResearcherData } from "../types.js";
 
 const MIN_TOPIC_SCORE = 0.3;

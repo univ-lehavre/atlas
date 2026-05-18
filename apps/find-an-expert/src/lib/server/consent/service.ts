@@ -1,8 +1,8 @@
-import { AppwriteConsentEventRepository, AppwriteCurrentConsentRepository } from './repository';
+import { BaasConsentEventRepository, BaasCurrentConsentRepository } from './repository';
 import type { TConsentType, TCurrentConsent, TConsentStatusResponse } from './types';
 
-const consentEventRepo = new AppwriteConsentEventRepository();
-const currentConsentRepo = new AppwriteCurrentConsentRepository();
+const consentEventRepo = new BaasConsentEventRepository();
+const currentConsentRepo = new BaasCurrentConsentRepository();
 
 /**
  * Gets the current consent status for a user and consent type.

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Icon, LoadingSpinner, Alert, Badge } from '$lib/ui';
-  import type { TInstitution } from '$lib/server/openalex';
+  import type { TInstitution } from '$lib/server/citation';
 
   /**
    * ResearchOrganizationSearch - Search and select research organizations.

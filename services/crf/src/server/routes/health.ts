@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { Effect, pipe } from 'effect';
-import { redcap } from '../redcap.js';
+import { client } from '../client.js';
 
 interface HealthCheck {
   readonly name: string;
@@ -28,12 +28,12 @@ const measureLatency = async <T>(
   return { result: result as T, latencyMs: Math.round(avgLatency) };
 };
 
-const checkRedcapServer = async (): Promise<{
+const checkCrfServer = async (): Promise<{
   readonly check: HealthCheck;
   readonly version?: string;
 }> => {
   const program = pipe(
-    redcap.getVersion(),
+    client.getVersion(),
     Effect.map((version) => ({ version }))
   );
 
@@ -42,7 +42,7 @@ const checkRedcapServer = async (): Promise<{
 
     return {
       check: {
-        name: 'redcap',
+        name: 'crf',
         status: latencyMs > 2000 ? 'degraded' : 'ok',
         latencyMs,
         ...(latencyMs > 2000 ? { message: 'High latency detected' } : {}),
@@ -52,7 +52,7 @@ const checkRedcapServer = async (): Promise<{
   } catch (error) {
     return {
       check: {
-        name: 'redcap',
+        name: 'crf',
         status: 'error',
         message: error instanceof Error ? error.message : 'Failed to connect to REDCap server',
       },
@@ -66,7 +66,7 @@ const checkToken = async (): Promise<{
 }> => {
   try {
     const { result, latencyMs } = await measureLatency(() =>
-      Effect.runPromise(redcap.getProjectInfo())
+      Effect.runPromise(client.getProjectInfo())
     );
 
     return {
@@ -99,10 +99,10 @@ export const health = new Hono();
 health.get('/', (c) => c.json({ status: 'ok' }));
 
 health.get('/detailed', async (c) => {
-  const redcapResult = await checkRedcapServer();
+  const crfResult = await checkCrfServer();
 
   const tokenResult =
-    redcapResult.check.status === 'error'
+    crfResult.check.status === 'error'
       ? {
           check: {
             name: 'token',
@@ -112,19 +112,19 @@ health.get('/detailed', async (c) => {
         }
       : await checkToken();
 
-  const checks = [redcapResult.check, tokenResult.check];
+  const checks = [crfResult.check, tokenResult.check];
 
   const response = {
     status: computeOverallStatus(checks),
     timestamp: new Date().toISOString(),
     checks: {
-      redcap: redcapResult.check,
+      crf: crfResult.check,
       token: tokenResult.check,
     },
-    ...(redcapResult.version !== undefined && tokenResult.project !== undefined
+    ...(crfResult.version !== undefined && tokenResult.project !== undefined
       ? {
-          redcap: {
-            version: redcapResult.version,
+          crf: {
+            version: crfResult.version,
             project: tokenResult.project.title,
             projectId: tokenResult.project.id,
           },

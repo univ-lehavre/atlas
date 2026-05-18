@@ -245,10 +245,9 @@ type(scope): description
 | `dashboard` | apps/atlas-dashboard                                  |
 | `ecrin`     | apps/ecrin                                            |
 | `find`      | apps/find-an-expert                                   |
-| `redcap`    | apps/redcap-dashboard, packages/redcap-\*             |
-| `crf`       | services/crf, cli/crf                                 |
+| `crf`       | services/crf, cli/crf*, packages/crf-\*, apps/crf-dashboard, sandbox/crf-sandbox |
 | `net`       | packages/net, cli/net                                 |
-| `openalex`  | packages/openalex*, packages/fetch-*                  |
+| `citation` | packages/citation*, cli/citation                       |
 | `profiles`  | packages/researcher-profiles, cli/researcher-profiles |
 | `deps`      | Dependencies                                          |
 | `config`    | Configuration                                         |
@@ -273,36 +272,37 @@ atlas/
 ├── apps/                    # SvelteKit web applications
 │   ├── amarre/              # Survey management app
 │   ├── atlas-dashboard/     # Main dashboard
+│   ├── crf-dashboard/       # Clinical research form (CRF / REDCap) dashboard
 │   ├── ecrin/               # ECRIN portal
-│   ├── find-an-expert/      # Researcher discovery app
-│   └── redcap-dashboard/    # REDCap dashboard
+│   └── find-an-expert/      # Researcher discovery app
 │
 ├── packages/                # Shared libraries
-│   ├── appwrite/            # Appwrite client utilities
 │   ├── auth/                # Authentication helpers
+│   ├── baas/                # Backend-as-a-Service (Appwrite) client utilities
+│   ├── citation/            # OpenAlex citation graph domain logic
+│   ├── citation-fetch/      # OpenAlex citation graph API client
+│   ├── citation-types/      # OpenAlex citation graph type definitions
+│   ├── citation-validate/   # OpenAlex citation graph data validation
+│   ├── crf-client/          # Clinical research form (CRF / REDCap) HTTP client
+│   ├── crf-core/            # CRF / REDCap domain types & adapters
+│   ├── crf-logs/            # CRF / REDCap audit log types
 │   ├── errors/              # Shared error types
 │   ├── fetch-one-api-page/  # Paginated API fetching
-│   ├── fetch-openalex/      # OpenAlex API client
 │   ├── net/                 # Network utilities
-│   ├── openalex/            # OpenAlex domain logic
-│   ├── openalex-types/      # OpenAlex type definitions
-│   ├── redcap-client/       # REDCap HTTP client
-│   ├── redcap-core/         # REDCap domain types & adapters
-│   ├── redcap-logs/         # REDCap audit log types
 │   ├── researcher-profiles/ # Researcher profile generation
-│   ├── validate-openalex/   # OpenAlex data validation
 │   └── validators/          # Shared validation utilities
 │
 ├── services/                # Backend microservices
 │   └── crf/                 # CRF HTTP service (Hono)
 │
 ├── cli/                     # Command-line tools
-│   ├── biblio/              # Bibliography CLI
-│   ├── crf/                 # CRF management CLI
-│   ├── net/                 # Network diagnostics CLI
-│   ├── redcap-openapi/      # REDCap OpenAPI spec generator
-│   ├── redcap-stats/        # REDCap statistics CLI
 │   ├── atlas-stats/         # Atlas statistics CLI
+│   ├── biblio/              # Bibliography CLI
+│   ├── citation/            # OpenAlex citation graph CLI
+│   ├── crf/                 # CRF management CLI
+│   ├── crf-openapi/         # CRF (REDCap) OpenAPI spec generator
+│   ├── crf-stats/           # CRF (REDCap) statistics CLI
+│   ├── net/                 # Network diagnostics CLI
 │   └── researcher-profiles/ # Researcher profile CLI
 │
 ├── config/
@@ -392,7 +392,7 @@ If a check produces a false positive for a legitimate transitional state, add th
 ```js
 // Packages temporarily exempt from CLI I/O source checks
 const CLI_IO_MIGRATION_PENDING = new Set([
-  "@univ-lehavre/atlas-validate-openalex",
+  "@univ-lehavre/atlas-citation-validate",
 ]);
 ```
 

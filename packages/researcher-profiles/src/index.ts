@@ -11,9 +11,9 @@ export {
 export {
   CsvParseError,
   CsvReadError,
-  OpenAlexSearchError,
-  RedcapWriteError,
-  RedcapFetchError,
+  CitationSearchError,
+  CrfWriteError,
+  CrfFetchError,
 } from "./errors.js";
 
 export { daysUntilNextUpdate } from "./utils.js";
@@ -27,16 +27,16 @@ export {
   resolveAuthors,
   fetchWorksForAuthors,
   resolveAll,
-} from "./services/openalex.js";
+} from "./services/citation.js";
 
 export {
-  type RedcapConnectionConfig,
+  type CrfConnectionConfig,
   fetchResearchers,
   fetchResearcherData,
   writeResearcherData,
   writeFinalReferences,
   downloadPublicationsFile,
-} from "./services/redcap.js";
+} from "./services/crf.js";
 
 export { extractText } from "./services/file-extractor.js";
 

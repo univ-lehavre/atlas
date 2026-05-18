@@ -13,11 +13,11 @@ Atlas CRF provides a TypeScript client and HTTP server for interacting with the 
 ## Architecture
 
 ```
-packages/redcap-core/       # Pure REDCap domain types, brands and validation
-packages/redcap-client/     # Effect client and generated REDCap API types
+packages/crf-core/       # Pure REDCap domain types, brands and validation
+packages/crf-client/     # Effect client and generated REDCap API types
 services/crf/               # Hono HTTP microservice
 cli/crf/                    # crf-redcap and crf-server commands
-cli/redcap-openapi/         # OpenAPI extraction, comparison and documentation tools
+cli/crf-openapi/         # OpenAPI extraction, comparison and documentation tools
 ```
 
 ## REDCap Client
@@ -25,7 +25,7 @@ cli/redcap-openapi/         # OpenAPI extraction, comparison and documentation t
 ### Installation
 
 ```bash
-pnpm add @univ-lehavre/atlas-redcap-client effect
+pnpm add @univ-lehavre/atlas-crf-client effect
 ```
 
 ### Basic usage
@@ -33,14 +33,14 @@ pnpm add @univ-lehavre/atlas-redcap-client effect
 ```typescript
 import { Effect } from "effect";
 import {
-  createRedcapClient,
-  RedcapUrl,
-  RedcapToken,
-} from "@univ-lehavre/atlas-redcap-client";
+  createCrfClient,
+  CrfUrl,
+  CrfToken,
+} from "@univ-lehavre/atlas-crf-client";
 
-const client = createRedcapClient({
-  url: RedcapUrl("https://redcap.example.com/api/"),
-  token: RedcapToken("YOUR_32_CHAR_HEXADECIMAL_TOKEN"),
+const client = createCrfClient({
+  url: CrfUrl("https://redcap.example.com/api/"),
+  token: CrfToken("YOUR_32_CHAR_HEXADECIMAL_TOKEN"),
 });
 
 // Export records
@@ -60,17 +60,17 @@ const instruments = await Effect.runPromise(client.listInstruments());
 ```typescript
 import { Effect, Match } from "effect";
 import {
-  RedcapError,
-  RedcapNetworkError,
-  RedcapAuthError,
+  CrfError,
+  CrfNetworkError,
+  CrfAuthError,
 } from "@univ-lehavre/atlas-crf";
 
 const program = client.exportRecords({ fields: ["record_id"] }).pipe(
-  Effect.catchTag("RedcapAuthError", (error) => {
+  Effect.catchTag("CrfAuthError", (error) => {
     console.error("Invalid token:", error.message);
     return Effect.succeed([]);
   }),
-  Effect.catchTag("RedcapNetworkError", (error) => {
+  Effect.catchTag("CrfNetworkError", (error) => {
     console.error("Network error:", error.message);
     return Effect.succeed([]);
   }),
@@ -82,15 +82,15 @@ const program = client.exportRecords({ fields: ["record_id"] }).pipe(
 The client uses branded types for compile-time validation:
 
 ```typescript
-import { RecordId, RedcapUrl, RedcapToken } from "@univ-lehavre/atlas-crf";
+import { RecordId, CrfUrl, CrfToken } from "@univ-lehavre/atlas-crf";
 
 // These lines fail at compile time if the format is invalid
 const recordId = RecordId("123"); // OK
-const url = RedcapUrl("https://redcap.example.com/api/"); // OK
-const token = RedcapToken("AAAABBBBCCCCDDDDEEEE11112222"); // 32 chars hex
+const url = CrfUrl("https://redcap.example.com/api/"); // OK
+const token = CrfToken("AAAABBBBCCCCDDDDEEEE11112222"); // 32 chars hex
 
 // Compilation error:
-const badToken = RedcapToken("too-short"); // ❌ Type error
+const badToken = CrfToken("too-short"); // ❌ Type error
 ```
 
 ## HTTP Server
@@ -174,11 +174,11 @@ The client supports different REDCap versions via adapters:
 
 ```typescript
 // Adapters handle API differences between versions
-import { createRedcapClient } from "@univ-lehavre/atlas-crf";
+import { createCrfClient } from "@univ-lehavre/atlas-crf";
 
-const client = createRedcapClient({
-  url: RedcapUrl("https://redcap.example.com/api/"),
-  token: RedcapToken("..."),
+const client = createCrfClient({
+  url: CrfUrl("https://redcap.example.com/api/"),
+  token: CrfToken("..."),
   version: "14.5.10", // Optional, automatically detected
 });
 ```

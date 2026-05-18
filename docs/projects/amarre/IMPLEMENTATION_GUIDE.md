@@ -274,7 +274,7 @@ export async function jwtAuth(request: FastifyRequest, reply: FastifyReply): Pro
 // src/clients/redcapClient.ts
 import { config } from '../config';
 
-interface RedcapRequestOptions {
+interface CrfRequestOptions {
   content?: string;
   action?: string;
   format?: string;
@@ -288,7 +288,7 @@ interface RedcapRequestOptions {
   [key: string]: string | undefined;
 }
 
-const DEFAULT_OPTIONS: RedcapRequestOptions = {
+const DEFAULT_OPTIONS: CrfRequestOptions = {
   content: 'record',
   action: 'export',
   format: 'json',
@@ -306,7 +306,7 @@ const DEFAULT_OPTIONS: RedcapRequestOptions = {
   filterLogic: '',
 };
 
-export class RedcapClient {
+export class CrfClient {
   private readonly apiUrl: string;
   private readonly apiToken: string;
 
@@ -315,7 +315,7 @@ export class RedcapClient {
     this.apiToken = config.redcap.apiToken;
   }
 
-  private async request(params: RedcapRequestOptions): Promise<Response> {
+  private async request(params: CrfRequestOptions): Promise<Response> {
     const requestData = { ...DEFAULT_OPTIONS, ...params, token: this.apiToken };
 
     const body = new URLSearchParams(
@@ -335,12 +335,12 @@ export class RedcapClient {
     return response;
   }
 
-  async requestJSON<T>(params: RedcapRequestOptions): Promise<T> {
+  async requestJSON<T>(params: CrfRequestOptions): Promise<T> {
     const response = await this.request(params);
     return response.json() as Promise<T>;
   }
 
-  async requestText(params: RedcapRequestOptions): Promise<string> {
+  async requestText(params: CrfRequestOptions): Promise<string> {
     const response = await this.request(params);
     return response.text();
   }
@@ -370,7 +370,7 @@ export class RedcapClient {
 
 ```typescript
 // src/services/surveyService.ts
-import { RedcapClient } from '../clients/redcapClient';
+import { CrfClient } from '../clients/redcapClient';
 import { nanoid } from 'nanoid';
 
 export interface SurveyRequest {
@@ -391,9 +391,9 @@ export interface CreateSurveyRequestInput {
 }
 
 export class SurveyService {
-  private readonly redcapClient: RedcapClient;
+  private readonly redcapClient: CrfClient;
 
-  constructor(redcapClient: RedcapClient) {
+  constructor(redcapClient: CrfClient) {
     this.redcapClient = redcapClient;
   }
 
@@ -585,7 +585,7 @@ import Fastify, { FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import { config } from './config';
-import { RedcapClient } from './clients/redcapClient';
+import { CrfClient } from './clients/redcapClient';
 import { SurveyService } from './services/surveyService';
 import { surveyRoutes } from './routes/surveys';
 import { apiKeyAuth } from './middleware/auth';
@@ -611,7 +611,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   fastify.get('/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 
   // Dependencies
-  const redcapClient = new RedcapClient();
+  const redcapClient = new CrfClient();
   const surveyService = new SurveyService(redcapClient);
 
   // Register routes
@@ -668,25 +668,25 @@ main();
 // tests/unit/surveyService.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SurveyService } from '../../src/services/surveyService';
-import { RedcapClient } from '../../src/clients/redcapClient';
+import { CrfClient } from '../../src/clients/redcapClient';
 
 describe('SurveyService', () => {
-  let mockRedcapClient: RedcapClient;
+  let mockCrfClient: CrfClient;
   let surveyService: SurveyService;
 
   beforeEach(() => {
-    mockRedcapClient = {
+    mockCrfClient = {
       importRecords: vi.fn(),
       exportRecords: vi.fn(),
       getSurveyLink: vi.fn(),
-    } as unknown as RedcapClient;
+    } as unknown as CrfClient;
 
-    surveyService = new SurveyService(mockRedcapClient);
+    surveyService = new SurveyService(mockCrfClient);
   });
 
   describe('createRequest', () => {
     it('should create a new survey request', async () => {
-      vi.mocked(mockRedcapClient.importRecords).mockResolvedValue({ count: 1 });
+      vi.mocked(mockCrfClient.importRecords).mockResolvedValue({ count: 1 });
 
       const result = await surveyService.createRequest({
         userId: 'user123',
@@ -694,7 +694,7 @@ describe('SurveyService', () => {
       });
 
       expect(result).toEqual({ count: 1 });
-      expect(mockRedcapClient.importRecords).toHaveBeenCalledWith(
+      expect(mockCrfClient.importRecords).toHaveBeenCalledWith(
         expect.arrayContaining([
           expect.objectContaining({ userid: 'user123', email: 'test@example.com' }),
         ])
@@ -704,7 +704,7 @@ describe('SurveyService', () => {
 
   describe('canCreateNewRequest', () => {
     it('should return true when no incomplete requests', async () => {
-      vi.mocked(mockRedcapClient.exportRecords).mockResolvedValue([
+      vi.mocked(mockCrfClient.exportRecords).mockResolvedValue([
         {
           record_id: '1',
           form_complete: '2',
@@ -720,7 +720,7 @@ describe('SurveyService', () => {
     });
 
     it('should return false when incomplete requests exist', async () => {
-      vi.mocked(mockRedcapClient.exportRecords).mockResolvedValue([
+      vi.mocked(mockCrfClient.exportRecords).mockResolvedValue([
         {
           record_id: '1',
           form_complete: '1', // Incomplete
@@ -1056,7 +1056,7 @@ export async function metricsHandler() {
 ### Testing Phase
 
 - [ ] Unit tests (coverage ≥ 80%)
-  - [ ] RedcapClient
+  - [ ] CrfClient
   - [ ] SurveyService
   - [ ] Validators
 - [ ] Integration tests

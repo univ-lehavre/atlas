@@ -11,12 +11,12 @@
         "src/**/*.ts"
       ]
     },
-    "packages/redcap-core": {
+    "packages/crf-core": {
       "project": [
         "src/**/*.ts"
       ]
     },
-    "packages/appwrite": {
+    "packages/baas": {
       "project": [
         "src/**/*.ts"
       ]
@@ -36,7 +36,7 @@
         "src/**/*.ts"
       ]
     },
-    "packages/openalex-types": {
+    "packages/citation-types": {
       "project": [
         "src/**/*.ts"
       ]
@@ -46,12 +46,12 @@
         "src/**/*.ts"
       ]
     },
-    "packages/fetch-openalex": {
+    "packages/citation-fetch": {
       "project": [
         "src/**/*.ts"
       ]
     },
-    "packages/validate-openalex": {
+    "packages/citation-validate": {
       "project": [
         "src/**/*.ts"
       ],
@@ -59,7 +59,7 @@
         "src/oa/index.ts"
       ]
     },
-    "packages/openalex": {
+    "packages/citation": {
       "project": [
         "src/**/*.ts"
       ],
@@ -75,7 +75,7 @@
         "uuid"
       ]
     },
-    "cli/openalex": {
+    "cli/citation": {
       "project": [
         "src/**/*.ts"
       ]
@@ -101,7 +101,7 @@
       "ignore": [
         "src/lib/ui/Button.svelte",
         "src/lib/ui/TakeTheSurvey.svelte",
-        "src/lib/redcap/index.ts"
+        "src/lib/crf/index.ts"
       ],
       "ignoreDependencies": [
         "@univ-lehavre/atlas-logos",
@@ -142,7 +142,7 @@
         "pandoc"
       ]
     },
-    "cli/redcap-openapi": {
+    "cli/crf-openapi": {
       "project": [
         "src/**/*.ts"
       ]
@@ -153,12 +153,12 @@
         "prettier/**/*.js"
       ]
     },
-    "sandbox/redcap-sandbox": {
+    "sandbox/crf-sandbox": {
       "project": [
         "tests/**/*.ts"
       ]
     },
-    "packages/redcap-client": {
+    "packages/crf-client": {
       "project": [
         "src/**/*.ts"
       ],
@@ -181,7 +181,7 @@
         "src/**/*.ts"
       ],
       "ignore": [
-        "src/commands/redcap/commands.ts",
+        "src/commands/api/commands.ts",
         "src/shared/context.ts",
         "src/shared/terminal.ts"
       ]
