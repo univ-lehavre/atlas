@@ -86,6 +86,38 @@ describe('REDCap Client', () => {
       expect(client.downloadPdf).toBeDefined();
       expect(client.findUserIdByEmail).toBeDefined();
     });
+
+    it('appends trailing slash to URL when missing (REDCap quirk)', async () => {
+      const mockFetch = vi.fn(
+        async () => new Response('"14.0.0"', { status: 200 })
+      ) as unknown as typeof fetch;
+
+      const client = createCrfClient(
+        { url: CrfUrl('http://localhost:8080/api'), token: CrfToken(VALID_TOKEN) },
+        mockFetch
+      );
+
+      await Effect.runPromise(client.getVersion());
+
+      const calls = (mockFetch as unknown as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls.at(-1)?.[0]).toBe('http://localhost:8080/api/');
+    });
+
+    it('preserves trailing slash when already present', async () => {
+      const mockFetch = vi.fn(
+        async () => new Response('"14.0.0"', { status: 200 })
+      ) as unknown as typeof fetch;
+
+      const client = createCrfClient(
+        { url: CrfUrl('http://localhost:8080/api/'), token: CrfToken(VALID_TOKEN) },
+        mockFetch
+      );
+
+      await Effect.runPromise(client.getVersion());
+
+      const calls = (mockFetch as unknown as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls.at(-1)?.[0]).toBe('http://localhost:8080/api/');
+    });
   });
 
   describe('escapeFilterLogicValue', () => {
@@ -450,7 +482,8 @@ describe('REDCap Client', () => {
         );
 
         const lastCall = mockFetch.mock.calls.at(-1)!;
-        expect(lastCall[0]).toBe(VALID_URL);
+        // crf-client appends a trailing slash if missing (REDCap quirk)
+        expect(lastCall[0]).toBe(`${VALID_URL}/`);
         expect(lastCall[1]?.method).toBe('POST');
         expect(lastCall[1]?.body).toBeInstanceOf(FormData);
       });
