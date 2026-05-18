@@ -5,7 +5,7 @@ import { z } from 'zod';
  * Appwrite returns ISO dates with offset (+00:00) instead of Z suffix.
  * Example: "2024-01-15T12:30:45.123+00:00"
  */
-const appwriteDatetime = z
+const baasDatetime = z
   .string()
   .refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid datetime string' });
 
@@ -32,7 +32,7 @@ export const ConsentEvent = z.object({
   userId: z.string(),
   consentType: ConsentType,
   action: ConsentAction,
-  $createdAt: appwriteDatetime,
+  $createdAt: baasDatetime,
 });
 
 export type TConsentEvent = z.infer<typeof ConsentEvent>;
@@ -52,7 +52,7 @@ export const CurrentConsent = z.object({
   userId: z.string(),
   consentType: ConsentType,
   granted: z.boolean(),
-  $updatedAt: appwriteDatetime,
+  $updatedAt: baasDatetime,
 });
 
 export type TCurrentConsent = z.infer<typeof CurrentConsent>;
@@ -63,7 +63,7 @@ export type TCurrentConsent = z.infer<typeof CurrentConsent>;
 const ConsentStatusResponse = z.object({
   consentType: ConsentType,
   granted: z.boolean().nullable(),
-  updatedAt: appwriteDatetime.nullable(),
+  updatedAt: baasDatetime.nullable(),
 });
 
 export type TConsentStatusResponse = z.infer<typeof ConsentStatusResponse>;

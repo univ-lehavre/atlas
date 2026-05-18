@@ -27,7 +27,7 @@
 | Package                                                   | Description                                |
 | --------------------------------------------------------- | ------------------------------------------ |
 | [@univ-lehavre/atlas-net](packages/net)                   | Network diagnostic utilities               |
-| [@univ-lehavre/atlas-appwrite](packages/appwrite)         | Shared Appwrite client                     |
+| [@univ-lehavre/atlas-baas](packages/baas)         | Shared Appwrite client                     |
 | [@univ-lehavre/atlas-auth](packages/auth)                 | Authentication service                     |
 | [@univ-lehavre/atlas-errors](packages/errors)             | Shared error classes                       |
 | [@univ-lehavre/atlas-validators](packages/validators)     | Validation utilities                       |

@@ -92,7 +92,7 @@ const PACKAGE_PATHS = [
   'cli/redcap-openapi',
   'sandbox/redcap-sandbox',
   'packages/net',
-  'packages/appwrite',
+  'packages/baas',
   'packages/auth',
   'packages/errors',
   'packages/validators',

@@ -1,5 +1,5 @@
 import { Query, ID, type Models } from 'node-appwrite';
-import { createAdminClient } from '$lib/server/appwrite';
+import { createAdminClient } from '$lib/server/baas';
 import {
   APPWRITE_DATABASE_ID,
   APPWRITE_CONSENT_EVENTS_COLLECTION_ID,
@@ -60,7 +60,7 @@ export interface CurrentConsentRepository {
  * Appwrite implementation of consent event repository.
  * Uses Appwrite's $createdAt system field for event timestamp.
  */
-export class AppwriteConsentEventRepository implements ConsentEventRepository {
+export class BaasConsentEventRepository implements ConsentEventRepository {
   async create(event: TConsentEventInput): Promise<TConsentEvent> {
     const { databases } = createAdminClient();
 
@@ -111,7 +111,7 @@ export class AppwriteConsentEventRepository implements ConsentEventRepository {
  * Appwrite implementation of current consent repository.
  * Uses Appwrite's $updatedAt system field for last update time.
  */
-export class AppwriteCurrentConsentRepository implements CurrentConsentRepository {
+export class BaasCurrentConsentRepository implements CurrentConsentRepository {
   async get(userId: string, consentType: TConsentType): Promise<TCurrentConsent | null> {
     const { databases } = createAdminClient();
 

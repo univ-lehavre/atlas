@@ -63,7 +63,7 @@ const PACKAGE_GROUPS: Record<string, string[]> = {
     'atlas-stats',
     'atlas-stats-cli',
   ],
-  Appwrite: ['atlas-appwrite', 'atlas-auth'],
+  BaaS: ['atlas-baas', 'atlas-auth'],
 };
 
 // TypeDoc standard category folders

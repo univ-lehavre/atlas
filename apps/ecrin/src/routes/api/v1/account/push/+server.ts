@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getSession } from '$lib/appwrite/server';
+import { getSession } from '$lib/baas/server';
 import { REDCAP_API_TOKEN } from '$env/static/private';
 import { pushAccountToCrf } from '$lib/server/services/accountService';
 

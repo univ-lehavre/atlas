@@ -15,7 +15,7 @@ export const en: HealthContent = {
     refreshLabel: 'Refresh status',
     status: commonLabels.statusLabels,
     services: {
-      appwrite: brand.appwrite,
+      baas: brand.baas,
       internet: 'Internet',
     },
     checked: 'Checked',
@@ -26,7 +26,7 @@ export const en: HealthContent = {
     missing: 'Missing',
   },
   connectivity: {
-    appwriteUnavailable: {
+    baasUnavailable: {
       title: 'Authentication server unavailable',
       description:
         'Unable to connect to the authentication server. Some features may not work properly.',

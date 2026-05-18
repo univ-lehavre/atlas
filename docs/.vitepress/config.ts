@@ -87,7 +87,7 @@ export default withMermaid(
               },
               {
                 text: "Appwrite Setup",
-                link: "/projects/ecrin/find-an-expert/appwrite-setup",
+                link: "/projects/ecrin/find-an-expert/baas-setup",
               },
               {
                 text: "Design System",

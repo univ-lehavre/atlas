@@ -17,7 +17,7 @@ export const ADMIN_LABEL = 'admin';
 /**
  * Configuration for Appwrite clients.
  */
-export interface AppwriteConfig {
+export interface BaasConfig {
   /** Appwrite endpoint URL */
   endpoint: string;
   /** Appwrite project ID */
@@ -60,7 +60,7 @@ export interface SessionAccount {
  * const { account, users, databases } = createAdminClient(config);
  * ```
  */
-export const createAdminClient = (config: AppwriteConfig): AdminClient => {
+export const createAdminClient = (config: BaasConfig): AdminClient => {
   if (!config.endpoint || !config.projectId || !config.apiKey) {
     throw new Error('Appwrite admin client not configured: missing endpoint, projectId, or apiKey');
   }
@@ -91,7 +91,7 @@ export const createAdminClient = (config: AppwriteConfig): AdminClient => {
  * @returns A configured Appwrite Client
  * @throws SessionError if no active session exists
  */
-const createSession = (config: Omit<AppwriteConfig, 'apiKey'>, cookies: Cookies): Client => {
+const createSession = (config: Omit<BaasConfig, 'apiKey'>, cookies: Cookies): Client => {
   if (!config.endpoint || !config.projectId) {
     throw new Error('Appwrite session client not configured: missing endpoint or projectId');
   }
@@ -125,7 +125,7 @@ const createSession = (config: Omit<AppwriteConfig, 'apiKey'>, cookies: Cookies)
  * ```
  */
 export const createSessionClient = (
-  config: Omit<AppwriteConfig, 'apiKey'>,
+  config: Omit<BaasConfig, 'apiKey'>,
   cookies: Cookies
 ): SessionAccount => {
   const client = createSession(config, cookies);
@@ -156,10 +156,10 @@ export interface UserRepository {
  * Appwrite implementation of the UserRepository interface.
  * Retrieves user data from Appwrite using the admin client.
  */
-export class AppwriteUserRepository implements UserRepository {
-  private readonly config: AppwriteConfig;
+export class BaasUserRepository implements UserRepository {
+  private readonly config: BaasConfig;
 
-  constructor(config: AppwriteConfig) {
+  constructor(config: BaasConfig) {
     this.config = config;
   }
 
@@ -176,7 +176,7 @@ export class AppwriteUserRepository implements UserRepository {
       const user: Models.User<Models.Preferences> = await users.get({ userId });
       return { id: user.$id, email: user.email, labels: user.labels };
     } catch (error) {
-      console.error('AppwriteUserRepository.getById error', error);
+      console.error('BaasUserRepository.getById error', error);
       // Return minimal profile so callers can continue
       return { id: userId, email: null, labels: [] };
     }
@@ -184,7 +184,7 @@ export class AppwriteUserRepository implements UserRepository {
 }
 
 /**
- * Creates an AppwriteUserRepository with the given configuration.
+ * Creates an BaasUserRepository with the given configuration.
  *
  * @param config - Appwrite configuration with API key
  * @returns A UserRepository instance
@@ -199,8 +199,8 @@ export class AppwriteUserRepository implements UserRepository {
  * const user = await userRepo.getById('user123');
  * ```
  */
-export const createUserRepository = (config: AppwriteConfig): UserRepository => {
-  return new AppwriteUserRepository(config);
+export const createUserRepository = (config: BaasConfig): UserRepository => {
+  return new BaasUserRepository(config);
 };
 
 // Re-export node-appwrite types for convenience

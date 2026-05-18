@@ -24,7 +24,7 @@ describe('brand', () => {
     expect(brand.github).toBe('GitHub');
     expect(brand.openAlex).toBe('OpenAlex');
     expect(brand.zenodo).toBe('Zenodo');
-    expect(brand.appwrite).toBe('Appwrite');
+    expect(brand.baas).toBe('Appwrite');
   });
 });
 

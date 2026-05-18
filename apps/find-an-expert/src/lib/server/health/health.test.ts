@@ -24,7 +24,7 @@ vi.mock('$env/static/private', () => ({
   APPWRITE_CURRENT_CONSENTS_COLLECTION_ID: 'current-consents',
 }));
 
-vi.mock('$lib/server/appwrite', () => ({
+vi.mock('$lib/server/baas', () => ({
   createAdminClient: mocks.createAdminClient,
 }));
 
@@ -96,7 +96,7 @@ describe('DatabaseHealth', () => {
 describe('ServiceHealth', () => {
   it('should validate healthy service', () => {
     const data = {
-      name: 'appwrite',
+      name: 'baas',
       status: 'healthy',
       responseTimeMs: 42,
     };
@@ -105,7 +105,7 @@ describe('ServiceHealth', () => {
 
   it('should validate unhealthy service with error', () => {
     const data = {
-      name: 'appwrite',
+      name: 'baas',
       status: 'unhealthy',
       error: 'Connection timeout',
     };
@@ -119,7 +119,7 @@ describe('HealthCheckResponse', () => {
       status: 'healthy',
       timestamp: '2024-01-01T00:00:00Z',
       services: [
-        { name: 'appwrite', status: 'healthy', responseTimeMs: 50 },
+        { name: 'baas', status: 'healthy', responseTimeMs: 50 },
         { name: 'github', status: 'healthy', responseTimeMs: 100 },
       ],
     };
@@ -131,7 +131,7 @@ describe('HealthCheckResponse', () => {
       status: 'degraded',
       timestamp: '2024-01-01T00:00:00Z',
       services: [
-        { name: 'appwrite', status: 'unhealthy', error: 'Down' },
+        { name: 'baas', status: 'unhealthy', error: 'Down' },
         { name: 'github', status: 'healthy' },
       ],
     };
@@ -174,7 +174,7 @@ describe('performHealthCheck', () => {
     expect(result.status).toBe('healthy');
     expect(result.services).toHaveLength(1);
     expect(result.services[0]).toMatchObject({
-      name: 'appwrite',
+      name: 'baas',
       status: 'healthy',
       database: {
         id: 'atlas',
@@ -212,7 +212,7 @@ describe('performHealthCheck', () => {
     expect(result.status).toBe('unhealthy');
     expect(result.services).toEqual([
       expect.objectContaining({
-        name: 'appwrite',
+        name: 'baas',
         status: 'unhealthy',
         error: 'DNS lookup failed - hostname not found',
       }),

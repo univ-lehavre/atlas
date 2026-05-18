@@ -12,7 +12,7 @@ vi.mock('../../transformers/build-name', () => ({
 
 import { fetchCrf } from '$lib/crf/server';
 import { transformToName } from '../../transformers/build-name';
-import { listUsersFromCrf, fetchUserId, mapAppwriteUserToProfile } from './userService';
+import { listUsersFromCrf, fetchUserId, mapBaasUserToProfile } from './userService';
 
 const mockFetchCrf = vi.mocked(fetchCrf);
 const mockTransformToName = vi.mocked(transformToName);
@@ -109,11 +109,11 @@ describe('userService', () => {
     });
   });
 
-  describe('mapAppwriteUserToProfile', () => {
+  describe('mapBaasUserToProfile', () => {
     it('should map Appwrite user to profile', () => {
       const user = { $id: 'user-123', email: 'test@example.com', labels: ['admin', 'researcher'] };
 
-      const result = mapAppwriteUserToProfile(user);
+      const result = mapBaasUserToProfile(user);
 
       expect(result).toEqual({
         id: 'user-123',
@@ -123,13 +123,13 @@ describe('userService', () => {
     });
 
     it('should return null values when user is null', () => {
-      const result = mapAppwriteUserToProfile(null);
+      const result = mapBaasUserToProfile(null);
 
       expect(result).toEqual({ id: null, email: null, name: null });
     });
 
     it('should use fallbackId when user is null', () => {
-      const result = mapAppwriteUserToProfile(null, 'fallback-id');
+      const result = mapBaasUserToProfile(null, 'fallback-id');
 
       expect(result).toEqual({ id: 'fallback-id', email: null, name: null });
     });
@@ -137,7 +137,7 @@ describe('userService', () => {
     it('should use fallbackId when user.$id is missing', () => {
       const user = { email: 'test@example.com', labels: [] };
 
-      const result = mapAppwriteUserToProfile(user, 'fallback-id');
+      const result = mapBaasUserToProfile(user, 'fallback-id');
 
       expect(result).toEqual({ id: 'fallback-id', email: 'test@example.com', labels: [] });
     });
@@ -145,7 +145,7 @@ describe('userService', () => {
     it('should handle missing labels', () => {
       const user = { $id: 'user-123', email: 'test@example.com' };
 
-      const result = mapAppwriteUserToProfile(user);
+      const result = mapBaasUserToProfile(user);
 
       expect('labels' in result ? result.labels : []).toEqual([]);
     });
@@ -153,7 +153,7 @@ describe('userService', () => {
     it('should handle missing email', () => {
       const user = { $id: 'user-123', labels: ['admin'] };
 
-      const result = mapAppwriteUserToProfile(user);
+      const result = mapBaasUserToProfile(user);
 
       expect(result.email).toBeNull();
     });

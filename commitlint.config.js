@@ -23,7 +23,7 @@ export default {
       'always',
       [
         'amarre',
-        'appwrite',
+        'baas',
         'auth',
         'biblio-cli',
         'ci',

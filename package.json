@@ -107,7 +107,7 @@
       "packages/crf-core",
       "packages/errors",
       "packages/validators",
-      "packages/appwrite",
+      "packages/baas",
       "packages/auth",
       "packages/citation-types",
       "packages/fetch-one-api-page",

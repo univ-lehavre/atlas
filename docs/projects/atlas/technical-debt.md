@@ -87,7 +87,7 @@ The `ecrin` package uses **two** Appwrite clients:
 }
 ```
 
-**Recommendation**: Use `node-appwrite` on the server side via `@univ-lehavre/atlas-appwrite`.
+**Recommendation**: Use `node-appwrite` on the server side via `@univ-lehavre/atlas-baas`.
 
 ### 3.3 Misaligned versions
 

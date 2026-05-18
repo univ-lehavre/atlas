@@ -1,4 +1,4 @@
-# @univ-lehavre/atlas-appwrite
+# @univ-lehavre/atlas-baas
 
 Utilitaires Appwrite serveur pour les applications Atlas.
 
@@ -16,7 +16,7 @@ Ce package crée des clients Appwrite admin ou sessionnés à partir de la confi
 ## Installation
 
 ```bash
-pnpm add @univ-lehavre/atlas-appwrite
+pnpm add @univ-lehavre/atlas-baas
 ```
 
 ## Usage
@@ -24,7 +24,7 @@ pnpm add @univ-lehavre/atlas-appwrite
 ### Admin Client
 
 ```typescript
-import { createAdminClient } from '@univ-lehavre/atlas-appwrite';
+import { createAdminClient } from '@univ-lehavre/atlas-baas';
 
 const config = {
   endpoint: process.env.APPWRITE_ENDPOINT,
@@ -41,7 +41,7 @@ const user = await users.get({ userId: 'user123' });
 ### Session Client
 
 ```typescript
-import { createSessionClient, SESSION_COOKIE } from '@univ-lehavre/atlas-appwrite';
+import { createSessionClient, SESSION_COOKIE } from '@univ-lehavre/atlas-baas';
 
 // In a SvelteKit endpoint
 export const GET = async ({ cookies }) => {
@@ -60,7 +60,7 @@ export const GET = async ({ cookies }) => {
 ### User Repository
 
 ```typescript
-import { createUserRepository } from '@univ-lehavre/atlas-appwrite';
+import { createUserRepository } from '@univ-lehavre/atlas-baas';
 
 const userRepo = createUserRepository({
   endpoint: process.env.APPWRITE_ENDPOINT,
@@ -95,15 +95,15 @@ Re-exported Appwrite types: `Models`, `Account`, `Users`, `Databases`, `Client`,
 ## Scripts
 
 ```bash
-pnpm -F @univ-lehavre/atlas-appwrite dev      # Development
-pnpm -F @univ-lehavre/atlas-appwrite build    # Build
-pnpm -F @univ-lehavre/atlas-appwrite test     # Tests
-pnpm -F @univ-lehavre/atlas-appwrite lint     # ESLint
+pnpm -F @univ-lehavre/atlas-baas dev      # Development
+pnpm -F @univ-lehavre/atlas-baas build    # Build
+pnpm -F @univ-lehavre/atlas-baas test     # Tests
+pnpm -F @univ-lehavre/atlas-baas lint     # ESLint
 ```
 
 ## Documentation
 
-- [API Documentation](../../docs/api/@univ-lehavre/atlas-appwrite/)
+- [API Documentation](../../docs/api/@univ-lehavre/atlas-baas/)
 
 ## Organization
 

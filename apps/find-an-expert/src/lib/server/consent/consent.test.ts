@@ -6,10 +6,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('./repository', () => ({
-  AppwriteConsentEventRepository: vi.fn(function () {
+  BaasConsentEventRepository: vi.fn(function () {
     return mocks.eventRepo;
   }),
-  AppwriteCurrentConsentRepository: vi.fn(function () {
+  BaasCurrentConsentRepository: vi.fn(function () {
     return mocks.currentRepo;
   }),
 }));

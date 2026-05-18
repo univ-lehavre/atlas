@@ -1,19 +1,21 @@
-import { Client, Account, Users } from 'node-appwrite';
+import { Client, Account, Users, TablesDB } from 'node-appwrite';
 import type { Cookies } from '@sveltejs/kit';
 
 import { SessionError } from '@univ-lehavre/atlas-errors';
-import { SESSION_COOKIE } from '@univ-lehavre/atlas-appwrite';
+import { SESSION_COOKIE } from '@univ-lehavre/atlas-baas';
 import { APPWRITE_KEY } from '$env/static/private';
 import { PUBLIC_APPWRITE_ENDPOINT, PUBLIC_APPWRITE_PROJECT } from '$env/static/public';
 
 interface AdminClient {
   readonly account: Account;
   readonly users: Users;
+  readonly databases: TablesDB;
 }
 
 const createAdminClient = (): AdminClient => {
-  if (!PUBLIC_APPWRITE_ENDPOINT || !PUBLIC_APPWRITE_PROJECT || !APPWRITE_KEY)
+  if (!PUBLIC_APPWRITE_ENDPOINT || !PUBLIC_APPWRITE_PROJECT || !APPWRITE_KEY) {
     throw new Error('Appwrite admin client not configured: missing environment variables');
+  }
 
   const client = new Client()
     .setEndpoint(PUBLIC_APPWRITE_ENDPOINT)
@@ -27,13 +29,13 @@ const createAdminClient = (): AdminClient => {
     get users() {
       return new Users(client);
     },
+    get databases() {
+      return new TablesDB(client);
+    },
   };
 };
 
 const createSession = (cookies: Cookies): Client => {
-  if (!PUBLIC_APPWRITE_ENDPOINT || !PUBLIC_APPWRITE_PROJECT)
-    throw new Error('Appwrite session client not configured: missing PUBLIC_APPWRITE_*');
-
   const client: Client = new Client()
     .setEndpoint(PUBLIC_APPWRITE_ENDPOINT)
     .setProject(PUBLIC_APPWRITE_PROJECT);
@@ -58,4 +60,17 @@ const createSessionClient = (cookies: Cookies): SessionAccount => {
   };
 };
 
-export { createAdminClient, createSessionClient };
+interface Session {
+  id: string;
+  email: string;
+}
+
+const getSession = async (cookies: Cookies): Promise<Session> => {
+  const client = createSession(cookies);
+  const user = await new Account(client).get();
+  const id = user.$id;
+  const email = user.email;
+  return { id, email };
+};
+
+export { createAdminClient, createSessionClient, getSession };

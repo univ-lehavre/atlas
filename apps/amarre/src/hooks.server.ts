@@ -2,7 +2,7 @@ import type { Handle } from '@sveltejs/kit';
 import { AppwriteException } from 'node-appwrite';
 
 import { SessionError } from '$lib/errors';
-import { createSessionClient } from '$lib/server/appwrite';
+import { createSessionClient } from '$lib/server/baas';
 
 export const handle: Handle = async ({ event, resolve }) => {
   try {
@@ -13,8 +13,8 @@ export const handle: Handle = async ({ event, resolve }) => {
     // Ne pas lancer l'erreur ici pour éviter de faire planter toute la requête.
     // On considère l'utilisateur comme non authentifié si la récupération échoue.
     const isSessionError = error instanceof SessionError;
-    const isAppwriteAuthError = error instanceof AppwriteException && error.code === 401;
-    if (!isSessionError && !isAppwriteAuthError) {
+    const isBaasAuthError = error instanceof AppwriteException && error.code === 401;
+    if (!isSessionError && !isBaasAuthError) {
       console.error('Unexpected error while retrieving session', error);
     }
   }

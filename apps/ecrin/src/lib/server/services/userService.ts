@@ -60,10 +60,7 @@ export const fetchUserId = async (fetch: Fetch, email: string): Promise<string |
   return result;
 };
 
-export const mapAppwriteUserToProfile = (
-  user: Record<string, unknown> | null,
-  fallbackId?: string
-) => {
+export const mapBaasUserToProfile = (user: Record<string, unknown> | null, fallbackId?: string) => {
   if (!user) return { id: fallbackId ?? null, email: null, name: null };
   const result = {
     id: (user['$id'] as string) ?? fallbackId ?? null,

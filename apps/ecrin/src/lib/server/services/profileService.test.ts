@@ -3,10 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Create mock function at module level for hoisting
 const mockGetById = vi.fn();
 
-// Mock the AppwriteUserRepository as a class
-vi.mock('$lib/appwrite/server/userRepository', () => {
+// Mock the BaasUserRepository as a class
+vi.mock('$lib/baas/server/userRepository', () => {
   return {
-    AppwriteUserRepository: class MockAppwriteUserRepository {
+    BaasUserRepository: class MockBaasUserRepository {
       getById(userId: string) {
         return mockGetById(userId);
       }

@@ -1,8 +1,8 @@
 import { ADMIN_LABEL } from '$lib/constants';
-import { AppwriteUserRepository } from './repository';
+import { BaasUserRepository } from './repository';
 import type { TUser } from './types';
 
-const userRepo = new AppwriteUserRepository();
+const userRepo = new BaasUserRepository();
 
 /**
  * Retrieves a user profile by their ID.

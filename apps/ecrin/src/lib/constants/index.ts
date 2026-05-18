@@ -15,6 +15,6 @@ const NAVY = '#000080';
 const WHITE = '#FFFFFF';
 
 // Re-export SESSION_COOKIE from shared package
-export { SESSION_COOKIE } from '@univ-lehavre/atlas-appwrite';
+export { SESSION_COOKIE } from '@univ-lehavre/atlas-baas';
 
 export { ECR, RED, BLUE, GREEN, YELLOW, PURPLE, CYAN, MAGENTA, NAVY, WHITE };

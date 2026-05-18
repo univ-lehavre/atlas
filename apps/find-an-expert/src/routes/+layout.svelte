@@ -29,7 +29,7 @@
   interface Props {
     data: {
       user: { email: string } | null;
-      connectivityError?: 'appwrite_unavailable' | 'no_internet';
+      connectivityError?: 'baas_unavailable' | 'no_internet';
     };
     form: {
       error?: boolean;

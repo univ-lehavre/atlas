@@ -36,7 +36,7 @@ export const brand = {
   /** External services */
   github: 'GitHub',
   zenodo: 'Zenodo',
-  appwrite: 'Appwrite',
+  baas: 'Appwrite',
   openAlex: 'OpenAlex',
 } as const;
 

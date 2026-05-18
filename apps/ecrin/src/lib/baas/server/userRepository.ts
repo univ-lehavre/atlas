@@ -1,9 +1,9 @@
-import { createAdminClient } from '$lib/server/appwrite';
+import { createAdminClient } from '$lib/baas/server';
 import type { UserRepository, TUser } from '$lib/types/api/user';
 import type { Models } from 'node-appwrite';
 
 // Adaptateur Appwrite pour le domaine UserRepository
-export class AppwriteUserRepository implements UserRepository {
+export class BaasUserRepository implements UserRepository {
   async getById(userId: string): Promise<TUser> {
     const { users } = createAdminClient();
     try {
@@ -11,7 +11,7 @@ export class AppwriteUserRepository implements UserRepository {
       if (!user) return { id: userId, email: null, labels: [] };
       return { id: user.$id, email: user.email ?? null, labels: user.labels ?? [] };
     } catch (error) {
-      console.error('AppwriteUserRepository.getById error', error);
+      console.error('BaasUserRepository.getById error', error);
       // Normalisation d'erreur: on renvoie un profil minimal pour que l'appelant puisse continuer.
       return { id: userId, email: null, labels: [] };
     }

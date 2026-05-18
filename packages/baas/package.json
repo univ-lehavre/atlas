@@ -1,18 +1,18 @@
 {
-  "name": "@univ-lehavre/atlas-appwrite",
+  "name": "@univ-lehavre/atlas-baas",
   "version": "1.0.2",
-  "description": "Shared Appwrite client utilities for Atlas applications",
+  "description": "Shared Backend-as-a-Service (Appwrite) client utilities for Atlas applications",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/univ-lehavre/atlas.git",
-    "directory": "packages/appwrite"
+    "directory": "packages/baas"
   },
   "bugs": {
     "url": "https://github.com/univ-lehavre/atlas/issues"
   },
-  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/appwrite#readme",
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/baas#readme",
   "keywords": [
     "appwrite",
     "client",

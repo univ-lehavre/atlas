@@ -31,7 +31,7 @@
     statusHealthy: string;
     statusDegraded: string;
     statusUnhealthy: string;
-    serviceAppwrite: string;
+    serviceBaas: string;
     serviceInternet: string;
     checkedLabel: string;
     apiKeyLabel: string;
@@ -170,7 +170,7 @@
   });
 
   const serviceLabels = $derived<Record<string, string>>({
-    appwrite: content.serviceAppwrite,
+    baas: content.serviceBaas,
     internet: content.serviceInternet,
   });
 

@@ -2,7 +2,7 @@ import { ID, type Models } from 'node-appwrite';
 
 import type { SignupContext } from '$lib/types/auth';
 import { PUBLIC_LOGIN_URL } from '$env/static/public';
-import { createAdminClient, createSessionClient } from '$lib/appwrite/server';
+import { createAdminClient, createSessionClient } from '$lib/baas/server';
 import { fetchUserId } from '$lib/server/services/userService';
 import {
   validateMagicUrlLogin,

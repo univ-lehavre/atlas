@@ -5,7 +5,7 @@ import { isAdmin, getProfile } from './service';
 const mocks = vi.hoisted(() => ({ userRepo: { getById: vi.fn() } }));
 
 vi.mock('./repository', () => ({
-  AppwriteUserRepository: vi.fn(function () {
+  BaasUserRepository: vi.fn(function () {
     return mocks.userRepo;
   }),
 }));

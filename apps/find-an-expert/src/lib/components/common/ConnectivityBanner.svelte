@@ -14,7 +14,7 @@
    */
   interface Props {
     /** Type of connectivity error */
-    error: 'appwrite_unavailable' | 'no_internet';
+    error: 'baas_unavailable' | 'no_internet';
   }
 
   let { error }: Props = $props();
@@ -23,8 +23,8 @@
   const ui = $derived(i18n.ui);
 
   const content = $derived({
-    appwriteUnavailableTitle: ui.connectivity.appwriteUnavailable.title,
-    appwriteUnavailableDescription: ui.connectivity.appwriteUnavailable.description,
+    baasUnavailableTitle: ui.connectivity.baasUnavailable.title,
+    baasUnavailableDescription: ui.connectivity.baasUnavailable.description,
     noInternetTitle: ui.connectivity.noInternet.title,
     noInternetDescription: ui.connectivity.noInternet.description,
     checkStatusLabel: ui.common.checkStatus,

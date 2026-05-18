@@ -239,7 +239,7 @@ graph TD
 | `@univ-lehavre/atlas-crf-core`    | Domain logic         | 1.1.0   | effect                              |
 | `@univ-lehavre/atlas-net`            | Network utilities    | 0.7.0   | effect, @effect/\*                  |
 | `@univ-lehavre/atlas-shared-config`  | Config               | 0.3.0   | typescript-eslint, eslint-plugin-\* |
-| `@univ-lehavre/atlas-appwrite`       | Appwrite utils       | 0.2.0   | node-appwrite                       |
+| `@univ-lehavre/atlas-baas`       | Appwrite utils       | 0.2.0   | node-appwrite                       |
 | `@univ-lehavre/atlas-auth`           | Auth service         | 0.2.0   | node-appwrite                       |
 | `@univ-lehavre/atlas-errors`         | Error classes        | 0.2.0   | -                                   |
 | `@univ-lehavre/atlas-validators`     | Validation           | 0.2.0   | -                                   |

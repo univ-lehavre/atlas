@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type * as NodeAppwrite from 'node-appwrite';
+import type * as BaasSdk from 'node-appwrite';
 
 const noop = (): void => {
   /* test stub */
@@ -8,7 +8,7 @@ const noop = (): void => {
 const usersGetSpy = vi.hoisted(() => vi.fn());
 
 vi.mock('node-appwrite', async () => {
-  const actual = await vi.importActual<typeof NodeAppwrite>('node-appwrite');
+  const actual = await vi.importActual<typeof BaasSdk>('node-appwrite');
   class MockUsers {
     get = usersGetSpy;
   }
@@ -23,7 +23,7 @@ import {
   ADMIN_LABEL,
   createAdminClient,
   createSessionClient,
-  AppwriteUserRepository,
+  BaasUserRepository,
   createUserRepository,
 } from './index.js';
 import { SessionError } from '@univ-lehavre/atlas-errors';
@@ -116,10 +116,10 @@ describe('createSessionClient', () => {
   });
 });
 
-describe('AppwriteUserRepository', () => {
+describe('BaasUserRepository', () => {
   it('should be instantiable with config', () => {
-    const repo = new AppwriteUserRepository(mockConfig);
-    expect(repo).toBeInstanceOf(AppwriteUserRepository);
+    const repo = new BaasUserRepository(mockConfig);
+    expect(repo).toBeInstanceOf(BaasUserRepository);
   });
 
   describe('getById', () => {
@@ -141,7 +141,7 @@ describe('AppwriteUserRepository', () => {
         labels: ['admin'],
       });
 
-      const repo = new AppwriteUserRepository(mockConfig);
+      const repo = new BaasUserRepository(mockConfig);
       const result = await repo.getById('user-123');
 
       expect(result).toEqual({
@@ -155,7 +155,7 @@ describe('AppwriteUserRepository', () => {
     it('returns a minimal profile and logs when Appwrite throws', async () => {
       usersGetSpy.mockRejectedValue(new Error('user not found'));
 
-      const repo = new AppwriteUserRepository(mockConfig);
+      const repo = new BaasUserRepository(mockConfig);
       const result = await repo.getById('missing-user');
 
       expect(result).toEqual({
@@ -171,7 +171,7 @@ describe('AppwriteUserRepository', () => {
 describe('createUserRepository', () => {
   it('should return a UserRepository instance', () => {
     const repo = createUserRepository(mockConfig);
-    expect(repo).toBeInstanceOf(AppwriteUserRepository);
+    expect(repo).toBeInstanceOf(BaasUserRepository);
     expect(repo).toHaveProperty('getById');
   });
 });

@@ -30,7 +30,7 @@ describe('brand', () => {
   it('should have external service names defined', () => {
     expect(brand.github).toBe('GitHub');
     expect(brand.zenodo).toBe('Zenodo');
-    expect(brand.appwrite).toBe('Appwrite');
+    expect(brand.baas).toBe('Appwrite');
     expect(brand.openAlex).toBe('OpenAlex');
   });
 });

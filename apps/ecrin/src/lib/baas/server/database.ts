@@ -1,4 +1,4 @@
-import { createAdminClient } from '$lib/appwrite/server';
+import { createAdminClient } from '$lib/baas/server';
 import {
   APPWRITE_DB_ID,
   APPWRITE_TABLE_ID_ALLOWED_EMAIL_DOMAINS_TO_SUBSCRIBE,

@@ -1,5 +1,5 @@
 import { SessionError } from '$lib/errors';
-import { createSessionClient } from '$lib/appwrite/server';
+import { createSessionClient } from '$lib/baas/server';
 
 import type { Handle } from '@sveltejs/kit';
 

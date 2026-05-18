@@ -2,7 +2,7 @@ import type { Cookies } from '@sveltejs/kit';
 import { AppwriteException } from 'node-appwrite';
 
 import { SessionError } from '@univ-lehavre/atlas-errors';
-import { createSessionClient, type AppwriteConfig } from '@univ-lehavre/atlas-appwrite';
+import { createSessionClient, type BaasConfig } from '@univ-lehavre/atlas-baas';
 
 /**
  * User session data extracted from Appwrite.
@@ -21,7 +21,7 @@ export interface SessionResult {
   /** User session if authenticated, undefined otherwise */
   session?: UserSession;
   /** Connectivity error type if backend is unreachable */
-  connectivityError?: 'appwrite_unavailable';
+  connectivityError?: 'baas_unavailable';
 }
 
 /**
@@ -70,7 +70,7 @@ const CONNECTIVITY_ERROR_LOG_INTERVAL_MS = 60_000; // Log at most once per minut
  */
 export interface SessionMiddlewareConfig {
   /** Appwrite configuration (endpoint and projectId) */
-  appwrite: Omit<AppwriteConfig, 'apiKey'>;
+  baas: Omit<BaasConfig, 'apiKey'>;
 }
 
 /**
@@ -86,7 +86,7 @@ export interface SessionMiddlewareConfig {
  * // In hooks.server.ts
  * export const handle: Handle = async ({ event, resolve }) => {
  *   const result = await extractSession(
- *     { appwrite: { endpoint: APPWRITE_ENDPOINT, projectId: APPWRITE_PROJECT } },
+ *     { baas: { endpoint: APPWRITE_ENDPOINT, projectId: APPWRITE_PROJECT } },
  *     event.cookies
  *   );
  *
@@ -105,7 +105,7 @@ export const extractSession = async (
   cookies: Cookies
 ): Promise<SessionResult> => {
   try {
-    const { account } = createSessionClient(config.appwrite, cookies);
+    const { account } = createSessionClient(config.baas, cookies);
     const user = await account.get();
     return {
       session: {
@@ -123,7 +123,7 @@ export const extractSession = async (
           '[Connectivity] Appwrite server unreachable. Check network or server status.'
         );
       }
-      return { connectivityError: 'appwrite_unavailable' };
+      return { connectivityError: 'baas_unavailable' };
     }
 
     if (!isExpectedAuthError(error)) {
@@ -147,7 +147,7 @@ export const extractSession = async (
  * import { createSessionHandle } from '@univ-lehavre/atlas-auth/hooks';
  *
  * export const handle = createSessionHandle({
- *   appwrite: {
+ *   baas: {
  *     endpoint: APPWRITE_ENDPOINT,
  *     projectId: APPWRITE_PROJECT,
  *   },

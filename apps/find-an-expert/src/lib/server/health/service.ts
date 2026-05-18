@@ -4,7 +4,7 @@ import {
   APPWRITE_CONSENT_EVENTS_COLLECTION_ID,
   APPWRITE_CURRENT_CONSENTS_COLLECTION_ID,
 } from '$env/static/private';
-import { createAdminClient } from '$lib/server/appwrite';
+import { createAdminClient } from '$lib/server/baas';
 import type {
   THealthCheckResponse,
   TServiceHealth,
@@ -94,12 +94,12 @@ const checkUrl = async (
 /**
  * Checks Appwrite server health (endpoint reachability only).
  */
-const checkAppwriteEndpoint = async (): Promise<TServiceHealth> => {
+const checkBaasEndpoint = async (): Promise<TServiceHealth> => {
   const healthUrl = `${APPWRITE_ENDPOINT}/health`;
   const result = await checkUrl(healthUrl);
 
   return {
-    name: 'appwrite',
+    name: 'baas',
     status: result.success ? 'healthy' : 'unhealthy',
     responseTimeMs: result.responseTimeMs,
     error: result.error,
@@ -110,18 +110,18 @@ const checkAppwriteEndpoint = async (): Promise<TServiceHealth> => {
  * Checks Appwrite server health including database, collections, and attributes.
  * Also verifies project existence and API key validity.
  */
-const checkAppwrite = async (): Promise<TServiceHealth> => {
+const checkBaas = async (): Promise<TServiceHealth> => {
   const startTime = performance.now();
 
   // First check endpoint reachability
-  const endpointCheck = await checkAppwriteEndpoint();
+  const endpointCheck = await checkBaasEndpoint();
 
   if (endpointCheck.status === 'unhealthy') {
     return endpointCheck;
   }
 
   // Then check database configuration
-  const database = await checkAppwriteDatabase();
+  const database = await checkBaasDatabase();
   const responseTimeMs = Math.round(performance.now() - startTime);
 
   // Determine status based on database check
@@ -155,7 +155,7 @@ const checkAppwrite = async (): Promise<TServiceHealth> => {
   }
 
   return {
-    name: 'appwrite',
+    name: 'baas',
     status,
     responseTimeMs,
     error,
@@ -245,7 +245,7 @@ const checkCollection = async (
  * Also verifies project and API key validity.
  * @returns Database health check result
  */
-const checkAppwriteDatabase = async (): Promise<TDatabaseHealth> => {
+const checkBaasDatabase = async (): Promise<TDatabaseHealth> => {
   try {
     const { databases } = createAdminClient();
 
@@ -319,11 +319,11 @@ const determineOverallStatus = (services: TServiceHealth[]): THealthStatus => {
  * @returns Health check response with status of all services
  */
 export const performHealthCheck = async (): Promise<THealthCheckResponse> => {
-  const appwrite = await checkAppwrite();
-  const services: TServiceHealth[] = [appwrite];
+  const baas = await checkBaas();
+  const services: TServiceHealth[] = [baas];
 
   // Only check internet connectivity if Appwrite is unreachable
-  if (appwrite.status === 'unhealthy') {
+  if (baas.status === 'unhealthy') {
     const internet = await checkInternet();
     services.push(internet);
   }

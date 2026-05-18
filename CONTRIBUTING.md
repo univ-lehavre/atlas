@@ -278,9 +278,8 @@ atlas/
 │   └── redcap-dashboard/    # REDCap dashboard
 │
 ├── packages/                # Shared libraries
-│   ├── appwrite/            # Appwrite client utilities
 │   ├── auth/                # Authentication helpers
-│   ├── errors/              # Shared error types
+│   ├── baas/                # Backend-as-a-Service (Appwrite) client utilities
 │   ├── citation/            # OpenAlex citation graph domain logic
 │   ├── citation-fetch/      # OpenAlex citation graph API client
 │   ├── citation-types/      # OpenAlex citation graph type definitions
@@ -288,6 +287,7 @@ atlas/
 │   ├── crf-client/          # Clinical research form (CRF / REDCap) HTTP client
 │   ├── crf-core/            # CRF / REDCap domain types & adapters
 │   ├── crf-logs/            # CRF / REDCap audit log types
+│   ├── errors/              # Shared error types
 │   ├── fetch-one-api-page/  # Paginated API fetching
 │   ├── net/                 # Network utilities
 │   ├── researcher-profiles/ # Researcher profile generation

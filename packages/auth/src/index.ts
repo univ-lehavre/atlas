@@ -5,13 +5,13 @@ import {
   createAdminClient,
   createSessionClient,
   SESSION_COOKIE,
-  type AppwriteConfig,
-} from '@univ-lehavre/atlas-appwrite';
+  type BaasConfig,
+} from '@univ-lehavre/atlas-baas';
 import { validateMagicUrlLogin, validateSignupEmail, validateUserId } from './validators.js';
 import type { DomainValidationConfig } from './validators.js';
 
 // Re-export for convenience
-export { SESSION_COOKIE } from '@univ-lehavre/atlas-appwrite';
+export { SESSION_COOKIE } from '@univ-lehavre/atlas-baas';
 export {
   validateMagicUrlLogin,
   validateSignupEmail,
@@ -25,7 +25,7 @@ export {
  */
 export interface AuthConfig {
   /** Appwrite configuration */
-  appwrite: AppwriteConfig;
+  baas: BaasConfig;
   /** Login redirect URL (e.g., 'https://app.example.com') */
   loginUrl: string;
   /** Domain validation configuration */
@@ -47,7 +47,7 @@ export interface AuthConfig {
  * @example
  * ```typescript
  * const authService = createAuthService({
- *   appwrite: {
+ *   baas: {
  *     endpoint: APPWRITE_ENDPOINT,
  *     projectId: APPWRITE_PROJECT,
  *     apiKey: APPWRITE_KEY,
@@ -82,7 +82,7 @@ export const createAuthService = (config: AuthConfig): AuthService => {
       userId = ID.unique();
     }
 
-    const { account } = createAdminClient(config.appwrite);
+    const { account } = createAdminClient(config.baas);
     const token = await account.createMagicURLToken({ userId, email, url });
 
     return token;
@@ -103,7 +103,7 @@ export const createAuthService = (config: AuthConfig): AuthService => {
   ): Promise<Models.Session> => {
     const { userId, secret } = validateMagicUrlLogin(unsecuredUserId, unsecuredSecret);
 
-    const { account } = createAdminClient(config.appwrite);
+    const { account } = createAdminClient(config.baas);
     const session = await account.createSession({ userId, secret });
     cookies.set(SESSION_COOKIE, session.secret, {
       sameSite: 'strict',
@@ -124,7 +124,7 @@ export const createAuthService = (config: AuthConfig): AuthService => {
   const logout = async (unsecuredUserId: unknown, cookies: Cookies): Promise<void> => {
     validateUserId(unsecuredUserId);
 
-    const { account } = createSessionClient(config.appwrite, cookies);
+    const { account } = createSessionClient(config.baas, cookies);
     await account.deleteSessions();
     cookies.delete(SESSION_COOKIE, { path: '/' });
   };
@@ -138,7 +138,7 @@ export const createAuthService = (config: AuthConfig): AuthService => {
   const deleteUser = async (unsecuredUserId: unknown, cookies: Cookies): Promise<void> => {
     const userId = validateUserId(unsecuredUserId);
     await logout(userId, cookies);
-    const { users } = createAdminClient(config.appwrite);
+    const { users } = createAdminClient(config.baas);
     await users.delete({ userId });
   };
 
