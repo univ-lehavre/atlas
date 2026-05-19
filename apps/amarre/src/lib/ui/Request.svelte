@@ -10,7 +10,7 @@
       request.mobilite_universite_gu8 !== '' ||
       request.mobilite_universite_autre !== ''
   );
-  let isCategoryEnseignantChercheur = $derived(request.demandeur_statut === '1');
+  // let isCategoryEnseignantChercheur = $derived(request.demandeur_statut === '1');
   let isCategoryEnseignant = $derived(request.demandeur_statut === '2');
   let isCategoryOther = $derived(
     request.demandeur_statut !== '' &&
@@ -21,9 +21,17 @@
   let laboValidation = $derived(request.labo_complete === '2');
   let encadrantValidation = $derived(request.encadrant_complete === '2');
   let composanteShouldSign = $derived(
-    isInvitation && (isCategoryEnseignantChercheur || isCategoryEnseignant)
+    isInvitation &&
+      (request.invitation_type === '2' ||
+        request.invitation_type === '3' ||
+        isCategoryEnseignant)
   );
-  let laboShouldSign = $derived(isCategoryEnseignantChercheur || isCategoryOther);
+  let laboShouldSign = $derived(
+    request.invitation_type === '1' ||
+      request.invitation_type === '3' ||
+      request.mobilite_type === '2' ||
+      isCategoryOther
+  );
   let encadrantShouldSign = $derived(isCategoryOther && isVoyage);
   let finalValidationShouldSign = $derived.by(() => {
     if (composanteShouldSign && laboShouldSign) {
