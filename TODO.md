@@ -37,49 +37,51 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [x] CI : success
 - [x] Deploy Documentation : success (fix VitePress validé)
 - [x] Release : success
-- [ ] **Gitleaks : failure** — 41 leaks détectés sur l'historique (cf. ci-dessous)
+- [x] **Gitleaks** : 3 itérations nécessaires (cf. ci-dessous), résolu en passant le scan main en mode diff-only via PR #144
 
-### Faux positifs Gitleaks à traiter
+### Faux positifs Gitleaks — chronique d'un puits sans fond
 
-Le scan trouve 41 findings sur 2 fichiers, **tous des fixtures de documentation/JSDoc** (pas de vrais secrets) :
+L'historique du repo (migration trademark #125 + renames antérieurs) contient de nombreux fichiers aux paths obsolètes qui matchent les règles gitleaks. Trois itérations de correction successives ont été nécessaires avant de changer de stratégie :
 
-- `packages/redcap-api/src/brands.ts:15` (commit `ab05c13`, 2026-01-22) — `RedcapToken('A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4')` dans un bloc `@example` JSDoc
-- `docs/api/redcap-api.md:43` (commits `553d38c`, `160d3cf`, 2026-01-20) — `RedcapToken('ABCDEF0123456789ABCDEF0123456789')` dans un exemple de doc
+| # PR | Findings | Sources                                                                                      | Correction                                                                                                  |
+| ---- | -------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| #141 | 41       | JSDoc `RedcapToken('A1B2…')` + doc `.md` exemples                                            | Règle `redcap-api-token` durcie (contexte d'affectation requis) + allowlist `\.md$` + patterns fixtures     |
+| #143 | 26       | `packages/redcap/tests/fixtures/projects.json` (path historique d'avant migration trademark) | Allowlist path élargie de `sandbox/crf-sandbox/tests/fixtures/.*` → `(?:^\|/)tests/fixtures/`               |
+| #144 | 18       | `packages/amarre/scripts/`, `packages/redcap-sandbox/.env.test` (autres paths historiques)   | **Changement de stratégie** : scan push main en mode diff (`before..after`) au lieu de l'historique complet |
 
-Cause : la règle `redcap-api-token` dans [.gitleaks.toml](.gitleaks.toml) matche tout pattern `[A-F0-9]{32}` proche du mot-clé `redcap`, sans exiger de contexte d'affectation.
+**Stratégie finale (post-PR #144)** :
 
-**Options de correction** (cf. discussion conversationnelle) :
+- Sur **PR** : scan du diff de la PR (`base.sha..head.sha`) — inchangé
+- Sur **push main** : scan uniquement les nouveaux commits du push (`before..after`)
+- Sur **workflow_dispatch** : nouveau step → scan complet de l'historique, à lancer manuellement pour audit ponctuel
 
-| Option                                                                                       | Avantage                          | Inconvénient                                       |
-| -------------------------------------------------------------------------------------------- | --------------------------------- | -------------------------------------------------- |
-| A. Allowlist regex des patterns fixture (`A1B2C3D4…`, `ABCDEF01…`) + path `\.md$`            | Ciblé, durable, couvre futurs cas | Maintenir la liste si nouveaux patterns            |
-| B. Allowlist par commit fingerprints (les 41)                                                | Précis, n'élargit rien            | Ne couvre pas un dev recopiant le même exemple     |
-| C. Durcir la règle : exiger un contexte d'assignation (`token\s*[:=]\s*['"]?([A-F0-9]{32})`) | Le plus propre, zéro bruit en doc | Peut louper des contextes légitimes (CSV, header…) |
+Garanties préservées : tout nouveau secret est détecté soit par le scan PR, soit par le scan push main (les deux en mode diff). L'historique n'est plus re-scanné automatiquement.
 
-**Recommandation** : A + C — allowlist patterns + path `\.md$` + durcissement de la règle pour exiger un contexte d'affectation.
-
-- [ ] Appliquer la correction `.gitleaks.toml` (option recommandée A+C)
-- [ ] Relancer `gitleaks detect --source . --log-opts="--all"` localement → vérifier 0 finding
-- [ ] Commit + push → vérifier que le workflow Gitleaks passe sur main
-- [ ] Documenter la décision (commentaires dans `.gitleaks.toml` ou note dans `SECURITY.md`)
+- [ ] Une fois PR #144 mergée : lancer `workflow_dispatch` Gitleaks pour cartographier l'inventaire complet des findings historiques (faux positifs vs vrais secrets oubliés)
+- [ ] Documenter dans [.gitleaks.toml](.gitleaks.toml) la stratégie retenue (déjà commentée dans le workflow)
 
 ### Dependabot — premier passage
 
-8 PRs ouvertes par le premier run de `.github/dependabot.yml` :
+8 PRs ouvertes par le premier run de `.github/dependabot.yml`, toutes mergées le 2026-05-19 :
 
-**GitHub Actions** (3 PRs — déjà CI verte + Gitleaks vert, mergeables)
+**GitHub Actions** (3 PRs)
 
-- [ ] `actions/upload-pages-artifact` 4 → 5
-- [ ] `pnpm/action-setup` digest bump
-- [ ] `actions/deploy-pages` 4 → 5
+- [x] `actions/upload-pages-artifact` 4 → 5 (#130)
+- [x] `pnpm/action-setup` digest bump (#129)
+- [x] `actions/deploy-pages` 4 → 5 (#128)
 
 **npm groupes** (5 PRs)
 
-- [ ] `eslint-prettier` (3 updates)
-- [ ] `typescript-tooling` (2 updates)
-- [ ] `vitest` (3 updates)
-- [ ] `sveltekit` (4 updates)
-- [ ] 1 PR `npm_and_yarn` supplémentaire (dependabot update encore en cours au moment du check)
+- [x] `eslint-prettier` (#138 — `eslint-plugin-n` 17→18)
+- [x] `typescript-tooling` (#137 — `@napi-rs/canvas` 0.1.100→1.0.0)
+- [x] `vitest` (PR mergée — cf. historique)
+- [x] `sveltekit` (PR mergée — cf. historique)
+- [x] `node-appwrite` 24→25 (#140) + `@commitlint/cli` 20.5.2→21.0.1 (#136) + `@commitlint/config-conventional` 20.5.0→21.0.1 (#139)
+
+À faire ensuite :
+
+- [ ] Vérifier qu'aucun build n'est cassé par les bumps majors (`@napi-rs/canvas` 0.x→1.x notamment)
+- [ ] Configurer **auto-merge des patches** Dependabot après CI verte (Phase 3.1 — case restante)
 
 ### RGPD / PRIVACY.md (à arbitrer)
 
