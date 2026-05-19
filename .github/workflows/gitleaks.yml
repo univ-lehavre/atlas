@@ -4,6 +4,10 @@ name: Gitleaks
 # Appwrite, clés GitHub App, etc.). Couvre l'historique complet de la PR ;
 # le pre-commit hook lefthook scanne uniquement les fichiers stagés.
 #
+# Note technique : on utilise le binaire OSS `gitleaks` directement (et pas
+# `gitleaks-action`) car ce dernier est devenu payant pour les organisations
+# GitHub depuis sa v2. Le binaire reste sous licence MIT.
+#
 # Configuration : .gitleaks.toml (à la racine).
 
 on:
@@ -14,8 +18,6 @@ on:
 
 permissions:
   contents: read
-  # Nécessaire pour signaler les findings dans le summary de la PR
-  pull-requests: write
 
 concurrency:
   group: gitleaks-${{ github.workflow }}-${{ github.ref }}
@@ -29,16 +31,40 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
-          # Fetch full history so gitleaks can scan all commits on a PR
+          # Full history so gitleaks can scan all commits in the PR.
           fetch-depth: 0
 
-      - name: Run gitleaks
-        # Pinned by SHA per the supply-chain hardening policy (see TODO.md
-        # Phase 4.1). Update via Dependabot.
-        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+      - name: Install gitleaks binary (OSS)
         env:
-          # GITHUB_TOKEN is needed by the action to comment on PRs.
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Use the project config rather than the action's defaults so the
-          # custom REDCap token rules are picked up.
-          GITLEAKS_CONFIG: .gitleaks.toml
+          GITLEAKS_VERSION: "8.30.1"
+        run: |
+          set -euo pipefail
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /tmp
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      - name: Scan repository (PR diff)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          # On a PR, scan the commits added by the branch only (faster) but
+          # still load the full repo so .gitleaks.toml allowlist works.
+          gitleaks detect \
+            --source . \
+            --config .gitleaks.toml \
+            --log-opts "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}" \
+            --redact \
+            --verbose \
+            --no-banner
+
+      - name: Scan repository (push to main)
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          gitleaks detect \
+            --source . \
+            --config .gitleaks.toml \
+            --redact \
+            --verbose \
+            --no-banner
