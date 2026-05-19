@@ -2,13 +2,19 @@
 # Documentation: https://github.com/gitleaks/gitleaks#configuration
 #
 # Inherits the default rules then adds patterns specific to Atlas:
-#   - REDCap project tokens (32-char uppercase hex)
-#   - REDCap token CSVs at repo root
-#   - Generic high-entropy 32-char hex tokens in known places
+#   - REDCap project tokens (32-char uppercase hex) — only when surrounded by
+#     an explicit assignment context (`=` or `:`) to avoid matching JSDoc /
+#     doc examples that contain look-alike hex strings.
+#   - REDCap token CSVs at repo root.
 #
 # Whitelists:
+#   - Markdown files (`*.md`) — documentation by nature contains example
+#     tokens (e.g. `RedcapToken('ABCDEF…')`). Source code with real secrets
+#     would not live in `.md`.
 #   - Test fixtures and example files (`.env.example`, sandbox docker
 #     `.env.test`) intentionally contain look-alike values.
+#   - Known fixture patterns explicitly used in JSDoc / doc examples
+#     (`A1B2C3D4…`, `ABCDEF0123…`) — see PR #127 follow-up in TODO.md.
 #   - `redcap-token.csv` is gitignored and never tracked, but we still
 #     blacklist its path defensively.
 
@@ -21,10 +27,14 @@ useDefault = true
 
 [[rules]]
 id = "redcap-api-token"
-description = "REDCap API project token (32-char uppercase hex)"
-regex = '''[A-F0-9]{32}'''
+description = "REDCap API project token (32-char uppercase hex) in an assignment context"
+# Requires the hex value to follow an assignment-like context (`=` or `:`)
+# preceded by a redcap-token-related identifier. This avoids matching JSDoc
+# function-call examples such as `RedcapToken('A1B2C3D4…')`.
+regex = '''(?i)(?:redcap[_-]?(?:api[_-]?)?token|REDCAP_API_TOKEN)\s*[:=]\s*['"]?([A-F0-9]{32})['"]?'''
 keywords = ["redcap", "REDCAP_API_TOKEN", "redcap_token"]
 entropy = 3.0
+secretGroup = 1
 
 [[rules]]
 id = "redcap-token-csv"
@@ -50,6 +60,9 @@ paths = [
   '''sandbox/crf-sandbox/tests/fixtures/.*''',
   '''packages/.*/src/.*\.test\.ts$''',
   '''packages/.*/src/.*\.spec\.ts$''',
+  # Markdown documentation — contains example tokens by nature, never
+  # real secrets.
+  '''\.md$''',
 ]
 
 # Common test fixtures (e.g. 32-char hex that aren't real tokens)
@@ -58,4 +71,7 @@ regexes = [
   '''^[A-Z0]{32}$''',
   # SHA hashes (40 chars) are NOT secrets
   '''^[a-f0-9]{40}$''',
+  # Known doc/JSDoc fixture patterns (repeating 16-char blocks)
+  '''^A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4$''',
+  '''^ABCDEF0123456789ABCDEF0123456789$''',
 ]
