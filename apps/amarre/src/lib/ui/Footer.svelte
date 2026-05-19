@@ -19,7 +19,7 @@
 
 <style>
   .footer {
-    background-color: transparent;
+    background-color: #fff;
   }
 
   .logo {
