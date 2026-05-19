@@ -1,0 +1,100 @@
+# amarre-sandbox — composes a local CRF (REDCap) instance, a self-hosted
+# BaaS (Appwrite) and exposes them on conflicting-free ports so the
+# `amarre` SvelteKit app can run end-to-end against them via
+# `pnpm -F amarre dev`.
+#
+# Layout
+# ------
+# - The CRF stack lives in sandbox/crf-sandbox/ and is included verbatim
+#   via Docker Compose `include:` (v2.20+). We don't duplicate it.
+# - The BaaS stack (Appwrite + its mariadb + its redis) is declared
+#   inline here. Service + network names are prefixed `baas-` to avoid
+#   any clash with the CRF stack.
+# - Variables are read from `.env` (see `.env.example`).
+#
+# Usage
+# -----
+# - `pnpm up`           : start both stacks
+# - `pnpm bootstrap`    : provision Appwrite project/key + CRF token, write
+#                        them to apps/amarre/.env.local
+# - `pnpm logs`         : tail logs of all services
+# - `pnpm down`         : stop services (keeps volumes)
+# - `pnpm reset`        : stop services and wipe volumes (data loss)
+#
+# Note Appwrite : la stack ici est minimale (appwrite + db + redis sans
+# traefik ni workers). Suffisant pour les flux Account/Users/Database
+# utilisés par amarre. Pour un environnement plus proche de la prod,
+# importer le compose officiel d'Appwrite via `include:` à la place.
+
+include:
+  - path: ../crf-sandbox/docker/docker-compose.yml
+
+services:
+  baas:
+    image: appwrite/appwrite:1.7
+    container_name: amarre-sandbox-baas
+    ports:
+      - "${APP_PORT:-8090}:80"
+    depends_on:
+      baas-mariadb:
+        condition: service_healthy
+      baas-redis:
+        condition: service_started
+    environment:
+      _APP_ENV: development
+      _APP_LOCALE: fr
+      _APP_OPTIONS_ABUSE: "disabled"
+      _APP_OPTIONS_FORCE_HTTPS: "disabled"
+      _APP_OPENSSL_KEY_V1: ${_APP_OPENSSL_KEY_V1:?Define _APP_OPENSSL_KEY_V1 in .env}
+      _APP_DOMAIN: ${APP_DOMAIN:-localhost}
+      _APP_DOMAIN_TARGET: ${APP_DOMAIN_TARGET:-localhost}
+      _APP_REDIS_HOST: ${_APP_REDIS_HOST:-baas-redis}
+      _APP_REDIS_PORT: ${_APP_REDIS_PORT:-6379}
+      _APP_DB_HOST: ${_APP_DB_HOST:-baas-mariadb}
+      _APP_DB_PORT: ${_APP_DB_PORT:-3306}
+      _APP_DB_USER: ${_APP_DB_USER:-baas}
+      _APP_DB_PASS: ${_APP_DB_PASS:-baas_password}
+      _APP_DB_SCHEMA: ${_APP_DB_SCHEMA:-baas}
+    volumes:
+      - baas-uploads:/storage/uploads
+      - baas-cache:/storage/cache
+      - baas-config:/storage/config
+      - baas-certificates:/storage/certificates
+    networks:
+      - baas-net
+
+  baas-mariadb:
+    image: mariadb:10.11
+    container_name: amarre-sandbox-baas-mariadb
+    environment:
+      MARIADB_ROOT_PASSWORD: ${_APP_DB_PASS:-baas_password}
+      MARIADB_DATABASE: ${_APP_DB_SCHEMA:-baas}
+      MARIADB_USER: ${_APP_DB_USER:-baas}
+      MARIADB_PASSWORD: ${_APP_DB_PASS:-baas_password}
+    volumes:
+      - baas-mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - baas-net
+
+  baas-redis:
+    image: redis:7.4-alpine
+    container_name: amarre-sandbox-baas-redis
+    networks:
+      - baas-net
+
+volumes:
+  baas-uploads:
+  baas-cache:
+  baas-config:
+  baas-certificates:
+  baas-mariadb-data:
+
+networks:
+  baas-net:
+    driver: bridge

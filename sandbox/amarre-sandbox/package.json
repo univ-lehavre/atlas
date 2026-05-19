@@ -1,0 +1,33 @@
+{
+  "name": "@univ-lehavre/atlas-amarre-sandbox",
+  "version": "0.1.0",
+  "description": "Local Docker sandbox for the amarre app: bundles a CRF (REDCap) instance, a self-hosted BaaS (Appwrite), and the wiring scripts needed to run amarre end-to-end without depending on production services.",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "sandbox/amarre-sandbox"
+  },
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "up": "docker compose up -d",
+    "down": "docker compose down",
+    "reset": "docker compose down -v",
+    "logs": "docker compose logs -f",
+    "bootstrap": "./scripts/bootstrap.sh",
+    "bootstrap:baas": "./scripts/bootstrap-baas.sh",
+    "bootstrap:crf": "./scripts/bootstrap-crf.sh",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@univ-lehavre/atlas-crf-sandbox": "workspace:*",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "prettier": "^3.8.3"
+  }
+}
