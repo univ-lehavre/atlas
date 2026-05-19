@@ -6,7 +6,7 @@
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
-    "prepare": "svelte-kit sync || echo ''",
+    "prepare": "svelte-kit sync || echo '' && atlas-logos-install static/logos",
     "format": "prettier --write --ignore-path ../../.prettierignore .",
     "format:check": "prettier --check --ignore-path ../../.prettierignore .",
     "typecheck": "tsc --noEmit",
@@ -32,7 +32,6 @@
     "svelte-check": "^4.4.8",
     "typescript": "^6.0.3",
     "vite": "^8.0.13",
-    "vite-plugin-static-copy": "^4.1.0",
     "vitest": "^4.1.6"
   },
   "dependencies": {
