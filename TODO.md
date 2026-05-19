@@ -14,7 +14,7 @@ Items concrets, immédiatement actionnables, sans dépendance d'arbitrage préal
 - [x] Vérifier qu'aucun build n'est cassé par les bumps majors Dependabot du 2026-05-19 (notamment `@napi-rs/canvas` 0.x→1.x via #137) — API `createCanvas`/`getContext`/`toBuffer` validée à l'exécution, tests + build OK
 - [x] Vérifier le nouveau wording RGPD du modal [CreateRequest.svelte](apps/amarre/src/lib/ui/CreateRequest.svelte) (porté via [PR #155](https://github.com/univ-lehavre/atlas/pull/155)) — code-side : diff conforme à l'upstream `b035655` (titre, lien `target=_blank rel=noopener`). Vérif visuelle finale à faire côté dev par toi si souhaitée.
 - [x] Vérifier la logique de signature composante/labo selon `invitation_type` dans amarre (`1`=Recherche, `2`=Enseignement, `3`=Les deux) — table de vérité conforme au spec ; 3 points cosmétiques à noter ([Request.svelte:13](apps/amarre/src/lib/ui/Request.svelte#L13) dead code commenté, asymétrie `isInvitation` préservée de l'upstream, pas de test unitaire sur `Request.svelte`)
-- [ ] [Actions UI GitHub](#actions-manuelles-ui-github) — activer Secret Scanning + Push Protection + branch protection sur `main`
+- [x] [Actions UI GitHub](#actions-manuelles-ui-github) — Secret Scanning + Push Protection + Dependabot security updates + branch protection sur `main` activés via API GitHub le 2026-05-19
 - [x] Fix logos `vite-plugin-static-copy` → script `prepare` (3 apps) — livré et mergé via [PR #157](https://github.com/univ-lehavre/atlas/pull/157)
 - [ ] Nettoyer `knip.json` : retirer `@univ-lehavre/atlas-logos` de `ignoreDependencies` des 3 apps (la dep est maintenant utilisée par le `prepare` script — knip remonte ça en *configuration hint*)
 
@@ -38,7 +38,7 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [x] Phase 1 — CodeQL workflow (voir [§1.1](#11-codeql)) — workflow livré via PR #156, reste vérif Security tab + nomination security champion
 - [ ] Phase 4.3 — npm provenance via OIDC (voir [§4.3](#43-npm-provenance-via-oidc))
 - [ ] Phase 4.4 — SBOM CycloneDX (voir [§4.4](#44-sbom-software-bill-of-materials))
-- [ ] Phase 5.3 — branch protection sur `main` (UI GitHub, voir [§5.3](#53-branch-protection-sur-main))
+- [x] Phase 5.3 — branch protection sur `main` activée via API le 2026-05-19 (voir [§5.3](#53-branch-protection-sur-main))
 - [ ] Phase 6 — HTTP headers + rate limit (par app, voir [§6.3](#63-en-têtes-http-de-sécurité) et [§6.5](#65-rate-limiting))
 - [ ] Phase 7 — OWASP ZAP baseline (voir [§7.1](#71-owasp-zap-baseline))
 - [ ] Phase 8 — observabilité + runbook incident (voir [§8](#phase-8--observabilité-et-réponse-aux-incidents))
@@ -79,8 +79,8 @@ Le dépôt standalone (dernier commit 2026-02-06) est dépassé : atlas est dés
 
 À faire dans les Settings du dépôt (hors code, mais nécessaires pour la gouvernance) :
 
-- [ ] Activer **Secret Scanning** + **Push Protection** (Settings → Code security)
-- [ ] Activer **branch protection** sur `main` (Settings → Branches) avec CODEOWNERS review + status checks requis — voir [§5.3](#53-branch-protection-sur-main) pour les checks à exiger
+- [x] Activer **Secret Scanning** + **Push Protection** (activés via API le 2026-05-19)
+- [x] Activer **branch protection** sur `main` (activée via API le 2026-05-19, voir [§5.3](#53-branch-protection-sur-main) pour le détail)
 - [ ] Annoncer `brew install gitleaks` aux contributeurs pour le pre-commit local
 
 ---
@@ -160,9 +160,9 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 
 ### 2.1 GitHub natif
 
-- [ ] Activer **Secret Scanning** : Settings → Code security → Secret scanning
-- [ ] Activer **Push Protection** : bloque les push contenant des secrets détectés
-- [ ] Activer **Dependabot alerts** et **security updates** au passage
+- [x] Activer **Secret Scanning** — activé via API le 2026-05-19
+- [x] Activer **Push Protection** — activé via API le 2026-05-19 (bloque les push contenant des secrets détectés)
+- [x] Activer **Dependabot alerts** et **security updates** — activés le 2026-05-19 (7 alertes existantes remontées : 6 moderate + 1 low, à triager)
 
 ### 2.2 Gitleaks en CI et pre-commit
 
@@ -244,12 +244,15 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 
 ### 5.3 Branch protection sur `main`
 
-- [ ] Settings → Branches → Add rule pour `main`
-- [ ] Require PR review (1 minimum, codeowners review pour les paths couverts)
-- [ ] Require status checks : `lint`, `typecheck`, `test`, `build`, `audit`, `CodeQL`, `dependency-review`, `gitleaks`
-- [ ] Require signed commits (gpg ou ssh signing)
-- [ ] Block force-push
-- [ ] Inclure les administrateurs dans les règles
+Activée via API le 2026-05-19. Configuration appliquée :
+
+- [x] Règle créée pour `main`
+- [x] Required PR (0 approbation requise, vu bus-factor=1 ; status checks gardent la sécurité)
+- [x] Required status checks : `Lint`, `Typecheck`, `Test`, `Build`, `Audit`, `Documentation`, `Scan for secrets` (gitleaks), `Analyze (javascript-typescript)` (CodeQL), `Review dependencies`
+- [ ] Required signed commits — **désactivé pour l'instant** (commits locaux non signés ; à réactiver une fois GPG/SSH signing configuré localement)
+- [x] Block force-push
+- [ ] Inclure les administrateurs dans les règles — **désactivé** (admins bypass, pour hotfix solo bus-factor=1)
+- [ ] Codeowners review obligatoire — désactivé (à activer quand un second mainteneur sera ajouté, cf. [§5.2](#52-codeowners))
 
 ### 5.4 Politique de contribution
 
