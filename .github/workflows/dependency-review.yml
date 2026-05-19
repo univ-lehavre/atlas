@@ -13,8 +13,11 @@ name: Dependency review
 #    `deny-packages: ''` exception si besoin).
 #
 # Prérequis : Dependency graph doit être activé côté repo (Settings →
-# Code security → Dependency graph). C'est le cas sur atlas, sinon
-# Dependabot ne tournerait pas.
+# Security → Code security → Dependency graph). Sans ce paramètre,
+# l'action échoue avec "Dependency review is not supported on this
+# repository". À noter : Dependabot version updates fonctionne sans le
+# graphe (lecture directe des lockfiles), seules Dependabot alerts et
+# cette action en dépendent.
 
 on:
   pull_request:
