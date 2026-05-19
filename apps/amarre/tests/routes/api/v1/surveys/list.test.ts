@@ -30,6 +30,7 @@ describe('GET /api/v1/surveys/list (anti-derive OpenAPI)', () => {
         record_id: 'abc123',
         created_at: '2025-12-17T12:34:56Z',
         demandeur_statut: 'autre',
+        invitation_type: '1',
         mobilite_type: 'v1',
         invite_nom: 'Jean Dupont',
         mobilite_universite_eunicoast: 'EH',
