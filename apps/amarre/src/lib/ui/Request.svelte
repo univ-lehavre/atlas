@@ -10,7 +10,6 @@
       request.mobilite_universite_gu8 !== '' ||
       request.mobilite_universite_autre !== ''
   );
-  // let isCategoryEnseignantChercheur = $derived(request.demandeur_statut === '1');
   let isCategoryEnseignant = $derived(request.demandeur_statut === '2');
   let isCategoryOther = $derived(
     request.demandeur_statut !== '' &&
