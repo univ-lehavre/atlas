@@ -36,7 +36,7 @@
     "docs:pdf": "LC_ALL=en_US.UTF-8 perl -CSD -pe 's/\\x{2099}/n/g; s/\\x{1d62}/i/g; s/\\x{2081}/1/g; s/\\x{2082}/2/g' ALGORITHMS.md | pandoc -o ALGORITHMS.pdf --pdf-engine=xelatex -V geometry:margin=2cm -V mainfont='Arial Unicode MS' -V monofont=Menlo --toc --toc-depth=3 -f markdown"
   },
   "dependencies": {
-    "@clack/prompts": "^1.2.0",
+    "@clack/prompts": "^1.4.0",
     "@univ-lehavre/atlas-citation-fetch": "workspace:*",
     "@univ-lehavre/atlas-citation-types": "workspace:*",
     "@univ-lehavre/atlas-researcher-profiles": "workspace:*",
@@ -44,9 +44,9 @@
     "picocolors": "^1.1.1"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.9.0",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "eslint": "^10.2.1",
+    "eslint": "^10.4.0",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3"
   },
