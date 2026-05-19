@@ -65,3 +65,6 @@ data-dictionaries/
 .atlas-stats.json
 cli/researcher-profiles/matches.html
 cli/researcher-profiles/ALGORITHMS.pdf
+
+# Logos copied from packages/logos at prepare time (see apps/*/package.json)
+apps/*/static/logos/

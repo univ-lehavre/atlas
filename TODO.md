@@ -1,8 +1,20 @@
-# TODO — Passage à DevSecOps
+# TODO — atlas
 
-Plan détaillé pour ajouter la couche "Sec" au pipeline existant (CI GitHub Actions + CD Appwrite Sites pour amarre et ecrin).
+État courant des chantiers actifs sur le monorepo atlas : passage progressif à **DevSecOps** (couche "Sec" sur le pipeline CI/CD existant — GitHub Actions + Appwrite Sites pour amarre/ecrin) et travaux **hors DevSecOps** (sandbox amarre, composants UI partagés, etc.).
 
-État actuel : Sprint 1 + une grosse partie du Sprint 2/3 livrés via PR #127 (devsecops hardening). Restent les workflows SAST/DAST (CodeQL, ZAP), la supply chain avancée (provenance OIDC, SBOM), le durcissement runtime Appwrite (headers HTTP, rate limit) et la gouvernance UI GitHub (branch protection, Secret Scanning).
+Avancement DevSecOps : Sprint 1 + une grosse partie du Sprint 2/3 livrés via PR #127. Phase 1.1 CodeQL ajoutée via PR #156. Restent les workflows complémentaires (provenance OIDC, SBOM, ZAP), le durcissement runtime Appwrite (headers HTTP, rate limit) et la gouvernance UI GitHub (branch protection, Secret Scanning).
+
+---
+
+## Prochaines actions
+
+Items concrets, immédiatement actionnables, sans dépendance d'arbitrage préalable :
+
+- [ ] Après merge [PR #156](https://github.com/univ-lehavre/atlas/pull/156) — vérifier que les alertes CodeQL remontent dans l'onglet **Security → Code scanning** du dépôt
+- [ ] Vérifier qu'aucun build n'est cassé par les bumps majors Dependabot du 2026-05-19 (notamment `@napi-rs/canvas` 0.x→1.x via #137)
+- [ ] Vérifier en dev le nouveau wording RGPD du modal [CreateRequest.svelte](apps/amarre/src/lib/components/CreateRequest.svelte) (porté via [PR #155](https://github.com/univ-lehavre/atlas/pull/155))
+- [ ] Vérifier la logique de signature composante/labo selon `invitation_type` dans amarre (`1`=Recherche, `2`=Enseignement, `3`=Les deux)
+- [ ] [Actions UI GitHub](#actions-manuelles-ui-github) — activer Secret Scanning + Push Protection + branch protection sur `main`
 
 ---
 
@@ -21,13 +33,53 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 
 **DevSecOps (renvoient aux phases ci-dessous)**
 
-- [x] Phase 1 — CodeQL workflow (voir [§1.1](#11-codeql)) — workflow créé, reste vérif Security tab + nomination security champion
+- [x] Phase 1 — CodeQL workflow (voir [§1.1](#11-codeql)) — workflow livré via PR #156, reste vérif Security tab + nomination security champion
 - [ ] Phase 4.3 — npm provenance via OIDC (voir [§4.3](#43-npm-provenance-via-oidc))
 - [ ] Phase 4.4 — SBOM CycloneDX (voir [§4.4](#44-sbom-software-bill-of-materials))
 - [ ] Phase 5.3 — branch protection sur `main` (UI GitHub, voir [§5.3](#53-branch-protection-sur-main))
 - [ ] Phase 6 — HTTP headers + rate limit (par app, voir [§6.3](#63-en-têtes-http-de-sécurité) et [§6.5](#65-rate-limiting))
 - [ ] Phase 7 — OWASP ZAP baseline (voir [§7.1](#71-owasp-zap-baseline))
 - [ ] Phase 8 — observabilité + runbook incident (voir [§8](#phase-8--observabilité-et-réponse-aux-incidents))
+
+---
+
+## À arbitrer
+
+Items qui demandent une décision avant action.
+
+### RGPD / PRIVACY.md
+
+Initialement retiré du périmètre de la PR #127 (_"le repo est du code, pas une politique RGPD"_). À reprendre comme item indépendant, en se posant d'abord la question du **cadrage** :
+
+- [ ] Cadrer le périmètre : ce repo héberge du **code source**, pas des données personnelles. Mais des considérations indirectes existent — à trancher pour chacune :
+  - Métadonnées des commits (email des contributeurs externes) : suffit-il d'un renvoi vers la politique GitHub ?
+  - Données collectées par les apps déployées (amarre, ecrin, find-an-expert) : relève des **apps** elles-mêmes, pas du repo — où documenter ?
+  - Dépendances tierces appelant des services externes (OpenAlex, Appwrite, Sentry si activé…) : à inventorier
+  - Logs côté Appwrite (IP, user-agent…) : qui est responsable de traitement ?
+- [ ] Décider : un seul `PRIVACY.md` à la racine ? Une politique par app dans `apps/*/PRIVACY.md` ? Ou renvoi vers une politique ULHN existante ?
+- [ ] Identifier le **responsable de traitement** (probablement l'Université Le Havre Normandie / DSI, pas le repo lui-même)
+- [ ] Rédiger le contenu une fois le cadrage figé (sortir du périmètre TODO si délégué à la DSI)
+
+### Sort du dépôt standalone `univ-lehavre/amarre`
+
+Le dépôt standalone (dernier commit 2026-02-06) est dépassé : atlas est désormais la source canonique de l'app amarre (sync via [PR #155](https://github.com/univ-lehavre/atlas/pull/155)). Décider :
+
+- [ ] Archiver le dépôt standalone (recommandé) ou le garder en lecture seule comme historique
+
+### Security champion CodeQL
+
+- [ ] Nommer un _security champion_ responsable du triage des alertes CodeQL (cf. [§1.1](#11-codeql)). Idéalement un second mainteneur pour le bus-factor (cf. [§5.2](#52-codeowners)).
+- [ ] Limitation Svelte de CodeQL : l'extracteur JS/TS ne couvre pas les `.svelte` (les `<script>` sont hors analyse). Définir un complément (lint Svelte strict, revues manuelles ciblées).
+
+---
+
+## Actions manuelles UI GitHub
+
+À faire dans les Settings du dépôt (hors code, mais nécessaires pour la gouvernance) :
+
+- [ ] Activer **Secret Scanning** + **Push Protection** (Settings → Code security)
+- [ ] Activer **branch protection** sur `main` (Settings → Branches) avec CODEOWNERS review + status checks requis — voir [§5.3](#53-branch-protection-sur-main) pour les checks à exiger
+- [ ] Annoncer `brew install gitleaks` aux contributeurs pour le pre-commit local
 
 ---
 
@@ -53,96 +105,6 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 - Couplage léger avec `crf-sandbox` (noms de services, ports) — si le compose de `crf-sandbox` change, amarre-sandbox casse. Acceptable tant que la convention est explicitée dans le README
 - L'allowlist email d'Amarre (`ALLOWED_DOMAINS_REGEXP`) doit autoriser un domaine de test (ex. `@example\.org`) pour les comptes locaux
 - Pas de noms de marques dans le code/identifiants (cf. convention repo) : `amarre-sandbox`, pas `redcap-sandbox` ; variables `CRF_*` plutôt que `REDCAP_*` côté scripts
-
----
-
-## Suivi immédiat post-PR #127
-
-### Workflows du merge sur main
-
-- [x] CI : success
-- [x] Deploy Documentation : success (fix VitePress validé)
-- [x] Release : success
-- [x] **Gitleaks** : 3 itérations nécessaires (cf. ci-dessous), résolu en passant le scan main en mode diff-only via PR #144
-
-### Faux positifs Gitleaks — saga close ✅
-
-L'historique du repo (migration trademark #125 + renames antérieurs) contenait de nombreux fichiers aux paths obsolètes qui matchaient les règles gitleaks. **Cinq PRs** ont été nécessaires pour stabiliser :
-
-| # PR                                | Findings | Sources                                                                                                        | Correction                                                                                                         |
-| ----------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| #141                                | 41       | JSDoc `RedcapToken('A1B2…')` + doc `.md` exemples                                                              | Règle `redcap-api-token` durcie (contexte d'affectation requis) + allowlist `\.md$` + patterns fixtures            |
-| #143                                | 26       | `packages/redcap/tests/fixtures/projects.json` (path historique d'avant migration trademark)                   | Allowlist path élargie de `sandbox/crf-sandbox/tests/fixtures/.*` → `(?:^\|/)tests/fixtures/`                      |
-| #144                                | 18       | `packages/amarre/scripts/`, `packages/redcap-sandbox/.env.test` (autres paths historiques)                     | **Changement de stratégie** : scan push main en mode diff (`before..after`) au lieu de l'historique complet        |
-| Audit `workflow_dispatch` post-#144 | 18       | Inventaire complet : 3 fichiers obsolètes (sandbox `.env.test`, amarre `generate-openapi.ts` + `openapi.json`) | Inspection des contenus : 100% faux positifs (fixtures localhost + exemples doc OpenAPI), aucun vrai secret oublié |
-| #145                                | 18 → 0   | Les 3 paths historiques ci-dessus                                                                              | Allowlist ciblée des paths historiques (préféré à un `git filter-repo` jugé disproportionné pour des fixtures)     |
-
-**Stratégie finale** :
-
-- Sur **PR** : scan du diff de la PR (`base.sha..head.sha`)
-- Sur **push main** : scan uniquement les nouveaux commits du push (`before..after`)
-- Sur **workflow_dispatch** : scan complet de l'historique, à lancer manuellement pour audit ponctuel (renvoie maintenant **0 finding**)
-
-Garanties préservées : tout nouveau secret est détecté soit par le scan PR, soit par le scan push main (les deux en mode diff).
-
-- [x] Audit historique complet via `workflow_dispatch` — 18 findings cartographiés, tous identifiés comme faux positifs
-- [x] Allowlist des 3 paths historiques pour clore l'audit (#145)
-- [x] Stratégie documentée dans [.github/workflows/gitleaks.yml](.github/workflows/gitleaks.yml) et [.gitleaks.toml](.gitleaks.toml)
-
-### Dependabot — premier passage
-
-8 PRs ouvertes par le premier run de `.github/dependabot.yml`, toutes mergées le 2026-05-19 :
-
-**GitHub Actions** (3 PRs)
-
-- [x] `actions/upload-pages-artifact` 4 → 5 (#130)
-- [x] `pnpm/action-setup` digest bump (#129)
-- [x] `actions/deploy-pages` 4 → 5 (#128)
-
-**npm groupes** (5 PRs)
-
-- [x] `eslint-prettier` (#138 — `eslint-plugin-n` 17→18)
-- [x] `typescript-tooling` (#137 — `@napi-rs/canvas` 0.1.100→1.0.0)
-- [x] `vitest` (PR mergée — cf. historique)
-- [x] `sveltekit` (PR mergée — cf. historique)
-- [x] `node-appwrite` 24→25 (#140) + `@commitlint/cli` 20.5.2→21.0.1 (#136) + `@commitlint/config-conventional` 20.5.0→21.0.1 (#139)
-
-À faire ensuite :
-
-- [ ] Vérifier qu'aucun build n'est cassé par les bumps majors (`@napi-rs/canvas` 0.x→1.x notamment)
-- [ ] Configurer **auto-merge des patches** Dependabot après CI verte (Phase 3.1 — case restante)
-
-### Sync amarre upstream (PR #155 mergée 2026-05-19)
-
-L'app `amarre` dans atlas avait été importée le 2026-01-27 depuis `univ-lehavre/amarre`. Le dépôt standalone a ensuite reçu 3 commits le 2026-02-06 qui n'avaient pas été reportés. Synchronisation faite via PR #155.
-
-- [x] Port `1db30df` — composante/labo signing requirements basés sur `invitation_type`
-- [x] Port `8486e79` — mock test survey list avec `invitation_type`
-- [x] Port `b035655` — wording du modal RGPD `CreateRequest.svelte` + lien vers formulaire
-- [ ] Vérifier en dev le nouveau wording RGPD du modal `CreateRequest.svelte`
-- [ ] Vérifier la logique de signature composante/labo selon `invitation_type` (`1`=Recherche, `2`=Enseignement, `3`=Les deux)
-- [ ] Décider du sort de `univ-lehavre/amarre` (standalone, dernier commit 2026-02-06) : archiver — atlas est désormais la source canonique — ou garder en lecture seule comme historique
-
-### RGPD / PRIVACY.md (à arbitrer)
-
-Initialement retiré du périmètre de la PR #127 (_"le repo est du code, pas une politique RGPD"_). À reprendre comme item indépendant, en se posant d'abord la question du **cadrage** :
-
-- [ ] Cadrer le périmètre : ce repo héberge du **code source**, pas des données personnelles. Mais des considérations indirectes existent — à trancher pour chacune :
-  - Métadonnées des commits (email des contributeurs externes) : suffit-il d'un renvoi vers la politique GitHub ?
-  - Données collectées par les apps déployées (amarre, ecrin, find-an-expert) : relève des **apps** elles-mêmes, pas du repo — où documenter ?
-  - Dépendances tierces appelant des services externes (OpenAlex, Appwrite, Sentry si activé…) : à inventorier
-  - Logs côté Appwrite (IP, user-agent…) : qui est responsable de traitement ?
-- [ ] Décider : un seul `PRIVACY.md` à la racine ? Une politique par app dans `apps/*/PRIVACY.md` ? Ou renvoi vers une politique ULHN existante ?
-- [ ] Identifier le **responsable de traitement** (probablement l'Université Le Havre Normandie / DSI, pas le repo lui-même)
-- [ ] Rédiger le contenu une fois le cadrage figé (sortir du périmètre TODO si délégué à la DSI)
-
-### Actions manuelles UI GitHub à planifier
-
-Issus du test plan de la PR #127, à faire dans Settings GitHub :
-
-- [ ] Activer **Secret Scanning** + **Push Protection** (Settings → Code security)
-- [ ] Activer **branch protection** sur `main` (Settings → Branches) avec CODEOWNERS review + status checks requis
-- [ ] Annoncer `brew install gitleaks` aux contributeurs pour le pre-commit local
 
 ---
 
@@ -173,11 +135,11 @@ Issus du test plan de la PR #127, à faire dans Settings GitHub :
 
 ### 1.1 CodeQL
 
-- [x] Créer `.github/workflows/codeql.yml` avec langages `javascript-typescript`
+- [x] Créer `.github/workflows/codeql.yml` avec langages `javascript-typescript` (via [PR #156](https://github.com/univ-lehavre/atlas/pull/156))
 - [x] Déclencheurs : `push` sur main, `pull_request` sur main, `schedule` hebdomadaire (lundi 03:17 UTC) + `workflow_dispatch`
 - [x] Activer les query suites `security-extended` et `security-and-quality`
 - [ ] Vérifier après premier run que les alertes remontent dans l'onglet Security du dépôt GitHub
-- [ ] Définir un _security champion_ responsable du triage des alertes
+- [ ] Définir un _security champion_ responsable du triage des alertes (cf. [À arbitrer](#à-arbitrer))
 - [ ] Limitation Svelte : l'extracteur JS/TS de CodeQL ne parse pas les `.svelte` (les `<script>` sont hors couverture). À documenter et compléter par des revues + lint Svelte.
 
 ### 1.2 Semgrep (optionnel, complémentaire)
@@ -208,8 +170,8 @@ Issus du test plan de la PR #127, à faire dans Settings GitHub :
 
 ### 2.3 Audit historique
 
-- [ ] Lancer `gitleaks detect --source . --log-opts="--all"` une fois pour scanner tout l'historique
-- [ ] Traiter chaque finding : rotation, purge si nécessaire, ajout en whitelist sinon
+- [x] Lancer `gitleaks detect --source . --log-opts="--all"` une fois pour scanner tout l'historique — fait via `workflow_dispatch`, 18 findings cartographiés (cf. [archive](#2026-05-19--faux-positifs-gitleaks))
+- [x] Traiter chaque finding : rotation, purge si nécessaire, ajout en whitelist sinon — tous identifiés comme faux positifs, allowlist ciblée via #145
 
 ---
 
@@ -219,7 +181,7 @@ Issus du test plan de la PR #127, à faire dans Settings GitHub :
 
 - [x] Créer `.github/dependabot.yml` avec écosystèmes : `npm` (groupé par workspace), `github-actions` — schedule lundi 6h Europe/Paris
 - [x] Stratégie : groupage des minors/patches, PRs séparées pour les majors
-- [ ] Auto-merge des patches après CI verte (via workflow ou GitHub native)
+- [x] Auto-merge des patches après CI verte — [.github/workflows/dependabot-auto-merge.yml](.github/workflows/dependabot-auto-merge.yml) ; couvre patches partout + minors sur devDeps. Validé en prod via auto-merge de PR #149 le 2026-05-19. Prérequis Settings : *Allow auto-merge* à activer côté UI.
 
 ### 3.2 Dependency Review Action
 
@@ -241,12 +203,12 @@ Issus du test plan de la PR #127, à faire dans Settings GitHub :
 - [x] Remplacer `actions/checkout@v6` → `actions/checkout@<sha> # v6.x.x`
 - [x] Idem pour `pnpm/action-setup@v5`, `actions/setup-node@v6`, `actions/cache@v5` (10 occurrences pinées dans la PR #127)
 - [x] Intégrer dans Dependabot (`github-actions` ecosystem) — fait via `.github/dependabot.yml`
-- [x] Concerne : [.github/workflows/ci.yml](.github/workflows/ci.yml), [.github/workflows/docs.yml](.github/workflows/docs.yml), [.github/workflows/release.yml](.github/workflows/release.yml), [.github/workflows/gitleaks.yml](.github/workflows/gitleaks.yml)
+- [x] Concerne : [.github/workflows/ci.yml](.github/workflows/ci.yml), [.github/workflows/docs.yml](.github/workflows/docs.yml), [.github/workflows/release.yml](.github/workflows/release.yml), [.github/workflows/gitleaks.yml](.github/workflows/gitleaks.yml), [.github/workflows/codeql.yml](.github/workflows/codeql.yml)
 
 ### 4.2 Permissions minimales par job
 
 - [x] Actuellement `permissions: contents: read` au top de ci.yml
-- [x] `permissions:` explicites présents dans `release.yml`, `docs.yml`, `gitleaks.yml`
+- [x] `permissions:` explicites présents dans `release.yml`, `docs.yml`, `gitleaks.yml`, `codeql.yml`
 - [ ] Pour `release.yml` : `id-token: write` requis pour OIDC/provenance — à ajouter quand on activera Phase 4.3
 
 ### 4.3 npm provenance via OIDC
@@ -388,7 +350,7 @@ Issus du test plan de la PR #127, à faire dans Settings GitHub :
 
 **Sprint 2 (1 semaine — fondations)**
 
-- Phase 1.1 (CodeQL)
+- Phase 1.1 (CodeQL) — ✅ livré via PR #156
 - Phase 3.1, 3.2 (Dependabot + dependency-review)
 - Phase 4.1, 4.2 (pin actions, permissions)
 
@@ -396,7 +358,7 @@ Issus du test plan de la PR #127, à faire dans Settings GitHub :
 
 - Phase 4.3, 4.4 (provenance, SBOM)
 - Phase 6.3, 6.4 (headers HTTP, cookies)
-- Phase 2.2 (gitleaks)
+- Phase 2.2 (gitleaks) — ✅ livré via PR #127 + cycle de stabilisation #141/#143/#144/#145
 
 **Sprint 4 (1 semaine — finalisation)**
 
@@ -406,3 +368,56 @@ Issus du test plan de la PR #127, à faire dans Settings GitHub :
 - Phase 5.2, 5.4 (CODEOWNERS, CONTRIBUTING)
 
 À l'issue des 4 sprints, le dépôt satisfait honnêtement le qualificatif **DevSecOps** pour la partie développement _et_ déploiement (amarre, ecrin).
+
+---
+
+## Archive
+
+Historique des chantiers closés, gardé pour traçabilité.
+
+### 2026-05-19 — Workflows post-merge PR #127
+
+- [x] CI : success
+- [x] Deploy Documentation : success (fix VitePress validé)
+- [x] Release : success
+- [x] Gitleaks : 3 itérations nécessaires (cf. ci-dessous), résolu en passant le scan main en mode diff-only via PR #144
+
+### 2026-05-19 — Faux positifs Gitleaks
+
+Saga close après cinq PRs ✅. L'historique du repo (migration trademark #125 + renames antérieurs) contenait de nombreux fichiers aux paths obsolètes qui matchaient les règles gitleaks.
+
+| # PR                                | Findings | Sources                                                                                                        | Correction                                                                                                         |
+| ----------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| #141                                | 41       | JSDoc `RedcapToken('A1B2…')` + doc `.md` exemples                                                              | Règle `redcap-api-token` durcie (contexte d'affectation requis) + allowlist `\.md$` + patterns fixtures            |
+| #143                                | 26       | `packages/redcap/tests/fixtures/projects.json` (path historique d'avant migration trademark)                   | Allowlist path élargie de `sandbox/crf-sandbox/tests/fixtures/.*` → `(?:^\|/)tests/fixtures/`                      |
+| #144                                | 18       | `packages/amarre/scripts/`, `packages/redcap-sandbox/.env.test` (autres paths historiques)                     | **Changement de stratégie** : scan push main en mode diff (`before..after`) au lieu de l'historique complet        |
+| Audit `workflow_dispatch` post-#144 | 18       | Inventaire complet : 3 fichiers obsolètes (sandbox `.env.test`, amarre `generate-openapi.ts` + `openapi.json`) | Inspection des contenus : 100% faux positifs (fixtures localhost + exemples doc OpenAPI), aucun vrai secret oublié |
+| #145                                | 18 → 0   | Les 3 paths historiques ci-dessus                                                                              | Allowlist ciblée des paths historiques (préféré à un `git filter-repo` jugé disproportionné pour des fixtures)     |
+
+**Stratégie finale**, documentée dans [.github/workflows/gitleaks.yml](.github/workflows/gitleaks.yml) et [.gitleaks.toml](.gitleaks.toml) :
+
+- Sur **PR** : scan du diff de la PR (`base.sha..head.sha`)
+- Sur **push main** : scan uniquement les nouveaux commits du push (`before..after`)
+- Sur **workflow_dispatch** : scan complet de l'historique, à lancer manuellement pour audit ponctuel (renvoie maintenant **0 finding**)
+
+Garanties préservées : tout nouveau secret est détecté soit par le scan PR, soit par le scan push main (les deux en mode diff).
+
+### 2026-05-19 — Dependabot : premier passage
+
+8 PRs ouvertes par le premier run de `.github/dependabot.yml`, toutes mergées le 2026-05-19 :
+
+**GitHub Actions (3 PRs)** : `actions/upload-pages-artifact` 4 → 5 (#130), `pnpm/action-setup` digest bump (#129), `actions/deploy-pages` 4 → 5 (#128).
+
+**npm groupes (5 PRs)** : `eslint-prettier` (#138 — `eslint-plugin-n` 17→18), `typescript-tooling` (#137 — `@napi-rs/canvas` 0.1.100→1.0.0), `vitest`, `sveltekit`, `node-appwrite` 24→25 (#140) + `@commitlint/cli` 20.5.2→21.0.1 (#136) + `@commitlint/config-conventional` 20.5.0→21.0.1 (#139).
+
+Suivi actif déplacé dans [Prochaines actions](#prochaines-actions) (vérif bumps majors + auto-merge patches).
+
+### 2026-05-19 — Sync amarre upstream (PR #155)
+
+L'app `amarre` dans atlas avait été importée le 2026-01-27 depuis `univ-lehavre/amarre`. Le dépôt standalone a ensuite reçu 3 commits le 2026-02-06 qui n'avaient pas été reportés. Synchronisation faite via PR #155.
+
+- [x] Port `1db30df` — composante/labo signing requirements basés sur `invitation_type`
+- [x] Port `8486e79` — mock test survey list avec `invitation_type`
+- [x] Port `b035655` — wording du modal RGPD `CreateRequest.svelte` + lien vers formulaire
+
+Suivi actif déplacé dans [Prochaines actions](#prochaines-actions) (vérifs dev) et [À arbitrer](#sort-du-dépôt-standalone-univ-lehavreamarre) (sort du standalone).
