@@ -1,181 +1,78 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { signupWithEmail, login, logout, deleteUser } from './authService';
-import type { Cookies } from '@sveltejs/kit';
 
-// Mock dependencies
-vi.mock('node-appwrite', () => ({ ID: { unique: vi.fn(() => 'unique-id') } }));
+// Le service est maintenant un thin wrapper autour de
+// `createAuthService` du package `@univ-lehavre/atlas-auth`. Les tests
+// du factory (signup / login / logout / deleteUser) vivent dans
+// `packages/auth/src/index.test.ts`. On ne re-teste ici que le câblage
+// spécifique à l'app : la résolution d'ID via `fetchUserId` (REDCap)
+// passée au factory en `resolveUserId`.
 
-vi.mock('$env/static/public', () => ({ PUBLIC_LOGIN_URL: 'https://example.com' }));
-
-vi.mock('$lib/baas/server', () => ({
-  createAdminClient: vi.fn(),
-  createSessionClient: vi.fn(),
+const mocks = vi.hoisted(() => ({
+  createAuthService: vi.fn(),
+  fetchUserId: vi.fn(),
 }));
 
-vi.mock('$lib/server/services/userService', () => ({ fetchUserId: vi.fn() }));
-
-vi.mock('$lib/validators/server/auth', () => ({
-  validateMagicUrlLogin: vi.fn(),
-  validateSignupEmail: vi.fn(),
-  validateUserId: vi.fn(),
+vi.mock('@univ-lehavre/atlas-auth', () => ({
+  createAuthService: mocks.createAuthService,
 }));
 
-vi.mock('$lib/constants', () => ({ SESSION_COOKIE: 'session' }));
+vi.mock('$env/static/private', () => ({ APPWRITE_KEY: 'k' }));
+vi.mock('$env/static/public', () => ({
+  PUBLIC_APPWRITE_ENDPOINT: 'https://endpoint.test',
+  PUBLIC_APPWRITE_PROJECT: 'proj',
+  PUBLIC_LOGIN_URL: 'https://example.com',
+}));
+vi.mock('$lib/server/services/userService', () => ({ fetchUserId: mocks.fetchUserId }));
 
-import { ID } from 'node-appwrite';
-import { createAdminClient, createSessionClient } from '$lib/baas/server';
-import { fetchUserId } from '$lib/server/services/userService';
-import {
-  validateMagicUrlLogin,
-  validateSignupEmail,
-  validateUserId,
-} from '$lib/validators/server/auth';
-
-const mockCreateAdminClient = vi.mocked(createAdminClient);
-const mockCreateSessionClient = vi.mocked(createSessionClient);
-const mockFetchUserId = vi.mocked(fetchUserId);
-const mockValidateMagicUrlLogin = vi.mocked(validateMagicUrlLogin);
-const mockValidateSignupEmail = vi.mocked(validateSignupEmail);
-const mockValidateUserId = vi.mocked(validateUserId);
-const mockIDUnique = vi.mocked(ID.unique);
-
-describe('authService', () => {
-  const mockCookies: Cookies = {
-    set: vi.fn(),
-    get: vi.fn(),
-    delete: vi.fn(),
-    getAll: vi.fn(),
-    serialize: vi.fn(),
-  } as unknown as Cookies;
-
-  const mockFetch = vi.fn();
-
+describe('authService wrapping', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mocks.createAuthService.mockReset();
+    mocks.fetchUserId.mockReset();
   });
 
-  describe('signupWithEmail', () => {
-    const mockCreateMagicURLToken = vi.fn();
-
-    beforeEach(() => {
-      mockCreateAdminClient.mockReturnValue({
-        account: { createMagicURLToken: mockCreateMagicURLToken },
-      } as unknown as ReturnType<typeof createAdminClient>);
+  it('crée le service partagé login/logout avec la config app', async () => {
+    mocks.createAuthService.mockReturnValue({
+      signupWithEmail: vi.fn(),
+      login: vi.fn(),
+      logout: vi.fn(),
+      deleteUser: vi.fn(),
     });
 
-    it('should create magic URL token with existing REDCap user ID', async () => {
-      mockValidateSignupEmail.mockResolvedValue('test@example.com');
-      mockFetchUserId.mockResolvedValue('redcap-user-id');
-      mockCreateMagicURLToken.mockResolvedValue({
-        userId: 'redcap-user-id',
-        secret: 'token-secret',
-      });
+    await import('./authService');
 
-      const result = await signupWithEmail('test@example.com', { fetch: mockFetch });
-
-      expect(mockValidateSignupEmail).toHaveBeenCalledWith('test@example.com');
-      expect(mockFetchUserId).toHaveBeenCalledWith(mockFetch, 'test@example.com');
-      expect(mockCreateMagicURLToken).toHaveBeenCalledWith({
-        userId: 'redcap-user-id',
-        email: 'test@example.com',
-        url: 'https://example.com/login',
-      });
-      expect(result).toEqual({ userId: 'redcap-user-id', secret: 'token-secret' });
-    });
-
-    it('should create magic URL token with unique ID when no REDCap user exists', async () => {
-      mockValidateSignupEmail.mockResolvedValue('new@example.com');
-      mockFetchUserId.mockResolvedValue(null);
-      mockIDUnique.mockReturnValue('unique-id');
-      mockCreateMagicURLToken.mockResolvedValue({ userId: 'unique-id', secret: 'token-secret' });
-
-      const result = await signupWithEmail('new@example.com', { fetch: mockFetch });
-
-      expect(mockFetchUserId).toHaveBeenCalledWith(mockFetch, 'new@example.com');
-      expect(mockCreateMagicURLToken).toHaveBeenCalledWith({
-        userId: 'unique-id',
-        email: 'new@example.com',
-        url: 'https://example.com/login',
-      });
-      expect(result).toEqual({ userId: 'unique-id', secret: 'token-secret' });
-    });
+    expect(mocks.createAuthService).toHaveBeenCalledWith(
+      expect.objectContaining({
+        baas: expect.objectContaining({
+          endpoint: 'https://endpoint.test',
+          projectId: 'proj',
+          apiKey: 'k',
+        }),
+        loginUrl: 'https://example.com',
+      })
+    );
   });
 
-  describe('login', () => {
-    const mockCreateSession = vi.fn();
-
-    beforeEach(() => {
-      mockCreateAdminClient.mockReturnValue({
-        account: { createSession: mockCreateSession },
-      } as unknown as ReturnType<typeof createAdminClient>);
+  it('passe resolveUserId basé sur fetchUserId au signup, et tombe sur undefined si fetchUserId renvoie null', async () => {
+    const innerSignup = vi.fn().mockResolvedValue({});
+    mocks.createAuthService.mockReturnValue({
+      signupWithEmail: innerSignup,
+      login: vi.fn(),
+      logout: vi.fn(),
+      deleteUser: vi.fn(),
     });
+    mocks.fetchUserId.mockResolvedValue(null);
 
-    it('should create session and set cookie', async () => {
-      mockValidateMagicUrlLogin.mockReturnValue({ userId: 'user-123', secret: 'secret-abc' });
-      mockCreateSession.mockResolvedValue({
-        secret: 'session-secret',
-        expire: '2026-02-01T00:00:00.000Z',
-      });
+    const mod = await import('./authService');
+    await mod.signupWithEmail('user@example.org', { fetch: vi.fn() as never });
 
-      const result = await login('user-123', 'secret-abc', mockCookies);
+    // Récupère la config passée au factory pour le signup (dernier appel)
+    const lastCallConfig = mocks.createAuthService.mock.calls.at(-1)?.[0] as {
+      resolveUserId?: (email: string) => Promise<string | undefined>;
+    };
+    expect(lastCallConfig.resolveUserId).toBeTypeOf('function');
 
-      expect(mockValidateMagicUrlLogin).toHaveBeenCalledWith('user-123', 'secret-abc');
-      expect(mockCreateSession).toHaveBeenCalledWith({ userId: 'user-123', secret: 'secret-abc' });
-      expect(mockCookies.set).toHaveBeenCalledWith('session', 'session-secret', {
-        httpOnly: true,
-        sameSite: 'strict',
-        expires: new Date('2026-02-01T00:00:00.000Z'),
-        secure: true,
-        path: '/',
-      });
-      expect(result).toEqual({ secret: 'session-secret', expire: '2026-02-01T00:00:00.000Z' });
-    });
-  });
-
-  describe('logout', () => {
-    const mockDeleteSessions = vi.fn();
-
-    beforeEach(() => {
-      mockCreateSessionClient.mockReturnValue({
-        account: { deleteSessions: mockDeleteSessions },
-      } as unknown as ReturnType<typeof createSessionClient>);
-    });
-
-    it('should delete sessions and remove cookie', async () => {
-      mockValidateUserId.mockReturnValue('user-123');
-      mockDeleteSessions.mockResolvedValue(undefined);
-
-      await logout('user-123', mockCookies);
-
-      expect(mockValidateUserId).toHaveBeenCalledWith('user-123');
-      expect(mockDeleteSessions).toHaveBeenCalled();
-      expect(mockCookies.delete).toHaveBeenCalledWith('session', { path: '/' });
-    });
-  });
-
-  describe('deleteUser', () => {
-    const mockDeleteSessions = vi.fn();
-    const mockDeleteUser = vi.fn();
-
-    beforeEach(() => {
-      mockCreateSessionClient.mockReturnValue({
-        account: { deleteSessions: mockDeleteSessions },
-      } as unknown as ReturnType<typeof createSessionClient>);
-      mockCreateAdminClient.mockReturnValue({
-        users: { delete: mockDeleteUser },
-      } as unknown as ReturnType<typeof createAdminClient>);
-    });
-
-    it('should logout and delete user', async () => {
-      mockValidateUserId.mockReturnValue('user-123');
-      mockDeleteSessions.mockResolvedValue(undefined);
-      mockDeleteUser.mockResolvedValue(undefined);
-
-      await deleteUser('user-123', mockCookies);
-
-      expect(mockValidateUserId).toHaveBeenCalledWith('user-123');
-      expect(mockDeleteSessions).toHaveBeenCalled();
-      expect(mockDeleteUser).toHaveBeenCalledWith({ userId: 'user-123' });
-    });
+    const resolved = await lastCallConfig.resolveUserId?.('user@example.org');
+    expect(resolved).toBeUndefined();
+    expect(mocks.fetchUserId).toHaveBeenCalled();
   });
 });

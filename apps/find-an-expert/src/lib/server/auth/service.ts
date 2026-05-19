@@ -1,63 +1,35 @@
 import type { Cookies } from '@sveltejs/kit';
-import { ID, type Models } from 'node-appwrite';
+import type { Models } from 'node-appwrite';
 
-import { SESSION_COOKIE } from '$lib/constants';
+import { createAuthService } from '@univ-lehavre/atlas-auth';
+import {
+  ALLOWED_DOMAINS_REGEXP,
+  APPWRITE_ENDPOINT,
+  APPWRITE_KEY,
+  APPWRITE_PROJECT,
+} from '$env/static/private';
 import { PUBLIC_LOGIN_URL } from '$env/static/public';
-import { createAdminClient, createSessionClient } from '$lib/server/baas';
-import { validateMagicUrlLogin, validateSignupEmail, validateUserId } from './validators';
 
-/**
- * Signs up a user with email and sends a magic link for authentication.
- * @param unsecuredEmail - The email address to validate and use for signup
- * @returns A promise resolving to the magic URL token
- */
-export const signupWithEmail = async (unsecuredEmail: unknown): Promise<Models.Token> => {
-  const email: string = await validateSignupEmail(unsecuredEmail);
-  const url: string = `${PUBLIC_LOGIN_URL}/login`;
+// find-an-expert n'a pas de résolution d'ID externe : `ID.unique()` est
+// généré par le factory `createAuthService` (cf. packages/auth/src/index.ts).
+const service = createAuthService({
+  baas: {
+    endpoint: APPWRITE_ENDPOINT,
+    projectId: APPWRITE_PROJECT,
+    apiKey: APPWRITE_KEY,
+  },
+  loginUrl: PUBLIC_LOGIN_URL,
+  domainValidation: { allowedDomainsRegexp: ALLOWED_DOMAINS_REGEXP },
+});
 
-  const { account } = createAdminClient();
-  const userId: string = ID.unique();
-  const token: Models.Token = await account.createMagicURLToken({ userId, email, url });
+export const signupWithEmail = (unsecuredEmail: unknown): Promise<Models.Token> =>
+  service.signupWithEmail(unsecuredEmail);
 
-  return token;
-};
-
-/**
- * Logs in a user using magic URL parameters and creates a session.
- * @param unsecuredUserId - The user ID from the magic URL
- * @param unsecuredSecret - The secret from the magic URL
- * @param cookies - SvelteKit cookies object for setting the session cookie
- * @returns A promise resolving to the created session
- */
-export const login = async (
+export const login = (
   unsecuredUserId: unknown,
   unsecuredSecret: unknown,
   cookies: Cookies
-): Promise<Models.Session> => {
-  const { userId, secret } = validateMagicUrlLogin(unsecuredUserId, unsecuredSecret);
+): Promise<Models.Session> => service.login(unsecuredUserId, unsecuredSecret, cookies);
 
-  const { account } = createAdminClient();
-  const session: Models.Session = await account.createSession({ userId, secret });
-  cookies.set(SESSION_COOKIE, session.secret, {
-    httpOnly: true,
-    sameSite: 'strict',
-    expires: new Date(session.expire),
-    secure: true,
-    path: '/',
-  });
-
-  return session;
-};
-
-/**
- * Logs out a user by deleting all their sessions and clearing the session cookie.
- * @param unsecuredUserId - The user ID to validate
- * @param cookies - SvelteKit cookies object for deleting the session cookie
- */
-export const logout = async (unsecuredUserId: unknown, cookies: Cookies): Promise<void> => {
-  validateUserId(unsecuredUserId);
-
-  const { account } = createSessionClient(cookies);
-  await account.deleteSessions();
-  cookies.delete(SESSION_COOKIE, { path: '/' });
-};
+export const logout = (unsecuredUserId: unknown, cookies: Cookies): Promise<void> =>
+  service.logout(unsecuredUserId, cookies);
