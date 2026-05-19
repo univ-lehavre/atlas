@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-researcher-profiles
 
+## 1.4.3
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @univ-lehavre/atlas-researcher-profiles@2.0.1
+
 ## 1.4.2
 
 ### Patch Changes
