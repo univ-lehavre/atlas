@@ -32,7 +32,7 @@
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
-    "@clack/prompts": "^1.2.0",
+    "@clack/prompts": "^1.4.0",
     "@effect/cluster": "^0.58.2",
     "@effect/experimental": "^0.60.0",
     "@effect/platform-node": "^0.106.0",

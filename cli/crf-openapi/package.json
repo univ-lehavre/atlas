@@ -61,10 +61,10 @@
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
-    "@clack/prompts": "^1.2.0",
+    "@clack/prompts": "^1.4.0",
     "@univ-lehavre/atlas-crf-core": "workspace:*",
     "picocolors": "^1.1.1",
-    "yaml": "^2.8.3"
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
