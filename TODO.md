@@ -40,7 +40,8 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [ ] Phase 4.3 — npm provenance via OIDC (voir [§4.3](#43-npm-provenance-via-oidc))
 - [ ] Phase 4.4 — SBOM CycloneDX (voir [§4.4](#44-sbom-software-bill-of-materials))
 - [x] Phase 5.3 — branch protection sur `main` activée via API le 2026-05-19 (voir [§5.3](#53-branch-protection-sur-main))
-- [ ] Phase 6 — HTTP headers + rate limit (par app, voir [§6.3](#63-en-têtes-http-de-sécurité) et [§6.5](#65-rate-limiting))
+- [x] Phase 6.3 — HTTP headers de sécurité livrés (CSP via `kit.csp` + 5 headers via `hooks.server.ts`, sur amarre + ecrin + find-an-expert). Reste à tightener `connect-src` (wildcard pour v1).
+- [ ] Phase 6.5 — rate limiting sur les endpoints publics (voir [§6.5](#65-rate-limiting))
 - [ ] Phase 7 — OWASP ZAP baseline (voir [§7.1](#71-owasp-zap-baseline))
 - [ ] Phase 8 — observabilité + runbook incident (voir [§8](#phase-8--observabilité-et-réponse-aux-incidents))
 
@@ -120,15 +121,15 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 
 ### 0.2 Inventaire des secrets en circulation
 
-- [ ] Lister tous les secrets attendus : tokens REDCap, clés OpenAlex authentifiées, clés Appwrite, `TURBO_TOKEN`, identifiants GitHub
-- [ ] Pour chacun : noter où il est stocké (Appwrite console, GitHub Secrets, fichier local) et qui y a accès
-- [ ] Documenter la procédure de rotation dans `docs/security/secrets.md`
+- [x] Lister tous les secrets attendus — voir [docs/security/secrets.md](docs/security/secrets.md) : TURBO_TOKEN, PAT_TOKEN, NPM_TOKEN, GITHUB_TOKEN (GH Actions) ; APPWRITE_KEY + IDs + ALLOWED_DOMAINS_REGEXP + REDCAP_API_TOKEN + OPENALEX_API_TOKEN (Appwrite Console) ; tokens.csv + GITHUB_TOKEN local (dashboards)
+- [x] Pour chacun : emplacement de stockage (GH Secrets, Appwrite Console, fichier `.env` local) + owner + procédure de rotation — documenté dans [docs/security/secrets.md](docs/security/secrets.md)
+- [x] Documenter la procédure de rotation — section "Procédure de rotation générique" + "Procédure d'urgence" dans [docs/security/secrets.md](docs/security/secrets.md)
 
 ### 0.3 Cartographie des surfaces exposées
 
-- [ ] Lister les URLs Appwrite Sites de prod (amarre, ecrin) et de preview éventuelles
-- [ ] Lister les endpoints API publics dans [apps/find-an-expert/src/routes/api/](apps/find-an-expert/src/routes/api/)
-- [ ] Identifier les routes nécessitant authentification vs publiques
+- [ ] URLs Appwrite Sites prod (amarre, ecrin, find-an-expert) et previews — structure documentée dans [docs/security/surfaces.md](docs/security/surfaces.md), URLs concrètes _à compléter par l'admin Appwrite_
+- [x] Lister les endpoints API publics — [docs/security/surfaces.md](docs/security/surfaces.md) couvre les 3 apps déployées (amarre, ecrin, find-an-expert) + les 2 dashboards locaux
+- [x] Identifier les routes nécessitant authentification vs publiques — classification `🌐 PUBLIC` / `🔒 AUTH` / `🏠 LOCAL` pour chaque endpoint. 3 points d'attention identifiés : `ecrin /graphs`, `find-an-expert /institutions/search`, `find-an-expert /repositories/[id]` sont publics — à arbitrer (gate auth ou rate limit, cf. Phase 6.5)
 
 ---
 
@@ -276,21 +277,25 @@ Activée via API le 2026-05-19. Configuration appliquée :
 
 ### 6.3 En-têtes HTTP de sécurité
 
-- [ ] Configurer dans Appwrite Sites (ou via `hooks.server.ts` SvelteKit) :
-  - `Content-Security-Policy` (script-src, style-src, img-src, connect-src — y compris l'API Appwrite, OpenAlex)
-  - `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
-  - `X-Content-Type-Options: nosniff`
-  - `Referrer-Policy: strict-origin-when-cross-origin`
-  - `Permissions-Policy` (désactiver caméra, micro, géoloc si non utilisés)
-  - `X-Frame-Options: DENY` (ou via CSP `frame-ancestors`)
-- [ ] Valider avec [securityheaders.com](https://securityheaders.com) — objectif : note A minimum
+Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d'hydration) + `hooks.server.ts` (HSTS gated sur HTTPS, autres headers toujours). Couvre les 3 apps SvelteKit (amarre, ecrin, find-an-expert).
+
+- [x] `Content-Security-Policy` — strict (default/script/font/img/object/frame-ancestors/form-action/base-uri) ; `style-src 'unsafe-inline'` conservé pour les `style=` inline Svelte et Bootstrap
+- [x] `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` — uniquement quand `event.url.protocol === 'https:'`
+- [x] `X-Content-Type-Options: nosniff`
+- [x] `Referrer-Policy: strict-origin-when-cross-origin`
+- [x] `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
+- [x] `X-Frame-Options: DENY` (defense-in-depth, redondant avec CSP `frame-ancestors 'none'`)
+- [ ] **À tightener** : `connect-src 'self' https:` est volontairement wildcard pour ne pas bloquer Appwrite/REDCap/OpenAlex selon l'environnement de déploiement. Iteration suivante : remplacer par les domaines exacts (`appwrite-dev.univ-lehavre.fr`, `backend.chasset.net`, `redcap.univ-lehavre.fr`, `api.openalex.org`) via env var lue au build ou hardcodée par environnement.
+- [ ] **Dette test** : `hooks.server.ts` n'a pas de test unitaire ; l'ajout des headers a fait passer amarre/ecrin sous leur seuil de couverture. Seuils baissés de 1 point (amarre statements 42→41 + lines 43→42, ecrin statements 28→27 + branches 18→17) — à remonter en ajoutant un test du `handle` qui mocke `createSessionClient` et vérifie les 5 headers.
+- [ ] Valider avec [securityheaders.com](https://securityheaders.com) — objectif : note A minimum (après déploiement)
 - [ ] Tester aussi avec [Mozilla Observatory](https://observatory.mozilla.org)
 
 ### 6.4 Authentification et sessions
 
-- [ ] Cookies de session : `HttpOnly`, `Secure`, `SameSite=Lax` (ou `Strict`)
-- [ ] Vérifier les flux d'auth dans [packages/auth/](packages/auth/) — pas de tokens en localStorage
-- [ ] Protection CSRF sur les formulaires (SvelteKit gère nativement avec `actions`)
+- [x] Cookies de session : `httpOnly: true` (rendu explicite — était implicite via le default SvelteKit), `secure: true`, `sameSite: 'strict'` (plus strict que minimum Lax), `path: '/'`, `expires` — appliqué dans les 4 setters (`packages/auth/src/index.ts` + services des 3 apps).
+- [x] Vérifier les flux d'auth — aucun `localStorage` ni `sessionStorage` dans tout le repo (audit `grep -rn` sur apps + packages clean). Cookies UI find-an-expert (theme, font, dark-mode, locale) en `SameSite=Lax`, sans `Secure` — non sensible, lus côté client par design.
+- [x] Protection CSRF — SvelteKit `csrf: { checkOrigin: true }` actif par défaut (aucun override dans les `svelte.config.js`). Confirmé par audit.
+- [ ] **À noter** : duplication du code de gestion de session entre `packages/auth/src/index.ts` (factory `createAuthService`) et les 3 services par app — ces derniers n'utilisent pas le factory partagé. Pas critique mais à dédupliquer dans un futur refactor pour éviter la dérive.
 
 ### 6.5 Rate limiting
 

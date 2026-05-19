@@ -45,6 +45,7 @@ export const login = async (
   const { account } = createAdminClient();
   const session: Models.Session = await account.createSession({ userId, secret });
   cookies.set(SESSION_COOKIE, session.secret, {
+    httpOnly: true,
     sameSite: 'strict',
     expires: new Date(session.expire),
     secure: true,
