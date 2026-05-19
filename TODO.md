@@ -297,6 +297,7 @@ Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d
 - [x] Protection CSRF — SvelteKit `csrf: { checkOrigin: true }` actif par défaut (aucun override dans les `svelte.config.js`). Confirmé par audit.
 - [x] **Dédup session/auth** : les 3 services par-app sont désormais des thin wrappers (~30 lignes) autour de `createAuthService` du package partagé. La logique cookie + admin/session client + validation est centralisée dans `packages/auth/src/index.ts`. ecrin garde `deleteUser`, amarre/ecrin gardent le câblage `resolveUserId` (REDCap `fetchUserId`), find-an-expert utilise le factory tel quel (no resolveUserId).
 - [x] **Dédup baas client** : amarre + find-an-expert ont leur `$lib/server/baas/index.ts` réécrit en thin wrapper (~25 lignes) autour de `createAdminClient` / `createSessionClient` du package partagé `@univ-lehavre/atlas-baas`. La signature locale (sans config, qui est dérivée de l'env de l'app) reste identique pour ne pas toucher les consumers (hooks.server.ts, services). **ecrin volontairement laissé en local** : utilise `TablesDB` (API typée récente d'Appwrite) que le package partagé n'expose pas (il fournit `Databases`). À uniformiser en étendant le package quand `TablesDB` deviendra le standard partagé.
+- [x] **Dédup userRepository** : amarre `$lib/server/baas/userRepository.ts` + find-an-expert `$lib/server/user/repository.ts` sont des thin subclasses (~10 lignes) qui étendent `BaasUserRepository` du package partagé en injectant `adminConfig` local. L'API à constructeur sans argument est préservée — consumers (`new BaasUserRepository()`) inchangés.
 
 ### 6.5 Rate limiting
 
@@ -366,32 +367,52 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 
 ## Ordre de priorité recommandé
 
-**Sprint 1 (1 semaine — bloquants sécurité)**
+État au 2026-05-19 : Sprints 1–4 majoritairement bouclés, restent surtout les workflows DAST/supply-chain (Phase 4.3/4.4/7.1) et l'observabilité (Phase 8).
 
-- Phase 0 complète (audit token, secrets, surfaces)
-- Phase 2.1 (GitHub Secret Scanning + Push Protection)
-- Phase 5.1 (SECURITY.md) et 5.3 (branch protection minimale)
+**Sprint 1 (bloquants sécurité)**
 
-**Sprint 2 (1 semaine — fondations)**
+- [x] Phase 0.1 (audit token REDCap) ; Phase 0.2/0.3 ✅ livrés via [PR #171](https://github.com/univ-lehavre/atlas/pull/171) (`docs/security/secrets.md` + `surfaces.md`)
+- [x] Phase 2.1 (Secret Scanning + Push Protection + Dependabot alerts) — activés via API GitHub le 2026-05-19
+- [x] Phase 5.1 (SECURITY.md) ✅ livré via PR #127
+- [x] Phase 5.3 (branch protection main) — activée via API le 2026-05-19
 
-- Phase 1.1 (CodeQL) — ✅ livré via PR #156
-- Phase 3.1, 3.2 (Dependabot + dependency-review)
-- Phase 4.1, 4.2 (pin actions, permissions)
+**Sprint 2 (fondations)**
 
-**Sprint 3 (1 semaine — supply chain et Appwrite)**
+- [x] Phase 1.1 (CodeQL) ✅ livré via [PR #156](https://github.com/univ-lehavre/atlas/pull/156)
+- [x] Phase 3.1 (Dependabot) ✅ livré + auto-merge patches via `.github/workflows/dependabot-auto-merge.yml`
+- [x] Phase 3.2 (Dependency Review Action) ✅ livré via [PR #161](https://github.com/univ-lehavre/atlas/pull/161)
+- [x] Phase 4.1 (pin actions SHA) ✅ livré via PR #127 (+ #156, #161)
+- [x] Phase 4.2 (permissions minimales par job) ✅ — id-token reste à ajouter avec Phase 4.3
 
-- Phase 4.3, 4.4 (provenance, SBOM)
-- Phase 6.3, 6.4 (headers HTTP, cookies)
-- Phase 2.2 (gitleaks) — ✅ livré via PR #127 + cycle de stabilisation #141/#143/#144/#145
+**Sprint 3 (supply chain et Appwrite)**
 
-**Sprint 4 (1 semaine — finalisation)**
+- [ ] Phase 4.3 (npm provenance via OIDC) — à faire
+- [ ] Phase 4.4 (SBOM CycloneDX) — à faire
+- [x] Phase 6.3 (headers HTTP de sécurité) ✅ livré via PR #171 ; tightener `connect-src` ouvert
+- [x] Phase 6.4 (cookies session hardening + audit localStorage + CSRF) ✅ livré via PR #171
+- [x] Phase 2.2 (gitleaks) ✅ livré via PR #127 + stabilisation #141/#143/#144/#145
 
-- Phase 7.1 (ZAP baseline)
-- Phase 6.5 (rate limiting)
-- Phase 8 (observabilité, runbook)
-- Phase 5.2, 5.4 (CODEOWNERS, CONTRIBUTING)
+**Sprint 4 (finalisation)**
 
-À l'issue des 4 sprints, le dépôt satisfait honnêtement le qualificatif **DevSecOps** pour la partie développement _et_ déploiement (amarre, ecrin).
+- [ ] Phase 7.1 (OWASP ZAP baseline) — à faire
+- [x] Phase 6.5 (rate limiting) ✅ livré en local (branche `devsecops/rate-limiting-phase-6-5`) — pas encore mergé
+- [x] Phase 7.2 (tests sécurité applicatifs) ✅ partiellement livré (handlers rate-limités) ; reste hooks.server.ts + anti-XSS / payloads malformés
+- [ ] Phase 8 (observabilité, runbook incident) — à faire
+- [x] Phase 5.2 (CODEOWNERS) ✅ livré via PR #127 ; nomination d'un second mainteneur ouverte
+- [x] Phase 5.4 (CONTRIBUTING) ✅ livré via PR #127
+
+**Hors plan initial mais réalisé en session 2026-05-19**
+
+- [x] Dédup `authService` × 3 apps via `createAuthService` (packages/auth) — ~150 lignes supprimées
+- [x] Dédup baas client × 2 apps (amarre + find-an-expert ; ecrin gardé pour TablesDB) — ~80 lignes supprimées
+- [x] Dédup `BaasUserRepository` × 2 apps via subclass thin de `packages/baas`
+- [x] Fix logos `vite-plugin-static-copy` v3→v4 régression via prepare script (PR #157)
+- [x] Décision standalone `univ-lehavre/amarre` (gardé en l'état)
+- [x] Bump amarre/ecrin/find-an-expert : white background header/footer (PR #159)
+- [x] Dependabot — reduce PR noise (1 PR groupée/écosystème, max 1 ouverte simultanée)
+- [x] Cleanup `knip.json` (PR #160) + dette cosmétique (`<span class="">` vide, dead code commenté)
+
+À l'issue de ce backlog, le dépôt satisfait honnêtement le qualificatif **DevSecOps** pour la partie développement *et* déploiement (amarre, ecrin, find-an-expert).
 
 ---
 
