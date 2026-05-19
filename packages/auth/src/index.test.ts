@@ -113,6 +113,7 @@ describe('createAuthService.login', () => {
 
     expect(createSession).toHaveBeenCalledWith({ userId: validUserId, secret: validSecret });
     expect(cookies.set).toHaveBeenCalledWith('atlas-session', 'session-secret', {
+      httpOnly: true,
       sameSite: 'strict',
       expires: new Date(expire),
       secure: true,

@@ -106,6 +106,7 @@ export const createAuthService = (config: AuthConfig): AuthService => {
     const { account } = createAdminClient(config.baas);
     const session = await account.createSession({ userId, secret });
     cookies.set(SESSION_COOKIE, session.secret, {
+      httpOnly: true,
       sameSite: 'strict',
       expires: new Date(session.expire),
       secure: true,

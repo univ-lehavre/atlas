@@ -122,6 +122,7 @@ describe('authService', () => {
       expect(mockValidateMagicUrlLogin).toHaveBeenCalledWith('user-123', 'secret-abc');
       expect(mockCreateSession).toHaveBeenCalledWith({ userId: 'user-123', secret: 'secret-abc' });
       expect(mockCookies.set).toHaveBeenCalledWith('session', 'session-secret', {
+        httpOnly: true,
         sameSite: 'strict',
         expires: new Date('2026-02-01T00:00:00.000Z'),
         secure: true,

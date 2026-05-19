@@ -291,9 +291,10 @@ Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d
 
 ### 6.4 Authentification et sessions
 
-- [ ] Cookies de session : `HttpOnly`, `Secure`, `SameSite=Lax` (ou `Strict`)
-- [ ] Vérifier les flux d'auth dans [packages/auth/](packages/auth/) — pas de tokens en localStorage
-- [ ] Protection CSRF sur les formulaires (SvelteKit gère nativement avec `actions`)
+- [x] Cookies de session : `httpOnly: true` (rendu explicite — était implicite via le default SvelteKit), `secure: true`, `sameSite: 'strict'` (plus strict que minimum Lax), `path: '/'`, `expires` — appliqué dans les 4 setters (`packages/auth/src/index.ts` + services des 3 apps).
+- [x] Vérifier les flux d'auth — aucun `localStorage` ni `sessionStorage` dans tout le repo (audit `grep -rn` sur apps + packages clean). Cookies UI find-an-expert (theme, font, dark-mode, locale) en `SameSite=Lax`, sans `Secure` — non sensible, lus côté client par design.
+- [x] Protection CSRF — SvelteKit `csrf: { checkOrigin: true }` actif par défaut (aucun override dans les `svelte.config.js`). Confirmé par audit.
+- [ ] **À noter** : duplication du code de gestion de session entre `packages/auth/src/index.ts` (factory `createAuthService`) et les 3 services par app — ces derniers n'utilisent pas le factory partagé. Pas critique mais à dédupliquer dans un futur refactor pour éviter la dérive.
 
 ### 6.5 Rate limiting
 
