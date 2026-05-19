@@ -16,7 +16,8 @@ Items concrets, immédiatement actionnables, sans dépendance d'arbitrage préal
 - [x] Vérifier la logique de signature composante/labo selon `invitation_type` dans amarre (`1`=Recherche, `2`=Enseignement, `3`=Les deux) — table de vérité conforme au spec ; 3 points cosmétiques à noter ([Request.svelte:13](apps/amarre/src/lib/ui/Request.svelte#L13) dead code commenté, asymétrie `isInvitation` préservée de l'upstream, pas de test unitaire sur `Request.svelte`)
 - [x] [Actions UI GitHub](#actions-manuelles-ui-github) — Secret Scanning + Push Protection + Dependabot security updates + branch protection sur `main` activés via API GitHub le 2026-05-19
 - [x] Fix logos `vite-plugin-static-copy` → script `prepare` (3 apps) — livré et mergé via [PR #157](https://github.com/univ-lehavre/atlas/pull/157)
-- [ ] Nettoyer `knip.json` : retirer `@univ-lehavre/atlas-logos` de `ignoreDependencies` des 3 apps (la dep est maintenant utilisée par le `prepare` script — knip remonte ça en *configuration hint*)
+- [x] Nettoyer `knip.json` : retirer `@univ-lehavre/atlas-logos` de `ignoreDependencies` des 3 apps — livré via [PR #160](https://github.com/univ-lehavre/atlas/pull/160)
+- [ ] Examiner les 7 alertes Dependabot remontées suite à l'activation du Dependency graph le 2026-05-19 (6 moderate, 1 low — toutes sous le seuil `high` du workflow `dependency-review`). Triage via Settings → Security → Dependabot. Lié à [Phase 3.3](#33-renforcement-de-pnpm-audit) (durcissement `--audit-level=moderate`).
 
 ---
 
@@ -64,9 +65,7 @@ Initialement retiré du périmètre de la PR #127 (_"le repo est du code, pas un
 
 ### Sort du dépôt standalone `univ-lehavre/amarre`
 
-Le dépôt standalone (dernier commit 2026-02-06) est dépassé : atlas est désormais la source canonique de l'app amarre (sync via [PR #155](https://github.com/univ-lehavre/atlas/pull/155)). Décider :
-
-- [ ] Archiver le dépôt standalone (recommandé) ou le garder en lecture seule comme historique
+- [x] **Décision 2026-05-19** : le dépôt standalone reste **en l'état** (dernier commit 2026-02-06), gardé tel quel comme historique. atlas est la source canonique pour les futurs développements (sync via [PR #155](https://github.com/univ-lehavre/atlas/pull/155)).
 
 ### Security champion CodeQL
 
@@ -187,9 +186,10 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 
 ### 3.2 Dependency Review Action
 
-- [ ] Workflow `.github/workflows/dependency-review.yml` déclenché sur `pull_request`
-- [ ] Bloquer les vulnérabilités `high` et au-dessus
-- [ ] Bloquer les licences non listées dans l'allowlist (à définir : MIT, Apache-2.0, BSD-\*, ISC, MPL-2.0…)
+- [x] Workflow [.github/workflows/dependency-review.yml](.github/workflows/dependency-review.yml) déclenché sur `pull_request` — livré via [PR #161](https://github.com/univ-lehavre/atlas/pull/161)
+- [x] Bloquer les vulnérabilités `high` et au-dessus (`fail-on-severity: high`)
+- [x] Bloquer les licences non listées dans l'allowlist — `MIT, MIT-0, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD, Unlicense, CC0-1.0, CC-BY-4.0, Python-2.0, MPL-2.0, BlueOak-1.0.0, Zlib, WTFPL` (SPDX canoniques, aligné sur `scripts/audit/licenses.mjs`)
+- [x] Prérequis Settings : Dependency graph activé (2026-05-19) — débloque aussi les Dependabot alerts (7 vulnérabilités remontées le 2026-05-19 : 6 moderate + 1 low, à examiner — cf. [Prochaines actions](#prochaines-actions))
 
 ### 3.3 Renforcement de `pnpm audit`
 
