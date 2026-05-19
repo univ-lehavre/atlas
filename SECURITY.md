@@ -1,5 +1,15 @@
 # Security Policy
 
+> **Nature de ce document.** Cette politique décrit, sur la base du meilleur
+> effort, la manière dont les vulnérabilités sont traitées dans le projet
+> Atlas. Elle **ne constitue ni un contrat, ni une garantie, ni un engagement
+> juridique opposable**. Le logiciel est diffusé sous licence MIT, sans
+> garantie d'aucune sorte (cf. [LICENSE](LICENSE)). Les délais et procédures
+> indiqués ci-dessous sont des objectifs indicatifs, pas des obligations
+> contractuelles. Les obligations légales applicables par ailleurs (RGPD,
+> conventions inter-établissements, marchés publics…) restent régies par
+> leurs propres textes et prévalent en cas de conflit.
+
 ## Supported Versions
 
 Atlas suit un modèle de release continue (changesets). Seules les versions
@@ -29,15 +39,15 @@ exposerait la vulnérabilité avant qu'un correctif soit disponible.
 - Impact potentiel (lecture/écriture de données, escalade de privilèges, etc.)
 - Votre nom et affiliation si vous souhaitez être crédité dans la correction
 
-### Engagements
+### Délais cibles (best effort)
 
-| Étape                       | Délai cible |
-| --------------------------- | ----------- |
-| Accusé de réception         | 72 heures   |
-| Évaluation initiale         | 7 jours     |
-| Correctif (sévérité haute)  | 30 jours    |
-| Correctif (sévérité moyenne)| 90 jours    |
-| Divulgation publique        | Après correctif déployé + 30 jours |
+| Étape                        | Délai cible                        |
+| ---------------------------- | ---------------------------------- |
+| Accusé de réception          | 72 heures                          |
+| Évaluation initiale          | 7 jours                            |
+| Correctif (sévérité haute)   | 30 jours                           |
+| Correctif (sévérité moyenne) | 90 jours                           |
+| Divulgation publique         | Après correctif déployé + 30 jours |
 
 ## Scope
 
