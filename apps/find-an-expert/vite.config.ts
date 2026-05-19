@@ -31,11 +31,14 @@ export default defineConfig({
         'src/lib/**/index.ts',
         'src/lib/**/*.d.ts',
       ],
+      // Seuils baissés après dédup validators (les branches de validation ont
+      // migré dans @univ-lehavre/atlas-auth, hors périmètre de coverage local).
+      // À remonter en migrant aussi les tests des validators dans le package.
       thresholds: {
         statements: 58,
-        branches: 46,
-        functions: 41,
-        lines: 59,
+        branches: 41,
+        functions: 40,
+        lines: 58,
       },
     }),
 
