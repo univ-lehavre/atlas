@@ -120,15 +120,15 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 
 ### 0.2 Inventaire des secrets en circulation
 
-- [ ] Lister tous les secrets attendus : tokens REDCap, clés OpenAlex authentifiées, clés Appwrite, `TURBO_TOKEN`, identifiants GitHub
-- [ ] Pour chacun : noter où il est stocké (Appwrite console, GitHub Secrets, fichier local) et qui y a accès
-- [ ] Documenter la procédure de rotation dans `docs/security/secrets.md`
+- [x] Lister tous les secrets attendus — voir [docs/security/secrets.md](docs/security/secrets.md) : TURBO_TOKEN, PAT_TOKEN, NPM_TOKEN, GITHUB_TOKEN (GH Actions) ; APPWRITE_KEY + IDs + ALLOWED_DOMAINS_REGEXP + REDCAP_API_TOKEN + OPENALEX_API_TOKEN (Appwrite Console) ; tokens.csv + GITHUB_TOKEN local (dashboards)
+- [x] Pour chacun : emplacement de stockage (GH Secrets, Appwrite Console, fichier `.env` local) + owner + procédure de rotation — documenté dans [docs/security/secrets.md](docs/security/secrets.md)
+- [x] Documenter la procédure de rotation — section "Procédure de rotation générique" + "Procédure d'urgence" dans [docs/security/secrets.md](docs/security/secrets.md)
 
 ### 0.3 Cartographie des surfaces exposées
 
-- [ ] Lister les URLs Appwrite Sites de prod (amarre, ecrin) et de preview éventuelles
-- [ ] Lister les endpoints API publics dans [apps/find-an-expert/src/routes/api/](apps/find-an-expert/src/routes/api/)
-- [ ] Identifier les routes nécessitant authentification vs publiques
+- [ ] URLs Appwrite Sites prod (amarre, ecrin, find-an-expert) et previews — structure documentée dans [docs/security/surfaces.md](docs/security/surfaces.md), URLs concrètes _à compléter par l'admin Appwrite_
+- [x] Lister les endpoints API publics — [docs/security/surfaces.md](docs/security/surfaces.md) couvre les 3 apps déployées (amarre, ecrin, find-an-expert) + les 2 dashboards locaux
+- [x] Identifier les routes nécessitant authentification vs publiques — classification `🌐 PUBLIC` / `🔒 AUTH` / `🏠 LOCAL` pour chaque endpoint. 3 points d'attention identifiés : `ecrin /graphs`, `find-an-expert /institutions/search`, `find-an-expert /repositories/[id]` sont publics — à arbitrer (gate auth ou rate limit, cf. Phase 6.5)
 
 ---
 
