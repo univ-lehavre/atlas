@@ -286,7 +286,7 @@ Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d
 - [x] `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
 - [x] `X-Frame-Options: DENY` (defense-in-depth, redondant avec CSP `frame-ancestors 'none'`)
 - [ ] **À tightener** : `connect-src 'self' https:` est volontairement wildcard pour ne pas bloquer Appwrite/REDCap/OpenAlex selon l'environnement de déploiement. Iteration suivante : remplacer par les domaines exacts (`appwrite-dev.univ-lehavre.fr`, `backend.chasset.net`, `redcap.univ-lehavre.fr`, `api.openalex.org`) via env var lue au build ou hardcodée par environnement.
-- [x] **Dette test partiellement résolue** : tests handler ajoutés en Phase 7.2 pour les 6 endpoints rate-limités → couverture globale remontée, seuils restaurés à leur valeur d'origine (amarre 42/52/36/43, ecrin 28/18/27/28). Reste à tester `hooks.server.ts` (les 5 headers de sécurité) — cf. Phase 7.2.
+- [x] **Dette test résolue** : tests handler ajoutés en Phase 7.2 pour les 6 endpoints rate-limités, **plus tests `hooks.server.ts`** sur les 3 apps (3 cas chacun : headers statiques, HSTS gated HTTPS, population de `event.locals.userId` quand session valide). Couverture globale remontée, seuils restaurés à leur valeur d'origine (amarre 42/52/36/43, ecrin 28/18/27/28).
 - [ ] Valider avec [securityheaders.com](https://securityheaders.com) — objectif : note A minimum (après déploiement)
 - [ ] Tester aussi avec [Mozilla Observatory](https://observatory.mozilla.org)
 
@@ -335,7 +335,7 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 - [x] Tests handler `find-an-expert /repositories/[id]` — 2 cas (200, 429)
 - [x] Tests handlers `/auth/signup` × 3 apps — 2 cas chacun (200, 429 anti-spam)
 - [ ] **Étendre** : ajouter tests pour les autres catégories listées initialement — payloads malformés (cas explicites), 401 sur endpoints AUTH sans session (déjà partiellement testé sur amarre /surveys/new), anti-XSS basique (vérifier que les inputs ne sont pas réfléchis tels quels)
-- [ ] **Étendre** : test handler `hooks.server.ts` qui mocke `createSessionClient` et vérifie les 5 headers de sécurité (Phase 6.3)
+- [x] Test handler `hooks.server.ts` × 3 apps qui mocke `createSessionClient` et vérifie les 5 headers de sécurité (Phase 6.3)
 
 ### 7.3 Revue de sécurité périodique
 
@@ -397,7 +397,7 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 
 - [ ] Phase 7.1 (OWASP ZAP baseline) — à faire
 - [x] Phase 6.5 (rate limiting) ✅ livré en local (branche `devsecops/rate-limiting-phase-6-5`) — pas encore mergé
-- [x] Phase 7.2 (tests sécurité applicatifs) ✅ partiellement livré (handlers rate-limités) ; reste hooks.server.ts + anti-XSS / payloads malformés
+- [x] Phase 7.2 (tests sécurité applicatifs) ✅ : handlers rate-limités + hooks.server.ts × 3 apps livrés ; reste à étendre sur anti-XSS et payloads malformés explicites
 - [ ] Phase 8 (observabilité, runbook incident) — à faire
 - [x] Phase 5.2 (CODEOWNERS) ✅ livré via PR #127 ; nomination d'un second mainteneur ouverte
 - [x] Phase 5.4 (CONTRIBUTING) ✅ livré via PR #127
