@@ -16,6 +16,7 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [ ] Helper TS pour parser le CSV REDCap + générer des fake records
 - [ ] Abstraction CLI partagée (réduire le boilerplate des 3 CLIs citation-like)
 - [ ] Tests `bin/` pour `cli/crf` (couverture 22.7% → 50%+)
+- [ ] Déplacement des composants UI des apps vers un package partagé (extraire les composants Svelte communs hors de `apps/*/src/lib/components/` vers un `packages/ui/` ou équivalent — à cadrer : périmètre, conventions de styling/theming, gestion des dépendances Svelte/SvelteKit)
 
 **DevSecOps (renvoient aux phases ci-dessous)**
 
