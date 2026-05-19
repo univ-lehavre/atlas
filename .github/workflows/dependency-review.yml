@@ -1,0 +1,46 @@
+name: Dependency review
+
+# Vérifie chaque PR contre la GitHub Dependency Graph :
+#  - bloque toute nouvelle vulnérabilité de sévérité `high` ou `critical`.
+#    Les `moderate` et `low` ne bloquent pas — le script `audit:security`
+#    (lancé en pre-push et en CI sur le job Audit) garde la couverture
+#    pour ces niveaux et peut être durci à `--audit-level=moderate` si
+#    on le souhaite (cf. Phase 3.3).
+#  - bloque toute nouvelle dépendance avec une licence hors allowlist.
+#    L'allowlist est alignée sur `scripts/audit/licenses.mjs` — SPDX
+#    canoniques uniquement (les exceptions par package du script local,
+#    ex. `fsevents`, sont laissées hors workflow ; à ajouter en
+#    `deny-packages: ''` exception si besoin).
+#
+# Prérequis : Dependency graph doit être activé côté repo (Settings →
+# Code security → Dependency graph). C'est le cas sur atlas, sinon
+# Dependabot ne tournerait pas.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: Review dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          fail-on-severity: high
+          allow-licenses: >-
+            MIT, MIT-0, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD,
+            Unlicense, CC0-1.0, CC-BY-4.0, Python-2.0, MPL-2.0,
+            BlueOak-1.0.0, Zlib, WTFPL
+          comment-summary-in-pr: on-failure
