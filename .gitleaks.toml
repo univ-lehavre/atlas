@@ -56,8 +56,11 @@ paths = [
   # Workspace-locked CSV containing project tokens — never tracked but
   # defended in depth.
   '''^redcap-token\.csv$''',
-  # Test fixtures with synthetic data
-  '''sandbox/crf-sandbox/tests/fixtures/.*''',
+  # Test fixtures with synthetic data — covers current and historical paths
+  # (e.g. `packages/<pkg>/tests/fixtures/`, the now-renamed
+  # `packages/redcap/tests/fixtures/` from before the trademark migration,
+  # and the sandbox tree).
+  '''(?:^|/)tests/fixtures/''',
   '''packages/.*/src/.*\.test\.ts$''',
   '''packages/.*/src/.*\.spec\.ts$''',
   # Markdown documentation — contains example tokens by nature, never
