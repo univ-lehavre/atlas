@@ -11,10 +11,12 @@ Avancement DevSecOps : Sprint 1 + une grosse partie du Sprint 2/3 livrés via PR
 Items concrets, immédiatement actionnables, sans dépendance d'arbitrage préalable :
 
 - [ ] Après merge [PR #156](https://github.com/univ-lehavre/atlas/pull/156) — vérifier que les alertes CodeQL remontent dans l'onglet **Security → Code scanning** du dépôt
-- [ ] Vérifier qu'aucun build n'est cassé par les bumps majors Dependabot du 2026-05-19 (notamment `@napi-rs/canvas` 0.x→1.x via #137)
-- [ ] Vérifier en dev le nouveau wording RGPD du modal [CreateRequest.svelte](apps/amarre/src/lib/components/CreateRequest.svelte) (porté via [PR #155](https://github.com/univ-lehavre/atlas/pull/155))
-- [ ] Vérifier la logique de signature composante/labo selon `invitation_type` dans amarre (`1`=Recherche, `2`=Enseignement, `3`=Les deux)
+- [x] Vérifier qu'aucun build n'est cassé par les bumps majors Dependabot du 2026-05-19 (notamment `@napi-rs/canvas` 0.x→1.x via #137) — API `createCanvas`/`getContext`/`toBuffer` validée à l'exécution, tests + build OK
+- [x] Vérifier le nouveau wording RGPD du modal [CreateRequest.svelte](apps/amarre/src/lib/ui/CreateRequest.svelte) (porté via [PR #155](https://github.com/univ-lehavre/atlas/pull/155)) — code-side : diff conforme à l'upstream `b035655` (titre, lien `target=_blank rel=noopener`). Vérif visuelle finale à faire côté dev par toi si souhaitée.
+- [x] Vérifier la logique de signature composante/labo selon `invitation_type` dans amarre (`1`=Recherche, `2`=Enseignement, `3`=Les deux) — table de vérité conforme au spec ; 3 points cosmétiques à noter ([Request.svelte:13](apps/amarre/src/lib/ui/Request.svelte#L13) dead code commenté, asymétrie `isInvitation` préservée de l'upstream, pas de test unitaire sur `Request.svelte`)
 - [ ] [Actions UI GitHub](#actions-manuelles-ui-github) — activer Secret Scanning + Push Protection + branch protection sur `main`
+- [ ] Fix logos `vite-plugin-static-copy` → script `prepare` (3 apps) — livré via [PR #157](https://github.com/univ-lehavre/atlas/pull/157), à merger
+- [ ] Nettoyer `knip.json` : retirer `@univ-lehavre/atlas-logos` de `ignoreDependencies` des 3 apps (la dep est maintenant utilisée par le `prepare` script — knip remonte ça en *configuration hint*)
 
 ---
 
