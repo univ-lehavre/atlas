@@ -40,7 +40,8 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [ ] Phase 4.3 — npm provenance via OIDC (voir [§4.3](#43-npm-provenance-via-oidc))
 - [ ] Phase 4.4 — SBOM CycloneDX (voir [§4.4](#44-sbom-software-bill-of-materials))
 - [x] Phase 5.3 — branch protection sur `main` activée via API le 2026-05-19 (voir [§5.3](#53-branch-protection-sur-main))
-- [ ] Phase 6 — HTTP headers + rate limit (par app, voir [§6.3](#63-en-têtes-http-de-sécurité) et [§6.5](#65-rate-limiting))
+- [x] Phase 6.3 — HTTP headers de sécurité livrés (CSP via `kit.csp` + 5 headers via `hooks.server.ts`, sur amarre + ecrin + find-an-expert). Reste à tightener `connect-src` (wildcard pour v1).
+- [ ] Phase 6.5 — rate limiting sur les endpoints publics (voir [§6.5](#65-rate-limiting))
 - [ ] Phase 7 — OWASP ZAP baseline (voir [§7.1](#71-owasp-zap-baseline))
 - [ ] Phase 8 — observabilité + runbook incident (voir [§8](#phase-8--observabilité-et-réponse-aux-incidents))
 
@@ -276,14 +277,16 @@ Activée via API le 2026-05-19. Configuration appliquée :
 
 ### 6.3 En-têtes HTTP de sécurité
 
-- [ ] Configurer dans Appwrite Sites (ou via `hooks.server.ts` SvelteKit) :
-  - `Content-Security-Policy` (script-src, style-src, img-src, connect-src — y compris l'API Appwrite, OpenAlex)
-  - `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
-  - `X-Content-Type-Options: nosniff`
-  - `Referrer-Policy: strict-origin-when-cross-origin`
-  - `Permissions-Policy` (désactiver caméra, micro, géoloc si non utilisés)
-  - `X-Frame-Options: DENY` (ou via CSP `frame-ancestors`)
-- [ ] Valider avec [securityheaders.com](https://securityheaders.com) — objectif : note A minimum
+Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d'hydration) + `hooks.server.ts` (HSTS gated sur HTTPS, autres headers toujours). Couvre les 3 apps SvelteKit (amarre, ecrin, find-an-expert).
+
+- [x] `Content-Security-Policy` — strict (default/script/font/img/object/frame-ancestors/form-action/base-uri) ; `style-src 'unsafe-inline'` conservé pour les `style=` inline Svelte et Bootstrap
+- [x] `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` — uniquement quand `event.url.protocol === 'https:'`
+- [x] `X-Content-Type-Options: nosniff`
+- [x] `Referrer-Policy: strict-origin-when-cross-origin`
+- [x] `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
+- [x] `X-Frame-Options: DENY` (defense-in-depth, redondant avec CSP `frame-ancestors 'none'`)
+- [ ] **À tightener** : `connect-src 'self' https:` est volontairement wildcard pour ne pas bloquer Appwrite/REDCap/OpenAlex selon l'environnement de déploiement. Iteration suivante : remplacer par les domaines exacts (`appwrite-dev.univ-lehavre.fr`, `backend.chasset.net`, `redcap.univ-lehavre.fr`, `api.openalex.org`) via env var lue au build ou hardcodée par environnement.
+- [ ] Valider avec [securityheaders.com](https://securityheaders.com) — objectif : note A minimum (après déploiement)
 - [ ] Tester aussi avec [Mozilla Observatory](https://observatory.mozilla.org)
 
 ### 6.4 Authentification et sessions
