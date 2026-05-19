@@ -142,7 +142,7 @@
   "devDependencies": {
     "@changesets/changelog-github": "^0.6.0",
     "@changesets/cli": "^2.31.0",
-    "@commitlint/cli": "^20.5.2",
+    "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^21.0.1",
     "@modyfi/vite-plugin-yaml": "^1.1.1",
     "@size-limit/file": "^12.1.0",
