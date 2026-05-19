@@ -17,16 +17,42 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [ ] Abstraction CLI partagée (réduire le boilerplate des 3 CLIs citation-like)
 - [ ] Tests `bin/` pour `cli/crf` (couverture 22.7% → 50%+)
 - [ ] Déplacement des composants UI des apps vers un package partagé (extraire les composants Svelte communs hors de `apps/*/src/lib/components/` vers un `packages/ui/` ou équivalent — à cadrer : périmètre, conventions de styling/theming, gestion des dépendances Svelte/SvelteKit)
+- [ ] `sandbox/amarre-sandbox/` (environnement Docker local Amarre + Appwrite + REDCap, voir [§Sandbox Amarre](#sandbox-amarre--appwrite--crf-en-local))
 
 **DevSecOps (renvoient aux phases ci-dessous)**
 
-- [ ] Phase 1 — CodeQL workflow (voir [§1.1](#11-codeql))
+- [x] Phase 1 — CodeQL workflow (voir [§1.1](#11-codeql)) — workflow créé, reste vérif Security tab + nomination security champion
 - [ ] Phase 4.3 — npm provenance via OIDC (voir [§4.3](#43-npm-provenance-via-oidc))
 - [ ] Phase 4.4 — SBOM CycloneDX (voir [§4.4](#44-sbom-software-bill-of-materials))
 - [ ] Phase 5.3 — branch protection sur `main` (UI GitHub, voir [§5.3](#53-branch-protection-sur-main))
 - [ ] Phase 6 — HTTP headers + rate limit (par app, voir [§6.3](#63-en-têtes-http-de-sécurité) et [§6.5](#65-rate-limiting))
 - [ ] Phase 7 — OWASP ZAP baseline (voir [§7.1](#71-owasp-zap-baseline))
 - [ ] Phase 8 — observabilité + runbook incident (voir [§8](#phase-8--observabilité-et-réponse-aux-incidents))
+
+---
+
+## Sandbox Amarre + Appwrite + CRF en local
+
+Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre/](apps/amarre/) bout-en-bout en local, avec une instance Appwrite self-hosted et une instance CRF (REDCap) — pour itérer sur l'app sans dépendre des instances de prod.
+
+**Localisation** : nouveau package `sandbox/amarre-sandbox/` à côté de [sandbox/crf-sandbox/](sandbox/crf-sandbox/) (qui reste dédié à la validation contract/security de l'API CRF). Le nouveau package réutilise la stack CRF existante via la directive `include:` de Docker Compose v2.20+ et ajoute Appwrite + le wiring Amarre.
+
+### Périmètre
+
+- [ ] Squelette `sandbox/amarre-sandbox/` : `docker-compose.yaml` (avec `include:` de `../crf-sandbox/docker-compose.yaml`), `README.md`, `package.json`, scripts
+- [ ] Stack Appwrite self-hosted ajoutée au compose (image officielle, ~10 conteneurs : mariadb, redis, traefik, workers) — vérifier l'empreinte RAM et documenter le `docker compose up` initial (1-2 min)
+- [ ] Script `bootstrap-appwrite.sh` : crée le projet Appwrite, la clé API serveur, configure le domaine autorisé (`localhost:5173`), écrit `PUBLIC_APPWRITE_ENDPOINT` / `PUBLIC_APPWRITE_PROJECT` / `APPWRITE_KEY` dans `apps/amarre/.env.local`
+- [ ] Script `bootstrap-crf.sh` : réutilise `pnpm -F crf-sandbox docker:install`, crée un projet de test avec le bon dictionnaire de données Amarre, génère le token, écrit `PUBLIC_REDCAP_URL` / `REDCAP_API_TOKEN` dans `apps/amarre/.env.local`
+- [ ] Script `bootstrap.sh` orchestrateur : up de la stack, attente healthchecks, bootstrap Appwrite + CRF, affichage des credentials
+- [ ] Décider si Amarre tourne en `pnpm -F amarre dev` sur l'hôte (rapide à itérer) ou dans un conteneur (plus reproductible) — recommandation par défaut : sur l'hôte, conteneurisation optionnelle plus tard
+- [ ] Documentation du dictionnaire de données minimal côté CRF pour qu'Amarre fonctionne (champs attendus par les API routes `apps/amarre/src/routes/api/v1/`)
+
+### Points d'attention
+
+- Bootstrap Appwrite par API n'est pas trivial : la création initiale du projet/clé passe traditionnellement par la console web. Évaluer si l'API admin Appwrite suffit, sinon documenter les étapes manuelles
+- Couplage léger avec `crf-sandbox` (noms de services, ports) — si le compose de `crf-sandbox` change, amarre-sandbox casse. Acceptable tant que la convention est explicitée dans le README
+- L'allowlist email d'Amarre (`ALLOWED_DOMAINS_REGEXP`) doit autoriser un domaine de test (ex. `@example\.org`) pour les comptes locaux
+- Pas de noms de marques dans le code/identifiants (cf. convention repo) : `amarre-sandbox`, pas `redcap-sandbox` ; variables `CRF_*` plutôt que `REDCAP_*` côté scripts
 
 ---
 
@@ -86,6 +112,17 @@ Garanties préservées : tout nouveau secret est détecté soit par le scan PR, 
 - [ ] Vérifier qu'aucun build n'est cassé par les bumps majors (`@napi-rs/canvas` 0.x→1.x notamment)
 - [ ] Configurer **auto-merge des patches** Dependabot après CI verte (Phase 3.1 — case restante)
 
+### Sync amarre upstream (PR #155 mergée 2026-05-19)
+
+L'app `amarre` dans atlas avait été importée le 2026-01-27 depuis `univ-lehavre/amarre`. Le dépôt standalone a ensuite reçu 3 commits le 2026-02-06 qui n'avaient pas été reportés. Synchronisation faite via PR #155.
+
+- [x] Port `1db30df` — composante/labo signing requirements basés sur `invitation_type`
+- [x] Port `8486e79` — mock test survey list avec `invitation_type`
+- [x] Port `b035655` — wording du modal RGPD `CreateRequest.svelte` + lien vers formulaire
+- [ ] Vérifier en dev le nouveau wording RGPD du modal `CreateRequest.svelte`
+- [ ] Vérifier la logique de signature composante/labo selon `invitation_type` (`1`=Recherche, `2`=Enseignement, `3`=Les deux)
+- [ ] Décider du sort de `univ-lehavre/amarre` (standalone, dernier commit 2026-02-06) : archiver — atlas est désormais la source canonique — ou garder en lecture seule comme historique
+
 ### RGPD / PRIVACY.md (à arbitrer)
 
 Initialement retiré du périmètre de la PR #127 (_"le repo est du code, pas une politique RGPD"_). À reprendre comme item indépendant, en se posant d'abord la question du **cadrage** :
@@ -136,11 +173,12 @@ Issus du test plan de la PR #127, à faire dans Settings GitHub :
 
 ### 1.1 CodeQL
 
-- [ ] Créer `.github/workflows/codeql.yml` avec langages `javascript-typescript`
-- [ ] Déclencheurs : `push` sur main, `pull_request` sur main, `schedule` hebdomadaire
-- [ ] Activer les query suites `security-extended` et `security-and-quality`
-- [ ] Vérifier que les alertes remontent dans l'onglet Security du dépôt GitHub
+- [x] Créer `.github/workflows/codeql.yml` avec langages `javascript-typescript`
+- [x] Déclencheurs : `push` sur main, `pull_request` sur main, `schedule` hebdomadaire (lundi 03:17 UTC) + `workflow_dispatch`
+- [x] Activer les query suites `security-extended` et `security-and-quality`
+- [ ] Vérifier après premier run que les alertes remontent dans l'onglet Security du dépôt GitHub
 - [ ] Définir un _security champion_ responsable du triage des alertes
+- [ ] Limitation Svelte : l'extracteur JS/TS de CodeQL ne parse pas les `.svelte` (les `<script>` sont hors couverture). À documenter et compléter par des revues + lint Svelte.
 
 ### 1.2 Semgrep (optionnel, complémentaire)
 
