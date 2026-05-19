@@ -19,7 +19,7 @@ ECRIN enables researchers to:
 
 - [Technical Documentation](/projects/ecrin/dev/) - Development status, architecture, components
 - [Technical Setup](/projects/ecrin/find-an-expert/technical-setup) - Installation and development
-- [Appwrite Setup](/projects/ecrin/find-an-expert/appwrite-setup) - Backend and collections
+- [Appwrite Setup](/projects/ecrin/find-an-expert/baas-setup) - Backend and collections
 - [Design System](/projects/ecrin/find-an-expert/design-system) - Components and themes
 - [CSS Architecture](/projects/ecrin/find-an-expert/css-architecture) - Tailwind and styles
 - [Technical Audit](/projects/ecrin/audit/) - CSS and architecture audits

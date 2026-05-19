@@ -27,6 +27,20 @@ pre-commit:
         fi
       priority: 1
 
+    gitleaks:
+      # Bloque les commits contenant des secrets détectés (tokens REDCap 32-char
+      # hex, clés Appwrite, clés GitHub App, etc.). Nécessite gitleaks 8.x dans
+      # le PATH (brew install gitleaks). Si non installé, le hook passe en
+      # mode warning — la CI le couvre via .github/workflows/gitleaks.yml.
+      run: |
+        if command -v gitleaks > /dev/null 2>&1; then
+          gitleaks protect --staged --verbose --redact
+        else
+          echo "ℹ️  gitleaks non installé localement (brew install gitleaks)."
+          echo "    Scan secrets délégué à la CI sur PR. Continuez."
+        fi
+      priority: 1
+
     format:
       run: pnpm format:check
 

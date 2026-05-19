@@ -23,6 +23,7 @@ export default withMermaid(
       /\.\.\/_media\/atlas-/,
       // TypeDoc generated references between packages can be emitted as _media-relative paths.
       /\.\.\/\.\.\/\.\.\/atlas-redcap-client\/interfaces\/Version/,
+      /\.\.\/\.\.\/\.\.\/atlas-crf-client\/interfaces\/Version/,
       // README links pointing to docs/api (broken when copied by TypeDoc)
       /\.\.\/docs\/api\/@univ-lehavre/,
       // TypeDoc generated links pointing to old guide paths

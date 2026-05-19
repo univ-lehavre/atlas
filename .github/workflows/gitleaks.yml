@@ -1,0 +1,70 @@
+name: Gitleaks
+
+# Détecte les secrets potentiellement committés (tokens REDCap, clés
+# Appwrite, clés GitHub App, etc.). Couvre l'historique complet de la PR ;
+# le pre-commit hook lefthook scanne uniquement les fichiers stagés.
+#
+# Note technique : on utilise le binaire OSS `gitleaks` directement (et pas
+# `gitleaks-action`) car ce dernier est devenu payant pour les organisations
+# GitHub depuis sa v2. Le binaire reste sous licence MIT.
+#
+# Configuration : .gitleaks.toml (à la racine).
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gitleaks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Scan for secrets
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # Full history so gitleaks can scan all commits in the PR.
+          fetch-depth: 0
+
+      - name: Install gitleaks binary (OSS)
+        env:
+          GITLEAKS_VERSION: "8.30.1"
+        run: |
+          set -euo pipefail
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            | tar -xz -C /tmp
+          sudo mv /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      - name: Scan repository (PR diff)
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+          # On a PR, scan the commits added by the branch only (faster) but
+          # still load the full repo so .gitleaks.toml allowlist works.
+          gitleaks detect \
+            --source . \
+            --config .gitleaks.toml \
+            --log-opts "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}" \
+            --redact \
+            --verbose \
+            --no-banner
+
+      - name: Scan repository (push to main)
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          gitleaks detect \
+            --source . \
+            --config .gitleaks.toml \
+            --redact \
+            --verbose \
+            --no-banner

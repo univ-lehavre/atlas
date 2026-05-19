@@ -26,7 +26,7 @@ export { generateOpenApiSpec } from './generator.js';
 
 /**
  * Get available REDCap versions from ZIP files in the upstream directory.
- * Expects files named `redcap<version>.zip` (e.g. `redcap16.1.9.zip`).
+ * Expects files named `redcap{version}.zip` (e.g. `redcap16.1.9.zip`).
  */
 export function getAvailableVersions(upstreamPath: string): string[] {
   if (!existsSync(upstreamPath)) {
@@ -41,7 +41,7 @@ export function getAvailableVersions(upstreamPath: string): string[] {
 
 /**
  * Extract a REDCap ZIP to a temporary directory and return the versioned source path.
- * The ZIP structure is expected to be `redcap/redcap_v<version>/`.
+ * The ZIP structure is expected to be `redcap/redcap_v{version}/`.
  * The caller is responsible for cleaning up the returned `tmpRoot`.
  */
 export function extractZip(
@@ -72,7 +72,7 @@ export function extractZip(
 export interface ExtractOptions {
   /** REDCap version to extract */
   version: string;
-  /** Path to the upstream/ directory containing redcap<version>.zip files */
+  /** Path to the upstream/ directory containing redcap{version}.zip files */
   upstreamPath: string;
   /** Output path for the generated spec */
   outputPath: string;

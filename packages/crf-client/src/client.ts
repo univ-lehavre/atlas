@@ -214,7 +214,16 @@ const extractUserId = (results: readonly { readonly userid?: string }[]): string
  * 2. Select the appropriate adapter for that version
  * 3. Apply version-specific transformations to requests/responses
  */
-const makeCrfClient = (config: CrfConfig, fetchFn: typeof fetch = fetch): CrfClient => {
+const makeCrfClient = (rawConfig: CrfConfig, fetchFn: typeof fetch = fetch): CrfClient => {
+  // REDCap returns HTTP 501 on POST when the API URL is missing the
+  // trailing slash (e.g. `/api` instead of `/api/`). Normalise here so
+  // callers don't have to remember this quirk.
+  const config: CrfConfig = {
+    ...rawConfig,
+    url: (rawConfig.url.endsWith('/')
+      ? rawConfig.url
+      : `${rawConfig.url}/`) as typeof rawConfig.url,
+  };
   // Mutable state for lazy initialization (caching detected version)
   // eslint-disable-next-line functional/no-let -- Required for lazy caching
   let state: ClientState = { version: null, adapter: null, versionString: null };
