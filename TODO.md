@@ -286,6 +286,7 @@ Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d
 - [x] `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
 - [x] `X-Frame-Options: DENY` (defense-in-depth, redondant avec CSP `frame-ancestors 'none'`)
 - [ ] **À tightener** : `connect-src 'self' https:` est volontairement wildcard pour ne pas bloquer Appwrite/REDCap/OpenAlex selon l'environnement de déploiement. Iteration suivante : remplacer par les domaines exacts (`appwrite-dev.univ-lehavre.fr`, `backend.chasset.net`, `redcap.univ-lehavre.fr`, `api.openalex.org`) via env var lue au build ou hardcodée par environnement.
+- [ ] **Dette test** : `hooks.server.ts` n'a pas de test unitaire ; l'ajout des headers a fait passer amarre/ecrin sous leur seuil de couverture. Seuils baissés de 1 point (amarre statements 42→41 + lines 43→42, ecrin statements 28→27 + branches 18→17) — à remonter en ajoutant un test du `handle` qui mocke `createSessionClient` et vérifie les 5 headers.
 - [ ] Valider avec [securityheaders.com](https://securityheaders.com) — objectif : note A minimum (après déploiement)
 - [ ] Tester aussi avec [Mozilla Observatory](https://observatory.mozilla.org)
 
