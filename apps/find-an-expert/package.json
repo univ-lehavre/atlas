@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@iconify/svelte": "^5.2.1",
+    "@univ-lehavre/atlas-auth": "workspace:*",
     "@univ-lehavre/atlas-baas": "workspace:*",
     "@univ-lehavre/atlas-errors": "workspace:*",
     "@univ-lehavre/atlas-citation-fetch": "workspace:*",

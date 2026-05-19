@@ -286,7 +286,7 @@ Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d
 - [x] `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
 - [x] `X-Frame-Options: DENY` (defense-in-depth, redondant avec CSP `frame-ancestors 'none'`)
 - [ ] **À tightener** : `connect-src 'self' https:` est volontairement wildcard pour ne pas bloquer Appwrite/REDCap/OpenAlex selon l'environnement de déploiement. Iteration suivante : remplacer par les domaines exacts (`appwrite-dev.univ-lehavre.fr`, `backend.chasset.net`, `redcap.univ-lehavre.fr`, `api.openalex.org`) via env var lue au build ou hardcodée par environnement.
-- [ ] **Dette test** : `hooks.server.ts` n'a pas de test unitaire ; l'ajout des headers a fait passer amarre/ecrin sous leur seuil de couverture. Seuils baissés de 1 point (amarre statements 42→41 + lines 43→42, ecrin statements 28→27 + branches 18→17) — à remonter en ajoutant un test du `handle` qui mocke `createSessionClient` et vérifie les 5 headers.
+- [x] **Dette test résolue** : tests handler ajoutés en Phase 7.2 pour les 6 endpoints rate-limités, **plus tests `hooks.server.ts`** sur les 3 apps (3 cas chacun : headers statiques, HSTS gated HTTPS, population de `event.locals.userId` quand session valide). Seuils ajustés : amarre 42/52/36/43 et ecrin 28/18/27/28 restaurés à leur valeur d'origine. **find-an-expert baissé temporairement** à 58/41/40/58 après dédup validators (les branches de validation ont migré dans `@univ-lehavre/atlas-auth`, hors périmètre de coverage local) — à remonter en migrant aussi les tests des validators dans le package.
 - [ ] Valider avec [securityheaders.com](https://securityheaders.com) — objectif : note A minimum (après déploiement)
 - [ ] Tester aussi avec [Mozilla Observatory](https://observatory.mozilla.org)
 
@@ -295,12 +295,24 @@ Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d
 - [x] Cookies de session : `httpOnly: true` (rendu explicite — était implicite via le default SvelteKit), `secure: true`, `sameSite: 'strict'` (plus strict que minimum Lax), `path: '/'`, `expires` — appliqué dans les 4 setters (`packages/auth/src/index.ts` + services des 3 apps).
 - [x] Vérifier les flux d'auth — aucun `localStorage` ni `sessionStorage` dans tout le repo (audit `grep -rn` sur apps + packages clean). Cookies UI find-an-expert (theme, font, dark-mode, locale) en `SameSite=Lax`, sans `Secure` — non sensible, lus côté client par design.
 - [x] Protection CSRF — SvelteKit `csrf: { checkOrigin: true }` actif par défaut (aucun override dans les `svelte.config.js`). Confirmé par audit.
-- [ ] **À noter** : duplication du code de gestion de session entre `packages/auth/src/index.ts` (factory `createAuthService`) et les 3 services par app — ces derniers n'utilisent pas le factory partagé. Pas critique mais à dédupliquer dans un futur refactor pour éviter la dérive.
+- [x] **Dédup session/auth** : les 3 services par-app sont désormais des thin wrappers (~30 lignes) autour de `createAuthService` du package partagé. La logique cookie + admin/session client + validation est centralisée dans `packages/auth/src/index.ts`. ecrin garde `deleteUser`, amarre/ecrin gardent le câblage `resolveUserId` (REDCap `fetchUserId`), find-an-expert utilise le factory tel quel (no resolveUserId).
+- [x] **Dédup baas client** : amarre + find-an-expert ont leur `$lib/server/baas/index.ts` réécrit en thin wrapper (~25 lignes) autour de `createAdminClient` / `createSessionClient` du package partagé `@univ-lehavre/atlas-baas`. La signature locale (sans config, qui est dérivée de l'env de l'app) reste identique pour ne pas toucher les consumers (hooks.server.ts, services). **ecrin volontairement laissé en local** : utilise `TablesDB` (API typée récente d'Appwrite) que le package partagé n'expose pas (il fournit `Databases`). À uniformiser en étendant le package quand `TablesDB` deviendra le standard partagé.
+- [x] **Dédup userRepository** : amarre `$lib/server/baas/userRepository.ts` + find-an-expert `$lib/server/user/repository.ts` sont des thin subclasses (~10 lignes) qui étendent `BaasUserRepository` du package partagé en injectant `adminConfig` local. L'API à constructeur sans argument est préservée — consumers (`new BaasUserRepository()`) inchangés.
+- [x] **Dédup validators auth** : amarre + find-an-expert ont leur `validators/auth.ts` réécrit en re-exports du package `@univ-lehavre/atlas-auth` (`validateMagicUrlLogin`, `validateUserId`, `checkRequestBody`) et `@univ-lehavre/atlas-validators` (`ensureJsonContentType`, `parseJsonBody`). `validateSignupEmail` est wrappé pour injecter `ALLOWED_DOMAINS_REGEXP` depuis l'env. **ecrin volontairement gardé local** sur `validateSignupEmail` : utilise une lookup async `isAlliance` (lecture base Appwrite) au lieu d'une regex statique, et lève `NotPartOfAllianceError` au lieu de `NotAnEmailError`. Le reste est re-exporté du package.
 
 ### 6.5 Rate limiting
 
-- [ ] Mettre en place rate limiting sur les endpoints publics : voir [apps/find-an-expert/src/routes/api/](apps/find-an-expert/src/routes/api/)
-- [ ] Solution : via Appwrite Functions, middleware SvelteKit, ou Cloudflare devant si applicable
+Implémentation : utilitaire `createRateLimiter` dans [packages/auth/src/rate-limit.ts](packages/auth/src/rate-limit.ts) — fenêtre fixe par-clé (IP), in-memory, ~80 lignes. API : `check(key)` retourne `{ ok, remaining, resetAt }` ; helper `rateLimitHeaders(result, limit)` pour les headers `X-RateLimit-*` + `Retry-After` quand refusé.
+
+- [x] Rate-limit sur les 3 endpoints publics flagués dans [docs/security/surfaces.md](docs/security/surfaces.md) :
+  - `ecrin /graphs` — 30 req/min/IP (atténue l'énumération brute de `record_id`)
+  - `find-an-expert /institutions/search` — 30 req/min/IP (protège `OPENALEX_API_TOKEN` de l'abus de quota)
+  - `find-an-expert /repositories/[id]` — 60 req/min/IP (lightweight)
+- [x] Rate-limit anti-spam sur les 3 endpoints `/auth/signup` (amarre + ecrin + find-an-expert) — 5 req/min/IP (déclenche un envoi d'email)
+- [ ] **Limitations connues** (à arbitrer plus tard) :
+  - In-memory : multi-instance (load balancer) → chaque instance compte séparément. OK en single-instance adapter-node, à migrer vers Redis/Upstash si scale-out
+  - Fenêtre fixe (pas glissante) : burst possible en fin de fenêtre
+  - Pas de rate-limit sur `/auth/login` (magic URL secret haute entropie) ni sur `/health` (lightweight) — à considérer si besoin
 
 ---
 
@@ -316,10 +328,14 @@ Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d
 
 ### 7.2 Tests de sécurité applicatifs
 
-- [ ] Ajouter quelques tests Vitest spécifiques :
-  - Vérification que les routes API rejettent les payloads malformés
-  - Vérification que les endpoints authentifiés renvoient 401 sans token
-  - Vérification de l'absence de réflexion brute des inputs utilisateurs (anti-XSS basique)
+Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5). Couvrent les chemins succès / 400 (paramètre manquant) / 429 (saturation rate-limit) / isolation par-IP, plus la présence des headers `X-RateLimit-*` et `Retry-After`. A remonté la couverture globale, permettant la restauration des seuils baissés en Phase 6.3/6.5.
+
+- [x] Tests handler `ecrin /graphs` — 4 cas (200, 400 missing param, 429 saturation, isolation par IP)
+- [x] Tests handler `find-an-expert /institutions/search` — 2 cas (200 + headers, 429)
+- [x] Tests handler `find-an-expert /repositories/[id]` — 2 cas (200, 429)
+- [x] Tests handlers `/auth/signup` × 3 apps — 2 cas chacun (200, 429 anti-spam)
+- [ ] **Étendre** : ajouter tests pour les autres catégories listées initialement — payloads malformés (cas explicites), 401 sur endpoints AUTH sans session (déjà partiellement testé sur amarre /surveys/new), anti-XSS basique (vérifier que les inputs ne sont pas réfléchis tels quels)
+- [x] Test handler `hooks.server.ts` × 3 apps qui mocke `createSessionClient` et vérifie les 5 headers de sécurité (Phase 6.3)
 
 ### 7.3 Revue de sécurité périodique
 
@@ -352,32 +368,52 @@ Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d
 
 ## Ordre de priorité recommandé
 
-**Sprint 1 (1 semaine — bloquants sécurité)**
+État au 2026-05-19 : Sprints 1–4 majoritairement bouclés, restent surtout les workflows DAST/supply-chain (Phase 4.3/4.4/7.1) et l'observabilité (Phase 8).
 
-- Phase 0 complète (audit token, secrets, surfaces)
-- Phase 2.1 (GitHub Secret Scanning + Push Protection)
-- Phase 5.1 (SECURITY.md) et 5.3 (branch protection minimale)
+**Sprint 1 (bloquants sécurité)**
 
-**Sprint 2 (1 semaine — fondations)**
+- [x] Phase 0.1 (audit token REDCap) ; Phase 0.2/0.3 ✅ livrés via [PR #171](https://github.com/univ-lehavre/atlas/pull/171) (`docs/security/secrets.md` + `surfaces.md`)
+- [x] Phase 2.1 (Secret Scanning + Push Protection + Dependabot alerts) — activés via API GitHub le 2026-05-19
+- [x] Phase 5.1 (SECURITY.md) ✅ livré via PR #127
+- [x] Phase 5.3 (branch protection main) — activée via API le 2026-05-19
 
-- Phase 1.1 (CodeQL) — ✅ livré via PR #156
-- Phase 3.1, 3.2 (Dependabot + dependency-review)
-- Phase 4.1, 4.2 (pin actions, permissions)
+**Sprint 2 (fondations)**
 
-**Sprint 3 (1 semaine — supply chain et Appwrite)**
+- [x] Phase 1.1 (CodeQL) ✅ livré via [PR #156](https://github.com/univ-lehavre/atlas/pull/156)
+- [x] Phase 3.1 (Dependabot) ✅ livré + auto-merge patches via `.github/workflows/dependabot-auto-merge.yml`
+- [x] Phase 3.2 (Dependency Review Action) ✅ livré via [PR #161](https://github.com/univ-lehavre/atlas/pull/161)
+- [x] Phase 4.1 (pin actions SHA) ✅ livré via PR #127 (+ #156, #161)
+- [x] Phase 4.2 (permissions minimales par job) ✅ — id-token reste à ajouter avec Phase 4.3
 
-- Phase 4.3, 4.4 (provenance, SBOM)
-- Phase 6.3, 6.4 (headers HTTP, cookies)
-- Phase 2.2 (gitleaks) — ✅ livré via PR #127 + cycle de stabilisation #141/#143/#144/#145
+**Sprint 3 (supply chain et Appwrite)**
 
-**Sprint 4 (1 semaine — finalisation)**
+- [ ] Phase 4.3 (npm provenance via OIDC) — à faire
+- [ ] Phase 4.4 (SBOM CycloneDX) — à faire
+- [x] Phase 6.3 (headers HTTP de sécurité) ✅ livré via PR #171 ; tightener `connect-src` ouvert
+- [x] Phase 6.4 (cookies session hardening + audit localStorage + CSRF) ✅ livré via PR #171
+- [x] Phase 2.2 (gitleaks) ✅ livré via PR #127 + stabilisation #141/#143/#144/#145
 
-- Phase 7.1 (ZAP baseline)
-- Phase 6.5 (rate limiting)
-- Phase 8 (observabilité, runbook)
-- Phase 5.2, 5.4 (CODEOWNERS, CONTRIBUTING)
+**Sprint 4 (finalisation)**
 
-À l'issue des 4 sprints, le dépôt satisfait honnêtement le qualificatif **DevSecOps** pour la partie développement _et_ déploiement (amarre, ecrin).
+- [ ] Phase 7.1 (OWASP ZAP baseline) — à faire
+- [x] Phase 6.5 (rate limiting) ✅ livré en local (branche `devsecops/rate-limiting-phase-6-5`) — pas encore mergé
+- [x] Phase 7.2 (tests sécurité applicatifs) ✅ : handlers rate-limités + hooks.server.ts × 3 apps livrés ; reste à étendre sur anti-XSS et payloads malformés explicites
+- [ ] Phase 8 (observabilité, runbook incident) — à faire
+- [x] Phase 5.2 (CODEOWNERS) ✅ livré via PR #127 ; nomination d'un second mainteneur ouverte
+- [x] Phase 5.4 (CONTRIBUTING) ✅ livré via PR #127
+
+**Hors plan initial mais réalisé en session 2026-05-19**
+
+- [x] Dédup `authService` × 3 apps via `createAuthService` (packages/auth) — ~150 lignes supprimées
+- [x] Dédup baas client × 2 apps (amarre + find-an-expert ; ecrin gardé pour TablesDB) — ~80 lignes supprimées
+- [x] Dédup `BaasUserRepository` × 2 apps via subclass thin de `packages/baas`
+- [x] Fix logos `vite-plugin-static-copy` v3→v4 régression via prepare script (PR #157)
+- [x] Décision standalone `univ-lehavre/amarre` (gardé en l'état)
+- [x] Bump amarre/ecrin/find-an-expert : white background header/footer (PR #159)
+- [x] Dependabot — reduce PR noise (1 PR groupée/écosystème, max 1 ouverte simultanée)
+- [x] Cleanup `knip.json` (PR #160) + dette cosmétique (`<span class="">` vide, dead code commenté)
+
+À l'issue de ce backlog, le dépôt satisfait honnêtement le qualificatif **DevSecOps** pour la partie développement *et* déploiement (amarre, ecrin, find-an-expert).
 
 ---
 

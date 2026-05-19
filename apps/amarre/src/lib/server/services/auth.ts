@@ -1,70 +1,55 @@
 import type { Cookies } from '@sveltejs/kit';
-import { ID, type Models } from 'node-appwrite';
+import type { Models } from 'node-appwrite';
 
-import { SESSION_COOKIE } from '$lib/constants';
-import { PUBLIC_LOGIN_URL } from '$env/static/public';
-import { createAdminClient, createSessionClient } from '$lib/server/baas';
+import { createAuthService } from '@univ-lehavre/atlas-auth';
+import { ALLOWED_DOMAINS_REGEXP, APPWRITE_KEY } from '$env/static/private';
 import {
-  validateMagicUrlLogin,
-  validateSignupEmail,
-  validateUserId,
-} from '$lib/server/validators/auth';
+  PUBLIC_APPWRITE_ENDPOINT,
+  PUBLIC_APPWRITE_PROJECT,
+  PUBLIC_LOGIN_URL,
+} from '$env/static/public';
 import { fetchUserId } from './surveys';
 import type { Fetch } from '$lib/types';
+
+// Configuration partagée pour les flux login/logout (pas besoin du fetch
+// SvelteKit). Le signup utilise une instance dédiée par requête pour
+// brancher la résolution d'ID via REDCap (`fetchUserId`).
+const baseConfig = {
+  baas: {
+    endpoint: PUBLIC_APPWRITE_ENDPOINT,
+    projectId: PUBLIC_APPWRITE_PROJECT,
+    apiKey: APPWRITE_KEY,
+  },
+  loginUrl: PUBLIC_LOGIN_URL,
+  domainValidation: { allowedDomainsRegexp: ALLOWED_DOMAINS_REGEXP },
+} as const;
+
+const sharedService = createAuthService(baseConfig);
 
 export const signupWithEmail = async (
   unsecuredEmail: unknown,
   { fetch }: { fetch: Fetch }
 ): Promise<Models.Token> => {
-  // Validate email
-  const email: string = await validateSignupEmail(unsecuredEmail);
-
-  // Fix redirect URL
-  const url: string = `${PUBLIC_LOGIN_URL}/login`;
-
-  // Create magic URL token
-  const { account } = createAdminClient();
-  let userId: string;
-  try {
-    const id = await fetchUserId(email, { fetch });
-    userId = id ?? ID.unique();
-  } catch (error) {
-    console.error('Failed to fetch user ID from REDCap in signupWithEmail:', error);
-    userId = ID.unique();
-  }
-  const token: Models.Token = await account.createMagicURLToken({ userId, email, url });
-
-  return token;
+  const service = createAuthService({
+    ...baseConfig,
+    resolveUserId: async (email) => {
+      try {
+        const id = await fetchUserId(email, { fetch });
+        return id ?? undefined;
+      } catch (error) {
+        console.error('Failed to fetch user ID from REDCap in signupWithEmail:', error);
+        return undefined;
+      }
+    },
+  });
+  return service.signupWithEmail(unsecuredEmail);
 };
 
-export const login = async (
+export const login = (
   unsecuredUserId: unknown,
   unsecuredSecret: unknown,
   cookies: Cookies
-): Promise<Models.Session> => {
-  // Validate inputs
-  const { userId, secret } = validateMagicUrlLogin(unsecuredUserId, unsecuredSecret);
+): Promise<Models.Session> => sharedService.login(unsecuredUserId, unsecuredSecret, cookies);
 
-  // Create session
-  const { account } = createAdminClient();
-  const session: Models.Session = await account.createSession({ userId, secret });
-  cookies.set(SESSION_COOKIE, session.secret, {
-    httpOnly: true,
-    sameSite: 'strict',
-    expires: new Date(session.expire),
-    secure: true,
-    path: '/',
-  });
-
-  return session;
-};
-
-export const logout = async (unsecuredUserId: unknown, cookies: Cookies): Promise<void> => {
-  // Validate userId
-  validateUserId(unsecuredUserId);
-
-  // Delete all sessions for the user
-  const { account } = createSessionClient(cookies);
-  await account.deleteSessions();
-  cookies.delete(SESSION_COOKIE, { path: '/' });
-};
+export const logout = (unsecuredUserId: unknown, cookies: Cookies): Promise<void> =>
+  sharedService.logout(unsecuredUserId, cookies);

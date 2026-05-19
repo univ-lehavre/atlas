@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { createRateLimiter, rateLimitHeaders } from '@univ-lehavre/atlas-auth';
 
 import {
   getGitHubRepoFromPath,
@@ -10,6 +11,11 @@ import {
   buildDiscussionsUrl,
 } from '$lib/server/github';
 import { mapErrorToResponse } from '$lib/server/http';
+
+// Endpoint public sans gate d'auth — rate-limit par-IP pour éviter
+// l'énumération brute (Phase 6.5 DevSecOps, flagué dans
+// docs/security/surfaces.md).
+const limiter = createRateLimiter({ limit: 60, windowMs: 60_000 });
 
 /**
  * Response structure for repository detail endpoint.
@@ -34,7 +40,15 @@ interface RepositoryDetailResponse {
  * Path parameters:
  * - id: Repository identifier (currently accepts any value, uses current repo)
  */
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, getClientAddress }) => {
+  const rate = limiter.check(getClientAddress());
+  if (!rate.ok) {
+    return json(
+      { code: 'rate_limited', message: 'Trop de requêtes, réessayez plus tard.' },
+      { status: 429, headers: rateLimitHeaders(rate, limiter.limit) }
+    );
+  }
+
   try {
     const repoPath = process.cwd();
     const repoInfo = await getGitHubRepoFromPath(repoPath);
@@ -69,7 +83,7 @@ export const GET: RequestHandler = async ({ params }) => {
       urls,
     };
 
-    return json(response);
+    return json(response, { headers: rateLimitHeaders(rate, limiter.limit) });
   } catch (error: unknown) {
     return mapErrorToResponse(error);
   }

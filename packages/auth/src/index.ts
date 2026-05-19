@@ -19,6 +19,15 @@ export {
   checkRequestBody,
   type DomainValidationConfig,
 } from './validators.js';
+export {
+  createRateLimiter,
+  rateLimitHeaders,
+  type RateLimiter,
+  type RateLimitConfig,
+  type RateLimitResult,
+  type RateLimitOk,
+  type RateLimitDenied,
+} from './rate-limit.js';
 
 /**
  * Configuration for the auth service.
