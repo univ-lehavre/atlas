@@ -286,7 +286,7 @@ Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d
 - [x] `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
 - [x] `X-Frame-Options: DENY` (defense-in-depth, redondant avec CSP `frame-ancestors 'none'`)
 - [ ] **À tightener** : `connect-src 'self' https:` est volontairement wildcard pour ne pas bloquer Appwrite/REDCap/OpenAlex selon l'environnement de déploiement. Iteration suivante : remplacer par les domaines exacts (`appwrite-dev.univ-lehavre.fr`, `backend.chasset.net`, `redcap.univ-lehavre.fr`, `api.openalex.org`) via env var lue au build ou hardcodée par environnement.
-- [ ] **Dette test** : `hooks.server.ts` n'a pas de test unitaire ; l'ajout des headers a fait passer amarre/ecrin sous leur seuil de couverture. Seuils baissés de 1 point (amarre statements 42→41 + lines 43→42, ecrin statements 28→27 + branches 18→17) — à remonter en ajoutant un test du `handle` qui mocke `createSessionClient` et vérifie les 5 headers.
+- [ ] **Dette test** : `hooks.server.ts` (Phase 6.3) et les handlers rate-limités (Phase 6.5) ne sont pas testés unitairement. Seuils de coverage baissés progressivement : amarre statements 42→41 + lines 43→42 + branches 52→51, ecrin statements 28→27 + branches 18→17 + lines 28→27. À remonter en ajoutant des tests `handle` (qui mocke `createSessionClient` et vérifie les 5 headers) + tests des handlers rate-limités.
 - [ ] Valider avec [securityheaders.com](https://securityheaders.com) — objectif : note A minimum (après déploiement)
 - [ ] Tester aussi avec [Mozilla Observatory](https://observatory.mozilla.org)
 
@@ -299,8 +299,17 @@ Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d
 
 ### 6.5 Rate limiting
 
-- [ ] Mettre en place rate limiting sur les endpoints publics : voir [apps/find-an-expert/src/routes/api/](apps/find-an-expert/src/routes/api/)
-- [ ] Solution : via Appwrite Functions, middleware SvelteKit, ou Cloudflare devant si applicable
+Implémentation : utilitaire `createRateLimiter` dans [packages/auth/src/rate-limit.ts](packages/auth/src/rate-limit.ts) — fenêtre fixe par-clé (IP), in-memory, ~80 lignes. API : `check(key)` retourne `{ ok, remaining, resetAt }` ; helper `rateLimitHeaders(result, limit)` pour les headers `X-RateLimit-*` + `Retry-After` quand refusé.
+
+- [x] Rate-limit sur les 3 endpoints publics flagués dans [docs/security/surfaces.md](docs/security/surfaces.md) :
+  - `ecrin /graphs` — 30 req/min/IP (atténue l'énumération brute de `record_id`)
+  - `find-an-expert /institutions/search` — 30 req/min/IP (protège `OPENALEX_API_TOKEN` de l'abus de quota)
+  - `find-an-expert /repositories/[id]` — 60 req/min/IP (lightweight)
+- [x] Rate-limit anti-spam sur les 3 endpoints `/auth/signup` (amarre + ecrin + find-an-expert) — 5 req/min/IP (déclenche un envoi d'email)
+- [ ] **Limitations connues** (à arbitrer plus tard) :
+  - In-memory : multi-instance (load balancer) → chaque instance compte séparément. OK en single-instance adapter-node, à migrer vers Redis/Upstash si scale-out
+  - Fenêtre fixe (pas glissante) : burst possible en fin de fenêtre
+  - Pas de rate-limit sur `/auth/login` (magic URL secret haute entropie) ni sur `/health` (lightweight) — à considérer si besoin
 
 ---
 
