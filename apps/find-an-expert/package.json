@@ -51,7 +51,7 @@
     "@univ-lehavre/atlas-logos": "workspace:*",
     "@univ-lehavre/atlas-validators": "workspace:*",
     "effect": "^3.21.2",
-    "node-appwrite": "^24.0.0",
+    "node-appwrite": "^25.0.0",
     "simple-git": "^3.36.0",
     "swagger-ui-dist": "^5.32.5",
     "zod": "^4.3.6"
