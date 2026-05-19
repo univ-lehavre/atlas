@@ -1,0 +1,67 @@
+name: CodeQL
+
+# Analyse statique (SAST) du code JavaScript/TypeScript avec les suites
+# `security-extended` et `security-and-quality`. Les alertes remontent dans
+# l'onglet Security du dépôt — le triage est documenté dans SECURITY.md.
+#
+# Triggers :
+#  - pull_request sur main : bloque les régressions avant merge.
+#  - push sur main : analyse de référence après merge (alimente les
+#    comparaisons d'alertes sur les futures PRs).
+#  - schedule hebdomadaire : capture les nouvelles règles CodeQL publiées,
+#    indépendamment de l'activité de merge.
+#  - workflow_dispatch : audit ponctuel manuel.
+#
+# Note Svelte : l'extracteur JS/TS de CodeQL ne parse pas les fichiers
+# `.svelte`. Le code des `<script>` est donc hors périmètre — c'est une
+# limitation upstream connue, à compléter avec d'autres outils (lint Svelte,
+# revues manuelles).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Lundi 03:17 UTC — décalé pour éviter les pics de runners et la
+    # fenêtre Dependabot (lundi 06:00 Europe/Paris).
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: javascript-typescript
+            build-mode: none
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended,security-and-quality
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
+        with:
+          category: "/language:${{ matrix.language }}"
