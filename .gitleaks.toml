@@ -51,8 +51,19 @@ paths = [
   # Generated / template files that mimic tokens for documentation
   '''\.env\.example$''',
   '''\.env\.[a-z]+\.example$''',
-  '''sandbox/crf-sandbox/docker/config/\.env\.test$''',
-  '''sandbox/crf-sandbox/docker/config/\.env\.test\.example$''',
+  # Sandbox docker .env.test files (Docker compose sandbox running on
+  # localhost — tokens are local-only, not production secrets).
+  # The leading `(?:^|/)` covers both the current path
+  # `sandbox/crf-sandbox/docker/config/.env.test` and the historical
+  # path `packages/redcap-sandbox/docker/config/.env.test` (pre-#125
+  # trademark rename, kept in git history).
+  '''(?:^|/)docker/config/\.env\.test$''',
+  '''(?:^|/)docker/config/\.env\.test\.example$''',
+  # Historical OpenAPI artifacts in amarre (pre-`apps/` restructure).
+  # Both files contain placeholder example tokens for the OpenAPI spec,
+  # never real secrets. They no longer exist in the current tree.
+  '''^packages/amarre/scripts/generate-openapi\.ts$''',
+  '''^packages/amarre/static/api/openapi\.json$''',
   # Workspace-locked CSV containing project tokens — never tracked but
   # defended in depth.
   '''^redcap-token\.csv$''',
