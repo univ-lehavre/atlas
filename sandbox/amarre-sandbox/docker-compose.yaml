@@ -31,7 +31,7 @@ include:
 
 services:
   baas:
-    image: appwrite/appwrite:1.7
+    image: appwrite/appwrite:1.9
     container_name: amarre-sandbox-baas
     ports:
       - "${APP_PORT:-8090}:80"
