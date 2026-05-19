@@ -39,26 +39,29 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [x] Release : success
 - [x] **Gitleaks** : 3 itérations nécessaires (cf. ci-dessous), résolu en passant le scan main en mode diff-only via PR #144
 
-### Faux positifs Gitleaks — chronique d'un puits sans fond
+### Faux positifs Gitleaks — saga close ✅
 
-L'historique du repo (migration trademark #125 + renames antérieurs) contient de nombreux fichiers aux paths obsolètes qui matchent les règles gitleaks. Trois itérations de correction successives ont été nécessaires avant de changer de stratégie :
+L'historique du repo (migration trademark #125 + renames antérieurs) contenait de nombreux fichiers aux paths obsolètes qui matchaient les règles gitleaks. **Cinq PRs** ont été nécessaires pour stabiliser :
 
-| # PR | Findings | Sources                                                                                      | Correction                                                                                                  |
-| ---- | -------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| #141 | 41       | JSDoc `RedcapToken('A1B2…')` + doc `.md` exemples                                            | Règle `redcap-api-token` durcie (contexte d'affectation requis) + allowlist `\.md$` + patterns fixtures     |
-| #143 | 26       | `packages/redcap/tests/fixtures/projects.json` (path historique d'avant migration trademark) | Allowlist path élargie de `sandbox/crf-sandbox/tests/fixtures/.*` → `(?:^\|/)tests/fixtures/`               |
-| #144 | 18       | `packages/amarre/scripts/`, `packages/redcap-sandbox/.env.test` (autres paths historiques)   | **Changement de stratégie** : scan push main en mode diff (`before..after`) au lieu de l'historique complet |
+| # PR                                | Findings | Sources                                                                                                        | Correction                                                                                                         |
+| ----------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| #141                                | 41       | JSDoc `RedcapToken('A1B2…')` + doc `.md` exemples                                                              | Règle `redcap-api-token` durcie (contexte d'affectation requis) + allowlist `\.md$` + patterns fixtures            |
+| #143                                | 26       | `packages/redcap/tests/fixtures/projects.json` (path historique d'avant migration trademark)                   | Allowlist path élargie de `sandbox/crf-sandbox/tests/fixtures/.*` → `(?:^\|/)tests/fixtures/`                      |
+| #144                                | 18       | `packages/amarre/scripts/`, `packages/redcap-sandbox/.env.test` (autres paths historiques)                     | **Changement de stratégie** : scan push main en mode diff (`before..after`) au lieu de l'historique complet        |
+| Audit `workflow_dispatch` post-#144 | 18       | Inventaire complet : 3 fichiers obsolètes (sandbox `.env.test`, amarre `generate-openapi.ts` + `openapi.json`) | Inspection des contenus : 100% faux positifs (fixtures localhost + exemples doc OpenAPI), aucun vrai secret oublié |
+| #145                                | 18 → 0   | Les 3 paths historiques ci-dessus                                                                              | Allowlist ciblée des paths historiques (préféré à un `git filter-repo` jugé disproportionné pour des fixtures)     |
 
-**Stratégie finale (post-PR #144)** :
+**Stratégie finale** :
 
-- Sur **PR** : scan du diff de la PR (`base.sha..head.sha`) — inchangé
+- Sur **PR** : scan du diff de la PR (`base.sha..head.sha`)
 - Sur **push main** : scan uniquement les nouveaux commits du push (`before..after`)
-- Sur **workflow_dispatch** : nouveau step → scan complet de l'historique, à lancer manuellement pour audit ponctuel
+- Sur **workflow_dispatch** : scan complet de l'historique, à lancer manuellement pour audit ponctuel (renvoie maintenant **0 finding**)
 
-Garanties préservées : tout nouveau secret est détecté soit par le scan PR, soit par le scan push main (les deux en mode diff). L'historique n'est plus re-scanné automatiquement.
+Garanties préservées : tout nouveau secret est détecté soit par le scan PR, soit par le scan push main (les deux en mode diff).
 
-- [ ] Une fois PR #144 mergée : lancer `workflow_dispatch` Gitleaks pour cartographier l'inventaire complet des findings historiques (faux positifs vs vrais secrets oubliés)
-- [ ] Documenter dans [.gitleaks.toml](.gitleaks.toml) la stratégie retenue (déjà commentée dans le workflow)
+- [x] Audit historique complet via `workflow_dispatch` — 18 findings cartographiés, tous identifiés comme faux positifs
+- [x] Allowlist des 3 paths historiques pour clore l'audit (#145)
+- [x] Stratégie documentée dans [.github/workflows/gitleaks.yml](.github/workflows/gitleaks.yml) et [.gitleaks.toml](.gitleaks.toml)
 
 ### Dependabot — premier passage
 
