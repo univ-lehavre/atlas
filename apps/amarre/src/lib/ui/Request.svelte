@@ -22,9 +22,7 @@
   let encadrantValidation = $derived(request.encadrant_complete === '2');
   let composanteShouldSign = $derived(
     isInvitation &&
-      (request.invitation_type === '2' ||
-        request.invitation_type === '3' ||
-        isCategoryEnseignant)
+      (request.invitation_type === '2' || request.invitation_type === '3' || isCategoryEnseignant)
   );
   let laboShouldSign = $derived(
     request.invitation_type === '1' ||
