@@ -18,7 +18,7 @@ const sessionConfig: Omit<BaasConfig, 'apiKey'> = {
   projectId: PUBLIC_APPWRITE_PROJECT,
 };
 
-const adminConfig: BaasConfig = {
+export const adminConfig: BaasConfig = {
   ...sessionConfig,
   apiKey: APPWRITE_KEY,
 };
