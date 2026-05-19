@@ -45,7 +45,7 @@
     "@univ-lehavre/atlas-logos": "workspace:*",
     "@univ-lehavre/atlas-validators": "workspace:*",
     "luxon": "^3.7.2",
-    "node-appwrite": "^24.0.0",
+    "node-appwrite": "^25.0.0",
     "zod": "^4.3.6"
   }
 }
