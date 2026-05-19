@@ -1,0 +1,54 @@
+name: Dependabot auto-merge
+
+# Active GitHub auto-merge sur les PRs Dependabot considérées comme
+# sûres :
+#   - tous les `version-update:semver-patch` (ex : 1.2.3 → 1.2.4)
+#   - les `version-update:semver-minor` sur les devDependencies
+#     uniquement (ex : eslint, vitest, prettier — ne touche pas le
+#     code de prod)
+#
+# Les bumps minor sur les runtime deps et tous les majors restent en
+# revue manuelle.
+#
+# Prérequis côté Settings GitHub (à activer une fois après merge) :
+#   - Settings → General → Pull Requests → Allow auto-merge ✅
+#   - Recommandé : Settings → Branches → branch protection sur `main`
+#     avec status checks requis. Sans ça, `gh pr merge --auto` merge
+#     immédiatement si rien n'est obligatoire — donc les "patches"
+#     sortiraient avant que la CI ait fini.
+#
+# Méthode de merge : `--merge` (merge commit), cohérent avec
+# l'historique actuel du repo.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  auto-merge:
+    name: Auto-merge safe Dependabot updates
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+
+      - name: Enable auto-merge (patches everywhere, minors on devDeps)
+        if: |
+          steps.meta.outputs.update-type == 'version-update:semver-patch' ||
+          (steps.meta.outputs.update-type == 'version-update:semver-minor' &&
+           steps.meta.outputs.dependency-type == 'direct:development')
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge --auto --merge "$PR_URL"
