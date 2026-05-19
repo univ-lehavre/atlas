@@ -2,7 +2,104 @@
 
 Plan détaillé pour ajouter la couche "Sec" au pipeline existant (CI GitHub Actions + CD Appwrite Sites pour amarre et ecrin).
 
-État actuel : DevOps fonctionnel (build/test/lint/audit en CI, déploiement automatique Appwrite Sites sur push). Manque la sécurité intégrée tout au long du cycle.
+État actuel : Sprint 1 + une grosse partie du Sprint 2/3 livrés via PR #127 (devsecops hardening). Restent les workflows SAST/DAST (CodeQL, ZAP), la supply chain avancée (provenance OIDC, SBOM), le durcissement runtime Appwrite (headers HTTP, rate limit) et la gouvernance UI GitHub (branch protection, Secret Scanning).
+
+---
+
+## Backlog d'issues à créer
+
+Items différés (issus de la PR #127, trop volumineux pour y être inclus — chacun mérite sa propre PR/issue) :
+
+**Hors DevSecOps**
+
+- [ ] `packages/crf-project-template/` (trame déclarative avec Effect Schema)
+- [ ] Helper TS pour parser le CSV REDCap + générer des fake records
+- [ ] Abstraction CLI partagée (réduire le boilerplate des 3 CLIs citation-like)
+- [ ] Tests `bin/` pour `cli/crf` (couverture 22.7% → 50%+)
+
+**DevSecOps (renvoient aux phases ci-dessous)**
+
+- [ ] Phase 1 — CodeQL workflow (voir [§1.1](#11-codeql))
+- [ ] Phase 4.3 — npm provenance via OIDC (voir [§4.3](#43-npm-provenance-via-oidc))
+- [ ] Phase 4.4 — SBOM CycloneDX (voir [§4.4](#44-sbom-software-bill-of-materials))
+- [ ] Phase 5.3 — branch protection sur `main` (UI GitHub, voir [§5.3](#53-branch-protection-sur-main))
+- [ ] Phase 6 — HTTP headers + rate limit (par app, voir [§6.3](#63-en-têtes-http-de-sécurité) et [§6.5](#65-rate-limiting))
+- [ ] Phase 7 — OWASP ZAP baseline (voir [§7.1](#71-owasp-zap-baseline))
+- [ ] Phase 8 — observabilité + runbook incident (voir [§8](#phase-8--observabilité-et-réponse-aux-incidents))
+
+---
+
+## Suivi immédiat post-PR #127
+
+### Workflows du merge sur main
+
+- [x] CI : success
+- [x] Deploy Documentation : success (fix VitePress validé)
+- [x] Release : success
+- [ ] **Gitleaks : failure** — 41 leaks détectés sur l'historique (cf. ci-dessous)
+
+### Faux positifs Gitleaks à traiter
+
+Le scan trouve 41 findings sur 2 fichiers, **tous des fixtures de documentation/JSDoc** (pas de vrais secrets) :
+
+- `packages/redcap-api/src/brands.ts:15` (commit `ab05c13`, 2026-01-22) — `RedcapToken('A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4')` dans un bloc `@example` JSDoc
+- `docs/api/redcap-api.md:43` (commits `553d38c`, `160d3cf`, 2026-01-20) — `RedcapToken('ABCDEF0123456789ABCDEF0123456789')` dans un exemple de doc
+
+Cause : la règle `redcap-api-token` dans [.gitleaks.toml](.gitleaks.toml) matche tout pattern `[A-F0-9]{32}` proche du mot-clé `redcap`, sans exiger de contexte d'affectation.
+
+**Options de correction** (cf. discussion conversationnelle) :
+
+| Option                                                                                       | Avantage                          | Inconvénient                                       |
+| -------------------------------------------------------------------------------------------- | --------------------------------- | -------------------------------------------------- |
+| A. Allowlist regex des patterns fixture (`A1B2C3D4…`, `ABCDEF01…`) + path `\.md$`            | Ciblé, durable, couvre futurs cas | Maintenir la liste si nouveaux patterns            |
+| B. Allowlist par commit fingerprints (les 41)                                                | Précis, n'élargit rien            | Ne couvre pas un dev recopiant le même exemple     |
+| C. Durcir la règle : exiger un contexte d'assignation (`token\s*[:=]\s*['"]?([A-F0-9]{32})`) | Le plus propre, zéro bruit en doc | Peut louper des contextes légitimes (CSV, header…) |
+
+**Recommandation** : A + C — allowlist patterns + path `\.md$` + durcissement de la règle pour exiger un contexte d'affectation.
+
+- [ ] Appliquer la correction `.gitleaks.toml` (option recommandée A+C)
+- [ ] Relancer `gitleaks detect --source . --log-opts="--all"` localement → vérifier 0 finding
+- [ ] Commit + push → vérifier que le workflow Gitleaks passe sur main
+- [ ] Documenter la décision (commentaires dans `.gitleaks.toml` ou note dans `SECURITY.md`)
+
+### Dependabot — premier passage
+
+8 PRs ouvertes par le premier run de `.github/dependabot.yml` :
+
+**GitHub Actions** (3 PRs — déjà CI verte + Gitleaks vert, mergeables)
+
+- [ ] `actions/upload-pages-artifact` 4 → 5
+- [ ] `pnpm/action-setup` digest bump
+- [ ] `actions/deploy-pages` 4 → 5
+
+**npm groupes** (5 PRs)
+
+- [ ] `eslint-prettier` (3 updates)
+- [ ] `typescript-tooling` (2 updates)
+- [ ] `vitest` (3 updates)
+- [ ] `sveltekit` (4 updates)
+- [ ] 1 PR `npm_and_yarn` supplémentaire (dependabot update encore en cours au moment du check)
+
+### RGPD / PRIVACY.md (à arbitrer)
+
+Initialement retiré du périmètre de la PR #127 (_"le repo est du code, pas une politique RGPD"_). À reprendre comme item indépendant, en se posant d'abord la question du **cadrage** :
+
+- [ ] Cadrer le périmètre : ce repo héberge du **code source**, pas des données personnelles. Mais des considérations indirectes existent — à trancher pour chacune :
+  - Métadonnées des commits (email des contributeurs externes) : suffit-il d'un renvoi vers la politique GitHub ?
+  - Données collectées par les apps déployées (amarre, ecrin, find-an-expert) : relève des **apps** elles-mêmes, pas du repo — où documenter ?
+  - Dépendances tierces appelant des services externes (OpenAlex, Appwrite, Sentry si activé…) : à inventorier
+  - Logs côté Appwrite (IP, user-agent…) : qui est responsable de traitement ?
+- [ ] Décider : un seul `PRIVACY.md` à la racine ? Une politique par app dans `apps/*/PRIVACY.md` ? Ou renvoi vers une politique ULHN existante ?
+- [ ] Identifier le **responsable de traitement** (probablement l'Université Le Havre Normandie / DSI, pas le repo lui-même)
+- [ ] Rédiger le contenu une fois le cadrage figé (sortir du périmètre TODO si délégué à la DSI)
+
+### Actions manuelles UI GitHub à planifier
+
+Issus du test plan de la PR #127, à faire dans Settings GitHub :
+
+- [ ] Activer **Secret Scanning** + **Push Protection** (Settings → Code security)
+- [ ] Activer **branch protection** sur `main` (Settings → Branches) avec CODEOWNERS review + status checks requis
+- [ ] Annoncer `brew install gitleaks` aux contributeurs pour le pre-commit local
 
 ---
 
@@ -10,9 +107,9 @@ Plan détaillé pour ajouter la couche "Sec" au pipeline existant (CI GitHub Act
 
 ### 0.1 Audit du token REDCap à la racine
 
-- [ ] Vérifier que `redcap-token.csv` est bien dans `.gitignore`
-- [ ] Vérifier qu'il n'a jamais été commité : `git log --all --full-history -- redcap-token.csv`
-- [ ] Si commité un jour : rotation immédiate du token côté REDCap + purge de l'historique (`git filter-repo`) + force-push coordonné avec l'équipe
+- [x] Vérifier que `redcap-token.csv` est bien dans `.gitignore` — couvert par le pattern `*-token.csv` (ligne 59)
+- [x] Vérifier qu'il n'a jamais été commité : `git log --all --full-history -- redcap-token.csv` — aucun historique
+- [ ] Si commité un jour : rotation immédiate du token côté REDCap + purge de l'historique (`git filter-repo`) + force-push coordonné avec l'équipe — N/A
 - [ ] Déplacer le fichier hors du dépôt (ex : `~/.config/atlas/redcap-token.csv`) et adapter le chargement applicatif
 
 ### 0.2 Inventaire des secrets en circulation
@@ -37,7 +134,7 @@ Plan détaillé pour ajouter la couche "Sec" au pipeline existant (CI GitHub Act
 - [ ] Déclencheurs : `push` sur main, `pull_request` sur main, `schedule` hebdomadaire
 - [ ] Activer les query suites `security-extended` et `security-and-quality`
 - [ ] Vérifier que les alertes remontent dans l'onglet Security du dépôt GitHub
-- [ ] Définir un *security champion* responsable du triage des alertes
+- [ ] Définir un _security champion_ responsable du triage des alertes
 
 ### 1.2 Semgrep (optionnel, complémentaire)
 
@@ -61,9 +158,9 @@ Plan détaillé pour ajouter la couche "Sec" au pipeline existant (CI GitHub Act
 
 ### 2.2 Gitleaks en CI et pre-commit
 
-- [ ] Ajouter `gitleaks` au pre-commit lefthook (workflow rapide sur fichiers staged)
-- [ ] Workflow `.github/workflows/gitleaks.yml` sur PR (scan complet de l'historique des commits de la PR)
-- [ ] Créer `.gitleaks.toml` avec règles custom pour les patterns REDCap (token 32 char hex) et Appwrite
+- [x] Ajouter `gitleaks` au pre-commit lefthook (workflow rapide sur fichiers staged) — `lefthook.yml`, tolérant à l'absence locale du binaire
+- [x] Workflow `.github/workflows/gitleaks.yml` sur PR (scan complet de l'historique des commits de la PR) — via `gitleaks-action@v2.3.9` épinglé SHA
+- [x] Créer `.gitleaks.toml` avec règles custom pour les patterns REDCap (token 32 char hex) et Appwrite — règles custom + allowlist
 
 ### 2.3 Audit historique
 
@@ -76,15 +173,15 @@ Plan détaillé pour ajouter la couche "Sec" au pipeline existant (CI GitHub Act
 
 ### 3.1 Dependabot
 
-- [ ] Créer `.github/dependabot.yml` avec écosystèmes : `npm` (groupé par workspace), `github-actions`
-- [ ] Stratégie : groupage des minors/patches, PRs séparées pour les majors
+- [x] Créer `.github/dependabot.yml` avec écosystèmes : `npm` (groupé par workspace), `github-actions` — schedule lundi 6h Europe/Paris
+- [x] Stratégie : groupage des minors/patches, PRs séparées pour les majors
 - [ ] Auto-merge des patches après CI verte (via workflow ou GitHub native)
 
 ### 3.2 Dependency Review Action
 
 - [ ] Workflow `.github/workflows/dependency-review.yml` déclenché sur `pull_request`
 - [ ] Bloquer les vulnérabilités `high` et au-dessus
-- [ ] Bloquer les licences non listées dans l'allowlist (à définir : MIT, Apache-2.0, BSD-*, ISC, MPL-2.0…)
+- [ ] Bloquer les licences non listées dans l'allowlist (à définir : MIT, Apache-2.0, BSD-\*, ISC, MPL-2.0…)
 
 ### 3.3 Renforcement de `pnpm audit`
 
@@ -97,16 +194,16 @@ Plan détaillé pour ajouter la couche "Sec" au pipeline existant (CI GitHub Act
 
 ### 4.1 Épingler les GitHub Actions par SHA
 
-- [ ] Remplacer `actions/checkout@v6` → `actions/checkout@<sha> # v6.x.x`
-- [ ] Idem pour `pnpm/action-setup@v5`, `actions/setup-node@v6`, `actions/cache@v5`
-- [ ] Utiliser `pinact` ou `ratchet` pour automatiser, intégrer dans Dependabot (`github-actions` ecosystem)
-- [ ] Concerne : [.github/workflows/ci.yml](.github/workflows/ci.yml), [.github/workflows/docs.yml](.github/workflows/docs.yml), [.github/workflows/release.yml](.github/workflows/release.yml)
+- [x] Remplacer `actions/checkout@v6` → `actions/checkout@<sha> # v6.x.x`
+- [x] Idem pour `pnpm/action-setup@v5`, `actions/setup-node@v6`, `actions/cache@v5` (10 occurrences pinées dans la PR #127)
+- [x] Intégrer dans Dependabot (`github-actions` ecosystem) — fait via `.github/dependabot.yml`
+- [x] Concerne : [.github/workflows/ci.yml](.github/workflows/ci.yml), [.github/workflows/docs.yml](.github/workflows/docs.yml), [.github/workflows/release.yml](.github/workflows/release.yml), [.github/workflows/gitleaks.yml](.github/workflows/gitleaks.yml)
 
 ### 4.2 Permissions minimales par job
 
-- [ ] Actuellement `permissions: contents: read` au top de ci.yml ✓
-- [ ] Vérifier release.yml et docs.yml — ajouter `permissions:` explicites par job
-- [ ] Pour `release.yml` : `id-token: write` requis pour OIDC/provenance, `contents: write` pour les tags
+- [x] Actuellement `permissions: contents: read` au top de ci.yml
+- [x] `permissions:` explicites présents dans `release.yml`, `docs.yml`, `gitleaks.yml`
+- [ ] Pour `release.yml` : `id-token: write` requis pour OIDC/provenance — à ajouter quand on activera Phase 4.3
 
 ### 4.3 npm provenance via OIDC
 
@@ -126,15 +223,15 @@ Plan détaillé pour ajouter la couche "Sec" au pipeline existant (CI GitHub Act
 
 ### 5.1 SECURITY.md
 
-- [ ] Créer `SECURITY.md` à la racine
-- [ ] Contenu : versions supportées, contact (email dédié type `security@univ-lehavre.fr` si possible), procédure de divulgation responsable, SLA de réponse (ex : accusé réception 72h, correctif critical 7j)
-- [ ] Mention RGPD et données REDCap (sensibles santé selon usage)
+- [x] Créer `SECURITY.md` à la racine
+- [x] Contenu : versions supportées, contact, procédure de divulgation responsable, SLA (accusé 72h, évaluation 7j, correctif haute 30j / moyenne 90j, divulgation publique +30j après correctif)
+- [ ] Mention RGPD et données REDCap (sensibles santé selon usage) — à enrichir si besoin
 - [ ] Référencer la politique sécurité de l'Université Le Havre Normandie si elle existe
 
 ### 5.2 CODEOWNERS
 
-- [ ] Créer `.github/CODEOWNERS`
-- [ ] Owners obligatoires sur : `packages/auth/`, `packages/crf-client/`, `packages/crf-core/`, `services/crf/`, `.github/workflows/`, `SECURITY.md`, `package.json` racine
+- [x] Créer `.github/CODEOWNERS`
+- [x] Owners sur : `packages/auth/`, `packages/baas/`, `packages/crf-client/`, `packages/crf-core/`, `services/crf/`, `.github/workflows/`, root config
 - [ ] Au minimum : `@pierre-olivier.chasset`, idéalement un second mainteneur pour le bus-factor
 
 ### 5.3 Branch protection sur `main`
@@ -148,7 +245,7 @@ Plan détaillé pour ajouter la couche "Sec" au pipeline existant (CI GitHub Act
 
 ### 5.4 Politique de contribution
 
-- [ ] Mettre à jour [CONTRIBUTING.md](CONTRIBUTING.md) avec la section "Security" : comment signaler une vulnérabilité, ne jamais ouvrir d'issue publique pour une faille
+- [x] Mettre à jour [CONTRIBUTING.md](CONTRIBUTING.md) avec la section "Security", Code of Conduct (Contributor Covenant 2.1) et CLA léger
 
 ---
 
@@ -240,24 +337,28 @@ Plan détaillé pour ajouter la couche "Sec" au pipeline existant (CI GitHub Act
 ## Ordre de priorité recommandé
 
 **Sprint 1 (1 semaine — bloquants sécurité)**
+
 - Phase 0 complète (audit token, secrets, surfaces)
 - Phase 2.1 (GitHub Secret Scanning + Push Protection)
 - Phase 5.1 (SECURITY.md) et 5.3 (branch protection minimale)
 
 **Sprint 2 (1 semaine — fondations)**
+
 - Phase 1.1 (CodeQL)
 - Phase 3.1, 3.2 (Dependabot + dependency-review)
 - Phase 4.1, 4.2 (pin actions, permissions)
 
 **Sprint 3 (1 semaine — supply chain et Appwrite)**
+
 - Phase 4.3, 4.4 (provenance, SBOM)
 - Phase 6.3, 6.4 (headers HTTP, cookies)
 - Phase 2.2 (gitleaks)
 
 **Sprint 4 (1 semaine — finalisation)**
+
 - Phase 7.1 (ZAP baseline)
 - Phase 6.5 (rate limiting)
 - Phase 8 (observabilité, runbook)
 - Phase 5.2, 5.4 (CODEOWNERS, CONTRIBUTING)
 
-À l'issue des 4 sprints, le dépôt satisfait honnêtement le qualificatif **DevSecOps** pour la partie développement *et* déploiement (amarre, ecrin).
+À l'issue des 4 sprints, le dépôt satisfait honnêtement le qualificatif **DevSecOps** pour la partie développement _et_ déploiement (amarre, ecrin).
