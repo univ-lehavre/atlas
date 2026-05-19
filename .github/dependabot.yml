@@ -1,6 +1,15 @@
 # Dependabot keeps the dependencies fresh and the GitHub Actions pinned by SHA
 # up-to-date (re-pins to the latest SHA when a version is released).
 # Reference: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+#
+# Bruit de PR : tous les minor/patch sont regroupés dans une PR unique
+# par écosystème et par run (1×/semaine, lundi 06:00 Europe/Paris) ;
+# `open-pull-requests-limit: 1` garantit qu'une seule PR Dependabot par
+# écosystème reste ouverte à la fois — les mises à jour s'enfilent en
+# file d'attente derrière la PR en cours. Les majors sortent en PR
+# séparée (Dependabot default) mais sont également soumis au limit, donc
+# attendent leur tour. Les *security updates* (alertes Dependabot) ne
+# sont pas affectés par ce limit et restent prioritaires.
 
 version: 2
 
@@ -15,7 +24,7 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Paris"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 1
     labels:
       - "dependencies"
       - "automation"
@@ -23,74 +32,15 @@ updates:
       prefix: "chore"
       include: "scope"
     groups:
-      # Group minor + patch updates by category to reduce PR churn.
-      # Major updates open separate PRs (Dependabot default).
-      effect:
-        applies-to: version-updates
-        patterns:
-          - "effect"
-          - "@effect/*"
-        update-types:
-          - "minor"
-          - "patch"
-      sveltekit:
-        applies-to: version-updates
-        patterns:
-          - "@sveltejs/*"
-          - "svelte"
-          - "svelte-*"
-        update-types:
-          - "minor"
-          - "patch"
-      vitest:
-        applies-to: version-updates
-        patterns:
-          - "vitest"
-          - "@vitest/*"
-        update-types:
-          - "minor"
-          - "patch"
-      typescript-tooling:
-        applies-to: version-updates
-        patterns:
-          - "typescript"
-          - "tsx"
-          - "tsup"
-          - "typedoc"
-          - "typedoc-*"
-          - "@types/*"
-        update-types:
-          - "minor"
-          - "patch"
-      eslint-prettier:
-        applies-to: version-updates
-        patterns:
-          - "eslint"
-          - "eslint-*"
-          - "@typescript-eslint/*"
-          - "prettier"
-          - "prettier-*"
-        update-types:
-          - "minor"
-          - "patch"
-      vitepress:
-        applies-to: version-updates
-        patterns:
-          - "vitepress"
-          - "vitepress-*"
-          - "@modyfi/vite-plugin-yaml"
-        update-types:
-          - "minor"
-          - "patch"
-      # Catch-all for the rest (otherwise Dependabot opens 1 PR per dep).
-      misc:
+      # Toutes les mises à jour minor + patch dans une seule PR par run.
+      # Les majors ouvrent leur propre PR (Dependabot default).
+      all-minor-patch:
         applies-to: version-updates
         patterns:
           - "*"
         update-types:
           - "minor"
           - "patch"
-    # Security updates always open standalone PRs even with grouping.
 
   # ---------------------------------------------------------------------------
   # GitHub Actions — keep pinned SHAs current with version bumps
@@ -102,10 +52,16 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Paris"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 1
     labels:
       - "github-actions"
       - "automation"
     commit-message:
       prefix: "ci"
       include: "scope"
+    groups:
+      # Tous les bumps d'actions dans une seule PR par run.
+      all-actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
