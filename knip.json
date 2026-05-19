@@ -88,9 +88,6 @@
       "ignore": [
         "src/lib/ui/Retrieve.svelte",
         "src/lib/ui/Rule.svelte"
-      ],
-      "ignoreDependencies": [
-        "@univ-lehavre/atlas-logos"
       ]
     },
     "apps/ecrin": {
@@ -104,7 +101,6 @@
         "src/lib/crf/index.ts"
       ],
       "ignoreDependencies": [
-        "@univ-lehavre/atlas-logos",
         "appwrite",
         "graphology-layout-force",
         "luxon",
@@ -119,7 +115,6 @@
         "src/**/*.svelte"
       ],
       "ignoreDependencies": [
-        "@univ-lehavre/atlas-logos",
         "tailwindcss"
       ]
     },
