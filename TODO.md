@@ -65,9 +65,7 @@ Initialement retiré du périmètre de la PR #127 (_"le repo est du code, pas un
 
 ### Sort du dépôt standalone `univ-lehavre/amarre`
 
-Le dépôt standalone (dernier commit 2026-02-06) est dépassé : atlas est désormais la source canonique de l'app amarre (sync via [PR #155](https://github.com/univ-lehavre/atlas/pull/155)). Décider :
-
-- [ ] Archiver le dépôt standalone (recommandé) ou le garder en lecture seule comme historique
+- [x] **Décision 2026-05-19** : le dépôt standalone reste **en l'état** (dernier commit 2026-02-06), gardé tel quel comme historique. atlas est la source canonique pour les futurs développements (sync via [PR #155](https://github.com/univ-lehavre/atlas/pull/155)).
 
 ### Security champion CodeQL
 
