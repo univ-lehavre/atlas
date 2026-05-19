@@ -36,7 +36,7 @@ describe('validateMagicUrlLogin', () => {
   });
 
   it('rejects missing values', () => {
-    expect(() => validateMagicUrlLogin('abcd')).toThrow();
+    expect(() => validateMagicUrlLogin('abcd', undefined)).toThrow();
   });
 
   it('rejects non-string values', () => {
@@ -54,7 +54,7 @@ describe('validateUserId', () => {
   });
 
   it('rejects missing userId', () => {
-    expect(() => validateUserId()).toThrow(SessionError);
+    expect(() => validateUserId(undefined)).toThrow(SessionError);
   });
 
   it('rejects non-string userId', () => {
