@@ -20,7 +20,7 @@
     "@sveltejs/adapter-node": "^5.5.4",
     "@sveltejs/kit": "^2.60.1",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
-    "@types/node": "^25.6.0",
+    "@types/node": "^25.9.0",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^10.2.1",
     "prettier": "^3.8.3",
