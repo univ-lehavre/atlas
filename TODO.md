@@ -296,6 +296,7 @@ Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d
 - [x] Vérifier les flux d'auth — aucun `localStorage` ni `sessionStorage` dans tout le repo (audit `grep -rn` sur apps + packages clean). Cookies UI find-an-expert (theme, font, dark-mode, locale) en `SameSite=Lax`, sans `Secure` — non sensible, lus côté client par design.
 - [x] Protection CSRF — SvelteKit `csrf: { checkOrigin: true }` actif par défaut (aucun override dans les `svelte.config.js`). Confirmé par audit.
 - [x] **Dédup session/auth** : les 3 services par-app sont désormais des thin wrappers (~30 lignes) autour de `createAuthService` du package partagé. La logique cookie + admin/session client + validation est centralisée dans `packages/auth/src/index.ts`. ecrin garde `deleteUser`, amarre/ecrin gardent le câblage `resolveUserId` (REDCap `fetchUserId`), find-an-expert utilise le factory tel quel (no resolveUserId).
+- [x] **Dédup baas client** : amarre + find-an-expert ont leur `$lib/server/baas/index.ts` réécrit en thin wrapper (~25 lignes) autour de `createAdminClient` / `createSessionClient` du package partagé `@univ-lehavre/atlas-baas`. La signature locale (sans config, qui est dérivée de l'env de l'app) reste identique pour ne pas toucher les consumers (hooks.server.ts, services). **ecrin volontairement laissé en local** : utilise `TablesDB` (API typée récente d'Appwrite) que le package partagé n'expose pas (il fournit `Databases`). À uniformiser en étendant le package quand `TablesDB` deviendra le standard partagé.
 
 ### 6.5 Rate limiting
 
