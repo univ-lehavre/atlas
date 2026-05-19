@@ -46,7 +46,7 @@
   "dependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "^4.7.1",
     "@eslint/js": "^10.0.1",
-    "@vitest/eslint-plugin": "^1.6.16",
+    "@vitest/eslint-plugin": "^1.6.17",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-barrel-files": "^3.0.1",
     "eslint-plugin-functional": "^9.0.4",
@@ -74,6 +74,6 @@
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "devDependencies": {
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.6"
   }
 }
