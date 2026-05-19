@@ -286,7 +286,7 @@ Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d
 - [x] `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
 - [x] `X-Frame-Options: DENY` (defense-in-depth, redondant avec CSP `frame-ancestors 'none'`)
 - [ ] **À tightener** : `connect-src 'self' https:` est volontairement wildcard pour ne pas bloquer Appwrite/REDCap/OpenAlex selon l'environnement de déploiement. Iteration suivante : remplacer par les domaines exacts (`appwrite-dev.univ-lehavre.fr`, `backend.chasset.net`, `redcap.univ-lehavre.fr`, `api.openalex.org`) via env var lue au build ou hardcodée par environnement.
-- [ ] **Dette test** : `hooks.server.ts` (Phase 6.3) et les handlers rate-limités (Phase 6.5) ne sont pas testés unitairement. Seuils de coverage baissés progressivement : amarre statements 42→41 + lines 43→42 + branches 52→51, ecrin statements 28→27 + branches 18→17 + lines 28→27. À remonter en ajoutant des tests `handle` (qui mocke `createSessionClient` et vérifie les 5 headers) + tests des handlers rate-limités.
+- [x] **Dette test partiellement résolue** : tests handler ajoutés en Phase 7.2 pour les 6 endpoints rate-limités → couverture globale remontée, seuils restaurés à leur valeur d'origine (amarre 42/52/36/43, ecrin 28/18/27/28). Reste à tester `hooks.server.ts` (les 5 headers de sécurité) — cf. Phase 7.2.
 - [ ] Valider avec [securityheaders.com](https://securityheaders.com) — objectif : note A minimum (après déploiement)
 - [ ] Tester aussi avec [Mozilla Observatory](https://observatory.mozilla.org)
 
@@ -325,10 +325,14 @@ Implémentation : utilitaire `createRateLimiter` dans [packages/auth/src/rate-li
 
 ### 7.2 Tests de sécurité applicatifs
 
-- [ ] Ajouter quelques tests Vitest spécifiques :
-  - Vérification que les routes API rejettent les payloads malformés
-  - Vérification que les endpoints authentifiés renvoient 401 sans token
-  - Vérification de l'absence de réflexion brute des inputs utilisateurs (anti-XSS basique)
+Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5). Couvrent les chemins succès / 400 (paramètre manquant) / 429 (saturation rate-limit) / isolation par-IP, plus la présence des headers `X-RateLimit-*` et `Retry-After`. A remonté la couverture globale, permettant la restauration des seuils baissés en Phase 6.3/6.5.
+
+- [x] Tests handler `ecrin /graphs` — 4 cas (200, 400 missing param, 429 saturation, isolation par IP)
+- [x] Tests handler `find-an-expert /institutions/search` — 2 cas (200 + headers, 429)
+- [x] Tests handler `find-an-expert /repositories/[id]` — 2 cas (200, 429)
+- [x] Tests handlers `/auth/signup` × 3 apps — 2 cas chacun (200, 429 anti-spam)
+- [ ] **Étendre** : ajouter tests pour les autres catégories listées initialement — payloads malformés (cas explicites), 401 sur endpoints AUTH sans session (déjà partiellement testé sur amarre /surveys/new), anti-XSS basique (vérifier que les inputs ne sont pas réfléchis tels quels)
+- [ ] **Étendre** : test handler `hooks.server.ts` qui mocke `createSessionClient` et vérifie les 5 headers de sécurité (Phase 6.3)
 
 ### 7.3 Revue de sécurité périodique
 

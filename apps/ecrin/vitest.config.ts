@@ -8,12 +8,11 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
     coverage: coverageConfig({
-      // Thresholds baissés progressivement après l'ajout de code non
-      // couvert par les tests :
-      // - Phase 6.3 (headers HTTP dans hooks.server.ts) : statements 28→27, branches 18→17
-      // - Phase 6.5 (rate-limit dans /graphs et /auth/signup) : lines 28→27
-      // À remonter via tests pour hooks.server.ts + handlers rate-limités — cf. TODO §6.3 et §6.5.
-      thresholds: { statements: 27, branches: 17, functions: 27, lines: 27 },
+      // Seuils restaurés à leur valeur d'origine après ajout des tests
+      // handlers /graphs et /auth/signup (Phase 7.2). hooks.server.ts reste
+      // partiellement non couvert mais la couverture globale repasse au-dessus
+      // du seuil grâce aux nouveaux tests.
+      thresholds: { statements: 28, branches: 18, functions: 27, lines: 28 },
     }),
   },
   resolve: {

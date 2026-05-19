@@ -12,12 +12,11 @@ export default mergeConfig(
       globals: true,
       include: ['tests/**/*.test.ts'],
       coverage: coverageConfig({
-        // Thresholds baissés progressivement après l'ajout de code non
-        // couvert par les tests :
-        // - Phase 6.3 (headers HTTP dans hooks.server.ts) : statements 42→41, lines 43→42
-        // - Phase 6.5 (rate-limit dans /auth/signup) : branches 52→51
-        // À remonter via tests pour hooks.server.ts + signup — cf. TODO §6.3 et §6.5.
-        thresholds: { statements: 41, branches: 51, functions: 36, lines: 42 },
+        // Seuils restaurés à leur valeur d'origine après ajout des tests
+        // handler /auth/signup (Phase 7.2). hooks.server.ts reste partiellement
+        // non couvert mais la couverture globale repasse au-dessus du seuil
+        // grâce aux nouveaux tests.
+        thresholds: { statements: 42, branches: 52, functions: 36, lines: 43 },
       }),
     },
   })
