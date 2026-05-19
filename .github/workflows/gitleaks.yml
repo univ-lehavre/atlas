@@ -62,6 +62,27 @@ jobs:
         if: github.event_name == 'push'
         run: |
           set -euo pipefail
+          # Scan only the commits introduced by this push, not the full
+          # history. The pre-PR-#125 trademark rename left a long tail of
+          # historical paths containing test fixtures with token-like
+          # strings; a `--log-opts "--all"` scan therefore re-surfaces the
+          # same fixtures on every push (cf. PR #141, #143, …).
+          # Protection against newly-leaked secrets remains: the PR scan
+          # catches them in the diff, and this step re-checks them on
+          # merge. For a full audit, use the `workflow_dispatch` trigger
+          # below.
+          gitleaks detect \
+            --source . \
+            --config .gitleaks.toml \
+            --log-opts "${{ github.event.before }}..${{ github.event.after }}" \
+            --redact \
+            --verbose \
+            --no-banner
+
+      - name: Scan repository (manual full-history audit)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          set -euo pipefail
           gitleaks detect \
             --source . \
             --config .gitleaks.toml \
