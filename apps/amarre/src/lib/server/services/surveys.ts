@@ -73,6 +73,7 @@ const listRequestsWithCode = async (
       'record_id',
       'created_at',
       'demandeur_statut',
+      'invitation_type',
       'mobilite_type',
       'invite_nom',
       'form_complete',
