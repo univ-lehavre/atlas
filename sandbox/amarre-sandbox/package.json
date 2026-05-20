@@ -33,7 +33,6 @@
   "devDependencies": {
     "@faker-js/faker": "^10.4.0",
     "@types/node": "^25.9.1",
-    "@univ-lehavre/atlas-crf-sandbox": "workspace:*",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "prettier": "^3.8.3",
     "tsx": "^4.22.3",
