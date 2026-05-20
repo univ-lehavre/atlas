@@ -44,6 +44,13 @@ export default withMermaid(
       /\/roadmaps\//,
       // API package index links (TypeDoc generates without /index suffix)
       /\/api\/@univ-lehavre\/[^/]+\/index$/,
+      // Repo-root files referenced from docs/security/* (TODO.md, .npmrc,
+      // app source paths). vitepress only serves under docs/, but the
+      // security docs point to the real source for code reviewers to
+      // follow on GitHub.
+      /\.\.\/\.\.\/TODO/,
+      /\.\.\/\.\.\/\.npmrc/,
+      /\.\.\/\.\.\/apps\//,
     ],
     themeConfig: {
       nav: [
