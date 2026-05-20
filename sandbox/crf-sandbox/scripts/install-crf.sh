@@ -11,16 +11,24 @@ CONFIG_DIR="$DEV_DIR/docker/config"
 echo "=== REDCap Automated Installation ==="
 echo ""
 
-# Check if Docker containers are running
-if ! docker ps --format '{{.Names}}' | grep -q "docker-mariadb-1"; then
+# Auto-detect the container names. They differ depending on which
+# compose project orchestrates them: "docker" when crf-sandbox is run
+# standalone (compose file in crf-sandbox/docker/), "amarre-sandbox"
+# when included from there, etc.
+MARIADB_CONTAINER=$(docker ps --format '{{.Names}}' | grep -E '(^|-)mariadb-1$' | grep -v 'baas' | head -1)
+REDCAP_CONTAINER=$(docker ps --format '{{.Names}}' | grep -E '(^|-)redcap-1$' | head -1)
+
+if [ -z "$MARIADB_CONTAINER" ]; then
     echo "Error: MariaDB container not running. Start with: pnpm docker:up"
     exit 1
 fi
 
-if ! docker ps --format '{{.Names}}' | grep -q "docker-redcap-1"; then
+if [ -z "$REDCAP_CONTAINER" ]; then
     echo "Error: REDCap container not running. Start with: pnpm docker:up"
     exit 1
 fi
+
+echo "Using containers: $REDCAP_CONTAINER, $MARIADB_CONTAINER"
 
 # Wait for REDCap to be healthy
 echo "Waiting for REDCap to be ready..."
@@ -32,7 +40,7 @@ for i in {1..30}; do
 done
 
 # Check if already installed
-TABLES=$(docker exec docker-mariadb-1 mariadb -u redcap -predcap_password redcap -N -e "SHOW TABLES LIKE 'redcap_config'" 2>/dev/null || echo "")
+TABLES=$(docker exec "$MARIADB_CONTAINER" mariadb -u redcap -predcap_password redcap -N -e "SHOW TABLES LIKE 'redcap_config'" 2>/dev/null || echo "")
 if [ -n "$TABLES" ]; then
     echo "REDCap database already initialized."
     echo ""
@@ -74,21 +82,21 @@ else
     echo "   Extracted $SQL_LINES lines of SQL"
 
     echo "Step 3: Executing SQL in MariaDB..."
-    docker exec -i docker-mariadb-1 mariadb -u redcap -predcap_password redcap < /tmp/redcap_install.sql
+    docker exec -i "$MARIADB_CONTAINER" mariadb -u redcap -predcap_password redcap < /tmp/redcap_install.sql
     echo "   Database schema created"
 fi
 
 # Check existing token
 echo ""
 echo "Step 4: Setting up API token..."
-EXISTING_TOKEN=$(docker exec docker-mariadb-1 mariadb -u redcap -predcap_password redcap -N -e "SELECT api_token FROM redcap_user_rights WHERE username='site_admin' AND project_id=1" 2>/dev/null || echo "")
+EXISTING_TOKEN=$(docker exec "$MARIADB_CONTAINER" mariadb -u redcap -predcap_password redcap -N -e "SELECT api_token FROM redcap_user_rights WHERE username='site_admin' AND project_id=1" 2>/dev/null || echo "")
 
 if [ -n "$EXISTING_TOKEN" ] && [ "$EXISTING_TOKEN" != "NULL" ]; then
     TOKEN="$EXISTING_TOKEN"
     echo "   Using existing token"
 else
     TOKEN="${REDCAP_API_TOKEN:-3ED422AB16AFD8815A729EA57E56254B}"
-    docker exec docker-mariadb-1 mariadb -u redcap -predcap_password redcap -e "
+    docker exec "$MARIADB_CONTAINER" mariadb -u redcap -predcap_password redcap -e "
     INSERT INTO redcap_user_rights (project_id, username, api_token, api_export, api_import, data_export_tool, data_import_tool, data_logging, user_rights, design, alerts, graphical, data_quality_design)
     VALUES (1, 'site_admin', '$TOKEN', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
     ON DUPLICATE KEY UPDATE api_token='$TOKEN', api_export=1, api_import=1;"
