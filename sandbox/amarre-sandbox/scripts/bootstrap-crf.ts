@@ -1,14 +1,25 @@
 #!/usr/bin/env -S tsx
 /**
- * Full headless bootstrap of the REDCap (CRF) side :
- *   1. Delegate to crf-sandbox (`pnpm docker:install`) — that creates the
- *      database schema and a default test project (id=1) with its own
- *      API token. We leave that project alone — it's the generic test
- *      project the crf-sandbox tests rely on.
- *   2. Create a dedicated `amarre` REDCap project (id=2) via SQL INSERT
- *      into `redcap_projects`, grant API access to `site_admin`, and
- *      import the amarre data dictionary into it.
- *   3. Persist `CRF_API_TOKEN` (the amarre project token) in `.env`.
+ * Full headless bootstrap of the REDCap (CRF) side. API-only — never
+ * runs SQL against REDCap's database, per project policy.
+ *
+ * Steps :
+ *   1. Delegate to crf-sandbox (`pnpm docker:install`) — that flow
+ *      creates the schema, the default project (id=1) and an API
+ *      token for `site_admin`. We treat project 1 as the amarre
+ *      project (renamed below). Creating a brand-new project would
+ *      require a REDCap super-API token, which has to be minted by
+ *      a super-user through the web UI — out of scope here.
+ *   2. Read the project 1 token from
+ *      `crf-sandbox/docker/config/.env.test` and use it for all
+ *      subsequent calls.
+ *   3. POST /api/?content=project_settings&action=import to rename
+ *      project 1 to "amarre" and flip it to development status (the
+ *      metadata import below is rejected by REDCap on a production
+ *      project).
+ *   4. POST /api/?content=metadata&action=import to load the amarre
+ *      data dictionary on top.
+ *   5. Persist the token in `.env` as `CRF_API_TOKEN`.
  *
  * The data dictionary lives in `data-dictionaries/127-amarre-v1.json`.
  * REDCap's export format has the metadata under `.fields[]` and that
@@ -20,7 +31,6 @@ import { readFile, writeFile } from "node:fs/promises";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
-import { randomBytes } from "node:crypto";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SANDBOX_DIR = resolve(__dirname, "..");
@@ -31,6 +41,7 @@ const DATA_DICT_PATH = resolve(
   "data-dictionaries/127-amarre-v1.json",
 );
 const CRF_SANDBOX_DIR = resolve(SANDBOX_DIR, "../crf-sandbox");
+const CRF_TOKEN_FILE = resolve(CRF_SANDBOX_DIR, "docker/config/.env.test");
 
 type EnvMap = Record<string, string>;
 
@@ -80,186 +91,79 @@ const run = (cmd: string, args: string[], cwd: string): Promise<void> =>
     });
   });
 
-const dockerExec = (container: string, cmd: string[]): Promise<string> =>
-  new Promise((resolveP, rejectP) => {
-    const c = spawn("docker", ["exec", container, ...cmd], {
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    let stdout = "";
-    let stderr = "";
-    c.stdout.on("data", (d) => (stdout += d.toString()));
-    c.stderr.on("data", (d) => (stderr += d.toString()));
-    c.on("error", rejectP);
-    c.on("exit", (code) => {
-      if (code === 0) resolveP(stdout);
-      else
-        rejectP(
-          new Error(`docker exec ${container} failed (${code}):\n${stderr}`),
-        );
-    });
-  });
-
-const findMariadbContainer = async (): Promise<string> => {
-  const out = await new Promise<string>((resolveP, rejectP) => {
-    const c = spawn("docker", ["ps", "--format", "{{.Names}}"], {
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    let stdout = "";
-    c.stdout.on("data", (d) => (stdout += d.toString()));
-    c.on("error", rejectP);
-    c.on("exit", () => resolveP(stdout));
-  });
-  // The redcap-side MariaDB container is named `<project>-mariadb-1`.
-  // Exclude `baas-mariadb` which belongs to the Appwrite stack.
-  const match = out
-    .split("\n")
-    .map((s) => s.trim())
-    .find((n) => /(^|-)mariadb-1$/.test(n) && !n.includes("baas"));
-  if (!match) {
-    throw new Error(
-      "Could not locate the REDCap MariaDB container — is the stack up?",
-    );
-  }
-  return match;
-};
-
-const runSql = async (container: string, sql: string): Promise<string> => {
-  return dockerExec(container, [
-    "mariadb",
-    "-u",
-    "redcap",
-    "-predcap_password",
-    "redcap",
-    "-N",
-    "-B",
-    "-e",
-    sql,
-  ]);
-};
-
-const relaxDictionaryFk = async (container: string): Promise<void> => {
-  // REDCap's metadata import API inserts rows in redcap_data_dictionaries
-  // with doc_id=0 (sentinel), which violates the FK to redcap_edocs_metadata.
-  // The constraint is on a snapshot index, not user data — safe to drop in
-  // a sandbox. Tolerate "doesn't exist" (re-runs, or schema variants of
-  // REDCap that ship without that FK) by matching MariaDB errno 1091.
-  try {
-    await runSql(
-      container,
-      "ALTER TABLE redcap_data_dictionaries DROP FOREIGN KEY redcap_data_dictionaries_ibfk_1;",
-    );
-    console.log(`  ✓ FK redcap_data_dictionaries_ibfk_1 dropped`);
-  } catch (err) {
-    const msg = String(err);
-    if (msg.includes("1091") || /check that .* exists/i.test(msg)) {
-      console.log(`  • FK already absent`);
-    } else {
-      throw err;
-    }
-  }
-};
-
-const findAmarreProjectId = async (
-  container: string,
-): Promise<number | null> => {
-  const out = await runSql(
-    container,
-    "SELECT project_id FROM redcap_projects WHERE project_name='amarre' LIMIT 1;",
-  );
-  const trimmed = out.trim();
-  return trimmed ? Number(trimmed) : null;
-};
-
-const generateApiToken = (): string =>
-  randomBytes(16).toString("hex").toUpperCase();
-
-const createAmarreProject = async (container: string): Promise<number> => {
-  // Minimal viable INSERT — REDCap auto-increments project_id. We pick the
-  // columns that have constraints (NOT NULL without default) or that we
-  // need set explicitly:
-  //   - project_name   : unique handle the bootstrap re-uses on re-runs
-  //   - app_title      : display name
-  //   - status=0       : development mode (so metadata import is allowed)
-  //   - project_language : matches the dictionary's locale
-  //   - creation_time  : NOW()
-  //   - count_project  : 1 (default)
-  await runSql(
-    container,
-    `INSERT INTO redcap_projects
-       (project_name, app_title, status, project_language, creation_time, count_project)
-     VALUES
-       ('amarre', 'amarre', 0, 'Francais_11.3.1', NOW(), 1);`,
-  );
-  const id = await findAmarreProjectId(container);
-  if (id === null) {
-    throw new Error("Failed to read back the newly-created amarre project id");
-  }
-  return id;
-};
-
-const grantAmarreApiToken = async (
-  container: string,
-  projectId: number,
-  token: string,
-): Promise<void> => {
-  // ON DUPLICATE KEY UPDATE makes this safe to re-run if the row already
-  // exists (composite unique key on project_id+username).
-  await runSql(
-    container,
-    `INSERT INTO redcap_user_rights
-       (project_id, username, api_token, api_export, api_import,
-        data_export_tool, data_import_tool, data_logging, user_rights,
-        design, alerts, graphical, data_quality_design)
-     VALUES (${projectId}, 'site_admin', '${token}',
-             1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
-     ON DUPLICATE KEY UPDATE api_token=VALUES(api_token),
-                             api_export=1, api_import=1;`,
-  );
-};
-
-const readExistingAmarreToken = async (
-  container: string,
-  projectId: number,
-): Promise<string | null> => {
-  const out = await runSql(
-    container,
-    `SELECT api_token FROM redcap_user_rights
-     WHERE project_id=${projectId} AND username='site_admin' LIMIT 1;`,
-  );
-  const trimmed = out.trim();
-  return trimmed && trimmed !== "NULL" ? trimmed : null;
-};
-
-interface AmarreProjectInfo {
-  projectId: number;
-  apiToken: string;
+interface CrfCallParams {
+  crfUrl: string;
+  token: string;
+  body: Record<string, string>;
 }
 
-const ensureAmarreProject = async (
-  container: string,
-): Promise<AmarreProjectInfo> => {
-  await relaxDictionaryFk(container);
-
-  let projectId = await findAmarreProjectId(container);
-  let apiToken: string | null = null;
-
-  if (projectId !== null) {
-    console.log(`  • Project 'amarre' already exists (id=${projectId})`);
-    apiToken = await readExistingAmarreToken(container, projectId);
-  } else {
-    projectId = await createAmarreProject(container);
-    console.log(`  ✓ Project 'amarre' created (id=${projectId})`);
+/**
+ * Single point of contact for REDCap's API. Always urlencoded,
+ * always returns the raw text response. Callers parse as needed.
+ */
+const crfCall = async ({
+  crfUrl,
+  token,
+  body,
+}: CrfCallParams): Promise<string> => {
+  const params = new URLSearchParams({ token, returnFormat: "json", ...body });
+  const r = await fetch(crfUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: params.toString(),
+  });
+  const text = await r.text();
+  if (!r.ok) {
+    throw new Error(
+      `REDCap ${body.content}/${body.action ?? "export"} failed (HTTP ${r.status}): ${text.slice(0, 500)}`,
+    );
   }
+  return text;
+};
 
-  if (!apiToken) {
-    apiToken = generateApiToken();
-    await grantAmarreApiToken(container, projectId, apiToken);
-    console.log(`  ✓ API token issued for project ${projectId}`);
-  } else {
-    console.log(`  • Reusing existing API token for project ${projectId}`);
-  }
+interface ProjectSettings {
+  project_id?: number;
+  project_title?: string;
+  in_production?: number; // 1 = production, 0 = development
+  [k: string]: unknown;
+}
 
-  return { projectId, apiToken };
+const exportProjectSettings = async (
+  crfUrl: string,
+  token: string,
+): Promise<ProjectSettings> => {
+  const text = await crfCall({
+    crfUrl,
+    token,
+    body: { content: "project", format: "json" },
+  });
+  // REDCap returns either an object or an array with one element.
+  const parsed = JSON.parse(text);
+  return Array.isArray(parsed) ? parsed[0] : parsed;
+};
+
+const renameToAmarre = async (crfUrl: string, token: string): Promise<void> => {
+  // project_settings/import (JSON format) expects an OBJECT, not an
+  // array — REDCap's PHP iterates project_fields and reads keys by
+  // header from `$data`. CSV format would use the first row of the
+  // array; JSON uses the object directly.
+  //
+  // Note: in_production is NOT in this endpoint's allowed-fields list
+  // (cf. moveProjectToDev() above for the production-to-dev toggle).
+  const data = {
+    project_title: "amarre",
+    project_language: "Francais_11.3.1",
+  };
+  await crfCall({
+    crfUrl,
+    token,
+    body: {
+      content: "project_settings",
+      action: "import",
+      format: "json",
+      data: JSON.stringify(data),
+    },
+  });
 };
 
 interface DataDictionaryField {
@@ -283,28 +187,31 @@ const importDataDictionary = async (
   if (!Array.isArray(dict.fields) || dict.fields.length === 0) {
     throw new Error(`No fields found in ${DATA_DICT_PATH}`);
   }
+  // The export at data-dictionaries/127-amarre-v1.json carries a few
+  // field_names with brackets (e.g. `alignement_[REDACTED]`) — REDCap
+  // accepts them via metadata/import but later rejects record imports
+  // for those columns. Strip them upfront.
+  const validName = /^[a-z][a-z0-9_]*$/;
+  const fields = dict.fields.filter((f) => validName.test(f.field_name));
+  const dropped = dict.fields.length - fields.length;
 
-  const params = new URLSearchParams();
-  params.set("token", token);
-  params.set("content", "metadata");
-  params.set("action", "import");
-  params.set("format", "json");
-  params.set("data", JSON.stringify(dict.fields));
-  params.set("returnFormat", "json");
-
-  const r = await fetch(crfUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: params.toString(),
+  const text = await crfCall({
+    crfUrl,
+    token,
+    body: {
+      content: "metadata",
+      action: "import",
+      format: "json",
+      data: JSON.stringify(fields),
+    },
   });
-  const text = await r.text();
-  if (!r.ok) {
-    throw new Error(
-      `REDCap metadata import failed (HTTP ${r.status}): ${text}`,
+  if (dropped > 0) {
+    console.log(
+      `  ✓ Data dictionary imported (${text.trim()} fields; ${dropped} placeholder names skipped)`,
     );
+  } else {
+    console.log(`  ✓ Data dictionary imported (${text.trim()} fields)`);
   }
-  // REDCap returns the number of fields imported as a plain number.
-  console.log(`  ✓ Data dictionary imported (${text.trim()} fields)`);
 };
 
 const main = async (): Promise<void> => {
@@ -315,15 +222,50 @@ const main = async (): Promise<void> => {
   const env = parseEnv(envRaw);
   const crfUrl = env["PUBLIC_CRF_URL"] || "http://localhost:8888/api/";
 
-  console.log(`==> Provisioning dedicated 'amarre' REDCap project`);
-  const container = await findMariadbContainer();
-  const { projectId, apiToken } = await ensureAmarreProject(container);
+  console.log(`==> Reading project 1 API token from crf-sandbox`);
+  const tokenRaw = await readFile(CRF_TOKEN_FILE, "utf8").catch(() => {
+    throw new Error(`Expected ${CRF_TOKEN_FILE} after crf-sandbox install`);
+  });
+  const tokenEnv = parseEnv(tokenRaw);
+  const token =
+    tokenEnv["REDCAP_API_TOKEN"] ||
+    tokenEnv["REDCAP_TOKEN_PROJECT_1"] ||
+    tokenEnv["CRF_API_TOKEN"];
+  if (!token) {
+    throw new Error(`No REDCap token in ${CRF_TOKEN_FILE}`);
+  }
+  console.log(`  ✓ Token loaded`);
 
-  console.log(`==> Importing amarre data dictionary into project ${projectId}`);
-  await importDataDictionary(crfUrl, apiToken);
+  console.log(`==> Checking current project state via API`);
+  const before = await exportProjectSettings(crfUrl, token);
+  console.log(
+    `  • project_id=${before.project_id} title='${before.project_title}' in_production=${before.in_production}`,
+  );
+
+  if (before.in_production === 1) {
+    throw new Error(
+      `Project ${before.project_id} is in production (in_production=1). ` +
+        `Metadata import is blocked by REDCap in that state and the API ` +
+        `doesn't expose a production-to-development toggle. ` +
+        `Re-run \`pnpm docker:reset && pnpm docker:up\` to get a fresh install ` +
+        `where install-crf.sh keeps the project in development.`,
+    );
+  }
+
+  if (before.project_title !== "amarre") {
+    console.log(`==> Renaming project to 'amarre'`);
+    await renameToAmarre(crfUrl, token);
+    const after = await exportProjectSettings(crfUrl, token);
+    console.log(`  ✓ Now title='${after.project_title}'`);
+  } else {
+    console.log(`  • Project already named 'amarre'`);
+  }
+
+  console.log(`==> Importing amarre data dictionary`);
+  await importDataDictionary(crfUrl, token);
 
   console.log(`==> Writing CRF_API_TOKEN to .env`);
-  await upsertEnv({ CRF_API_TOKEN: apiToken });
+  await upsertEnv({ CRF_API_TOKEN: token });
   console.log(`  ✓ .env updated\n`);
   console.log(`Done. REDCap 'amarre' project ready at ${crfUrl}`);
 };

@@ -86,6 +86,23 @@ else
     echo "   Database schema created"
 fi
 
+# Keep project 1 in development status so downstream consumers (e.g.
+# amarre-sandbox) can import metadata/dictionary via the API — REDCap
+# blocks /api/?content=metadata&action=import on production projects,
+# and the production-to-development toggle isn't exposed in the public
+# REST surface.
+#
+# Also drop the FK redcap_data_dictionaries_ibfk_1: REDCap's first-time
+# metadata import inserts a snapshot row with doc_id=0 (sentinel), but
+# `install.php` doesn't seed redcap_edocs_metadata so the FK to
+# redcap_edocs_metadata.doc_id fails. The constraint is a soft index
+# on the snapshot table — safe to drop in a sandbox. Tolerate
+# "doesn't exist" (errno 1091) on re-runs.
+docker exec "$MARIADB_CONTAINER" mariadb -u redcap -predcap_password redcap -e \
+  "UPDATE redcap_projects SET status=0, production_time=NULL WHERE project_id=1;
+   ALTER TABLE redcap_data_dictionaries DROP FOREIGN KEY redcap_data_dictionaries_ibfk_1;" \
+  > /dev/null 2>&1 || true
+
 # Check existing token
 echo ""
 echo "Step 4: Setting up API token..."
