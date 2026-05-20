@@ -1,5 +1,16 @@
 # @univ-lehavre/atlas-find-an-expert
 
+## 2.0.1
+
+### Patch Changes
+
+- Updated dependencies [[`3229d56`](https://github.com/univ-lehavre/atlas/commit/3229d56df92f880e112dfba6158fc48523699d36)]:
+  - @univ-lehavre/atlas-auth@2.1.0
+  - @univ-lehavre/atlas-logos@1.2.0
+  - @univ-lehavre/atlas-baas@2.0.1
+  - @univ-lehavre/atlas-errors@1.0.2
+  - @univ-lehavre/atlas-validators@1.0.2
+
 ## 2.0.0
 
 ### Major Changes

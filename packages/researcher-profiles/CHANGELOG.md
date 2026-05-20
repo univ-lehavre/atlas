@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-researcher-profiles
 
+## 2.0.1
+
+### Patch Changes
+
+- Updated dependencies [[`3229d56`](https://github.com/univ-lehavre/atlas/commit/3229d56df92f880e112dfba6158fc48523699d36)]:
+  - @univ-lehavre/atlas-crf-client@3.0.1
+
 ## 2.0.0
 
 ### Major Changes
