@@ -1,304 +1,93 @@
 # Tests AMARRE
 
-## Overview
+L'app `amarre` (SvelteKit + Appwrite + REDCap) est couverte par une pyramide à 5 niveaux. Ce dossier contient les niveaux **1** (unit + UI), les autres niveaux vivent dans les sandbox.
 
-Ce répertoire contient les tests automatisés et utilitaires de non-régression de l'application AMARRE. Il couvre les routes API de surveys, les validateurs serveur, la transformation des erreurs et la détection de dérive par rapport aux baselines de comportement.
+## Pyramide
 
-## Features
+| #   | Niveau                                           | Où                                                                                                                    | Framework                                                             | Prérequis                       |
+| --- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------- |
+| 1   | UI amarre (composants + affichage conditionnel)  | `apps/amarre/tests/ui/`                                                                                               | Vitest + happy-dom + `@testing-library/svelte`                        | aucun                           |
+| 1   | Unit / API / services serveur                    | `apps/amarre/tests/{lib,routes,server,integration,utils}/`                                                            | Vitest (node env)                                                     | aucun                           |
+| 2   | REDCap seul (contract amarre + OpenAPI strict)   | [sandbox/crf-sandbox/tests/contract-amarre/](../../../sandbox/crf-sandbox/tests/contract-amarre/) _(à venir)_         | Vitest + `ajv` + [packages/crf-client](../../../packages/crf-client/) | REDCap docker                   |
+| 3   | amarre + REDCap (services serveur, sans browser) | [sandbox/amarre-sandbox/tests/integration/crf/](../../../sandbox/amarre-sandbox/tests/integration/crf/) _(à venir)_   | Vitest                                                                | REDCap + bootstrap-crf          |
+| 4   | amarre + Appwrite (magic-link API-only)          | [sandbox/amarre-sandbox/tests/integration/auth/](../../../sandbox/amarre-sandbox/tests/integration/auth/) _(à venir)_ | Vitest + Mailpit                                                      | Appwrite + Mailpit + amarre dev |
+| 5   | Smoke E2E browser final                          | [sandbox/amarre-sandbox/tests/e2e/](../../../sandbox/amarre-sandbox/tests/e2e/) _(à venir)_                           | `@playwright/test`                                                    | stack complète (`pnpm start`)   |
 
-### 1. **Drift Detection** 🎯
+Le plan global est dans `.claude/plans/j-aimerais-que-tu-audites-compiled-glade.md`. La phase A (présente PR) ne livre que le niveau 1.
 
-Automatically detect unintended changes in:
-
-- API response structures and schemas
-- Performance characteristics
-- Data formats and types
-- Error handling behavior
-
-### 2. **Non-Regression Testing** ✅
-
-- Run comprehensive test suites on every change
-- Compare against established baselines
-- Identify breaking changes early
-- Track test success rates over time
-
-### 3. **Test Coverage Analysis** 📊
-
-- Monitor code coverage metrics
-- Identify untested code paths
-- Generate actionable recommendations
-- Track coverage trends
-
-### 4. **CI/CD Integration** 🔄
-
-- Automated testing in GitHub Actions
-- Coverage reports as artifacts
-- Baseline validation on PRs
-- Smart test execution
-
-## Quick Start
-
-### Running Tests
-
-```bash
-# Run all tests
-npm test
-
-# Run tests in watch mode (for development)
-npm run test:watch
-
-# Run with coverage
-npm run test:coverage
-```
-
-### Drift Detection
-
-```bash
-# Initialize baselines for first-time setup
-npm run test:baseline-init
-
-# List all available baselines
-npm run test:baseline-list
-
-# Validate baselines against current version
-npm run test:baseline-validate
-```
-
-### Coverage Analysis
-
-```bash
-# Generate coverage report
-npm run test:coverage-report
-```
-
-## Architecture
-
-### Components
-
-1. **Drift Detector** (`tests/utils/drift-detector.ts`)
-   - Core utility for detecting behavioral drift
-   - Supports API, performance, and schema comparisons
-   - Configurable sensitivity and thresholds
-
-2. **Baseline Manager** (`scripts/manage-baselines.ts`)
-   - Manages test baselines for drift detection
-   - Tracks versions and timestamps
-   - Easy baseline updates and validation
-
-3. **Coverage Analyzer** (`scripts/analyze-test-coverage.ts`)
-   - Analyzes test coverage metrics
-   - Identifies low-coverage files
-   - Generates improvement recommendations
-
-4. **Integration Tests** (`tests/integration/`)
-   - End-to-end testing scenarios
-   - Real-world drift detection examples
-   - API contract validation
-
-## Test Structure
+## Structure
 
 ```
 tests/
-├── baselines/              # Baseline data for drift detection
-│   ├── .gitkeep
-│   └── *.baseline.json     # Version-tracked baselines
-├── integration/            # Integration and E2E tests
-│   └── drift-detection.test.ts
-├── lib/                    # Library/utility tests
-├── routes/                 # API route tests
-├── server/                 # Server-side logic tests
-└── utils/                  # Test utilities
-    ├── drift-detector.ts
-    └── drift-detector.test.ts
+├── README.md                  ← vous êtes ici
+├── fixtures/                  ← payloads typés partagés (users, requests, forms)
+│   ├── users.ts
+│   ├── requests.ts
+│   └── forms.ts
+├── ui/                        ← niveau 1, environment=happy-dom
+│   ├── setup.ts               ← extend expect + cleanup auto
+│   ├── conditional-sections.test.ts
+│   ├── TopNavbar.test.ts
+│   └── forms.test.ts
+├── lib/                       ← niveau 1, environment=node
+├── routes/                    ←  "
+├── server/                    ←  "
+├── integration/               ←  "  (drift detection — utilitaire interne)
+├── utils/                     ←  "
+└── hooks.server.test.ts       ←  "
 ```
 
-## Usage Examples
+## Vitest multi-project
 
-### Example 1: Detecting API Drift
+[vitest.config.ts](../vitest.config.ts) déclare deux projects :
 
-```typescript
-import { DriftDetector } from '../utils/drift-detector';
+- `unit` (environment `node`, include `tests/**/*.test.ts` sauf `tests/ui/**`) — les tests existants, intacts.
+- `ui` (environment `happy-dom`, include `tests/ui/**/*.test.ts`, force la résolution Svelte `browser` pour éviter `lifecycle_function_unavailable`) — les tests de composants.
 
-const detector = new DriftDetector();
+Les deux projects partagent la config Vite/SvelteKit racine via `mergeConfig`, donc `$lib`, `$env/*` et autres alias virtuels fonctionnent dans les tests.
 
-// First run - establishes baseline
-const response1 = { status: 'ok', data: { id: 1 } };
-detector.checkApiDrift('my-endpoint', response1);
+## Commandes
 
-// Later - detects changes
-const response2 = { status: 'ok', data: { id: 1, newField: 'value' } };
-const result = detector.checkApiDrift('my-endpoint', response2);
-
-if (result.hasDrift) {
-  console.log('Drift detected!', result.driftDetails);
-}
+```bash
+pnpm test            # unit + ui (98 tests, ~1s)
+pnpm test:unit       # node project uniquement (78 tests)
+pnpm test:ui         # happy-dom project uniquement (20 tests)
+pnpm test:coverage   # rapport de couverture (seuils dans vitest.config.ts)
 ```
 
-### Example 2: Performance Monitoring
+Aucune commande n'a besoin de docker pour le niveau 1. Pour les niveaux 2-5, voir les sandbox correspondantes.
 
-```typescript
-const detector = new DriftDetector();
+## Écrire un test de composant (niveau 1)
 
-const start = Date.now();
-await myApiCall();
-const duration = Date.now() - start;
+```ts
+// tests/ui/MyComponent.test.ts
+import { render, screen } from '@testing-library/svelte';
+import { describe, it, expect } from 'vitest';
 
-const result = detector.checkPerformanceDrift('my-operation', duration, 20);
-// Alerts if performance degrades by more than 20%
-```
+import MyComponent from '$lib/ui/MyComponent.svelte';
 
-### Example 3: Using in Tests
-
-```typescript
-describe('API Tests', () => {
-  it('should maintain response structure', async () => {
-    const response = await fetch('/api/endpoint');
-    const data = await response.json();
-
-    const detector = new DriftDetector();
-    const result = detector.checkApiDrift('endpoint-response', data);
-
-    expect(result.hasDrift).toBe(false);
+describe('MyComponent.svelte', () => {
+  it('renders the title prop', () => {
+    render(MyComponent, { title: 'hello' });
+    expect(screen.getByText('hello')).toBeInTheDocument();
   });
 });
 ```
 
-## Configuration
+Pièges connus :
 
-### Coverage Thresholds
+- **Bootstrap modals** : `.modal.fade` porte `aria-hidden="true"`, Testing Library masque le contenu par défaut. Passer `{ hidden: true }` aux queries (`getByRole('button', { name: /…/, hidden: true })`).
+- **Svelte 5 + Vitest** : si vous voyez `lifecycle_function_unavailable: mount(...) is not available on the server`, c'est que le project a chargé la build SSR. La conf `resolve.conditions = ['browser']` du project `ui` règle ça.
 
-Default thresholds are defined in `scripts/analyze-test-coverage.ts`:
+## Drift detection (legacy)
 
-- Statements: 80%
-- Branches: 70%
-- Functions: 80%
-- Lines: 80%
+`tests/utils/drift-detector.ts` est un utilitaire interne pour détecter les changements de structure d'API. Il est branché sur `tests/integration/drift-detection.test.ts`. À ce jour il n'a pas de baselines actives sur disque (les anciens scripts `test:baseline-*` n'existent plus dans `package.json`). On le garde le temps de décider s'il fusionne avec le niveau 2 (contract OpenAPI) ou s'il sort.
 
-### Drift Detection Settings
+## Phases à venir
 
-Configure drift detection sensitivity:
-
-```typescript
-// Strict mode - detects value changes
-detector.checkApiDrift('endpoint', data, { strictMode: true });
-
-// Custom performance threshold (30%)
-detector.checkPerformanceDrift('operation', duration, 30);
-```
-
-## CI/CD Integration
-
-The agent runs automatically in CI:
-
-1. **On Push/PR**:
-   - Runs all tests
-   - Generates coverage reports
-   - Validates against baselines
-2. **Artifacts**:
-   - Test coverage reports
-   - Baseline snapshots
-   - Test results
-
-3. **Alerts**:
-   - Failed tests block merge
-   - Coverage drops trigger warnings
-   - Drift detection findings reported
-
-## Best Practices
-
-### 1. Writing Tests
-
-- **Isolate Tests**: Each test should be independent
-- **Clear Names**: Use descriptive test names
-- **Mock External Deps**: Use `vi.mock()` for external services
-- **Test Edge Cases**: Cover boundary conditions
-
-### 2. Managing Baselines
-
-- **Update Intentionally**: Only update baselines for intentional changes
-- **Review Changes**: Always review baseline diffs before committing
-- **Version Track**: Baselines are tied to app versions
-- **Document Updates**: Explain why baselines changed
-
-### 3. Coverage Goals
-
-- **Prioritize Critical Paths**: Focus on business-critical code
-- **Test Error Paths**: Don't forget error handling
-- **Integration Over Unit**: Balance unit and integration tests
-- **Quality Over Quantity**: Meaningful tests > high coverage
-
-## Maintenance
-
-### Updating Baselines
-
-When making intentional API changes:
-
-```bash
-# 1. Make your changes
-# 2. Update the affected baselines
-npm run test:baseline-init
-
-# 3. Review the changes
-git diff tests/baselines/
-
-# 4. Commit if correct
-git add tests/baselines/
-git commit -m "Update baselines for API v2"
-```
-
-### Adding New Tests
-
-1. Create test file: `tests/[category]/[feature].test.ts`
-2. Follow existing patterns
-3. Run tests: `npm test`
-4. Check coverage: `npm run test:coverage`
-
-### Troubleshooting
-
-**Tests failing with "baseline not found":**
-
-```bash
-npm run test:baseline-init
-```
-
-**Coverage too low:**
-
-```bash
-npm run test:coverage-report  # Shows which files need tests
-```
-
-**Performance test flaky:**
-
-- Increase threshold
-- Run multiple times and average
-- Consider using mocks
-
-## Future Enhancements
-
-Planned features:
-
-- [ ] Visual regression testing with Playwright
-- [ ] Mutation testing for test quality
-- [ ] AI-powered test generation
-- [ ] Smart test selection (run only affected tests)
-- [ ] Automated test repair
-- [ ] Load testing integration
-- [ ] Cross-browser E2E testing
-
-## Resources
-
-- [Vitest Documentation](https://vitest.dev/)
-- [Testing Best Practices](https://testingjavascript.com/)
-- [SvelteKit Testing Guide](https://kit.svelte.dev/docs/testing)
-
-## Support
-
-For issues or questions:
-
-1. Review existing tests for examples
-2. Create an issue with the `testing` label
-
----
-
-**Maintained by**: AMARRE Development Team  
-**Last Updated**: December 2024
+- **B** : niveau 2 — `tests/contract-amarre/` côté crf-sandbox + helper `assertMatchesOpenAPI` (ajv + spec v16.1.9.yaml)
+- **C** : niveau 3 — intégration amarre × REDCap via `packages/crf-client`
+- **D** : niveau 4 — magic-link API-only (conversion de `sandbox/amarre-sandbox/scripts/test-e2e.ts` en suite Vitest)
+- **E** : niveau 5 — smoke E2E avec `@playwright/test` (`sandbox/amarre-sandbox/tests/e2e/smoke.spec.ts`)
+- **F** : migration des tests admin Appwrite vers `packages/baas/tests/`
+- **G** : nettoyage final, suppression des scripts `test-e2e*.ts` de la sandbox
