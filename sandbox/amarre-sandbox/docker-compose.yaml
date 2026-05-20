@@ -52,6 +52,13 @@ services:
       _APP_OPENSSL_KEY_V1: ${_APP_OPENSSL_KEY_V1:?Define _APP_OPENSSL_KEY_V1 in .env}
       _APP_DOMAIN: ${APP_DOMAIN:-localhost}
       _APP_DOMAIN_TARGET: ${APP_DOMAIN_TARGET:-localhost}
+      # GET /v1/console/variables crashes (TypeError) on Appwrite 1.9
+      # if these are absent — the controller passes them directly to
+      # `new Domain($value)` without a default. Setting them avoids
+      # the post-login 500 that breaks the SPA's org redirect.
+      _APP_DOMAIN_TARGET_CNAME: ${_APP_DOMAIN_TARGET_CNAME:-localhost}
+      _APP_DOMAIN_TARGET_A: ${_APP_DOMAIN_TARGET_A:-}
+      _APP_DOMAIN_TARGET_AAAA: ${_APP_DOMAIN_TARGET_AAAA:-}
       _APP_REDIS_HOST: ${_APP_REDIS_HOST:-baas-redis}
       _APP_REDIS_PORT: ${_APP_REDIS_PORT:-6379}
       # DB — Appwrite 1.9 defaults to MongoDB. We mirror the official
@@ -129,6 +136,13 @@ services:
       _APP_OPENSSL_KEY_V1: ${_APP_OPENSSL_KEY_V1:?Define _APP_OPENSSL_KEY_V1 in .env}
       _APP_DOMAIN: ${APP_DOMAIN:-localhost}
       _APP_DOMAIN_TARGET: ${APP_DOMAIN_TARGET:-localhost}
+      # GET /v1/console/variables crashes (TypeError) on Appwrite 1.9
+      # if these are absent — the controller passes them directly to
+      # `new Domain($value)` without a default. Setting them avoids
+      # the post-login 500 that breaks the SPA's org redirect.
+      _APP_DOMAIN_TARGET_CNAME: ${_APP_DOMAIN_TARGET_CNAME:-localhost}
+      _APP_DOMAIN_TARGET_A: ${_APP_DOMAIN_TARGET_A:-}
+      _APP_DOMAIN_TARGET_AAAA: ${_APP_DOMAIN_TARGET_AAAA:-}
       _APP_REDIS_HOST: ${_APP_REDIS_HOST:-baas-redis}
       _APP_REDIS_PORT: ${_APP_REDIS_PORT:-6379}
       _APP_DB_ADAPTER: mongodb
