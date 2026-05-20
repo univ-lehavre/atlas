@@ -15,19 +15,28 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "up": "docker compose up -d",
-    "down": "docker compose down",
-    "reset": "docker compose down -v",
-    "logs": "docker compose logs -f",
+    "start": "./scripts/start.sh",
+    "stop": "docker compose down",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v",
+    "docker:logs": "docker compose logs -f",
     "bootstrap": "./scripts/bootstrap.sh",
-    "bootstrap:baas": "./scripts/bootstrap-baas.sh",
-    "bootstrap:crf": "./scripts/bootstrap-crf.sh",
+    "bootstrap:baas": "tsx scripts/bootstrap-baas.ts",
+    "bootstrap:crf": "tsx scripts/bootstrap-crf.ts",
+    "seed": "tsx scripts/seed-fake-data.ts",
+    "pull:prod": "tsx scripts/pull-from-prod.ts",
+    "test:e2e": "tsx scripts/test-e2e.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.4.0",
+    "@types/node": "^25.9.1",
     "@univ-lehavre/atlas-crf-sandbox": "workspace:*",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "prettier": "^3.8.3"
+    "prettier": "^3.8.3",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
   }
 }
