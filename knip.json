@@ -2,71 +2,43 @@
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "workspaces": {
     ".": {
-      "project": [
-        "*.{js,ts}"
-      ]
+      "project": ["*.{js,ts}"],
+      "ignoreBinaries": ["eslint"]
     },
     "packages/net": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     },
     "packages/crf-core": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     },
     "packages/baas": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     },
     "packages/auth": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     },
     "packages/errors": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     },
     "packages/validators": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     },
     "packages/citation-types": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     },
     "packages/fetch-one-api-page": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     },
     "packages/citation-fetch": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     },
     "packages/citation-validate": {
-      "project": [
-        "src/**/*.ts"
-      ],
-      "ignore": [
-        "src/oa/index.ts"
-      ]
+      "project": ["src/**/*.ts"],
+      "ignore": ["src/oa/index.ts"]
     },
     "packages/citation": {
-      "project": [
-        "src/**/*.ts"
-      ],
-      "ignore": [
-        "src/db/index.ts",
-        "src/group/helpers.ts"
-      ],
+      "project": ["src/**/*.ts"],
+      "ignore": ["src/db/index.ts", "src/group/helpers.ts"],
       "ignoreDependencies": [
         "@duckdb/node-api",
         "@effect/experimental",
@@ -76,25 +48,14 @@
       ]
     },
     "cli/citation": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     },
     "apps/amarre": {
-      "project": [
-        "src/**/*.ts",
-        "src/**/*.svelte"
-      ],
-      "ignore": [
-        "src/lib/ui/Retrieve.svelte",
-        "src/lib/ui/Rule.svelte"
-      ]
+      "project": ["src/**/*.ts", "src/**/*.svelte"],
+      "ignore": ["src/lib/ui/Retrieve.svelte", "src/lib/ui/Rule.svelte"]
     },
     "apps/ecrin": {
-      "project": [
-        "src/**/*.ts",
-        "src/**/*.svelte"
-      ],
+      "project": ["src/**/*.ts", "src/**/*.svelte"],
       "ignore": [
         "src/lib/ui/Button.svelte",
         "src/lib/ui/TakeTheSurvey.svelte",
@@ -110,71 +71,38 @@
       ]
     },
     "apps/find-an-expert": {
-      "project": [
-        "src/**/*.ts",
-        "src/**/*.svelte"
-      ],
-      "ignoreDependencies": [
-        "tailwindcss"
-      ]
+      "project": ["src/**/*.ts", "src/**/*.svelte"],
+      "ignoreDependencies": ["tailwindcss"]
     },
     "cli/biblio": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     },
     "packages/researcher-profiles": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     },
     "cli/researcher-profiles": {
-      "project": [
-        "src/**/*.ts"
-      ],
-      "ignoreBinaries": [
-        "perl",
-        "pandoc"
-      ]
+      "project": ["src/**/*.ts"],
+      "ignoreBinaries": ["perl", "pandoc"]
     },
     "cli/crf-openapi": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     },
     "config/shared-config": {
-      "project": [
-        "eslint/**/*.js",
-        "prettier/**/*.js"
-      ]
+      "project": ["eslint/**/*.js", "prettier/**/*.js"]
     },
     "sandbox/crf-sandbox": {
-      "project": [
-        "tests/**/*.ts"
-      ]
+      "project": ["tests/**/*.ts"]
     },
     "packages/crf-client": {
-      "project": [
-        "src/**/*.ts"
-      ],
-      "ignore": [
-        "src/brands.ts",
-        "src/errors.ts",
-        "src/version.ts"
-      ]
+      "project": ["src/**/*.ts"],
+      "ignore": ["src/brands.ts", "src/errors.ts", "src/version.ts"]
     },
     "services/crf": {
-      "project": [
-        "src/**/*.ts"
-      ],
-      "ignore": [
-        "src/server/schemas.ts"
-      ]
+      "project": ["src/**/*.ts"],
+      "ignore": ["src/server/schemas.ts"]
     },
     "cli/crf": {
-      "project": [
-        "src/**/*.ts"
-      ],
+      "project": ["src/**/*.ts"],
       "ignore": [
         "src/commands/api/commands.ts",
         "src/shared/context.ts",
@@ -182,9 +110,7 @@
       ]
     },
     "cli/net": {
-      "project": [
-        "src/**/*.ts"
-      ]
+      "project": ["src/**/*.ts"]
     }
   },
   "ignoreDependencies": [

@@ -42,10 +42,18 @@ pre-commit:
       priority: 1
 
     format:
-      run: pnpm format:check
+      # Run prettier only on the files actually staged, not the whole
+      # monorepo. Skips when nothing in {staged_files} matches the glob.
+      glob: "*.{js,jsx,ts,tsx,svelte,md,mdx,json,yml,yaml,css,scss,html}"
+      run: pnpm exec prettier --check {staged_files}
 
     lint:
-      run: pnpm lint
+      # Same idea for ESLint. Each package owns its own flat config
+      # (apps/*/eslint.config.js etc.), and ESLint picks the nearest
+      # one per file — so this works across the monorepo with no extra
+      # plumbing. Falls back to `turbo lint` if you want a full sweep.
+      glob: "*.{js,jsx,ts,tsx,svelte}"
+      run: pnpm exec eslint {staged_files}
 
     typecheck:
       run: pnpm typecheck
@@ -83,6 +91,10 @@ pre-push:
       priority: 2
 
     check-lockfile:
+      # Only matters when package manifests or the lockfile changed
+      # — otherwise this is a no-op `pnpm install` that still costs
+      # ~7s. Skip the hook when no relevant file is in the push set.
+      glob: "{package.json,pnpm-lock.yaml,**/package.json}"
       run: pnpm install --frozen-lockfile
       priority: 2
 
