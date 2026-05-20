@@ -1,6 +1,12 @@
 # Dependencies
 node_modules/
 
+# Package manager lockfiles — pnpm owns the format; running prettier
+# on them mangles spacing and creates churn on every `pnpm install`.
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
 # Build outputs
 dist/
 build/

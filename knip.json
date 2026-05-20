@@ -3,7 +3,7 @@
   "workspaces": {
     ".": {
       "project": ["*.{js,ts}"],
-      "ignoreBinaries": ["eslint"]
+      "ignoreDependencies": ["eslint", "prettier-plugin-svelte"]
     },
     "packages/net": {
       "project": ["src/**/*.ts"]
