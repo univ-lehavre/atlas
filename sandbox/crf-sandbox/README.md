@@ -17,8 +17,11 @@ redcap-sandbox/
 │   ├── test-contract.sh    # Run contract tests
 │   └── test-security.sh    # Run security/fuzzing tests
 ├── tests/                  # Integration tests
-│   ├── contract/           # API contract tests (require Docker)
+│   ├── contract/           # Generic REDCap API contract tests (require Docker)
+│   ├── contract-amarre/    # Amarre-specific contract tests (run pnpm test:contract:amarre)
 │   ├── fixtures/           # Test data and setup scripts
+│   │   ├── redcap-admin.ts # API-only helpers : mint super-token, create project, import dictionary
+│   │   └── setup-test-projects.ts # Provisions tokens + amarre project via API
 │   └── api-smoke.ts        # Quick API smoke tests
 ├── docker-compose.yaml     # Main compose file
 └── vitest.config.ts        # Vitest configuration
@@ -44,6 +47,7 @@ pnpm docker:up
 ```
 
 This starts:
+
 - **REDCap** at http://localhost:8888
 - **phpMyAdmin** at http://localhost:8889
 - **Mailpit** at http://localhost:8025
@@ -55,6 +59,7 @@ pnpm docker:install
 ```
 
 This script:
+
 1. Submits the REDCap install form
 2. Extracts and executes the SQL schema
 3. Creates an API token for testing
@@ -107,11 +112,22 @@ pnpm docker:reset    # Reset database (destroys data)
 pnpm docker:install  # Automated installation
 
 # Testing
-pnpm test:setup      # Setup test fixtures
-pnpm test:api        # Smoke tests (quick)
-pnpm test:contract   # Contract tests (full)
-pnpm test:security   # Security/fuzz tests
+pnpm test:setup            # Setup test fixtures + provision amarre project (API-only)
+pnpm test:api              # Smoke tests (quick)
+pnpm test:contract         # Contract tests (full — generic REDCap + amarre)
+pnpm test:contract:amarre  # Contract tests scoped to the amarre project only
+pnpm test:security         # Security/fuzz tests
 ```
+
+## Amarre contract tests
+
+The `tests/contract-amarre/` suite exercises the REDCap endpoints used by [`apps/amarre`](../../apps/amarre/). It targets a dedicated `amarre` project provisioned by `pnpm test:setup` :
+
+1. Mint a super-API token for `site_admin` via the Control Center AJAX endpoint (auth=none gives super-user access by default on the sandbox).
+2. `POST /api/?content=project&action=import` with the super-token to create a fresh project.
+3. `POST /api/?content=metadata&action=import` with the project's regular token to load [`data-dictionaries/127-amarre-v1.json`](../../data-dictionaries/127-amarre-v1.json).
+
+No SQL is executed (this is a project policy — REDCap is touched exclusively through its HTTP API, web endpoints included). The helpers live in [`tests/fixtures/redcap-admin.ts`](tests/fixtures/redcap-admin.ts) and are idempotent across runs: a cached token in `.env.test` is reused if it still resolves to a project titled `amarre`.
 
 ## Test Fixtures
 

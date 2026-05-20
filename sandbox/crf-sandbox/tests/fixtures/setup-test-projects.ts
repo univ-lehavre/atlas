@@ -8,11 +8,21 @@
  */
 
 import { execSync } from 'node:child_process';
-import { writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+import {
+  mintSuperToken,
+  createProject,
+  importDataDictionary,
+  tokenMatchesProject,
+} from './redcap-admin.js';
 
 const FIXTURES_DIR = join(import.meta.dirname);
 const CONFIG_DIR = join(import.meta.dirname, '../../docker/config');
+const REPO_ROOT = join(import.meta.dirname, '../../../..');
+const AMARRE_DICT_PATH = join(REPO_ROOT, 'data-dictionaries/127-amarre-v1.json');
+const AMARRE_PROJECT_TITLE = 'amarre';
 
 interface ProjectSetup {
   id: number;
@@ -496,12 +506,62 @@ async function verifyProjectSetup(
   return { passed, details };
 }
 
+/**
+ * Read an existing REDCap amarre token from `.env.test`, if any. Used
+ * to make `setupAmarreProject()` idempotent across `pnpm test:setup`
+ * runs without recreating the project.
+ */
+function readCachedAmarreToken(): string | undefined {
+  const envPath = join(CONFIG_DIR, '.env.test');
+  if (!existsSync(envPath)) return undefined;
+  const raw = readFileSync(envPath, 'utf8');
+  const m = raw.match(/^REDCAP_TOKEN_PROJECT_AMARRE=([A-Fa-f0-9]{32})$/m);
+  return m?.[1];
+}
+
+/**
+ * Provision the `amarre` REDCap project end-to-end, API-only :
+ *   1. mint (or reuse) the super-API token for site_admin
+ *   2. create the project via POST /api/?content=project&action=import
+ *   3. import the amarre data dictionary
+ *
+ * Idempotent : if a cached token in `.env.test` still points at a
+ * project titled "amarre", we reuse it without recreating anything.
+ */
+async function setupAmarreProject(
+  apiUrl: string,
+  baseUrl: string
+): Promise<{ token: string; recordCount: number }> {
+  const cached = readCachedAmarreToken();
+  if (cached && (await tokenMatchesProject(apiUrl, cached, AMARRE_PROJECT_TITLE))) {
+    console.log('  Reusing cached amarre token');
+    return { token: cached, recordCount: 0 };
+  }
+
+  console.log('  Minting super-API token for site_admin');
+  const superToken = await mintSuperToken(baseUrl);
+
+  console.log('  Creating amarre project via API');
+  const token = await createProject(apiUrl, superToken, {
+    project_title: AMARRE_PROJECT_TITLE,
+    purpose: '3', // Quality Improvement
+    project_language: 'English',
+  });
+
+  console.log('  Importing amarre data dictionary');
+  const { imported, dropped } = await importDataDictionary(apiUrl, token, AMARRE_DICT_PATH);
+  console.log(`    ${imported} fields imported (${dropped} placeholders dropped)`);
+
+  return { token, recordCount: 0 };
+}
+
 async function main() {
   console.log('Setting up test projects with fixtures');
   console.log('='.repeat(50));
   console.log();
 
-  const apiUrl = 'http://localhost:8888/api/';
+  const baseUrl = 'http://localhost:8888';
+  const apiUrl = `${baseUrl}/api/`;
   const projectTokens: Record<number, string> = {};
   const projectCapabilities: Record<number, ProjectCapabilities> = {};
 
@@ -565,6 +625,13 @@ async function main() {
   }
   console.log();
 
+  // Provision the amarre project via API (no SQL). Lives outside the
+  // TEST_PROJECTS loop because the amarre project doesn't exist as a
+  // REDCap template — it's created from scratch via super-API token.
+  console.log('Step 4.5: Provisioning amarre project (API-only)...');
+  const amarre = await setupAmarreProject(apiUrl, baseUrl);
+  console.log();
+
   // Save fixtures configuration
   console.log('Step 5: Saving fixtures configuration...');
 
@@ -586,6 +653,11 @@ async function main() {
         hasSurveys: Boolean(projectCapabilities[p.id]?.surveyInstrument),
       },
     })),
+    amarre: {
+      title: AMARRE_PROJECT_TITLE,
+      token: amarre.token,
+      recordCount: amarre.recordCount,
+    },
   };
 
   writeFileSync(
@@ -603,6 +675,9 @@ async function main() {
     '',
     '# Project tokens',
     ...TEST_PROJECTS.map((p) => `REDCAP_TOKEN_PROJECT_${p.id}=${projectTokens[p.id]}`),
+    '',
+    '# Amarre project (provisioned via API, no SQL)',
+    `REDCAP_TOKEN_PROJECT_AMARRE=${amarre.token}`,
     '',
     '# Default token (Classic Database)',
     `REDCAP_API_TOKEN=${projectTokens[1] ?? ''}`,
