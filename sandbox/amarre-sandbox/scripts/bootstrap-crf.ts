@@ -141,7 +141,8 @@ const relaxDictionaryFk = async (container: string): Promise<void> => {
   // REDCap's metadata import API inserts rows in redcap_data_dictionaries
   // with doc_id=0 (sentinel), which violates the FK to redcap_edocs_metadata.
   // The constraint is on a snapshot index, not user data — safe to drop in
-  // a sandbox. Tolerate "constraint doesn't exist" on re-runs.
+  // a sandbox. Tolerate "doesn't exist" (re-runs, or schema variants of
+  // REDCap that ship without that FK) by matching MariaDB errno 1091.
   try {
     await runSql(
       container,
@@ -149,8 +150,9 @@ const relaxDictionaryFk = async (container: string): Promise<void> => {
     );
     console.log(`  ✓ FK redcap_data_dictionaries_ibfk_1 dropped`);
   } catch (err) {
-    if (String(err).includes("Check that column/key exists")) {
-      console.log(`  • FK already dropped`);
+    const msg = String(err);
+    if (msg.includes("1091") || /check that .* exists/i.test(msg)) {
+      console.log(`  • FK already absent`);
     } else {
       throw err;
     }
