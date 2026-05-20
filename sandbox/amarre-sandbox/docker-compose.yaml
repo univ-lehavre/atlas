@@ -85,16 +85,23 @@ services:
   # Console SPA. Sur Appwrite 1.9, la console n'est plus servie par le
   # conteneur principal — c'est une image séparée. En prod Appwrite la
   # source un Traefik route /console vers ce conteneur. Ici on l'expose
-  # directement sur :8091 pour rester simple. La console pointe par
-  # défaut vers l'API du même host:port — on injecte donc l'endpoint
-  # de notre stack via PUBLIC_APPWRITE_ENDPOINT.
+  # directement sur :8091 pour rester simple.
+  #
+  # La SPA est un SvelteKit en mode SSG : les variables PUBLIC_* sont
+  # figées au build de l'image, pas lues à l'exécution. Passer
+  # PUBLIC_APPWRITE_ENDPOINT dans `environment` n'a donc aucun effet.
+  # On override le fichier _app/env.js au démarrage avec un `sed` puis
+  # on chaîne sur l'entrypoint nginx par défaut.
   baas-console:
     image: appwrite/console:8
     container_name: amarre-sandbox-baas-console
     ports:
       - "${APP_CONSOLE_PORT:-8091}:80"
-    environment:
-      PUBLIC_APPWRITE_ENDPOINT: ${PUBLIC_APPWRITE_ENDPOINT:-http://localhost:8090/v1}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        sed -i 's|"PUBLIC_APPWRITE_ENDPOINT":"[^"]*"|"PUBLIC_APPWRITE_ENDPOINT":"'"${PUBLIC_APPWRITE_ENDPOINT:-http://localhost:8090/v1}"'"|' /usr/share/nginx/html/console/_app/env.js
+        exec nginx -g 'daemon off;'
     depends_on:
       - baas
     networks:
