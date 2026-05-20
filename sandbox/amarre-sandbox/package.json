@@ -1,0 +1,45 @@
+{
+  "name": "@univ-lehavre/atlas-amarre-sandbox",
+  "version": "0.1.0",
+  "description": "Local Docker sandbox for the amarre app: bundles a CRF (REDCap) instance, a self-hosted BaaS (Appwrite), and the wiring scripts needed to run amarre end-to-end without depending on production services.",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "sandbox/amarre-sandbox"
+  },
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "./scripts/start.sh",
+    "stop": "docker compose down",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v",
+    "docker:logs": "docker compose logs -f",
+    "bootstrap": "./scripts/bootstrap.sh",
+    "bootstrap:baas": "tsx scripts/bootstrap-baas.ts",
+    "bootstrap:crf": "tsx scripts/bootstrap-crf.ts",
+    "seed": "tsx scripts/seed-fake-data.ts",
+    "pull:prod": "tsx scripts/pull-from-prod.ts",
+    "test:e2e": "tsx scripts/test-e2e.ts",
+    "test:e2e:ui": "tsx scripts/test-e2e-ui.ts",
+    "test:e2e:baas": "tsx scripts/test-e2e-baas.ts",
+    "test:e2e:baas:ui": "tsx scripts/test-e2e-baas-ui.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^10.4.0",
+    "@types/node": "^25.9.1",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "playwright": "^1.50.0",
+    "prettier": "^3.8.3",
+    "tsx": "^4.22.3",
+    "typescript": "^6.0.3"
+  }
+}

@@ -1,0 +1,5 @@
+.env
+.env.local
+.env.bootstrap
+.env.prod
+.artifacts/

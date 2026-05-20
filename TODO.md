@@ -32,7 +32,7 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [ ] Abstraction CLI partagée (réduire le boilerplate des 3 CLIs citation-like)
 - [ ] Tests `bin/` pour `cli/crf` (couverture 22.7% → 50%+)
 - [ ] Déplacement des composants UI des apps vers un package partagé (extraire les composants Svelte communs hors de `apps/*/src/lib/components/` vers un `packages/ui/` ou équivalent — à cadrer : périmètre, conventions de styling/theming, gestion des dépendances Svelte/SvelteKit)
-- [ ] `sandbox/amarre-sandbox/` (environnement Docker local Amarre + Appwrite + REDCap, voir [§Sandbox Amarre](#sandbox-amarre--appwrite--crf-en-local))
+- [x] `sandbox/amarre-sandbox/` (environnement Docker local Amarre + Appwrite + REDCap) — squelette livré (cf. [§Sandbox Amarre](#sandbox-amarre--appwrite--crf-en-local)) ; reste l'export du dictionnaire CRF minimum à automatiser
 
 **DevSecOps (renvoient aux phases ci-dessous)**
 
@@ -93,13 +93,13 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 
 ### Périmètre
 
-- [ ] Squelette `sandbox/amarre-sandbox/` : `docker-compose.yaml` (avec `include:` de `../crf-sandbox/docker-compose.yaml`), `README.md`, `package.json`, scripts
-- [ ] Stack Appwrite self-hosted ajoutée au compose (image officielle, ~10 conteneurs : mariadb, redis, traefik, workers) — vérifier l'empreinte RAM et documenter le `docker compose up` initial (1-2 min)
-- [ ] Script `bootstrap-appwrite.sh` : crée le projet Appwrite, la clé API serveur, configure le domaine autorisé (`localhost:5173`), écrit `PUBLIC_APPWRITE_ENDPOINT` / `PUBLIC_APPWRITE_PROJECT` / `APPWRITE_KEY` dans `apps/amarre/.env.local`
-- [ ] Script `bootstrap-crf.sh` : réutilise `pnpm -F crf-sandbox docker:install`, crée un projet de test avec le bon dictionnaire de données Amarre, génère le token, écrit `PUBLIC_REDCAP_URL` / `REDCAP_API_TOKEN` dans `apps/amarre/.env.local`
-- [ ] Script `bootstrap.sh` orchestrateur : up de la stack, attente healthchecks, bootstrap Appwrite + CRF, affichage des credentials
-- [ ] Décider si Amarre tourne en `pnpm -F amarre dev` sur l'hôte (rapide à itérer) ou dans un conteneur (plus reproductible) — recommandation par défaut : sur l'hôte, conteneurisation optionnelle plus tard
-- [ ] Documentation du dictionnaire de données minimal côté CRF pour qu'Amarre fonctionne (champs attendus par les API routes `apps/amarre/src/routes/api/v1/`)
+- [x] Squelette `sandbox/amarre-sandbox/` : `docker-compose.yaml` (avec `include:` de `../crf-sandbox/docker/docker-compose.yml`), `README.md`, `package.json`, scripts, `.env.example`, `.gitignore`
+- [x] Stack BaaS (Appwrite) self-hosted **minimale** ajoutée au compose (3 conteneurs : `baas`, `baas-mariadb`, `baas-redis` ; sans traefik ni workers — suffisant pour Account/Users/Database utilisés par amarre)
+- [x] Script `bootstrap-baas.sh` (renommé sans la marque) : valide les credentials du projet contre `/v1/users`. La création initiale projet + clé reste **semi-manuelle** via la console web Appwrite (limitation API admin documentée dans le README)
+- [x] Script `bootstrap-crf.sh` : délègue à `pnpm -F crf-sandbox docker:install`, récupère le token écrit dans `crf-sandbox/docker/config/.env.test`, l'inscrit dans `.env`. Création du projet REDCap + dictionnaire reste manuelle (cf. ligne dictionnaire ci-dessous)
+- [x] Script `bootstrap.sh` orchestrateur : `wait-for` healthcheck BaaS, enchaîne baas → crf → écrit `apps/amarre/.env.local` via `write-amarre-env.sh`
+- [x] Décision : Amarre tourne en `pnpm -F amarre dev` sur l'hôte (rapide à itérer) ; conteneurisation pas dans ce premier livrable
+- [ ] **Reste à faire** : exporter le dictionnaire CRF minimum (champs `record_id`, `created_at`, `demandeur_statut`, `mobilite_type`, `invitation_type`, `invite_nom`, `mobilite_universite_*`, `*_complete`, `avis_*_position`) dans `sandbox/amarre-sandbox/fixtures/` + script d'import REDCap, pour automatiser entièrement le `bootstrap-crf.sh`
 
 ### Points d'attention
 
