@@ -102,6 +102,11 @@ services:
       - |
         sed -i 's|"PUBLIC_APPWRITE_ENDPOINT":"[^"]*"|"PUBLIC_APPWRITE_ENDPOINT":"'"${PUBLIC_APPWRITE_ENDPOINT:-http://localhost:8090/v1}"'"|' /usr/share/nginx/html/console/_app/env.js
         exec nginx -g 'daemon off;'
+    volumes:
+      # Override the default nginx config — see docker/console-nginx.conf
+      # for the why. Adds a proxy_pass /v1/ → http://baas:80/v1/ so the
+      # SPA's same-origin API calls reach Appwrite.
+      - ./docker/console-nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       - baas
     networks:
