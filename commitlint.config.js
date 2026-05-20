@@ -23,6 +23,7 @@ export default {
       'always',
       [
         'amarre',
+        'amarre-sandbox',
         'baas',
         'auth',
         'biblio-cli',

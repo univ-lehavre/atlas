@@ -36,8 +36,8 @@ services:
     ports:
       - "${APP_PORT:-8090}:80"
     depends_on:
-      baas-mariadb:
-        condition: service_healthy
+      baas-mongodb:
+        condition: service_started
       baas-redis:
         condition: service_started
     environment:
@@ -45,16 +45,34 @@ services:
       _APP_LOCALE: fr
       _APP_OPTIONS_ABUSE: "disabled"
       _APP_OPTIONS_FORCE_HTTPS: "disabled"
+      # Allow the bootstrap script to create the first console user via
+      # POST /v1/account. Without this, Appwrite 1.9 refuses signup with
+      # `user_console_count_exceeded`.
+      _APP_CONSOLE_WHITELIST_ROOT: "disabled"
       _APP_OPENSSL_KEY_V1: ${_APP_OPENSSL_KEY_V1:?Define _APP_OPENSSL_KEY_V1 in .env}
       _APP_DOMAIN: ${APP_DOMAIN:-localhost}
       _APP_DOMAIN_TARGET: ${APP_DOMAIN_TARGET:-localhost}
       _APP_REDIS_HOST: ${_APP_REDIS_HOST:-baas-redis}
       _APP_REDIS_PORT: ${_APP_REDIS_PORT:-6379}
-      _APP_DB_HOST: ${_APP_DB_HOST:-baas-mariadb}
-      _APP_DB_PORT: ${_APP_DB_PORT:-3306}
-      _APP_DB_USER: ${_APP_DB_USER:-baas}
+      # DB — Appwrite 1.9 defaults to MongoDB. We mirror the official
+      # docker-compose: adapter=mongodb, root user, port 27017.
+      _APP_DB_ADAPTER: mongodb
+      _APP_DB_HOST: ${_APP_DB_HOST:-baas-mongodb}
+      _APP_DB_PORT: ${_APP_DB_PORT:-27017}
+      _APP_DB_USER: ${_APP_DB_USER:-root}
       _APP_DB_PASS: ${_APP_DB_PASS:-baas_password}
-      _APP_DB_SCHEMA: ${_APP_DB_SCHEMA:-baas}
+      _APP_DB_ROOT_PASS: ${_APP_DB_PASS:-baas_password}
+      _APP_DB_SCHEMA: ${_APP_DB_SCHEMA:-appwrite}
+      # SMTP — pointe vers Mailpit (service défini dans crf-sandbox, partagé
+      # via redcap-net). Mailpit accepte tout, sans auth ni TLS — c'est un
+      # mail-trap local, pas un vrai relai.
+      _APP_SMTP_HOST: ${_APP_SMTP_HOST:-mailpit}
+      _APP_SMTP_PORT: ${_APP_SMTP_PORT:-1025}
+      _APP_SMTP_SECURE: ""
+      _APP_SMTP_USERNAME: ""
+      _APP_SMTP_PASSWORD: ""
+      _APP_SYSTEM_EMAIL_NAME: ${APPWRITE_SYSTEM_EMAIL_NAME:-Amarre Sandbox}
+      _APP_SYSTEM_EMAIL_ADDRESS: ${APPWRITE_SYSTEM_EMAIL_ADDRESS:-no-reply@amarre.local}
     volumes:
       - baas-uploads:/storage/uploads
       - baas-cache:/storage/cache
@@ -62,23 +80,71 @@ services:
       - baas-certificates:/storage/certificates
     networks:
       - baas-net
+      - redcap-net
 
-  baas-mariadb:
-    image: mariadb:10.11
-    container_name: amarre-sandbox-baas-mariadb
+  # Console SPA. Sur Appwrite 1.9, la console n'est plus servie par le
+  # conteneur principal — c'est une image séparée. En prod Appwrite la
+  # source un Traefik route /console vers ce conteneur. Ici on l'expose
+  # directement sur :8091 pour rester simple. La console pointe par
+  # défaut vers l'API du même host:port — on injecte donc l'endpoint
+  # de notre stack via PUBLIC_APPWRITE_ENDPOINT.
+  baas-console:
+    image: appwrite/console:8
+    container_name: amarre-sandbox-baas-console
+    ports:
+      - "${APP_CONSOLE_PORT:-8091}:80"
     environment:
-      MARIADB_ROOT_PASSWORD: ${_APP_DB_PASS:-baas_password}
-      MARIADB_DATABASE: ${_APP_DB_SCHEMA:-baas}
-      MARIADB_USER: ${_APP_DB_USER:-baas}
-      MARIADB_PASSWORD: ${_APP_DB_PASS:-baas_password}
+      PUBLIC_APPWRITE_ENDPOINT: ${PUBLIC_APPWRITE_ENDPOINT:-http://localhost:8090/v1}
+    depends_on:
+      - baas
+    networks:
+      - baas-net
+
+  # Worker dédié à la consommation de la queue v1-mails. Sans ce service,
+  # `account.createMagicURLToken` enfile bien le job dans Redis mais
+  # personne ne l'envoie → les emails ne quittent jamais Appwrite.
+  baas-worker-mails:
+    image: appwrite/appwrite:1.9
+    container_name: amarre-sandbox-baas-worker-mails
+    entrypoint: worker-mails
+    depends_on:
+      - baas
+      - baas-redis
+      - baas-mongodb
+    environment:
+      _APP_ENV: development
+      _APP_LOCALE: fr
+      _APP_OPENSSL_KEY_V1: ${_APP_OPENSSL_KEY_V1:?Define _APP_OPENSSL_KEY_V1 in .env}
+      _APP_DOMAIN: ${APP_DOMAIN:-localhost}
+      _APP_DOMAIN_TARGET: ${APP_DOMAIN_TARGET:-localhost}
+      _APP_REDIS_HOST: ${_APP_REDIS_HOST:-baas-redis}
+      _APP_REDIS_PORT: ${_APP_REDIS_PORT:-6379}
+      _APP_DB_ADAPTER: mongodb
+      _APP_DB_HOST: ${_APP_DB_HOST:-baas-mongodb}
+      _APP_DB_PORT: ${_APP_DB_PORT:-27017}
+      _APP_DB_USER: ${_APP_DB_USER:-root}
+      _APP_DB_PASS: ${_APP_DB_PASS:-baas_password}
+      _APP_DB_ROOT_PASS: ${_APP_DB_PASS:-baas_password}
+      _APP_DB_SCHEMA: ${_APP_DB_SCHEMA:-appwrite}
+      _APP_SMTP_HOST: ${_APP_SMTP_HOST:-mailpit}
+      _APP_SMTP_PORT: ${_APP_SMTP_PORT:-1025}
+      _APP_SMTP_SECURE: ""
+      _APP_SMTP_USERNAME: ""
+      _APP_SMTP_PASSWORD: ""
+      _APP_SYSTEM_EMAIL_NAME: ${APPWRITE_SYSTEM_EMAIL_NAME:-Amarre Sandbox}
+      _APP_SYSTEM_EMAIL_ADDRESS: ${APPWRITE_SYSTEM_EMAIL_ADDRESS:-no-reply@amarre.local}
+    networks:
+      - baas-net
+      - redcap-net
+
+  baas-mongodb:
+    image: mongo:8.2.5
+    container_name: amarre-sandbox-baas-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${_APP_DB_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${_APP_DB_PASS:-baas_password}
     volumes:
-      - baas-mariadb-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      - baas-mongodb-data:/data/db
     networks:
       - baas-net
 
@@ -93,8 +159,13 @@ volumes:
   baas-cache:
   baas-config:
   baas-certificates:
-  baas-mariadb-data:
+  baas-mongodb-data:
 
 networks:
   baas-net:
     driver: bridge
+  # Déclaré ici pour pouvoir l'attacher au service `baas`. Le réseau réel
+  # est défini par crf-sandbox/docker/docker-compose.yml (inclus ci-dessus)
+  # — Compose le déduplique au merge.
+  redcap-net:
+    external: false
