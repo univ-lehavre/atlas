@@ -98,6 +98,35 @@ interface CrfCallParams {
 }
 
 /**
+ * Validate that a URL read from `.env` points somewhere we expect to
+ * call (http/https + localhost / docker host). Defends against an
+ * accidental or malicious `.env` rewrite redirecting the bootstrap
+ * to an attacker-controlled endpoint with our token in the body —
+ * CodeQL's `js/file-access-to-http` alert.
+ */
+const ALLOWED_CRF_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
+
+const ensureSafeCrfUrl = (raw: string): string => {
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error(`PUBLIC_CRF_URL is not a valid URL: ${raw}`);
+  }
+  if (!["http:", "https:"].includes(parsed.protocol)) {
+    throw new Error(
+      `PUBLIC_CRF_URL must be http(s); got ${parsed.protocol} (${raw})`,
+    );
+  }
+  if (!ALLOWED_CRF_HOSTS.has(parsed.hostname)) {
+    throw new Error(
+      `PUBLIC_CRF_URL must point to localhost (allowed: ${[...ALLOWED_CRF_HOSTS].join(", ")}); got ${parsed.hostname}`,
+    );
+  }
+  return parsed.href;
+};
+
+/**
  * Single point of contact for REDCap's API. Always urlencoded,
  * always returns the raw text response. Callers parse as needed.
  */
@@ -106,8 +135,9 @@ const crfCall = async ({
   token,
   body,
 }: CrfCallParams): Promise<string> => {
+  const safeUrl = ensureSafeCrfUrl(crfUrl);
   const params = new URLSearchParams({ token, returnFormat: "json", ...body });
-  const r = await fetch(crfUrl, {
+  const r = await fetch(safeUrl, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: params.toString(),
