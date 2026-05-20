@@ -191,11 +191,26 @@ jobs:
       - name: Build packages (for API docs)
         run: pnpm build
 
-      - name: Generate API documentation
-        run: pnpm docs:api
+      # Run TypeDoc and the repo-stats generator in parallel — they touch
+      # disjoint outputs (docs/api/* vs docs/.vitepress/data/repo-stats.json)
+      # and stats:generate just walks git history, so there's no shared
+      # bottleneck. `wait $pid_*` propagates either failure.
+      - name: Generate API docs + repo stats (parallel)
+        run: |
+          set -e
+          pnpm docs:api &
+          pid_api=$!
+          pnpm stats:generate &
+          pid_stats=$!
+          wait $pid_api
+          wait $pid_stats
 
+      # `docs:build` would re-run `docs:api` + `stats:generate` from the
+      # composite script. Skip that and call only the remaining stages
+      # (api:sidebar then the VitePress bundle) — the two heavy steps
+      # are already done above.
       - name: Build VitePress site
-        run: pnpm docs:build
+        run: pnpm api:sidebar && pnpm exec vitepress build docs
 
   audit:
     name: Audit
