@@ -27,6 +27,8 @@
     "seed": "tsx scripts/seed-fake-data.ts",
     "pull:prod": "tsx scripts/pull-from-prod.ts",
     "test:e2e": "tsx scripts/test-e2e.ts",
+    "test:e2e:baas": "tsx scripts/test-e2e-baas.ts",
+    "test:e2e:baas:ui": "tsx scripts/test-e2e-baas-ui.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -34,6 +36,7 @@
     "@faker-js/faker": "^10.4.0",
     "@types/node": "^25.9.1",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "playwright": "^1.50.0",
     "prettier": "^3.8.3",
     "tsx": "^4.22.3",
     "typescript": "^6.0.3"
