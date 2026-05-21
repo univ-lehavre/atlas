@@ -49,6 +49,7 @@
     "@univ-lehavre/atlas-baas": "workspace:*",
     "@univ-lehavre/atlas-errors": "workspace:*",
     "@univ-lehavre/atlas-logos": "workspace:*",
+    "@univ-lehavre/atlas-ui": "workspace:*",
     "@univ-lehavre/atlas-validators": "workspace:*",
     "luxon": "^3.7.2",
     "node-appwrite": "^25.0.0",

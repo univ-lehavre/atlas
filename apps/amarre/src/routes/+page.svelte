@@ -1,16 +1,23 @@
 <script lang="ts">
   import type { PageProps } from './$types';
   import type { SurveyRequestItem } from '$lib/types/api/surveys';
+  import { resolve } from '$app/paths';
+  import { PUBLIC_RGPD_NOTICE_URL } from '$env/static/public';
 
-  import Collaborate from '$lib/ui/Collaborate.svelte';
-  import Complete from '$lib/ui/Complete.svelte';
-  import Administrate from '$lib/ui/Administrate.svelte';
-  import ECRIN from '$lib/ui/MainTitle.svelte';
-  import TopNavbar from '$lib/ui/TopNavbar.svelte';
-  import Follow from '$lib/ui/Follow.svelte';
-  import Footer from '$lib/ui/Footer.svelte';
+  import Collaborate from '@univ-lehavre/atlas-ui/Collaborate.svelte';
+  import Complete from '@univ-lehavre/atlas-ui/Complete.svelte';
+  import Administrate from '@univ-lehavre/atlas-ui/Administrate.svelte';
+  import ECRIN from '@univ-lehavre/atlas-ui/MainTitle.svelte';
+  import TopNavbar from '@univ-lehavre/atlas-ui/TopNavbar.svelte';
+  import Follow from '@univ-lehavre/atlas-ui/Follow.svelte';
+  import Footer from '@univ-lehavre/atlas-ui/Footer.svelte';
 
   let { data, form }: PageProps = $props();
+
+  // SvelteKit-scoped URLs are resolved in the consumer app (here) and
+  // passed as plain string props to the design-system components, so the
+  // components stay portable across apps.
+  const downloadUrl = resolve('/api/v1/surveys/download');
 
   const userId = $derived(data.user?.id);
   const email = $derived(data.user?.email);
@@ -39,14 +46,14 @@
   data-bs-root-margin="0px 0px -50%"
   data-bs-smooth-scroll="true"
 >
-  <Collaborate {userId} requests={data.requests} />
+  <Collaborate {userId} requests={data.requests} rgpdUrl={PUBLIC_RGPD_NOTICE_URL} />
   {#if hasIncompleteRequests}
     <Complete requests={incompleteRequests} />
   {/if}
   {#if hasRequestsInProgress}
     <Follow requests={requestsInProgress} />
   {/if}
-  <Administrate {userId} {email} {form} />
+  <Administrate {userId} {email} {form} {downloadUrl} />
 </div>
 
 <Footer />
