@@ -216,6 +216,20 @@ export const AuthenticatedEmpty: Story = {
   },
 };
 
+/** Freshly-created request — authenticated user with a single record
+ * just inserted by `newRequest`. `form_complete='0'`, no flow chosen
+ * yet, only `record_id` + `created_at` populated. Complete renders the
+ * card with all rows in the yellow "à compléter" state ; the
+ * Formulaire link points at the resume-edit URL. */
+export const CompleteFreshlyCreated: Story = {
+  args: {
+    ...SHARED,
+    userId: "usr_demo_42",
+    email: "demo@example.org",
+    requests: [blankDraft],
+  },
+};
+
 /** Compléter showcase — authenticated user whose Complete section
  * holds one card per Request.svelte rendering branch :
  *
