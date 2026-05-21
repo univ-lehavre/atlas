@@ -55,5 +55,6 @@
     "simple-git": "^3.36.0",
     "swagger-ui-dist": "^5.32.6",
     "zod": "^4.4.3"
-  }
+  },
+  "private": true
 }
