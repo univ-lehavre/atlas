@@ -32,6 +32,11 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [ ] Abstraction CLI partagée (réduire le boilerplate des 3 CLIs citation-like)
 - [ ] Tests `bin/` pour `cli/crf` (couverture 22.7% → 50%+)
 - [ ] Déplacement des composants UI des apps vers un package partagé (extraire les composants Svelte communs hors de `apps/*/src/lib/components/` vers un `packages/ui/` ou équivalent — à cadrer : périmètre, conventions de styling/theming, gestion des dépendances Svelte/SvelteKit)
+- [ ] **Publier les 7 CLIs sur GitHub Packages** (`atlas-citation-cli`, `atlas-net-cli`, `atlas-stats-cli`, `atlas-crf-stats-cli`, `atlas-researcher-profiles-cli`, `atlas-crf-cli`, `atlas-crf-openapi`) — n'ont jamais déclenché de release, pas `private` mais absents du registry. Vérifier que les changesets les détectent, créer un premier changeset par package, vérifier que `pnpm release` les pousse bien sur `npm.pkg.github.com`. Documenter l'install côté consommateur (auth GH requis).
+- [ ] **Marquer 3 packages comme `"private": true`** pour éviter une publication accidentelle :
+  - `apps/atlas-dashboard/package.json` (app SvelteKit, déployée via Appwrite Sites)
+  - `apps/crf-dashboard/package.json` (idem)
+  - `sandbox/crf-sandbox/package.json` (sandbox Docker local, pas un package npm distribuable)
 - [x] `sandbox/amarre-sandbox/` (environnement Docker local Amarre + Appwrite + REDCap) — squelette livré (cf. [§Sandbox Amarre](#sandbox-amarre--appwrite--crf-en-local)) ; reste l'export du dictionnaire CRF minimum à automatiser
 
 **DevSecOps (renvoient aux phases ci-dessous)**
@@ -183,7 +188,7 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 
 - [x] Créer `.github/dependabot.yml` avec écosystèmes : `npm` (groupé par workspace), `github-actions` — schedule lundi 6h Europe/Paris
 - [x] Stratégie : groupage des minors/patches, PRs séparées pour les majors
-- [x] Auto-merge des patches après CI verte — [.github/workflows/dependabot-auto-merge.yml](.github/workflows/dependabot-auto-merge.yml) ; couvre patches partout + minors sur devDeps. Validé en prod via auto-merge de PR #149 le 2026-05-19. Prérequis Settings : *Allow auto-merge* à activer côté UI.
+- [x] Auto-merge des patches après CI verte — [.github/workflows/dependabot-auto-merge.yml](.github/workflows/dependabot-auto-merge.yml) ; couvre patches partout + minors sur devDeps. Validé en prod via auto-merge de PR #149 le 2026-05-19. Prérequis Settings : _Allow auto-merge_ à activer côté UI.
 
 ### 3.2 Dependency Review Action
 
@@ -413,7 +418,7 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 - [x] Dependabot — reduce PR noise (1 PR groupée/écosystème, max 1 ouverte simultanée)
 - [x] Cleanup `knip.json` (PR #160) + dette cosmétique (`<span class="">` vide, dead code commenté)
 
-À l'issue de ce backlog, le dépôt satisfait honnêtement le qualificatif **DevSecOps** pour la partie développement *et* déploiement (amarre, ecrin, find-an-expert).
+À l'issue de ce backlog, le dépôt satisfait honnêtement le qualificatif **DevSecOps** pour la partie développement _et_ déploiement (amarre, ecrin, find-an-expert).
 
 ---
 
