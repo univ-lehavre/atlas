@@ -18,6 +18,12 @@ Items concrets, immédiatement actionnables, sans dépendance d'arbitrage préal
 - [x] Fix logos `vite-plugin-static-copy` → script `prepare` (3 apps) — livré et mergé via [PR #157](https://github.com/univ-lehavre/atlas/pull/157)
 - [x] Nettoyer `knip.json` : retirer `@univ-lehavre/atlas-logos` de `ignoreDependencies` des 3 apps — livré via [PR #160](https://github.com/univ-lehavre/atlas/pull/160)
 - [ ] Examiner les 7 alertes Dependabot remontées suite à l'activation du Dependency graph le 2026-05-19 (6 moderate, 1 low — toutes sous le seuil `high` du workflow `dependency-review`). Triage via Settings → Security → Dependabot. Lié à [Phase 3.3](#33-renforcement-de-pnpm-audit) (durcissement `--audit-level=moderate`).
+- [ ] **Trier les 25 warnings + 4 notes CodeQL restants** (post-[PR #194](https://github.com/univ-lehavre/atlas/pull/194), qui a fermé l'erreur critique `js/command-line-injection` + 1 warning) :
+  - `js/file-access-to-http` × 13 — test helpers sandbox/crf-sandbox (REDCap test code lisant un path d'env puis fetchant `localhost:8888`). Acceptable pour des tests sandbox-only ; envisager `// codeql[js/file-access-to-http]` ligne-à-ligne pour silencer.
+  - `js/incomplete-url-substring-sanitization` × ~3 restants — vérifier si chaque match est un placeholder check (comme `appwrite.ts` fixé en #194) ou un vrai gap.
+  - `js/comparison-between-incompatible-types` × 1 — [apps/crf-dashboard/src/routes/api/logs/+server.ts](apps/crf-dashboard/src/routes/api/logs/+server.ts). Pre-existing.
+  - `js/unused-local-variable` × 4 — `note` severity, simple dead-let pruning dans `packages/crf-core/src/validation/`, `packages/citation-validate/`, `apps/ecrin/src/lib/transformers/build-name.ts`.
+  - Pour chaque alerte non corrigeable : décider entre **dismiss** (Settings → Security → Code scanning → Dismiss as `won't fix` / `false positive` avec justification) et **fix code**.
 
 ---
 
