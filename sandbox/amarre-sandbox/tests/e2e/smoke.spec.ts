@@ -59,6 +59,16 @@ test.describe("amarre smoke — full stack", () => {
       .first();
     await expect(signupCta).toBeVisible();
 
+    // Bootstrap JS is dynamic-imported in +layout.svelte's onMount, so
+    // its `data-bs-toggle` delegation isn't attached at navigation
+    // time. Wait for `window.bootstrap` before the first modal click
+    // or the click silently no-ops.
+    await page.waitForFunction(
+      () => Boolean((window as unknown as { bootstrap?: unknown }).bootstrap),
+      null,
+      { timeout: 10_000 },
+    );
+
     // ---- 2. Signup ----
     await signupCta.click();
     const signupModal = page.locator("#SignUp");
