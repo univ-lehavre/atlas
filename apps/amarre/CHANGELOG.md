@@ -1,5 +1,46 @@
 # @univ-lehavre/amarre
 
+## 3.0.4
+
+### Patch Changes
+
+- [#184](https://github.com/univ-lehavre/atlas/pull/184) [`5ce34b9`](https://github.com/univ-lehavre/atlas/commit/5ce34b959a111c6300cc8904e42eaf5ed63371b1) Thanks [@chasset](https://github.com/chasset)! - Level-3 of the amarre test pyramid : integration tests for the REDCap services in `src/lib/server/services/surveys.ts`, exercised against a real REDCap docker.
+  - New `tests/integration/crf/surveys.test.ts` covering `newRequest`, `fetchUserId` (hit + miss), `listRequests` (hit + miss) and the `filterLogic` escaping path.
+  - New `tests/integration/helpers/redcap.ts` : reachability probe (`isRedcapReachable`), Node `Fetch` context, prefix-scoped cleanup.
+  - `vitest.config.ts` gains a third project `integration` (node env, 30s timeout). The suite self-skips via `describe.skipIf(!await isRedcapReachable())`, so the default `pnpm test` remains docker-free.
+  - New `pnpm test:integration` script.
+
+  To exercise the suite, start the sandbox stack first :
+
+  ```bash
+  pnpm -F @univ-lehavre/atlas-amarre-sandbox start
+  pnpm -F @univ-lehavre/atlas-amarre test:integration
+  ```
+
+- [#186](https://github.com/univ-lehavre/atlas/pull/186) [`820e6b6`](https://github.com/univ-lehavre/atlas/commit/820e6b61ebf0f5239bc6baa327d473b4dda253ee) Thanks [@chasset](https://github.com/chasset)! - Level-4 of the amarre test pyramid : Vitest integration tests for the **signup → magic-link → session** flow, exercised against a real Appwrite + Mailpit stack.
+  - New `tests/integration/auth/signup.test.ts` (4 tests) :
+    - `signupWithEmail()` returns a Token from Appwrite.
+    - Signup is rejected for emails outside `ALLOWED_DOMAINS_REGEXP`.
+    - The magic-link email actually lands in Mailpit (Appwrite worker-mails dispatch).
+    - `login(userId, secret, cookies)` opens a real Appwrite session (verified via the admin SDK's `listSessions`).
+  - New `tests/integration/helpers/mailpit.ts` : reachability probe, polling, magic-link URL extraction (handles `&amp;`-escaped HTML bodies), purge.
+  - New `tests/integration/helpers/appwrite.ts` : admin reachability probe (catches placeholder configs early), session count, prefix-scoped user cleanup.
+
+  The suite self-skips via `describe.skipIf(!appwriteUp || !mailpitUp)`, so the default `pnpm test` stays docker-free. REDCap doesn't need to be up — `signupWithEmail` falls back to `ID.unique()` when `fetchUserId` errors.
+
+  To exercise the suite :
+
+  ```bash
+  pnpm -F @univ-lehavre/atlas-amarre-sandbox start
+  pnpm -F @univ-lehavre/atlas-amarre test:integration
+  ```
+
+- [#183](https://github.com/univ-lehavre/atlas/pull/183) [`e7ba8e8`](https://github.com/univ-lehavre/atlas/commit/e7ba8e86092dfb23b5dba7a41234693c690827b0) Thanks [@chasset](https://github.com/chasset)! - Externalize the RGPD notice URL displayed in the "Create request" modal.
+
+  The URL was hardcoded in `src/lib/ui/CreateRequest.svelte` and pointed at a specific survey id on `survey.univ-lehavre.fr`. It is now read from `PUBLIC_RGPD_NOTICE_URL` (exposed via `$env/static/public`), so prod / pre-prod / sandbox can each point at their own notice without forking the component.
+
+  **Action required after pulling** : add `PUBLIC_RGPD_NOTICE_URL` to your local `apps/amarre/.env*` files. The expected shape is documented in [`apps/amarre/.env.example`](apps/amarre/.env.example). The CI workflow copies `.env.example` → `.env`, so it picks the documented placeholder up automatically.
+
 ## 3.0.3
 
 ### Patch Changes
