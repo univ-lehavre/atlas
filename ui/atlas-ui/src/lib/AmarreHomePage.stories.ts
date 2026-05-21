@@ -254,6 +254,27 @@ export const CompleteShowcase: Story = {
   },
 };
 
+/** Complete + Follow side-by-side — authenticated user whose history
+ * spans both sections. The Complete scroller holds in-progress records
+ * (form unfilled, awaiting signatures, ready for final), and the
+ * Follow scroller holds the fully-validated terminal cases. Useful to
+ * eyeball the full vertical rhythm of the page : MainTitle, navbar,
+ * Collaborate, Complete, Follow, Administrate, Footer all visible. */
+export const CompleteAndFollowMixed: Story = {
+  args: {
+    ...SHARED,
+    userId: "usr_demo_42",
+    email: "demo@example.org",
+    requests: [
+      blankDraft,
+      invitationAwaitingComposante,
+      voyageOtherReadyForFinal,
+      invitationDone,
+      voyageEtudiantDone,
+    ],
+  },
+};
+
 /** Suivre showcase — authenticated user whose Follow section holds
  * one card per Request.svelte flow at the fully-validated terminal
  * state :
