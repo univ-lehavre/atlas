@@ -1,10 +1,15 @@
 <script lang="ts">
-  const logos = [
-    { src: "/logos/ulhn.svg", alt: "Université Le Havre Normandie" },
-    { src: "/logos/eunicoast.png", alt: "EUNICoast" },
-    { src: "/logos/france-2030.png", alt: "France 2030" },
-    { src: "/logos/region-normandie.png", alt: "Région Normandie" },
-  ];
+  interface Logo {
+    src: string;
+    alt: string;
+  }
+  interface Props {
+    /** Partner / funder logos rendered side-by-side in the footer. The
+     * consumer app owns the actual list (proper names + asset paths) ;
+     * the component only handles layout. */
+    logos: Logo[];
+  }
+  let { logos }: Props = $props();
 </script>
 
 <footer class="footer py-4">

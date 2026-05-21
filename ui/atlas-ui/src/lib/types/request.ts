@@ -22,6 +22,13 @@ export interface RequestRecord {
   labo_complete: string;
   encadrant_complete: string;
   validation_finale_complete: string;
+
+  /** Resume-edit URL surfaced as a "Formulaire" link when
+   * `form_complete !== '2'`. */
+  form?: string;
+  /** Final-validation URL surfaced when `finalValidationShouldSign` and
+   * `validation_finale_complete !== '2'`. */
+  validation_finale?: string;
 }
 
 export type RequestRecordList = RequestRecord[];

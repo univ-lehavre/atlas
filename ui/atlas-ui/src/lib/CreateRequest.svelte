@@ -2,8 +2,10 @@
   interface Props {
     /** RGPD notice URL the consumer app reads from its own env (e.g. PUBLIC_RGPD_NOTICE_URL). */
     rgpdUrl: string;
+    /** Name of the platform shown in the RGPD notice sentence. */
+    platformName: string;
   }
-  let { rgpdUrl }: Props = $props();
+  let { rgpdUrl, platformName }: Props = $props();
 
   let consent = $state(false);
 </script>
@@ -35,7 +37,8 @@
             href={rgpdUrl}
             target="_blank"
             rel="noopener noreferrer">formulaire</a
-          > d’informations RGPD de la plateforme AMARRE.
+          >
+          d’informations RGPD de la plateforme {platformName}.
         </p>
         <form method="post" action="?/newSurvey" class="input-group mb-3">
           <div class="input-group-text">

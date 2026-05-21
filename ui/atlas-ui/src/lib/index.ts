@@ -9,6 +9,7 @@
 //   import Signup from '@univ-lehavre/atlas-ui/Signup.svelte';
 
 export { default as Administrate } from "./Administrate.svelte";
+export { default as AmarreHomePage } from "./AmarreHomePage.svelte";
 export { default as CardItem } from "./CardItem.svelte";
 export { default as Collaborate } from "./Collaborate.svelte";
 export { default as Complete } from "./Complete.svelte";

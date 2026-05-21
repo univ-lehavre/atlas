@@ -1,11 +1,13 @@
-import type { Meta, StoryObj } from "@storybook/sveltekit";
+import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import { signupRateLimited, signupSuccess, signupWrongEmail } from "./fixtures";
 import Signup from "./Signup.svelte";
 
 const meta = {
-  title: "amarre/Signup",
+  title: "amarre/Modals/Signup",
   component: Signup,
   parameters: {
+    // The whole story IS the modal content — keep it visible.
+    atlasUi: { forceModalsOpen: true },
     docs: {
       description: {
         component:

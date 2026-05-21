@@ -11,10 +11,10 @@ const baseRequest: RequestRecord = {
   demandeur_statut: "1",
   mobilite_type: "1",
   invitation_type: "1",
-  invite_nom: "Dupont Marie",
+  invite_nom: "Personne Fictive",
   mobilite_universite_eunicoast: "",
   mobilite_universite_gu8: "",
-  mobilite_universite_autre: "Université de Test",
+  mobilite_universite_autre: "Université Fictive",
   form_complete: "2",
   demandeur_composante_complete: "2",
   labo_complete: "2",
@@ -24,25 +24,21 @@ const baseRequest: RequestRecord = {
 
 export const noRequests: RequestRecordList = [];
 
-export const oneIncompleteRequest: RequestRecordList = [
+/**
+ * Form not yet completed (`form_complete !== '2'`). This is what
+ * `allowedRequestCreation` checks — when one of the user's requests is
+ * still being filled, new request creation is blocked.
+ */
+export const oneFormInProgressRequest: RequestRecordList = [
   {
     ...baseRequest,
-    record_id: "incomplete-001",
+    record_id: "form-in-progress-001",
+    form_complete: "0",
+    demandeur_composante_complete: "0",
+    labo_complete: "0",
+    encadrant_complete: "0",
     validation_finale_complete: "0",
   },
-];
-
-export const oneInProgressRequest: RequestRecordList = [
-  {
-    ...baseRequest,
-    record_id: "progress-001",
-    validation_finale_complete: "2",
-  },
-];
-
-export const mixedRequests: RequestRecordList = [
-  ...oneIncompleteRequest,
-  ...oneInProgressRequest,
 ];
 
 export const signupSuccess = {

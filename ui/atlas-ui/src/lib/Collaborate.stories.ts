@@ -1,13 +1,9 @@
-import type { Meta, StoryObj } from "@storybook/sveltekit";
+import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import Collaborate from "./Collaborate.svelte";
-import {
-  noRequests,
-  oneIncompleteRequest,
-  oneInProgressRequest,
-} from "./fixtures";
+import { noRequests, oneFormInProgressRequest } from "./fixtures";
 
 const meta = {
-  title: "amarre/Collaborate",
+  title: "amarre/Sections/Collaborate",
   component: Collaborate,
   parameters: {
     docs: {
@@ -23,28 +19,39 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const RGPD_URL = "https://example.com/rgpd-notice";
+const PLATFORM = "Plateforme Fictive";
 
 export const Anonymous: Story = {
-  args: { userId: undefined, requests: noRequests, rgpdUrl: RGPD_URL },
-};
-
-export const NoRequests: Story = {
-  args: { userId: "usr_demo_42", requests: noRequests, rgpdUrl: RGPD_URL },
-};
-
-export const HasInProgressOnly: Story = {
   args: {
-    userId: "usr_demo_42",
-    requests: oneInProgressRequest,
+    userId: undefined,
+    requests: noRequests,
     rgpdUrl: RGPD_URL,
+    platformName: PLATFORM,
   },
 };
 
-export const Blocked: Story = {
-  // form_complete !== '2' on the existing request → create disabled.
+/** Authenticated user, no draft in progress — both "S'authentifier" is
+ * disabled and "Créer une nouvelle" is active. Visually identical for
+ * any other request shape that satisfies `allowedRequestCreation`
+ * (e.g. all previous requests at `form_complete === '2'`). */
+export const CanCreate: Story = {
   args: {
     userId: "usr_demo_42",
-    requests: oneIncompleteRequest,
+    requests: noRequests,
     rgpdUrl: RGPD_URL,
+    platformName: PLATFORM,
+  },
+};
+
+/** Authenticated user with one request still being filled
+ * (`form_complete === '0'`) — `allowedRequestCreation` returns false, so
+ * the "Créer une nouvelle" button is disabled (no second draft until
+ * the first one's form is complete). */
+export const Blocked: Story = {
+  args: {
+    userId: "usr_demo_42",
+    requests: oneFormInProgressRequest,
+    rgpdUrl: RGPD_URL,
+    platformName: PLATFORM,
   },
 };

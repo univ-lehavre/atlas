@@ -10,8 +10,11 @@
     form: unknown;
     /** Resolved URL of the "download my data" endpoint in the consumer app. */
     downloadUrl: string;
+    /** Background variant — owned by the parent page so alternation
+     *  stays correct even when conditional sections are missing. */
+    variant?: "light" | "dark";
   }
-  let { userId, email, form, downloadUrl }: Props = $props();
+  let { userId, email, form, downloadUrl, variant = "dark" }: Props = $props();
   let showHeading = $state(false);
 </script>
 
@@ -22,7 +25,7 @@
     ariaLabel="Administrate cards"
     headingText="Administrate"
     bind:showHeading
-    variant="dark"
+    {variant}
   >
     <SectionTile title={!showHeading ? "Administrer" : ""} />
 

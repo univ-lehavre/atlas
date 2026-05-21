@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from "@storybook/sveltekit";
+import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import Rule from "./Rule.svelte";
 
 const meta = {
-  title: "amarre/primitives/Rule",
+  title: "amarre/Primitives/Rule",
   component: Rule,
   parameters: {
     docs: {

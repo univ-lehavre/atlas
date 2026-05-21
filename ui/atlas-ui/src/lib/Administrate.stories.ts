@@ -1,14 +1,14 @@
-import type { Meta, StoryObj } from "@storybook/sveltekit";
+import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import Administrate from "./Administrate.svelte";
 
 const meta = {
-  title: "amarre/Administrate",
+  title: "amarre/Sections/Administrate",
   component: Administrate,
   parameters: {
     docs: {
       description: {
         component:
-          "User-administration tile : exposes signup (when no session) and logout (when authenticated).",
+          "User-administration tile : exposes signup (when no session) and logout (when authenticated). Embeds the Signup modal — but the modal stays closed in Storybook (Bootstrap JS toggle isn't loaded in the preview iframe), so signup form states are covered by the dedicated `Signup` stories, not here.",
       },
     },
   },
@@ -19,6 +19,7 @@ type Story = StoryObj<typeof meta>;
 
 const DOWNLOAD_URL = "/api/v1/surveys/download";
 
+/** Visitor with no session — signup CTA visible, logout hidden. */
 export const Anonymous: Story = {
   args: {
     userId: undefined,
@@ -28,6 +29,7 @@ export const Anonymous: Story = {
   },
 };
 
+/** Authenticated user — email displayed + logout CTA. */
 export const Authenticated: Story = {
   args: {
     userId: "usr_demo_42",

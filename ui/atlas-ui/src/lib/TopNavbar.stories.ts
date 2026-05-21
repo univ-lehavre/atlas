@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from "@storybook/sveltekit";
+import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import TopNavbar from "./TopNavbar.svelte";
 
 const meta = {
-  title: "amarre/TopNavbar",
+  title: "amarre/Navigation/TopNavbar",
   component: TopNavbar,
 } satisfies Meta<typeof TopNavbar>;
 

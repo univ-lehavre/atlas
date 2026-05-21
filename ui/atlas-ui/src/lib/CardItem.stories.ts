@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from "@storybook/sveltekit";
+import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import CardItem from "./CardItem.svelte";
 
 const meta = {
-  title: "amarre/primitives/CardItem",
+  title: "amarre/Primitives/CardItem",
   component: CardItem,
   parameters: {
     docs: {

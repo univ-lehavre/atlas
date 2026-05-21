@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from "@storybook/sveltekit";
+import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import SectionTile from "./SectionTile.svelte";
 
 const meta = {
-  title: "amarre/primitives/SectionTile",
+  title: "amarre/Primitives/SectionTile",
   component: SectionTile,
   argTypes: {
     title: { control: "text" },

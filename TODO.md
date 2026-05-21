@@ -31,7 +31,13 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [ ] Helper TS pour parser le CSV REDCap + générer des fake records
 - [ ] Abstraction CLI partagée (réduire le boilerplate des 3 CLIs citation-like)
 - [ ] Tests `bin/` pour `cli/crf` (couverture 22.7% → 50%+)
-- [ ] Déplacement des composants UI des apps vers un package partagé (extraire les composants Svelte communs hors de `apps/*/src/lib/components/` vers un `packages/ui/` ou équivalent — à cadrer : périmètre, conventions de styling/theming, gestion des dépendances Svelte/SvelteKit)
+- [x] Déplacement des composants UI des apps vers un package partagé — livré via [PR #190](https://github.com/univ-lehavre/atlas/pull/190) : les 15 composants Svelte de `apps/amarre/src/lib/ui/` sont dans `ui/atlas-ui/` (package `@univ-lehavre/atlas-ui`), prévisualisés via Storybook 10. Bootstrap centralisé dans le package (plus de CDN). Brand identity injectée via props (logos, alt-text, platformName) — cf. [PR #192](https://github.com/univ-lehavre/atlas/pull/192).
+- [ ] **`atlas-ui` : système de theming optionnel** — exposer des points d'extension pour : palettes de couleurs (variants Bootstrap custom : `--bs-primary` etc.), familles de fontes (au-delà de Gambetta hardcodée dans amarre), tailles de base (rem-scale, line-height, spacing). Cibles : autres apps du monorepo qui consommeraient atlas-ui avec leur propre identité visuelle, sans forker les composants. Pistes à cadrer :
+  - Variables CSS custom exposées par `@univ-lehavre/atlas-ui/client` (override au niveau consumer)
+  - Ou prop `theme` sur un composant racine (Provider pattern)
+  - Ou export de SCSS sources pour rebuild Bootstrap (`atlas-ui/scss`)
+  - Storybook : ajouter un addon `@storybook/addon-themes` ou switcher manuel pour prévisualiser chaque palette
+  - Décider si l'identité amarre reste hardcodée dans `apps/amarre/static/` ou si elle remonte dans un thème nommé.
 - [ ] **Publier les 7 CLIs sur GitHub Packages** (`atlas-citation-cli`, `atlas-net-cli`, `atlas-stats-cli`, `atlas-crf-stats-cli`, `atlas-researcher-profiles-cli`, `atlas-crf-cli`, `atlas-crf-openapi`) — n'ont jamais déclenché de release, pas `private` mais absents du registry. Vérifier que les changesets les détectent, créer un premier changeset par package, vérifier que `pnpm release` les pousse bien sur `npm.pkg.github.com`. Documenter l'install côté consommateur (auth GH requis).
 - [ ] **Marquer 3 packages comme `"private": true`** pour éviter une publication accidentelle :
   - `apps/atlas-dashboard/package.json` (app SvelteKit, déployée via Appwrite Sites)

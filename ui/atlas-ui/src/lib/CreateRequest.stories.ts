@@ -1,10 +1,12 @@
-import type { Meta, StoryObj } from "@storybook/sveltekit";
+import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import CreateRequest from "./CreateRequest.svelte";
 
 const meta = {
-  title: "amarre/CreateRequest",
+  title: "amarre/Modals/CreateRequest",
   component: CreateRequest,
   parameters: {
+    // The whole story IS the modal content — keep it visible.
+    atlasUi: { forceModalsOpen: true },
     docs: {
       description: {
         component:
@@ -18,5 +20,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: { rgpdUrl: "https://example.com/rgpd-notice" },
+  args: {
+    rgpdUrl: "https://example.com/rgpd-notice",
+    platformName: "Plateforme Fictive",
+  },
 };

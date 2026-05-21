@@ -1,14 +1,14 @@
-import type { Meta, StoryObj } from "@storybook/sveltekit";
+import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import MainTitle from "./MainTitle.svelte";
 
 const meta = {
-  title: "amarre/primitives/MainTitle",
+  title: "amarre/Navigation/MainTitle",
   component: MainTitle,
   parameters: {
     docs: {
       description: {
         component:
-          "Top banner with the AMARRE logo. The logo `<img>` points at `/logos/amarre.png` ; the file lives in `apps/amarre/static/logos/`, so the image shows broken inside this package — that is the cost of `static` assets not following the component.",
+          "Top banner with the brand logo. The consumer owns the asset URL + alt text + home URL — the component handles layout only. Stories use a fake placeholder image so the package stays free of brand assets.",
       },
     },
   },
@@ -17,4 +17,11 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+/** Placeholder logo — the actual brand asset lives in the consumer app. */
+export const Default: Story = {
+  args: {
+    logoSrc: "https://placehold.co/240x120/0066cc/ffffff?text=Fake+Brand",
+    logoAlt: "Marque Fictive",
+    homeUrl: "/",
+  },
+};
