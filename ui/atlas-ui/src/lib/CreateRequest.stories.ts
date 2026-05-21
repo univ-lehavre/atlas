@@ -5,6 +5,8 @@ const meta = {
   title: "amarre/CreateRequest",
   component: CreateRequest,
   parameters: {
+    // The whole story IS the modal content — keep it visible.
+    atlasUi: { forceModalsOpen: true },
     docs: {
       description: {
         component:

@@ -55,6 +55,7 @@ const compileStorybookSvelteAssets = (): Plugin => {
 const config: StorybookConfig = {
   stories: ["../src/lib/**/*.stories.@(ts|svelte)"],
   framework: "@storybook/svelte-vite",
+  addons: ["@storybook/addon-a11y"],
   typescript: {
     check: false,
   },

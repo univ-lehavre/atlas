@@ -41,6 +41,7 @@
     "format:check": "prettier --check --ignore-path ../../.prettierignore ."
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "^10.4.0",
     "@storybook/svelte-vite": "^10.4.0",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "@types/luxon": "^3.7.1",

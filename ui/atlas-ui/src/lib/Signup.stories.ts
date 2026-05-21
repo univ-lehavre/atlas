@@ -6,6 +6,8 @@ const meta = {
   title: "amarre/Signup",
   component: Signup,
   parameters: {
+    // The whole story IS the modal content — keep it visible.
+    atlasUi: { forceModalsOpen: true },
     docs: {
       description: {
         component:
