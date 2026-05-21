@@ -3,7 +3,7 @@
     title: string;
     width?: string;
   }
-  let { title, width = '18rem' }: Props = $props();
+  let { title, width = "18rem" }: Props = $props();
 </script>
 
 <div class="flex-shrink-0">

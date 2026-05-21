@@ -1,10 +1,17 @@
 <script lang="ts">
-  import Signup from './Signup.svelte';
-  import HorizontalScroller from '$lib/ui/HorizontalScroller.svelte';
-  import SectionTile from '$lib/ui/SectionTile.svelte';
-  import CardItem from '$lib/ui/CardItem.svelte';
-  import { resolve } from '$app/paths';
-  let { userId, email, form } = $props();
+  import Signup from "./Signup.svelte";
+  import HorizontalScroller from "./HorizontalScroller.svelte";
+  import SectionTile from "./SectionTile.svelte";
+  import CardItem from "./CardItem.svelte";
+
+  interface Props {
+    userId: string | undefined;
+    email: string | null | undefined;
+    form: unknown;
+    /** Resolved URL of the "download my data" endpoint in the consumer app. */
+    downloadUrl: string;
+  }
+  let { userId, email, form, downloadUrl }: Props = $props();
   let showHeading = $state(false);
 </script>
 
@@ -17,7 +24,7 @@
     bind:showHeading
     variant="dark"
   >
-    <SectionTile title={!showHeading ? 'Administrer' : ''} />
+    <SectionTile title={!showHeading ? "Administrer" : ""} />
 
     <div class="flex-shrink-0">
       <CardItem>
@@ -42,7 +49,10 @@
           >
             <div class="d-flex flex-row">
               <i class="bi bi-box-arrow-in-right me-2"></i>
-              <div class="list-group list-group-flush fw-light" style="font-family: Gambetta;">
+              <div
+                class="list-group list-group-flush fw-light"
+                style="font-family: Gambetta;"
+              >
                 S'authentifier
               </div>
             </div>
@@ -56,7 +66,10 @@
             >
               <div class="d-flex flex-row">
                 <i class="bi bi-box-arrow-right me-2"></i>
-                <div class="list-group list-group-flush fw-light" style="font-family: Gambetta;">
+                <div
+                  class="list-group list-group-flush fw-light"
+                  style="font-family: Gambetta;"
+                >
                   Se déconnecter
                 </div>
               </div>
@@ -73,12 +86,14 @@
         {/snippet}
         {#snippet description()}
           {#if !userId}
-            <p>Je dois m'authentifier avant de pouvoir accéder à mes données.</p>
+            <p>
+              Je dois m'authentifier avant de pouvoir accéder à mes données.
+            </p>
           {/if}
         {/snippet}
         {#snippet actions()}
           <a
-            href={resolve('/api/v1/surveys/download')}
+            href={downloadUrl}
             class="list-group-item list-group-item-action {userId
               ? 'list-group-item-secondary'
               : ''} {userId ? '' : 'disabled'}"
@@ -87,7 +102,10 @@
           >
             <div class="d-flex flex-row">
               <i class="bi bi-arrow-down me-2"></i>
-              <div class="list-group list-group-flush fw-light" style="font-family: Gambetta;">
+              <div
+                class="list-group list-group-flush fw-light"
+                style="font-family: Gambetta;"
+              >
                 Télécharger
               </div>
             </div>

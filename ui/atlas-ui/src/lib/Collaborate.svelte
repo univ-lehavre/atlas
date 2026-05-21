@@ -1,21 +1,23 @@
 <script lang="ts">
-  import HorizontalScroller from '$lib/ui/HorizontalScroller.svelte';
-  import SectionTile from '$lib/ui/SectionTile.svelte';
-  import CardItem from '$lib/ui/CardItem.svelte';
-  import CreateRequest from './CreateRequest.svelte';
-  import type { SurveyRequestList } from '$lib/types/api/surveys';
-  import { allowed_request_creation } from '$lib/validators/surveys';
+  import HorizontalScroller from "./HorizontalScroller.svelte";
+  import SectionTile from "./SectionTile.svelte";
+  import CardItem from "./CardItem.svelte";
+  import CreateRequest from "./CreateRequest.svelte";
+  import type { RequestRecordList } from "./types/request";
+  import { allowedRequestCreation } from "./utils/request";
 
   interface Props {
     userId: string | undefined;
-    requests: SurveyRequestList;
+    requests: RequestRecordList;
+    /** Forwarded to the nested CreateRequest modal (env-scoped per app). */
+    rgpdUrl: string;
   }
-  let { userId, requests }: Props = $props();
-  let allowingNewRequests = $derived(allowed_request_creation(requests));
+  let { userId, requests, rgpdUrl }: Props = $props();
+  let allowingNewRequests = $derived(allowedRequestCreation(requests));
   let showHeading = $state(false);
 </script>
 
-<CreateRequest />
+<CreateRequest {rgpdUrl} />
 
 <div id="collaborate">
   <HorizontalScroller
@@ -24,26 +26,32 @@
     bind:showHeading
     variant="light"
   >
-    <SectionTile title={!showHeading ? 'Déposer' : ''} />
+    <SectionTile title={!showHeading ? "Déposer" : ""} />
     <div class="flex-shrink-0">
       <CardItem>
         {#snippet title()}
           Une demande
         {/snippet}
         {#snippet description()}
-          {userId ? '' : "Je dois m'authentifier avant de déposer ou suivre une demande."}
+          {userId
+            ? ""
+            : "Je dois m'authentifier avant de déposer ou suivre une demande."}
         {/snippet}
         {#snippet actions()}
           <button
             type="button"
-            class="list-group-item list-group-item-action {userId ? 'disabled' : 'active'}"
+            class="list-group-item list-group-item-action {userId
+              ? 'disabled'
+              : 'active'}"
             data-bs-toggle="modal"
             data-bs-target="#SignUp"
           >
             <div class="d-flex flex-row {userId ? '' : 'fs-5'}">
               <i class="bi bi-box-arrow-in-right me-2"></i>
               <div
-                class="list-group list-group-flush fw-{userId ? 'light' : 'bold mb-1'}"
+                class="list-group list-group-flush fw-{userId
+                  ? 'light'
+                  : 'bold mb-1'}"
                 style="font-family: Gambetta;"
               >
                 S'authentifier
@@ -52,16 +60,22 @@
           </button>
           <button
             type="button"
-            class="list-group-item list-group-item-action {userId && allowingNewRequests
+            class="list-group-item list-group-item-action {userId &&
+            allowingNewRequests
               ? 'active'
               : 'disabled'}"
             data-bs-toggle="modal"
             data-bs-target="#CreateRequest"
           >
-            <div class="d-flex flex-row {userId && allowingNewRequests ? 'fs-5' : ''}">
+            <div
+              class="d-flex flex-row {userId && allowingNewRequests
+                ? 'fs-5'
+                : ''}"
+            >
               <i class="bi bi-clipboard2-plus me-2"></i>
               <div
-                class="list-group list-group-flush fw-{userId && allowingNewRequests
+                class="list-group list-group-flush fw-{userId &&
+                allowingNewRequests
                   ? 'bold mb-1'
                   : 'light'}"
                 style="font-family: Gambetta;"

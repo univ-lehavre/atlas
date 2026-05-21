@@ -13,8 +13,8 @@ import { describe, it, expect } from 'vitest';
 // `{ hidden: true }` so the queries reach inside the modal scaffold.
 const inModal = { hidden: true } as const;
 
-import Signup from '$lib/ui/Signup.svelte';
-import CreateRequest from '$lib/ui/CreateRequest.svelte';
+import Signup from '@univ-lehavre/atlas-ui/Signup.svelte';
+import CreateRequest from '@univ-lehavre/atlas-ui/CreateRequest.svelte';
 import { signupSuccess, signupWrongEmail } from '../fixtures/forms';
 
 describe('Signup.svelte', () => {

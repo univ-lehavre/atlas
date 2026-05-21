@@ -1,29 +1,29 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount } from "svelte";
 
-  import type { Snippet } from 'svelte';
+  import type { Snippet } from "svelte";
 
   interface Props {
     ariaLabel?: string;
     step?: number; // pixels; si non fourni, ~80% de la largeur visible
     children?: Snippet;
-    snap?: 'none' | 'start' | 'center';
+    snap?: "none" | "start" | "center";
     snapPadding?: string; // ex: '1rem', '24px'
     headingText?: string; // titre à afficher en <h1> quand la tuile-titre disparaît
     headingRatio?: number; // ratio de visibilité sous lequel on affiche le header (0..1)
     showHeading?: boolean; // bindable: reflète l'état d'affichage du header
-    variant?: 'light' | 'dark' | 'none'; // alternance de couleurs basée sur info
+    variant?: "light" | "dark" | "none"; // alternance de couleurs basée sur info
   }
   let {
-    ariaLabel = 'Horizontal scroller',
+    ariaLabel = "Horizontal scroller",
     step,
     children,
-    snap = 'start',
-    snapPadding = '1rem',
+    snap = "start",
+    snapPadding = "1rem",
     headingText,
     headingRatio = 0.85,
     showHeading = $bindable(false),
-    variant = 'none',
+    variant = "none",
   }: Props = $props();
 
   let scroller: HTMLDivElement;
@@ -41,7 +41,7 @@
   const scrollStep = (dir: number) => {
     if (!scroller) return;
     const px = step ?? Math.max(1, Math.floor(scroller.clientWidth * 0.8));
-    scroller.scrollBy({ left: dir * px, behavior: 'smooth' });
+    scroller.scrollBy({ left: dir * px, behavior: "smooth" });
   };
 
   onMount(() => {
@@ -57,15 +57,15 @@
           const e = entries[0];
           if (!e) {
             console.warn(
-              'IntersectionObserver callback received no entries. This should not happen.',
-              entries
+              "IntersectionObserver callback received no entries. This should not happen.",
+              entries,
             );
             return;
           }
           const ratio = e.intersectionRatio ?? 0;
           showHeading = ratio < headingRatio;
         },
-        { root: scroller, threshold }
+        { root: scroller, threshold },
       );
       const target = items?.firstElementChild as Element | null;
       if (target) io.observe(target);
@@ -87,15 +87,16 @@
 
     <div class="position-relative hs-root">
       <div
-        class={`overflow-auto ${snap !== 'none' ? 'snap-x' : ''}`}
+        class={`overflow-auto ${snap !== "none" ? "snap-x" : ""}`}
         style={`scroll-padding-inline: ${snapPadding}`}
         aria-label={ariaLabel}
         bind:this={scroller}
         onscroll={updateArrows}
       >
         <div
-          class={`d-flex flex-column flex-sm-row flex-sm-nowrap pe-3 py-1 ${snap !== 'none' ? 'snap-items' : ''}`}
-          style={(snap !== 'none' ? `--snap-align: ${snap}; ` : '') + `gap: var(--card-gap, 1rem);`}
+          class={`d-flex flex-column flex-sm-row flex-sm-nowrap pe-3 py-1 ${snap !== "none" ? "snap-items" : ""}`}
+          style={(snap !== "none" ? `--snap-align: ${snap}; ` : "") +
+            `gap: var(--card-gap, 1rem);`}
           bind:this={items}
         >
           {@render children?.()}

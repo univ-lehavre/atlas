@@ -7,7 +7,7 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, it, expect } from 'vitest';
 
-import TopNavbar from '$lib/ui/TopNavbar.svelte';
+import TopNavbar from '@univ-lehavre/atlas-ui/TopNavbar.svelte';
 
 describe('TopNavbar.svelte', () => {
   it('hides the "Compléter" tab when there are no incomplete requests', () => {

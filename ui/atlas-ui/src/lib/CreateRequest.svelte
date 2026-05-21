@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { PUBLIC_RGPD_NOTICE_URL } from '$env/static/public';
+  interface Props {
+    /** RGPD notice URL the consumer app reads from its own env (e.g. PUBLIC_RGPD_NOTICE_URL). */
+    rgpdUrl: string;
+  }
+  let { rgpdUrl }: Props = $props();
 
   let consent = $state(false);
 </script>
@@ -17,12 +21,18 @@
         <h1 class="modal-title fs-5" id="CreateRequestLabel">
           Traitement des données à caractère personnel
         </h1>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
       </div>
       <div class="modal-body">
         <p>
-          Avant de créer une nouvelle demande, je confirme avoir pris connaissance du <a
-            href={PUBLIC_RGPD_NOTICE_URL}
+          Avant de créer une nouvelle demande, je confirme avoir pris
+          connaissance du <a
+            href={rgpdUrl}
             target="_blank"
             rel="noopener noreferrer">formulaire</a
           > d’informations RGPD de la plateforme AMARRE.
@@ -37,8 +47,13 @@
               bind:checked={consent}
             />
           </div>
-          <span class="input-group-text" id="basic-addon1">Je donne mon consentement</span>
-          <button type="submit" class="btn btn-primary {consent ? '' : 'disabled'}">
+          <span class="input-group-text" id="basic-addon1"
+            >Je donne mon consentement</span
+          >
+          <button
+            type="submit"
+            class="btn btn-primary {consent ? '' : 'disabled'}"
+          >
             Créer une demande</button
           >
         </form>

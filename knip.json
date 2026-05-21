@@ -51,8 +51,7 @@
       "project": ["src/**/*.ts"]
     },
     "apps/amarre": {
-      "project": ["src/**/*.ts", "src/**/*.svelte"],
-      "ignore": ["src/lib/ui/Retrieve.svelte", "src/lib/ui/Rule.svelte"]
+      "project": ["src/**/*.ts", "src/**/*.svelte"]
     },
     "apps/ecrin": {
       "project": ["src/**/*.ts", "src/**/*.svelte"],

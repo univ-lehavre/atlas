@@ -1,33 +1,37 @@
 <script lang="ts">
-  import { DateTime } from 'luxon';
-  import CardItem from '$lib/ui/CardItem.svelte';
+  import { DateTime } from "luxon";
+  import CardItem from "./CardItem.svelte";
 
   let { request } = $props();
 
-  let isInvitation = $derived(request.invite_nom !== '');
+  let isInvitation = $derived(request.invite_nom !== "");
   let isVoyage = $derived(
-    request.mobilite_universite_eunicoast !== '' ||
-      request.mobilite_universite_gu8 !== '' ||
-      request.mobilite_universite_autre !== ''
+    request.mobilite_universite_eunicoast !== "" ||
+      request.mobilite_universite_gu8 !== "" ||
+      request.mobilite_universite_autre !== "",
   );
-  let isCategoryEnseignant = $derived(request.demandeur_statut === '2');
+  let isCategoryEnseignant = $derived(request.demandeur_statut === "2");
   let isCategoryOther = $derived(
-    request.demandeur_statut !== '' &&
-      request.demandeur_statut !== '1' &&
-      request.demandeur_statut !== '2'
+    request.demandeur_statut !== "" &&
+      request.demandeur_statut !== "1" &&
+      request.demandeur_statut !== "2",
   );
-  let composanteValidation = $derived(request.demandeur_composante_complete === '2');
-  let laboValidation = $derived(request.labo_complete === '2');
-  let encadrantValidation = $derived(request.encadrant_complete === '2');
+  let composanteValidation = $derived(
+    request.demandeur_composante_complete === "2",
+  );
+  let laboValidation = $derived(request.labo_complete === "2");
+  let encadrantValidation = $derived(request.encadrant_complete === "2");
   let composanteShouldSign = $derived(
     isInvitation &&
-      (request.invitation_type === '2' || request.invitation_type === '3' || isCategoryEnseignant)
+      (request.invitation_type === "2" ||
+        request.invitation_type === "3" ||
+        isCategoryEnseignant),
   );
   let laboShouldSign = $derived(
-    request.invitation_type === '1' ||
-      request.invitation_type === '3' ||
-      request.mobilite_type === '2' ||
-      isCategoryOther
+    request.invitation_type === "1" ||
+      request.invitation_type === "3" ||
+      request.mobilite_type === "2" ||
+      isCategoryOther,
   );
   let encadrantShouldSign = $derived(isCategoryOther && isVoyage);
   let finalValidationShouldSign = $derived.by(() => {
@@ -44,11 +48,11 @@
     }
   });
   let destination = $derived.by(() => {
-    if (request.mobilite_universite_eunicoast !== '') {
+    if (request.mobilite_universite_eunicoast !== "") {
       return request.mobilite_universite_eunicoast;
-    } else if (request.mobilite_universite_gu8 !== '') {
+    } else if (request.mobilite_universite_gu8 !== "") {
       return request.mobilite_universite_gu8;
-    } else if (request.mobilite_universite_autre !== '') {
+    } else if (request.mobilite_universite_autre !== "") {
       return request.mobilite_universite_autre;
     } else {
       return null;
@@ -72,9 +76,9 @@
           ? 'success'
           : 'warning'}"
       >
-        {request.form_complete === '2'
-          ? 'Mon formulaire est complet'
-          : 'Je dois compléter mon formulaire'}.
+        {request.form_complete === "2"
+          ? "Mon formulaire est complet"
+          : "Je dois compléter mon formulaire"}.
       </div>
       {#if composanteShouldSign}
         <div
@@ -84,11 +88,11 @@
               ? 'success'
               : 'info'}"
         >
-          Ma composante {request.form_complete !== '2'
-            ? 'attend mon formulaire'
-            : request.demandeur_composante_complete === '2'
-              ? 'a informé sa décision'
-              : 'se concerte'}.
+          Ma composante {request.form_complete !== "2"
+            ? "attend mon formulaire"
+            : request.demandeur_composante_complete === "2"
+              ? "a informé sa décision"
+              : "se concerte"}.
         </div>
       {/if}
       {#if laboShouldSign}
@@ -99,11 +103,11 @@
               ? 'success'
               : 'info'}"
         >
-          Mon laboratoire {request.form_complete !== '2'
-            ? 'attend mon formulaire'
-            : request.labo_complete === '2'
-              ? 'a informé sa décision'
-              : 'se concerte'}.
+          Mon laboratoire {request.form_complete !== "2"
+            ? "attend mon formulaire"
+            : request.labo_complete === "2"
+              ? "a informé sa décision"
+              : "se concerte"}.
         </div>
       {/if}
       {#if encadrantShouldSign}
@@ -114,11 +118,11 @@
               ? 'success'
               : 'info'}"
         >
-          Mon encadrant {request.form_complete !== '2'
-            ? 'attend mon formulaire'
-            : request.encadrant_complete === '2'
-              ? 'a informé sa décision'
-              : 'se concerte'}.
+          Mon encadrant {request.form_complete !== "2"
+            ? "attend mon formulaire"
+            : request.encadrant_complete === "2"
+              ? "a informé sa décision"
+              : "se concerte"}.
         </div>
       {/if}
       <div
@@ -130,17 +134,17 @@
               ? 'warning'
               : 'info'}"
       >
-        {request.form_complete !== '2'
+        {request.form_complete !== "2"
           ? "Ma validation finale n'est pas disponible tant que mon formulaire n'est pas complet et que toutes les parties prenantes n'ont pas pris de décision"
-          : request.validation_finale_complete === '2'
-            ? 'Ma validation finale est complète'
+          : request.validation_finale_complete === "2"
+            ? "Ma validation finale est complète"
             : finalValidationShouldSign
-              ? 'Je dois compléter ma validation finale'
+              ? "Je dois compléter ma validation finale"
               : "Je dois attendre la validation de toutes les parties prenantes avant d'effectuer ma validation finale"}.
       </div>
     {/snippet}
     {#snippet links()}
-      {#if request.form_complete === '2'}
+      {#if request.form_complete === "2"}
         <!-- eslint-disable svelte/no-navigation-without-resolve -->
         <a
           href="/api/v1/surveys/pdf?record_id={request.record_id}"
@@ -150,14 +154,17 @@
         <!-- eslint-enable svelte/no-navigation-without-resolve -->
       {:else if request.form}
         <!-- eslint-disable svelte/no-navigation-without-resolve -->
-        <a href={request.form} class="card-link" target="_blank" rel="noopener noreferrer"
-          >Formulaire</a
+        <a
+          href={request.form}
+          class="card-link"
+          target="_blank"
+          rel="noopener noreferrer">Formulaire</a
         >
         <!-- eslint-enable svelte/no-navigation-without-resolve -->
       {:else}
         <span class="card-link text-body-secondary">Formulaire</span>
       {/if}
-      {#if request.validation_finale_complete !== '2'}
+      {#if request.validation_finale_complete !== "2"}
         {#if finalValidationShouldSign && request.validation_finale}
           <!-- eslint-disable svelte/no-navigation-without-resolve -->
           <a
@@ -174,7 +181,9 @@
     {/snippet}
     {#snippet footer()}
       <small class="text-body-secondary">
-        Créée {DateTime.fromISO(request.created_at).toRelative({ locale: 'fr' })}
+        Créée {DateTime.fromISO(request.created_at).toRelative({
+          locale: "fr",
+        })}
       </small>
     {/snippet}
   </CardItem>

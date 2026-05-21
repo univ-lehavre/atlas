@@ -8,8 +8,8 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, it, expect } from 'vitest';
 
-import Complete from '$lib/ui/Complete.svelte';
-import Follow from '$lib/ui/Follow.svelte';
+import Complete from '@univ-lehavre/atlas-ui/Complete.svelte';
+import Follow from '@univ-lehavre/atlas-ui/Follow.svelte';
 import type { SurveyRequestItem } from '$lib/types/api/surveys';
 import {
   noRequests,

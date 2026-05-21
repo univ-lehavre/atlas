@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Snippet } from 'svelte';
+  import type { Snippet } from "svelte";
 
   interface Props {
     imageSrc?: string | null;
@@ -17,8 +17,8 @@
     title = undefined,
     description = undefined,
     imageSrc = null,
-    imageAlt = '',
-    width = '18rem',
+    imageAlt = "",
+    width = "18rem",
     bodyExtra = undefined,
     actions = undefined,
     links = undefined,
