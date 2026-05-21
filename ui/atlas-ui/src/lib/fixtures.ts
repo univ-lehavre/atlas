@@ -24,22 +24,6 @@ const baseRequest: RequestRecord = {
 
 export const noRequests: RequestRecordList = [];
 
-export const oneIncompleteRequest: RequestRecordList = [
-  {
-    ...baseRequest,
-    record_id: "incomplete-001",
-    validation_finale_complete: "0",
-  },
-];
-
-export const oneInProgressRequest: RequestRecordList = [
-  {
-    ...baseRequest,
-    record_id: "progress-001",
-    validation_finale_complete: "2",
-  },
-];
-
 /**
  * Form not yet completed (`form_complete !== '2'`). This is what
  * `allowedRequestCreation` checks — when one of the user's requests is
@@ -55,11 +39,6 @@ export const oneFormInProgressRequest: RequestRecordList = [
     encadrant_complete: "0",
     validation_finale_complete: "0",
   },
-];
-
-export const mixedRequests: RequestRecordList = [
-  ...oneIncompleteRequest,
-  ...oneInProgressRequest,
 ];
 
 export const signupSuccess = {
