@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { PUBLIC_RGPD_NOTICE_URL } from '$env/static/public';
+
   let consent = $state(false);
 </script>
 
@@ -20,7 +22,7 @@
       <div class="modal-body">
         <p>
           Avant de créer une nouvelle demande, je confirme avoir pris connaissance du <a
-            href="https://survey.univ-lehavre.fr/surveys/?__file=VXFzrMApmUxKEqgU3tSXuSjA9CzpmmQrVDTvpDWFyjvKy2JCrrkziYzjdpbFkHJ57tWwrbB7b95GdneAz9Sd25SpzuDVs8BzKy8V"
+            href={PUBLIC_RGPD_NOTICE_URL}
             target="_blank"
             rel="noopener noreferrer">formulaire</a
           > d’informations RGPD de la plateforme AMARRE.
