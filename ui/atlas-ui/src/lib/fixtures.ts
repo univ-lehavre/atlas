@@ -40,6 +40,23 @@ export const oneInProgressRequest: RequestRecordList = [
   },
 ];
 
+/**
+ * Form not yet completed (`form_complete !== '2'`). This is what
+ * `allowedRequestCreation` checks — when one of the user's requests is
+ * still being filled, new request creation is blocked.
+ */
+export const oneFormInProgressRequest: RequestRecordList = [
+  {
+    ...baseRequest,
+    record_id: "form-in-progress-001",
+    form_complete: "0",
+    demandeur_composante_complete: "0",
+    labo_complete: "0",
+    encadrant_complete: "0",
+    validation_finale_complete: "0",
+  },
+];
+
 export const mixedRequests: RequestRecordList = [
   ...oneIncompleteRequest,
   ...oneInProgressRequest,
