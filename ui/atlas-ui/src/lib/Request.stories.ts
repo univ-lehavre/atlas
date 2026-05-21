@@ -2,12 +2,15 @@ import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import Request from "./Request.svelte";
 import type { RequestRecord } from "./types/request";
 
-// Base used to make each story differ only by the conditional branches
-// the component derives. See `Request.svelte` for the rules.
+// `Request.svelte` branches on a dozen derived flags. Every story below
+// is built from this base and changes just enough to isolate one
+// rendering path (title, signature rows, link availability, final
+// validation banner). See the JSDoc on each story for what's being
+// exercised.
 const base: RequestRecord = {
   record_id: "req-base",
   created_at: "2026-03-14T10:00:00Z",
-  demandeur_statut: "1",
+  demandeur_statut: "1", // étudiant
   invitation_type: "1",
   mobilite_type: "1",
   invite_nom: "",
@@ -21,52 +24,89 @@ const base: RequestRecord = {
   validation_finale_complete: "0",
 };
 
-const invitationPending: RequestRecord = {
+// --- Pre-form (no flow chosen yet) ---
+
+const blankDraft: RequestRecord = {
   ...base,
-  record_id: "req-invitation-pending",
-  invite_nom: "Pr. Watanabe Yuki",
-  mobilite_universite_gu8: "Université de Tsukuba",
+  record_id: "req-draft",
+  form_complete: "0",
+  invitation_type: "",
+  mobilite_type: "",
+  form: "https://example.com/forms/req-draft",
+};
+
+// --- Invitation flow (someone visiting Le Havre) ---
+
+const invitationFormInProgress: RequestRecord = {
+  ...base,
+  record_id: "req-inv-form",
+  invite_nom: "Personne Fictive 1",
   invitation_type: "2", // → composanteShouldSign
+  mobilite_universite_gu8: "Université Fictive Alpha",
+  form_complete: "0",
+  form: "https://example.com/forms/req-inv-form",
+};
+
+const invitationAwaitingComposante: RequestRecord = {
+  ...base,
+  record_id: "req-inv-await-composante",
+  invite_nom: "Personne Fictive 1",
+  invitation_type: "2",
+  mobilite_universite_gu8: "Université Fictive Alpha",
 };
 
 const invitationComposanteSigned: RequestRecord = {
-  ...invitationPending,
-  record_id: "req-invitation-composante-ok",
+  ...invitationAwaitingComposante,
+  record_id: "req-inv-composante-ok",
   demandeur_composante_complete: "2",
+  validation_finale: "https://example.com/forms/req-inv-final",
 };
 
 const invitationFullyValidated: RequestRecord = {
-  ...invitationPending,
-  record_id: "req-invitation-full",
+  ...invitationAwaitingComposante,
+  record_id: "req-inv-full",
   demandeur_composante_complete: "2",
   labo_complete: "2",
   validation_finale_complete: "2",
 };
 
-const voyageInProgress: RequestRecord = {
+// --- Voyage flow (someone going abroad) ---
+
+const voyageEtudiantAwaiting: RequestRecord = {
   ...base,
-  record_id: "req-voyage",
-  demandeur_statut: "3", // categoryOther
+  record_id: "req-voyage-etu",
+  mobilite_type: "2", // → laboShouldSign for student
+  mobilite_universite_eunicoast: "Université Fictive Bravo",
+};
+
+const voyageOtherFullCircuit: RequestRecord = {
+  ...base,
+  record_id: "req-voyage-other",
+  demandeur_statut: "3", // categoryOther → encadrantShouldSign + laboShouldSign
   mobilite_type: "2",
   invitation_type: "",
-  mobilite_universite_eunicoast: "Université de La Corogne",
+  mobilite_universite_autre: "Université Fictive Charlie",
   labo_complete: "2",
   encadrant_complete: "2",
+  validation_finale: "https://example.com/forms/req-voyage-other-final",
 };
 
 const voyageFullyValidated: RequestRecord = {
-  ...voyageInProgress,
+  ...voyageOtherFullCircuit,
   record_id: "req-voyage-full",
   validation_finale_complete: "2",
 };
 
+// --- Special : enseignant inviting ---
+
 const enseignantInvitation: RequestRecord = {
   ...base,
   record_id: "req-enseignant",
-  demandeur_statut: "2", // enseignant → composanteShouldSign even without invitation_type 2/3
-  invite_nom: "Dr. Smith John",
-  mobilite_universite_autre: "Boston University",
+  demandeur_statut: "2", // enseignant → composanteShouldSign for any invitation
+  invite_nom: "Personne Fictive 2",
+  mobilite_universite_autre: "Université Fictive Delta",
   invitation_type: "1",
+  demandeur_composante_complete: "2",
 };
 
 const meta = {
@@ -76,7 +116,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Per-request card. Rendered logic flags branch on : `invite_nom` (invitation vs voyage), `demandeur_statut` (1=etudiant, 2=enseignant, 3+=other), `invitation_type` and `mobilite_type` (which signatures are required), and per-actor `*_complete === '2'` (whether that signature is done).",
+          "Per-request card. Branches on a dozen derived flags : `invite_nom` (invitation/voyage/new title), `demandeur_statut` + `invitation_type` + `mobilite_type` (which signatures matter), and per-actor `*_complete === '2'` (whether each is done). Each row's colour bands the progress : warning (form unfilled), info (waiting), success (signed/validated). The trailing card-links (`Formulaire` + `Validation finale`) toggle between download / resume-edit / disabled.",
       },
     },
   },
@@ -85,32 +125,68 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Invitation flow, awaiting composante signature. */
-export const InvitationAwaitingComposante: Story = {
-  args: { request: invitationPending },
+// ---- Pre-form ----
+
+/** Blank draft — `form_complete='0'`, no invite_nom, no destination.
+ * Title falls back to "Ma nouvelle demande" (third branch). All
+ * signature rows hidden (no should-sign flag), every other row is
+ * warning. Formulaire link points at the resume-edit URL. */
+export const BlankDraft: Story = {
+  args: { request: blankDraft },
 };
 
-/** Invitation flow, composante signed, awaiting next signature. */
-export const InvitationPartial: Story = {
+// ---- Invitation flow ----
+
+/** Invitation, form still being filled. All progress rows yellow ;
+ * Formulaire link points at the in-progress edit URL. */
+export const InvitationFormInProgress: Story = {
+  args: { request: invitationFormInProgress },
+};
+
+/** Invitation, form done, composante hasn't signed yet (info row
+ * "se concerte"). PDF download link active for Formulaire ;
+ * Validation finale shown disabled. */
+export const InvitationAwaitingComposante: Story = {
+  args: { request: invitationAwaitingComposante },
+};
+
+/** Invitation, composante signed (green row) ; final validation
+ * available — Validation finale link active. */
+export const InvitationReadyForFinal: Story = {
   args: { request: invitationComposanteSigned },
 };
 
-/** Invitation flow, all signatures collected + final validation. */
+/** Invitation, every signature collected + final validation done.
+ * All rows green ; Validation finale link hidden (already done). */
 export const InvitationFullyValidated: Story = {
   args: { request: invitationFullyValidated },
 };
 
-/** Voyage (outgoing) flow, encadrant + labo signed, final pending. */
-export const VoyageAwaitingFinal: Story = {
-  args: { request: voyageInProgress },
+// ---- Voyage flow ----
+
+/** Voyage by an étudiant — labo must sign (mobilite_type=2 trigger).
+ * Composante & encadrant rows hidden. */
+export const VoyageEtudiantAwaitingLabo: Story = {
+  args: { request: voyageEtudiantAwaiting },
 };
 
-/** Voyage flow, fully validated. */
+/** Voyage by a categoryOther — both labo and encadrant must sign ;
+ * both signed, awaiting final. Validation finale link active. */
+export const VoyageReadyForFinal: Story = {
+  args: { request: voyageOtherFullCircuit },
+};
+
+/** Voyage fully validated (every row green). */
 export const VoyageFullyValidated: Story = {
   args: { request: voyageFullyValidated },
 };
 
-/** Enseignant inviting : composanteShouldSign even without invitation_type 2/3. */
+// ---- Edge case ----
+
+/** Enseignant inviting : composanteShouldSign fires for any invitation
+ * type (not just 2/3), because `isCategoryEnseignant` short-circuits.
+ * Composante already signed, demonstrates the "demandeur_statut=2"
+ * code-path. */
 export const EnseignantInvitation: Story = {
   args: { request: enseignantInvitation },
 };

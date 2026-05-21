@@ -1,6 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import Administrate from "./Administrate.svelte";
-import { signupRateLimited, signupSuccess, signupWrongEmail } from "./fixtures";
 
 const meta = {
   title: "amarre/Administrate",
@@ -9,7 +8,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "User-administration tile : exposes signup (when no session) and logout (when authenticated). Embeds the Signup modal — when `form?.data` is set, the modal opens automatically with the success alert.",
+          "User-administration tile : exposes signup (when no session) and logout (when authenticated). Embeds the Signup modal — but the modal stays closed in Storybook (Bootstrap JS toggle isn't loaded in the preview iframe), so signup form states are covered by the dedicated `Signup` stories, not here.",
       },
     },
   },
@@ -36,36 +35,6 @@ export const Authenticated: Story = {
     userId: "usr_demo_42",
     email: "demo@example.org",
     form: null,
-    downloadUrl: DOWNLOAD_URL,
-  },
-};
-
-/** Anonymous + signup just succeeded — success alert in the Signup modal. */
-export const SignupSuccess: Story = {
-  args: {
-    userId: undefined,
-    email: undefined,
-    form: signupSuccess,
-    downloadUrl: DOWNLOAD_URL,
-  },
-};
-
-/** Anonymous + signup rejected (domain whitelist). */
-export const SignupWrongEmail: Story = {
-  args: {
-    userId: undefined,
-    email: undefined,
-    form: signupWrongEmail,
-    downloadUrl: DOWNLOAD_URL,
-  },
-};
-
-/** Anonymous + signup rate-limited. */
-export const SignupRateLimited: Story = {
-  args: {
-    userId: undefined,
-    email: undefined,
-    form: signupRateLimited,
     downloadUrl: DOWNLOAD_URL,
   },
 };
