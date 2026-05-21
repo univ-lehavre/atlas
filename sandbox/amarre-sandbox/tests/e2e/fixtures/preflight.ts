@@ -27,7 +27,7 @@ const probe = async (url: string, init?: RequestInit): Promise<boolean> => {
   }
 };
 
-export const isMailpitReachable = (): Promise<boolean> =>
+const isMailpitReachable = (): Promise<boolean> =>
   probe(`${MAILPIT_URL}/api/v1/messages?limit=1`);
 
 /**
@@ -50,7 +50,7 @@ const readAmarreEnv = (): Record<string, string> => {
   return out;
 };
 
-export const isAppwriteReachable = async (): Promise<boolean> => {
+const isAppwriteReachable = async (): Promise<boolean> => {
   const env = readAmarreEnv();
   const project = env["PUBLIC_APPWRITE_PROJECT"];
   const apiKey = env["APPWRITE_KEY"];
