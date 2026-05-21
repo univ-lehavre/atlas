@@ -1,9 +1,15 @@
 name: Release
 
+# Releases are paused — `push: main` was disabled while the
+# `secrets.NPM_TOKEN` and `@univ-lehavre` scope ownership are sorted
+# out. Re-enable by uncommenting the `push` trigger below ; the
+# `workflow_dispatch` trigger keeps the door open for a manual one-off
+# run from the Actions tab.
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
