@@ -102,6 +102,60 @@ const allCompleteVariants: RequestRecordList = [
   enseignantInvitation,
 ];
 
+// Follow shows requests where `validation_finale_complete === '2'`. The
+// records below are each flow's fully-validated terminal state — Request
+// renders them with every progress row green and the PDF download link
+// active.
+
+const followBase: RequestRecord = {
+  ...base,
+  form_complete: "2",
+  demandeur_composante_complete: "2",
+  labo_complete: "2",
+  encadrant_complete: "2",
+  validation_finale_complete: "2",
+};
+
+const invitationDone: RequestRecord = {
+  ...followBase,
+  record_id: "fake-follow-invitation",
+  invite_nom: "Personne Fictive A",
+  invitation_type: "2",
+  mobilite_universite_gu8: "Université Fictive Alpha",
+};
+
+const voyageEtudiantDone: RequestRecord = {
+  ...followBase,
+  record_id: "fake-follow-voyage-etu",
+  mobilite_type: "2",
+  mobilite_universite_eunicoast: "Université Fictive Bravo",
+};
+
+const voyageOtherDone: RequestRecord = {
+  ...followBase,
+  record_id: "fake-follow-voyage-other",
+  demandeur_statut: "3",
+  mobilite_type: "2",
+  invitation_type: "",
+  mobilite_universite_autre: "Université Fictive Charlie",
+};
+
+const enseignantInvitationDone: RequestRecord = {
+  ...followBase,
+  record_id: "fake-follow-enseignant",
+  demandeur_statut: "2",
+  invite_nom: "Personne Fictive B",
+  invitation_type: "1",
+  mobilite_universite_autre: "Université Fictive Delta",
+};
+
+const allFollowVariants: RequestRecordList = [
+  invitationDone,
+  voyageEtudiantDone,
+  voyageOtherDone,
+  enseignantInvitationDone,
+];
+
 const RGPD_URL = "https://example.com/rgpd-notice";
 const DOWNLOAD_URL = "/api/v1/surveys/download";
 const FAKE_BRAND = {
@@ -183,5 +237,26 @@ export const CompleteShowcase: Story = {
     userId: "usr_demo_42",
     email: "demo@example.org",
     requests: allCompleteVariants,
+  },
+};
+
+/** Suivre showcase — authenticated user whose Follow section holds
+ * one card per Request.svelte flow at the fully-validated terminal
+ * state :
+ *
+ *   1. Invitation, all signatures + final validation done.
+ *   2. Voyage by an étudiant, fully validated.
+ *   3. Voyage by an autre statut, fully validated.
+ *   4. Enseignant inviting, fully validated.
+ *
+ * Because every request has `validation_finale_complete === '2'`,
+ * Complete is hidden and only Follow renders. Use this story to
+ * compare how Request renders each flow's "green" terminal state. */
+export const FollowShowcase: Story = {
+  args: {
+    ...SHARED,
+    userId: "usr_demo_42",
+    email: "demo@example.org",
+    requests: allFollowVariants,
   },
 };
