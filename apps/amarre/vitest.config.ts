@@ -5,15 +5,20 @@ import viteConfig from './vite.config';
 // Merge Vitest config with Vite/SvelteKit config so that `$lib`, `$env/*` and
 // other virtual aliases are properly resolved in tests.
 //
-// Two test projects co-exist :
+// Three test projects co-exist :
 //   - `unit` : tests of lib/, routes/, server/ in a pure Node environment.
 //             Existing tests, untouched.
 //   - `ui`   : tests of Svelte components under `tests/ui/` rendered with
 //             happy-dom and @testing-library/svelte. Level-1 of the test
 //             pyramid (cf. apps/amarre/tests/README.md).
+//   - `integration` : tests under `tests/integration/` that hit a real
+//             REDCap docker (level 3). They self-skip when REDCap is
+//             unreachable, so they're safe to leave in `pnpm test`. To
+//             actually exercise them, bring docker up via the
+//             crf-sandbox / amarre-sandbox scripts before running.
 //
-// Run a single project: `pnpm test:unit` or `pnpm test:ui`. The default
-// `pnpm test` runs both.
+// Run a single project: `pnpm test:unit`, `pnpm test:ui` or
+// `pnpm test:integration`. The default `pnpm test` runs all three.
 export default mergeConfig(
   viteConfig,
   defineConfig({
@@ -41,10 +46,11 @@ export default mergeConfig(
           test: {
             name: 'unit',
             environment: 'node',
-            // Everything except the `tests/ui/` tree. Keeps the original
-            // pre-pyramid test layout working unchanged.
+            // Everything except the `tests/ui/` and `tests/integration/`
+            // trees. Keeps the original pre-pyramid test layout working
+            // unchanged.
             include: ['tests/**/*.test.ts'],
-            exclude: ['tests/ui/**', 'node_modules/**', 'dist/**'],
+            exclude: ['tests/ui/**', 'tests/integration/**', 'node_modules/**', 'dist/**'],
           },
         },
         {
@@ -61,6 +67,19 @@ export default mergeConfig(
             environment: 'happy-dom',
             include: ['tests/ui/**/*.test.ts'],
             setupFiles: ['./tests/ui/setup.ts'],
+          },
+        },
+        {
+          extends: true,
+          test: {
+            name: 'integration',
+            environment: 'node',
+            include: ['tests/integration/**/*.test.ts'],
+            // Real network calls to REDCap on localhost:8888 — allow time
+            // for the docker container to respond + project queries to
+            // resolve. Suites self-skip when REDCap is unreachable.
+            testTimeout: 30_000,
+            hookTimeout: 30_000,
           },
         },
       ],
