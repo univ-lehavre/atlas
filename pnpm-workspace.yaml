@@ -22,35 +22,42 @@ onlyBuiltDependencies:
   - vue-demi
 
 # Moved from the deprecated `pnpm.*` block in package.json: pnpm 10 reads
-# these from here, not from package.json (silent-ignore otherwise — see the
-# WARN emitted by pnpm on every command).
+# these from here, not from package.json (silent-ignore otherwise).
+#
+# Security overrides are always *scoped to the vulnerable version range*
+# (e.g. `"pkg@>=A <B": ">=B"`) rather than applied globally. A global
+# override forces every consumer — including legacy majors that aren't
+# affected by the CVE — onto the new version, and that often breaks
+# API-incompatible consumers : see js-yaml 3→4 (read-yaml-file uses the
+# removed `safeLoad`) and ajv 6→8 (eslint 10 imports the v6 ref path).
+# The conditional syntax leaves unaffected majors alone.
 overrides:
   "@isaacs/brace-expansion": ">=5.0.1"
   "@sveltejs/kit": ">=2.58.0"
   "@xmldom/xmldom": ">=0.9.10"
-  # Scoped to the vulnerable range only : ajv 6.x is unaffected and still
-  # required by eslint 10 (it imports the v6-only path `ajv/lib/refs/json-
-  # schema-draft-04.json`). Forcing all ajv to >=8.18 breaks eslint.
   "ajv@>=7.0.0-alpha.0 <8.18.0": ">=8.18.0"
-  cookie: ">=0.7.0"
+  "cookie@<0.7.0": ">=0.7.0"
   defu: ">=6.1.7"
   devalue: ">=5.8.1"
   effect: ">=3.21.2"
-  esbuild: ">=0.25.0"
+  "esbuild@<0.25.0": ">=0.25.0"
   fast-uri: ">=3.1.2"
   fast-xml-parser: ">=5.7.2"
   flatted: ">=3.4.2"
-  js-yaml: ">=4.1.1"
+  "js-yaml@>=4.0.0 <4.1.1": ">=4.1.1"
   lodash: ">=4.18.1"
   lodash-es: ">=4.18.1"
   minimatch: ">=10.2.5"
   picomatch: ">=4.0.4"
-  protobufjs: ">=8.2.0"
+  # Both 7.x (used by @xenova/transformers) and 8.x have separate CVEs ;
+  # cover each major in its own scoped override.
+  "protobufjs@<7.5.8": ">=7.5.8"
+  "protobufjs@>=8.0.0 <8.2.0": ">=8.2.0"
   rollup: ">=4.60.2"
   undici: ">=7.25.0 <8"
-  uuid: ">=11.1.1"
-  vite: ">=6.4.2"
-  ws: ">=8.20.1"
+  "uuid@>=11.0.0 <11.1.1": ">=11.1.1"
+  "vite@<=6.4.1": ">=6.4.2"
+  "ws@>=8.0.0 <8.20.1": ">=8.20.1"
 
 patchedDependencies:
   reprism@0.0.11: patches/reprism@0.0.11.patch
