@@ -2,15 +2,17 @@
 # Full zero-touch sandbox setup :
 #   1. docker compose up -d
 #   2. ./scripts/bootstrap.sh    (provisions BaaS + CRF + seed + .env.local)
-#   3. pnpm test:e2e             (validates the magic-link flow end-to-end;
-#                                 the script spawns the amarre dev server
-#                                 itself and kills it on exit)
+#   3. pnpm test:smoke           (Playwright level-5 smoke ; auto-spawns
+#                                 the amarre dev server via webServer)
 #
 # Environment knobs :
-#   SEED_MODE=fake|prod|none  (default: fake)
-#       fake  → 120 synthetic records via @faker-js/faker
-#       prod  → pull real records from PROD_CRF_URL/PROD_CRF_TOKEN
-#       none  → skip data population
+#   SEED_MODE=fake|prod|none  (auto-detected, see below)
+#       prod  → pull real records from PROD_CRF_URL/PROD_CRF_TOKEN.
+#               Auto-selected when both are set in .env / .env.prod.
+#       fake  → 120 synthetic records via @faker-js/faker.
+#               Fallback when prod credentials aren't available.
+#       none  → skip data population entirely.
+#       Set SEED_MODE explicitly to override the auto-detection.
 #   SKIP_E2E=1                Skip the final smoke test.
 
 set -euo pipefail
@@ -45,5 +47,24 @@ if [ "${SKIP_E2E:-0}" = "1" ]; then
 fi
 
 echo
-echo "==> [3/3] Running E2E magic-link smoke test"
-pnpm test:e2e
+echo "==> [3/3] Running Playwright smoke (level 5)"
+pnpm test:smoke
+
+cat <<'EOF'
+
+==> Sandbox ready.
+
+  The Playwright smoke spawns its own amarre dev server and kills it on
+  exit, so http://localhost:5173 is NOT live right now. To use the app :
+
+    pnpm -F @univ-lehavre/atlas-amarre dev
+    → http://localhost:5173  (Ctrl+C to stop)
+
+  Other URLs (still up — backed by docker) :
+    - Mailpit (magic-links)    : http://localhost:8025
+    - REDCap (projet amarre)   : http://localhost:8888
+    - Appwrite console         : http://localhost:8091
+
+  Stop everything : pnpm -F @univ-lehavre/atlas-amarre-sandbox stop
+
+EOF

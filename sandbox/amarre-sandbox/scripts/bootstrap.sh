@@ -39,11 +39,21 @@ if [ -f .env.prod ]; then
 fi
 
 # SEED_MODE controls how the REDCap project is populated with data:
-#   fake  (default) — generate N synthetic records with @faker-js/faker
-#   prod            — pull real records from a remote REDCap (requires
-#                     PROD_CRF_URL + PROD_CRF_TOKEN in .env)
-#   none            — skip data population entirely
-SEED_MODE="${SEED_MODE:-fake}"
+#   prod  — pull real records from a remote REDCap (PROD_CRF_URL +
+#           PROD_CRF_TOKEN required). Auto-selected when both are set.
+#   fake  — generate N synthetic records with @faker-js/faker. Default
+#           fallback when prod credentials aren't available.
+#   none  — skip data population entirely.
+# Override the auto-detection by exporting SEED_MODE explicitly.
+if [ -z "${SEED_MODE:-}" ]; then
+  if [ -n "${PROD_CRF_URL:-}" ] && [ -n "${PROD_CRF_TOKEN:-}" ]; then
+    SEED_MODE="prod"
+    echo "==> Detected PROD_CRF_* credentials → SEED_MODE=prod (real data)"
+  else
+    SEED_MODE="fake"
+    echo "==> No PROD_CRF_* credentials → SEED_MODE=fake (synthetic data)"
+  fi
+fi
 
 echo "==> [1/4] Bootstrapping BaaS (Appwrite)"
 pnpm bootstrap:baas

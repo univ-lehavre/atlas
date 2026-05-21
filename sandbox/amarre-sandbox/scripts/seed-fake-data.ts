@@ -336,7 +336,15 @@ const main = async (): Promise<void> => {
   }
 
   console.log(`==> Loading data dictionary`);
-  const raw = await readFile(DATA_DICT_PATH, "utf8");
+  const raw = await readFile(DATA_DICT_PATH, "utf8").catch(() => {
+    throw new Error(
+      `Data dictionary not found at ${DATA_DICT_PATH}\n` +
+        `\n` +
+        `This file is gitignored. Run \`pnpm crf:dictionaries:export --apply\`\n` +
+        `from the repo root, or ask a teammate for the anonymised export.\n` +
+        `See apps/amarre/tests/RUNBOOK.md → "Préparer le data dictionary".`,
+    );
+  });
   const dict = JSON.parse(raw) as DataDictionary;
   const forms = Array.from(new Set(dict.fields.map((f) => f.form_name)));
 

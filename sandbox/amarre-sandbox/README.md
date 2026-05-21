@@ -32,14 +32,15 @@ C'est tout. `pnpm start` crée `.env` depuis `.env.example`, génère `_APP_OPEN
 
 Variables d'environnement utiles :
 
-| Var         | Valeurs         | Effet                                                                               |
-| ----------- | --------------- | ----------------------------------------------------------------------------------- |
-| `SEED_MODE` | `fake` (défaut) | 120 records synthétiques via `@faker-js/faker`                                      |
-|             | `prod`          | Pull les vrais records depuis `PROD_CRF_URL` / `PROD_CRF_TOKEN` (à set dans `.env`) |
-|             | `none`          | Ne pré-remplit pas le projet                                                        |
-| `SKIP_E2E`  | `1`             | Saute le smoke test final (le bootstrap s'arrête après le seed)                     |
+| Var         | Valeurs   | Effet                                                                                                                                            |
+| ----------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SEED_MODE` | _(unset)_ | **Défaut auto** : `prod` si `PROD_CRF_URL` + `PROD_CRF_TOKEN` sont set (dans `.env` ou `.env.prod`), sinon `fake`. Message affiché au lancement. |
+|             | `prod`    | Force le pull des vrais records depuis `PROD_CRF_URL` / `PROD_CRF_TOKEN`                                                                         |
+|             | `fake`    | Force 120 records synthétiques via `@faker-js/faker`                                                                                             |
+|             | `none`    | Ne pré-remplit pas le projet                                                                                                                     |
+| `SKIP_E2E`  | `1`       | Saute le smoke test final (le bootstrap s'arrête après le seed)                                                                                  |
 
-Exemples : `SEED_MODE=prod pnpm start`, `SEED_MODE=none SKIP_E2E=1 pnpm start`.
+Exemples : `pnpm start` (auto), `SEED_MODE=fake pnpm start` (force fake même avec creds prod), `SEED_MODE=none SKIP_E2E=1 pnpm start`.
 
 À la fin :
 
@@ -52,20 +53,20 @@ Ouvrir http://localhost:5173 et signer avec un email matchant `ALLOWED_DOMAINS_R
 
 ## Commandes
 
-| Commande              | Effet                                                                   |
-| --------------------- | ----------------------------------------------------------------------- |
-| `pnpm start`          | Raccourci `docker:up` + `bootstrap` en un coup                          |
-| `pnpm stop`           | Arrête les conteneurs (volumes préservés)                               |
-| `pnpm docker:up`      | Démarre tous les conteneurs (BaaS + CRF + Mailpit)                      |
-| `pnpm docker:down`    | Arrête les conteneurs (volumes préservés)                               |
-| `pnpm docker:reset`   | Arrête + supprime les volumes (perte de données)                        |
-| `pnpm docker:logs`    | Tail des logs                                                           |
-| `pnpm bootstrap`      | Orchestrateur complet (BaaS + CRF + seed + .env amarre)                 |
-| `pnpm bootstrap:baas` | Provisionne Appwrite (account root + org + projet + clé API)            |
-| `pnpm bootstrap:crf`  | Installe REDCap, crée un projet `amarre` dédié, importe la trame        |
-| `pnpm seed`           | Génère et importe N records synthétiques (défaut 120, voir `.env`)      |
-| `pnpm pull:prod`      | Pull opt-in des records de prod (nécessite `PROD_CRF_*` dans `.env`)    |
-| `pnpm test:e2e`       | Smoke test du flow magic-link bout-en-bout (spawn amarre dev si besoin) |
+| Commande              | Effet                                                                |
+| --------------------- | -------------------------------------------------------------------- |
+| `pnpm start`          | Raccourci `docker:up` + `bootstrap` en un coup                       |
+| `pnpm stop`           | Arrête les conteneurs (volumes préservés)                            |
+| `pnpm docker:up`      | Démarre tous les conteneurs (BaaS + CRF + Mailpit)                   |
+| `pnpm docker:down`    | Arrête les conteneurs (volumes préservés)                            |
+| `pnpm docker:reset`   | Arrête + supprime les volumes (perte de données)                     |
+| `pnpm docker:logs`    | Tail des logs                                                        |
+| `pnpm bootstrap`      | Orchestrateur complet (BaaS + CRF + seed + .env amarre)              |
+| `pnpm bootstrap:baas` | Provisionne Appwrite (account root + org + projet + clé API)         |
+| `pnpm bootstrap:crf`  | Installe REDCap, crée un projet `amarre` dédié, importe la trame     |
+| `pnpm seed`           | Génère et importe N records synthétiques (défaut 120, voir `.env`)   |
+| `pnpm pull:prod`      | Pull opt-in des records de prod (nécessite `PROD_CRF_*` dans `.env`) |
+| `pnpm test:smoke`     | Playwright smoke level-5 ; auto-spawn d'amarre dev via webServer     |
 
 > Les commandes `up`/`down`/`reset` sont préfixées `docker:` parce que `pnpm up` est une commande native pnpm (= `update`) qui shadow-erait nos scripts.
 
@@ -130,16 +131,16 @@ Le script demande une confirmation interactive avant de pull (skip avec `--yes`)
 
 ### Test E2E
 
-[`test-e2e.ts`](scripts/test-e2e.ts) exerce le flow magic-link bout-en-bout :
+Le smoke end-to-end est piloté par Playwright — voir [`tests/e2e/smoke.spec.ts`](tests/e2e/smoke.spec.ts). Il couvre le scénario complet : signup via la modale → poll Mailpit → visite du magic-link → création de demande via `/api/v1/surveys/new` → reload → assert section _Compléter_ → logout. La suite se skip toute seule si Mailpit ou Appwrite ne sont pas joignables.
 
-1. `POST /api/v1/auth/signup` sur le dev server amarre
-2. Poll l'API Mailpit jusqu'à voir le mail
-3. Extrait `userId` + `secret` du body
-4. `GET /login?userId=...&secret=...` → vérifie 302 + cookie de session
-5. `GET /api/v1/me` avec le cookie → vérifie 200 + bonnes données
-6. Cleanup : supprime le user Appwrite + purge Mailpit
+Lancer :
 
-Pre-requis : `pnpm bootstrap` joué. Si `localhost:5173` n'est pas joignable, le script spawn lui-même `pnpm -F amarre dev` (et le tue en fin de run).
+```bash
+pnpm test:smoke          # headless
+pnpm test:smoke:headed   # avec UI
+```
+
+Le `webServer` de [`playwright.config.ts`](playwright.config.ts) spawn `pnpm -F amarre dev` automatiquement (`reuseExistingServer: true`). Pre-requis stack : `pnpm bootstrap` joué (Appwrite + REDCap + .env amarre provisionnés).
 
 ## Limites connues
 

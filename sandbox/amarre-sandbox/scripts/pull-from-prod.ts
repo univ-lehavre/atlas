@@ -80,6 +80,27 @@ interface MetadataField {
   field_name: string;
 }
 
+interface ProjectInfo {
+  record_autonumbering_enabled?: 0 | 1;
+  // REDCap's project export uses an empty string when the primary key
+  // is just the default `record_id`. Otherwise it carries the actual
+  // first field's name.
+  custom_record_label?: string;
+}
+
+const fetchProjectInfo = async (
+  url: string,
+  token: string,
+): Promise<ProjectInfo> => {
+  const raw = await redcapCall(url, token, {
+    content: "project",
+    format: "json",
+  });
+  const arr = JSON.parse(raw);
+  // REDCap returns an array with a single project info object.
+  return (Array.isArray(arr) ? arr[0] : arr) as ProjectInfo;
+};
+
 const main = async (): Promise<void> => {
   const env = await parseEnv();
   const prodUrl = process.env["PROD_CRF_URL"] || env["PROD_CRF_URL"];
@@ -162,6 +183,42 @@ const main = async (): Promise<void> => {
     return next;
   });
 
+  // Sanity check : the local primary key (first metadata field) MUST
+  // be in every cleaned record, otherwise REDCap rejects the import
+  // with "The record id field (xxx) is missing.".
+  const localPrimary = localMeta[0]?.field_name;
+  if (!localPrimary) {
+    throw new Error(
+      "Local metadata has no fields — has bootstrap-crf run successfully ?",
+    );
+  }
+  if (cleaned.length > 0 && !(localPrimary in cleaned[0])) {
+    const prodKeysSample = Object.keys(records[0]).slice(0, 8).join(", ");
+    throw new Error(
+      `Local primary key "${localPrimary}" missing from the pulled records.\n` +
+        `\n` +
+        `Most likely cause : the prod project uses a different primary key\n` +
+        `field name (or has \`record_autonumbering_enabled\` and stripped it\n` +
+        `from the export). First record's fields, for reference :\n` +
+        `\n` +
+        `  ${prodKeysSample}\n` +
+        `\n` +
+        `Options :\n` +
+        `  - Re-export the data dictionary so its first field matches prod :\n` +
+        `      pnpm crf:dictionaries:export --apply\n` +
+        `  - Or fix the local trame's first field to match the prod primary\n` +
+        `    key before re-running \`bootstrap-crf\`.`,
+    );
+  }
+
+  // If the local project has auto-numbering enabled, REDCap rewrites
+  // record ids server-side — pass forceAutoNumber so the import
+  // doesn't fail on duplicate / out-of-sequence ids. We still need the
+  // primary key column in the payload to group rows.
+  const localProject = await fetchProjectInfo(localUrl, localToken);
+  const forceAutoNumber =
+    localProject.record_autonumbering_enabled === 1 ? "true" : "false";
+
   console.log(`==> Importing into local REDCap`);
   const batchSize = 50;
   for (let i = 0; i < cleaned.length; i += batchSize) {
@@ -170,7 +227,7 @@ const main = async (): Promise<void> => {
       format: "json",
       type: "flat",
       overwriteBehavior: "overwrite",
-      forceAutoNumber: "false",
+      forceAutoNumber,
       data: JSON.stringify(cleaned.slice(i, i + batchSize)),
       returnContent: "count",
     });

@@ -1,8 +1,5 @@
 // Level-5 smoke : drive the full amarre stack end-to-end in a real
-// browser. Replaces the legacy `scripts/test-e2e-ui.ts` (run via tsx)
-// with a clean `@playwright/test` spec — same scenario, but as a
-// proper Playwright test with retries, traces, screenshots and html
-// reporter.
+// browser via @playwright/test.
 //
 // Scenario :
 //   1. Open the home in an anonymous state. Verify the "S'authentifier"
@@ -18,7 +15,7 @@
 //   7. Click logout. Verify we're back to anonymous state.
 //
 // The suite self-skips when Mailpit + Appwrite aren't reachable so
-// `pnpm test:e2e` is safe to run without the docker stack — it just
+// `pnpm test:smoke` is safe to run without the docker stack — it just
 // reports "skipped".
 
 import { expect, test } from "@playwright/test";
@@ -62,6 +59,16 @@ test.describe("amarre smoke — full stack", () => {
       .first();
     await expect(signupCta).toBeVisible();
 
+    // Bootstrap JS is dynamic-imported in +layout.svelte's onMount, so
+    // its `data-bs-toggle` delegation isn't attached at navigation
+    // time. Wait for `window.bootstrap` before the first modal click
+    // or the click silently no-ops.
+    await page.waitForFunction(
+      () => Boolean((window as unknown as { bootstrap?: unknown }).bootstrap),
+      null,
+      { timeout: 10_000 },
+    );
+
     // ---- 2. Signup ----
     await signupCta.click();
     const signupModal = page.locator("#SignUp");
@@ -89,13 +96,20 @@ test.describe("amarre smoke — full stack", () => {
 
     // ---- 5. Create request via API (the UI modal posts a form action
     // that redirects to a 118-field REDCap survey — we shortcut by
-    // hitting the JSON endpoint directly, same as the legacy
-    // `scripts/test-e2e-ui.ts` does). The UX coverage of the
+    // hitting the JSON endpoint directly). The UX coverage of the
     // CreateRequest modal itself lives in level-1 (`forms.test.ts`).
     const createResponse = await page.request.post("/api/v1/surveys/new", {
       data: {},
     });
-    expect(createResponse.ok()).toBe(true);
+    if (!createResponse.ok()) {
+      // Surface what REDCap (or the amarre handler) actually returned —
+      // the bare `expect(ok).toBe(true)` makes debugging schema drifts
+      // way harder than necessary.
+      const body = await createResponse.text().catch(() => "<unreadable>");
+      throw new Error(
+        `POST /api/v1/surveys/new failed : HTTP ${createResponse.status()}\n${body}`,
+      );
+    }
 
     // ---- 6. Reload, verify Compléter renders ----
     await page.reload();

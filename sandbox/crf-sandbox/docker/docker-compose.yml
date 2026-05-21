@@ -65,10 +65,21 @@ services:
       - redcap-net
 
   mailpit:
-    image: axllent/mailpit:latest
+    # Pinned : the `latest` tag at some point started timing out SMTP
+    # sessions before Appwrite's `baas-worker-mails` could finish its
+    # MAIL FROM exchange (HTTP 421 "closing transmission channel after
+    # timeout exceeded"). v1.20 holds the session long enough.
+    image: axllent/mailpit:v1.20
     ports:
       - '8025:8025'
       - '1025:1025'
+    environment:
+      # Disable STARTTLS requirement and bump the auth/relay timeout
+      # ceilings — the worker uses plain SMTP on the redcap-net bridge,
+      # no need for TLS, and the longer ceiling avoids flakes when the
+      # worker queue is slow to wake up.
+      MP_SMTP_AUTH_ALLOW_INSECURE: 'true'
+      MP_SMTP_DISABLE_RDNS: 'true'
     networks:
       - redcap-net
 
