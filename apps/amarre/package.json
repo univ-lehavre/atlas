@@ -50,6 +50,7 @@
     "@univ-lehavre/atlas-logos": "workspace:*",
     "@univ-lehavre/atlas-ui": "workspace:*",
     "@univ-lehavre/atlas-validators": "workspace:*",
+    "bootstrap": "5.3.8",
     "node-appwrite": "^25.0.0",
     "zod": "^4.4.3"
   },
