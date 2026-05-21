@@ -1,7 +1,8 @@
 import type { StorybookConfig } from "@storybook/svelte-vite";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import type { Plugin } from "vite";
+import type { Plugin, PluginOption } from "vite";
 
 const here = (p: string): string =>
   fileURLToPath(new URL(`./stubs/${p}`, import.meta.url));
@@ -63,7 +64,21 @@ const config: StorybookConfig = {
   // The contract used by the components is read-only (`resolve` returns
   // the path, `enhance` is a no-op) — enough for visual review.
   viteFinal: async (cfg) => {
-    cfg.plugins = [compileStorybookSvelteAssets(), ...(cfg.plugins ?? [])];
+    // `@storybook/svelte-vite` doesn't auto-add vite-plugin-svelte ; the
+    // preset only installs storybook's docgen plugin, which then tries
+    // to parse raw `.svelte` source as JS and bombs ("Expression
+    // expected") unless the svelte plugin compiles the file first.
+    // Inject it explicitly so user components compile.
+    // Cast via `unknown` because @storybook/svelte-vite's types pin
+    // Vite 6's `Plugin` while our runtime is Vite 8 ; the structural
+    // diff (HotUpdatePluginContext) tsc flags is a no-op at runtime.
+    cfg.plugins = [
+      ...([
+        compileStorybookSvelteAssets(),
+        svelte(),
+      ] as unknown as PluginOption[]),
+      ...(cfg.plugins ?? []),
+    ];
     cfg.resolve = {
       ...cfg.resolve,
       alias: {
