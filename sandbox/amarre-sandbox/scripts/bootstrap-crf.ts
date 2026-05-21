@@ -212,7 +212,24 @@ const importDataDictionary = async (
   crfUrl: string,
   token: string,
 ): Promise<void> => {
-  const raw = await readFile(DATA_DICT_PATH, "utf8");
+  const raw = await readFile(DATA_DICT_PATH, "utf8").catch(() => {
+    throw new Error(
+      `Data dictionary not found at ${DATA_DICT_PATH}\n` +
+        `\n` +
+        `This file is gitignored (potentially sensitive : field labels +\n` +
+        `branching logic) so it must be generated locally before the first\n` +
+        `bootstrap. Two options :\n` +
+        `\n` +
+        `  1. Export from prod REDCap (requires REDCAP_API_TOKEN in repo .env\n` +
+        `     or redcap-token.csv at the repo root) :\n` +
+        `       pnpm crf:dictionaries:export --apply\n` +
+        `\n` +
+        `  2. Ask a teammate to send you the anonymised export and drop it\n` +
+        `     in data-dictionaries/ at the repo root.\n` +
+        `\n` +
+        `See apps/amarre/tests/RUNBOOK.md → "Préparer le data dictionary".`,
+    );
+  });
   const dict = JSON.parse(raw) as DataDictionary;
   if (!Array.isArray(dict.fields) || dict.fields.length === 0) {
     throw new Error(`No fields found in ${DATA_DICT_PATH}`);

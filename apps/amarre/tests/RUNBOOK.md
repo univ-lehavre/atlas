@@ -22,16 +22,43 @@ git clone git@github.com:univ-lehavre/atlas.git
 cd atlas
 pnpm install                              # ~2 min
 
-# 2. Installer le navigateur pour le niveau 5 (Playwright)
+# 2. Préparer le data dictionary (gitignored, doit être généré localement)
+#    → voir la section "Préparer le data dictionary" plus bas pour les deux options.
+pnpm crf:dictionaries:export --apply      # option export prod (la plus rapide)
+
+# 3. Installer le navigateur pour le niveau 5 (Playwright)
 pnpm -F @univ-lehavre/atlas-amarre-sandbox exec playwright install chromium
 
-# 3. Lancer le stack + bootstrap + smoke (≈ 5 min la première fois)
+# 4. Lancer le stack + bootstrap + smoke (≈ 5 min la première fois)
 pnpm -F @univ-lehavre/atlas-amarre-sandbox start
 ```
 
 À l'issue du `start`, le sandbox affiche les URLs utiles. La stack reste up — `pnpm -F @univ-lehavre/atlas-amarre-sandbox stop` pour arrêter (volumes préservés), `docker:reset` pour repartir de zéro.
 
-Si tu ne veux faire tourner que le **niveau 1** (unit + UI, pas de docker requis), saute l'étape 2 et 3 — un simple `pnpm -F @univ-lehavre/atlas-amarre test` après `pnpm install` suffit.
+Si tu ne veux faire tourner que le **niveau 1** (unit + UI, pas de docker requis), saute les étapes 2 à 4 — un simple `pnpm -F @univ-lehavre/atlas-amarre test` après `pnpm install` suffit.
+
+## Préparer le data dictionary
+
+Le data dictionary REDCap d'amarre (`data-dictionaries/127-amarre-v1.json`, 118 champs + branching logic) est **gitignoré** : il contient des labels et de la logique potentiellement sensibles. Il faut donc le matérialiser localement avant le premier `bootstrap-crf` (sinon `pnpm start` plante au step `==> Importing amarre data dictionary` avec une erreur explicite).
+
+**Option A — export depuis la prod REDCap** (recommandé si tu as un token API du projet amarre prod) :
+
+```bash
+# Prérequis : REDCAP_API_TOKEN dans le .env racine, OU redcap-token.csv
+# à la racine avec un mapping project_id;token (le script lit les deux).
+pnpm crf:dictionaries:export --apply
+```
+
+Le script [scripts/crf-trame/export-data-dictionaries.ts](../../../scripts/crf-trame/export-data-dictionaries.ts) tape `getFields` + `getInstruments` + `getProjectInfo` sur la prod, **anonymise** les valeurs identifiantes (ULHN, labos, emails, téléphones — patterns dans [redact-patterns.json](../../../scripts/crf-trame/redact-patterns.json)) avant d'écrire `data-dictionaries/<id>-<slug>.json`. Idempotent.
+
+**Option B — récupérer l'export anonymisé d'un teammate** : demander le fichier `127-amarre-v1.json` déjà exporté et le déposer à `data-dictionaries/` (créer le dossier si besoin). Le fichier reste gitignored, ne jamais le commit.
+
+**Vérif** :
+
+```bash
+ls data-dictionaries/127-amarre-v1.json   # doit exister
+jq '.fields | length' data-dictionaries/127-amarre-v1.json   # ≥ 100 attendu
+```
 
 ## Services up — URLs locales
 
