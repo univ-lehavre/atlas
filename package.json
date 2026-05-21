@@ -175,35 +175,5 @@
     "vitest": "^4.1.6",
     "vue-chartjs": "^5.3.3"
   },
-  "packageManager": "pnpm@10.33.2",
-  "pnpm": {
-    "overrides": {
-      "@isaacs/brace-expansion": ">=5.0.1",
-      "@sveltejs/kit": ">=2.58.0",
-      "@xmldom/xmldom": ">=0.9.10",
-      "defu": ">=6.1.7",
-      "devalue": ">=5.8.1",
-      "effect": ">=3.21.2",
-      "fast-uri": ">=3.1.2",
-      "fast-xml-parser": ">=5.7.2",
-      "flatted": ">=3.4.2",
-      "lodash": ">=4.18.1",
-      "lodash-es": ">=4.18.1",
-      "minimatch": ">=10.2.5",
-      "picomatch": ">=4.0.4",
-      "protobufjs": ">=8.0.3",
-      "rollup": ">=4.60.2",
-      "undici": ">=7.25.0 <8"
-    },
-    "patchedDependencies": {
-      "reprism@0.0.11": "patches/reprism@0.0.11.patch"
-    },
-    "peerDependencyRules": {
-      "allowedVersions": {
-        "@effect/vitest>vitest": "^4",
-        "@standard-community/standard-json>quansync": "^1",
-        "openapi-typescript>typescript": "^6"
-      }
-    }
-  }
+  "packageManager": "pnpm@10.33.2"
 }

@@ -46,6 +46,13 @@ jobs:
           git config user.name "chasset"
           git config user.email "1488688+chasset@users.noreply.github.com"
 
+      - name: Configure registry auth for publish step
+        run: |
+          {
+            echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}"
+            echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}"
+          } >> .npmrc
+
       - name: Create Release Pull Request or Publish to registries
         id: changesets
         uses: changesets/action@63a615b9cd06ba9a3e6d13796c7fbcb080a60a0b # v1
