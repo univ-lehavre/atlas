@@ -9,7 +9,7 @@ L'app `amarre` (SvelteKit + Appwrite + REDCap) est couverte par une pyramide à 
 | 1   | UI amarre (composants + affichage conditionnel)  | `apps/amarre/tests/ui/`                                                                                               | Vitest + happy-dom + `@testing-library/svelte`                        | aucun                           |
 | 1   | Unit / API / services serveur                    | `apps/amarre/tests/{lib,routes,server,integration,utils}/`                                                            | Vitest (node env)                                                     | aucun                           |
 | 2   | REDCap seul (contract amarre + OpenAPI strict)   | [sandbox/crf-sandbox/tests/contract-amarre/](../../../sandbox/crf-sandbox/tests/contract-amarre/) _(à venir)_         | Vitest + `ajv` + [packages/crf-client](../../../packages/crf-client/) | REDCap docker                   |
-| 3   | amarre + REDCap (services serveur, sans browser) | [sandbox/amarre-sandbox/tests/integration/crf/](../../../sandbox/amarre-sandbox/tests/integration/crf/) _(à venir)_   | Vitest                                                                | REDCap + bootstrap-crf          |
+| 3   | amarre + REDCap (services serveur, sans browser) | `apps/amarre/tests/integration/crf/`                                                                                  | Vitest (node env, self-skip)                                          | REDCap + bootstrap-crf          |
 | 4   | amarre + Appwrite (magic-link API-only)          | [sandbox/amarre-sandbox/tests/integration/auth/](../../../sandbox/amarre-sandbox/tests/integration/auth/) _(à venir)_ | Vitest + Mailpit                                                      | Appwrite + Mailpit + amarre dev |
 | 5   | Smoke E2E browser final                          | [sandbox/amarre-sandbox/tests/e2e/](../../../sandbox/amarre-sandbox/tests/e2e/) _(à venir)_                           | `@playwright/test`                                                    | stack complète (`pnpm start`)   |
 
@@ -32,30 +32,42 @@ tests/
 ├── lib/                       ← niveau 1, environment=node
 ├── routes/                    ←  "
 ├── server/                    ←  "
-├── integration/               ←  "  (drift detection — utilitaire interne)
+├── integration/               ← niveau 3 (amarre × REDCap, self-skip)
+│   ├── crf/surveys.test.ts    ← appelle directement $lib/server/services/surveys
+│   ├── helpers/redcap.ts      ← reachability + cleanup, partagé
+│   └── drift-detection.test.ts ← utilitaire interne, sans réseau
 ├── utils/                     ←  "
 └── hooks.server.test.ts       ←  "
 ```
 
 ## Vitest multi-project
 
-[vitest.config.ts](../vitest.config.ts) déclare deux projects :
+[vitest.config.ts](../vitest.config.ts) déclare trois projects :
 
-- `unit` (environment `node`, include `tests/**/*.test.ts` sauf `tests/ui/**`) — les tests existants, intacts.
+- `unit` (environment `node`, include `tests/**/*.test.ts` sauf `tests/ui/**` et `tests/integration/**`) — les tests existants, intacts.
 - `ui` (environment `happy-dom`, include `tests/ui/**/*.test.ts`, force la résolution Svelte `browser` pour éviter `lifecycle_function_unavailable`) — les tests de composants.
+- `integration` (environment `node`, include `tests/integration/**/*.test.ts`, `testTimeout: 30s`) — niveau 3 (amarre × REDCap). Les suites docker-required appellent `isRedcapReachable()` au load et passent par `describe.skipIf(!reachable)`, donc elles se skip seules quand le stack n'est pas up.
 
-Les deux projects partagent la config Vite/SvelteKit racine via `mergeConfig`, donc `$lib`, `$env/*` et autres alias virtuels fonctionnent dans les tests.
+Les trois projects partagent la config Vite/SvelteKit racine via `mergeConfig`, donc `$lib`, `$env/*` et autres alias virtuels fonctionnent dans les tests.
 
 ## Commandes
 
 ```bash
-pnpm test            # unit + ui (98 tests, ~1s)
-pnpm test:unit       # node project uniquement (78 tests)
-pnpm test:ui         # happy-dom project uniquement (20 tests)
-pnpm test:coverage   # rapport de couverture (seuils dans vitest.config.ts)
+pnpm test              # unit + ui + integration (les level-3 se skipent sans docker)
+pnpm test:unit         # node project uniquement
+pnpm test:ui           # happy-dom project uniquement
+pnpm test:integration  # node project + REDCap docker
+pnpm test:coverage     # rapport de couverture (seuils dans vitest.config.ts)
 ```
 
-Aucune commande n'a besoin de docker pour le niveau 1. Pour les niveaux 2-5, voir les sandbox correspondantes.
+Pour exécuter le niveau 3, démarrer la stack au préalable :
+
+```bash
+pnpm -F @univ-lehavre/atlas-amarre-sandbox start  # docker up + bootstrap baas + bootstrap-crf + seed
+pnpm -F @univ-lehavre/atlas-amarre test:integration
+```
+
+Sans la stack, la suite level-3 se skipe proprement (les autres niveaux passent).
 
 ## Écrire un test de composant (niveau 1)
 
