@@ -19,9 +19,15 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const RGPD_URL = "https://example.com/rgpd-notice";
+const PLATFORM = "Plateforme Fictive";
 
 export const Anonymous: Story = {
-  args: { userId: undefined, requests: noRequests, rgpdUrl: RGPD_URL },
+  args: {
+    userId: undefined,
+    requests: noRequests,
+    rgpdUrl: RGPD_URL,
+    platformName: PLATFORM,
+  },
 };
 
 /** Authenticated user, no draft in progress — both "S'authentifier" is
@@ -29,7 +35,12 @@ export const Anonymous: Story = {
  * any other request shape that satisfies `allowedRequestCreation`
  * (e.g. all previous requests at `form_complete === '2'`). */
 export const CanCreate: Story = {
-  args: { userId: "usr_demo_42", requests: noRequests, rgpdUrl: RGPD_URL },
+  args: {
+    userId: "usr_demo_42",
+    requests: noRequests,
+    rgpdUrl: RGPD_URL,
+    platformName: PLATFORM,
+  },
 };
 
 /** Authenticated user with one request still being filled
@@ -41,5 +52,6 @@ export const Blocked: Story = {
     userId: "usr_demo_42",
     requests: oneFormInProgressRequest,
     rgpdUrl: RGPD_URL,
+    platformName: PLATFORM,
   },
 };

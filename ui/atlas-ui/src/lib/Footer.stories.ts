@@ -8,7 +8,7 @@ const meta = {
     docs: {
       description: {
         component:
-          "Renders the 4 hardcoded partner logos (ULHN, EUNICoast, France 2030, Région Normandie). Note : images live in `apps/amarre/static/logos/` ; in Storybook the broken-image icons signal the assets are not in this package.",
+          "Renders a row of partner / funder logos provided by the consumer. The component owns layout only ; brand identity (alt-text + asset paths) lives in the app. Stories use fake placeholders — broken-image icons are expected since the assets only exist in the consumer app's `static/`.",
       },
     },
   },
@@ -17,4 +17,18 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {};
+const fakeLogos = [
+  { src: "/fake-logos/partner-a.png", alt: "Partenaire Fictif A" },
+  { src: "/fake-logos/partner-b.png", alt: "Partenaire Fictif B" },
+  { src: "/fake-logos/partner-c.png", alt: "Partenaire Fictif C" },
+  { src: "/fake-logos/partner-d.png", alt: "Partenaire Fictif D" },
+];
+
+/** Four placeholder partners — covers the typical amarre layout. */
+export const FourLogos: Story = { args: { logos: fakeLogos } };
+
+/** No partners — the footer still renders its layout container. */
+export const Empty: Story = { args: { logos: [] } };
+
+/** Single logo — checks centering when the row has only one item. */
+export const OneLogo: Story = { args: { logos: fakeLogos.slice(0, 1) } };

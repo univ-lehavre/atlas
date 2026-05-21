@@ -3,7 +3,7 @@
   import SectionTile from "./SectionTile.svelte";
   import Request from "./Request.svelte";
 
-  let { requests } = $props();
+  let { requests, variant = "light" } = $props();
   let showHeading = $state(false);
 </script>
 
@@ -12,7 +12,7 @@
     ariaLabel="Follow cards"
     headingText="Suivre"
     bind:showHeading
-    variant="light"
+    {variant}
   >
     <SectionTile title={!showHeading ? "Suivre" : ""} />
     {#each requests as request (request.record_id)}

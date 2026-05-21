@@ -20,5 +20,8 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: { rgpdUrl: "https://example.com/rgpd-notice" },
+  args: {
+    rgpdUrl: "https://example.com/rgpd-notice",
+    platformName: "Plateforme Fictive",
+  },
 };

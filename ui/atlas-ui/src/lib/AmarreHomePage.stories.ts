@@ -104,6 +104,24 @@ const allCompleteVariants: RequestRecordList = [
 
 const RGPD_URL = "https://example.com/rgpd-notice";
 const DOWNLOAD_URL = "/api/v1/surveys/download";
+const FAKE_BRAND = {
+  logoSrc: "https://placehold.co/240x120/0066cc/ffffff?text=Fake+Brand",
+  logoAlt: "Marque Fictive",
+  homeUrl: "/",
+  platformName: "Plateforme Fictive",
+};
+const FAKE_FOOTER_LOGOS = [
+  { src: "/fake-logos/partner-a.png", alt: "Partenaire Fictif A" },
+  { src: "/fake-logos/partner-b.png", alt: "Partenaire Fictif B" },
+  { src: "/fake-logos/partner-c.png", alt: "Partenaire Fictif C" },
+  { src: "/fake-logos/partner-d.png", alt: "Partenaire Fictif D" },
+];
+const SHARED = {
+  ...FAKE_BRAND,
+  rgpdUrl: RGPD_URL,
+  downloadUrl: DOWNLOAD_URL,
+  footerLogos: FAKE_FOOTER_LOGOS,
+};
 
 const meta = {
   title: "amarre/Pages/HomePage",
@@ -126,11 +144,10 @@ type Story = StoryObj<typeof meta>;
  * active, no Complete/Follow sections, Administrate prompts signup. */
 export const Anonymous: Story = {
   args: {
+    ...SHARED,
     userId: undefined,
     email: undefined,
     requests: [],
-    rgpdUrl: RGPD_URL,
-    downloadUrl: DOWNLOAD_URL,
   },
 };
 
@@ -138,11 +155,10 @@ export const Anonymous: Story = {
  * active, no Complete/Follow, Administrate shows logout. */
 export const AuthenticatedEmpty: Story = {
   args: {
+    ...SHARED,
     userId: "usr_demo_42",
     email: "demo@example.org",
     requests: [],
-    rgpdUrl: RGPD_URL,
-    downloadUrl: DOWNLOAD_URL,
   },
 };
 
@@ -163,10 +179,9 @@ export const AuthenticatedEmpty: Story = {
  * tiles overflow the viewport. */
 export const CompleteShowcase: Story = {
   args: {
+    ...SHARED,
     userId: "usr_demo_42",
     email: "demo@example.org",
     requests: allCompleteVariants,
-    rgpdUrl: RGPD_URL,
-    downloadUrl: DOWNLOAD_URL,
   },
 };

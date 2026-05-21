@@ -11,20 +11,32 @@
     requests: RequestRecordList;
     /** Forwarded to the nested CreateRequest modal (env-scoped per app). */
     rgpdUrl: string;
+    /** Forwarded to the nested CreateRequest modal (consumer-app name). */
+    platformName: string;
+    /** Background variant — alternation is decided by the parent page so
+     *  light/dark sections stay alternated even when conditional
+     *  sections (Complete, Follow) are missing. */
+    variant?: "light" | "dark";
   }
-  let { userId, requests, rgpdUrl }: Props = $props();
+  let {
+    userId,
+    requests,
+    rgpdUrl,
+    platformName,
+    variant = "light",
+  }: Props = $props();
   let allowingNewRequests = $derived(allowedRequestCreation(requests));
   let showHeading = $state(false);
 </script>
 
-<CreateRequest {rgpdUrl} />
+<CreateRequest {rgpdUrl} {platformName} />
 
 <div id="collaborate">
   <HorizontalScroller
     ariaLabel="Collaborate cards"
     headingText="Collaborate"
     bind:showHeading
-    variant="light"
+    {variant}
   >
     <SectionTile title={!showHeading ? "Déposer" : ""} />
     <div class="flex-shrink-0">
