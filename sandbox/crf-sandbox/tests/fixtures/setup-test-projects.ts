@@ -7,7 +7,7 @@
  * Usage: pnpm test:setup
  */
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -187,9 +187,28 @@ const TEST_PROJECTS: ProjectSetup[] = [
 ];
 
 function execMariaDB(sql: string): string {
+  // Pass the SQL as a separate argv item to `execFileSync` instead of
+  // interpolating it into a shell command. No shell is spawned, so
+  // there's no command-line-injection vector (cf. CodeQL alert #12,
+  // `js/command-line-injection`). The legacy SQL-based fixtures for
+  // generic REDCap test projects (1, 2, 5, 12) are kept here as-is ;
+  // the amarre fixtures (cf. `setupAmarreProject`) use the REDCap API
+  // exclusively, per the project's no-SQL policy.
   try {
-    const result = execSync(
-      `docker exec docker-mariadb-1 mariadb -u redcap -predcap_password redcap -N -e "${sql.replace(/"/g, '\\"')}"`,
+    const result = execFileSync(
+      'docker',
+      [
+        'exec',
+        'docker-mariadb-1',
+        'mariadb',
+        '-u',
+        'redcap',
+        '-predcap_password',
+        'redcap',
+        '-N',
+        '-e',
+        sql,
+      ],
       { encoding: 'utf-8' }
     );
     return result.trim();
