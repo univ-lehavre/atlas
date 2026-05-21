@@ -68,7 +68,11 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Merge Release PR
+        # --auto queues the merge until the 9 required checks finish on the
+        # PR (CI typically takes ~3 min). Without it, this step races the
+        # CI and fails with "the base branch policy prohibits the merge"
+        # every time main protection requires status checks.
         if: steps.changesets.outputs.pullRequestNumber
-        run: gh pr merge ${{ steps.changesets.outputs.pullRequestNumber }} --squash --delete-branch
+        run: gh pr merge ${{ steps.changesets.outputs.pullRequestNumber }} --squash --delete-branch --auto
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
