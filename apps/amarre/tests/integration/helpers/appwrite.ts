@@ -18,12 +18,26 @@ const adminConfig = {
  * Returns true when the project is reachable AND the key is accepted.
  * Used as a skip predicate at the top of the auth integration suite.
  */
+// We only treat the endpoint as a placeholder when it points at the
+// literal example.com host of `.env.example`. `includes('example.com')`
+// would also match e.g. `appwrite.example.company.io`, which CodeQL
+// flags as an incomplete URL sanitisation (`js/incomplete-url-
+// substring-sanitization`, alert #41). Comparing the parsed host
+// instead pins us to the actual placeholder.
+const isPlaceholderEndpoint = (endpoint: string): boolean => {
+  try {
+    return new URL(endpoint).hostname === 'cloud.example.com';
+  } catch {
+    return false;
+  }
+};
+
 export const isAppwriteReachable = async (): Promise<boolean> => {
   if (
     !APPWRITE_KEY ||
     APPWRITE_KEY.startsWith('<') ||
     !PUBLIC_APPWRITE_ENDPOINT ||
-    PUBLIC_APPWRITE_ENDPOINT.includes('example.com')
+    isPlaceholderEndpoint(PUBLIC_APPWRITE_ENDPOINT)
   ) {
     return false;
   }
