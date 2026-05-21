@@ -49,3 +49,22 @@ fi
 echo
 echo "==> [3/3] Running Playwright smoke (level 5)"
 pnpm test:smoke
+
+cat <<'EOF'
+
+==> Sandbox ready.
+
+  The Playwright smoke spawns its own amarre dev server and kills it on
+  exit, so http://localhost:5173 is NOT live right now. To use the app :
+
+    pnpm -F @univ-lehavre/atlas-amarre dev
+    → http://localhost:5173  (Ctrl+C to stop)
+
+  Other URLs (still up — backed by docker) :
+    - Mailpit (magic-links)    : http://localhost:8025
+    - REDCap (projet amarre)   : http://localhost:8888
+    - Appwrite console         : http://localhost:8091
+
+  Stop everything : pnpm -F @univ-lehavre/atlas-amarre-sandbox stop
+
+EOF

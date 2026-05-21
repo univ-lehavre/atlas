@@ -62,16 +62,23 @@ jq '.fields | length' data-dictionaries/127-amarre-v1.json   # ≥ 100 attendu
 
 ## Services up — URLs locales
 
-Une fois `start` joué, ces interfaces sont accessibles :
+Une fois `start` joué, les interfaces docker restent up. L'app amarre, elle, n'est **pas** servie en permanence : Playwright spawn et tue son propre dev server pour le smoke, donc à la fin de `start` le port :5173 est libre.
 
-| Service             | URL                     | Notes                                                                 |
-| ------------------- | ----------------------- | --------------------------------------------------------------------- |
-| amarre app          | <http://localhost:5173> | dev server (`pnpm -F amarre dev`, spawné par le webServer Playwright) |
-| BaaS API (Appwrite) | <http://localhost:8090> | API self-hosted (`/v1` racine)                                        |
-| BaaS console        | <http://localhost:8091> | UI Appwrite (login dans `sandbox/amarre-sandbox/.env`)                |
-| CRF (REDCap)        | <http://localhost:8888> | projet `amarre` provisionné par bootstrap-crf                         |
-| Mailpit             | <http://localhost:8025> | mail-trap : tous les magic-links atterrissent ici                     |
-| phpMyAdmin          | <http://localhost:8889> | accès direct MariaDB REDCap                                           |
+Pour utiliser l'app après `start` (ou indépendamment) :
+
+```bash
+pnpm -F @univ-lehavre/atlas-amarre dev    # Ctrl+C pour arrêter
+# → http://localhost:5173
+```
+
+| Service             | URL                     | Vie                      | Notes                                                  |
+| ------------------- | ----------------------- | ------------------------ | ------------------------------------------------------ |
+| amarre app          | <http://localhost:5173> | manuel (`pnpm -F … dev`) | dev server SvelteKit, n'est PAS spawné par `start`     |
+| BaaS API (Appwrite) | <http://localhost:8090> | docker                   | API self-hosted (`/v1` racine)                         |
+| BaaS console        | <http://localhost:8091> | docker                   | UI Appwrite (login dans `sandbox/amarre-sandbox/.env`) |
+| CRF (REDCap)        | <http://localhost:8888> | docker                   | projet `amarre` provisionné par bootstrap-crf          |
+| Mailpit             | <http://localhost:8025> | docker                   | mail-trap : tous les magic-links atterrissent ici      |
+| phpMyAdmin          | <http://localhost:8889> | docker                   | accès direct MariaDB REDCap                            |
 
 ## TL;DR
 
