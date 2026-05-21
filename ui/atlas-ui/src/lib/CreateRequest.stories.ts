@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import CreateRequest from "./CreateRequest.svelte";
 
 const meta = {
-  title: "amarre/CreateRequest",
+  title: "amarre/Modals/CreateRequest",
   component: CreateRequest,
   parameters: {
     // The whole story IS the modal content — keep it visible.

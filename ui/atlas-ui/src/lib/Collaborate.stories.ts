@@ -3,7 +3,7 @@ import Collaborate from "./Collaborate.svelte";
 import { noRequests, oneFormInProgressRequest } from "./fixtures";
 
 const meta = {
-  title: "amarre/Collaborate",
+  title: "amarre/Sections/Collaborate",
   component: Collaborate,
   parameters: {
     docs: {

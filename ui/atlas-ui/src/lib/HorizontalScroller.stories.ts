@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import HorizontalScroller from "./HorizontalScroller.svelte";
 
 const meta = {
-  title: "amarre/primitives/HorizontalScroller",
+  title: "amarre/Primitives/HorizontalScroller",
   component: HorizontalScroller,
   parameters: {
     docs: {

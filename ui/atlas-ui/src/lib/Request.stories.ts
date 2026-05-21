@@ -110,7 +110,7 @@ const enseignantInvitation: RequestRecord = {
 };
 
 const meta = {
-  title: "amarre/Request",
+  title: "amarre/Cards/Request",
   component: Request,
   parameters: {
     docs: {

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import Footer from "./Footer.svelte";
 
 const meta = {
-  title: "amarre/primitives/Footer",
+  title: "amarre/Navigation/Footer",
   component: Footer,
   parameters: {
     docs: {

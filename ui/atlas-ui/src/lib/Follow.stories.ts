@@ -67,7 +67,7 @@ const many: RequestRecordList = [
 ];
 
 const meta = {
-  title: "amarre/Follow",
+  title: "amarre/Sections/Follow",
   component: Follow,
   parameters: {
     docs: {

@@ -78,7 +78,7 @@ const many: RequestRecordList = [
 ];
 
 const meta = {
-  title: "amarre/Complete",
+  title: "amarre/Sections/Complete",
   component: Complete,
   parameters: {
     docs: {

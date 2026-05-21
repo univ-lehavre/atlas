@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import Retrieve from "./Retrieve.svelte";
 
 const meta = {
-  title: "amarre/Retrieve",
+  title: "amarre/Sections/Retrieve",
   component: Retrieve,
   parameters: {
     docs: {

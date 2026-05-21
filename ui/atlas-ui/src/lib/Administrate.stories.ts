@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import Administrate from "./Administrate.svelte";
 
 const meta = {
-  title: "amarre/Administrate",
+  title: "amarre/Sections/Administrate",
   component: Administrate,
   parameters: {
     docs: {
