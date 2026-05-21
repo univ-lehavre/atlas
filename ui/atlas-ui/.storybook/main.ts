@@ -1,8 +1,55 @@
 import type { StorybookConfig } from "@storybook/svelte-vite";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import type { Plugin } from "vite";
 
 const here = (p: string): string =>
   fileURLToPath(new URL(`./stubs/${p}`, import.meta.url));
+
+/**
+ * Storybook 10 declares `@sveltejs/vite-plugin-svelte: ^2-6` as a peer ;
+ * we run v7. vite-plugin-svelte's default include skips `node_modules`,
+ * so Storybook's internal `.svelte` / `.svelte.js` files
+ * (`PreviewRender.svelte`, `app-state-mock.svelte.js`, etc.) reach the
+ * browser uncompiled.
+ *
+ * We intercept them at the `load` hook (before Vite's import-analysis
+ * looks at them) and hand back compiled JS, then let `transform` apply
+ * the same fix to any second-pass invocation.
+ */
+const compileStorybookSvelteAssets = (): Plugin => {
+  const matches = (id: string): "module" | "component" | null => {
+    if (!id.includes("@storybook/")) return null;
+    if (id.endsWith(".svelte.js") || id.endsWith(".svelte.ts")) return "module";
+    if (id.endsWith(".svelte")) return "component";
+    return null;
+  };
+  const compile = async (
+    code: string,
+    id: string,
+    kind: "module" | "component",
+  ): Promise<{ code: string; map: import("vite").Rollup.SourceMapInput }> => {
+    const { compile: c, compileModule } = await import("svelte/compiler");
+    const result =
+      kind === "module"
+        ? compileModule(code, { filename: id, generate: "client" })
+        : c(code, { filename: id, generate: "client" });
+    return {
+      code: result.js.code,
+      map: result.js.map as import("vite").Rollup.SourceMapInput,
+    };
+  };
+  return {
+    name: "compile-storybook-svelte-assets",
+    enforce: "pre",
+    async load(id) {
+      const kind = matches(id);
+      if (!kind) return null;
+      const raw = await readFile(id, "utf-8");
+      return compile(raw, id, kind);
+    },
+  };
+};
 
 const config: StorybookConfig = {
   stories: ["../src/lib/**/*.stories.@(ts|svelte)"],
@@ -12,11 +59,11 @@ const config: StorybookConfig = {
   },
   // Components depend on a handful of SvelteKit-scoped modules. We're
   // running plain `@storybook/svelte-vite` (not the SvelteKit framework)
-  // to dodge the vite-plugin-svelte v7 peer-dep mismatch, so we stub
-  // those imports with minimal local versions in `./stubs/`. The
-  // contract used by the components is read-only (`resolve` returns
+  // so we stub those imports with minimal local versions in `./stubs/`.
+  // The contract used by the components is read-only (`resolve` returns
   // the path, `enhance` is a no-op) — enough for visual review.
   viteFinal: async (cfg) => {
+    cfg.plugins = [compileStorybookSvelteAssets(), ...(cfg.plugins ?? [])];
     cfg.resolve = {
       ...cfg.resolve,
       alias: {

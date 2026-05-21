@@ -110,6 +110,13 @@
     },
     "cli/net": {
       "project": ["src/**/*.ts"]
+    },
+    "ui/atlas-ui": {
+      "project": ["src/**/*.{ts,svelte}", ".storybook/**/*.ts"],
+      "ignore": [
+        ".storybook/stubs/app-forms.ts",
+        ".storybook/stubs/app-paths.ts"
+      ]
     }
   },
   "ignoreDependencies": [
