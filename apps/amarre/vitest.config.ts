@@ -31,14 +31,12 @@ export default mergeConfig(
         // tracks files in `include`, and shared-config defaults to
         // ts/tsx/js/jsx only).
         include: ['src/**/*.{ts,tsx,js,jsx,svelte}'],
-        // Adding the .svelte files surfaced a lot of conditional branches
-        // in components the level-1 suite doesn't cover yet (Collaborate,
-        // Footer, MainTitle, HorizontalScroller, etc.). We lower the
-        // branches threshold from 52 → 40 to absorb that without masking
-        // the gain on statements/functions/lines (which all went up
-        // thanks to the new UI tests). The threshold will be raised
-        // again as level-1 coverage expands to those components.
-        thresholds: { statements: 42, branches: 40, functions: 36, lines: 43 },
+        // Re-baselined after the 15 UI components moved to
+        // @univ-lehavre/atlas-ui. The denominator dropped (no more
+        // src/lib/ui/ tree) so absolute % shifted. The remaining amarre
+        // code is mostly routes + services. Raise these as those layers
+        // get more covered.
+        thresholds: { statements: 50, branches: 60, functions: 32, lines: 54 },
       }),
       projects: [
         {
