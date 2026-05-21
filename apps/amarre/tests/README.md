@@ -4,14 +4,14 @@ L'app `amarre` (SvelteKit + Appwrite + REDCap) est couverte par une pyramide à 
 
 ## Pyramide
 
-| #   | Niveau                                           | Où                                                                                                                    | Framework                                                             | Prérequis                       |
-| --- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------- |
-| 1   | UI amarre (composants + affichage conditionnel)  | `apps/amarre/tests/ui/`                                                                                               | Vitest + happy-dom + `@testing-library/svelte`                        | aucun                           |
-| 1   | Unit / API / services serveur                    | `apps/amarre/tests/{lib,routes,server,integration,utils}/`                                                            | Vitest (node env)                                                     | aucun                           |
-| 2   | REDCap seul (contract amarre + OpenAPI strict)   | [sandbox/crf-sandbox/tests/contract-amarre/](../../../sandbox/crf-sandbox/tests/contract-amarre/) _(à venir)_         | Vitest + `ajv` + [packages/crf-client](../../../packages/crf-client/) | REDCap docker                   |
-| 3   | amarre + REDCap (services serveur, sans browser) | `apps/amarre/tests/integration/crf/`                                                                                  | Vitest (node env, self-skip)                                          | REDCap + bootstrap-crf          |
-| 4   | amarre + Appwrite (magic-link API-only)          | [sandbox/amarre-sandbox/tests/integration/auth/](../../../sandbox/amarre-sandbox/tests/integration/auth/) _(à venir)_ | Vitest + Mailpit                                                      | Appwrite + Mailpit + amarre dev |
-| 5   | Smoke E2E browser final                          | [sandbox/amarre-sandbox/tests/e2e/](../../../sandbox/amarre-sandbox/tests/e2e/) _(à venir)_                           | `@playwright/test`                                                    | stack complète (`pnpm start`)   |
+| #   | Niveau                                           | Où                                                                                                            | Framework                                                             | Prérequis                     |
+| --- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ----------------------------- |
+| 1   | UI amarre (composants + affichage conditionnel)  | `apps/amarre/tests/ui/`                                                                                       | Vitest + happy-dom + `@testing-library/svelte`                        | aucun                         |
+| 1   | Unit / API / services serveur                    | `apps/amarre/tests/{lib,routes,server,integration,utils}/`                                                    | Vitest (node env)                                                     | aucun                         |
+| 2   | REDCap seul (contract amarre + OpenAPI strict)   | [sandbox/crf-sandbox/tests/contract-amarre/](../../../sandbox/crf-sandbox/tests/contract-amarre/) _(à venir)_ | Vitest + `ajv` + [packages/crf-client](../../../packages/crf-client/) | REDCap docker                 |
+| 3   | amarre + REDCap (services serveur, sans browser) | `apps/amarre/tests/integration/crf/`                                                                          | Vitest (node env, self-skip)                                          | REDCap + bootstrap-crf        |
+| 4   | amarre + Appwrite (magic-link API-only)          | `apps/amarre/tests/integration/auth/`                                                                         | Vitest (node env, self-skip)                                          | Appwrite + Mailpit            |
+| 5   | Smoke E2E browser final                          | [sandbox/amarre-sandbox/tests/e2e/](../../../sandbox/amarre-sandbox/tests/e2e/) _(à venir)_                   | `@playwright/test`                                                    | stack complète (`pnpm start`) |
 
 Le plan global est dans `.claude/plans/j-aimerais-que-tu-audites-compiled-glade.md`. La phase A (présente PR) ne livre que le niveau 1.
 
@@ -32,9 +32,13 @@ tests/
 ├── lib/                       ← niveau 1, environment=node
 ├── routes/                    ←  "
 ├── server/                    ←  "
-├── integration/               ← niveau 3 (amarre × REDCap, self-skip)
-│   ├── crf/surveys.test.ts    ← appelle directement $lib/server/services/surveys
-│   ├── helpers/redcap.ts      ← reachability + cleanup, partagé
+├── integration/               ← niveaux 3 & 4 (self-skip selon stack)
+│   ├── crf/surveys.test.ts    ← niveau 3 (amarre × REDCap)
+│   ├── auth/signup.test.ts    ← niveau 4 (amarre × Appwrite × Mailpit)
+│   ├── helpers/
+│   │   ├── redcap.ts          ← reachability + cleanup REDCap
+│   │   ├── appwrite.ts        ← reachability + cleanup Appwrite users
+│   │   └── mailpit.ts         ← polling magic-link emails, extract userId/secret
 │   └── drift-detection.test.ts ← utilitaire interne, sans réseau
 ├── utils/                     ←  "
 └── hooks.server.test.ts       ←  "
