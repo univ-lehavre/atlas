@@ -6,10 +6,13 @@
 #                                 the amarre dev server via webServer)
 #
 # Environment knobs :
-#   SEED_MODE=fake|prod|none  (default: fake)
-#       fake  → 120 synthetic records via @faker-js/faker
-#       prod  → pull real records from PROD_CRF_URL/PROD_CRF_TOKEN
-#       none  → skip data population
+#   SEED_MODE=fake|prod|none  (auto-detected, see below)
+#       prod  → pull real records from PROD_CRF_URL/PROD_CRF_TOKEN.
+#               Auto-selected when both are set in .env / .env.prod.
+#       fake  → 120 synthetic records via @faker-js/faker.
+#               Fallback when prod credentials aren't available.
+#       none  → skip data population entirely.
+#       Set SEED_MODE explicitly to override the auto-detection.
 #   SKIP_E2E=1                Skip the final smoke test.
 
 set -euo pipefail

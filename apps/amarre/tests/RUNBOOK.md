@@ -239,20 +239,30 @@ Artefacts : `sandbox/amarre-sandbox/playwright-report/` (HTML reporter) + `test-
 | [helpers/mailpit.ts](./integration/helpers/mailpit.ts)                                                                             | `isMailpitReachable`, `purgeMailpit`, `pollForMessage`, `extractMagicLinkParams` |
 | [fixtures/users.ts](./fixtures/users.ts), [fixtures/requests.ts](./fixtures/requests.ts), [fixtures/forms.ts](./fixtures/forms.ts) | Payloads typés partagés entre niveaux 1 et 3/4                                   |
 
-## Données réelles (préchargement depuis la prod)
+## Données réelles vs fake (auto-détection)
 
-Par défaut le sandbox seed 120 records synthétiques (`@faker-js/faker`, locale `fr`). Pour bosser avec les **vrais records de la prod** :
+Au lancement du `start`, le bootstrap **auto-détecte** quel mode de seed appliquer :
+
+- **`PROD_CRF_URL` + `PROD_CRF_TOKEN` set** (dans `.env` ou `.env.prod`) → `SEED_MODE=prod` : pull les vrais records de la prod.
+- **Sinon** → `SEED_MODE=fake` : 120 records synthétiques via `@faker-js/faker` (locale `fr`).
+
+Le mode choisi est affiché dans la sortie (`==> Detected PROD_CRF_* credentials → SEED_MODE=prod` ou `==> No PROD_CRF_* credentials → SEED_MODE=fake`). Pour **forcer** un mode :
 
 ```bash
-# 1. Créer .env.prod (gitignoré, persiste à travers les docker:reset)
+SEED_MODE=fake pnpm -F @univ-lehavre/atlas-amarre-sandbox start    # force fake même avec creds prod
+SEED_MODE=none pnpm -F @univ-lehavre/atlas-amarre-sandbox start    # skip le seed
+SEED_MODE=prod pnpm -F @univ-lehavre/atlas-amarre-sandbox start    # exige les creds (échoue sinon)
+```
+
+### Configurer le mode prod
+
+```bash
+# .env.prod (gitignoré, persiste à travers les docker:reset)
 cd sandbox/amarre-sandbox
 cp .env.prod.example .env.prod
 # Éditer :
 #   PROD_CRF_URL=https://redcap.univ-lehavre.fr/api/      # /api/ final obligatoire
 #   PROD_CRF_TOKEN=<token amarre prod>                    # demander à un admin REDCap
-
-# 2. Lancer la stack en mode prod
-SEED_MODE=prod pnpm -F @univ-lehavre/atlas-amarre-sandbox start
 ```
 
 Le bootstrap appelle [`pull-from-prod.ts`](../../../sandbox/amarre-sandbox/scripts/pull-from-prod.ts) qui :
@@ -276,12 +286,27 @@ pnpm -F @univ-lehavre/atlas-amarre-sandbox pull:prod --yes  # non-interactif
 - **URL prod** : doit inclure le `/api/` final (REDCap exige le path d'API).
 - **Champs supplémentaires en prod** : si la trame prod a évolué sans MAJ de `data-dictionaries/127-amarre-v1.json`, les nouveaux champs sont droppés silencieusement à l'import (warn dans les logs). Le N2 (contract) catche ça.
 
+## Intégration des 5 niveaux dans pre-commit / pre-push / CI
+
+| Niveau                | pre-commit |   pre-push   |  CI GitHub   | Comment                                                                                                                                                                          |
+| --------------------- | :--------: | :----------: | :----------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 — unit              |     ❌     |      ✅      |      ✅      | inclus via `pnpm test:coverage` (turbo → project `unit` de Vitest)                                                                                                               |
+| 1 — UI                |     ❌     |      ✅      |      ✅      | idem via project `ui` (happy-dom)                                                                                                                                                |
+| 2 — contract amarre   |     ❌     |      ❌      |      ❌      | **explicitement exclu** par [vitest.config.ts](../../../sandbox/crf-sandbox/vitest.config.ts) du crf-sandbox (REDCap docker requis). Lancement manuel via `test:contract:amarre` |
+| 3 — amarre × REDCap   |     ❌     | ✅ self-skip | ✅ self-skip | inclus via project `integration` mais `describe.skipIf(!reachable)` — REDCap pas joignable en pre-push ni en CI → skip silencieux                                                |
+| 4 — amarre × Appwrite |     ❌     | ✅ self-skip | ✅ self-skip | idem N3                                                                                                                                                                          |
+| 5 — Playwright smoke  |     ❌     |      ❌      |      ❌      | aucun rattachement automatique. Lancement manuel via `test:smoke`                                                                                                                |
+
+**En clair** : seul le niveau 1 (~85 tests) protège réellement les PRs en automatique. Les niveaux 3 et 4 sont _présents_ mais skipped en pipeline, les niveaux 2 et 5 sont totalement absents — une régression N2/N5 ne sera attrapée que par un dev qui pense à lancer la suite localement avec la stack up.
+
+Brancher N2-N5 sur pre-push / CI est un chantier listé dans [TODO.md](../../../TODO.md) (« Brancher les niveaux 2 à 5 d'amarre sur pre-push »). Trade-off : ~5 min ajoutés au job CI pour démarrer la stack docker complète, vs vraie couverture pyramide.
+
 ## Reset complet (en cas de doute)
 
 ```bash
 pnpm -F @univ-lehavre/atlas-amarre-sandbox docker:reset    # tue + volumes
 pnpm -F atlas-crf-sandbox docker:reset                     # idem côté crf (si N2 utilisé indépendamment)
-pnpm -F @univ-lehavre/atlas-amarre-sandbox start           # repart de zéro (fake data par défaut)
+pnpm -F @univ-lehavre/atlas-amarre-sandbox start           # repart de zéro (auto fake/prod selon creds)
 ```
 
-`.env.prod` survit au reset → un `SEED_MODE=prod pnpm -F …amarre-sandbox start` repart immédiatement avec les vraies données.
+`.env.prod` survit au reset → tes credentials prod persistent et le seed prod redémarre automatiquement.
