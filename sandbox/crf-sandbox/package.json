@@ -22,6 +22,7 @@
     "docker:install": "./scripts/install-crf.sh",
     "test:setup": "tsx tests/fixtures/setup-test-projects.ts",
     "test:contract": "./scripts/test-contract.sh",
+    "test:contract:amarre": "vitest run --config vitest.contract.config.ts tests/contract-amarre",
     "test:docker": "pnpm docker:reset && pnpm docker:install && pnpm test:setup && pnpm test:contract",
     "test:security": "./scripts/test-security.sh",
     "test:api": "tsx tests/api-smoke.ts",
