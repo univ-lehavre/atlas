@@ -101,7 +101,15 @@ test.describe("amarre smoke — full stack", () => {
     const createResponse = await page.request.post("/api/v1/surveys/new", {
       data: {},
     });
-    expect(createResponse.ok()).toBe(true);
+    if (!createResponse.ok()) {
+      // Surface what REDCap (or the amarre handler) actually returned —
+      // the bare `expect(ok).toBe(true)` makes debugging schema drifts
+      // way harder than necessary.
+      const body = await createResponse.text().catch(() => "<unreadable>");
+      throw new Error(
+        `POST /api/v1/surveys/new failed : HTTP ${createResponse.status()}\n${body}`,
+      );
+    }
 
     // ---- 6. Reload, verify Compléter renders ----
     await page.reload();
