@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/sveltekit";
+import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import Administrate from "./Administrate.svelte";
 
 const meta = {

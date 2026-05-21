@@ -1,6 +1,10 @@
 {
-  "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"],
     "allowJs": true,
     "checkJs": true,
     "esModuleInterop": true,
@@ -9,9 +13,10 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "moduleResolution": "bundler",
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true
+    "exactOptionalPropertyTypes": true,
+    "isolatedModules": true
   },
-  "exclude": ["vite.config.ts"]
+  "include": ["src/**/*", ".storybook/**/*"],
+  "exclude": ["node_modules", "storybook-static"]
 }

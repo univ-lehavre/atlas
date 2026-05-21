@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/sveltekit";
+import type { Meta, StoryObj } from "@storybook/svelte-vite";
 import Complete from "./Complete.svelte";
 import { mixedRequests, noRequests, oneIncompleteRequest } from "./fixtures";
 

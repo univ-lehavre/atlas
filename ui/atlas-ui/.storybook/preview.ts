@@ -1,4 +1,4 @@
-import type { Preview } from "@storybook/sveltekit";
+import type { Preview } from "@storybook/svelte-vite";
 
 // Pulled from the package's own dependencies — same version as every
 // consumer app, no CDN drift. Bump `bootstrap` in
