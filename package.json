@@ -50,7 +50,7 @@
     "crf:dictionaries:export": "tsx scripts/crf-trame/export-data-dictionaries.ts",
     "crf:fixtures:generate": "tsx scripts/crf-trame/generate-test-fixtures.ts",
     "others": "git -C . ls-files --others | grep -v -e 'node_modules' -e '.svelte-kit' ",
-    "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json' 'apps/*/tests/baselines/*.json' 'docs/.vitepress/dist' 'docs/.vitepress/.temp' 'docs/.vitepress/vite-ssg-*.json'",
+    "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json' 'docs/.vitepress/dist' 'docs/.vitepress/.temp' 'docs/.vitepress/vite-ssg-*.json'",
     "prepare": "lefthook install"
   },
   "size-limit": [

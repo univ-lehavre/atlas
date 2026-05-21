@@ -2,9 +2,8 @@
 # Full zero-touch sandbox setup :
 #   1. docker compose up -d
 #   2. ./scripts/bootstrap.sh    (provisions BaaS + CRF + seed + .env.local)
-#   3. pnpm test:e2e             (validates the magic-link flow end-to-end;
-#                                 the script spawns the amarre dev server
-#                                 itself and kills it on exit)
+#   3. pnpm test:smoke           (Playwright level-5 smoke ; auto-spawns
+#                                 the amarre dev server via webServer)
 #
 # Environment knobs :
 #   SEED_MODE=fake|prod|none  (default: fake)
@@ -45,5 +44,5 @@ if [ "${SKIP_E2E:-0}" = "1" ]; then
 fi
 
 echo
-echo "==> [3/3] Running E2E magic-link smoke test"
-pnpm test:e2e
+echo "==> [3/3] Running Playwright smoke (level 5)"
+pnpm test:smoke

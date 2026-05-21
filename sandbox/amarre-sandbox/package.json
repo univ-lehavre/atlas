@@ -28,10 +28,6 @@
     "pull:prod": "tsx scripts/pull-from-prod.ts",
     "test:smoke": "playwright test",
     "test:smoke:headed": "playwright test --headed",
-    "test:e2e": "tsx scripts/test-e2e.ts",
-    "test:e2e:ui": "tsx scripts/test-e2e-ui.ts",
-    "test:e2e:baas": "tsx scripts/test-e2e-baas.ts",
-    "test:e2e:baas:ui": "tsx scripts/test-e2e-baas-ui.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
