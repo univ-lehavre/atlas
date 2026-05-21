@@ -23,17 +23,56 @@ const base: RequestRecord = {
   validation_finale_complete: "0",
 };
 
-const invitationAwaiting: RequestRecord = {
+// All records below have `validation_finale_complete !== '2'` so they
+// land in the Complete section (amarre's "incomplete" filter). They
+// span every branch Request.svelte renders : the new-draft fallback,
+// invitation flow at three signature stages, voyage flow for two
+// statuts, and the enseignant special case.
+
+const blankDraft: RequestRecord = {
   ...base,
-  record_id: "fake-invitation-await",
+  record_id: "fake-draft",
+  form_complete: "0",
+  invitation_type: "",
+  mobilite_type: "",
+  form: "https://example.com/forms/fake-draft",
+};
+
+const invitationFormInProgress: RequestRecord = {
+  ...base,
+  record_id: "fake-inv-form",
+  invite_nom: "Personne Fictive A",
+  invitation_type: "2",
+  mobilite_universite_gu8: "Université Fictive Alpha",
+  form_complete: "0",
+  form: "https://example.com/forms/fake-inv-form",
+};
+
+const invitationAwaitingComposante: RequestRecord = {
+  ...base,
+  record_id: "fake-inv-await",
   invite_nom: "Personne Fictive A",
   invitation_type: "2",
   mobilite_universite_gu8: "Université Fictive Alpha",
 };
 
-const voyageReadyForFinal: RequestRecord = {
+const invitationReadyForFinal: RequestRecord = {
+  ...invitationAwaitingComposante,
+  record_id: "fake-inv-ready",
+  demandeur_composante_complete: "2",
+  validation_finale: "https://example.com/forms/fake-inv-final",
+};
+
+const voyageEtudiantAwaiting: RequestRecord = {
   ...base,
-  record_id: "fake-voyage-ready",
+  record_id: "fake-voyage-etu",
+  mobilite_type: "2",
+  mobilite_universite_eunicoast: "Université Fictive Bravo",
+};
+
+const voyageOtherReadyForFinal: RequestRecord = {
+  ...base,
+  record_id: "fake-voyage-other",
   demandeur_statut: "3",
   mobilite_type: "2",
   invitation_type: "",
@@ -43,21 +82,24 @@ const voyageReadyForFinal: RequestRecord = {
   validation_finale: "https://example.com/forms/fake-voyage-final",
 };
 
-const fullyValidated: RequestRecord = {
+const enseignantInvitation: RequestRecord = {
   ...base,
-  record_id: "fake-validated",
+  record_id: "fake-enseignant",
+  demandeur_statut: "2",
   invite_nom: "Personne Fictive B",
-  invitation_type: "2",
-  mobilite_universite_gu8: "Université Fictive Alpha",
+  invitation_type: "1",
+  mobilite_universite_autre: "Université Fictive Delta",
   demandeur_composante_complete: "2",
-  labo_complete: "2",
-  validation_finale_complete: "2",
 };
 
-const allStates: RequestRecordList = [
-  invitationAwaiting,
-  voyageReadyForFinal,
-  fullyValidated,
+const allCompleteVariants: RequestRecordList = [
+  blankDraft,
+  invitationFormInProgress,
+  invitationAwaitingComposante,
+  invitationReadyForFinal,
+  voyageEtudiantAwaiting,
+  voyageOtherReadyForFinal,
+  enseignantInvitation,
 ];
 
 const RGPD_URL = "https://example.com/rgpd-notice";
@@ -104,38 +146,26 @@ export const AuthenticatedEmpty: Story = {
   },
 };
 
-/** Authenticated user with only in-progress requests — Complete shown,
- * Follow hidden. TopNavbar reflects via `hasIncompleteRequests`. */
-export const AuthenticatedIncompleteOnly: Story = {
+/** Compléter showcase — authenticated user whose Complete section
+ * holds one card per Request.svelte rendering branch :
+ *
+ *   1. Blank draft (no flow chosen yet, form unfilled).
+ *   2. Invitation, form in progress.
+ *   3. Invitation, awaiting composante's signature.
+ *   4. Invitation, ready for the user's final validation.
+ *   5. Voyage by an étudiant, awaiting labo.
+ *   6. Voyage by an autre statut, ready for final validation.
+ *   7. Enseignant inviting (composanteShouldSign fires for any
+ *      invitation type).
+ *
+ * Use this story to compare side-by-side how Request renders every
+ * progress state. The Complete scroller scrolls horizontally once the
+ * tiles overflow the viewport. */
+export const CompleteShowcase: Story = {
   args: {
     userId: "usr_demo_42",
     email: "demo@example.org",
-    requests: [invitationAwaiting, voyageReadyForFinal],
-    rgpdUrl: RGPD_URL,
-    downloadUrl: DOWNLOAD_URL,
-  },
-};
-
-/** Authenticated user with only fully-validated requests — Follow
- * shown, Complete hidden. */
-export const AuthenticatedFollowOnly: Story = {
-  args: {
-    userId: "usr_demo_42",
-    email: "demo@example.org",
-    requests: [fullyValidated],
-    rgpdUrl: RGPD_URL,
-    downloadUrl: DOWNLOAD_URL,
-  },
-};
-
-/** Authenticated user with a mix of all three states — every section
- * visible, TopNavbar shows all tabs. Best frame to compare the visual
- * cohesion of the home end-to-end. */
-export const AuthenticatedMixed: Story = {
-  args: {
-    userId: "usr_demo_42",
-    email: "demo@example.org",
-    requests: allStates,
+    requests: allCompleteVariants,
     rgpdUrl: RGPD_URL,
     downloadUrl: DOWNLOAD_URL,
   },
