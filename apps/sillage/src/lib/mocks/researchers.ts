@@ -24,41 +24,41 @@ type AnonymousResearcherList = readonly AnonymousResearcher[];
  * so each fictional researcher keeps the same face every time they
  * appear.
  *
- * Will be replaced (phase 6) by a server-side load that reads REDCap
- * records, filters those with `data_audience === "General public"` and
- * `identification_level === "Identifiable"`, and maps them to this
+ * Will be replaced (later phase) by a server-side load that reads
+ * REDCap records, filters those with `data_audience === "General public"`
+ * and `identification_level === "Identifiable"`, and maps them to this
  * shape.
  */
 const bios = [
-  'Océanographie côtière, modélisation des polluants émergents.',
-  'Linguistique de corpus, variation diatopique des langues romanes.',
-  'Histoire maritime contemporaine, archives portuaires.',
-  'Génie côtier, érosion et défense des littoraux artificialisés.',
-  'Économie portuaire, chaînes logistiques et résilience.',
-  'Sociologie des publics, médiation scientifique et patrimoine.',
-  'Physique des matériaux, alliages haute performance.',
-  'Droit maritime, contentieux et conventions internationales.',
-  'Écologie marine, biodiversité des estuaires.',
-  'Géographie urbaine, mutations des villes-ports.',
-  'Sciences politiques, gouvernance des espaces maritimes.',
-  'Hydrodynamique, sédimentation des fleuves côtiers.',
-  'Anthropologie maritime, rituels et savoirs des gens de mer.',
-  'Chimie de l’environnement, traceurs isotopiques.',
-  'Architecture portuaire, patrimoine industriel reconverti.',
-  'Climatologie, séries longues et trajectoires littorales.',
-  'Pêche durable, dynamique des stocks et politiques publiques.',
-  'Robotique sous-marine, capteurs autonomes.',
-  'Littérature maritime, imaginaires et récits du large.',
-  'Toxicologie marine, micropolluants et organismes sentinelles.',
-  'Tourisme côtier, mutations sociales et économiques.',
-  'Géopolitique, conflits et coopérations maritimes.',
-  'Aquaculture, élevages durables et bien-être animal.',
-  'Énergies marines renouvelables, intégration territoriale.',
+  'Coastal oceanography, modelling of emerging pollutants.',
+  'Corpus linguistics, diatopic variation in Romance languages.',
+  'Contemporary maritime history, port archives.',
+  'Coastal engineering, erosion and defence of engineered shorelines.',
+  'Port economics, supply chains and resilience.',
+  'Sociology of audiences, science communication and heritage.',
+  'Materials physics, high-performance alloys.',
+  'Maritime law, disputes and international conventions.',
+  'Marine ecology, biodiversity of estuaries.',
+  'Urban geography, transformations of port cities.',
+  'Political science, governance of maritime spaces.',
+  'Hydrodynamics, sedimentation of coastal rivers.',
+  'Maritime anthropology, rituals and knowledge of seafarers.',
+  'Environmental chemistry, isotopic tracers.',
+  'Port architecture, reconverted industrial heritage.',
+  'Climatology, long series and shoreline trajectories.',
+  'Sustainable fisheries, stock dynamics and public policy.',
+  'Underwater robotics, autonomous sensors.',
+  'Maritime literature, imaginaries and tales of the open sea.',
+  'Marine toxicology, micropollutants and sentinel organisms.',
+  'Coastal tourism, social and economic shifts.',
+  'Geopolitics, maritime conflicts and cooperation.',
+  'Aquaculture, sustainable farming and animal welfare.',
+  'Marine renewable energy, territorial integration.',
 ];
 
 export const mockResearcherPool: AnonymousResearcherList = bios.map((bio, i) => ({
   id: `rsr-${i + 1}`,
-  fullName: `Personne Fictive ${String.fromCharCode(65 + (i % 26))}${i + 1}`,
+  fullName: `Fictional Person ${String.fromCharCode(65 + (i % 26))}${i + 1}`,
   photoUrl: `https://i.pravatar.cc/300?u=sillage-rsr-${i + 1}`,
   bio,
 }));

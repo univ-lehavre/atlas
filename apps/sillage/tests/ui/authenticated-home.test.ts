@@ -34,13 +34,13 @@ const questionnaires = [
 describe('<AuthenticatedHome>', () => {
   it('renders the welcome heading with greetingName when provided', () => {
     const { container } = render(AuthenticatedHome, {
-      greetingName: 'Personne Fictive',
+      greetingName: 'Fictional Person',
       projects,
       questionnaires,
     });
     const heading = container.querySelector('.welcome h1');
-    expect(heading?.textContent).toContain('Bonjour');
-    expect(heading?.textContent).toContain('Personne Fictive');
+    expect(heading?.textContent).toContain('Welcome');
+    expect(heading?.textContent).toContain('Fictional Person');
   });
 
   it('renders the welcome heading without name when greetingName is absent', () => {
@@ -49,7 +49,7 @@ describe('<AuthenticatedHome>', () => {
       questionnaires,
     });
     const heading = container.querySelector('.welcome h1');
-    expect(heading?.textContent).toContain('Bonjour');
+    expect(heading?.textContent).toContain('Welcome');
     expect(heading?.querySelector('span')).toBeNull();
   });
 
@@ -71,13 +71,11 @@ describe('<AuthenticatedHome>', () => {
     });
     // Active entries render an <a class="invite-link">, disabled ones a div.
     const activeCtas = container.querySelectorAll(
-      'section[aria-label="Et vos déclarations ?"] a.invite-link'
+      'section[aria-label="Your contribution"] a.invite-link'
     );
     expect(activeCtas).toHaveLength(1);
     // Disabled entries are listed but rendered as a non-clickable div.
-    const allCards = container.querySelectorAll(
-      'section[aria-label="Et vos déclarations ?"] li .card'
-    );
+    const allCards = container.querySelectorAll('section[aria-label="Your contribution"] li .card');
     expect(allCards).toHaveLength(questionnaires.length);
   });
 });

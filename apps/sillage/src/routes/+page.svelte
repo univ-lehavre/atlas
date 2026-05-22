@@ -37,7 +37,7 @@
 {#if data.userId}
   <AuthenticatedHome {greetingName} projects={data.projects} questionnaires={data.questionnaires} />
   <div class="logout-bar">
-    <button type="button" class="logout" onclick={handleLogout}> Se déconnecter </button>
+    <button type="button" class="logout" onclick={handleLogout}> Log out </button>
   </div>
 {:else}
   <AnonymousHome

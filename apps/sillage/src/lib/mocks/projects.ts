@@ -1,12 +1,12 @@
 /**
- * Mock project snapshots for the authenticated homepage carousel.
+ * Mock project snapshots used as a development fallback for the
+ * authenticated homepage carousel.
  *
- * Will be replaced (phase 6+) by a server-side read of an actual
- * snapshot index (probably from services/cahier-reports/ once the
- * Quarto pipeline is wired). Until then : 12 fictive projects inspired
- * by the disciplines surfaced in the trombinoscope, shuffled in
- * `+page.server.ts` so each authenticated visit gets a different
- * trio at the top.
+ * **Not the source of truth** — projects are meant to be read from
+ * REDCap (project_proposal instrument, records where
+ * `project_proposal_complete = 2`). This pool is the fallback when
+ * REDCap is empty or unreachable, and it powers Storybook stories +
+ * vitest UI tests.
  *
  * Shape mirrored from `@univ-lehavre/atlas-ui` (ProjectSnapshot).
  * Inlined to avoid pulling the barrel import — see the comment in
@@ -26,132 +26,133 @@ type ProjectSnapshotList = readonly ProjectSnapshot[];
 
 export const mockProjectPool: ProjectSnapshotList = [
   {
-    id: 'proj-portspeche',
-    title: 'Mutations des ports de pêche normands',
-    lead: 'Chaînes logistiques entre Dieppe, Fécamp et Cherbourg',
+    id: 'proj-fishports',
+    title: 'Shifting Norman fishing ports',
+    lead: 'Supply chains across Dieppe, Fécamp and Cherbourg',
     abstract:
-      "Une enquête de terrain sur les recompositions économiques observées entre 2015 et 2023 dans trois ports normands. L'étude croise relevés statistiques, entretiens semi-directifs et cartographie des flux.",
-    tags: ['Économie', 'Géographie', 'Ports'],
+      'A field survey of the economic shifts seen between 2015 and 2023 in three Norman ports. The study weaves together statistical records, semi-structured interviews and flow mapping.',
+    tags: ['Economics', 'Geography', 'Ports'],
     date: '2024-03-12',
-    href: '/coming-soon?project=portspeche',
+    href: '/coming-soon?project=fishports',
   },
   {
-    id: 'proj-micropolluants',
-    title: 'Cartographie des micropolluants côtiers',
-    lead: 'Sentinelles biologiques le long de la Manche orientale',
+    id: 'proj-micropollutants',
+    title: 'Mapping coastal micropollutants',
+    lead: 'Biological sentinels along the eastern Channel',
     abstract:
-      'Échantillonnage saisonnier de bivalves et de poissons benthiques le long de la côte havraise. Corrélation entre pics de présence et rejets industriels documentés.',
-    tags: ['Écotoxicologie', 'Littoral'],
+      'Seasonal sampling of bivalves and benthic fish along the Le Havre coastline. The analysis seeks to correlate concentration peaks with documented industrial discharges.',
+    tags: ['Ecotoxicology', 'Coastline'],
     date: '2024-06-05',
-    href: '/coming-soon?project=micropolluants',
+    href: '/coming-soon?project=micropollutants',
   },
   {
-    id: 'proj-chantiers',
-    title: 'Mémoire ouvrière des chantiers navals',
-    lead: 'Archives orales d’anciens salariés du Trait',
+    id: 'proj-shipyards',
+    title: 'Workers’ memory of the shipyards',
+    lead: 'Oral archives from former employees of Le Trait',
     abstract:
-      "Constitution d'un corpus d'entretiens et de photographies sur la fin des chantiers de la basse-Seine. Le projet articule histoire industrielle, anthropologie et patrimoine matériel.",
-    tags: ['Histoire', 'Patrimoine', 'Anthropologie'],
+      'A corpus of interviews and photographs gathered around the end of the lower Seine shipyards. The project weaves industrial history, anthropology and tangible heritage.',
+    tags: ['History', 'Heritage', 'Anthropology'],
     date: '2025-01-20',
-    href: '/coming-soon?project=chantiers',
+    href: '/coming-soon?project=shipyards',
   },
   {
     id: 'proj-erosion',
-    title: 'Érosion accélérée des falaises de craie',
-    lead: 'Cap d’Ailly à Étretat : 30 ans de recul',
+    title: 'Accelerated erosion of the chalk cliffs',
+    lead: 'From Cap d’Ailly to Étretat: thirty years of retreat',
     abstract:
-      'Reconstitution diachronique des fronts de falaise à partir de photographies aériennes IGN. Modélisation des paramètres météo et lithologiques expliquant les bonds d’érosion.',
-    tags: ['Géomorphologie', 'Climat'],
+      'Diachronic reconstruction of the cliff face from IGN aerial photographs. Modelling of the meteorological and lithological parameters that account for the erosion bursts.',
+    tags: ['Geomorphology', 'Climate'],
     date: '2024-09-18',
     href: '/coming-soon?project=erosion',
   },
   {
-    id: 'proj-eolien',
-    title: "Acceptabilité sociale de l'éolien offshore",
-    lead: 'Enquête mixte autour du parc de Fécamp',
+    id: 'proj-offshore-wind',
+    title: 'Social acceptance of offshore wind',
+    lead: 'A mixed-methods survey around the Fécamp wind farm',
     abstract:
-      "Combinaison d'une enquête par questionnaire (800 répondants) et d'entretiens auprès des associations locales. Cartographie des positions selon catégories sociales et exposition visuelle.",
-    tags: ['Sociologie', 'Énergie'],
+      'Combines a survey (800 respondents) with interviews of local associations. Mapping of positions across social categories and visual exposure.',
+    tags: ['Sociology', 'Energy'],
     date: '2024-11-02',
-    href: '/coming-soon?project=eolien',
+    href: '/coming-soon?project=offshore-wind',
   },
   {
-    id: 'proj-langues',
-    title: 'Variation diatopique du normand maritime',
-    lead: 'Corpus oral de pêcheurs retraités',
+    id: 'proj-norman-language',
+    title: 'Diatopic variation of maritime Norman',
+    lead: 'Spoken corpus from retired fishermen',
     abstract:
-      "Enregistrement et transcription d'entretiens libres avec d'anciens pêcheurs des trois grands ports. Analyse lexicale des nominations d'espèces et de manœuvres.",
-    tags: ['Linguistique', 'Patrimoine immatériel'],
+      'Recording and transcription of open-ended interviews with retired fishermen from the three main ports. Lexical analysis of the names given to species and to fishing manoeuvres.',
+    tags: ['Linguistics', 'Intangible heritage'],
     date: '2023-12-08',
-    href: '/coming-soon?project=langues',
+    href: '/coming-soon?project=norman-language',
   },
   {
-    id: 'proj-droit',
-    title: 'Contentieux du droit maritime contemporain',
-    lead: 'Convention de Rotterdam : dix ans après',
+    id: 'proj-maritime-law',
+    title: 'Contemporary maritime-law disputes',
+    lead: 'The Rotterdam Rules, ten years on',
     abstract:
-      "Recensement des affaires portées devant les tribunaux français impliquant la Convention. Analyse des points d'achoppement entre transporteurs et chargeurs.",
-    tags: ['Droit', 'International'],
+      'Survey of French court cases citing the Convention. Analysis of the friction points between carriers and shippers.',
+    tags: ['Law', 'International'],
     date: '2025-02-14',
-    href: '/coming-soon?project=droit',
+    href: '/coming-soon?project=maritime-law',
   },
   {
     id: 'proj-biodiv',
-    title: 'Biodiversité des estrans rocheux',
-    lead: 'Suivis participatifs avec les écoles primaires',
+    title: 'Biodiversity of the rocky shore',
+    lead: 'Citizen-science monitoring with primary schools',
     abstract:
-      "Protocole simplifié de comptage d'espèces remarquables sur 12 sites du littoral seinomarin. Les données alimentent le SINP régional et un outil pédagogique grand public.",
-    tags: ['Écologie', 'Médiation'],
+      'A simplified counting protocol for indicator species on 12 sites along the Seine-Maritime coast. The data feeds the regional SINP and a public-facing teaching tool.',
+    tags: ['Ecology', 'Outreach'],
     date: '2024-05-22',
     href: '/coming-soon?project=biodiv',
   },
   {
-    id: 'proj-tourisme',
-    title: 'Tourisme côtier : mutations post-pandémie',
-    lead: 'Trois saisons (2021-2023) au prisme du big data',
+    id: 'proj-tourism',
+    title: 'Coastal tourism: post-pandemic shifts',
+    lead: 'Three seasons (2021-2023) through big-data lenses',
     abstract:
-      'Exploitation de traces numériques (réservations, mobilités) pour caractériser les nouveaux flux touristiques. Comparaison avec les indicateurs de fréquentation classique.',
-    tags: ['Géographie', 'Économie'],
+      'Use of digital traces (bookings, mobility data) to characterise the new tourist flows. Comparison with classical attendance indicators.',
+    tags: ['Geography', 'Economics'],
     date: '2024-08-30',
-    href: '/coming-soon?project=tourisme',
+    href: '/coming-soon?project=tourism',
   },
   {
-    id: 'proj-matiere',
-    title: 'Alliages haute performance pour l’offshore',
-    lead: 'Comportement en milieu chloruré sous contrainte',
+    id: 'proj-alloys',
+    title: 'High-performance alloys for the offshore industry',
+    lead: 'Behaviour in chloride environments under stress',
     abstract:
-      "Étude expérimentale du vieillissement de trois familles d'alliages utilisés dans les structures éoliennes flottantes. Caractérisation par microscopie électronique et essais de fatigue.",
-    tags: ['Matériaux', 'Énergie'],
+      'Experimental study of the ageing of three alloy families used in floating wind structures. Characterisation via electron microscopy and fatigue tests.',
+    tags: ['Materials', 'Energy'],
     date: '2025-03-11',
-    href: '/coming-soon?project=matiere',
+    href: '/coming-soon?project=alloys',
   },
   {
-    id: 'proj-port-numerique',
-    title: 'Le port numérique : vers une plateforme régionale',
-    lead: 'Interopérabilité douanière et logistique',
+    id: 'proj-digital-port',
+    title: 'The digital port: towards a regional platform',
+    lead: 'Customs and logistics interoperability',
     abstract:
-      "Cartographie des systèmes d'information actuellement en usage dans les terminaux du Havre. Spécification d'un référentiel commun pour réduire les frottements administratifs.",
-    tags: ['Informatique', 'Logistique'],
+      'Mapping of the information systems currently in use across Le Havre terminals. Specification of a common reference framework to reduce administrative friction.',
+    tags: ['Computer Science', 'Logistics'],
     date: '2024-12-17',
-    href: '/coming-soon?project=port-numerique',
+    href: '/coming-soon?project=digital-port',
   },
   {
-    id: 'proj-pollutions',
-    title: 'Sources diffuses de pollution azotée',
-    lead: 'Bassin versant de la Lézarde, Seine-Maritime',
+    id: 'proj-nitrogen',
+    title: 'Diffuse sources of nitrogen pollution',
+    lead: 'The Lézarde watershed, Seine-Maritime',
     abstract:
-      "Caractérisation isotopique de l'azote sur 24 stations de prélèvement, du plateau agricole jusqu'à l'estuaire. Identification des contributions agricoles vs urbaines.",
-    tags: ['Hydrologie', 'Agronomie'],
+      'Isotopic characterisation of nitrogen across 24 sampling stations, from the agricultural plateau down to the estuary. Identification of agricultural vs urban contributions.',
+    tags: ['Hydrology', 'Agronomy'],
     date: '2023-10-04',
-    href: '/coming-soon?project=pollutions',
+    href: '/coming-soon?project=nitrogen',
   },
 ];
 
 /**
  * Four priority instruments inviting the researcher to fill their
- * declarations. Only `researcher_profile` is currently active — the
- * three others stay disabled until the gating in phase 6 unlocks them
- * based on REDCap profile state.
+ * declarations. The gating engine (`$lib/server/gating.ts`) decides
+ * which ones are active based on REDCap profile state ; the defaults
+ * below match the documented matrix (only `researcher_profile` is
+ * active for a fresh user).
  *
  * Shape mirrored from `@univ-lehavre/atlas-ui` (QuestionnaireEntry).
  */
@@ -167,28 +168,28 @@ type QuestionnaireEntryList = readonly QuestionnaireEntry[];
 export const priorityQuestionnaires: QuestionnaireEntryList = [
   {
     id: 'researcher_profile',
-    label: 'Mon profil',
-    description: 'Identité, affiliation, disciplines de recherche.',
+    label: 'My profile',
+    description: 'Identity, affiliation, research disciplines.',
     href: '/coming-soon?form=researcher_profile',
   },
   {
     id: 'research_questions',
-    label: 'Mes questions de recherche',
-    description: 'Axes de travail, hypothèses, partenariats envisagés.',
+    label: 'My research questions',
+    description: 'Lines of enquiry, hypotheses, intended partnerships.',
     href: '/coming-soon?form=research_questions',
     disabled: true,
   },
   {
     id: 'publications',
-    label: 'Mes références',
-    description: 'Publications, conférences, ORCID.',
+    label: 'My references',
+    description: 'Publications, talks, ORCID.',
     href: '/coming-soon?form=publications',
     disabled: true,
   },
   {
     id: 'project_proposal',
-    label: 'Mon projet',
-    description: 'Proposition de projet de recherche cadrée.',
+    label: 'My project',
+    description: 'A scoped research-project proposal.',
     href: '/coming-soon?form=project_proposal',
     disabled: true,
   },

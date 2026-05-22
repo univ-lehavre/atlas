@@ -10,7 +10,7 @@ describe('mockResearcherPool', () => {
   it('every entry has all four required fields', () => {
     for (const r of mockResearcherPool) {
       expect(r.id).toMatch(/^rsr-\d+$/);
-      expect(r.fullName).toMatch(/^Personne Fictive/);
+      expect(r.fullName).toMatch(/^Fictional Person/);
       expect(r.photoUrl).toMatch(/^https:\/\/i\.pravatar\.cc\/300\?u=sillage-rsr-/);
       expect(r.bio.length).toBeGreaterThan(10);
     }

@@ -5,9 +5,9 @@ import AnonymousHome from '@univ-lehavre/atlas-ui/AnonymousHome.svelte';
 const makeResearchers = (n: number) =>
   Array.from({ length: n }, (_, i) => ({
     id: `rsr-${i + 1}`,
-    fullName: `Fictive ${i + 1}`,
+    fullName: `Fictional ${i + 1}`,
     photoUrl: `https://i.pravatar.cc/300?u=test-${i + 1}`,
-    bio: `Bio fictive ${i + 1}.`,
+    bio: `Mock bio ${i + 1}.`,
   }));
 
 afterEach(cleanup);
@@ -62,6 +62,6 @@ describe('<AnonymousHome>', () => {
       researchers: makeResearchers(8),
     });
     const firstImg = container.querySelector('.portrait-tile img') as HTMLImageElement | null;
-    expect(firstImg?.alt).toMatch(/Portrait de Fictive 1/);
+    expect(firstImg?.alt).toMatch(/Portrait of Fictional 1/);
   });
 });

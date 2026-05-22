@@ -84,27 +84,28 @@ test.describe("sillage smoke — full stack", () => {
     await page.goto(magicUrl);
 
     // ---- 5. Authenticated state ----
-    await expect(page.locator("h1")).toContainText("Bonjour", {
+    await expect(page.locator("h1")).toContainText("Welcome", {
       timeout: 10_000,
     });
-    // Carousel : exactly 3 project cards rendered.
+    // Carousel : exactly 3 project cards rendered (one active, two
+    // hidden behind Bootstrap's `carousel-item` rotation).
     const projectCards = page.locator(
-      'section[aria-label$="en cours"] article',
+      'section[aria-label$="in focus"] article',
     );
     await expect(projectCards).toHaveCount(3);
     // Questionnaires invite : the priority instruments section is
     // present with at least one active CTA.
     await expect(
-      page.locator('section[aria-label="Et vos déclarations ?"]'),
+      page.locator('section[aria-label="Your contribution"]'),
     ).toBeVisible();
     await expect(
       page.locator(
-        'section[aria-label="Et vos déclarations ?"] a:has-text("Compléter")',
+        'section[aria-label="Your contribution"] a:has-text("Fill in")',
       ),
     ).toHaveCount(1);
 
     // ---- 6. Logout ----
-    await page.locator('button:has-text("Se déconnecter")').click();
+    await page.locator('button:has-text("Log out")').click();
     await page.waitForLoadState("networkidle");
     // Back to anonymous — the trombinoscope tile is visible again.
     await expect(
