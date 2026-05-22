@@ -6,14 +6,29 @@ import { mockResearcherPool } from '$lib/mocks/researchers';
 import { mockProjectPool, priorityQuestionnaires } from '$lib/mocks/projects';
 import type { ProfileState } from '$lib/types/api/profile';
 
-const profileStateFetch = (state: ProfileState): typeof globalThis.fetch =>
-  vi.fn(
-    async () =>
-      new Response(JSON.stringify({ data: state, error: null }), {
+/**
+ * Multi-endpoint fetch mock : `+page.server.ts` issues sub-requests
+ * to both `/api/v1/profile/state` and `/api/v1/projects/community`.
+ * The first arg of `fetch(input, init)` is a string here ; we route
+ * by substring so each endpoint gets its own canned reply.
+ */
+const profileStateFetch = (
+  state: ProfileState,
+  projects: ReadonlyArray<unknown> = []
+): typeof globalThis.fetch =>
+  vi.fn(async (input: RequestInfo | URL) => {
+    const url = typeof input === 'string' ? input : input.toString();
+    if (url.includes('/api/v1/projects/community')) {
+      return new Response(JSON.stringify({ data: projects, error: null }), {
         status: 200,
         headers: { 'content-type': 'application/json' },
-      })
-  ) as unknown as typeof globalThis.fetch;
+      });
+    }
+    return new Response(JSON.stringify({ data: state, error: null }), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  }) as unknown as typeof globalThis.fetch;
 
 const makeEvent = (
   userId?: string,
