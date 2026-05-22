@@ -1,6 +1,7 @@
 {
   "name": "@univ-lehavre/atlas-crf-sandbox",
   "version": "2.1.0",
+  "private": true,
   "description": "CRF (REDCap) testing sandbox - Docker environment and contract tests for validating OpenAPI specs",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
