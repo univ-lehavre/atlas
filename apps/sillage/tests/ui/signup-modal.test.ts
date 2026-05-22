@@ -74,8 +74,8 @@ describe('<SignupModal>', () => {
     const form = dialog.querySelector('form') as HTMLFormElement;
     await fireEvent.submit(form);
     await waitFor(() => {
-      const error = dialog.querySelector('.error');
-      expect(error?.textContent).toContain('Domaine non autorisé');
+      const alert = dialog.querySelector('.alert-danger');
+      expect(alert?.textContent).toContain('Domaine non autorisé');
     });
   });
 });

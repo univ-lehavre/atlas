@@ -59,7 +59,8 @@ describe('<AuthenticatedHome>', () => {
       projects,
       questionnaires,
     });
-    expect(container.querySelectorAll('.card')).toHaveLength(3 + questionnaires.length);
+    // Projects carousel renders one .project-card per visible project.
+    expect(container.querySelectorAll('.project-card')).toHaveLength(3);
   });
 
   it('renders one card per questionnaire entry', () => {
@@ -68,14 +69,15 @@ describe('<AuthenticatedHome>', () => {
       projects,
       questionnaires,
     });
-    // Active entries render an <a>, disabled ones don't.
+    // Active entries render an <a class="invite-link">, disabled ones a div.
     const activeCtas = container.querySelectorAll(
-      'section[aria-label="Et vos déclarations ?"] li a'
+      'section[aria-label="Et vos déclarations ?"] a.invite-link'
     );
     expect(activeCtas).toHaveLength(1);
-    const disabledLabels = container.querySelectorAll(
-      'section[aria-label="Et vos déclarations ?"] .cta-disabled'
+    // Disabled entries are listed but rendered as a non-clickable div.
+    const allCards = container.querySelectorAll(
+      'section[aria-label="Et vos déclarations ?"] li .card'
     );
-    expect(disabledLabels).toHaveLength(1);
+    expect(allCards).toHaveLength(questionnaires.length);
   });
 });

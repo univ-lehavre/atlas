@@ -18,8 +18,9 @@ describe('<AnonymousHome>', () => {
       signupUrl: '/signup',
       researchers: makeResearchers(24),
     });
-    expect(container.querySelectorAll('li.portrait')).toHaveLength(8);
-    expect(container.querySelectorAll('li.discover')).toHaveLength(1);
+    // Bootstrap layout : each tile lives in a .col
+    expect(container.querySelectorAll('.portrait-tile')).toHaveLength(8);
+    expect(container.querySelectorAll('.discover-tile')).toHaveLength(1);
     expect(container.textContent).toContain('Meet the community');
   });
 
@@ -28,8 +29,8 @@ describe('<AnonymousHome>', () => {
       signupUrl: '/signup',
       researchers: makeResearchers(3),
     });
-    expect(container.querySelectorAll('li.portrait')).toHaveLength(3);
-    expect(container.querySelectorAll('li.discover')).toHaveLength(1);
+    expect(container.querySelectorAll('.portrait-tile')).toHaveLength(3);
+    expect(container.querySelectorAll('.discover-tile')).toHaveLength(1);
   });
 
   it('discover tile links to signupUrl by default', () => {
@@ -37,21 +38,19 @@ describe('<AnonymousHome>', () => {
       signupUrl: '/custom-signup',
       researchers: makeResearchers(8),
     });
-    const link = container.querySelector('li.discover a');
+    const link = container.querySelector('a.discover-tile');
     expect(link?.getAttribute('href')).toBe('/custom-signup');
   });
 
-  it('renders a button (no href) and calls onSignupClick when provided', async () => {
+  it('renders a button (no <a>) and calls onSignupClick when provided', async () => {
     const onSignupClick = vi.fn();
     const { container } = render(AnonymousHome, {
       signupUrl: '/signup',
       researchers: makeResearchers(8),
       onSignupClick,
     });
-    // No <a href> when the callback is wired — prevents the default
-    // navigation Playwright was hitting before hydration finished.
-    expect(container.querySelector('li.discover a')).toBeNull();
-    const button = container.querySelector('li.discover button') as HTMLButtonElement;
+    expect(container.querySelector('a.discover-tile')).toBeNull();
+    const button = container.querySelector('button.discover-tile') as HTMLButtonElement;
     expect(button).toBeTruthy();
     await fireEvent.click(button);
     expect(onSignupClick).toHaveBeenCalledTimes(1);
@@ -62,7 +61,7 @@ describe('<AnonymousHome>', () => {
       signupUrl: '/signup',
       researchers: makeResearchers(8),
     });
-    const firstImg = container.querySelector('li.portrait img') as HTMLImageElement | null;
+    const firstImg = container.querySelector('.portrait-tile img') as HTMLImageElement | null;
     expect(firstImg?.alt).toMatch(/Portrait de Fictive 1/);
   });
 });
