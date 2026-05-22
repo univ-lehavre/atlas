@@ -53,6 +53,9 @@
     "apps/amarre": {
       "project": ["src/**/*.ts", "src/**/*.svelte"]
     },
+    "apps/sillage": {
+      "project": ["src/**/*.ts", "src/**/*.svelte"]
+    },
     "apps/ecrin": {
       "project": ["src/**/*.ts", "src/**/*.svelte"],
       "ignore": [
