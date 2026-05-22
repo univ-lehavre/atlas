@@ -17,7 +17,7 @@ Items concrets, immédiatement actionnables, sans dépendance d'arbitrage préal
 - [x] [Actions UI GitHub](#actions-manuelles-ui-github) — Secret Scanning + Push Protection + Dependabot security updates + branch protection sur `main` activés via API GitHub le 2026-05-19
 - [x] Fix logos `vite-plugin-static-copy` → script `prepare` (3 apps) — livré et mergé via [PR #157](https://github.com/univ-lehavre/atlas/pull/157)
 - [x] Nettoyer `knip.json` : retirer `@univ-lehavre/atlas-logos` de `ignoreDependencies` des 3 apps — livré via [PR #160](https://github.com/univ-lehavre/atlas/pull/160)
-- [ ] Examiner les 7 alertes Dependabot remontées suite à l'activation du Dependency graph le 2026-05-19 (6 moderate, 1 low — toutes sous le seuil `high` du workflow `dependency-review`). Triage via Settings → Security → Dependabot. Lié à [Phase 3.3](#33-renforcement-de-pnpm-audit) (durcissement `--audit-level=moderate`).
+- [x] Examiner les 7 alertes Dependabot remontées suite à l'activation du Dependency graph le 2026-05-19 — toutes fermées automatiquement le 2026-05-21 par les bumps Dependabot mergés (cookie, esbuild, js-yaml, ajv, vite, ws, protobufjs). Vérifié le 2026-05-22 : 0 alerte Dependabot ouverte.
 - [x] **Triage complet des alertes CodeQL restantes** (post-[PR #194](https://github.com/univ-lehavre/atlas/pull/194)) — inventaire réel 39 alertes (vs "25+4" estimé) ; 26 dismissées + 13 fixes code (PR triage). Détail dans l'[archive ci-dessous](#2026-05-22--triage-codeql-post-194).
 
 ---
@@ -45,7 +45,7 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [x] **Aligner `node-appwrite` (SDK 25.x = Appwrite 1.9.5) avec le server (`appwrite/appwrite:1.9.0`)** — **Décision 2026-05-22** : on garde SDK 25.x + server 1.9.0 (image latest, sortie 2026-04-01). Le warning « SDK built for 1.9.5, server 1.9.0 » au boot dev/smoke est accepté comme bruit jusqu'à la sortie d'`appwrite/appwrite:1.9.5` server-side. Raison du choix : (a) le downgrade SDK vers 24.1.0 (cible 1.9.4) ou 22.x (cible 1.8.x) ferait perdre `TablesDB` que `apps/ecrin` consomme déjà (cf [§6.4](#64-authentification-et-sessions) — dédup baas) ; (b) l'option « server only » 1.9.5 sortira naturellement, le warning disparaîtra alors sans toucher au code. Réévaluer si Appwrite tarde > 6 mois ou si le warning gagne en sévérité.
 - [ ] **Parité visuelle amarre prod vs local (atlas-amarre)** — la prod sur https://amarre.univ-lehavre.fr et le local servi par `pnpm -F amarre dev` ont des couleurs de background différentes (et possiblement d'autres divergences visuelles). Cause probable : depuis l'extraction des composants vers `@univ-lehavre/atlas-ui` ([PR #190](https://github.com/univ-lehavre/atlas/pull/190)), certaines variables CSS ou rules SCSS Bootstrap custom de la prod ne remontent plus jusqu'au local. Investigation : (a) extraire le HTML/CSS rendu côté prod et le diff avec le rendu local ; (b) vérifier que `@univ-lehavre/atlas-ui/client` charge bien la même version de Bootstrap CSS + tous les overrides custom ; (c) cf. l'item « atlas-ui : système de theming optionnel » qui couvre une partie du problème.
 - [ ] **Publier les 7 CLIs sur GitHub Packages** (`atlas-citation-cli`, `atlas-net-cli`, `atlas-stats-cli`, `atlas-crf-stats-cli`, `atlas-researcher-profiles-cli`, `atlas-crf-cli`, `atlas-crf-openapi`) — n'ont jamais déclenché de release, pas `private` mais absents du registry. Vérifier que les changesets les détectent, créer un premier changeset par package, vérifier que `pnpm release` les pousse bien sur `npm.pkg.github.com`. Documenter l'install côté consommateur (auth GH requis).
-- [ ] **Marquer 3 packages comme `"private": true`** pour éviter une publication accidentelle :
+- [x] **Marquer 3 packages comme `"private": true`** (livré le 2026-05-22) :
   - `apps/atlas-dashboard/package.json` (app SvelteKit, déployée via Appwrite Sites)
   - `apps/crf-dashboard/package.json` (idem)
   - `sandbox/crf-sandbox/package.json` (sandbox Docker local, pas un package npm distribuable)
@@ -58,7 +58,7 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [ ] Phase 4.4 — SBOM CycloneDX (voir [§4.4](#44-sbom-software-bill-of-materials))
 - [x] Phase 5.3 — branch protection sur `main` activée via API le 2026-05-19 (voir [§5.3](#53-branch-protection-sur-main))
 - [x] Phase 6.3 — HTTP headers de sécurité livrés (CSP via `kit.csp` + 5 headers via `hooks.server.ts`, sur amarre + ecrin + find-an-expert). Reste à tightener `connect-src` (wildcard pour v1).
-- [ ] Phase 6.5 — rate limiting sur les endpoints publics (voir [§6.5](#65-rate-limiting))
+- [x] Phase 6.5 — rate limiting sur les endpoints publics ([packages/auth/src/rate-limit.ts](packages/auth/src/rate-limit.ts) + usages dans amarre/ecrin/find-an-expert ; cf. [§6.5](#65-rate-limiting))
 - [ ] Phase 7 — OWASP ZAP baseline (voir [§7.1](#71-owasp-zap-baseline))
 - [ ] Phase 8 — observabilité + runbook incident (voir [§8](#phase-8--observabilité-et-réponse-aux-incidents))
 
@@ -157,7 +157,7 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 - [x] Créer `.github/workflows/codeql.yml` avec langages `javascript-typescript` (via [PR #156](https://github.com/univ-lehavre/atlas/pull/156))
 - [x] Déclencheurs : `push` sur main, `pull_request` sur main, `schedule` hebdomadaire (lundi 03:17 UTC) + `workflow_dispatch`
 - [x] Activer les query suites `security-extended` et `security-and-quality`
-- [ ] Vérifier après premier run que les alertes remontent dans l'onglet Security du dépôt GitHub
+- [x] Vérifier après premier run que les alertes remontent dans l'onglet Security du dépôt GitHub — confirmé via les triages successifs (#194 le 2026-05-21 puis #198 le 2026-05-22)
 - [ ] Définir un _security champion_ responsable du triage des alertes (cf. [À arbitrer](#à-arbitrer))
 - [ ] Limitation Svelte : l'extracteur JS/TS de CodeQL ne parse pas les `.svelte` (les `<script>` sont hors couverture). À documenter et compléter par des revues + lint Svelte.
 
