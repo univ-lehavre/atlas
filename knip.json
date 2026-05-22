@@ -95,6 +95,9 @@
     "sandbox/crf-sandbox": {
       "project": ["tests/**/*.ts"]
     },
+    "sandbox/sillage-sandbox": {
+      "project": ["scripts/**/*.ts", "tests/**/*.ts"]
+    },
     "sandbox/crf-sandbox-core": {
       "project": ["src/**/*.ts", "bin/**/*.ts", "tests/**/*.ts"]
     },

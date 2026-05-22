@@ -1568,6 +1568,33 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  sandbox/sillage-sandbox:
+    devDependencies:
+      '@faker-js/faker':
+        specifier: ^10.4.0
+        version: 10.4.0
+      '@playwright/test':
+        specifier: ^1.60.0
+        version: 1.60.0
+      '@types/node':
+        specifier: ^25.9.1
+        version: 25.9.1
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      playwright:
+        specifier: ^1.50.0
+        version: 1.60.0
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
+      tsx:
+        specifier: ^4.22.3
+        version: 4.22.3
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
   services/crf:
     dependencies:
       '@hono/node-server':

@@ -1,0 +1,9 @@
+.env
+.env.local
+.env.bootstrap
+.env.prod
+.artifacts/
+
+# Playwright outputs
+playwright-report/
+test-results/
