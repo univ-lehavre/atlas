@@ -1,14 +1,14 @@
 // Level-5 smoke : drive the full sillage stack end-to-end in a real
 // browser via @playwright/test.
 //
-// Scenario (phase 4 scope — pre-REDCap wiring) :
+// Scenario (phase 5 scope — pre-REDCap wiring) :
 //   1. Open the home in an anonymous state. Verify the trombinoscope
 //      and the central "Meet the community" tile are visible.
 //   2. Click the tile. The <dialog> signup modal opens.
 //   3. Fill a fake email + submit. The modal closes on success.
 //   4. Poll Mailpit for the magic-link email. Visit the URL.
-//   5. Now authenticated — verify the "Bonjour" heading and the userId
-//      placeholder are visible.
+//   5. Now authenticated — verify the welcome heading, the 3-card
+//      Quarto projects carousel and the questionnaires invite.
 //   6. Click the logout button. Verify we're back to the anonymous
 //      trombinoscope.
 //
@@ -87,10 +87,21 @@ test.describe("sillage smoke — full stack", () => {
     await expect(page.locator("h1")).toContainText("Bonjour", {
       timeout: 10_000,
     });
-    // The placeholder code block carries the userId returned by Appwrite.
-    if (capturedUserId) {
-      await expect(page.locator("code")).toContainText(capturedUserId);
-    }
+    // Carousel : exactly 3 project cards rendered.
+    const projectCards = page.locator(
+      'section[aria-label$="en cours"] article',
+    );
+    await expect(projectCards).toHaveCount(3);
+    // Questionnaires invite : the priority instruments section is
+    // present with at least one active CTA.
+    await expect(
+      page.locator('section[aria-label="Et vos déclarations ?"]'),
+    ).toBeVisible();
+    await expect(
+      page.locator(
+        'section[aria-label="Et vos déclarations ?"] a:has-text("Compléter")',
+      ),
+    ).toHaveCount(1);
 
     // ---- 6. Logout ----
     await page.locator('button:has-text("Se déconnecter")').click();
