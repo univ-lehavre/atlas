@@ -1,5 +1,6 @@
 <script lang="ts">
   import AnonymousHome from '@univ-lehavre/atlas-ui/AnonymousHome.svelte';
+  import AuthenticatedHome from '@univ-lehavre/atlas-ui/AuthenticatedHome.svelte';
   import SignupModal from '@univ-lehavre/atlas-ui/SignupModal.svelte';
   import type { PageData } from './$types';
 
@@ -27,17 +28,17 @@
     await fetch('/api/v1/auth/logout', { method: 'POST' });
     location.assign('/');
   }
+
+  // Until REDCap profile state lands (phase 6), display the first
+  // 12 chars of the Appwrite userId as a placeholder greeting.
+  let greetingName = $derived(data.userId ? data.userId.slice(0, 12) : undefined);
 </script>
 
 {#if data.userId}
-  <section class="authenticated">
-    <h1>Bonjour</h1>
-    <p>
-      Vous êtes connecté en tant que <code>{data.userId}</code>. La homepage authentifiée (carrousel
-      projets + invitation questionnaires) arrive en phase&nbsp;5.
-    </p>
+  <AuthenticatedHome {greetingName} projects={data.projects} questionnaires={data.questionnaires} />
+  <div class="logout-bar">
     <button type="button" class="logout" onclick={handleLogout}> Se déconnecter </button>
-  </section>
+  </div>
 {:else}
   <AnonymousHome
     signupUrl="/signup"
@@ -48,22 +49,12 @@
 {/if}
 
 <style>
-  .authenticated {
-    max-width: 36rem;
-    margin: 4rem auto;
-    padding: 0 1.5rem;
-    text-align: center;
-  }
-  .authenticated h1 {
-    font-size: 1.75rem;
-    color: #0a2540;
-  }
-  .authenticated p {
-    color: #4b5563;
-    line-height: 1.5;
+  .logout-bar {
+    display: flex;
+    justify-content: center;
+    padding: 2rem 1.5rem 3rem;
   }
   .logout {
-    margin-top: 1.5rem;
     padding: 0.5rem 1.25rem;
     border-radius: 0.5rem;
     border: 1px solid #d1d5db;
