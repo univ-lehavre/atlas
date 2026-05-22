@@ -32,13 +32,13 @@ C'est tout. `pnpm start` crée `.env` depuis `.env.example`, génère `_APP_OPEN
 
 Variables d'environnement utiles :
 
-| Var         | Valeurs   | Effet                                                                                                                                            |
-| ----------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `SEED_MODE` | _(unset)_ | **Défaut auto** : `prod` si `PROD_CRF_URL` + `PROD_CRF_TOKEN` sont set (dans `.env` ou `.env.prod`), sinon `fake`. Message affiché au lancement. |
-|             | `prod`    | Force le pull des vrais records depuis `PROD_CRF_URL` / `PROD_CRF_TOKEN`                                                                         |
-|             | `fake`    | Force 120 records synthétiques via `@faker-js/faker`                                                                                             |
-|             | `none`    | Ne pré-remplit pas le projet                                                                                                                     |
-| `SKIP_E2E`  | `1`       | Saute le smoke test final (le bootstrap s'arrête après le seed)                                                                                  |
+| Var         | Valeurs   | Effet                                                                                                                                                                       |
+| ----------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SEED_MODE` | _(unset)_ | **Défaut auto** : `prod` si `PROD_CRF_URL` + `PROD_CRF_TOKEN` sont set (dans `.env` ou `.env.prod`), sinon `fake`. Message affiché au lancement.                            |
+|             | `prod`    | Tente le pull depuis `PROD_CRF_URL` / `PROD_CRF_TOKEN`. Auto-fallback sur `fake` si la prod n'est pas joignable (probe `content=version` au démarrage — VPN off, token KO…) |
+|             | `fake`    | Force 120 records synthétiques via `@faker-js/faker`                                                                                                                        |
+|             | `none`    | Ne pré-remplit pas le projet                                                                                                                                                |
+| `SKIP_E2E`  | `1`       | Saute le smoke test final (le bootstrap s'arrête après le seed)                                                                                                             |
 
 Exemples : `pnpm start` (auto), `SEED_MODE=fake pnpm start` (force fake même avec creds prod), `SEED_MODE=none SKIP_E2E=1 pnpm start`.
 

@@ -41,6 +41,8 @@ fi
 # SEED_MODE controls how the REDCap project is populated with data:
 #   prod  — pull real records from a remote REDCap (PROD_CRF_URL +
 #           PROD_CRF_TOKEN required). Auto-selected when both are set.
+#           Falls back to fake at runtime if the prod URL is not
+#           reachable (e.g. off-VPN, bad token, server down).
 #   fake  — generate N synthetic records with @faker-js/faker. Default
 #           fallback when prod credentials aren't available.
 #   none  — skip data population entirely.
@@ -61,14 +63,36 @@ pnpm bootstrap:baas
 echo "==> [2/4] Bootstrapping CRF (REDCap)"
 pnpm bootstrap:crf
 
+# Probe reachability of the prod REDCap API. Hits content=version
+# (the cheapest authenticated endpoint, returns "16.1.9" in text/plain).
+# Returns 0 iff HTTP 200 — anything else (302 to a 403 page when not
+# on VPN, 401 on bad token, timeout when offline) means we can't pull.
+probe_prod_reachable() {
+  local code
+  code=$(curl -sS -o /dev/null -m 5 -w "%{http_code}" \
+    -X POST "$PROD_CRF_URL" \
+    -d "token=$PROD_CRF_TOKEN" \
+    -d "content=version" 2>/dev/null || echo "000")
+  [ "$code" = "200" ]
+}
+
 case "$SEED_MODE" in
   fake)
     echo "==> [3/4] Seeding fake data"
     pnpm seed
     ;;
   prod)
-    echo "==> [3/4] Pulling records from production REDCap"
-    pnpm pull:prod --yes
+    # Probing before `pull:prod` so an unreachable prod (VPN off,
+    # token rotated, server down) falls back to fake instead of
+    # killing the script under `set -e` and leaving step [4/4]
+    # unwritten.
+    if probe_prod_reachable; then
+      echo "==> [3/4] Pulling records from production REDCap"
+      pnpm pull:prod --yes
+    else
+      echo "==> [3/4] Prod REDCap unreachable (no VPN? token invalid?) → falling back to fake seed"
+      pnpm seed
+    fi
     ;;
   none)
     echo "==> [3/4] Skipping data population (SEED_MODE=none)"
