@@ -2,7 +2,7 @@ import { it, describe, expect, afterEach, beforeEach } from "@effect/vitest";
 import { Effect, Ref } from "effect";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { writeFileSync, unlinkSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { loadStores } from "./loader.js";
 import { EventsStore, ContextStore } from "./init.js";
 import type { IEvent } from "../events/types.js";
@@ -32,14 +32,15 @@ const makeEvent = (overrides: Partial<IEvent> = {}): IEvent => ({
   ...overrides,
 });
 
+let tmpDir: string;
 let ctxFile: string;
 let eventsFile: string;
 let savedEnv: Record<string, string | undefined>;
 
 beforeEach(() => {
-  const ts = Date.now();
-  ctxFile = join(tmpdir(), `atlas-ctx-${ts}.json`);
-  eventsFile = join(tmpdir(), `atlas-events-${ts}.json`);
+  tmpDir = mkdtempSync(join(tmpdir(), "atlas-load-"));
+  ctxFile = join(tmpDir, "ctx.json");
+  eventsFile = join(tmpDir, "events.json");
   savedEnv = {
     CONTEXT_FILE: process.env["CONTEXT_FILE"],
     EVENTS_FILE: process.env["EVENTS_FILE"],
@@ -51,8 +52,7 @@ beforeEach(() => {
 afterEach(() => {
   process.env["CONTEXT_FILE"] = savedEnv["CONTEXT_FILE"];
   process.env["EVENTS_FILE"] = savedEnv["EVENTS_FILE"];
-  if (existsSync(ctxFile)) unlinkSync(ctxFile);
-  if (existsSync(eventsFile)) unlinkSync(eventsFile);
+  rmSync(tmpDir, { recursive: true, force: true });
 });
 
 describe("loadStores", () => {
