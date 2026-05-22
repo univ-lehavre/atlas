@@ -18,10 +18,11 @@
     /** How often (ms) to swap one portrait when the pool exceeds 8.
      *  Pass 0 (or keep the pool ≤ 8) to disable rotation. */
     rotationIntervalMs?: number;
-    /** Optional click interceptor on the central tile. When provided,
-     *  the tile intercepts the navigation (preventDefault) and runs
-     *  the callback instead — typically used to open a signup modal
-     *  while preserving the `<a href>` for non-JS fallback. */
+    /** Optional click handler on the central tile. When provided, the
+     *  tile renders as a `<button>` and the navigation never happens
+     *  (typically used to open a signup modal). Without it, the tile
+     *  falls back to a real `<a href={signupUrl}>` so visitors with
+     *  JS disabled still reach the signup page. */
     onSignupClick?: () => void;
   }
 
@@ -31,12 +32,6 @@
     rotationIntervalMs = 5000,
     onSignupClick,
   }: Props = $props();
-
-  function handleSignupClick(event: MouseEvent) {
-    if (!onSignupClick) return;
-    event.preventDefault();
-    onSignupClick();
-  }
 
   // The 8 IDs currently on screen. Initial selection takes the first 8
   // entries of the pool — `+page.server.ts` on the consumer side is
@@ -72,11 +67,21 @@
     {#each visible as researcher, i (i)}
       {#if i === 4}
         <li class="tile discover">
-          <a href={signupUrl} onclick={handleSignupClick}>
-            <span class="discover-label">Meet the community</span>
-            <span class="discover-sub">Researchers shaping coastal studies</span
-            >
-          </a>
+          {#if onSignupClick}
+            <button type="button" onclick={onSignupClick}>
+              <span class="discover-label">Meet the community</span>
+              <span class="discover-sub"
+                >Researchers shaping coastal studies</span
+              >
+            </button>
+          {:else}
+            <a href={signupUrl}>
+              <span class="discover-label">Meet the community</span>
+              <span class="discover-sub"
+                >Researchers shaping coastal studies</span
+              >
+            </a>
+          {/if}
         </li>
       {/if}
       <li class="tile portrait">
@@ -98,10 +103,19 @@
     {/each}
     {#if visible.length <= 4}
       <li class="tile discover">
-        <a href={signupUrl} onclick={handleSignupClick}>
-          <span class="discover-label">Meet the community</span>
-          <span class="discover-sub">Researchers shaping coastal studies</span>
-        </a>
+        {#if onSignupClick}
+          <button type="button" onclick={onSignupClick}>
+            <span class="discover-label">Meet the community</span>
+            <span class="discover-sub">Researchers shaping coastal studies</span
+            >
+          </button>
+        {:else}
+          <a href={signupUrl}>
+            <span class="discover-label">Meet the community</span>
+            <span class="discover-sub">Researchers shaping coastal studies</span
+            >
+          </a>
+        {/if}
       </li>
     {/if}
   </ul>
@@ -166,7 +180,8 @@
     font-size: 0.875rem;
     line-height: 1.4;
   }
-  .discover a {
+  .discover a,
+  .discover button {
     position: absolute;
     inset: 0;
     display: flex;
@@ -180,9 +195,16 @@
     padding: 1rem;
     box-sizing: border-box;
     transition: background 150ms ease-in-out;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    width: 100%;
   }
   .discover a:hover,
-  .discover a:focus-visible {
+  .discover a:focus-visible,
+  .discover button:hover,
+  .discover button:focus-visible {
     background: #1e3a8a;
   }
   .discover-label,

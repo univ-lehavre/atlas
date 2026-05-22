@@ -1,13 +1,16 @@
 <script lang="ts">
   interface Props {
-    /** Two-way binding for the visibility of the dialog. Set to `true`
-     *  to open programmatically ; the component sets it back to `false`
-     *  when the user closes via ESC, the backdrop, or the close button. */
-    open?: boolean;
+    /** Visibility of the dialog. The component reacts imperatively
+     *  (`showModal()` / `close()`) on every change. Closing actions
+     *  inside the modal (ESC, backdrop, close button) call `onClose`
+     *  instead of mutating this prop directly. */
+    open: boolean;
+    /** Called when the user dismisses the modal — parents flip their
+     *  own state back to `false` from here. */
+    onClose: () => void;
     /** Callback invoked when the user submits a syntactically valid
-     *  email. Should return a promise that resolves on success (the
-     *  modal then closes) or rejects (the modal stays open and the
-     *  error message is surfaced). */
+     *  email. Resolves on success (the modal then closes) or rejects
+     *  (the modal stays open and the error message is surfaced). */
     onSubmit: (email: string) => void | Promise<void>;
     /** Optional override of the heading copy. */
     title?: string;
@@ -16,7 +19,8 @@
   }
 
   let {
-    open = $bindable(false),
+    open,
+    onClose,
     onSubmit,
     title = "Discover more profiles",
     description = "Enter your email address and we will send you a magic link to sign in.",
@@ -31,20 +35,33 @@
   // Sync `open` prop with the imperative <dialog> API. Native dialog
   // exposes show/close but no reactive `open` setter — the attribute
   // alone does not trigger the showModal() effect we want.
+  //
+  // Read both deps at the top of the effect so Svelte tracks them
+  // even when we early-return : a conditional access AFTER an early
+  // return is not tracked, which used to mean the effect never re-ran
+  // when `open` flipped because the first pass exited before reading
+  // it.
   $effect(() => {
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      dialog.showModal();
-    } else if (!open && dialog.open) {
-      dialog.close();
+    const shouldOpen = open;
+    const el = dialog;
+    if (!el) return;
+    if (shouldOpen && !el.open) {
+      el.showModal();
+    } else if (!shouldOpen && el.open) {
+      el.close();
     }
   });
 
   function handleClose() {
-    open = false;
-    // Reset the transient state when the modal goes away.
+    // Reset the transient state when the modal goes away. The parent
+    // owns `open` ; we just notify.
     submitting = false;
     errorMessage = undefined;
+    onClose();
+  }
+
+  function requestClose() {
+    onClose();
   }
 
   async function handleSubmit(event: SubmitEvent) {
@@ -55,7 +72,7 @@
     try {
       await onSubmit(email);
       email = "";
-      open = false;
+      onClose();
     } catch (err) {
       errorMessage =
         err instanceof Error
@@ -75,7 +92,7 @@
         type="button"
         class="close"
         aria-label="Fermer"
-        onclick={() => (open = false)}
+        onclick={requestClose}
       >
         ×
       </button>
@@ -99,7 +116,7 @@
       <button
         type="button"
         class="secondary"
-        onclick={() => (open = false)}
+        onclick={requestClose}
         disabled={submitting}
       >
         Annuler
