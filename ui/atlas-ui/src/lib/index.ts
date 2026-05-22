@@ -10,6 +10,7 @@
 
 export { default as Administrate } from "./Administrate.svelte";
 export { default as AmarreHomePage } from "./AmarreHomePage.svelte";
+export { default as AnonymousHome } from "./AnonymousHome.svelte";
 export { default as CardItem } from "./CardItem.svelte";
 export { default as Collaborate } from "./Collaborate.svelte";
 export { default as Complete } from "./Complete.svelte";
@@ -25,5 +26,9 @@ export { default as SectionTile } from "./SectionTile.svelte";
 export { default as Signup } from "./Signup.svelte";
 export { default as TopNavbar } from "./TopNavbar.svelte";
 
+export type {
+  AnonymousResearcher,
+  AnonymousResearcherList,
+} from "./types/anonymous-researcher";
 export type { RequestRecord, RequestRecordList } from "./types/request";
 export { allowedRequestCreation } from "./utils/request";
