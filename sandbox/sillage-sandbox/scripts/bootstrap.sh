@@ -40,19 +40,21 @@ fi
 
 # SEED_MODE controls how the REDCap project is populated with data:
 #   prod  — pull real records from a remote REDCap (PROD_CRF_URL +
-#           PROD_CRF_TOKEN required). Auto-selected when both are set.
-#   fake  — generate N synthetic records with @faker-js/faker. Default
-#           fallback when prod credentials aren't available.
-#   none  — skip data population entirely.
-# Override the auto-detection by exporting SEED_MODE explicitly.
+#           PROD_CRF_TOKEN required).
+#   fake  — generate N synthetic records with @faker-js/faker. NOTE :
+#           le scenario `four-state` clone d'amarre-sandbox hardcode
+#           des champs amarre (form_complete, avis_*_position, etc.)
+#           qui n'existent pas dans le dict ECRIN v2-alpha. À utiliser
+#           uniquement APRÈS extraction d'un scenario `generic`
+#           (cf. plan phase 7 — sandbox/crf-sandbox-core).
+#   none  — skip data population entirely. **Default sillage** tant
+#           que phase 6 (wiring REDCap + lecture profile/state) n'est
+#           pas en place : Appwrite + REDCap projet+dict sont quand
+#           même provisionnés, seul l'import de records est skipé.
+# Override via SEED_MODE explicitly.
 if [ -z "${SEED_MODE:-}" ]; then
-  if [ -n "${PROD_CRF_URL:-}" ] && [ -n "${PROD_CRF_TOKEN:-}" ]; then
-    SEED_MODE="prod"
-    echo "==> Detected PROD_CRF_* credentials → SEED_MODE=prod (real data)"
-  else
-    SEED_MODE="fake"
-    echo "==> No PROD_CRF_* credentials → SEED_MODE=fake (synthetic data)"
-  fi
+  SEED_MODE="none"
+  echo "==> SEED_MODE=none (default sillage — records seed arrive en phase 6)"
 fi
 
 echo "==> [1/4] Bootstrapping BaaS (Appwrite)"
