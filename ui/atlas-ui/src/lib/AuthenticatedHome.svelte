@@ -7,8 +7,10 @@
   interface Props {
     /** Display name surfaced in the welcome heading — typically the
      *  user's first name once REDCap profile/state is wired ; for now
-     *  consumers pass either the email local-part or the raw userId. */
-    greetingName?: string;
+     *  consumers pass either the email local-part or the raw userId.
+     *  `| undefined` is explicit to play nice with consumer tsconfigs
+     *  that set `exactOptionalPropertyTypes: true` (cf. apps/sillage). */
+    greetingName?: string | undefined;
     /** Projets passés en mode "shuffled, 3 visibles". Consumer-side
      *  load is in charge of randomising the slice across visits. */
     projects: ProjectSnapshotList;
