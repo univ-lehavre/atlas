@@ -14,6 +14,7 @@ describe('<SignupModal>', () => {
     const { container } = render(SignupModal, {
       open: true,
       onSubmit: vi.fn(),
+      onClose: vi.fn(),
     });
     const dialog = container.querySelector('dialog') as HTMLDialogElement;
     await waitFor(() => expect(dialog.open).toBe(true));
@@ -23,6 +24,7 @@ describe('<SignupModal>', () => {
     const { container } = render(SignupModal, {
       open: false,
       onSubmit: vi.fn(),
+      onClose: vi.fn(),
     });
     const dialog = container.querySelector('dialog') as HTMLDialogElement;
     // The dialog should never have been shown.
@@ -34,6 +36,7 @@ describe('<SignupModal>', () => {
     const { container } = render(SignupModal, {
       open: true,
       onSubmit,
+      onClose: vi.fn(),
     });
     const dialog = container.querySelector('dialog') as HTMLDialogElement;
     const input = dialog.querySelector('input[type="email"]') as HTMLInputElement;
@@ -47,6 +50,7 @@ describe('<SignupModal>', () => {
     const { container } = render(SignupModal, {
       open: true,
       onSubmit: vi.fn(),
+      onClose: vi.fn(),
     });
     const dialog = container.querySelector('dialog') as HTMLDialogElement;
     const input = dialog.querySelector('input[type="email"]') as HTMLInputElement;
@@ -62,6 +66,7 @@ describe('<SignupModal>', () => {
     const { container } = render(SignupModal, {
       open: true,
       onSubmit,
+      onClose: vi.fn(),
     });
     const dialog = container.querySelector('dialog') as HTMLDialogElement;
     const input = dialog.querySelector('input[type="email"]') as HTMLInputElement;

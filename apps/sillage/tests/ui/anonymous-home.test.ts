@@ -41,15 +41,19 @@ describe('<AnonymousHome>', () => {
     expect(link?.getAttribute('href')).toBe('/custom-signup');
   });
 
-  it('calls onSignupClick instead of navigating when provided', async () => {
+  it('renders a button (no href) and calls onSignupClick when provided', async () => {
     const onSignupClick = vi.fn();
     const { container } = render(AnonymousHome, {
       signupUrl: '/signup',
       researchers: makeResearchers(8),
       onSignupClick,
     });
-    const link = container.querySelector('li.discover a') as HTMLAnchorElement;
-    await fireEvent.click(link);
+    // No <a href> when the callback is wired — prevents the default
+    // navigation Playwright was hitting before hydration finished.
+    expect(container.querySelector('li.discover a')).toBeNull();
+    const button = container.querySelector('li.discover button') as HTMLButtonElement;
+    expect(button).toBeTruthy();
+    await fireEvent.click(button);
     expect(onSignupClick).toHaveBeenCalledTimes(1);
   });
 

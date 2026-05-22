@@ -44,7 +44,7 @@
     researchers={data.researchers}
     onSignupClick={() => (signupOpen = true)}
   />
-  <SignupModal bind:open={signupOpen} onSubmit={handleSignup} />
+  <SignupModal open={signupOpen} onClose={() => (signupOpen = false)} onSubmit={handleSignup} />
 {/if}
 
 <style>
