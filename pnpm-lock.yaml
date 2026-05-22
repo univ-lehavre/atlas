@@ -535,6 +535,10 @@ importers:
         version: 0.1.0(vitest@4.1.6)
 
   apps/sillage:
+    dependencies:
+      '@univ-lehavre/atlas-ui':
+        specifier: workspace:*
+        version: link:../../ui/atlas-ui
     devDependencies:
       '@sveltejs/adapter-node':
         specifier: ^5.5.4
