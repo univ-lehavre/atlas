@@ -92,6 +92,9 @@
     "sandbox/crf-sandbox": {
       "project": ["tests/**/*.ts"]
     },
+    "sandbox/crf-sandbox-core": {
+      "project": ["src/**/*.ts", "bin/**/*.ts", "tests/**/*.ts"]
+    },
     "packages/crf-client": {
       "project": ["src/**/*.ts"],
       "ignore": ["src/brands.ts", "src/errors.ts", "src/version.ts"]
