@@ -55,7 +55,7 @@
       errorMessage =
         err instanceof Error
           ? err.message
-          : "Une erreur est survenue. Réessayez.";
+          : "Something went wrong. Please try again.";
     } finally {
       submitting = false;
     }
@@ -69,7 +69,7 @@
       <button
         type="button"
         class="btn-close"
-        aria-label="Fermer"
+        aria-label="Close"
         onclick={requestClose}
       ></button>
     </header>
@@ -101,14 +101,14 @@
         onclick={requestClose}
         disabled={submitting}
       >
-        Annuler
+        Cancel
       </button>
       <button
         type="submit"
         class="btn btn-primary"
         disabled={!isValidEmail || submitting}
       >
-        {submitting ? "Envoi…" : "Envoyer le lien"}
+        {submitting ? "Sending…" : "Send the link"}
       </button>
     </div>
   </form>

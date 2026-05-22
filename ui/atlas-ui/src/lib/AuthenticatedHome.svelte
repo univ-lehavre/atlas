@@ -15,13 +15,13 @@
 
 <section class="container py-5 text-center welcome">
   <h1 class="display-5 mb-2 text-primary-emphasis">
-    Bonjour{#if greetingName}
+    Welcome{#if greetingName}
       <span class="text-primary">, {greetingName}</span>
     {/if}
   </h1>
   <p class="lead text-secondary m-0 mx-auto">
-    Trois projets de la communauté ont retenu notre attention aujourd'hui —
-    laissez-vous inspirer avant de raconter le vôtre.
+    Three community projects caught our eye today — be inspired before sharing
+    your own.
   </p>
 </section>
 

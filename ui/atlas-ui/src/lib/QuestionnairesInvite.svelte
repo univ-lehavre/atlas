@@ -8,8 +8,8 @@
   }
 
   let {
-    heading = "Et vos déclarations ?",
-    intro = "Renseignez vos questionnaires pour intégrer la cartographie de la communauté.",
+    heading = "Your contribution",
+    intro = "Fill in your questionnaires to take your place on the community map.",
     entries,
   }: Props = $props();
 </script>
@@ -31,7 +31,7 @@
                   {entry.description}
                 </p>
                 <p class="card-text small fst-italic text-muted m-0">
-                  Bientôt disponible
+                  Coming soon
                 </p>
               </div>
             </div>
@@ -48,7 +48,7 @@
                 <p
                   class="card-text small fw-semibold text-primary-emphasis m-0"
                 >
-                  Compléter →
+                  Fill in →
                 </p>
               </div>
             </a>

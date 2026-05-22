@@ -58,7 +58,7 @@
   });
 </script>
 
-<section class="container py-4" aria-label="Aperçu de la communauté">
+<section class="container py-4" aria-label="Community preview">
   <div class="row row-cols-2 row-cols-md-3 g-3 mx-auto trombi-grid">
     {#each visible as researcher, i (i)}
       {#if i === 4}
@@ -97,7 +97,7 @@
           >
             <img
               src={researcher.photoUrl}
-              alt="Portrait de {researcher.fullName}"
+              alt="Portrait of {researcher.fullName}"
               class="w-100 h-100 object-fit-cover"
               loading="lazy"
               decoding="async"

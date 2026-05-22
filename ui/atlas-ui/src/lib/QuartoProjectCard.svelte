@@ -60,16 +60,12 @@
       class="mt-auto pt-2 text-primary-emphasis fw-semibold text-decoration-none"
       href={project.href}
     >
-      Lire l'analyse →
+      Read the full report →
     </a>
   </div>
 </article>
 
 <style>
-  /* Custom : accent color derived from the project id (Quarto-flavoured
-     tonal stripe) + cover gradient when no image is provided. Bootstrap
-     handles everything else (card, body, badge, link). */
-
   .project-card {
     transition:
       transform 200ms ease-in-out,
