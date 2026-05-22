@@ -36,16 +36,6 @@ const makeContext = (overrides: Partial<IContext> = {}): IContext => ({
   ...overrides,
 });
 
-const provideStores = (
-  events: IEvent[],
-  ctx: IContext,
-  effect: Effect.Effect<void, unknown, EventsStore | ContextStore>,
-) =>
-  effect.pipe(
-    Effect.provideServiceEffect(EventsStore, Ref.make(events)),
-    Effect.provideServiceEffect(ContextStore, Ref.make(ctx)),
-  );
-
 describe("updateEventsStoreBasedOnAcceptedValues", () => {
   it.effect(
     "pending event with value in accepted → status becomes accepted",

@@ -18,12 +18,7 @@ Items concrets, immédiatement actionnables, sans dépendance d'arbitrage préal
 - [x] Fix logos `vite-plugin-static-copy` → script `prepare` (3 apps) — livré et mergé via [PR #157](https://github.com/univ-lehavre/atlas/pull/157)
 - [x] Nettoyer `knip.json` : retirer `@univ-lehavre/atlas-logos` de `ignoreDependencies` des 3 apps — livré via [PR #160](https://github.com/univ-lehavre/atlas/pull/160)
 - [ ] Examiner les 7 alertes Dependabot remontées suite à l'activation du Dependency graph le 2026-05-19 (6 moderate, 1 low — toutes sous le seuil `high` du workflow `dependency-review`). Triage via Settings → Security → Dependabot. Lié à [Phase 3.3](#33-renforcement-de-pnpm-audit) (durcissement `--audit-level=moderate`).
-- [ ] **Trier les 25 warnings + 4 notes CodeQL restants** (post-[PR #194](https://github.com/univ-lehavre/atlas/pull/194), qui a fermé l'erreur critique `js/command-line-injection` + 1 warning) :
-  - `js/file-access-to-http` × 13 — test helpers sandbox/crf-sandbox (REDCap test code lisant un path d'env puis fetchant `localhost:8888`). Acceptable pour des tests sandbox-only ; envisager `// codeql[js/file-access-to-http]` ligne-à-ligne pour silencer.
-  - `js/incomplete-url-substring-sanitization` × ~3 restants — vérifier si chaque match est un placeholder check (comme `appwrite.ts` fixé en #194) ou un vrai gap.
-  - `js/comparison-between-incompatible-types` × 1 — [apps/crf-dashboard/src/routes/api/logs/+server.ts](apps/crf-dashboard/src/routes/api/logs/+server.ts). Pre-existing.
-  - `js/unused-local-variable` × 4 — `note` severity, simple dead-let pruning dans `packages/crf-core/src/validation/`, `packages/citation-validate/`, `apps/ecrin/src/lib/transformers/build-name.ts`.
-  - Pour chaque alerte non corrigeable : décider entre **dismiss** (Settings → Security → Code scanning → Dismiss as `won't fix` / `false positive` avec justification) et **fix code**.
+- [x] **Triage complet des alertes CodeQL restantes** (post-[PR #194](https://github.com/univ-lehavre/atlas/pull/194)) — inventaire réel 39 alertes (vs "25+4" estimé) ; 26 dismissées + 13 fixes code (PR triage). Détail dans l'[archive ci-dessous](#2026-05-22--triage-codeql-post-194).
 
 ---
 
@@ -442,6 +437,30 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 ## Archive
 
 Historique des chantiers closés, gardé pour traçabilité.
+
+### 2026-05-22 — Triage CodeQL post-#194
+
+Inventaire réel : **39 alertes ouvertes** (vs "25 warnings + 4 notes" annoncés dans la TODO précédente).
+
+**Fix code (13 alertes via PR triage, branche `codeql/triage-post-194`)** :
+
+| Alerte(s)          | Règle                                                                   | Localisation                                                                                                                        | Fix                                                                         |
+| ------------------ | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| #10 (error) + #11  | `js/shell-command-{constructed-from-input, injection-from-environment}` | `cli/crf-openapi/src/extractor/index.ts:59`                                                                                         | `execSync` → `execFileSync` (args array, pas de shell)                      |
+| #15-#19 (×5)       | `js/insecure-temporary-file`                                            | `packages/citation-validate/src/store/{loader,saver}.test.ts`                                                                       | `join(tmpdir(), …${Date.now()})` → `mkdtempSync(tmpdir(), 'atlas-…-')`      |
+| #14                | `js/file-system-race`                                                   | `apps/amarre/scripts/manage-baselines.ts:67-77`                                                                                     | TOCTOU `existsSync`+`writeFileSync` → `try { readFileSync } catch (ENOENT)` |
+| #37                | `js/comparison-between-incompatible-types`                              | `apps/crf-dashboard/src/routes/api/logs/+server.ts:65`                                                                              | Branche `cache !== null` redondante supprimée (déjà court-circuitée)        |
+| #33, #34, #35, #36 | `js/unused-local-variable` (notes)                                      | `apps/ecrin/.../build-name.ts`, `packages/citation-validate/.../updater-effect.test.ts`, `packages/crf-core/.../validation.test.ts` | Suppression dead code/imports                                               |
+
+**Dismissed (26 alertes via gh API)** :
+
+| # alertes                         | Règle                    | Localisation                                                       | Raison                                                                                                                                                         |
+| --------------------------------- | ------------------------ | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #1-#9 (×9)                        | `js/polynomial-redos`    | `cli/crf-openapi/src/core/parsers/{help-php,schemas,index-php}.ts` | `won't fix` — outil CLI offline parsant des sources REDCap upstream téléchargées manuellement ; input trusted, pas user-provided ; DoS limité à la machine dev |
+| #21-#32, #39, #40, #42, #43 (×16) | `js/file-access-to-http` | `sandbox/crf-sandbox/tests/`, `sandbox/amarre-sandbox/tests/e2e/`  | `used in tests` — code test/sandbox lisant token de test depuis `.env.test` pour fetcher `localhost:8888` ; pas de prod                                        |
+| #20 (×1)                          | `js/file-access-to-http` | `packages/atlas-stats/src/github.ts:9`                             | `false positive` — pattern d'auth token GitHub API standard (URL hardcodée, seul le header `Authorization` vient d'un file)                                    |
+
+État final attendu après merge + re-scan CodeQL : **0 alerte ouverte**.
 
 ### 2026-05-19 — Workflows post-merge PR #127
 
