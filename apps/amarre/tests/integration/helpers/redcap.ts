@@ -45,13 +45,21 @@ export const isRedcapReachable = async (): Promise<boolean> => {
 export const nodeContext = { fetch: globalThis.fetch.bind(globalThis) };
 
 /**
- * Delete all records whose record_id starts with the given prefix. Used
- * for after-each cleanup so suites can re-run without polluting REDCap.
+ * Delete all records whose `userid` starts with the given prefix. Used
+ * for before-all cleanup so the suite can re-run without polluting
+ * REDCap with leftover rows.
+ *
+ * Filtre sur `userid`, pas sur `record_id` : `newRequest()` génère le
+ * record_id via `ID.unique()` (hex random ne matchant jamais le prefix).
+ * Le seul champ tagué par le test est `userid = ${TEST_PREFIX}${suffix}`.
+ * Sans ce fix, les records de chaque run s'accumulent jusqu'au plafond
+ * REDCap dev (50 records).
+ *
  * Goes through the REDCap API directly (the amarre services don't expose
  * a delete operation — that's a server-side admin concern).
  */
 export const deleteRecordsByPrefix = async (prefix: string): Promise<void> => {
-  // Export ids of matching records.
+  // Export record_id + userid pour tous les records.
   const exportRes = await fetch(PUBLIC_REDCAP_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -61,14 +69,15 @@ export const deleteRecordsByPrefix = async (prefix: string): Promise<void> => {
       action: 'export',
       format: 'json',
       type: 'flat',
-      fields: 'record_id',
+      fields: 'record_id,userid',
     }).toString(),
   });
   if (!exportRes.ok) return;
-  const rows = (await exportRes.json()) as Array<{ record_id: string }>;
+  const rows = (await exportRes.json()) as Array<{ record_id: string; userid?: string }>;
   const ids = rows
+    .filter((r) => typeof r.userid === 'string' && r.userid.startsWith(prefix))
     .map((r) => r.record_id)
-    .filter((id) => typeof id === 'string' && id.startsWith(prefix));
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
   if (ids.length === 0) return;
   const deleteBody = new URLSearchParams({
     token: REDCAP_API_TOKEN,
