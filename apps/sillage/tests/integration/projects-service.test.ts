@@ -17,7 +17,7 @@ const okFetch = (rows: unknown): typeof globalThis.fetch =>
 describe('mapRedcapToProjectSnapshot', () => {
   it('maps a typical row to a CommunityProject', () => {
     const out = mapRedcapToProjectSnapshot({
-      record_id: 'rec-42',
+      userid: 'rec-42',
       acronym: 'SEAVAR',
       title: 'Sea variability long-term',
       abstract: 'A multi-decade study of variability indicators in the Channel.',
@@ -34,7 +34,7 @@ describe('mapRedcapToProjectSnapshot', () => {
     expect(out?.href).toBe('/coming-soon?project=rec-42');
   });
 
-  it('returns null when record_id is missing', () => {
+  it('returns null when userid is missing', () => {
     expect(
       mapRedcapToProjectSnapshot({
         title: 'No id',
@@ -45,14 +45,14 @@ describe('mapRedcapToProjectSnapshot', () => {
   it('returns null when title is missing', () => {
     expect(
       mapRedcapToProjectSnapshot({
-        record_id: 'rec-1',
+        userid: 'rec-1',
       })
     ).toBeNull();
   });
 
   it('falls back to title when acronym is empty', () => {
     const out = mapRedcapToProjectSnapshot({
-      record_id: 'rec-2',
+      userid: 'rec-2',
       title: 'Only a title',
     });
     expect(out?.lead).toBe('Only a title');
@@ -60,7 +60,7 @@ describe('mapRedcapToProjectSnapshot', () => {
 
   it('strips html tags from rich-text fields', () => {
     const out = mapRedcapToProjectSnapshot({
-      record_id: 'rec-3',
+      userid: 'rec-3',
       title: '<p>Wrapped title</p>',
       abstract: '<div class="rt"><span>Wrapped abstract</span></div>',
     });
@@ -70,7 +70,7 @@ describe('mapRedcapToProjectSnapshot', () => {
 
   it('keeps tag order and drops empty keywords', () => {
     const out = mapRedcapToProjectSnapshot({
-      record_id: 'rec-4',
+      userid: 'rec-4',
       title: 'Title',
       keyword1: '',
       keyword2: 'Geography',
@@ -88,13 +88,13 @@ describe('getCommunityProjects', () => {
   it('returns mapped projects when REDCap responds with rows', async () => {
     const fetch = okFetch([
       {
-        record_id: 'p-1',
+        userid: 'p-1',
         title: 'Project one',
         acronym: 'P1',
         project_proposal_complete: '2',
       },
       {
-        record_id: 'p-2',
+        userid: 'p-2',
         title: 'Project two',
         acronym: 'P2',
         project_proposal_complete: '2',
@@ -106,11 +106,11 @@ describe('getCommunityProjects', () => {
     expect(out[1]?.id).toBe('p-2');
   });
 
-  it('drops rows that map to null (missing record_id or title)', async () => {
+  it('drops rows that map to null (missing userid or title)', async () => {
     const fetch = okFetch([
-      { record_id: 'p-1', title: 'Project one' },
-      { record_id: 'p-2' /* no title */ },
-      { title: 'Orphan project' /* no record_id */ },
+      { userid: 'p-1', title: 'Project one' },
+      { userid: 'p-2' /* no title */ },
+      { title: 'Orphan project' /* no userid */ },
     ]);
     const out = await getCommunityProjects({ fetch });
     expect(out).toHaveLength(1);

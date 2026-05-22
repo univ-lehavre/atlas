@@ -5,11 +5,17 @@ import { fetchCrfJSON } from '$lib/server/crf';
 /**
  * Fields pulled from REDCap for one validated `project_proposal`
  * record. The shape lines up with the dictionary
- * `data-dictionaries/136-ecrin-v2-alpha.json` (section
- * `form_name=project_proposal`).
+ * `data-dictionaries/136-ecrin-v2-alpha.json` (form_name=project_proposal).
+ *
+ * ECRIN v2-alpha uses `userid` as its record identifier (first field
+ * of the dict — REDCap convention when no `record_id` field is
+ * declared). The mapper surfaces it as `CommunityProject.id` (treated
+ * as opaque on the client ; consent gating in a later phase will
+ * pseudonymise it for projects whose `project_proposal_identification_
+ * level` is not `Identifiable`).
  */
 type RawProjectRow = {
-  record_id?: string;
+  userid?: string;
   acronym?: string;
   title?: string;
   abstract?: string;
@@ -20,7 +26,7 @@ type RawProjectRow = {
 };
 
 const PROJECT_FIELDS = [
-  'record_id',
+  'userid',
   'acronym',
   'title',
   'abstract',
@@ -38,7 +44,7 @@ const stripTags = (raw: string | undefined): string => {
 };
 
 export const mapRedcapToProjectSnapshot = (row: RawProjectRow): CommunityProject | null => {
-  const id = row.record_id?.trim();
+  const id = row.userid?.trim();
   const title = stripTags(row.title);
   if (!id || !title) return null;
 
