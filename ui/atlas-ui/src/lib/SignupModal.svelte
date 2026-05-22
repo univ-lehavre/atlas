@@ -1,20 +1,9 @@
 <script lang="ts">
   interface Props {
-    /** Visibility of the dialog. The component reacts imperatively
-     *  (`showModal()` / `close()`) on every change. Closing actions
-     *  inside the modal (ESC, backdrop, close button) call `onClose`
-     *  instead of mutating this prop directly. */
     open: boolean;
-    /** Called when the user dismisses the modal — parents flip their
-     *  own state back to `false` from here. */
     onClose: () => void;
-    /** Callback invoked when the user submits a syntactically valid
-     *  email. Resolves on success (the modal then closes) or rejects
-     *  (the modal stays open and the error message is surfaced). */
     onSubmit: (email: string) => void | Promise<void>;
-    /** Optional override of the heading copy. */
     title?: string;
-    /** Optional override of the descriptive paragraph above the field. */
     description?: string;
   }
 
@@ -32,15 +21,6 @@
   let errorMessage = $state<string | undefined>();
   let isValidEmail = $derived(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
 
-  // Sync `open` prop with the imperative <dialog> API. Native dialog
-  // exposes show/close but no reactive `open` setter — the attribute
-  // alone does not trigger the showModal() effect we want.
-  //
-  // Read both deps at the top of the effect so Svelte tracks them
-  // even when we early-return : a conditional access AFTER an early
-  // return is not tracked, which used to mean the effect never re-ran
-  // when `open` flipped because the first pass exited before reading
-  // it.
   $effect(() => {
     const shouldOpen = open;
     const el = dialog;
@@ -53,8 +33,6 @@
   });
 
   function handleClose() {
-    // Reset the transient state when the modal goes away. The parent
-    // owns `open` ; we just notify.
     submitting = false;
     errorMessage = undefined;
     onClose();
@@ -84,38 +62,42 @@
   }
 </script>
 
-<dialog bind:this={dialog} onclose={handleClose}>
-  <form onsubmit={handleSubmit}>
-    <header>
-      <h2>{title}</h2>
+<dialog bind:this={dialog} onclose={handleClose} class="signup-dialog">
+  <form onsubmit={handleSubmit} class="m-0 p-4 d-flex flex-column gap-3">
+    <header class="d-flex justify-content-between align-items-start gap-3">
+      <h2 class="h5 m-0 text-primary-emphasis">{title}</h2>
       <button
         type="button"
-        class="close"
+        class="btn-close"
         aria-label="Fermer"
         onclick={requestClose}
-      >
-        ×
-      </button>
+      ></button>
     </header>
-    <p class="description">{description}</p>
-    <label>
-      <span>Email</span>
+    <p class="text-secondary small m-0">{description}</p>
+    <div>
+      <label for="signup-email" class="form-label small fw-semibold"
+        >Email</label
+      >
       <input
+        id="signup-email"
         type="email"
+        class="form-control"
         bind:value={email}
         required
         autocomplete="email"
         placeholder="you@example.org"
         disabled={submitting}
       />
-    </label>
+    </div>
     {#if errorMessage}
-      <p class="error" role="alert">{errorMessage}</p>
+      <div class="alert alert-danger m-0 small" role="alert">
+        {errorMessage}
+      </div>
     {/if}
-    <div class="actions">
+    <div class="d-flex justify-content-end gap-2">
       <button
         type="button"
-        class="secondary"
+        class="btn btn-outline-secondary"
         onclick={requestClose}
         disabled={submitting}
       >
@@ -123,7 +105,7 @@
       </button>
       <button
         type="submit"
-        class="primary"
+        class="btn btn-primary"
         disabled={!isValidEmail || submitting}
       >
         {submitting ? "Envoi…" : "Envoyer le lien"}
@@ -133,7 +115,13 @@
 </dialog>
 
 <style>
-  dialog {
+  /* Bootstrap fournit `.form-control`, `.btn*`, `.alert*`, `.btn-close`,
+     `.h5`, etc. Le custom restant : la chrome du <dialog> natif (border,
+     shadow, backdrop) que Bootstrap ne couvre pas — `.modal` Bootstrap
+     suit un autre pattern (`<div class="modal fade">` + data-bs-*),
+     incompatible avec notre API callback. */
+
+  .signup-dialog {
     border: none;
     border-radius: 0.75rem;
     padding: 0;
@@ -141,113 +129,8 @@
     width: calc(100% - 2rem);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
-  dialog::backdrop {
+  .signup-dialog::backdrop {
     background: rgba(10, 37, 64, 0.55);
     backdrop-filter: blur(2px);
-  }
-  form {
-    padding: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 1rem;
-  }
-  header h2 {
-    margin: 0;
-    font-size: 1.25rem;
-    color: #0a2540;
-  }
-  .close {
-    background: transparent;
-    border: none;
-    font-size: 1.5rem;
-    line-height: 1;
-    cursor: pointer;
-    color: #6b7280;
-    padding: 0;
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-  .close:hover,
-  .close:focus-visible {
-    color: #0a2540;
-  }
-  .description {
-    margin: 0;
-    color: #4b5563;
-    font-size: 0.9375rem;
-    line-height: 1.5;
-  }
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-  }
-  label span {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #1f2937;
-  }
-  input {
-    padding: 0.625rem 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    font-size: 1rem;
-    font-family: inherit;
-  }
-  input:focus {
-    outline: none;
-    border-color: #0a2540;
-    box-shadow: 0 0 0 3px rgba(10, 37, 64, 0.15);
-  }
-  .error {
-    margin: 0;
-    color: #b91c1c;
-    font-size: 0.875rem;
-  }
-  .actions {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: flex-end;
-    margin-top: 0.5rem;
-  }
-  .actions button {
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1px solid transparent;
-    font-family: inherit;
-    font-size: 0.9375rem;
-  }
-  .primary {
-    background: #0a2540;
-    color: white;
-  }
-  .primary:hover:not(:disabled),
-  .primary:focus-visible:not(:disabled) {
-    background: #1e3a8a;
-  }
-  .primary:disabled {
-    background: #9ca3af;
-    cursor: not-allowed;
-  }
-  .secondary {
-    background: white;
-    color: #1f2937;
-    border-color: #d1d5db;
-  }
-  .secondary:hover:not(:disabled),
-  .secondary:focus-visible:not(:disabled) {
-    background: #f3f4f6;
-  }
-  .secondary:disabled {
-    color: #9ca3af;
-    cursor: not-allowed;
   }
 </style>

@@ -33,10 +33,6 @@
     onSignupClick,
   }: Props = $props();
 
-  // The 8 IDs currently on screen. Initial selection takes the first 8
-  // entries of the pool — `+page.server.ts` on the consumer side is
-  // expected to shuffle the pool before passing it in, so this still
-  // yields a different layout per page load.
   let visibleIds = $state<string[]>(researchers.slice(0, 8).map((r) => r.id));
 
   let byId = $derived(new Map(researchers.map((r) => [r.id, r])));
@@ -62,169 +58,132 @@
   });
 </script>
 
-<section class="portraits" aria-label="Aperçu de la communauté">
-  <ul class="grid">
+<section class="container py-4" aria-label="Aperçu de la communauté">
+  <div class="row row-cols-2 row-cols-md-3 g-3 mx-auto trombi-grid">
     {#each visible as researcher, i (i)}
       {#if i === 4}
-        <li class="tile discover">
-          {#if onSignupClick}
-            <button type="button" onclick={onSignupClick}>
-              <span class="discover-label">Meet the community</span>
-              <span class="discover-sub"
-                >Researchers shaping coastal studies</span
+        <div class="col">
+          <div class="ratio ratio-1x1">
+            {#if onSignupClick}
+              <button
+                type="button"
+                class="btn discover-tile w-100 h-100 d-flex flex-column justify-content-center align-items-center"
+                onclick={onSignupClick}
               >
-            </button>
-          {:else}
-            <a href={signupUrl}>
-              <span class="discover-label">Meet the community</span>
-              <span class="discover-sub"
-                >Researchers shaping coastal studies</span
+                <span class="fw-bold fs-4">Meet the community</span>
+                <span class="small mt-1 opacity-75">
+                  Researchers shaping coastal studies
+                </span>
+              </button>
+            {:else}
+              <a
+                class="btn discover-tile w-100 h-100 d-flex flex-column justify-content-center align-items-center"
+                href={signupUrl}
               >
-            </a>
-          {/if}
-        </li>
+                <span class="fw-bold fs-4">Meet the community</span>
+                <span class="small mt-1 opacity-75">
+                  Researchers shaping coastal studies
+                </span>
+              </a>
+            {/if}
+          </div>
+        </div>
       {/if}
-      <li class="tile portrait">
+      <div class="col">
         {#key researcher.id}
-          <figure in:fade={{ duration: 400 }}>
+          <figure
+            class="ratio ratio-1x1 portrait-tile mb-0 rounded-3 overflow-hidden position-relative"
+            in:fade={{ duration: 400 }}
+          >
             <img
               src={researcher.photoUrl}
               alt="Portrait de {researcher.fullName}"
+              class="w-100 h-100 object-fit-cover"
               loading="lazy"
               decoding="async"
             />
-            <figcaption>
+            <figcaption
+              class="portrait-caption position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-end p-3 text-white"
+            >
               <strong>{researcher.fullName}</strong>
-              <span>{researcher.bio}</span>
+              <span class="small lh-sm">{researcher.bio}</span>
             </figcaption>
           </figure>
         {/key}
-      </li>
+      </div>
     {/each}
     {#if visible.length <= 4}
-      <li class="tile discover">
-        {#if onSignupClick}
-          <button type="button" onclick={onSignupClick}>
-            <span class="discover-label">Meet the community</span>
-            <span class="discover-sub">Researchers shaping coastal studies</span
+      <div class="col">
+        <div class="ratio ratio-1x1">
+          {#if onSignupClick}
+            <button
+              type="button"
+              class="btn discover-tile w-100 h-100 d-flex flex-column justify-content-center align-items-center"
+              onclick={onSignupClick}
             >
-          </button>
-        {:else}
-          <a href={signupUrl}>
-            <span class="discover-label">Meet the community</span>
-            <span class="discover-sub">Researchers shaping coastal studies</span
+              <span class="fw-bold fs-4">Meet the community</span>
+              <span class="small mt-1 opacity-75">
+                Researchers shaping coastal studies
+              </span>
+            </button>
+          {:else}
+            <a
+              class="btn discover-tile w-100 h-100 d-flex flex-column justify-content-center align-items-center"
+              href={signupUrl}
             >
-          </a>
-        {/if}
-      </li>
+              <span class="fw-bold fs-4">Meet the community</span>
+              <span class="small mt-1 opacity-75">
+                Researchers shaping coastal studies
+              </span>
+            </a>
+          {/if}
+        </div>
+      </div>
     {/if}
-  </ul>
+  </div>
 </section>
 
 <style>
-  .portraits {
-    padding: 2rem 1.5rem;
-  }
-  .grid {
-    list-style: none;
-    padding: 0;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
+  /* Bootstrap fournit la grille (`row row-cols-*`), le ratio carré
+     (`ratio ratio-1x1`) et le bouton/lien (`btn`). Le code custom ci-
+     dessous couvre uniquement ce que Bootstrap ne propose pas natif :
+     l'effet hover sur l'overlay portrait, le fond marine du tile
+     central et la transition. */
+
+  .trombi-grid {
     max-width: 60rem;
   }
-  .tile {
-    aspect-ratio: 1 / 1;
-    border-radius: 0.75rem;
-    overflow: hidden;
-    position: relative;
-  }
-  .portrait figure {
-    margin: 0;
-    height: 100%;
-    position: absolute;
-    inset: 0;
-  }
-  .portrait img {
-    display: block;
-    width: 100%;
-    height: 100%;
+
+  .portrait-tile :global(img) {
+    /* Force le cover sur les anciennes versions Bootstrap qui ne
+       diffusent pas `object-fit-cover` (utility 5.2+) — defensive. */
     object-fit: cover;
   }
-  .portrait figcaption {
-    position: absolute;
-    inset: 0;
+
+  .portrait-caption {
     background: linear-gradient(
       180deg,
       rgba(0, 0, 0, 0) 30%,
       rgba(0, 0, 0, 0.85) 100%
     );
-    color: white;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
     opacity: 0;
     transition: opacity 200ms ease-in-out;
   }
-  .portrait:hover figcaption,
-  .portrait:focus-within figcaption {
+  .portrait-tile:hover .portrait-caption,
+  .portrait-tile:focus-within .portrait-caption {
     opacity: 1;
   }
-  .portrait figcaption strong {
-    font-size: 1rem;
-    margin-bottom: 0.25rem;
-  }
-  .portrait figcaption span {
-    font-size: 0.875rem;
-    line-height: 1.4;
-  }
-  .discover a,
-  .discover button {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+
+  .discover-tile {
     background: #0a2540;
     color: white;
-    text-decoration: none;
-    padding: 1rem;
-    box-sizing: border-box;
-    transition: background 150ms ease-in-out;
     border: none;
-    font-family: inherit;
-    font-size: inherit;
-    cursor: pointer;
-    width: 100%;
+    border-radius: 0.75rem;
+    transition: background 150ms ease-in-out;
   }
-  .discover a:hover,
-  .discover a:focus-visible,
-  .discover button:hover,
-  .discover button:focus-visible {
+  .discover-tile:hover,
+  .discover-tile:focus-visible {
     background: #1e3a8a;
-  }
-  .discover-label,
-  .discover-sub {
-    display: block;
-    max-width: 100%;
-  }
-  .discover-label {
-    font-size: 1.75rem;
-    font-weight: 700;
-    line-height: 1.2;
-  }
-  .discover-sub {
-    font-size: 1.0625rem;
-    line-height: 1.35;
-    margin-top: 0.5rem;
-  }
-  @media (max-width: 640px) {
-    .grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
+    color: white;
   }
 </style>

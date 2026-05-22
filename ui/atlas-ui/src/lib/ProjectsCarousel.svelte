@@ -3,13 +3,8 @@
   import type { ProjectSnapshotList } from "./types/project-snapshot";
 
   interface Props {
-    /** Heading rendered above the cards. Pass an empty string to hide. */
     heading?: string;
-    /** Optional intro paragraph under the heading. */
     intro?: string;
-    /** Pre-shuffled list of projects from the consumer. The component
-     *  renders the first 3 ; the consumer (server-side load) is in
-     *  charge of randomising the slice across visits. */
     projects: ProjectSnapshotList;
   }
 
@@ -22,51 +17,26 @@
   let visible = $derived(projects.slice(0, 3));
 </script>
 
-<section class="carousel" aria-label={heading}>
+<section class="container py-4" aria-label={heading}>
   {#if heading}
-    <header class="head">
-      <h2>{heading}</h2>
+    <header class="text-center mb-3">
+      <h2 class="h4 mb-1 text-primary-emphasis">{heading}</h2>
       {#if intro}
-        <p>{intro}</p>
+        <p class="text-secondary m-0 small">{intro}</p>
       {/if}
     </header>
   {/if}
-  <div class="grid">
+  <div class="row row-cols-1 row-cols-md-3 g-3 mx-auto carousel-grid">
     {#each visible as project (project.id)}
-      <QuartoProjectCard {project} />
+      <div class="col">
+        <QuartoProjectCard {project} />
+      </div>
     {/each}
   </div>
 </section>
 
 <style>
-  .carousel {
-    padding: 1.5rem;
-  }
-  .head {
+  .carousel-grid {
     max-width: 60rem;
-    margin: 0 auto 1.25rem;
-    text-align: center;
-  }
-  .head h2 {
-    margin: 0 0 0.25rem;
-    font-size: 1.5rem;
-    color: #0a2540;
-  }
-  .head p {
-    margin: 0;
-    color: #4b5563;
-    font-size: 0.9375rem;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
-    max-width: 60rem;
-    margin: 0 auto;
-  }
-  @media (max-width: 900px) {
-    .grid {
-      grid-template-columns: 1fr;
-    }
   }
 </style>
