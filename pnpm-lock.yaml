@@ -536,9 +536,24 @@ importers:
 
   apps/sillage:
     dependencies:
+      '@univ-lehavre/atlas-auth':
+        specifier: workspace:*
+        version: link:../../packages/auth
+      '@univ-lehavre/atlas-baas':
+        specifier: workspace:*
+        version: link:../../packages/baas
+      '@univ-lehavre/atlas-errors':
+        specifier: workspace:*
+        version: link:../../packages/errors
       '@univ-lehavre/atlas-ui':
         specifier: workspace:*
         version: link:../../ui/atlas-ui
+      '@univ-lehavre/atlas-validators':
+        specifier: workspace:*
+        version: link:../../packages/validators
+      node-appwrite:
+        specifier: ^25.0.0
+        version: 25.0.0
     devDependencies:
       '@sveltejs/adapter-node':
         specifier: ^5.5.4

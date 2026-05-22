@@ -20,8 +20,9 @@ const shuffle = <T>(input: readonly T[]): T[] => {
   return arr;
 };
 
-export const load: PageServerLoad = () => {
+export const load: PageServerLoad = ({ locals }) => {
   return {
+    userId: locals.userId ?? null,
     researchers: shuffle(mockResearcherPool),
   };
 };

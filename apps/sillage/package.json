@@ -30,7 +30,12 @@
     "vite": "^8.0.13"
   },
   "dependencies": {
-    "@univ-lehavre/atlas-ui": "workspace:*"
+    "@univ-lehavre/atlas-auth": "workspace:*",
+    "@univ-lehavre/atlas-baas": "workspace:*",
+    "@univ-lehavre/atlas-errors": "workspace:*",
+    "@univ-lehavre/atlas-ui": "workspace:*",
+    "@univ-lehavre/atlas-validators": "workspace:*",
+    "node-appwrite": "^25.0.0"
   },
   "private": true
 }
