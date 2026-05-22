@@ -53,6 +53,7 @@ export default {
         "crf-sandbox",
         "crf-stats",
         "researcher-profiles",
+        "sillage",
         "ui",
         "validators",
       ],
