@@ -4,8 +4,9 @@
   import type { AnonymousResearcherList } from "./types/anonymous-researcher";
 
   interface Props {
-    /** Destination of the central "Discover more" tile in the portraits
-     *  grid. Acts as the primary call-to-action for anonymous visitors. */
+    /** Destination of the central "Meet the community" tile when no
+     *  `onSignupClick` callback is provided. Always rendered as the
+     *  `href` so the tile remains a real link for non-JS visitors. */
     signupUrl: string;
     /** Pool of researchers eligible for public display. The component
      *  shows 8 at a time in a 3×3 grid (centre slot is the "Discover
@@ -17,9 +18,25 @@
     /** How often (ms) to swap one portrait when the pool exceeds 8.
      *  Pass 0 (or keep the pool ≤ 8) to disable rotation. */
     rotationIntervalMs?: number;
+    /** Optional click interceptor on the central tile. When provided,
+     *  the tile intercepts the navigation (preventDefault) and runs
+     *  the callback instead — typically used to open a signup modal
+     *  while preserving the `<a href>` for non-JS fallback. */
+    onSignupClick?: () => void;
   }
 
-  let { signupUrl, researchers, rotationIntervalMs = 5000 }: Props = $props();
+  let {
+    signupUrl,
+    researchers,
+    rotationIntervalMs = 5000,
+    onSignupClick,
+  }: Props = $props();
+
+  function handleSignupClick(event: MouseEvent) {
+    if (!onSignupClick) return;
+    event.preventDefault();
+    onSignupClick();
+  }
 
   // The 8 IDs currently on screen. Initial selection takes the first 8
   // entries of the pool — `+page.server.ts` on the consumer side is
@@ -55,7 +72,7 @@
     {#each visible as researcher, i (i)}
       {#if i === 4}
         <li class="tile discover">
-          <a href={signupUrl}>
+          <a href={signupUrl} onclick={handleSignupClick}>
             <span class="discover-label">Meet the community</span>
             <span class="discover-sub">Researchers shaping coastal studies</span
             >
@@ -81,7 +98,7 @@
     {/each}
     {#if visible.length <= 4}
       <li class="tile discover">
-        <a href={signupUrl}>
+        <a href={signupUrl} onclick={handleSignupClick}>
           <span class="discover-label">Meet the community</span>
           <span class="discover-sub">Researchers shaping coastal studies</span>
         </a>

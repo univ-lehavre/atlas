@@ -24,6 +24,7 @@ export { default as Retrieve } from "./Retrieve.svelte";
 export { default as Rule } from "./Rule.svelte";
 export { default as SectionTile } from "./SectionTile.svelte";
 export { default as Signup } from "./Signup.svelte";
+export { default as SignupModal } from "./SignupModal.svelte";
 export { default as TopNavbar } from "./TopNavbar.svelte";
 
 export type {
