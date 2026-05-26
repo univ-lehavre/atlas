@@ -48,12 +48,13 @@ pre-commit:
       run: pnpm exec prettier --check {staged_files}
 
     lint:
-      # Same idea for ESLint. Each package owns its own flat config
-      # (apps/*/eslint.config.js etc.), and ESLint picks the nearest
-      # one per file — so this works across the monorepo with no extra
-      # plumbing. Falls back to `turbo lint` if you want a full sweep.
+      # ESLint flat configs live per-package (apps/*/eslint.config.js etc.).
+      # When a commit stages files spanning multiple packages (notably merge
+      # commits), running `eslint <files>` from the repo root confuses
+      # typescript-eslint's tsconfigRootDir resolution. The script groups
+      # files by package root and invokes eslint from each package's cwd.
       glob: "*.{js,jsx,ts,tsx,svelte}"
-      run: pnpm exec eslint {staged_files}
+      run: node scripts/lint-staged.mjs {staged_files}
 
     typecheck:
       run: pnpm typecheck
