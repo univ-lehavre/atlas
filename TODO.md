@@ -59,7 +59,7 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [x] Phase 5.3 — branch protection sur `main` activée via API le 2026-05-19 (voir [§5.3](#53-branch-protection-sur-main))
 - [x] Phase 6.3 — HTTP headers de sécurité livrés (CSP via `kit.csp` + 5 headers via `hooks.server.ts`, sur amarre + ecrin + find-an-expert). Reste à tightener `connect-src` (wildcard pour v1).
 - [x] Phase 6.5 — rate limiting sur les endpoints publics ([packages/auth/src/rate-limit.ts](packages/auth/src/rate-limit.ts) + usages dans amarre/ecrin/find-an-expert ; cf. [§6.5](#65-rate-limiting))
-- [ ] Phase 7 — OWASP ZAP baseline (voir [§7.1](#71-owasp-zap-baseline))
+- [x] Phase 7 — OWASP ZAP baseline : workflow `zap-baseline.yml` livré en `workflow_dispatch` (cf. [§7.1](#71-owasp-zap-baseline)). Schedule nightly reste à arbitrer.
 - [ ] Phase 8 — observabilité + runbook incident (voir [§8](#phase-8--observabilité-et-réponse-aux-incidents))
 
 ---
@@ -338,11 +338,11 @@ Implémentation : utilitaire `createRateLimiter` dans [packages/auth/src/rate-li
 
 ### 7.1 OWASP ZAP baseline
 
-- [ ] Workflow `.github/workflows/zap-baseline.yml`
-- [ ] Déclencheur : nightly sur prod, ou sur les URLs de preview après déploiement Appwrite
-- [ ] Action : `zaproxy/action-baseline@<sha>` avec l'URL cible
-- [ ] Remonter le rapport dans les artefacts GitHub Actions
-- [ ] Définir le seuil d'échec (faux positifs gérés via `.zap/rules.tsv`)
+- [x] Workflow [.github/workflows/zap-baseline.yml](.github/workflows/zap-baseline.yml) livré en `workflow_dispatch` uniquement (URL cible passée en input). Premier jalon prudent : la décision sur le schedule nightly reste à arbitrer (URLs prod absentes du repo + coordination DSI ULHN nécessaire).
+- [ ] **Déclencheur nightly** : à activer après arbitrage. Trois pistes documentées dans [docs/security/dast.md → Phase 2](docs/security/dast.md) : (a) nightly contre prod (besoin URLs figées + DSI prévenue), (b) nightly contre stack docker-compose `sandbox/amarre-sandbox/` (lourd CI, couvre amarre seul), (c) PR previews (hors périmètre Appwrite Sites).
+- [x] Action `zaproxy/action-baseline@v0.15.0` (SHA `6c5a007541891231cd9e0ddec25d4f25c59c9874`).
+- [x] Rapport remonté en artefact `zap_scan` (HTML + MD + JSON, 90j) + issue auto-créée par l'action.
+- [x] Seuil d'échec configurable en input (`fail_action: warn|fail`), faux positifs gérés via [`.zap/rules.tsv`](.zap/rules.tsv) (documentation inline du format + procédure d'ajout).
 
 ### 7.2 Tests de sécurité applicatifs
 
@@ -413,7 +413,7 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 
 **Sprint 4 (finalisation)**
 
-- [ ] Phase 7.1 (OWASP ZAP baseline) — à faire
+- [x] Phase 7.1 (OWASP ZAP baseline) ✅ livré en `workflow_dispatch` le 2026-05-26 ; nightly schedule à arbitrer (cf. [§7.1](#71-owasp-zap-baseline))
 - [x] Phase 6.5 (rate limiting) ✅ livré en local (branche `devsecops/rate-limiting-phase-6-5`) — pas encore mergé
 - [x] Phase 7.2 (tests sécurité applicatifs) ✅ : handlers rate-limités + hooks.server.ts × 3 apps livrés ; reste à étendre sur anti-XSS et payloads malformés explicites
 - [ ] Phase 8 (observabilité, runbook incident) — à faire
