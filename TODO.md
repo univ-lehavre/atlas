@@ -54,7 +54,7 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 **DevSecOps (renvoient aux phases ci-dessous)**
 
 - [x] Phase 1 — CodeQL workflow (voir [§1.1](#11-codeql)) — workflow livré via PR #156, reste vérif Security tab + nomination security champion
-- [ ] Phase 4.3 — npm provenance via OIDC (voir [§4.3](#43-npm-provenance-via-oidc))
+- [x] Phase 4.3 — npm provenance via OIDC : `NPM_CONFIG_PROVENANCE=true` + `id-token: write` + doc `npm audit signatures` (voir [§4.3](#43-npm-provenance-via-oidc))
 - [ ] Phase 4.4 — SBOM CycloneDX (voir [§4.4](#44-sbom-software-bill-of-materials))
 - [x] Phase 5.3 — branch protection sur `main` activée via API le 2026-05-19 (voir [§5.3](#53-branch-protection-sur-main))
 - [x] Phase 6.3 — HTTP headers de sécurité livrés (CSP via `kit.csp` + 5 headers via `hooks.server.ts`, sur amarre + ecrin + find-an-expert). Reste à tightener `connect-src` (wildcard pour v1).
@@ -229,13 +229,14 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 
 - [x] Actuellement `permissions: contents: read` au top de ci.yml
 - [x] `permissions:` explicites présents dans `release.yml`, `docs.yml`, `gitleaks.yml`, `codeql.yml`
-- [ ] Pour `release.yml` : `id-token: write` requis pour OIDC/provenance — à ajouter quand on activera Phase 4.3
+- [x] Pour `release.yml` : `id-token: write` ajouté en même temps que Phase 4.3
 
 ### 4.3 npm provenance via OIDC
 
-- [ ] Dans le script `release` racine, ajouter `--provenance` à `npm publish` (ou via `changeset publish` avec la bonne config)
-- [ ] Vérifier que le workflow `release.yml` a `id-token: write`
-- [ ] Documenter la vérification côté consommateur : `npm audit signatures`
+- [x] `--provenance` activé sur les deux chemins de publish : `NPM_CONFIG_PROVENANCE=true` au niveau du job `release.yml` (capté par `pnpm changeset publish` qui délègue à `npm publish` pour la registry npm), et `--provenance` explicite sur `pnpm publish` dans [scripts/release/publish-packages.sh](scripts/release/publish-packages.sh) pour la registry GitHub Packages.
+- [x] Workflow `release.yml` : permission `id-token: write` ajoutée (requise pour minter l'attestation OIDC in-toto).
+- [x] Vérification côté consommateur documentée dans [SECURITY.md → Vérifier l'origine d'un package atlas](SECURITY.md) : `npm audit signatures` + `npm view … .dist.attestations`.
+- [ ] **À activer lors de la prochaine release réelle** : décommenter le trigger `push: main` dans [release.yml](.github/workflows/release.yml) (actuellement en pause). Les premiers tarballs publiés porteront alors la provenance.
 
 ### 4.4 SBOM (Software Bill of Materials)
 
@@ -400,11 +401,11 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 - [x] Phase 3.1 (Dependabot) ✅ livré + auto-merge patches via `.github/workflows/dependabot-auto-merge.yml`
 - [x] Phase 3.2 (Dependency Review Action) ✅ livré via [PR #161](https://github.com/univ-lehavre/atlas/pull/161)
 - [x] Phase 4.1 (pin actions SHA) ✅ livré via PR #127 (+ #156, #161)
-- [x] Phase 4.2 (permissions minimales par job) ✅ — id-token reste à ajouter avec Phase 4.3
+- [x] Phase 4.2 (permissions minimales par job) ✅ — `id-token: write` ajouté sur release.yml (2026-05-22)
 
 **Sprint 3 (supply chain et Appwrite)**
 
-- [ ] Phase 4.3 (npm provenance via OIDC) — à faire
+- [x] Phase 4.3 (npm provenance via OIDC) ✅ livré le 2026-05-22 (cf. [§4.3](#43-npm-provenance-via-oidc))
 - [ ] Phase 4.4 (SBOM CycloneDX) — à faire
 - [x] Phase 6.3 (headers HTTP de sécurité) ✅ livré via PR #171 ; tightener `connect-src` ouvert
 - [x] Phase 6.4 (cookies session hardening + audit localStorage + CSRF) ✅ livré via PR #171
