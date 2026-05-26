@@ -1,5 +1,5 @@
 # @univ-lehavre/atlas-dashboard
 
-Dashboard SvelteKit pour suivre l'activité technique du dépôt Atlas.
+Tableau de bord interne — vue d'ensemble santé du monorepo (CI, couverture, releases).
 
-L'application affiche les statistiques de releases GitHub et de paquets npm calculées par `@univ-lehavre/atlas-stats`. Elle propose des indicateurs clés, un tableau par paquet, des tendances de téléchargements et une actualisation côté serveur avec progression.
+Documentation : <https://univ-lehavre.github.io/atlas/apps/dashboards>
