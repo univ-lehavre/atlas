@@ -19,7 +19,7 @@ find packages -maxdepth 2 -name "package.json" \
   if [ "$private" = "false" ] && [ -n "$name" ]; then
     dir=$(dirname "$pkg")
     echo "  Publishing $name from $dir..."
-    pnpm --filter "$name" publish --registry https://npm.pkg.github.com --no-git-checks 2>&1 || true
+    pnpm --filter "$name" publish --registry https://npm.pkg.github.com --provenance --no-git-checks 2>&1 || true
   fi
 done
 
