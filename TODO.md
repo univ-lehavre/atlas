@@ -63,7 +63,7 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [x] Phase 6.3 — HTTP headers de sécurité livrés (CSP via `kit.csp` + 5 headers via `hooks.server.ts`, sur amarre + ecrin + find-an-expert). Reste à tightener `connect-src` (wildcard pour v1).
 - [x] Phase 6.5 — rate limiting sur les endpoints publics ([packages/auth/src/rate-limit.ts](packages/auth/src/rate-limit.ts) + usages dans amarre/ecrin/find-an-expert ; cf. [§6.5](#65-rate-limiting))
 - [x] Phase 7 — OWASP ZAP baseline : workflow `zap-baseline.yml` livré en `workflow_dispatch` (cf. [§7.1](#71-owasp-zap-baseline)). Schedule nightly reste à arbitrer.
-- [ ] Phase 8 — observabilité + runbook incident (voir [§8](#phase-8--observabilité-et-réponse-aux-incidents))
+- [x] Phase 8 — observabilité + runbook incident : runbook complet livré dans [docs/security/incident-response.md](docs/security/incident-response.md) (cadre 8.1/8.2/8.3 + scénarios). Exécution DSI (alerting + politique sauvegarde) à conduire en interne.
 
 ---
 
@@ -369,21 +369,21 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 
 ### 8.1 Logs et alerting
 
-- [ ] Identifier qui consulte les logs Appwrite et à quelle fréquence
-- [ ] Alerte basique sur 5xx > seuil et latence p95 anormale (via Appwrite si supporté, sinon export vers un outil tiers)
-- [ ] Logs d'auth : tentatives échouées, suspicions de brute-force
+- [x] **Cadre documenté** dans [§5 du runbook](docs/security/incident-response.md) : sources de logs (Appwrite Console, Appwrite Sites runtime, GitHub Actions, GitHub Audit log, REDCap) + rétention + ce qu'on y trouve.
+- [ ] **Exécution DSI** : confirmer auprès de la DSI ULHN qui consulte les logs Appwrite et à quelle fréquence ; valeur de rétention exacte ; brancher les alertes basiques (5xx > seuil, latence p95 anormale, auth fail rate > seuil — seuils suggérés dans le runbook).
+- [x] Logs d'auth Appwrite identifiés (création de session, logout, signup, suppression compte). Pas d'agrégation externe — la console Appwrite suffit pour l'investigation ponctuelle.
 
 ### 8.2 Runbook incident
 
-- [ ] Créer `docs/security/incident-response.md`
-- [ ] Étapes : détection, confinement (couper l'accès, rotation), éradication, récupération, post-mortem
-- [ ] Liste des contacts : Université Le Havre Normandie DSI, contact CNIL si fuite de données personnelles
+- [x] [docs/security/incident-response.md](docs/security/incident-response.md) livré : classification sévérité P0–P3, signaux de détection par source, 5 phases (détection → confinement → éradication → récupération → post-mortem), obligations RGPD (CNIL 72h), checklist de clôture, historique des incidents (vide).
+- [x] Confinement détaillé pour 4 scénarios concrets : secret compromis, compte Appwrite compromis, package npm compromis, fuite données perso.
+- [x] Contacts : mainteneur + DSI ULHN (coordonnées à compléter en interne) + CNIL + GitHub Security + npm Security + Vanderbilt REDCap.
 
 ### 8.3 Sauvegardes et restauration
 
-- [ ] Vérifier la politique de sauvegarde Appwrite (instance auto-hébergée ? Appwrite Cloud ?)
-- [ ] Documenter le RPO/RTO attendus
-- [ ] Tester une restauration au moins une fois par an
+- [x] **Cadre documenté** dans [§6 du runbook](docs/security/incident-response.md) : périmètre (Appwrite, REDCap, secrets, SBOMs), suggestion RPO 24h / RTO 4-24h selon app, procédure de test de restauration annuel via `sandbox/amarre-sandbox/`.
+- [ ] **Décision DSI** : confirmer si Appwrite est self-hosted ULHN ou Appwrite Cloud ; figer la politique de sauvegarde (fréquence, rétention, géo) ; valider les RPO/RTO suggérés ou les ajuster.
+- [ ] **Premier test de restauration** : à planifier dans les 12 mois suivant la validation DSI, sur `sandbox/amarre-sandbox/`.
 
 ---
 
@@ -419,7 +419,7 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 - [x] Phase 7.1 (OWASP ZAP baseline) ✅ livré en `workflow_dispatch` le 2026-05-26 ; nightly schedule à arbitrer (cf. [§7.1](#71-owasp-zap-baseline))
 - [x] Phase 6.5 (rate limiting) ✅ livré en local (branche `devsecops/rate-limiting-phase-6-5`) — pas encore mergé
 - [x] Phase 7.2 (tests sécurité applicatifs) ✅ : handlers rate-limités + hooks.server.ts × 3 apps livrés ; reste à étendre sur anti-XSS et payloads malformés explicites
-- [ ] Phase 8 (observabilité, runbook incident) — à faire
+- [x] Phase 8 (observabilité, runbook incident) ✅ runbook livré le 2026-05-26 ; exécution DSI en cours (cf. [§8](#phase-8--observabilité-et-réponse-aux-incidents))
 - [x] Phase 5.2 (CODEOWNERS) ✅ livré via PR #127 ; nomination d'un second mainteneur ouverte
 - [x] Phase 5.4 (CONTRIBUTING) ✅ livré via PR #127
 
