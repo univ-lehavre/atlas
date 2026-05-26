@@ -1,0 +1,21 @@
+# Glossaire
+
+_(à compléter pour un public non-expert dans une PR ultérieure)_
+
+| Terme                 | Définition courte                                                                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Appwrite**          | Backend-as-a-Service open-source (auth, base de données, stockage, fonctions). Atlas l'auto-héberge.                                        |
+| **CLAUDE.md**         | Fichier à la racine du repo contenant les instructions et conventions persistantes pour l'assistant de développement utilisé sur Atlas.     |
+| **BaaS**              | Backend-as-a-Service. Service prêt-à-l'emploi qui remplace l'écriture d'un backend custom (auth, DB, etc.).                                 |
+| **CRF**               | Case Report Form. Formulaire de collecte de données structurées en recherche clinique. Dans Atlas, le CRF est porté par REDCap.             |
+| **CodeQL**            | Outil GitHub d'analyse statique (SAST) qui détecte les patterns de vulnérabilités dans le code.                                             |
+| **DAST**              | Dynamic Application Security Testing. Sonde une application en cours d'exécution pour détecter des vulnérabilités. Atlas utilise OWASP ZAP. |
+| **ECRIN**             | European Clinical Research Infrastructure Network. Le projet `ecrin` d'Atlas en suit certaines conventions de modélisation.                 |
+| **REDCap**            | Research Electronic Data Capture. Plateforme open-source pour la capture de données de recherche.                                           |
+| **SAST**              | Static Application Security Testing. Analyse le code source sans l'exécuter.                                                                |
+| **SBOM**              | Software Bill of Materials. Liste exhaustive des dépendances logicielles d'un projet (format CycloneDX dans Atlas).                         |
+| **SvelteKit**         | Framework web full-stack basé sur Svelte. Utilisé pour toutes les apps d'Atlas.                                                             |
+| **gitleaks**          | Outil de détection de secrets (tokens, clés API) accidentellement commités.                                                                 |
+| **lefthook**          | Gestionnaire de hooks Git utilisé par Atlas pour exécuter automatiquement des contrôles avant commit/push.                                  |
+| **provenance npm**    | Attestation cryptographique liant un package npm à son code source et au workflow CI qui l'a construit.                                     |
+| **pyramide de tests** | Hiérarchie de tests du plus unitaire (rapide, nombreux) au plus end-to-end (lent, peu nombreux).                                            |
