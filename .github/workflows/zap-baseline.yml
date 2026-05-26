@@ -1,0 +1,79 @@
+name: ZAP Baseline
+
+# Phase 7.1 DevSecOps : scan DAST passif via OWASP ZAP baseline contre une
+# URL cible. Premier jalon en `workflow_dispatch` uniquement — la cible
+# est passée à l'exécution. Pas de schedule pour l'instant : décision
+# remise après arbitrage avec la DSI ULHN (les URLs prod ne sont pas
+# encore figées dans le repo et un trafic ZAP nocturne contre prod doit
+# être annoncé pour éviter IDS / rate-limit / contact utilisateur).
+#
+# Itération suivante (TODO Phase 7.1) :
+#  - décommenter le bloc `schedule` ci-dessous une fois les URLs prod
+#    figées dans docs/security/surfaces.md et la DSI prévenue,
+#  - ou ajouter un job qui monte la stack docker-compose
+#    `sandbox/amarre-sandbox/` et scanne `localhost:5173`.
+#
+# Faux positifs : gérés via `.zap/rules.tsv` (cf. fichier pour la doc).
+# Sortie : artefacts HTML + Markdown + JSON conservés 90j, plus une
+# issue GitHub auto-créée si `cmd_options: -a` n'est pas appliqué.
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "URL cible (ex: https://amarre.univ-lehavre.fr). Doit être accessible publiquement depuis le runner GitHub."
+        required: true
+        type: string
+      fail_action:
+        description: "Comportement en cas de finding : warn (artifact + step warning) ou fail (job rouge)."
+        required: true
+        default: "warn"
+        type: choice
+        options:
+          - warn
+          - fail
+
+permissions:
+  contents: read
+  # `issues: write` requis par zaproxy/action-baseline pour créer une
+  # issue GitHub résumant les findings. Désactivable via `allow_issue_writing`.
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ inputs.target_url }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  baseline:
+    name: ZAP Baseline scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 1
+
+      - name: Run ZAP baseline scan
+        uses: zaproxy/action-baseline@6c5a007541891231cd9e0ddec25d4f25c59c9874 # v0.15.0
+        with:
+          target: ${{ inputs.target_url }}
+          # `-a` : scan également les URLs trouvées dans le sitemap.
+          # `-j` : utilise le scan AJAX spider pour les SPA (amarre/ecrin
+          #        sont des SvelteKit, partiellement hydratés côté client).
+          # `-m 5` : maximum 5 minutes de spidering — borne le coût CI.
+          cmd_options: "-a -j -m 5"
+          rules_file_name: ".zap/rules.tsv"
+          # Tag des findings : passive scan only (baseline) ne déclenche
+          # pas d'attaques actives. Sûr contre prod, mais reste à
+          # coordonner avec la DSI ULHN (cf. docs/security/dast.md).
+          fail_action: ${{ inputs.fail_action == 'fail' }}
+          # Issue auto-créée résumant les findings + lien vers le rapport.
+          # Désactiver en passant `false` si on préfère gérer le triage
+          # uniquement via les artefacts du run.
+          allow_issue_writing: true
+          # Label de l'issue créée — facilite le triage dans le board.
+          issue_title: "ZAP Baseline — ${{ inputs.target_url }} (run ${{ github.run_id }})"
