@@ -1,0 +1,14 @@
+{
+  "extends": "@univ-lehavre/atlas-shared-config/base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "bin/**/*.ts", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

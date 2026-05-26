@@ -1,0 +1,197 @@
+# sillage-sandbox — composes a local CRF (REDCap) instance, a self-hosted
+# BaaS (Appwrite) and exposes them on conflicting-free ports so the
+# `sillage` SvelteKit app can run end-to-end against them via
+# `pnpm -F sillage dev`.
+#
+# Layout
+# ------
+# - The CRF stack lives in sandbox/crf-sandbox/ and is included verbatim
+#   via Docker Compose `include:` (v2.20+). We don't duplicate it.
+# - The BaaS stack (Appwrite + its mariadb + its redis) is declared
+#   inline here. Service + network names are prefixed `baas-` to avoid
+#   any clash with the CRF stack.
+# - Variables are read from `.env` (see `.env.example`).
+#
+# Usage
+# -----
+# - `pnpm up`           : start both stacks
+# - `pnpm bootstrap`    : provision Appwrite project/key + CRF token, write
+#                        them to apps/sillage/.env.local
+# - `pnpm logs`         : tail logs of all services
+# - `pnpm down`         : stop services (keeps volumes)
+# - `pnpm reset`        : stop services and wipe volumes (data loss)
+#
+# Note Appwrite : la stack ici est minimale (appwrite + db + redis sans
+# traefik ni workers). Suffisant pour les flux Account/Users/Database
+# utilisés par sillage. Pour un environnement plus proche de la prod,
+# importer le compose officiel d'Appwrite via `include:` à la place.
+
+include:
+  - path: ../crf-sandbox/docker/docker-compose.yml
+
+services:
+  baas:
+    image: appwrite/appwrite:1.9.0
+    container_name: sillage-sandbox-baas
+    ports:
+      - "${APP_PORT:-8090}:80"
+    depends_on:
+      baas-mongodb:
+        condition: service_started
+      baas-redis:
+        condition: service_started
+    environment:
+      _APP_ENV: development
+      _APP_LOCALE: fr
+      _APP_OPTIONS_ABUSE: "disabled"
+      _APP_OPTIONS_FORCE_HTTPS: "disabled"
+      # Allow the bootstrap script to create the first console user via
+      # POST /v1/account. Without this, Appwrite 1.9 refuses signup with
+      # `user_console_count_exceeded`.
+      _APP_CONSOLE_WHITELIST_ROOT: "disabled"
+      _APP_OPENSSL_KEY_V1: ${_APP_OPENSSL_KEY_V1:?Define _APP_OPENSSL_KEY_V1 in .env}
+      _APP_DOMAIN: ${APP_DOMAIN:-localhost}
+      _APP_DOMAIN_TARGET: ${APP_DOMAIN_TARGET:-localhost}
+      # GET /v1/console/variables crashes (TypeError) on Appwrite 1.9
+      # if these are absent — the controller passes them directly to
+      # `new Domain($value)` without a default. Setting them avoids
+      # the post-login 500 that breaks the SPA's org redirect.
+      _APP_DOMAIN_TARGET_CNAME: ${_APP_DOMAIN_TARGET_CNAME:-localhost}
+      _APP_DOMAIN_TARGET_A: ${_APP_DOMAIN_TARGET_A:-}
+      _APP_DOMAIN_TARGET_AAAA: ${_APP_DOMAIN_TARGET_AAAA:-}
+      _APP_REDIS_HOST: ${_APP_REDIS_HOST:-baas-redis}
+      _APP_REDIS_PORT: ${_APP_REDIS_PORT:-6379}
+      # DB — Appwrite 1.9 defaults to MongoDB. We mirror the official
+      # docker-compose: adapter=mongodb, root user, port 27017.
+      _APP_DB_ADAPTER: mongodb
+      _APP_DB_HOST: ${_APP_DB_HOST:-baas-mongodb}
+      _APP_DB_PORT: ${_APP_DB_PORT:-27017}
+      _APP_DB_USER: ${_APP_DB_USER:-root}
+      _APP_DB_PASS: ${_APP_DB_PASS:-baas_password}
+      _APP_DB_ROOT_PASS: ${_APP_DB_PASS:-baas_password}
+      _APP_DB_SCHEMA: ${_APP_DB_SCHEMA:-appwrite}
+      # SMTP — pointe vers Mailpit (service défini dans crf-sandbox, partagé
+      # via redcap-net). Mailpit accepte tout, sans auth ni TLS — c'est un
+      # mail-trap local, pas un vrai relai.
+      _APP_SMTP_HOST: ${_APP_SMTP_HOST:-mailpit}
+      _APP_SMTP_PORT: ${_APP_SMTP_PORT:-1025}
+      _APP_SMTP_SECURE: ""
+      _APP_SMTP_USERNAME: ""
+      _APP_SMTP_PASSWORD: ""
+      _APP_SYSTEM_EMAIL_NAME: ${APPWRITE_SYSTEM_EMAIL_NAME:-Sillage Sandbox}
+      _APP_SYSTEM_EMAIL_ADDRESS: ${APPWRITE_SYSTEM_EMAIL_ADDRESS:-no-reply@sillage.local}
+    volumes:
+      - baas-uploads:/storage/uploads
+      - baas-cache:/storage/cache
+      - baas-config:/storage/config
+      - baas-certificates:/storage/certificates
+    networks:
+      - baas-net
+      - redcap-net
+
+  # Console SPA. Sur Appwrite 1.9, la console n'est plus servie par le
+  # conteneur principal — c'est une image séparée. En prod Appwrite la
+  # source un Traefik route /console vers ce conteneur. Ici on l'expose
+  # directement sur :8091 pour rester simple.
+  #
+  # La SPA est un SvelteKit en mode SSG : les variables PUBLIC_* sont
+  # figées au build de l'image, pas lues à l'exécution. Passer
+  # PUBLIC_APPWRITE_ENDPOINT dans `environment` n'a donc aucun effet.
+  # On override le fichier _app/env.js au démarrage avec un `sed` puis
+  # on chaîne sur l'entrypoint nginx par défaut.
+  baas-console:
+    image: appwrite/console:8
+    container_name: sillage-sandbox-baas-console
+    ports:
+      - "${APP_CONSOLE_PORT:-8091}:80"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        sed -i 's|"PUBLIC_APPWRITE_ENDPOINT":"[^"]*"|"PUBLIC_APPWRITE_ENDPOINT":"'"${PUBLIC_APPWRITE_ENDPOINT:-http://localhost:8090/v1}"'"|' /usr/share/nginx/html/console/_app/env.js
+        exec nginx -g 'daemon off;'
+    volumes:
+      # Override the default nginx config — see docker/console-nginx.conf
+      # for the why. Adds a proxy_pass /v1/ → http://baas:80/v1/ so the
+      # SPA's same-origin API calls reach Appwrite.
+      - ./docker/console-nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - baas
+    networks:
+      - baas-net
+
+  # Worker dédié à la consommation de la queue v1-mails. Sans ce service,
+  # `account.createMagicURLToken` enfile bien le job dans Redis mais
+  # personne ne l'envoie → les emails ne quittent jamais Appwrite.
+  baas-worker-mails:
+    image: appwrite/appwrite:1.9.0
+    container_name: sillage-sandbox-baas-worker-mails
+    entrypoint: worker-mails
+    depends_on:
+      - baas
+      - baas-redis
+      - baas-mongodb
+    environment:
+      _APP_ENV: development
+      _APP_LOCALE: fr
+      _APP_OPENSSL_KEY_V1: ${_APP_OPENSSL_KEY_V1:?Define _APP_OPENSSL_KEY_V1 in .env}
+      _APP_DOMAIN: ${APP_DOMAIN:-localhost}
+      _APP_DOMAIN_TARGET: ${APP_DOMAIN_TARGET:-localhost}
+      # GET /v1/console/variables crashes (TypeError) on Appwrite 1.9
+      # if these are absent — the controller passes them directly to
+      # `new Domain($value)` without a default. Setting them avoids
+      # the post-login 500 that breaks the SPA's org redirect.
+      _APP_DOMAIN_TARGET_CNAME: ${_APP_DOMAIN_TARGET_CNAME:-localhost}
+      _APP_DOMAIN_TARGET_A: ${_APP_DOMAIN_TARGET_A:-}
+      _APP_DOMAIN_TARGET_AAAA: ${_APP_DOMAIN_TARGET_AAAA:-}
+      _APP_REDIS_HOST: ${_APP_REDIS_HOST:-baas-redis}
+      _APP_REDIS_PORT: ${_APP_REDIS_PORT:-6379}
+      _APP_DB_ADAPTER: mongodb
+      _APP_DB_HOST: ${_APP_DB_HOST:-baas-mongodb}
+      _APP_DB_PORT: ${_APP_DB_PORT:-27017}
+      _APP_DB_USER: ${_APP_DB_USER:-root}
+      _APP_DB_PASS: ${_APP_DB_PASS:-baas_password}
+      _APP_DB_ROOT_PASS: ${_APP_DB_PASS:-baas_password}
+      _APP_DB_SCHEMA: ${_APP_DB_SCHEMA:-appwrite}
+      _APP_SMTP_HOST: ${_APP_SMTP_HOST:-mailpit}
+      _APP_SMTP_PORT: ${_APP_SMTP_PORT:-1025}
+      _APP_SMTP_SECURE: ""
+      _APP_SMTP_USERNAME: ""
+      _APP_SMTP_PASSWORD: ""
+      _APP_SYSTEM_EMAIL_NAME: ${APPWRITE_SYSTEM_EMAIL_NAME:-Sillage Sandbox}
+      _APP_SYSTEM_EMAIL_ADDRESS: ${APPWRITE_SYSTEM_EMAIL_ADDRESS:-no-reply@sillage.local}
+    networks:
+      - baas-net
+      - redcap-net
+
+  baas-mongodb:
+    image: mongo:8.2.5
+    container_name: sillage-sandbox-baas-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${_APP_DB_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${_APP_DB_PASS:-baas_password}
+    volumes:
+      - baas-mongodb-data:/data/db
+    networks:
+      - baas-net
+
+  baas-redis:
+    image: redis:7.4-alpine
+    container_name: sillage-sandbox-baas-redis
+    networks:
+      - baas-net
+
+volumes:
+  baas-uploads:
+  baas-cache:
+  baas-config:
+  baas-certificates:
+  baas-mongodb-data:
+
+networks:
+  baas-net:
+    driver: bridge
+  # Déclaré ici pour pouvoir l'attacher au service `baas`. Le réseau réel
+  # est défini par crf-sandbox/docker/docker-compose.yml (inclus ci-dessus)
+  # — Compose le déduplique au merge.
+  redcap-net:
+    external: false

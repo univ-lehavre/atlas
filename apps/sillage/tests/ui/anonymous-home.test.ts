@@ -1,0 +1,67 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { cleanup, fireEvent, render } from '@testing-library/svelte';
+import AnonymousHome from '@univ-lehavre/atlas-ui/AnonymousHome.svelte';
+
+const makeResearchers = (n: number) =>
+  Array.from({ length: n }, (_, i) => ({
+    id: `rsr-${i + 1}`,
+    fullName: `Fictional ${i + 1}`,
+    photoUrl: `https://i.pravatar.cc/300?u=test-${i + 1}`,
+    bio: `Mock bio ${i + 1}.`,
+  }));
+
+afterEach(cleanup);
+
+describe('<AnonymousHome>', () => {
+  it('renders 8 portraits and one Meet-the-community tile when pool ≥ 8', () => {
+    const { container } = render(AnonymousHome, {
+      signupUrl: '/signup',
+      researchers: makeResearchers(24),
+    });
+    // Bootstrap layout : each tile lives in a .col
+    expect(container.querySelectorAll('.portrait-tile')).toHaveLength(8);
+    expect(container.querySelectorAll('.discover-tile')).toHaveLength(1);
+    expect(container.textContent).toContain('Meet the community');
+  });
+
+  it('still renders the discover tile when the pool has < 5 entries', () => {
+    const { container } = render(AnonymousHome, {
+      signupUrl: '/signup',
+      researchers: makeResearchers(3),
+    });
+    expect(container.querySelectorAll('.portrait-tile')).toHaveLength(3);
+    expect(container.querySelectorAll('.discover-tile')).toHaveLength(1);
+  });
+
+  it('discover tile links to signupUrl by default', () => {
+    const { container } = render(AnonymousHome, {
+      signupUrl: '/custom-signup',
+      researchers: makeResearchers(8),
+    });
+    const link = container.querySelector('a.discover-tile');
+    expect(link?.getAttribute('href')).toBe('/custom-signup');
+  });
+
+  it('renders a button (no <a>) and calls onSignupClick when provided', async () => {
+    const onSignupClick = vi.fn();
+    const { container } = render(AnonymousHome, {
+      signupUrl: '/signup',
+      researchers: makeResearchers(8),
+      onSignupClick,
+    });
+    expect(container.querySelector('a.discover-tile')).toBeNull();
+    const button = container.querySelector('button.discover-tile') as HTMLButtonElement;
+    expect(button).toBeTruthy();
+    await fireEvent.click(button);
+    expect(onSignupClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('researcher portraits expose alt text from fullName', () => {
+    const { container } = render(AnonymousHome, {
+      signupUrl: '/signup',
+      researchers: makeResearchers(8),
+    });
+    const firstImg = container.querySelector('.portrait-tile img') as HTMLImageElement | null;
+    expect(firstImg?.alt).toMatch(/Portrait of Fictional 1/);
+  });
+});

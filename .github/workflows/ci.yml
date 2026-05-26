@@ -35,7 +35,7 @@ jobs:
 
       - name: Create SvelteKit env files
         run: |
-          for app in apps/amarre apps/ecrin apps/find-an-expert; do
+          for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
             cp "$app/.env.example" "$app/.env" 2>/dev/null || true
           done
 
@@ -69,7 +69,7 @@ jobs:
 
       - name: Create SvelteKit env files
         run: |
-          for app in apps/amarre apps/ecrin apps/find-an-expert; do
+          for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
             cp "$app/.env.example" "$app/.env" 2>/dev/null || true
           done
 
@@ -103,7 +103,7 @@ jobs:
 
       - name: Create SvelteKit env files
         run: |
-          for app in apps/amarre apps/ecrin apps/find-an-expert; do
+          for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
             cp "$app/.env.example" "$app/.env" 2>/dev/null || true
           done
 
@@ -136,7 +136,7 @@ jobs:
 
       - name: Create SvelteKit env files
         run: |
-          for app in apps/amarre apps/ecrin apps/find-an-expert; do
+          for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
             cp "$app/.env.example" "$app/.env" 2>/dev/null || true
           done
 
@@ -174,7 +174,7 @@ jobs:
 
       - name: Create SvelteKit env files
         run: |
-          for app in apps/amarre apps/ecrin apps/find-an-expert; do
+          for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
             cp "$app/.env.example" "$app/.env" 2>/dev/null || true
           done
 

@@ -53,6 +53,9 @@
     "apps/amarre": {
       "project": ["src/**/*.ts", "src/**/*.svelte"]
     },
+    "apps/sillage": {
+      "project": ["src/**/*.ts", "src/**/*.svelte"]
+    },
     "apps/ecrin": {
       "project": ["src/**/*.ts", "src/**/*.svelte"],
       "ignore": [
@@ -91,6 +94,12 @@
     },
     "sandbox/crf-sandbox": {
       "project": ["tests/**/*.ts"]
+    },
+    "sandbox/sillage-sandbox": {
+      "project": ["scripts/**/*.ts", "tests/**/*.ts"]
+    },
+    "sandbox/crf-sandbox-core": {
+      "project": ["src/**/*.ts", "bin/**/*.ts", "tests/**/*.ts"]
     },
     "packages/crf-client": {
       "project": ["src/**/*.ts"],
