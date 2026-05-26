@@ -1,0 +1,18 @@
+# OWASP ZAP baseline — gestion des faux positifs
+#
+# Format : TSV (tabulations) à 3 colonnes : <plugin_id>\t<action>\t<commentaire>
+#   action : IGNORE | WARN | FAIL
+#
+# Comment ajouter une exception :
+#   1. Lancer le scan (Actions → ZAP Baseline → Run workflow → URL).
+#   2. Récupérer le report HTML/Markdown dans l'artefact `zap_scan`.
+#   3. Identifier le plugin_id (colonne `Risk` du tableau) de l'alerte
+#      à silencer.
+#   4. Ajouter une ligne IGNORE ici avec une justification courte mais
+#      vérifiable (lien vers la spec, motivation business, etc.).
+#   5. Relancer le workflow pour confirmer que l'alerte est silencieuse.
+#
+# Référence des plugin_id : https://www.zaproxy.org/docs/alerts/
+#
+# Exemple :
+# 10202	IGNORE	Anti-CSRF token absent — protégé par SameSite=Strict + Origin check côté SvelteKit (cf. Phase 6.4)
