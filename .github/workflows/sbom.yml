@@ -1,0 +1,130 @@
+name: SBOM
+
+# Phase 4.4 DevSecOps : génération du Software Bill of Materials au format
+# CycloneDX à chaque push sur main. L'artefact est conservé 90 jours sur
+# GitHub Actions (rétention par défaut) — suffisant pour répondre à un
+# audit ou à un advisory ciblé. Pour archive long-terme, snapshoter
+# manuellement vers `docs/security/sbom/` (cf. README de ce dossier).
+#
+# Triggers :
+#  - push sur main : SBOM canonique post-merge.
+#  - workflow_dispatch : régénération ponctuelle manuelle.
+#
+# Outil : @cyclonedx/cdxgen — épinglé en version exacte pour la
+# reproductibilité (cf. SBOM lui-même : la version du générateur fait
+# partie des métadonnées du document).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Pinned cdxgen version. Bumped via Dependabot ? Non — cdxgen tourne
+  # via `npx -y` donc Dependabot ne le voit pas. Mettre à jour à la main
+  # quand une nouvelle version stable sort (cdxgen suit semver).
+  CDXGEN_VERSION: "12.4.4"
+
+jobs:
+  generate:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          # SBOM doc inclut le commit SHA ; fetch-depth: 1 suffit.
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .nvmrc
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        # cdxgen lit pnpm-lock.yaml et inspecte node_modules pour le
+        # détail des dépendances transitives (hash, licences, sources).
+        # --frozen-lockfile garantit que le SBOM reflète exactement la
+        # lockfile committée.
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate CycloneDX SBOM
+        # `-t pnpm` : profil pnpm-aware (lit pnpm-lock.yaml).
+        # `--spec-version 1.6` : dernière version stable de la spec
+        # CycloneDX (publiée 2024-04). Compatible Dependency-Track,
+        # GitHub Dependency graph, Trivy, OSV-Scanner.
+        # `--recurse` (par défaut) : couvre apps/, packages/, cli/,
+        # services/, sandbox/, ui/, config/ — l'ensemble du monorepo.
+        # Validation : cdxgen valide par défaut sa propre sortie contre
+        # le schéma CycloneDX avant écriture (pas de flag `--no-validate`).
+        run: |
+          npx -y "@cyclonedx/cdxgen@${CDXGEN_VERSION}" \
+            -t pnpm \
+            --spec-version 1.6 \
+            -o sbom-cyclonedx.json \
+            .
+
+      - name: Sanity-check SBOM
+        # Vérifie que la sortie est un JSON parseable avec les champs
+        # CycloneDX attendus + au moins quelques composants. Détecte
+        # un cdxgen silencieusement cassé (sortie vide, mauvais format).
+        run: |
+          if ! jq -e '.bomFormat == "CycloneDX"' sbom-cyclonedx.json > /dev/null; then
+            echo "::error::Output is missing CycloneDX format marker"
+            exit 1
+          fi
+          if ! jq -e '.specVersion == "1.6"' sbom-cyclonedx.json > /dev/null; then
+            echo "::error::Output is not CycloneDX 1.6"
+            exit 1
+          fi
+          count=$(jq '.components | length' sbom-cyclonedx.json)
+          if [ "$count" -lt 100 ]; then
+            echo "::error::SBOM only has $count components — expected hundreds for this monorepo"
+            exit 1
+          fi
+          echo "SBOM sanity check passed ($count components)"
+
+      - name: Summarize SBOM
+        # Affiche un résumé lisible dans les logs : nombre de composants,
+        # version cdxgen, taille du document. Utile pour le triage rapide
+        # quand on rouvre un build vieux de plusieurs mois.
+        run: |
+          components=$(jq '.components | length' sbom-cyclonedx.json)
+          tool=$(jq -r '.metadata.tools.components[0].name + " " + .metadata.tools.components[0].version' sbom-cyclonedx.json)
+          size=$(wc -c < sbom-cyclonedx.json | tr -d ' ')
+          {
+            echo "## SBOM summary"
+            echo ""
+            echo "| Field | Value |"
+            echo "| --- | --- |"
+            echo "| Components | $components |"
+            echo "| Generator | $tool |"
+            echo "| Spec | CycloneDX 1.6 |"
+            echo "| Size | $size bytes |"
+            echo "| Commit | \`${{ github.sha }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: sbom-cyclonedx-${{ github.sha }}
+          path: sbom-cyclonedx.json
+          # 90 jours = rétention par défaut GitHub Actions, suffisant pour
+          # le cycle d'investigation post-incident (audit + remédiation).
+          # Pour archive long-terme, snapshoter à la main vers
+          # docs/security/sbom/ (cf. README).
+          retention-days: 90
+          if-no-files-found: error

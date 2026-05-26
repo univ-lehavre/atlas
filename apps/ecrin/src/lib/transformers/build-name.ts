@@ -1,5 +1,4 @@
 import type { EAV } from '../types';
-import { ECR } from '../constants';
 
 const buildName = (data: EAV[]): string => {
   const first_name = data
@@ -41,13 +40,5 @@ const capitalizeFirstLetter = (name: string): string => {
     })
     .join(' ');
 };
-
-const getID = (data: EAV[]): string => {
-  const id = data.filter((record) => record.field_name === 'id').map((record) => record.value)[0];
-  return id;
-};
-
-const getECRcode = (label: string) =>
-  ECR.filter((record) => record.label === label).map((record) => record.code)[0];
 
 export { buildName, transformToName };

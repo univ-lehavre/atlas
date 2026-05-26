@@ -17,6 +17,11 @@ env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  # Phase 4.3: attach npm provenance (OIDC-signed in-toto attestation) to
+  # every `npm publish` / `pnpm publish` call in this job. Honored by both
+  # `changeset publish` (npm registry) and the GitHub Packages loop in
+  # scripts/release/publish-packages.sh.
+  NPM_CONFIG_PROVENANCE: "true"
 
 jobs:
   release:
@@ -29,6 +34,10 @@ jobs:
       contents: write
       pull-requests: write
       packages: write
+      # OIDC token used by npm CLI to attach a provenance statement to each
+      # publish (Phase 4.3). Without this scope, `--provenance` fails to
+      # mint the in-toto attestation.
+      id-token: write
     steps:
       - name: Checkout Repo
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6

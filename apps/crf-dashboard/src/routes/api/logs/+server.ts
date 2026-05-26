@@ -61,8 +61,7 @@ const persistAndSend = async (
 ): Promise<void> => {
   const enriched = enrichLogs(allLogs);
   const hasNewData = enriched.length > (cache?.logs.length ?? 0);
-  const shouldWriteCache =
-    forceRefresh || cache === null || hasNewData || (cache !== null && isCacheStale(cache));
+  const shouldWriteCache = forceRefresh || cache === null || hasNewData || isCacheStale(cache);
   const persistedAt = shouldWriteCache ? Date.now() : (cache?.savedAt ?? null);
   if (shouldWriteCache) {
     await writeCache(

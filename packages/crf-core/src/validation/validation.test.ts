@@ -7,9 +7,6 @@ import { describe, it, expect } from 'vitest';
 import {
   TOKEN_PATTERN,
   CRF_NAME_PATTERN,
-  RECORD_ID_PATTERN,
-  EMAIL_PATTERN,
-  VERSION_PATTERN,
   DATE_PATTERN,
   DATETIME_PATTERN,
   TIME_PATTERN,

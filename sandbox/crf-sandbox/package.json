@@ -1,6 +1,7 @@
 {
   "name": "@univ-lehavre/atlas-crf-sandbox",
   "version": "2.1.0",
+  "private": true,
   "description": "CRF (REDCap) testing sandbox - Docker environment and contract tests for validating OpenAPI specs",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
@@ -34,12 +35,12 @@
     "format:check": "prettier --check tests"
   },
   "devDependencies": {
-    "@types/node": "^25.9.0",
+    "@types/node": "^25.9.1",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^10.4.0",
     "prettier": "^3.8.3",
     "tsx": "^4.22.3",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.7"
   }
 }

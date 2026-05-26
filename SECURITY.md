@@ -71,10 +71,33 @@ exposerait la vulnérabilité avant qu'un correctif soit disponible.
 
 - **Secret scanning** : `gitleaks` en pre-commit + scan GitHub natif
 - **SCA** : `pnpm audit` en CI (high+), Dependabot configuré
-- **SAST** : à implémenter (CodeQL — voir TODO.md DevSecOps)
-- **Supply chain** : actions GitHub épinglées par SHA, npm provenance
-  prévue (cf. `TODO.md` Phase 4.3)
-- **Branch protection** sur `main` : à configurer dans Settings → Branches
+- **SAST** : `CodeQL` (`.github/workflows/codeql.yml`) sur PR + push main + hebdomadaire
+- **Supply chain** : actions GitHub épinglées par SHA + `npm provenance`
+  via OIDC sur tous les publish (npm + GitHub Packages) + **SBOM CycloneDX**
+  généré à chaque push sur main (cf. [docs/security/sbom/](docs/security/sbom/README.md))
+- **Branch protection** sur `main` : activée le 2026-05-19
+
+## Vérifier l'origine d'un package atlas
+
+Tous les packages `@univ-lehavre/atlas-*` publiés depuis le 2026-05-22
+embarquent une **provenance statement** signée par OIDC GitHub Actions
+(in-toto attestation conforme à [SLSA Build L3](https://slsa.dev/spec/v1.0/levels)).
+Cette attestation lie un tarball publié à un commit Git, un workflow et
+un runner GitHub vérifiables.
+
+Pour vérifier qu'un package installé provient bien du workflow Atlas :
+
+```bash
+# Vérifie l'intégralité du lockfile (recommandé en CI)
+npm audit signatures
+
+# Inspecte la provenance d'un package précis
+npm view @univ-lehavre/atlas-citation --json | jq .dist.attestations
+```
+
+Une absence de provenance ou une signature invalide indique un publish
+hors workflow (hotfix manuel, account compromise, supply-chain attack) —
+**refuser l'install et ouvrir un advisory** via les canaux ci-dessus.
 
 ## Crédits
 

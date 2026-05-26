@@ -17,13 +17,8 @@ Items concrets, immédiatement actionnables, sans dépendance d'arbitrage préal
 - [x] [Actions UI GitHub](#actions-manuelles-ui-github) — Secret Scanning + Push Protection + Dependabot security updates + branch protection sur `main` activés via API GitHub le 2026-05-19
 - [x] Fix logos `vite-plugin-static-copy` → script `prepare` (3 apps) — livré et mergé via [PR #157](https://github.com/univ-lehavre/atlas/pull/157)
 - [x] Nettoyer `knip.json` : retirer `@univ-lehavre/atlas-logos` de `ignoreDependencies` des 3 apps — livré via [PR #160](https://github.com/univ-lehavre/atlas/pull/160)
-- [ ] Examiner les 7 alertes Dependabot remontées suite à l'activation du Dependency graph le 2026-05-19 (6 moderate, 1 low — toutes sous le seuil `high` du workflow `dependency-review`). Triage via Settings → Security → Dependabot. Lié à [Phase 3.3](#33-renforcement-de-pnpm-audit) (durcissement `--audit-level=moderate`).
-- [ ] **Trier les 25 warnings + 4 notes CodeQL restants** (post-[PR #194](https://github.com/univ-lehavre/atlas/pull/194), qui a fermé l'erreur critique `js/command-line-injection` + 1 warning) :
-  - `js/file-access-to-http` × 13 — test helpers sandbox/crf-sandbox (REDCap test code lisant un path d'env puis fetchant `localhost:8888`). Acceptable pour des tests sandbox-only ; envisager `// codeql[js/file-access-to-http]` ligne-à-ligne pour silencer.
-  - `js/incomplete-url-substring-sanitization` × ~3 restants — vérifier si chaque match est un placeholder check (comme `appwrite.ts` fixé en #194) ou un vrai gap.
-  - `js/comparison-between-incompatible-types` × 1 — [apps/crf-dashboard/src/routes/api/logs/+server.ts](apps/crf-dashboard/src/routes/api/logs/+server.ts). Pre-existing.
-  - `js/unused-local-variable` × 4 — `note` severity, simple dead-let pruning dans `packages/crf-core/src/validation/`, `packages/citation-validate/`, `apps/ecrin/src/lib/transformers/build-name.ts`.
-  - Pour chaque alerte non corrigeable : décider entre **dismiss** (Settings → Security → Code scanning → Dismiss as `won't fix` / `false positive` avec justification) et **fix code**.
+- [x] Examiner les 7 alertes Dependabot remontées suite à l'activation du Dependency graph le 2026-05-19 — toutes fermées automatiquement le 2026-05-21 par les bumps Dependabot mergés (cookie, esbuild, js-yaml, ajv, vite, ws, protobufjs). Vérifié le 2026-05-22 : 0 alerte Dependabot ouverte.
+- [x] **Triage complet des alertes CodeQL restantes** (post-[PR #194](https://github.com/univ-lehavre/atlas/pull/194)) — inventaire réel 39 alertes (vs "25+4" estimé) ; 26 dismissées + 13 fixes code (PR triage). Détail dans l'[archive ci-dessous](#2026-05-22--triage-codeql-post-194).
 
 ---
 
@@ -49,11 +44,11 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [ ] **Dockeriser sillage-app dans sillage-sandbox** — `apps/sillage` est lancée hors du compose (`pnpm -F atlas-sillage dev` sur le host). Pour anticiper les dépendances R (project-graph-shiny) et Python (ecrin.py / cahier-reports), il faut un service `app` dans `sandbox/sillage-sandbox/docker-compose.yaml` qui run sillage build-once et expose :5173. Étapes : (a) `apps/sillage/Dockerfile` multi-stage (node:24-alpine builder + adapter-node runtime), (b) service `app` dans le compose avec port mapping 5173:3000 et env vars depuis `.env.local` généré, (c) update `write-sillage-env.sh` pour pointer Appwrite/REDCap via le DNS interne docker (genre `http://baas:80/v1`) au lieu de `localhost`, (d) README qui documente `pnpm dev` (HMR rapide, host) vs `docker compose up` (prod-like, full stack incluant l'app). Pré-requis pour la phase qui ajoute les services R/Python.
 - [ ] **Sandbox sillage : volumes volatils par défaut** — actuellement `sillage-sandbox/docker-compose.yaml` déclare des volumes nommés persistants (`baas-uploads`, `baas-cache`, `baas-config`, `baas-certificates`, `baas-mongodb-data`). L'état survit donc à `docker compose down` mais en pratique on rebootstrappe systématiquement et le drift d'état (cf. l'item suivant) cause plus de bug que de bénéfice. Convertir en volumes anonymes / tmpfs pour que chaque `pnpm start` parte d'un état fresh — évite aussi les conflits d'état entre les sandboxes amarre/sillage qui partagent le projet REDCap id=1. Implique d'accepter un cold-bootstrap (~30-60s) à chaque relance.
 - [ ] **Bug d'idempotence Appwrite après `docker compose down`/`up`** — observé dans la session du 2026-05-21 : un cycle `docker compose down` (sans `-v`) suivi d'`up -d` perd l'état applicatif Appwrite (le projet `amarre` n'existe plus, retour `project_not_found` sur `/v1/...`). Pourtant le volume `baas-mongodb-data` est nommé et préservé. Hypothèses : Appwrite ne lit pas son state au cold-restart, ou MongoDB perd l'auth (root password drift). Workaround actuel : rejouer `pnpm bootstrap:baas` qui est idempotent. À creuser : pourquoi le state Appwrite ne survit pas à un down/up alors que les volumes sont là — diagnostiquer via `docker volume inspect amarre-sandbox_baas-mongodb-data` et `mongosh` direct dans le conteneur.
-- [ ] **Aligner `node-appwrite` (SDK 25.x = Appwrite 1.9.5) avec le server (`appwrite/appwrite:1.9.0`)** — 5 packages tirent `node-appwrite@^25.0.0` (`packages/auth`, `packages/baas`, `apps/amarre`, `apps/find-an-expert`, `apps/ecrin`) + un `appwrite@^25.1.1` (browser SDK) dans `apps/ecrin`. Le SDK 25.x annonce viser Appwrite 1.9.5 (header `X-Appwrite-Response-Format: 1.9.5`) alors que la dernière image stable côté server est `1.9.0`. Spam de warnings au démarrage du dev server + smoke. Options : (a) downgrade SDK vers `^23.1.0` (cible exact 1.9.0, mais 2 majors de retard et possibles breaking changes via le store features 1.9.x non disponibles) ; (b) downgrade vers `^24.1.0` (cible 1.9.4, plus proche, moins de breaking) ; (c) attendre que `appwrite/appwrite:1.9.5` sorte. Option (b) est probablement le bon compromis si elle ne casse rien. Tester via build + lint + typecheck + smoke avant merge.
+- [x] **Aligner `node-appwrite` (SDK 25.x = Appwrite 1.9.5) avec le server (`appwrite/appwrite:1.9.0`)** — **Décision 2026-05-22** : on garde SDK 25.x + server 1.9.0 (image latest, sortie 2026-04-01). Le warning « SDK built for 1.9.5, server 1.9.0 » au boot dev/smoke est accepté comme bruit jusqu'à la sortie d'`appwrite/appwrite:1.9.5` server-side. Raison du choix : (a) le downgrade SDK vers 24.1.0 (cible 1.9.4) ou 22.x (cible 1.8.x) ferait perdre `TablesDB` que `apps/ecrin` consomme déjà (cf [§6.4](#64-authentification-et-sessions) — dédup baas) ; (b) l'option « server only » 1.9.5 sortira naturellement, le warning disparaîtra alors sans toucher au code. Réévaluer si Appwrite tarde > 6 mois ou si le warning gagne en sévérité.
 - [ ] **Parité visuelle amarre prod vs local (atlas-amarre)** — la prod sur https://amarre.univ-lehavre.fr et le local servi par `pnpm -F amarre dev` ont des couleurs de background différentes (et possiblement d'autres divergences visuelles). Cause probable : depuis l'extraction des composants vers `@univ-lehavre/atlas-ui` ([PR #190](https://github.com/univ-lehavre/atlas/pull/190)), certaines variables CSS ou rules SCSS Bootstrap custom de la prod ne remontent plus jusqu'au local. Investigation : (a) extraire le HTML/CSS rendu côté prod et le diff avec le rendu local ; (b) vérifier que `@univ-lehavre/atlas-ui/client` charge bien la même version de Bootstrap CSS + tous les overrides custom ; (c) cf. l'item « atlas-ui : système de theming optionnel » qui couvre une partie du problème.
 - [ ] **Réviser le workflow UI d'amarre — drift vs `univ-lehavre/amarre` standalone** — l'app dans atlas/apps/amarre/ et le dépôt standalone https://github.com/univ-lehavre/amarre ont divergé (le standalone n'a pas reçu les évolutions atlas, et inversement certains patterns du standalone manquent ici). Audit nécessaire : (a) diff structurel apps/amarre/ vs univ-lehavre/amarre, (b) identifier les divergences fonctionnelles (routes, hooks, UI) vs cosmétiques, (c) statuer sur ce qui doit être porté dans atlas (atlas reste la source canonique per décision 2026-05-19, cf [À arbitrer](#sort-du-dépôt-standalone-univ-lehavreamarre)). Lié à l'item Parité visuelle ci-dessus.
 - [ ] **Publier les 7 CLIs sur GitHub Packages** (`atlas-citation-cli`, `atlas-net-cli`, `atlas-stats-cli`, `atlas-crf-stats-cli`, `atlas-researcher-profiles-cli`, `atlas-crf-cli`, `atlas-crf-openapi`) — n'ont jamais déclenché de release, pas `private` mais absents du registry. Vérifier que les changesets les détectent, créer un premier changeset par package, vérifier que `pnpm release` les pousse bien sur `npm.pkg.github.com`. Documenter l'install côté consommateur (auth GH requis).
-- [ ] **Marquer 3 packages comme `"private": true`** pour éviter une publication accidentelle :
+- [x] **Marquer 3 packages comme `"private": true`** (livré le 2026-05-22) :
   - `apps/atlas-dashboard/package.json` (app SvelteKit, déployée via Appwrite Sites)
   - `apps/crf-dashboard/package.json` (idem)
   - `sandbox/crf-sandbox/package.json` (sandbox Docker local, pas un package npm distribuable)
@@ -62,11 +57,11 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 **DevSecOps (renvoient aux phases ci-dessous)**
 
 - [x] Phase 1 — CodeQL workflow (voir [§1.1](#11-codeql)) — workflow livré via PR #156, reste vérif Security tab + nomination security champion
-- [ ] Phase 4.3 — npm provenance via OIDC (voir [§4.3](#43-npm-provenance-via-oidc))
-- [ ] Phase 4.4 — SBOM CycloneDX (voir [§4.4](#44-sbom-software-bill-of-materials))
+- [x] Phase 4.3 — npm provenance via OIDC : `NPM_CONFIG_PROVENANCE=true` + `id-token: write` + doc `npm audit signatures` (voir [§4.3](#43-npm-provenance-via-oidc))
+- [x] Phase 4.4 — SBOM CycloneDX : workflow `sbom.yml` (cdxgen 12.4.4, spec 1.6, artefact 90j, doc dans `docs/security/sbom/`) (voir [§4.4](#44-sbom-software-bill-of-materials))
 - [x] Phase 5.3 — branch protection sur `main` activée via API le 2026-05-19 (voir [§5.3](#53-branch-protection-sur-main))
 - [x] Phase 6.3 — HTTP headers de sécurité livrés (CSP via `kit.csp` + 5 headers via `hooks.server.ts`, sur amarre + ecrin + find-an-expert). Reste à tightener `connect-src` (wildcard pour v1).
-- [ ] Phase 6.5 — rate limiting sur les endpoints publics (voir [§6.5](#65-rate-limiting))
+- [x] Phase 6.5 — rate limiting sur les endpoints publics ([packages/auth/src/rate-limit.ts](packages/auth/src/rate-limit.ts) + usages dans amarre/ecrin/find-an-expert ; cf. [§6.5](#65-rate-limiting))
 - [ ] Phase 7 — OWASP ZAP baseline (voir [§7.1](#71-owasp-zap-baseline))
 - [ ] Phase 8 — observabilité + runbook incident (voir [§8](#phase-8--observabilité-et-réponse-aux-incidents))
 
@@ -165,7 +160,7 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 - [x] Créer `.github/workflows/codeql.yml` avec langages `javascript-typescript` (via [PR #156](https://github.com/univ-lehavre/atlas/pull/156))
 - [x] Déclencheurs : `push` sur main, `pull_request` sur main, `schedule` hebdomadaire (lundi 03:17 UTC) + `workflow_dispatch`
 - [x] Activer les query suites `security-extended` et `security-and-quality`
-- [ ] Vérifier après premier run que les alertes remontent dans l'onglet Security du dépôt GitHub
+- [x] Vérifier après premier run que les alertes remontent dans l'onglet Security du dépôt GitHub — confirmé via les triages successifs (#194 le 2026-05-21 puis #198 le 2026-05-22)
 - [ ] Définir un _security champion_ responsable du triage des alertes (cf. [À arbitrer](#à-arbitrer))
 - [ ] Limitation Svelte : l'extracteur JS/TS de CodeQL ne parse pas les `.svelte` (les `<script>` sont hors couverture). À documenter et compléter par des revues + lint Svelte.
 
@@ -237,19 +232,20 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 
 - [x] Actuellement `permissions: contents: read` au top de ci.yml
 - [x] `permissions:` explicites présents dans `release.yml`, `docs.yml`, `gitleaks.yml`, `codeql.yml`
-- [ ] Pour `release.yml` : `id-token: write` requis pour OIDC/provenance — à ajouter quand on activera Phase 4.3
+- [x] Pour `release.yml` : `id-token: write` ajouté en même temps que Phase 4.3
 
 ### 4.3 npm provenance via OIDC
 
-- [ ] Dans le script `release` racine, ajouter `--provenance` à `npm publish` (ou via `changeset publish` avec la bonne config)
-- [ ] Vérifier que le workflow `release.yml` a `id-token: write`
-- [ ] Documenter la vérification côté consommateur : `npm audit signatures`
+- [x] `--provenance` activé sur les deux chemins de publish : `NPM_CONFIG_PROVENANCE=true` au niveau du job `release.yml` (capté par `pnpm changeset publish` qui délègue à `npm publish` pour la registry npm), et `--provenance` explicite sur `pnpm publish` dans [scripts/release/publish-packages.sh](scripts/release/publish-packages.sh) pour la registry GitHub Packages.
+- [x] Workflow `release.yml` : permission `id-token: write` ajoutée (requise pour minter l'attestation OIDC in-toto).
+- [x] Vérification côté consommateur documentée dans [SECURITY.md → Vérifier l'origine d'un package atlas](SECURITY.md) : `npm audit signatures` + `npm view … .dist.attestations`.
+- [ ] **À activer lors de la prochaine release réelle** : décommenter le trigger `push: main` dans [release.yml](.github/workflows/release.yml) (actuellement en pause). Les premiers tarballs publiés porteront alors la provenance.
 
 ### 4.4 SBOM (Software Bill of Materials)
 
-- [ ] Générer un SBOM CycloneDX à chaque build : `cdxgen` ou `@cyclonedx/cdxgen`
-- [ ] Publier le SBOM en artefact GitHub Actions sur chaque release
-- [ ] Stocker un SBOM agrégé dans `docs/security/sbom/` ou à côté des artefacts de release
+- [x] Workflow [.github/workflows/sbom.yml](.github/workflows/sbom.yml) — `@cyclonedx/cdxgen@12.4.4` épinglé, CycloneDX 1.6, déclenché sur `push: main` + `workflow_dispatch`. Le SBOM `sbom-cyclonedx-<sha>.json` est uploadé comme artefact (rétention 90j) avec un résumé dans le step summary.
+- [x] Artefact attaché au run du workflow (visible dans [Actions → SBOM](https://github.com/univ-lehavre/atlas/actions/workflows/sbom.yml)). Pas attaché à la release elle-même (à brancher plus tard dans release.yml si besoin via `workflow_call`).
+- [x] Dossier [docs/security/sbom/](docs/security/sbom/README.md) créé avec README expliquant : où trouver l'artefact, comment l'utiliser (osv-scanner, Dependency-Track), comment snapshoter manuellement en cas d'audit. Convention de nommage `atlas-YYYYMMDD-<sha>.json` pour les snapshots commités. Aucun JSON commité pour l'instant.
 
 ---
 
@@ -408,12 +404,12 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 - [x] Phase 3.1 (Dependabot) ✅ livré + auto-merge patches via `.github/workflows/dependabot-auto-merge.yml`
 - [x] Phase 3.2 (Dependency Review Action) ✅ livré via [PR #161](https://github.com/univ-lehavre/atlas/pull/161)
 - [x] Phase 4.1 (pin actions SHA) ✅ livré via PR #127 (+ #156, #161)
-- [x] Phase 4.2 (permissions minimales par job) ✅ — id-token reste à ajouter avec Phase 4.3
+- [x] Phase 4.2 (permissions minimales par job) ✅ — `id-token: write` ajouté sur release.yml (2026-05-22)
 
 **Sprint 3 (supply chain et Appwrite)**
 
-- [ ] Phase 4.3 (npm provenance via OIDC) — à faire
-- [ ] Phase 4.4 (SBOM CycloneDX) — à faire
+- [x] Phase 4.3 (npm provenance via OIDC) ✅ livré le 2026-05-22 (cf. [§4.3](#43-npm-provenance-via-oidc))
+- [x] Phase 4.4 (SBOM CycloneDX) ✅ livré le 2026-05-22 (cf. [§4.4](#44-sbom-software-bill-of-materials))
 - [x] Phase 6.3 (headers HTTP de sécurité) ✅ livré via PR #171 ; tightener `connect-src` ouvert
 - [x] Phase 6.4 (cookies session hardening + audit localStorage + CSRF) ✅ livré via PR #171
 - [x] Phase 2.2 (gitleaks) ✅ livré via PR #127 + stabilisation #141/#143/#144/#145
@@ -445,6 +441,30 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 ## Archive
 
 Historique des chantiers closés, gardé pour traçabilité.
+
+### 2026-05-22 — Triage CodeQL post-#194
+
+Inventaire réel : **39 alertes ouvertes** (vs "25 warnings + 4 notes" annoncés dans la TODO précédente).
+
+**Fix code (13 alertes via PR triage, branche `codeql/triage-post-194`)** :
+
+| Alerte(s)          | Règle                                                                   | Localisation                                                                                                                        | Fix                                                                         |
+| ------------------ | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| #10 (error) + #11  | `js/shell-command-{constructed-from-input, injection-from-environment}` | `cli/crf-openapi/src/extractor/index.ts:59`                                                                                         | `execSync` → `execFileSync` (args array, pas de shell)                      |
+| #15-#19 (×5)       | `js/insecure-temporary-file`                                            | `packages/citation-validate/src/store/{loader,saver}.test.ts`                                                                       | `join(tmpdir(), …${Date.now()})` → `mkdtempSync(tmpdir(), 'atlas-…-')`      |
+| #14                | `js/file-system-race`                                                   | `apps/amarre/scripts/manage-baselines.ts:67-77`                                                                                     | TOCTOU `existsSync`+`writeFileSync` → `try { readFileSync } catch (ENOENT)` |
+| #37                | `js/comparison-between-incompatible-types`                              | `apps/crf-dashboard/src/routes/api/logs/+server.ts:65`                                                                              | Branche `cache !== null` redondante supprimée (déjà court-circuitée)        |
+| #33, #34, #35, #36 | `js/unused-local-variable` (notes)                                      | `apps/ecrin/.../build-name.ts`, `packages/citation-validate/.../updater-effect.test.ts`, `packages/crf-core/.../validation.test.ts` | Suppression dead code/imports                                               |
+
+**Dismissed (26 alertes via gh API)** :
+
+| # alertes                         | Règle                    | Localisation                                                       | Raison                                                                                                                                                         |
+| --------------------------------- | ------------------------ | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #1-#9 (×9)                        | `js/polynomial-redos`    | `cli/crf-openapi/src/core/parsers/{help-php,schemas,index-php}.ts` | `won't fix` — outil CLI offline parsant des sources REDCap upstream téléchargées manuellement ; input trusted, pas user-provided ; DoS limité à la machine dev |
+| #21-#32, #39, #40, #42, #43 (×16) | `js/file-access-to-http` | `sandbox/crf-sandbox/tests/`, `sandbox/amarre-sandbox/tests/e2e/`  | `used in tests` — code test/sandbox lisant token de test depuis `.env.test` pour fetcher `localhost:8888` ; pas de prod                                        |
+| #20 (×1)                          | `js/file-access-to-http` | `packages/atlas-stats/src/github.ts:9`                             | `false positive` — pattern d'auth token GitHub API standard (URL hardcodée, seul le header `Authorization` vient d'un file)                                    |
+
+État final attendu après merge + re-scan CodeQL : **0 alerte ouverte**.
 
 ### 2026-05-19 — Workflows post-merge PR #127
 

@@ -8,7 +8,7 @@
 import { existsSync, readdirSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { stringify } from 'yaml';
 
 import {
@@ -56,7 +56,7 @@ export function extractZip(
   const tmpRoot = join(tmpdir(), `redcap-openapi-${version}-${Date.now()}`);
   mkdirSync(tmpRoot, { recursive: true });
 
-  execSync(`unzip -q -o ${JSON.stringify(zipPath)} -d ${JSON.stringify(tmpRoot)}`);
+  execFileSync('unzip', ['-q', '-o', zipPath, '-d', tmpRoot]);
 
   const sourcePath = join(tmpRoot, 'redcap', `redcap_v${version}`);
   if (!existsSync(sourcePath)) {

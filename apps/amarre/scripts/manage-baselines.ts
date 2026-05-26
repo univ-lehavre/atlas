@@ -64,12 +64,17 @@ class BaselineManager {
     const filename = `${name}.baseline.json`;
     const filepath = join(this.baselinesDir, filename);
 
-    if (!existsSync(filepath)) {
-      console.error(`❌ Baseline not found: ${filename}`);
-      process.exit(1);
+    let existing: Baseline;
+    try {
+      existing = JSON.parse(readFileSync(filepath, 'utf-8')) as Baseline;
+    } catch (err) {
+      const e = err as NodeJS.ErrnoException;
+      if (e.code === 'ENOENT') {
+        console.error(`❌ Baseline not found: ${filename}`);
+        process.exit(1);
+      }
+      throw err;
     }
-
-    const existing = JSON.parse(readFileSync(filepath, 'utf-8')) as Baseline;
     existing.data = data;
     existing.timestamp = new Date().toISOString();
     existing.version = this.getVersion();
