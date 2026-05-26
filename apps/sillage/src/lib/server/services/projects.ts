@@ -40,7 +40,15 @@ const stripTags = (raw: string | undefined): string => {
   if (!raw) return '';
   // REDCap returns rich-text labels with stripped <div class="…"> chrome
   // already, but legacy rows or notes fields can contain leftover tags.
-  return raw.replace(/<[^>]+>/g, '').trim();
+  // Iterate until stable to defeat nested patterns like `<sc<script>ript>`
+  // where a single greedy pass would leave dangerous residue.
+  let out = raw;
+  let prev: string;
+  do {
+    prev = out;
+    out = out.replace(/<[^>]*>/g, '');
+  } while (out !== prev);
+  return out.replace(/[<>]/g, '').trim();
 };
 
 export const mapRedcapToProjectSnapshot = (row: RawProjectRow): CommunityProject | null => {

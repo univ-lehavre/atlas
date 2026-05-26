@@ -1,11 +1,7 @@
-// Appwrite admin helper for level-5 smoke cleanup. Reads
-// `apps/sillage/.env.local` (provisioned by
-// `pnpm -F @univ-lehavre/atlas-sillage-sandbox bootstrap`) to find the
-// project + key. Same env-source as the dev server, so we hit the
-// exact same Appwrite the test just signed up against.
-
-import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+// Appwrite admin helper for level-5 smoke cleanup. Reads Appwrite
+// credentials from process.env — `playwright.config.ts` calls
+// `process.loadEnvFile` on `apps/sillage/.env.local` at startup, so we
+// hit the exact same Appwrite the test just signed up against.
 
 interface AppwriteEnv {
   endpoint: string;
@@ -14,20 +10,10 @@ interface AppwriteEnv {
 }
 
 const readEnv = (): AppwriteEnv | null => {
-  const path = resolve(
-    new URL(".", import.meta.url).pathname,
-    "../../../../../apps/sillage/.env.local",
-  );
-  if (!existsSync(path)) return null;
-  const map: Record<string, string> = {};
-  for (const line of readFileSync(path, "utf-8").split(/\r?\n/)) {
-    const m = line.match(/^([A-Z_]+)="?([^"\n]+)"?$/);
-    if (m) map[m[1]!] = m[2]!;
-  }
   const endpoint =
-    map["PUBLIC_APPWRITE_ENDPOINT"] ?? "http://localhost:8090/v1";
-  const projectId = map["PUBLIC_APPWRITE_PROJECT"];
-  const apiKey = map["APPWRITE_KEY"];
+    process.env["PUBLIC_APPWRITE_ENDPOINT"] ?? "http://localhost:8090/v1";
+  const projectId = process.env["PUBLIC_APPWRITE_PROJECT"];
+  const apiKey = process.env["APPWRITE_KEY"];
   if (!projectId || !apiKey) return null;
   return { endpoint, projectId, apiKey };
 };

@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { defineConfig, devices } from "@playwright/test";
 
 // Level-5 of the sillage test pyramid : one Playwright smoke that drives
@@ -5,6 +6,19 @@ import { defineConfig, devices } from "@playwright/test";
 // The suite self-skips when the stack isn't reachable (see
 // `tests/e2e/fixtures/preflight.ts`), so `pnpm test:e2e` is safe to
 // invoke without docker — it just reports "skipped".
+
+// Load `apps/sillage/.env.local` into process.env so fixtures (e.g. the
+// Appwrite cleanup helper) can read PUBLIC_APPWRITE_* / APPWRITE_KEY
+// without re-parsing the file themselves. Silently skipped when the
+// file doesn't exist (sandbox not bootstrapped yet) — the preflight
+// fixture will then skip the suite.
+try {
+  process.loadEnvFile(
+    resolve(import.meta.dirname, "../../apps/sillage/.env.local"),
+  );
+} catch {
+  // .env.local missing — fixtures will detect missing env and skip.
+}
 
 export default defineConfig({
   testDir: "./tests/e2e",
