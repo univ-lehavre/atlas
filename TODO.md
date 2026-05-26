@@ -55,7 +55,7 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 
 - [x] Phase 1 — CodeQL workflow (voir [§1.1](#11-codeql)) — workflow livré via PR #156, reste vérif Security tab + nomination security champion
 - [x] Phase 4.3 — npm provenance via OIDC : `NPM_CONFIG_PROVENANCE=true` + `id-token: write` + doc `npm audit signatures` (voir [§4.3](#43-npm-provenance-via-oidc))
-- [ ] Phase 4.4 — SBOM CycloneDX (voir [§4.4](#44-sbom-software-bill-of-materials))
+- [x] Phase 4.4 — SBOM CycloneDX : workflow `sbom.yml` (cdxgen 12.4.4, spec 1.6, artefact 90j, doc dans `docs/security/sbom/`) (voir [§4.4](#44-sbom-software-bill-of-materials))
 - [x] Phase 5.3 — branch protection sur `main` activée via API le 2026-05-19 (voir [§5.3](#53-branch-protection-sur-main))
 - [x] Phase 6.3 — HTTP headers de sécurité livrés (CSP via `kit.csp` + 5 headers via `hooks.server.ts`, sur amarre + ecrin + find-an-expert). Reste à tightener `connect-src` (wildcard pour v1).
 - [x] Phase 6.5 — rate limiting sur les endpoints publics ([packages/auth/src/rate-limit.ts](packages/auth/src/rate-limit.ts) + usages dans amarre/ecrin/find-an-expert ; cf. [§6.5](#65-rate-limiting))
@@ -240,9 +240,9 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 
 ### 4.4 SBOM (Software Bill of Materials)
 
-- [ ] Générer un SBOM CycloneDX à chaque build : `cdxgen` ou `@cyclonedx/cdxgen`
-- [ ] Publier le SBOM en artefact GitHub Actions sur chaque release
-- [ ] Stocker un SBOM agrégé dans `docs/security/sbom/` ou à côté des artefacts de release
+- [x] Workflow [.github/workflows/sbom.yml](.github/workflows/sbom.yml) — `@cyclonedx/cdxgen@12.4.4` épinglé, CycloneDX 1.6, déclenché sur `push: main` + `workflow_dispatch`. Le SBOM `sbom-cyclonedx-<sha>.json` est uploadé comme artefact (rétention 90j) avec un résumé dans le step summary.
+- [x] Artefact attaché au run du workflow (visible dans [Actions → SBOM](https://github.com/univ-lehavre/atlas/actions/workflows/sbom.yml)). Pas attaché à la release elle-même (à brancher plus tard dans release.yml si besoin via `workflow_call`).
+- [x] Dossier [docs/security/sbom/](docs/security/sbom/README.md) créé avec README expliquant : où trouver l'artefact, comment l'utiliser (osv-scanner, Dependency-Track), comment snapshoter manuellement en cas d'audit. Convention de nommage `atlas-YYYYMMDD-<sha>.json` pour les snapshots commités. Aucun JSON commité pour l'instant.
 
 ---
 
@@ -406,7 +406,7 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 **Sprint 3 (supply chain et Appwrite)**
 
 - [x] Phase 4.3 (npm provenance via OIDC) ✅ livré le 2026-05-22 (cf. [§4.3](#43-npm-provenance-via-oidc))
-- [ ] Phase 4.4 (SBOM CycloneDX) — à faire
+- [x] Phase 4.4 (SBOM CycloneDX) ✅ livré le 2026-05-22 (cf. [§4.4](#44-sbom-software-bill-of-materials))
 - [x] Phase 6.3 (headers HTTP de sécurité) ✅ livré via PR #171 ; tightener `connect-src` ouvert
 - [x] Phase 6.4 (cookies session hardening + audit localStorage + CSRF) ✅ livré via PR #171
 - [x] Phase 2.2 (gitleaks) ✅ livré via PR #127 + stabilisation #141/#143/#144/#145

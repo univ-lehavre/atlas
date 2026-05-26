@@ -73,7 +73,8 @@ exposerait la vulnérabilité avant qu'un correctif soit disponible.
 - **SCA** : `pnpm audit` en CI (high+), Dependabot configuré
 - **SAST** : `CodeQL` (`.github/workflows/codeql.yml`) sur PR + push main + hebdomadaire
 - **Supply chain** : actions GitHub épinglées par SHA + `npm provenance`
-  via OIDC sur tous les publish (npm + GitHub Packages)
+  via OIDC sur tous les publish (npm + GitHub Packages) + **SBOM CycloneDX**
+  généré à chaque push sur main (cf. [docs/security/sbom/](docs/security/sbom/README.md))
 - **Branch protection** sur `main` : activée le 2026-05-19
 
 ## Vérifier l'origine d'un package atlas
