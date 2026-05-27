@@ -40,6 +40,10 @@ export default withMermaid(
               { text: "Monorepo", link: "/architecture/monorepo" },
               { text: "Flux de données", link: "/architecture/data-flow" },
               { text: "Choix techniques", link: "/architecture/tech-choices" },
+              {
+                text: "Infrastructure Zero Trust (cible)",
+                link: "/architecture/zero-trust",
+              },
             ],
           },
         ],

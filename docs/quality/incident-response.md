@@ -248,7 +248,7 @@ Avant de marquer un incident comme résolu :
 - [ ] Surveillance 24 h post-déploiement sans récidive.
 - [ ] Post-mortem rédigé (P0/P1) ou ticket de suivi créé (P2).
 - [ ] Notification CNIL effectuée si fuite données perso (via DSI).
-- [ ] Communication aux parties prenantes (utilisateurs / DSI / chercheurs).
+- [ ] Communication aux parties prenantes (utilisateurs / DSI).
 - [ ] Issue/advisory privée fermée ou rendue publique si responsabilité
       revealed (en accord avec le reporter).
 

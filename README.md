@@ -2,23 +2,23 @@
 
 [![DOI](https://zenodo.org/badge/1137569222.svg)](https://doi.org/10.5281/zenodo.18310357)
 
-**Atlas** is a TypeScript monorepo developed by **Université Le Havre Normandie** to support research and facilitate collaboration between researchers.
+**Atlas** is a TypeScript monorepo developed by **Université Le Havre Normandie**. It bundles a set of applications, libraries, and tools to manage projects, handle structured forms, and orchestrate collaboration.
 
 ## Packages
 
 ### Main Modules
 
-| Package                           | Description                                      |
-| --------------------------------- | ------------------------------------------------ |
-| [ecrin](apps/ecrin)               | ECRIN module - researcher collaboration platform |
-| [amarre](apps/amarre)             | AMARRE module - research network visualization   |
-| [@univ-lehavre/crf](services/crf) | CRF module - REDCap client, server and CLI       |
+| Package                           | Description                                       |
+| --------------------------------- | ------------------------------------------------- |
+| [ecrin](apps/ecrin)               | ECRIN module - project + ethics review management |
+| [amarre](apps/amarre)             | AMARRE module - convention management             |
+| [@univ-lehavre/crf](services/crf) | CRF module - REDCap client, server and CLI        |
 
 ### Sub-projects
 
-| Package                                                  | Parent Module | Description                                     |
-| -------------------------------------------------------- | ------------- | ----------------------------------------------- |
-| [find-an-expert](apps/find-an-expert)                    | ECRIN         | Expertise discovery via publications and GitHub |
+| Package                                            | Parent Module | Description                                     |
+| -------------------------------------------------- | ------------- | ----------------------------------------------- |
+| [find-an-expert](apps/find-an-expert)              | ECRIN         | Expertise discovery via publications and GitHub |
 | [@univ-lehavre/atlas-crf-core](packages/crf-core)  | CRF           | REDCap business logic with Effect               |
 | [@univ-lehavre/atlas-crf-openapi](cli/crf-openapi) | CRF           | OpenAPI extraction from REDCap                  |
 
@@ -27,7 +27,7 @@
 | Package                                                   | Description                                |
 | --------------------------------------------------------- | ------------------------------------------ |
 | [@univ-lehavre/atlas-net](packages/net)                   | Network diagnostic utilities               |
-| [@univ-lehavre/atlas-baas](packages/baas)         | Shared Appwrite client                     |
+| [@univ-lehavre/atlas-baas](packages/baas)                 | Shared Appwrite client                     |
 | [@univ-lehavre/atlas-auth](packages/auth)                 | Authentication service                     |
 | [@univ-lehavre/atlas-errors](packages/errors)             | Shared error classes                       |
 | [@univ-lehavre/atlas-validators](packages/validators)     | Validation utilities                       |
@@ -63,7 +63,7 @@ The Campus is a laureate of the "ExcellencES" call for projects of **France 2030
 
 **Partner universities:** Åland (Finland), Bourgas (Bulgaria), Stralsund (Germany), EMUNI (Slovenia), Azores (Portugal), Balearic Islands (Spain), Patras (Greece), Sassari (Italy), Faroe Islands, Antilles (France), Le Havre (France), Dubrovnik (Croatia), Szczecin (Poland).
 
-**Research hubs:**
+**Thematic hubs:**
 
 - Identities and heritage of coastal and island communities
 - Circular blue economy, port logistics, and sustainable tourism
@@ -73,10 +73,12 @@ The Campus is a laureate of the "ExcellencES" call for projects of **France 2030
 
 ## Documentation
 
-- [Getting Started Guide](https://univ-lehavre.github.io/atlas/guide/)
-- [API Reference](https://univ-lehavre.github.io/atlas/api/)
-- [Documentation Audit](https://univ-lehavre.github.io/atlas/projects/atlas/documentation-audit)
-- [ECRIN Audit](https://univ-lehavre.github.io/atlas/projects/ecrin/audit/)
+Full documentation is available at <https://univ-lehavre.github.io/atlas/>.
+
+- [Applications](https://univ-lehavre.github.io/atlas/apps/amarre)
+- [Architecture](https://univ-lehavre.github.io/atlas/architecture/monorepo)
+- [Quality & security](https://univ-lehavre.github.io/atlas/quality/ci-pipeline)
+- [Collaboration](https://univ-lehavre.github.io/atlas/collaboration/workflow)
 
 ## Quick Start
 
