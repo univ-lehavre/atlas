@@ -1,5 +1,123 @@
-# Pipeline CI
+# Pipeline d'intégration continue (CI)
 
-_(à rédiger pour un public non-expert dans une PR ultérieure)_
+L'**intégration continue** (CI) désigne l'ensemble des vérifications automatiques exécutées chaque fois qu'un contributeur pousse du code. Atlas l'orchestre via **[GitHub Actions](https://github.com/features/actions)**, le service intégré à GitHub qui exécute des _workflows_ (suites de commandes décrites dans des fichiers `.github/workflows/*.yml`) sur des machines virtuelles.
 
-Cette page décrira ce qui se passe automatiquement quand quelqu'un pousse du code sur Atlas : la chaîne de vérifications (typecheck, lint, tests, scans de sécurité, build, déploiement de la documentation) déclenchée par GitHub Actions sur chaque PR et chaque push sur `main`.
+Objectif : aucun code non vérifié n'entre dans `main`. Si une vérification échoue, la pull request est bloquée tant que l'auteur n'a pas corrigé.
+
+## Vue d'ensemble
+
+Six _workflows_ s'exécutent en parallèle à chaque pull request :
+
+| Workflow                                                                                                           | Rôle                                                                 |
+| ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| [`ci.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/ci.yml)                               | Lint, typecheck, tests, build, documentation, audits                 |
+| [`codeql.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/codeql.yml)                       | Analyse statique de sécurité (CodeQL)                                |
+| [`gitleaks.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/gitleaks.yml)                   | Détection de secrets dans le diff                                    |
+| [`dependency-review.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/dependency-review.yml) | Revue des nouvelles dépendances (versions, licences, vulnérabilités) |
+| [`sbom.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/sbom.yml)                           | Génération du SBOM (inventaire détaillé des dépendances)             |
+| [`zap-baseline.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/zap-baseline.yml)           | Scan dynamique OWASP ZAP (déclenchement manuel)                      |
+
+Deux autres tournent sur `main` :
+
+| Workflow                                                                                                                   | Rôle                                                  |
+| -------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| [`docs.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/docs.yml)                                   | Publication du site de documentation sur GitHub Pages |
+| [`release.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/release.yml)                             | Publication des paquets sur npm via Changesets        |
+| [`dependabot-auto-merge.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/dependabot-auto-merge.yml) | Auto-merge des bumps Dependabot patch/minor           |
+
+## Le workflow `ci.yml` en détail
+
+`ci.yml` regroupe six _jobs_ qui s'exécutent en parallèle (sauf `build` et `docs` qui attendent les précédents) :
+
+```
+              ┌──────────┐
+              │  lint    │
+              ├──────────┤
+push ─────▶   │ typecheck│ ─┐
+              ├──────────┤  │
+              │   test   │ ─┴──▶ build ─▶ docs
+              ├──────────┤
+              │  audit   │
+              └──────────┘
+```
+
+### `lint`
+
+```bash
+pnpm format:check     # Prettier vérifie le formatage
+pnpm lint             # ESLint applique les règles de style/sécurité
+```
+
+### `typecheck`
+
+```bash
+pnpm typecheck        # TypeScript vérifie les types
+pnpm svelte:check     # Vérification supplémentaire pour les fichiers .svelte
+```
+
+### `test`
+
+```bash
+pnpm test:coverage    # Tous les tests avec mesure de couverture
+```
+
+### `build`
+
+```bash
+pnpm build            # Compilation de chaque sous-projet
+pnpm audit:size       # Vérifie les budgets de taille de bundle
+```
+
+`build` attend que `lint`, `typecheck` et `test` aient réussi — pas la peine de compiler si l'un d'eux échoue.
+
+### `audit`
+
+```bash
+pnpm audit:security    # Vulnérabilités npm connues
+pnpm audit:licenses    # Compatibilité des licences
+pnpm audit:unused      # Code mort (knip)
+pnpm audit:duplicates  # Duplication de code (jscpd)
+pnpm audit:versions    # Dépendances obsolètes (taze)
+```
+
+### `docs`
+
+```bash
+pnpm docs:build        # Construit le site VitePress
+```
+
+Sur `main`, ce _job_ est suivi du déploiement sur GitHub Pages via `docs.yml`.
+
+## Reproduire la CI en local
+
+Tout ce que fait la CI est reproductible en local. Le raccourci global :
+
+```bash
+pnpm ci:checks
+```
+
+Lance dans l'ordre, _fail-fast_ :
+
+1. `format:check` — formatage (le plus rapide, le plus probable à échouer)
+2. `check` (svelte) — vérification SvelteKit
+3. `lint` — ESLint
+4. `typecheck` — TypeScript
+5. `test:coverage` — tests
+6. `build` — compilation (le plus long, en dernier)
+
+Les _hooks Git_ locaux ([lefthook](../quality/hooks.md)) exécutent automatiquement les étapes 1–4 sur les fichiers modifiés avant chaque commit, et un sous-ensemble plus large avant chaque push. Voir [Hooks Git](./hooks.md).
+
+## Si la CI échoue
+
+1. Cliquer sur le _job_ rouge dans la pull request → onglet **Details**.
+2. Le log GitHub Actions s'ouvre. Identifier le _step_ qui a échoué.
+3. Reproduire localement la commande exacte (`pnpm lint`, `pnpm test:coverage`, etc.).
+4. Corriger, recommitter, repousser — la CI relance automatiquement.
+
+Tous les _workflows_ échouent **vite** : la dépendance entre _jobs_ (`build` après `lint`/`typecheck`/`test`) évite d'attendre 5 min de build pour découvrir qu'une virgule manque dans un commentaire.
+
+## Cache distribué
+
+Pour accélérer la CI, Atlas utilise le **cache distribué Turborepo** (`TURBO_TOKEN` côté secrets). Quand un _job_ construit un projet, son résultat est mis en cache ; si le code source du projet n'a pas changé, le _job_ suivant le réutilise tel quel.
+
+Conséquence : une pull request qui modifie un seul sous-projet ne reconstruit pas tout le dépôt, seulement ce qui est touché.

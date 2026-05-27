@@ -28,16 +28,16 @@ En cas de doute, **escalader d'un cran** par défaut.
 
 Sources à monitorer pour repérer un incident.
 
-| Source                                                                                                  | Quoi y chercher                                               | Périodicité                           |
-| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------- |
-| [Security → Code scanning](https://github.com/univ-lehavre/atlas/security/code-scanning)                | Nouveaux findings CodeQL `error` ou `high warning`            | À chaque PR + post-merge              |
-| [Security → Dependabot](https://github.com/univ-lehavre/atlas/security/dependabot)                      | Advisories `high` ou `critical`                               | Quotidien (auto-merge couvre patches) |
-| [Security → Secret scanning](https://github.com/univ-lehavre/atlas/security/secret-scanning)            | Secrets détectés ; push protection bloqués                    | Quotidien                             |
-| [Actions → Gitleaks](https://github.com/univ-lehavre/atlas/actions/workflows/gitleaks.yml)              | Findings sur PR ou push main                                  | À chaque PR                           |
-| [Actions → ZAP Baseline](https://github.com/univ-lehavre/atlas/actions/workflows/zap-baseline.yml)      | Findings High/Medium après scan                               | Sur demande (Phase 7.1 Phase 1)       |
-| Logs Appwrite (console admin)                                                                           | 5xx > seuil ; tentatives auth échouées ; latence p95 anormale | À cadrer avec la DSI (cf. § Logs)     |
-| Email `redcap-support@univ-lehavre.fr`                                                                  | Divulgation responsable externe                               | Surveillance quotidienne              |
-| [GitHub Private Vulnerability Reporting](https://github.com/univ-lehavre/atlas/security/advisories/new) | Rapport coordonné                                             | Notification GitHub                   |
+| Source                                                                                                      | Quoi y chercher                                               | Périodicité                                 |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------- |
+| [Security → Code scanning](https://github.com/univ-lehavre/atlas/security/code-scanning)                    | Nouveaux findings CodeQL `error` ou `high warning`            | À chaque PR + post-merge                    |
+| [Security → Dependabot](https://github.com/univ-lehavre/atlas/security/dependabot)                          | Advisories `high` ou `critical`                               | Quotidien (auto-merge couvre patches)       |
+| [Security → Secret scanning](https://github.com/univ-lehavre/atlas/security/secret-scanning)                | Secrets détectés ; push protection bloqués                    | Quotidien                                   |
+| [Actions → Gitleaks](https://github.com/univ-lehavre/atlas/actions/workflows/gitleaks.yml)                  | Findings sur PR ou push main                                  | À chaque PR                                 |
+| [Actions → ZAP Baseline](https://github.com/univ-lehavre/atlas/actions/workflows/zap-baseline.yml)          | Findings High/Medium après scan                               | Sur demande (déclenchement manuel)          |
+| Logs Appwrite (console admin)                                                                               | 5xx > seuil ; tentatives auth échouées ; latence p95 anormale | À cadrer avec les admins infra (cf. § Logs) |
+| Email de divulgation publié dans [SECURITY.md](https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md) | Divulgation responsable externe                               | Surveillance quotidienne                    |
+| [GitHub Private Vulnerability Reporting](https://github.com/univ-lehavre/atlas/security/advisories/new)     | Rapport coordonné                                             | Notification GitHub                         |
 
 ## 3. Phases de réponse
 
@@ -84,7 +84,7 @@ Couper l'exposition sans détruire les preuves.
 **Si fuite de données personnelles confirmée** :
 
 1. Couper l'accès au système qui fuite (mettre l'app en maintenance).
-2. **Notifier la DSI ULHN dans les 4 h** (cf. § Contacts).
+2. **Notifier la Admins infra dans les 4 h** (cf. § Contacts).
 3. **Démarrer le compteur CNIL 72 h** (cf. § 3.6 RGPD).
 
 ### 3.3 Éradication
@@ -136,39 +136,39 @@ RGPD article 4) :
   risque pour les personnes est négligeable. Formulaire en ligne :
   https://www.cnil.fr/fr/notifier-une-violation-de-donnees-personnelles
 - **Notification aux personnes concernées** si risque élevé.
-- Coordination obligatoire avec la **DSI ULHN** (responsable de traitement)
+- Coordination obligatoire avec la **Admins infra** (responsable de traitement)
   — eux ouvrent la notification, pas le mainteneur du repo.
 
 ## 4. Contacts
 
-| Rôle                                           | Canal                                                                                                           | Quand                                                                                     |
-| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| **Mainteneur atlas**                           | `pierre-olivier.chasset@univ-lehavre.fr`                                                                        | Premier point de contact                                                                  |
-| **DSI ULHN**                                   | _coordonnées à compléter par le mainteneur_                                                                     | P0 confirmé ; suspicion de fuite RGPD ; question infra Appwrite/REDCap                    |
-| **CNIL** (si fuite données perso)              | https://www.cnil.fr/fr/notifier-une-violation-de-donnees-personnelles                                           | Sous 72 h après détection ; **via la DSI**, pas directement                               |
-| **Divulgation responsable externe**            | `redcap-support@univ-lehavre.fr` ou [GitHub PVR](https://github.com/univ-lehavre/atlas/security/advisories/new) | Documenté dans [SECURITY.md](https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md) |
-| **GitHub Security**                            | https://github.com/contact/report-content                                                                       | Compromise de compte / abuse                                                              |
-| **npm Security**                               | https://www.npmjs.com/support                                                                                   | Compromise de package publié                                                              |
-| **Vanderbilt REDCap** (si bug REDCap upstream) | https://projectredcap.org/contact/                                                                              | Bug confirmé dans REDCap, pas dans atlas                                                  |
+| Rôle                                           | Canal                                                                                                          | Quand                                                                                     |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| **Mainteneur atlas**                           | Voir [SECURITY.md](https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md)                                | Premier point de contact                                                                  |
+| **Admins infra**                               | _coordonnées à compléter par le mainteneur_                                                                    | P0 confirmé ; suspicion de fuite RGPD ; question infra Appwrite/REDCap                    |
+| **CNIL** (si fuite données perso)              | https://www.cnil.fr/fr/notifier-une-violation-de-donnees-personnelles                                          | Sous 72 h après détection ; **via les admins infra**, pas directement                     |
+| **Divulgation responsable externe**            | [GitHub PVR](https://github.com/univ-lehavre/atlas/security/advisories/new) ou contact publié dans SECURITY.md | Documenté dans [SECURITY.md](https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md) |
+| **GitHub Security**                            | https://github.com/contact/report-content                                                                      | Compromise de compte / abuse                                                              |
+| **npm Security**                               | https://www.npmjs.com/support                                                                                  | Compromise de package publié                                                              |
+| **Vanderbilt REDCap** (si bug REDCap upstream) | https://projectredcap.org/contact/                                                                             | Bug confirmé dans REDCap, pas dans atlas                                                  |
 
-## 5. Logs et alerting (cadre Phase 8.1)
+## 5. Logs et alerting
 
 **État actuel** : framework documenté ci-dessous, intégration concrète
-en attente d'arbitrage avec la DSI ULHN.
+en attente d'arbitrage avec la Admins infra.
 
 ### 5.1 Sources de logs
 
 | Source                     | Accès                              | Rétention                             | Quoi y trouver                                                    |
 | -------------------------- | ---------------------------------- | ------------------------------------- | ----------------------------------------------------------------- |
-| **Appwrite Console**       | Admin Appwrite (DSI ULHN)          | _à confirmer DSI_                     | Requêtes API, auth events, 5xx, audit log admin                   |
-| **Appwrite Sites runtime** | Idem                               | _à confirmer DSI_                     | Logs SSR SvelteKit (`console.error` dans `hooks.server.ts`, etc.) |
+| **Appwrite Console**       | Admins de l'instance Appwrite      | _à confirmer admins infra_            | Requêtes API, auth events, 5xx, audit log admin                   |
+| **Appwrite Sites runtime** | Idem                               | _à confirmer admins infra_            | Logs SSR SvelteKit (`console.error` dans `hooks.server.ts`, etc.) |
 | **GitHub Actions**         | Public sur PR, repo admin sur main | 90 jours                              | CI/CD, scans CodeQL/ZAP/SBOM/Gitleaks                             |
 | **GitHub Audit log**       | Admin org                          | 90 jours (free) / 6 mois (enterprise) | Push, modifs settings, ajout/retrait collaborator                 |
-| **REDCap upstream**        | DSI ULHN (compte admin REDCap)     | Selon politique DSI                   | Requêtes API utilisant les tokens REDCap                          |
+| **REDCap upstream**        | Admins de l'instance REDCap        | Selon politique des admins infra      | Requêtes API utilisant les tokens REDCap                          |
 
 ### 5.2 Alerting basique à mettre en place
 
-À cadrer avec la DSI ULHN :
+À cadrer avec la Admins infra :
 
 - **5xx > seuil** (suggérer : 5 erreurs/min pendant 5 min) → alerte
   email / Slack.
@@ -176,7 +176,7 @@ en attente d'arbitrage avec la DSI ULHN.
   alerte.
 - **Auth fail rate > seuil** (suggérer : 10 échecs/min sur la même IP
   ou même email) → alerte (signal brute-force, déjà partiellement
-  couvert par rate-limit Phase 6.5).
+  couvert par le rate-limit applicatif).
 - **Code scanning** : config GitHub envoie déjà notifications email aux
   watchers du repo.
 
@@ -188,31 +188,31 @@ tracer côté Appwrite :
 
 - Création de session (succès/échec)
 - Logout
-- Création de compte (rate-limité côté app — Phase 6.5)
+- Création de compte (rate-limité côté app)
 - Suppression de compte (`ecrin` uniquement)
 
 Appwrite log ces événements nativement dans `Logs → Sessions`. Pas
 d'agrégation externe pour l'instant.
 
-## 6. Sauvegardes et restauration (cadre Phase 8.3)
+## 6. Sauvegardes et restauration
 
 **État actuel** : framework documenté, paramètres concrets à confirmer
-avec la DSI ULHN — la politique dépend de l'hébergement Appwrite
-(self-hosted ULHN ? Appwrite Cloud ?).
+avec la Admins infra — la politique dépend de l'hébergement Appwrite
+(self-hosted ? Appwrite Cloud ?).
 
 ### 6.1 Périmètre à sauvegarder
 
 | Donnée                                                        | Localisation                                                               | Owner sauvegarde                                                                               |
 | ------------------------------------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
 | **Code source atlas**                                         | GitHub (mirror local des mainteneurs)                                      | GitHub + clones locaux                                                                         |
-| **Données utilisateurs Appwrite** (comptes, sessions, tables) | Appwrite (`baas-mongodb-data` en self-hosted)                              | _DSI ULHN_                                                                                     |
-| **Données REDCap**                                            | Instance REDCap ULHN                                                       | _DSI ULHN_                                                                                     |
+| **Données utilisateurs Appwrite** (comptes, sessions, tables) | Appwrite (`baas-mongodb-data` en self-hosted)                              | _Admins infra_                                                                                 |
+| **Données REDCap**                                            | Instance REDCap                                                            | _Admins infra_                                                                                 |
 | **Secrets**                                                   | GitHub Secrets + Appwrite vars d'env + `~/.config/atlas/` côté workstation | À documenter par le mainteneur                                                                 |
 | **SBOMs historiques**                                         | Artefacts GitHub Actions (90j)                                             | Snapshots manuels — cf. [section SBOM de Sécurité](./security#sbom-software-bill-of-materials) |
 
 ### 6.2 RPO / RTO cibles
 
-À fixer avec la DSI selon la criticité applicative.
+À fixer avec les admins infra selon la criticité applicative.
 
 - **RPO** (Recovery Point Objective — combien de données on accepte
   de perdre) : suggérer **24 h** pour amarre/ecrin/find-an-expert.
@@ -247,8 +247,8 @@ Avant de marquer un incident comme résolu :
 - [ ] Sessions / comptes affectés invalidés.
 - [ ] Surveillance 24 h post-déploiement sans récidive.
 - [ ] Post-mortem rédigé (P0/P1) ou ticket de suivi créé (P2).
-- [ ] Notification CNIL effectuée si fuite données perso (via DSI).
-- [ ] Communication aux parties prenantes (utilisateurs / DSI).
+- [ ] Notification CNIL effectuée si fuite données perso (via admins infra).
+- [ ] Communication aux parties prenantes (utilisateurs / admins infra).
 - [ ] Issue/advisory privée fermée ou rendue publique si responsabilité
       revealed (en accord avec le reporter).
 

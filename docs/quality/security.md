@@ -12,7 +12,7 @@ Pour la procédure de gestion d'incident (compromission supposée, divulgation r
 
 Inventaire des secrets en circulation dans le monorepo atlas, leur emplacement et la procédure de rotation associée.
 
-> Mis à jour : 2026-05-19 (Phase 0.2 du plan DevSecOps).
+> Mis à jour : 2026-05-19.
 
 ### Principe
 
@@ -37,22 +37,22 @@ Aucun secret réel n'est commité dans le dépôt. Les fichiers `apps/*/.env.exa
 
 Par site Appwrite Sites (amarre, ecrin, find-an-expert) :
 
-| Variable                                               | Apps concernées               | Usage                                                                                 | Owner                        | Rotation                                                                  |
-| ------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------------------------------------------------- |
-| `PUBLIC_APPWRITE_ENDPOINT`                             | amarre, ecrin                 | URL de l'instance Appwrite (publique, exposée au navigateur via `$env/static/public`) | DSI ULHN (instance Appwrite) | N/A (URL stable). Changement = migration.                                 |
-| `PUBLIC_APPWRITE_PROJECT`                              | amarre, ecrin                 | ID du projet Appwrite (publique)                                                      | DSI ULHN                     | N/A (ID stable).                                                          |
-| `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT`                | find-an-expert                | Mêmes que ci-dessus mais privés (non préfixés `PUBLIC_`)                              | DSI ULHN                     | N/A.                                                                      |
-| `APPWRITE_KEY`                                         | amarre, ecrin, find-an-expert | API key serveur, scope défini côté console Appwrite                                   | DSI ULHN / mainteneur        | Console Appwrite → Project → Settings → API keys → revoke + recreate.     |
-| `APPWRITE_DB_ID`, `APPWRITE_DATABASE_ID`               | ecrin, find-an-expert         | ID de la base de données Appwrite                                                     | DSI ULHN                     | N/A (ID stable).                                                          |
-| `APPWRITE_TABLE_ID_ALLOWED_EMAIL_DOMAINS_TO_SUBSCRIBE` | ecrin                         | ID de la table des domaines email autorisés                                           | DSI ULHN                     | N/A.                                                                      |
-| `APPWRITE_CONSENT_EVENTS_COLLECTION_ID`                | find-an-expert                | ID de la collection d'événements de consentement                                      | DSI ULHN                     | N/A.                                                                      |
-| `APPWRITE_CURRENT_CONSENTS_COLLECTION_ID`              | find-an-expert                | ID de la collection des consentements actuels                                         | DSI ULHN                     | N/A.                                                                      |
-| `ALLOWED_DOMAINS_REGEXP`                               | amarre, find-an-expert        | Regex des domaines email autorisés (allowlist signup, ex. `@univ-lehavre\.fr`)        | DSI ULHN / mainteneur        | N/A (config). Modifier = redéployer.                                      |
-| `PUBLIC_LOGIN_URL`                                     | amarre, ecrin, find-an-expert | URL de l'app pour générer les magic links de connexion                                | DSI ULHN                     | N/A.                                                                      |
-| `PUBLIC_REDCAP_URL` / `REDCAP_URL` / `REDCAP_API_URL`  | amarre, ecrin, crf-dashboard  | URL de l'instance REDCap (CRF)                                                        | DSI ULHN                     | N/A.                                                                      |
-| `REDCAP_API_TOKEN`                                     | amarre, ecrin                 | Token API REDCap (32-char hex), scope défini côté projet REDCap                       | DSI ULHN / mainteneur        | REDCap → Project → API → regenerate token + update Appwrite Site env var. |
-| `OPENALEX_API_TOKEN`                                   | find-an-expert                | API key OpenAlex (premium polite pool)                                                | Mainteneur                   | openalex.org dashboard → revoke + recreate.                               |
-| `OPENALEX_USER_AGENT`                                  | find-an-expert                | User-Agent OpenAlex polite-pool (`name/version (mailto:contact)`)                     | Mainteneur                   | N/A (string statique).                                                    |
+| Variable                                               | Apps concernées               | Usage                                                                                 | Owner                         | Rotation                                                                  |
+| ------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------- |
+| `PUBLIC_APPWRITE_ENDPOINT`                             | amarre, ecrin                 | URL de l'instance Appwrite (publique, exposée au navigateur via `$env/static/public`) | Admins de l'instance Appwrite | N/A (URL stable). Changement = migration.                                 |
+| `PUBLIC_APPWRITE_PROJECT`                              | amarre, ecrin                 | ID du projet Appwrite (publique)                                                      | Admins infra                  | N/A (ID stable).                                                          |
+| `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT`                | find-an-expert                | Mêmes que ci-dessus mais privés (non préfixés `PUBLIC_`)                              | Admins infra                  | N/A.                                                                      |
+| `APPWRITE_KEY`                                         | amarre, ecrin, find-an-expert | API key serveur, scope défini côté console Appwrite                                   | Admins infra / mainteneur     | Console Appwrite → Project → Settings → API keys → revoke + recreate.     |
+| `APPWRITE_DB_ID`, `APPWRITE_DATABASE_ID`               | ecrin, find-an-expert         | ID de la base de données Appwrite                                                     | Admins infra                  | N/A (ID stable).                                                          |
+| `APPWRITE_TABLE_ID_ALLOWED_EMAIL_DOMAINS_TO_SUBSCRIBE` | ecrin                         | ID de la table des domaines email autorisés                                           | Admins infra                  | N/A.                                                                      |
+| `APPWRITE_CONSENT_EVENTS_COLLECTION_ID`                | find-an-expert                | ID de la collection d'événements de consentement                                      | Admins infra                  | N/A.                                                                      |
+| `APPWRITE_CURRENT_CONSENTS_COLLECTION_ID`              | find-an-expert                | ID de la collection des consentements actuels                                         | Admins infra                  | N/A.                                                                      |
+| `ALLOWED_DOMAINS_REGEXP`                               | amarre, find-an-expert        | Regex des domaines email autorisés (allowlist signup, ex. `@exemple\.fr`)             | Admins infra / mainteneur     | N/A (config). Modifier = redéployer.                                      |
+| `PUBLIC_LOGIN_URL`                                     | amarre, ecrin, find-an-expert | URL de l'app pour générer les magic links de connexion                                | Admins infra                  | N/A.                                                                      |
+| `PUBLIC_REDCAP_URL` / `REDCAP_URL` / `REDCAP_API_URL`  | amarre, ecrin, crf-dashboard  | URL de l'instance REDCap (CRF)                                                        | Admins infra                  | N/A.                                                                      |
+| `REDCAP_API_TOKEN`                                     | amarre, ecrin                 | Token API REDCap (32-char hex), scope défini côté projet REDCap                       | Admins infra / mainteneur     | REDCap → Project → API → regenerate token + update Appwrite Site env var. |
+| `OPENALEX_API_TOKEN`                                   | find-an-expert                | API key OpenAlex (premium polite pool)                                                | Mainteneur                    | openalex.org dashboard → revoke + recreate.                               |
+| `OPENALEX_USER_AGENT`                                  | find-an-expert                | User-Agent OpenAlex polite-pool (`name/version (mailto:contact)`)                     | Mainteneur                    | N/A (string statique).                                                    |
 
 ### Inventaire — Dashboards internes
 
@@ -61,13 +61,13 @@ Apps de monitoring/admin, en principe non déployées en prod publique. Tournent
 | Variable         | App             | Usage                                                                          | Owner                        | Rotation                                                                                       |
 | ---------------- | --------------- | ------------------------------------------------------------------------------ | ---------------------------- | ---------------------------------------------------------------------------------------------- |
 | `GITHUB_TOKEN`   | atlas-dashboard | Fetch des releases GitHub publics (read-only)                                  | Contributeur (token perso)   | github.com → Settings → Tokens → revoke + recreate. Scope minimal (`public_repo` suffit).      |
-| `REDCAP_API_URL` | crf-dashboard   | Endpoint REDCap (lecture seule)                                                | DSI ULHN                     | N/A (URL).                                                                                     |
+| `REDCAP_API_URL` | crf-dashboard   | Endpoint REDCap (lecture seule)                                                | Admins infra                 | N/A (URL).                                                                                     |
 | `tokens.csv`     | crf-dashboard   | Fichier local listant les `token,project_id` REDCap par projet (pas d'env var) | Contributeur (export manuel) | Refaire l'export depuis REDCap. **Ne jamais commit** (cf. `.gitignore` pattern `*-token.csv`). |
 
 ### Fichiers locaux (machine contributeur, gitignored)
 
 - `apps/*/.env` — copie locale du `.env.example` avec valeurs réelles
-- `apps/*/.env.isc`, `.env.univ-lehavre` — variantes par environnement déployé (référence pour l'admin)
+- `apps/*/.env.<host>` — variantes par environnement déployé (référence pour l'admin)
 - `*-token.csv` — tokens REDCap par projet (cf. crf-dashboard)
 - `redcap-token.csv` à la racine — historique : voir [TODO.md](https://github.com/univ-lehavre/atlas/blob/main/TODO.md) §0.1 (jamais commité, audité 2026-05-19)
 
@@ -124,15 +124,15 @@ Délais maximums acceptables entre **détection** et **correctif déployé en pr
 
 Cartographie des surfaces publiques du monorepo : URLs des apps déployées et classification public/auth des endpoints HTTP.
 
-> Mis à jour : 2026-05-19 (Phase 0.3 du plan DevSecOps).
+> Mis à jour : 2026-05-19.
 
 ### Apps déployées (Appwrite Sites)
 
-| App                | URL prod      | URL preview / staging | Owner    | Source                                                                                       |
-| ------------------ | ------------- | --------------------- | -------- | -------------------------------------------------------------------------------------------- |
-| **amarre**         | _à compléter_ | _à compléter_         | DSI ULHN | [apps/amarre/](https://github.com/univ-lehavre/atlas/tree/main/apps/amarre/)                 |
-| **ecrin**          | _à compléter_ | _à compléter_         | DSI ULHN | [apps/ecrin/](https://github.com/univ-lehavre/atlas/tree/main/apps/ecrin/)                   |
-| **find-an-expert** | _à compléter_ | _à compléter_         | DSI ULHN | [apps/find-an-expert/](https://github.com/univ-lehavre/atlas/tree/main/apps/find-an-expert/) |
+| App                | URL prod      | URL preview / staging | Owner        | Source                                                                                       |
+| ------------------ | ------------- | --------------------- | ------------ | -------------------------------------------------------------------------------------------- |
+| **amarre**         | _à compléter_ | _à compléter_         | Admins infra | [apps/amarre/](https://github.com/univ-lehavre/atlas/tree/main/apps/amarre/)                 |
+| **ecrin**          | _à compléter_ | _à compléter_         | Admins infra | [apps/ecrin/](https://github.com/univ-lehavre/atlas/tree/main/apps/ecrin/)                   |
+| **find-an-expert** | _à compléter_ | _à compléter_         | Admins infra | [apps/find-an-expert/](https://github.com/univ-lehavre/atlas/tree/main/apps/find-an-expert/) |
 
 > Les URLs prod ne sont pas dans le repo (configuration Appwrite Sites). À renseigner par l'admin Appwrite et à figer ici pour traçabilité.
 
@@ -216,9 +216,9 @@ Convention : **🌐 PUBLIC** = accessible sans session ; **🔒 AUTH** = `locals
 
 Trois endpoints sont publics par décision implicite ou explicite — chacun mérite un examen :
 
-1. **`ecrin /graphs?record=<id>`** — explicitement public dans le code. Question : un attaquant connaissant un `record_id` peut-il lire le graphe complet ? Si oui, est-ce conforme aux attentes RGPD côté ECRIN ? Voir Phase 6.5 (rate limiting) pour atténuer l'énumération brute.
+1. **`ecrin /graphs?record=<id>`** — explicitement public dans le code. Question : un attaquant connaissant un `record_id` peut-il lire le graphe complet ? Si oui, est-ce conforme aux attentes RGPD côté ECRIN ? Le rate limiting applicatif atténue l'énumération brute.
 
-2. **`find-an-expert /institutions/search?q=<query>`** — pas de gate auth. Utilise `OPENALEX_API_TOKEN` côté serveur. Risque : abus de quota OpenAlex via spam de requêtes anonymes. À traiter via rate limiting (Phase 6.5) ou ajout d'un gate auth si la recherche n'a pas vocation à être anonyme.
+2. **`find-an-expert /institutions/search?q=<query>`** — pas de gate auth. Utilise `OPENALEX_API_TOKEN` côté serveur. Risque : abus de quota OpenAlex via spam de requêtes anonymes. À traiter via rate limiting ou ajout d'un gate auth si la recherche n'a pas vocation à être anonyme.
 
 3. **`find-an-expert /repositories/[id]` et `/analysis`** — pas de gate auth. Récupère les URLs du repository GitHub courant. Risque faible (info publique) mais surface inattendue. À documenter ou gater.
 
@@ -237,7 +237,7 @@ Outil : [OWASP ZAP](https://www.zaproxy.org/) en mode **baseline** (passif uniqu
 
 ### État actuel
 
-**Phase 1 (livrée)** — workflow déclenché manuellement uniquement, sur une URL passée en input :
+**État actuel** — workflow déclenché manuellement uniquement, sur une URL passée en input :
 
 - Trigger : `workflow_dispatch`
 - Cible : input `target_url` (URL accessible depuis un runner GitHub)
@@ -245,9 +245,9 @@ Outil : [OWASP ZAP](https://www.zaproxy.org/) en mode **baseline** (passif uniqu
 - Rapport : artefact `zap_scan` (HTML + Markdown + JSON, 90 jours)
 - Issue auto-créée si findings non-IGNORE (cf. config dans [`zap-baseline.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/zap-baseline.yml))
 
-**Phase 2 (différée)** — automatisation nightly contre prod ou stack locale. Trois pistes en attente :
+**Étape suivante (différée)** — automatisation nightly contre prod ou stack locale. Trois pistes en attente :
 
-1. **Nightly contre prod** : nécessite que les URLs `amarre.univ-lehavre.fr` et les autres soient figées dans la section [Surfaces exposées](#surfaces-exposees-apps-et-endpoints), et que la **DSI ULHN soit prévenue** du trafic ZAP pour éviter alertes IDS ou rate-limit. Décision en attente.
+1. **Nightly contre prod** : nécessite que les URLs prod soient figées dans la section [Surfaces exposées](#surfaces-exposees-apps-et-endpoints), et que les **admins infra soient prévenus** du trafic ZAP pour éviter alertes IDS ou rate-limit. Décision en attente.
 2. **Nightly contre `sandbox/amarre-sandbox/`** : monter la stack docker-compose (Appwrite + REDCap + amarre) en CI et scanner `localhost:5173`. Lourd (~10 min CI supplémentaires) mais aucune coordination externe nécessaire. Couvre uniquement amarre.
 3. **Sur PR avec preview URL** : Appwrite Sites n'offre pas de previews automatiques par PR. Hors périmètre tant qu'on reste sur ce déploiement.
 
@@ -255,7 +255,7 @@ Outil : [OWASP ZAP](https://www.zaproxy.org/) en mode **baseline** (passif uniqu
 
 1. Aller sur [Actions → ZAP Baseline](https://github.com/univ-lehavre/atlas/actions/workflows/zap-baseline.yml)
 2. Cliquer "Run workflow", choisir la branche `main`
-3. Remplir l'URL cible (ex : `https://amarre.univ-lehavre.fr`)
+3. Remplir l'URL cible (ex : `https://<app-host>`)
 4. Choisir `fail_action` :
    - `warn` (défaut) : le job réussit même avec des findings. Adapté au premier scan, à l'exploration, au shadow IT.
    - `fail` : le job échoue dès qu'une alerte non-IGNORE remonte. Adapté quand le scan est branché sur un gate (release, merge).
@@ -269,7 +269,7 @@ ZAP classe les findings par niveau de risque :
 - **Medium** : sérieux mais souvent contextuel — cookie sans `Secure`, CSP manquante, redirect ouvert.
 - **Low** / **Informational** : à évaluer mais souvent acceptable — headers d'info versions, commentaires HTML laissés en place.
 
-Les findings de cette app sont en grande partie déjà couverts par les mesures Phase 6.3 (CSP, HSTS, etc.) et Phase 6.4 (cookies session hardening). Un scan sain devrait remonter **0 high**, et les low/info peuvent être triés au cas par cas.
+Les findings de cette app sont en grande partie déjà couverts par les en-têtes de sécurité (CSP, HSTS, etc.) et le hardening des cookies de session. Un scan sain devrait remonter **0 high**, et les low/info peuvent être triés au cas par cas.
 
 ### Gérer les faux positifs
 
@@ -283,7 +283,7 @@ ZAP baseline est **passif** : il sonde des URLs trouvées via spider + analyse l
 
 Néanmoins :
 
-- Le scan peut **déclencher des envois d'email** si le crawler rencontre un formulaire de signup → privilégier une cible avec un rate-limit déjà actif (Phase 6.5 le couvre côté amarre/ecrin/find-an-expert).
+- Le scan peut **déclencher des envois d'email** si le crawler rencontre un formulaire de signup → privilégier une cible avec un rate-limit déjà actif (couvert applicativement côté amarre/ecrin/find-an-expert).
 - Le scan peut **créer des comptes test** sur Appwrite si le signup ne demande pas de captcha → laisser le rate-limit faire son travail et nettoyer manuellement après si nécessaire.
 - Le scan **respecte robots.txt** par défaut — pas de scan des routes exclues. Vérifier que `robots.txt` ne bloque pas des routes qu'on veut couvrir.
 

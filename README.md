@@ -2,146 +2,96 @@
 
 [![DOI](https://zenodo.org/badge/1137569222.svg)](https://doi.org/10.5281/zenodo.18310357)
 
-**Atlas** is a TypeScript monorepo developed by **Université Le Havre Normandie**. It bundles a set of applications, libraries, and tools to manage projects, handle structured forms, and orchestrate collaboration.
+**Atlas** est un dépôt unique qui rassemble plusieurs projets logiciels — applications web, bibliothèques, serveurs et outils en ligne de commande — sous une chaîne de qualité commune. Cette organisation s'appelle un _monorepo_ : un seul dépôt Git pour tous les projets, avec des règles partagées.
 
-## Packages
+> Documentation complète, illustrée et rédigée pour un public non-expert : voir le dossier [`docs/`](docs/).
 
-### Main Modules
+## Structure
 
-| Package                           | Description                                       |
-| --------------------------------- | ------------------------------------------------- |
-| [ecrin](apps/ecrin)               | ECRIN module - project + ethics review management |
-| [amarre](apps/amarre)             | AMARRE module - convention management             |
-| [@univ-lehavre/crf](services/crf) | CRF module - REDCap client, server and CLI        |
+Huit catégories, **une responsabilité et un jeu de règles par catégorie** — c'est ce qui rend le dépôt lisible pour un nouveau contributeur :
 
-### Sub-projects
+| Catégorie              | Rôle                                                                      | Règle principale                                                |
+| ---------------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| [apps/](apps/)         | Applications web destinées aux utilisateurs finaux (framework SvelteKit)  | Dépendent de `@sveltejs/kit` ; jamais d'une autre app           |
+| [assets/](assets/)     | Fichiers statiques versionnés (logos, images, polices)                    | Pas de code exécutable, pas de `bin`, pas de dépendance runtime |
+| [packages/](packages/) | Bibliothèques TypeScript réutilisables, publiées sur le registre npm      | Pas d'I/O terminal, pas de SvelteKit, pas de routage HTTP       |
+| [services/](services/) | Serveurs HTTP déployés en backend (framework Hono)                        | Dépendent de `hono` + au moins un paquet interne                |
+| [cli/](cli/)           | Outils en ligne de commande, courts, qui consomment les bibliothèques     | Le nom se termine par `-cli` ; doit avoir un `bin` field        |
+| [ui/](ui/)             | Composants d'interface partagés entre les applications (framework Svelte) | `svelte` en `peerDependencies` ; pas d'imports server-only      |
+| [config/](config/)     | Configurations communes (style de code, vérification de types, formatage) | Pas de `bin` ; importables depuis n'importe quel autre projet   |
+| [sandbox/](sandbox/)   | Environnements Docker pour tester l'intégration entre les projets         | Aucune autre catégorie ne peut en dépendre                      |
 
-| Package                                            | Parent Module | Description                                     |
-| -------------------------------------------------- | ------------- | ----------------------------------------------- |
-| [find-an-expert](apps/find-an-expert)              | ECRIN         | Expertise discovery via publications and GitHub |
-| [@univ-lehavre/atlas-crf-core](packages/crf-core)  | CRF           | REDCap business logic with Effect               |
-| [@univ-lehavre/atlas-crf-openapi](cli/crf-openapi) | CRF           | OpenAPI extraction from REDCap                  |
+Ces règles sont vérifiées par `pnpm audit:structure` (exécuté en CI). Voir [docs/architecture/monorepo.md](docs/architecture/monorepo.md) pour le détail complet (diagramme des dépendances, principes par catégorie, conventions de nommage).
 
-### Utility Sub-modules
+## Qualités du dépôt
 
-| Package                                                   | Description                                |
-| --------------------------------------------------------- | ------------------------------------------ |
-| [@univ-lehavre/atlas-net](packages/net)                   | Network diagnostic utilities               |
-| [@univ-lehavre/atlas-baas](packages/baas)                 | Shared Appwrite client                     |
-| [@univ-lehavre/atlas-auth](packages/auth)                 | Authentication service                     |
-| [@univ-lehavre/atlas-errors](packages/errors)             | Shared error classes                       |
-| [@univ-lehavre/atlas-validators](packages/validators)     | Validation utilities                       |
-| [@univ-lehavre/atlas-shared-config](config/shared-config) | ESLint, TypeScript, Prettier configuration |
+Le dépôt est outillé pour que chaque modification passe un ensemble cohérent de garde-fous, à la fois sur la machine du contributeur (via les _hooks Git_, des scripts déclenchés automatiquement par Git) et sur les serveurs d'intégration continue (via GitHub Actions).
 
-## Institutional Projects
+### Cohérence du code
 
-Atlas is developed as part of structural projects led by Université Le Havre Normandie.
+- **TypeScript strict** sur tout le dépôt : TypeScript est un langage qui ajoute des types à JavaScript ; le mode strict refuse de compiler à la moindre incohérence de types
+- **Programmation fonctionnelle** avec [Effect](https://effect.website/), une bibliothèque TypeScript : les erreurs deviennent des valeurs typées, la composition remplace les exceptions
+- **ESLint** (analyseur statique de code) combinant règles de style strictes, règles fonctionnelles et règles de sécurité
+- **Prettier** (formateur automatique de code) vérifié à chaque commit
+- **Conventional Commits** appliqué par [commitlint](https://commitlint.js.org/) : chaque message de commit suit un format standard (`type(scope): description`)
 
-### Campus Polytechnique des Territoires Maritimes et Portuaires
+### Tests
 
-The [Campus Polytechnique des Territoires Maritimes et Portuaires](https://www.cptmp.fr/) (CPTMP) is a unique consortium in Europe, inaugurated on January 30, 2025. It brings together **12 founding members** around Université Le Havre Normandie: CNRS, INSA Rouen Normandie, École Nationale Supérieure Maritime, Sciences Po, EM Normandie, ENSA Normandie, ESADHaR, IFEN, Le Havre Seine Métropole, Synerzip LH, UMEP, and Région Normandie.
+- **Pyramide à cinq niveaux** — du plus rapide (modules isolés) au plus complet (parcours utilisateur de bout en bout) : tests unitaires, tests d'intégration, contrats avec les services externes, flux d'authentification, scénarios _end-to-end_ avec Playwright
+- Suites dites _self-skipping_ qui se désactivent automatiquement quand l'environnement de test n'est pas disponible — pas de blocage du contributeur sans Docker
+- **Couverture** mesurée par vitest et agrégée par un script de reporting
 
-The Campus is a laureate of the "ExcellencES" call for projects of **France 2030**, with funding of **€7.3M** over 7 years (2023-2030).
+Détails : [docs/quality/tests.md](docs/quality/tests.md).
 
-**Strategic axes:**
+### Sécurité
 
-- Cities of tomorrow
-- Maritime and port issues
-- Transitions, risks, and uncertainties
+- **Gitleaks** (détecteur de secrets) à chaque commit (côté contributeur) et à chaque pull request (côté CI) — interdit les tokens ou clés accidentellement écrits dans le code
+- **CodeQL** (analyse statique de sécurité GitHub) — détecte les vulnérabilités classiques à chaque push
+- **OWASP ZAP** baseline — sonde dynamiquement les applications déployées à la recherche de vulnérabilités (_DAST_, Dynamic Application Security Testing)
+- **SBOM** (Software Bill of Materials, inventaire des dépendances) au format SPDX, généré à chaque release
+- **Audit npm** : alerte sur les vulnérabilités connues des dépendances, seuil `moderate`, échec bloquant en CI
+- **Audit licences** : liste blanche permissive (MIT, Apache-2.0, BSD, ISC) appliquée à toutes les dépendances
+- **Dependency review** sur chaque pull request via GitHub Advanced Security
+- **Releases npm signées** par OIDC : chaque paquet publié porte une attestation cryptographique qui lie le code source au workflow qui l'a construit
 
-**Five operational hubs:**
+Détails : [docs/quality/security.md](docs/quality/security.md) et [docs/quality/incident-response.md](docs/quality/incident-response.md).
 
-- Expertise and Qualifications Hub
-- Creations and Innovations Hub
-- International Hub
-- Digital and Technological Platforms Hub
-- Sports Academy Hub
+### Audits structurels
 
-### EUNICoast
+- **[knip](https://knip.dev/)** — détecte le code mort (exports, fichiers, dépendances jamais utilisés)
+- **[jscpd](https://github.com/kucherenko/jscpd)** — détecte la duplication de code, seuil à 5 %
+- **[size-limit](https://github.com/ai/size-limit)** — fixe un budget de taille pour chaque paquet, échec si dépassé
+- **[taze](https://github.com/antfu-collective/taze)** — vue d'ensemble des versions de dépendances disponibles
+- **audit de structure** (script maison) — vérifie que chaque sous-projet respecte les conventions de placement et de nommage du dépôt
 
-[EUNICoast](https://eunicoast.eu/) (European University of Islands, Ports & Coastal Territories) is an alliance of **13 European universities** coordinated by Université Le Havre Normandie, funded at **€14.4M** by the European Commission (2024-2028).
+### Hooks Git locaux
 
-**Partner universities:** Åland (Finland), Bourgas (Bulgaria), Stralsund (Germany), EMUNI (Slovenia), Azores (Portugal), Balearic Islands (Spain), Patras (Greece), Sassari (Italy), Faroe Islands, Antilles (France), Le Havre (France), Dubrovnik (Croatia), Szczecin (Poland).
+[Lefthook](https://github.com/evilmartians/lefthook) orchestre les hooks Git sur la machine du contributeur, pour bloquer en local ce qui échouerait de toute façon en CI :
 
-**Thematic hubs:**
+- **pre-commit** (avant chaque commit) : interdit les commits directs sur `main`, exécute gitleaks, Prettier, ESLint et la vérification de types sur les fichiers modifiés
+- **commit-msg** (à la rédaction du message) : commitlint vérifie le format du message
+- **pre-push** (avant chaque envoi au remote) : interdit les push directs sur `main`, lance l'audit de sécurité, l'audit de licences, les tests avec couverture, knip et jscpd
 
-- Identities and heritage of coastal and island communities
-- Circular blue economy, port logistics, and sustainable tourism
-- Governance and planning of coastal territories
-- Health, biodiversity, and nature-based solutions
-- Engineering solutions and data for coastal infrastructure, marine renewable energies, and maritime safety
+Détails : [docs/quality/hooks.md](docs/quality/hooks.md).
+
+### Outillage
+
+- **[pnpm](https://pnpm.io/)** : gestionnaire de paquets qui installe les dépendances et isole chaque sous-projet
+- **[turbo](https://turbo.build/)** : orchestrateur de tâches avec cache distribué — ne reconstruit que ce qui a changé
+- **[Changesets](https://github.com/changesets/changesets)** : gestion des versions et génération des changelogs
+- **[VitePress](https://vitepress.dev/)** : génère le site de documentation à partir des fichiers Markdown de [`docs/`](docs/)
 
 ## Documentation
 
-Full documentation is available at <https://univ-lehavre.github.io/atlas/>.
+Tout est dans [`docs/`](docs/) :
 
-- [Applications](https://univ-lehavre.github.io/atlas/apps/amarre)
-- [Architecture](https://univ-lehavre.github.io/atlas/architecture/monorepo)
-- [Quality & security](https://univ-lehavre.github.io/atlas/quality/ci-pipeline)
-- [Collaboration](https://univ-lehavre.github.io/atlas/collaboration/workflow)
+- [Architecture](docs/architecture/monorepo.md) — comment le dépôt est organisé
+- [Qualité & sécurité](docs/quality/ci-pipeline.md) — les garde-fous en détail
+- [Collaboration](docs/collaboration/workflow.md) — workflow pull request, releases, conventions
+- [Glossaire](docs/glossary.md) — définitions des termes techniques
 
-## Quick Start
+Pour contribuer, lire [CONTRIBUTING.md](CONTRIBUTING.md). Pour signaler une vulnérabilité, voir [SECURITY.md](SECURITY.md).
 
-### Using the REDCap API Client
-
-```bash
-pnpm add @univ-lehavre/atlas-crf-core effect
-```
-
-```typescript
-import { Effect } from "effect";
-import {
-  createCrfClient,
-  CrfUrl,
-  CrfToken,
-} from "@univ-lehavre/atlas-crf-core";
-
-const client = createCrfClient({
-  url: CrfUrl("https://redcap.example.com/api/"),
-  token: CrfToken("YOUR_32_CHAR_HEXADECIMAL_TOKEN"),
-});
-
-const records = await Effect.runPromise(
-  client.exportRecords({ fields: ["record_id", "name"] }),
-);
-```
-
-## Development
-
-```bash
-# Installation
-pnpm install
-
-# Development
-pnpm dev
-
-# Tests
-pnpm test
-
-# Pre-release checks
-pnpm ci:checks
-```
-
-## Partners and Funders
-
-<p align="center">
-  <a href="https://www.univ-lehavre.fr/">
-    <img src="packages/logos/ulhn.svg" alt="Université Le Havre Normandie" height="40">
-  </a>
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://www.cptmp.fr/">
-    <img src="packages/logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="40">
-  </a>
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <a href="https://eunicoast.eu/">
-    <img src="packages/logos/eunicoast.png" alt="EUNICoast" height="40">
-  </a>
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="packages/logos/france-2030.png" alt="France 2030" height="40">
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="packages/logos/region-normandie.png" alt="Région Normandie" height="40">
-</p>
-
-## License
+## Licence
 
 [MIT](LICENSE)

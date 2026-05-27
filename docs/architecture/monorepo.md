@@ -1,269 +1,173 @@
-# Architecture
+# Structure du monorepo
 
-## Package Architecture
+Un **monorepo** est un seul dépôt Git qui héberge plusieurs projets logiciels, avec des règles partagées. Atlas en est un.
+
+Atlas organise ses projets en **huit catégories**. Chaque catégorie a une responsabilité précise et des **règles propres** : framework imposé, dépendances autorisées ou interdites, présence ou absence d'un point d'entrée exécutable, etc. Le placement d'un sous-projet dans une catégorie indique d'emblée son rôle, et les règles sont vérifiées automatiquement par `pnpm audit:structure`.
+
+## Vue d'ensemble
+
+| Catégorie                                                               | Contenu                                                      | Convention de nommage                                 | Publié sur npm ?      |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------- | --------------------- |
+| [`apps/`](https://github.com/univ-lehavre/atlas/tree/main/apps)         | Applications web destinées aux utilisateurs finaux           | `@univ-lehavre/atlas-<nom-du-dossier>`                | Non (`private: true`) |
+| [`assets/`](https://github.com/univ-lehavre/atlas/tree/main/assets)     | Fichiers statiques versionnés (logos, images, polices)       | `@univ-lehavre/atlas-<nom>`                           | Variable              |
+| [`packages/`](https://github.com/univ-lehavre/atlas/tree/main/packages) | Bibliothèques TypeScript réutilisables                       | `@univ-lehavre/atlas-<nom>`                           | Oui                   |
+| [`services/`](https://github.com/univ-lehavre/atlas/tree/main/services) | Serveurs HTTP déployés en backend                            | `@univ-lehavre/atlas-<nom>`                           | Oui                   |
+| [`cli/`](https://github.com/univ-lehavre/atlas/tree/main/cli)           | Outils en ligne de commande, courts, qui consomment les libs | `@univ-lehavre/atlas-<nom>-cli` (dossier sans `-cli`) | Oui                   |
+| [`ui/`](https://github.com/univ-lehavre/atlas/tree/main/ui)             | Composants d'interface Svelte partagés                       | `@univ-lehavre/atlas-ui`                              | Variable              |
+| [`config/`](https://github.com/univ-lehavre/atlas/tree/main/config)     | Configurations communes (style, types, formatage)            | `@univ-lehavre/atlas-<nom>-config`                    | Oui                   |
+| [`sandbox/`](https://github.com/univ-lehavre/atlas/tree/main/sandbox)   | Environnements Docker pour tests d'intégration               | Pas de convention spécifique                          | Non                   |
+
+## Diagramme des dépendances
+
+Les flèches indiquent **« utilise »**. Les projets en haut dépendent de ceux en bas, jamais l'inverse.
 
 ```mermaid
 graph TB
-    subgraph "Atlas - Université Le Havre Normandie"
-        subgraph "ECRIN Project"
-            ECRIN_APP["ecrin<br/>(main project)"]
-            FAE["find-an-expert<br/>(sub-project)"]
-        end
+    APPS["apps/<br/>(applications)"]
+    CLI["cli/<br/>(ligne de commande)"]
+    SERVICES["services/<br/>(serveurs HTTP)"]
+    UI["ui/<br/>(composants Svelte)"]
+    PACKAGES["packages/<br/>(bibliothèques)"]
+    ASSETS["assets/<br/>(fichiers statiques)"]
+    CONFIG["config/<br/>(configurations)"]
 
-        subgraph "AMARRE Project"
-            AMARRE["amarre<br/>(main project)"]
-        end
-
-        subgraph "CRF Project"
-            CRF["crf<br/>(main project)"]
-            CORE["redcap-core<br/>(sub-project)"]
-            OPENAPI["redcap-openapi<br/>(sub-project)"]
-        end
-
-        subgraph "Utility Packages"
-            NET["atlas-net"]
-            CONFIG["atlas-shared-config"]
-            APPWRITE["atlas-appwrite"]
-            AUTH["atlas-auth"]
-            ERRORS["atlas-errors"]
-            VALIDATORS["atlas-validators"]
-        end
-    end
-
-    FAE --> APPWRITE
-    FAE --> AUTH
-    ECRIN_APP --> APPWRITE
-    ECRIN_APP --> AUTH
-    AMARRE --> APPWRITE
-    CRF --> CORE
-    CRF --> NET
-    ECRIN_APP -.->|"integrates"| FAE
-    CRF -.->|"uses"| CORE
-    CRF -.->|"uses"| OPENAPI
+    APPS --> UI
+    APPS --> PACKAGES
+    CLI --> PACKAGES
+    CLI --> ASSETS
+    SERVICES --> PACKAGES
+    UI --> PACKAGES
+    APPS -.-> CONFIG
+    PACKAGES -.-> CONFIG
+    SERVICES -.-> CONFIG
+    CLI -.-> CONFIG
+    UI -.-> CONFIG
 ```
 
-## Functional Programming with Effect
+Trait plein : dépendance d'exécution. Trait pointillé : dépendance de développement (configurations TypeScript, ESLint, Prettier).
 
-This project adopts a **functional programming** approach with [Effect](https://effect.website/), a TypeScript library for building robust and type-safe applications.
+`sandbox/` est isolé : **aucune autre catégorie ne peut dépendre d'un projet de `sandbox/`**.
 
-### Why Effect?
+## Principes par catégorie
 
-- **Type-safe error handling**: Errors are treated as values, not exceptions
-- **Composability**: Modular and reusable code via `pipe` and combinators
-- **Built-in observability**: Tracing and metrics compatible with OpenTelemetry
-- **Resource management**: Automatic acquisition and release (like `try-with-resources`)
-- **Structured concurrency**: Clean interruption and fiber management
+Chaque catégorie a une responsabilité unique. Les règles ci-dessous sont enforcées par le script `pnpm audit:structure` (cf. [scripts/audit/workspace-structure.mjs](https://github.com/univ-lehavre/atlas/blob/main/scripts/audit/workspace-structure.mjs)).
 
-## ESLint Configuration
+### `apps/` — applications utilisateur
 
-The project uses a strict ESLint configuration combining multiple plugins. See [@univ-lehavre/atlas-shared-config](https://github.com/univ-lehavre/atlas/tree/main/packages/shared-config) for details.
+**Rôle.** Front-end SvelteKit déployable, livré à des utilisateurs finaux. Chaque app a son cycle de vie (déploiement, versionnage applicatif via Changesets, _bundle_) indépendant.
 
-### TypeScript Strict
+**Règles.**
 
-Based on `tseslint.configs.strictTypeChecked` with additional rules:
+- Le nom du paquet est `@univ-lehavre/atlas-<nom-du-dossier>` (le préfixe `atlas-` est ajouté automatiquement si le dossier ne commence pas par `atlas-`).
+- `private: true` — une app n'est jamais publiée sur npm.
+- Doit dépendre de `@sveltejs/kit` **et** `svelte`.
+- Pas de `bin` field (une app n'est pas un exécutable en ligne de commande).
+- **Ne peut pas dépendre d'une autre app** — le code partagé doit être extrait vers `packages/` ou `ui/`.
 
-| Rule                          | Description                           |
-| ----------------------------- | ------------------------------------- |
-| `strict-boolean-expressions`  | Forbids implicit boolean coercions    |
-| `no-floating-promises`        | Requires handling all promises        |
-| `no-unnecessary-condition`    | Detects always true/false conditions  |
-| `consistent-type-imports`     | Forces `import type` for type imports |
-| `switch-exhaustiveness-check` | Verifies all cases are covered        |
-| `no-explicit-any`             | Forbids `any` (error, not warn)       |
+### `packages/` — bibliothèques réutilisables
 
-### Functional Programming
+**Rôle.** Code métier, pur, sans dépendance vers une interface utilisateur ni vers un terminal. C'est le cœur logique du dépôt, consommé par `apps/`, `services/`, `cli/` et `ui/`.
 
-Based on [eslint-plugin-functional](https://github.com/eslint-functional/eslint-plugin-functional):
+**Règles.**
 
-| Rule                        | Status | Description                                   |
-| --------------------------- | ------ | --------------------------------------------- |
-| `no-expression-statements`  | error  | Forbids expressions without return            |
-| `no-conditional-statements` | error  | Forbids if/switch (forces ternaries/matching) |
-| `no-throw-statements`       | error  | Forbids throw (forces Effect)                 |
-| `no-try-statements`         | error  | Forbids try/catch (forces Effect)             |
-| `immutable-data`            | error  | Forbids mutation of objects/arrays            |
-| `no-classes`                | off    | Disabled (Effect uses classes)                |
+- Pas de `bin` field — les exécutables en ligne de commande vivent dans `cli/`.
+- **Pas de dépendance d'I/O terminal.** Les bibliothèques d'interaction CLI (`@clack/prompts`, `yargs`, `commander`, `meow`, `inquirer`, `prompts`) sont interdites en `dependencies`.
+- **Pas d'import de modules terminal.** `node:readline`, `node:tty`, `'readline'`, `'tty'` sont interdits dans les sources `packages/*/src/`.
+- **Pas de Svelte ni SvelteKit en `dependencies`.** Si une bibliothèque a besoin de types Svelte, les déclarer en `peerDependencies` (optionnel) ou en `devDependencies` (pour le développement). Les imports runtime de `svelte`, `@sveltejs/kit`, `$app/`, `$lib/` sont interdits dans les sources.
+- **Pas de framework HTTP de routage** (`hono`, `express`, `fastify`, `koa`, `polka`) — le routage HTTP appartient à `services/`.
+- **Objectif de couverture de tests** élevé (cible 100 %), car ces bibliothèques sont consommées partout.
 
-### Security
+### `services/` — serveurs HTTP
 
-Based on [eslint-plugin-security](https://github.com/eslint-community/eslint-plugin-security):
+**Rôle.** Serveurs HTTP déployés en backend (par exemple : un service de proxy vers REDCap). Utilisent le framework [Hono](https://hono.dev/).
 
-| Rule                          | Description                       |
-| ----------------------------- | --------------------------------- |
-| `detect-unsafe-regex`         | Detects regex vulnerable to ReDoS |
-| `detect-eval-with-expression` | Forbids eval() with expressions   |
-| `detect-object-injection`     | Warns on dynamic access           |
+**Règles.**
 
-### Code Quality
+- Pas de `bin` field.
+- **Doit dépendre de `hono`.**
+- **Doit dépendre d'au moins un paquet `@univ-lehavre/atlas-*` interne** — la logique métier vit dans `packages/`, le service est une fine couche de routage.
+- **Ne peut pas dépendre d'un autre service** — la logique commune doit être extraite vers `packages/`.
 
-| Rule                     | Value | Description                              |
-| ------------------------ | ----- | ---------------------------------------- |
-| `max-depth`              | 4     | Max nesting depth                        |
-| `max-lines-per-function` | 60    | Max lines per function                   |
-| `complexity`             | 15    | Max cyclomatic complexity                |
-| `no-console`             | error | Forbids console.log (allow: warn, error) |
+### `cli/` — outils en ligne de commande
 
-### Ignored Effect Patterns
+**Rôle.** Exécutables Node.js exposés à l'utilisateur en ligne de commande. Restent **fins** : parsent les arguments, appellent une bibliothèque de `packages/`, formatent la sortie.
 
-Certain patterns are explicitly allowed for Effect and Hono:
+**Règles.**
 
-```javascript
-// Effect patterns
-Effect.runPromise(...)
-pipe(value, Effect.map(...))
-Layer.succeed(...)
+- **Le dossier ne doit pas se terminer par `-cli`.** Exemple : `cli/net/` (pas `cli/net-cli/`).
+- **Le paquet doit se terminer par `-cli`** sauf exception explicitée dans le script d'audit (cas historique : `@univ-lehavre/atlas-crf-openapi`).
+- **Doit avoir un `bin` field** pointant vers l'exécutable.
+- **Doit dépendre d'au moins un paquet `@univ-lehavre/atlas-*` interne** — la logique métier vit dans `packages/`, le CLI est une fine couche d'I/O terminal.
+- C'est ici que vivent les dépendances d'I/O terminal (`@clack/prompts`, `yargs`, etc.).
 
-// Hono patterns (route configuration)
-app.get('/path', handler)
-records.post('/', handler)
-```
+### `ui/` — composants d'interface partagés
 
-### Test Files
+**Rôle.** Bibliothèque de composants Svelte réutilisés par plusieurs applications.
 
-Strict rules are disabled for `*.test.ts` and `*.spec.ts` files to allow classic test patterns.
+**Règles.**
 
-## Scripts
+- Pas de `bin` field.
+- **`svelte` doit être déclaré en `peerDependencies`**, pas en `dependencies` — l'application hôte fournit sa version.
+- **Pas de dépendances CLI I/O** ni HTTP de routage.
+- **Pas d'imports server-only** dans les sources : `@sveltejs/kit/node`, `server-only`, `$env/static/private`, `$env/dynamic/private` sont interdits. La logique serveur appartient aux _hooks_ SvelteKit des applications (`apps/<nom>/src/hooks.server.ts`).
 
-### `ready` Script
+### `config/` — configurations communes
 
-The `pnpm ci:checks` script runs all checks before a release. The order is optimized according to the **fail-fast** principle: the fastest and most likely to fail checks are run first.
+**Rôle.** Paquets qui exportent des configurations partagées (préréglages ESLint, TypeScript, Prettier, etc.). Consommés par tous les autres projets.
+
+**Règles.**
+
+- Pas de `bin` field.
+- Doit pouvoir être consommé via `import` dans un fichier de configuration (par exemple `eslint.config.js` qui importe `@univ-lehavre/atlas-shared-config`).
+
+### `assets/` — fichiers statiques
+
+**Rôle.** Fichiers statiques versionnés : logos, images, polices, données figées. **Aucun code exécutable.** Consommés par les apps (souvent via un CLI d'installation qui copie les fichiers vers le dossier `static/` de l'app).
+
+**Règles.**
+
+- Pas de `bin` field — un outil d'installation va dans `cli/`, jamais ici.
+- **Pas de dépendances runtime** (`dependencies` doit être vide ou absent). Les _devDependencies_ sont autorisées (par exemple `vitest` pour vérifier la présence des fichiers).
+- Peut être publié sur npm (cas de `@univ-lehavre/atlas-logos`) ou privé selon le besoin.
+
+### `sandbox/` — environnements de test
+
+**Rôle.** Stacks Docker Compose pour reproduire localement les dépendances externes (Appwrite, REDCap, Mailpit, etc.) afin d'exécuter les tests d'intégration et les scénarios _end-to-end_.
+
+**Règles.**
+
+- **Isolation totale** : aucune autre catégorie (`apps/`, `packages/`, etc.) ne peut dépendre d'un paquet de `sandbox/`. Les dépendances vont uniquement dans l'autre sens : `sandbox/` peut importer du code du dépôt pour ses besoins propres.
+- Pas publié sur npm.
+
+## Conventions transverses
+
+### Nommage des paquets
+
+- Tous les paquets internes sont préfixés par `@univ-lehavre/atlas-`.
+- Le chemin du dossier dans le dépôt correspond au suffixe : `packages/auth/` → `@univ-lehavre/atlas-auth`.
+
+### `repository.directory`
+
+Si le `package.json` déclare un champ `repository.directory`, il **doit** correspondre au chemin réel du paquet dans le dépôt. Permet à npm d'afficher correctement le lien « source » dans la page du paquet.
+
+### Pas de cycles de dépendances
+
+Le script d'audit détecte les cycles dans le graphe des dépendances internes (`@univ-lehavre/atlas-*` → `@univ-lehavre/atlas-*`) et fait échouer la vérification. Un cycle signale une responsabilité mal placée : il faut extraire la zone commune dans un nouveau paquet `packages/*`.
+
+## Vérifier la structure
+
+Avant d'ouvrir une pull request qui ajoute, déplace ou modifie un sous-projet :
 
 ```bash
-pnpm ci:checks
+pnpm audit:structure
 ```
 
-**Execution order:**
+Le script signale, ligne par ligne, chaque écart par rapport aux règles ci-dessus. Il est lancé en CI dans le _workflow_ `ci.yml` (job `audit`).
 
-1. **`format:check`** - Format verification
-2. **`svelte:check`** - Svelte type checking
-3. **`lint`** - ESLint checks
-4. **`typecheck`** - TypeScript type checking
-5. **`test:coverage`** - Tests with coverage
-6. **`build`** - The longest, run last because if previous steps fail, no need to build
+## Outils du monorepo
 
-### License Audit
+Trois outils principaux organisent la vie quotidienne du dépôt :
 
-The `audit:licenses` script verifies that all dependencies use allowed licenses:
-
-```bash
-pnpm audit:licenses
-```
-
-**Allowed licenses:**
-
-| License          | Description                                               |
-| ---------------- | --------------------------------------------------------- |
-| **MIT**          | Very permissive license, most common in the npm ecosystem |
-| **Apache-2.0**   | Permissive with patent protection                         |
-| **BSD-2-Clause** | Permissive, simplified version (2 clauses)                |
-| **BSD-3-Clause** | Permissive, original version (3 clauses)                  |
-| **ISC**          | Equivalent to MIT, simplified                             |
-| **0BSD**         | Public domain, no restrictions                            |
-| **Unlicense**    | Explicit public domain                                    |
-
-**Why these licenses?**
-
-All these licenses are **permissive** and allow:
-
-- Commercial use
-- Code modification
-- Distribution
-- Private use
-
-They **do not** require sharing source code (unlike copyleft licenses like GPL), which is important for a project that may be used in various contexts.
-
-## MCP Servers
-
-The project is configured to use [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) servers that provide documentation and tools to AI assistants.
-
-### Configuration
-
-MCP servers are configured in `.mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "effect-mcp": {
-      "command": "pnpm",
-      "args": ["dlx", "@niklaserik/effect-mcp"]
-    },
-    "svelte-mcp": {
-      "command": "pnpm",
-      "args": ["dlx", "@sveltejs/mcp"]
-    },
-    "appwrite-docs": {
-      "command": "npx",
-      "args": ["mcp-remote", "https://mcp-for-docs.appwrite.io"]
-    },
-    "appwrite-api": {
-      "command": "uvx",
-      "args": ["mcp-server-appwrite", "--all"],
-      "env": {
-        "APPWRITE_PROJECT_ID": "${APPWRITE_PROJECT_ID}",
-        "APPWRITE_API_KEY": "${APPWRITE_API_KEY}",
-        "APPWRITE_ENDPOINT": "${APPWRITE_ENDPOINT}"
-      }
-    },
-    "openalex": {
-      "command": "npx",
-      "args": ["openalex-mcp"]
-    }
-  }
-}
-```
-
-### Available Servers
-
-| Server          | Description                                         |
-| --------------- | --------------------------------------------------- |
-| `effect-mcp`    | Effect.js documentation                             |
-| `svelte-mcp`    | Svelte 5 and SvelteKit documentation                |
-| `appwrite-docs` | Appwrite documentation                              |
-| `appwrite-api`  | Appwrite API (requires env vars)                    |
-| `openalex`      | OpenAlex API for academic research (240M+ articles) |
-
-### Prerequisites
-
-- **Node.js/npm**: For `effect-mcp`, `svelte-mcp`, `appwrite-docs`, `openalex`
-- **uv (Python)**: For `appwrite-api` (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
-
-### Environment Variables for Appwrite
-
-To use the `appwrite-api` server, configure:
-
-```bash
-export APPWRITE_PROJECT_ID="your_project_id"
-export APPWRITE_API_KEY="your_api_key"
-export APPWRITE_ENDPOINT="https://appwrite.yourdomain.com/v1"
-```
-
-## Third-party Platforms
-
-Atlas relies on two third-party platforms for its features:
-
-### REDCap (Research Electronic Data Capture)
-
-[REDCap](https://project-redcap.org/) is a secure web application developed by Vanderbilt University for creating and managing online surveys and databases.
-
-| Feature              | Value                       |
-| -------------------- | --------------------------- |
-| Partner institutions | 8,000+                      |
-| Countries            | 164                         |
-| Scientific citations | 51,000+                     |
-| Compliance           | GDPR, HIPAA, 21 CFR Part 11 |
-| Cost                 | Free for Consortium members |
-
-REDCap enables web and mobile data collection (including offline). The CRF module provides TypeScript tools for interacting with the REDCap API.
-
-### Appwrite
-
-[Appwrite](https://appwrite.io/) is an open-source backend platform providing essential services for application development:
-
-| Service        | Description                         |
-| -------------- | ----------------------------------- |
-| Authentication | Login via email, OAuth, magic links |
-| Database       | Data storage and querying           |
-| Storage        | File management with encryption     |
-| Functions      | Serverless code execution           |
-
-Appwrite is compliant with SOC-2, GDPR and HIPAA standards. The ECRIN and AMARRE projects use Appwrite for authentication and user data management.
+- **[pnpm](https://pnpm.io/)** (gestionnaire de paquets) installe les dépendances en partageant un cache global et isole chaque sous-projet via les _workspaces_ (fichier [`pnpm-workspace.yaml`](https://github.com/univ-lehavre/atlas/blob/main/pnpm-workspace.yaml))
+- **[turbo](https://turbo.build/)** (orchestrateur de tâches) parallélise les commandes (`build`, `test`, `lint`…) à travers les sous-projets et met en cache les résultats : un projet déjà construit n'est pas reconstruit
+- **[Changesets](https://github.com/changesets/changesets)** gère le versionnage : chaque pull request qui modifie un paquet publiable joint un fichier `.changeset/*.md` décrivant le changement et son impact (`patch`, `minor`, `major`)

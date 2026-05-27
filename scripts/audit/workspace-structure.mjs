@@ -5,6 +5,7 @@ import path from "node:path";
 
 const ROOTS = [
   "apps",
+  "assets",
   "cli",
   "config",
   "packages",
@@ -330,6 +331,19 @@ for (const [packageName, { root, dir, packageJson }] of workspaces) {
   if (root === "config") {
     if (hasBin) {
       errors.push(`${dir}: config/ must not have a "bin" field`);
+    }
+  }
+
+  if (root === "assets") {
+    if (hasBin) {
+      errors.push(
+        `${dir}: assets/ must not have a "bin" field — installation tooling belongs in cli/`,
+      );
+    }
+    if (Object.keys(runtimeDeps).length > 0) {
+      errors.push(
+        `${dir}: assets/ must not have runtime dependencies — only static files`,
+      );
     }
   }
 
