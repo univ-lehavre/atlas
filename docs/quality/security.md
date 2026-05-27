@@ -92,6 +92,34 @@ Cette procédure est résumée ici ; pour une réponse complète à un incident 
 4. **Si secret runtime (Appwrite/REDCap)** : audit des logs côté émetteur pour identifier l'usage non autorisé.
 5. **Post-mortem** : documenter l'incident et la mitigation dans une issue dédiée.
 
+## Triage des findings — SLA de remédiation
+
+Délais maximums acceptables entre **détection** et **correctif déployé en prod**, par sévérité. Distinct du tempo de réponse à un incident actif (cf. [incident-response.md § Classification](./incident-response.md#1-classification-de-severite) pour les engagements P0–P3).
+
+| Sévérité       | Sources typiques                                                                                                                | Délai max (détection → fix déployé)   |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| **Critical**   | CVE critical sur dépendance prod ; CodeQL `error` exploitable à distance ; secret commité avec accès actif                      | **7 jours**                           |
+| **High**       | CodeQL `high warning` ; Dependabot high ; finding ZAP high ; vulnérabilité applicative confirmée à exploit local                | **30 jours**                          |
+| **Medium**     | CodeQL `medium warning` ; Dependabot moderate ; finding ZAP medium ; faiblesse de hardening (header manquant, cookie sans flag) | **90 jours (1 trimestre)**            |
+| **Low / Info** | CodeQL `low/note` ; Dependabot low ; finding ZAP info ; hygiène (dead code, unused imports)                                     | Triage hebdomadaire, fix opportuniste |
+
+> Ces délais sont des **objectifs indicatifs**, pas des engagements contractuels (cf. [SECURITY.md](https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md) → note liminaire).
+
+### Application pratique
+
+- **Le compteur démarre** au moment de la détection vérifiable (date de l'alerte CodeQL / Dependabot / push gitleaks / réception du report PVR), pas au moment de l'analyse humaine.
+- **Le compteur s'arrête** quand le correctif est en prod (merge `main` + déploiement Appwrite confirmé pour les apps, publish npm + provenance valide pour les packages).
+- **Dérive autorisée** : si le fix dépend d'un upstream (CVE non patchée), documenter l'attente dans l'advisory privée et garder l'alerte ouverte ; le SLA reprend dès que le patch est disponible.
+- **Si le SLA est dépassé** : escalader d'un cran (Medium dépassé → traiter comme High), notifier explicitement les owners, envisager une mitigation temporaire (rate-limit, désactivation d'endpoint, downgrade dépendance).
+
+### Lien avec les triages déjà conduits
+
+| Date       | Source     | Findings traités                            | Référence                                                                                   |
+| ---------- | ---------- | ------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| 2026-05-21 | CodeQL     | 2 alertes URL-substring + command-injection | [PR #194](https://github.com/univ-lehavre/atlas/pull/194)                                   |
+| 2026-05-22 | CodeQL     | 13 fixes code + 26 dismissals justifiés     | [PR #198](https://github.com/univ-lehavre/atlas/pull/198)                                   |
+| 2026-05-21 | Dependabot | 7 alertes auto-fermées par les bumps        | cf. [TODO.md → Prochaines actions](https://github.com/univ-lehavre/atlas/blob/main/TODO.md) |
+
 ## Surfaces exposées — apps et endpoints
 
 Cartographie des surfaces publiques du monorepo : URLs des apps déployées et classification public/auth des endpoints HTTP.

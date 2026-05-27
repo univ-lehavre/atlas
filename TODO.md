@@ -171,8 +171,8 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 
 ### 1.3 Politique de triage
 
-- [ ] Définir un SLA de remédiation par sévérité (critical : 7j, high : 30j, medium : trimestre)
-- [ ] Documenter dans `SECURITY.md` (voir phase 5)
+- [x] SLA de remédiation par sévérité défini (Critical 7j, High 30j, Medium 90j/trimestre, Low/Info opportuniste) + application pratique (compteur, escalade, dérive sur upstream) + lien avec les triages déjà conduits (#194, #198, Dependabot 2026-05-21).
+- [x] Documenté dans [docs/quality/security.md → Triage des findings — SLA](https://univ-lehavre.github.io/atlas/quality/security#triage-des-findings-sla-de-remediation) (la refonte de la documentation #208 a déplacé le contenu détaillé hors de SECURITY.md, qui reste concis et pointe vers le site).
 
 ---
 
@@ -388,7 +388,7 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 
 ## Ordre de priorité recommandé
 
-État au 2026-05-19 : Sprints 1–4 majoritairement bouclés, restent surtout les workflows DAST/supply-chain (Phase 4.3/4.4/7.1) et l'observabilité (Phase 8).
+État au 2026-05-26 : **Sprints 1–4 entièrement bouclés côté code**. Les phases DevSecOps actives qui restent sont des items DSI (alerting Appwrite 8.1, politique sauvegarde 8.3, nightly ZAP 7.1) ou de gouvernance (security champion, second mainteneur). Les chantiers hors DevSecOps (theming atlas-ui, parité visuelle, sillage docker, etc.) continuent en parallèle.
 
 **Sprint 1 (bloquants sécurité)**
 
@@ -400,8 +400,10 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 **Sprint 2 (fondations)**
 
 - [x] Phase 1.1 (CodeQL) ✅ livré via [PR #156](https://github.com/univ-lehavre/atlas/pull/156)
+- [x] Phase 1.3 (politique de triage / SLA) ✅ livré le 2026-05-26 dans [docs/quality/security.md](https://univ-lehavre.github.io/atlas/quality/security#triage-des-findings-sla-de-remediation)
 - [x] Phase 3.1 (Dependabot) ✅ livré + auto-merge patches via `.github/workflows/dependabot-auto-merge.yml`
 - [x] Phase 3.2 (Dependency Review Action) ✅ livré via [PR #161](https://github.com/univ-lehavre/atlas/pull/161)
+- [x] Phase 3.3 (audit:security à --audit-level=moderate) ✅ livré le 2026-05-26 (cf. [§3.3](#33-renforcement-de-pnpm-audit))
 - [x] Phase 4.1 (pin actions SHA) ✅ livré via PR #127 (+ #156, #161)
 - [x] Phase 4.2 (permissions minimales par job) ✅ — `id-token: write` ajouté sur release.yml (2026-05-22)
 
