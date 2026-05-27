@@ -243,7 +243,7 @@ Atlas relies on two third-party platforms for its features:
 
 ### REDCap (Research Electronic Data Capture)
 
-[REDCap](https://project-redcap.org/) is a secure web application developed by Vanderbilt University for creating and managing online surveys and research databases.
+[REDCap](https://project-redcap.org/) is a secure web application developed by Vanderbilt University for creating and managing online surveys and databases.
 
 | Feature              | Value                       |
 | -------------------- | --------------------------- |
