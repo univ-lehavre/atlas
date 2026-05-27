@@ -57,4 +57,4 @@ npm view @univ-lehavre/atlas-<name> --json | jq .dist.attestations
 
 ## Crédits
 
-Les chercheurs et chercheuses ayant rapporté des vulnérabilités confirmées seront crédités dans le CHANGELOG du package concerné, sauf demande contraire.
+Les personnes ayant rapporté des vulnérabilités confirmées seront créditées dans le CHANGELOG du package concerné, sauf demande contraire.
