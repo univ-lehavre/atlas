@@ -1,18 +1,16 @@
 {
   "name": "@univ-lehavre/atlas-logos",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "Logos and brand assets for Atlas projects",
   "type": "module",
   "exports": {
-    "./*": "./*"
-  },
-  "bin": {
-    "atlas-logos-install": "./bin/install.mjs"
+    "./*": "./*",
+    "./package.json": "./package.json"
   },
   "files": [
     "*.png",
     "*.svg",
-    "bin"
+    "*.jpg"
   ],
   "publishConfig": {
     "access": "public"

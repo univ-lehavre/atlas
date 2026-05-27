@@ -1,0 +1,18 @@
+{
+  "name": "@univ-lehavre/atlas-logos-cli",
+  "version": "1.0.0",
+  "description": "CLI to copy Atlas logo assets into a target directory (typically a SvelteKit app's static/ folder)",
+  "type": "module",
+  "bin": {
+    "atlas-logos-install": "./bin/install.mjs"
+  },
+  "files": [
+    "bin"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@univ-lehavre/atlas-logos": "workspace:*"
+  }
+}
