@@ -15,9 +15,10 @@ const config = {
     //   externe est bloqué.
     // - `style-src 'unsafe-inline'` : nécessaire pour les `style="..."` des
     //   templates Svelte et les inline-styles Bootstrap. À durcir plus tard.
-    // - `connect-src 'https:'` : wildcard temporaire le temps de définir
-    //   précisément les endpoints (Appwrite, REDCap) selon l'environnement.
-    //   À tightener en seconde itération.
+    // - `connect-src 'self'` : aucune fetch client-side vers un service externe
+    //   (les appels Appwrite/REDCap passent tous par les routes `/api/v1/`
+    //   du serveur SvelteKit). Vérifié 2026-05-26 — pas d'import du SDK
+    //   browser `appwrite`, uniquement `node-appwrite` côté serveur.
     csp: {
       mode: 'auto',
       directives: {
@@ -26,7 +27,7 @@ const config = {
         'style-src': ["'self'", "'unsafe-inline'"],
         'img-src': ["'self'", 'data:', 'blob:'],
         'font-src': ["'self'"],
-        'connect-src': ["'self'", 'https:'],
+        'connect-src': ["'self'"],
         'frame-ancestors': ["'none'"],
         'form-action': ["'self'"],
         'base-uri': ["'self'"],

@@ -27,7 +27,7 @@
     "test:coverage": "turbo test:coverage",
     "coverage:report": "node scripts/audit/coverage-report.mjs",
     "ci:checks": "turbo run format:check check lint typecheck test:coverage build",
-    "audit:security": "pnpm audit --audit-level=high",
+    "audit:security": "pnpm audit --audit-level=moderate",
     "audit:licenses": "node scripts/audit/licenses.mjs",
     "audit:unused": "knip --exclude unresolved,types",
     "audit:structure": "node scripts/audit/workspace-structure.mjs",
