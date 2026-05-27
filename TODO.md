@@ -60,7 +60,7 @@ Items différés (issus de la PR #127, trop volumineux pour y être inclus — c
 - [x] Phase 4.3 — npm provenance via OIDC : `NPM_CONFIG_PROVENANCE=true` + `id-token: write` + doc `npm audit signatures` (voir [§4.3](#43-npm-provenance-via-oidc))
 - [x] Phase 4.4 — SBOM CycloneDX : workflow `sbom.yml` (cdxgen 12.4.4, spec 1.6, artefact 90j, doc dans `docs/security/sbom/`) (voir [§4.4](#44-sbom-software-bill-of-materials))
 - [x] Phase 5.3 — branch protection sur `main` activée via API le 2026-05-19 (voir [§5.3](#53-branch-protection-sur-main))
-- [x] Phase 6.3 — HTTP headers de sécurité livrés (CSP via `kit.csp` + 5 headers via `hooks.server.ts`, sur amarre + ecrin + find-an-expert). Reste à tightener `connect-src` (wildcard pour v1).
+- [x] Phase 6.3 — HTTP headers de sécurité livrés (CSP via `kit.csp` + 5 headers via `hooks.server.ts`, sur amarre + ecrin + find-an-expert). `connect-src` tightening → `'self'` livré le 2026-05-26 (cf. [§6.3](#63-en-têtes-http-de-sécurité)).
 - [x] Phase 6.5 — rate limiting sur les endpoints publics ([packages/auth/src/rate-limit.ts](packages/auth/src/rate-limit.ts) + usages dans amarre/ecrin/find-an-expert ; cf. [§6.5](#65-rate-limiting))
 - [x] Phase 7 — OWASP ZAP baseline : workflow `zap-baseline.yml` livré en `workflow_dispatch` (cf. [§7.1](#71-owasp-zap-baseline)). Schedule nightly reste à arbitrer.
 - [x] Phase 8 — observabilité + runbook incident : runbook complet livré dans [docs/security/incident-response.md](docs/security/incident-response.md) (cadre 8.1/8.2/8.3 + scénarios). Exécution DSI (alerting + politique sauvegarde) à conduire en interne.
@@ -214,8 +214,7 @@ Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre
 
 ### 3.3 Renforcement de `pnpm audit`
 
-- [ ] Passer `audit:security` de `--audit-level=high` à `--audit-level=moderate`
-- [ ] Garder le pre-push hook mais ajouter une exception documentée pour les alertes acceptées (`pnpm audit --ignore`)
+- [x] `audit:security` passé à `--audit-level=moderate` (2026-05-26). Vérifié au préalable : 0 alerte moderate, donc le pre-push hook reste vert sans exception. Si une advisory moderate remonte plus tard sans patch upstream, documenter ici la décision (override `pnpm.overrides`, `--ignore` ciblé, etc.).
 
 ---
 
@@ -306,7 +305,7 @@ Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d
 - [x] `Referrer-Policy: strict-origin-when-cross-origin`
 - [x] `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
 - [x] `X-Frame-Options: DENY` (defense-in-depth, redondant avec CSP `frame-ancestors 'none'`)
-- [ ] **À tightener** : `connect-src 'self' https:` est volontairement wildcard pour ne pas bloquer Appwrite/REDCap/OpenAlex selon l'environnement de déploiement. Iteration suivante : remplacer par les domaines exacts (`appwrite-dev.univ-lehavre.fr`, `backend.chasset.net`, `redcap.univ-lehavre.fr`, `api.openalex.org`) via env var lue au build ou hardcodée par environnement.
+- [x] **Tighteneur `connect-src`** : passé à `'self'` (2026-05-26) sur amarre + ecrin + find-an-expert. Vérifié : aucun import du SDK browser `appwrite` (uniquement `node-appwrite` côté serveur), aucune fetch client-side vers Appwrite/REDCap/OpenAlex. Tous les appels externes passent par les routes `/api/v1/` du serveur SvelteKit qui font le proxy. La config env-var-based prévue à l'origine s'avère inutile.
 - [x] **Dette test résolue** : tests handler ajoutés en Phase 7.2 pour les 6 endpoints rate-limités, **plus tests `hooks.server.ts`** sur les 3 apps (3 cas chacun : headers statiques, HSTS gated HTTPS, population de `event.locals.userId` quand session valide). Seuils ajustés : amarre 42/52/36/43 et ecrin 28/18/27/28 restaurés à leur valeur d'origine. **find-an-expert baissé temporairement** à 58/41/40/58 après dédup validators (les branches de validation ont migré dans `@univ-lehavre/atlas-auth`, hors périmètre de coverage local) — à remonter en migrant aussi les tests des validators dans le package.
 - [ ] Valider avec [securityheaders.com](https://securityheaders.com) — objectif : note A minimum (après déploiement)
 - [ ] Tester aussi avec [Mozilla Observatory](https://observatory.mozilla.org)
@@ -410,7 +409,7 @@ Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5)
 
 - [x] Phase 4.3 (npm provenance via OIDC) ✅ livré le 2026-05-22 (cf. [§4.3](#43-npm-provenance-via-oidc))
 - [x] Phase 4.4 (SBOM CycloneDX) ✅ livré le 2026-05-22 (cf. [§4.4](#44-sbom-software-bill-of-materials))
-- [x] Phase 6.3 (headers HTTP de sécurité) ✅ livré via PR #171 ; tightener `connect-src` ouvert
+- [x] Phase 6.3 (headers HTTP de sécurité) ✅ livré via PR #171 ; `connect-src` tightening livré le 2026-05-26
 - [x] Phase 6.4 (cookies session hardening + audit localStorage + CSRF) ✅ livré via PR #171
 - [x] Phase 2.2 (gitleaks) ✅ livré via PR #127 + stabilisation #141/#143/#144/#145
 
