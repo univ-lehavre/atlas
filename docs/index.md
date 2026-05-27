@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: Atlas
-  text: La plateforme logicielle de la recherche à l'Université Le Havre Normandie
-  tagline: Des outils pour gérer les projets de recherche, capter les données cliniques, identifier les expertises, et orchestrer la collaboration scientifique.
+  text: Plateforme logicielle de la recherche
+  tagline: Des outils pour gérer les projets de recherche, identifier les expertises, et orchestrer la collaboration scientifique.
   actions:
     - theme: brand
       text: Découvrir les applications
@@ -18,7 +18,7 @@ features:
     details: Amarre, Ecrin, Sillage, Find an Expert, Atlas Dashboard, CRF Dashboard — chaque app couvre un besoin précis du chercheur ou de la cellule recherche.
     link: /apps/amarre
   - title: Architecture
-    details: Un monorepo pnpm + turbo, des apps SvelteKit, un backend Appwrite auto-hébergé, REDCap comme source de données cliniques.
+    details: Un monorepo pnpm + turbo, des apps SvelteKit, un backend Appwrite auto-hébergé, REDCap comme plateforme de formulaires de recherche.
     link: /architecture/monorepo
   - title: Garde-fous qualité
     details: CI multi-job, CodeQL, SBOM, DAST OWASP ZAP, gitleaks, audit des licences, pyramide de tests à 5 niveaux, hooks pre-commit et pre-push.

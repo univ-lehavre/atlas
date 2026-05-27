@@ -4,8 +4,7 @@ import { withMermaid } from "vitepress-plugin-mermaid";
 export default withMermaid(
   defineConfig({
     title: "Atlas",
-    description:
-      "La plateforme logicielle de la recherche à l'Université Le Havre Normandie",
+    description: "Plateforme logicielle de la recherche",
     lang: "fr-FR",
     base: "/atlas/",
     ignoreDeadLinks: [

@@ -59,12 +59,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Build packages (for API docs)
-        run: pnpm build
-
-      - name: Generate API documentation
-        run: pnpm docs:api
-
       - name: Build VitePress site
         run: pnpm docs:build
 
