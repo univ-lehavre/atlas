@@ -1,6 +1,6 @@
 # Security Policy
 
-> **Nature de ce document.** Cette politique décrit, sur la base du meilleur effort, la manière dont les vulnérabilités sont traitées dans le projet Atlas. Elle **ne constitue ni un contrat, ni une garantie, ni un engagement juridique opposable**. Le logiciel est diffusé sous licence MIT, sans garantie d'aucune sorte (cf. [LICENSE](LICENSE)). Les délais et procédures indiqués ci-dessous sont des objectifs indicatifs, pas des obligations contractuelles. Les obligations légales applicables par ailleurs (RGPD, conventions inter-établissements, marchés publics…) restent régies par leurs propres textes et prévalent en cas de conflit.
+> **Nature de ce document.** Cette politique décrit, sur la base du meilleur effort, la manière dont les vulnérabilités sont traitées dans le projet Atlas. Elle **ne constitue ni un contrat, ni une garantie, ni un engagement juridique opposable**. Le logiciel est diffusé sous licence MIT, sans garantie d'aucune sorte (cf. [LICENSE](LICENSE)). Les délais et procédures indiqués ci-dessous sont des objectifs indicatifs, pas des obligations contractuelles. Les obligations légales applicables par ailleurs (RGPD, conventions, marchés publics…) restent régies par leurs propres textes et prévalent en cas de conflit.
 
 ## Signaler une vulnérabilité
 
@@ -8,8 +8,7 @@
 
 ### Canal de divulgation responsable
 
-- **Email** : `redcap-support@univ-lehavre.fr` (chiffrement PGP disponible sur demande)
-- **GitHub Private Vulnerability Reporting** : <https://github.com/univ-lehavre/atlas/security/advisories/new>
+Privilégier le **[GitHub Private Vulnerability Reporting](https://github.com/univ-lehavre/atlas/security/advisories/new)** — le rapport reste privé jusqu'à publication coordonnée d'un avis, et l'historique est tracé côté GitHub Security Advisories.
 
 ### Informations à inclure
 
@@ -33,20 +32,20 @@
 
 Atlas suit un modèle de release continue (changesets). Seules les versions publiées les plus récentes de chaque package npm `@univ-lehavre/atlas-*` sont supportées pour les correctifs de sécurité.
 
-Les anciens packages renommés lors de la migration anti-marque sont **dépréciés** sur npm avec un pointer vers les nouveaux noms et ne recevront plus de mises à jour, y compris pour les vulnérabilités.
+Les anciens packages renommés sont **dépréciés** sur npm avec un pointeur vers les nouveaux noms et ne reçoivent plus de mises à jour, y compris pour les vulnérabilités.
 
 ## Périmètre
 
 **Concerné** : packages npm `@univ-lehavre/atlas-*`, apps déployées (amarre, ecrin, find-an-expert), services backend (`services/crf`), workflows GitHub Actions.
 
-**Hors périmètre** : l'instance REDCap elle-même (`redcap.univ-lehavre.fr`, relève de la DSI ULHN) ; les dépendances tierces (signaler à leurs mainteneurs upstream).
+**Hors périmètre** : l'instance REDCap upstream (relève de ses opérateurs d'infrastructure) ; les dépendances tierces (signaler à leurs mainteneurs upstream).
 
 ## Pour aller plus loin
 
 Atlas documente l'ensemble de ses garde-fous applicatifs et opérationnels sur le site de documentation :
 
-- [Sécurité applicative](https://univ-lehavre.github.io/atlas/quality/security) — inventaire des secrets, classification des surfaces exposées, DAST, SBOM
-- [Incident response](https://univ-lehavre.github.io/atlas/quality/incident-response) — runbook opérationnel (P0–P3, 5 phases, RGPD)
+- [Sécurité applicative](docs/quality/security.md) — inventaire des secrets, classification des surfaces exposées, DAST, SBOM
+- [Réponse aux incidents](docs/quality/incident-response.md) — runbook opérationnel (P0–P3, 5 phases, RGPD)
 
 Pour vérifier qu'un package installé provient bien du workflow Atlas (provenance OIDC, SLSA Build L3) :
 
