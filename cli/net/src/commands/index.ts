@@ -56,7 +56,10 @@ interface DiagnosticsResult {
   readonly success: boolean;
 }
 
-const runDiagnostics = async (targetUrl: string, ctx: CliContext): Promise<DiagnosticsResult> => {
+export const runDiagnostics = async (
+  targetUrl: string,
+  ctx: CliContext
+): Promise<DiagnosticsResult> => {
   const url = new URL(targetUrl);
   const port =
     url.port !== '' ? Number.parseInt(url.port, 10) : url.protocol === 'https:' ? 443 : 80;
