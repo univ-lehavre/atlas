@@ -297,7 +297,7 @@ const main = async (): Promise<void> => {
       `Project ${before.project_id} is in production (in_production=1). ` +
         `Metadata import is blocked by REDCap in that state and the API ` +
         `doesn't expose a production-to-development toggle. ` +
-        `Re-run \`pnpm docker:reset && pnpm docker:up\` to get a fresh install ` +
+        `Re-run \`pnpm stop && pnpm docker:up\` to get a fresh install ` +
         `where install-crf.sh keeps the project in development.`,
     );
   }

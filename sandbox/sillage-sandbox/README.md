@@ -55,11 +55,10 @@ Ouvrir http://localhost:5173 et signer avec un email matchant `ALLOWED_DOMAINS_R
 
 | Commande              | Effet                                                                |
 | --------------------- | -------------------------------------------------------------------- |
-| `pnpm start`          | Raccourci `docker:up` + `bootstrap` en un coup                       |
-| `pnpm stop`           | Arrête les conteneurs (volumes préservés)                            |
+| `pnpm start`          | Wipe + `docker:up` + `bootstrap` + smoke en un coup (zero-touch)     |
+| `pnpm stop`           | Arrête les conteneurs et efface les volumes anonymes                 |
 | `pnpm docker:up`      | Démarre tous les conteneurs (BaaS + CRF + Mailpit)                   |
-| `pnpm docker:down`    | Arrête les conteneurs (volumes préservés)                            |
-| `pnpm docker:reset`   | Arrête + supprime les volumes (perte de données)                     |
+| `pnpm docker:down`    | Arrête les conteneurs et efface les volumes anonymes                 |
 | `pnpm docker:logs`    | Tail des logs                                                        |
 | `pnpm bootstrap`      | Orchestrateur complet (BaaS + CRF + seed + .env sillage)             |
 | `pnpm bootstrap:baas` | Provisionne Appwrite (account root + org + projet + clé API)         |
@@ -68,7 +67,9 @@ Ouvrir http://localhost:5173 et signer avec un email matchant `ALLOWED_DOMAINS_R
 | `pnpm pull:prod`      | Pull opt-in des records de prod (nécessite `PROD_CRF_*` dans `.env`) |
 | `pnpm test:smoke`     | Playwright smoke level-5 ; auto-spawn d'sillage dev via webServer    |
 
-> Les commandes `up`/`down`/`reset` sont préfixées `docker:` parce que `pnpm up` est une commande native pnpm (= `update`) qui shadow-erait nos scripts.
+> Les commandes `up`/`down` sont préfixées `docker:` parce que `pnpm up` est une commande native pnpm (= `update`) qui shadow-erait nos scripts.
+
+> **Volumes anonymes.** Les volumes Appwrite (`/storage/*`) et MongoDB (`/data/db`) sont déclarés anonymes dans [`docker-compose.yaml`](docker-compose.yaml). Un `pnpm stop` (ou `docker compose down --volumes`) les efface — donc chaque `pnpm start` repart d'un état fraîchement bootstrappé. Le cold-bootstrap ajoute ~30-60s à chaque relance, en échange de la disparition des bugs de drift d'état entre sessions et entre sandboxes (cf. la sandbox amarre qui partage le projet REDCap id=1).
 
 Tous les scripts sont idempotents — re-lance-les sans crainte.
 
@@ -127,7 +128,7 @@ SEED_MODE=prod pnpm start   # ou via le bootstrap orchestré
 
 Le script demande une confirmation interactive avant de pull (skip avec `--yes`). Les champs présents en prod mais absents en local sont droppés avec un warning. **L'URL doit inclure le `/api/` final** (REDCap exige le path d'API).
 
-⚠ **Privacy** : les records pull-és se retrouvent en clair dans ta MariaDB locale (côté REDCap). Un `pnpm docker:reset` les efface.
+⚠ **Privacy** : les records pull-és se retrouvent en clair dans ta MariaDB locale (côté REDCap). Un `pnpm stop` (ou `pnpm start` qui wipe en début de script) les efface.
 
 ### Test E2E
 
