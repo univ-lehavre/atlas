@@ -33,6 +33,14 @@ if grep -qE '^_APP_OPENSSL_KEY_V1=__set_a_random_string_here__$' .env; then
   rm -f .env.bak
 fi
 
+# Volumes anonymes : tout état Appwrite / MongoDB d'une session
+# précédente est effacé ici pour repartir d'un état fraîchement
+# bootstrapé. Évite le bug d'idempotence Appwrite après down/up et les
+# conflits d'état avec la sandbox amarre qui partage le projet REDCap
+# id=1. Cold-bootstrap = ~30-60s, accepté.
+echo "==> [0/3] Wiping previous sandbox state (volumes anonymes)"
+docker compose down --volumes --remove-orphans
+
 echo "==> [1/3] Starting containers"
 docker compose up -d
 

@@ -14,12 +14,23 @@
 #
 # Usage
 # -----
-# - `pnpm up`           : start both stacks
+# - `pnpm start`        : zero-touch — wipes any previous state, starts
+#                        both stacks, bootstraps and runs smoke (cf.
+#                        scripts/start.sh)
 # - `pnpm bootstrap`    : provision Appwrite project/key + CRF token, write
 #                        them to apps/sillage/.env.local
 # - `pnpm logs`         : tail logs of all services
-# - `pnpm down`         : stop services (keeps volumes)
-# - `pnpm reset`        : stop services and wipe volumes (data loss)
+# - `pnpm stop`         : stop services (volumes anonymes : effacés par
+#                        `down`)
+#
+# Volumes
+# -------
+# Volumes anonymes, donc effacés à chaque `docker compose down` (ou
+# `pnpm stop`). Chaque `pnpm start` recommence à partir d'un Appwrite et
+# d'une MongoDB fraîchement bootstrappés — environ 30 à 60 s de
+# bootstrap supplémentaires, acceptés en échange de la disparition des
+# bugs de drift entre sessions et entre sandboxes (cf. sandbox amarre
+# qui partage le projet REDCap id=1).
 #
 # Note Appwrite : la stack ici est minimale (appwrite + db + redis sans
 # traefik ni workers). Suffisant pour les flux Account/Users/Database
@@ -80,11 +91,15 @@ services:
       _APP_SMTP_PASSWORD: ""
       _APP_SYSTEM_EMAIL_NAME: ${APPWRITE_SYSTEM_EMAIL_NAME:-Sillage Sandbox}
       _APP_SYSTEM_EMAIL_ADDRESS: ${APPWRITE_SYSTEM_EMAIL_ADDRESS:-no-reply@sillage.local}
+    # Volumes anonymes : effacés par `docker compose down -v` (lancé
+    # automatiquement par `start.sh`). Chaque `pnpm start` repart d'un
+    # état fraîchement bootstrapé, évite les conflits d'état entre les
+    # sandboxes amarre/sillage qui partagent le projet REDCap id=1.
     volumes:
-      - baas-uploads:/storage/uploads
-      - baas-cache:/storage/cache
-      - baas-config:/storage/config
-      - baas-certificates:/storage/certificates
+      - /storage/uploads
+      - /storage/cache
+      - /storage/config
+      - /storage/certificates
     networks:
       - baas-net
       - redcap-net
@@ -169,8 +184,9 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${_APP_DB_USER:-root}
       MONGO_INITDB_ROOT_PASSWORD: ${_APP_DB_PASS:-baas_password}
+    # Volume anonyme : voir le commentaire sur le service `baas`.
     volumes:
-      - baas-mongodb-data:/data/db
+      - /data/db
     networks:
       - baas-net
 
@@ -179,13 +195,6 @@ services:
     container_name: sillage-sandbox-baas-redis
     networks:
       - baas-net
-
-volumes:
-  baas-uploads:
-  baas-cache:
-  baas-config:
-  baas-certificates:
-  baas-mongodb-data:
 
 networks:
   baas-net:
