@@ -106,11 +106,7 @@
     },
     "cli/crf": {
       "project": ["src/**/*.ts"],
-      "ignore": [
-        "src/commands/api/commands.ts",
-        "src/shared/context.ts",
-        "src/shared/terminal.ts"
-      ]
+      "ignore": ["src/commands/api/commands.ts"]
     },
     "cli/net": {
       "project": ["src/**/*.ts"]
