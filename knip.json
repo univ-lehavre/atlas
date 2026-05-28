@@ -38,9 +38,7 @@
     },
     "packages/citation": {
       "project": ["src/**/*.ts"],
-      "ignore": ["src/db/index.ts", "src/group/helpers.ts"],
       "ignoreDependencies": [
-        "@duckdb/node-api",
         "@effect/experimental",
         "@effect/platform-node",
         "@xenova/transformers",
@@ -97,9 +95,6 @@
     },
     "sandbox/sillage-sandbox": {
       "project": ["scripts/**/*.ts", "tests/**/*.ts"]
-    },
-    "sandbox/crf-sandbox-core": {
-      "project": ["src/**/*.ts", "bin/**/*.ts", "tests/**/*.ts"]
     },
     "packages/crf-client": {
       "project": ["src/**/*.ts"],
