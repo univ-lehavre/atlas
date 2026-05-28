@@ -1,69 +1,204 @@
 # TODO — atlas
 
-État courant des chantiers actifs sur le monorepo atlas : passage progressif à **DevSecOps** (couche "Sec" sur le pipeline CI/CD existant — GitHub Actions + Appwrite Sites pour amarre/ecrin) et travaux **hors DevSecOps** (sandbox amarre, composants UI partagés, etc.).
+État des chantiers actifs et décisions structurantes sur le monorepo atlas.
 
-Avancement DevSecOps : Sprint 1 + une grosse partie du Sprint 2/3 livrés via PR #127. Phase 1.1 CodeQL ajoutée via PR #156. Restent les workflows complémentaires (provenance OIDC, SBOM, ZAP), le durcissement runtime Appwrite (headers HTTP, rate limit) et la gouvernance UI GitHub (branch protection, Secret Scanning).
-
----
-
-## Prochaines actions
-
-Items concrets, immédiatement actionnables, sans dépendance d'arbitrage préalable :
-
-- [x] Après merge [PR #156](https://github.com/univ-lehavre/atlas/pull/156) — alertes CodeQL remontent dans l'onglet **Security → Code scanning** (30 alertes ouvertes, analyse `2026-05-19T14:00:10Z` sur `refs/heads/main` avec 37 résultats)
-- [x] Vérifier qu'aucun build n'est cassé par les bumps majors Dependabot du 2026-05-19 (notamment `@napi-rs/canvas` 0.x→1.x via #137) — API `createCanvas`/`getContext`/`toBuffer` validée à l'exécution, tests + build OK
-- [x] Vérifier le nouveau wording RGPD du modal [CreateRequest.svelte](apps/amarre/src/lib/ui/CreateRequest.svelte) (porté via [PR #155](https://github.com/univ-lehavre/atlas/pull/155)) — code-side : diff conforme à l'upstream `b035655` (titre, lien `target=_blank rel=noopener`). Vérif visuelle finale à faire côté dev par toi si souhaitée.
-- [x] Vérifier la logique de signature composante/labo selon `invitation_type` dans amarre (`1`=Recherche, `2`=Enseignement, `3`=Les deux) — table de vérité conforme au spec ; 3 points cosmétiques à noter ([Request.svelte:13](apps/amarre/src/lib/ui/Request.svelte#L13) dead code commenté, asymétrie `isInvitation` préservée de l'upstream, pas de test unitaire sur `Request.svelte`)
-- [x] [Actions UI GitHub](#actions-manuelles-ui-github) — Secret Scanning + Push Protection + Dependabot security updates + branch protection sur `main` activés via API GitHub le 2026-05-19
-- [x] Fix logos `vite-plugin-static-copy` → script `prepare` (3 apps) — livré et mergé via [PR #157](https://github.com/univ-lehavre/atlas/pull/157)
-- [x] Nettoyer `knip.json` : retirer `@univ-lehavre/atlas-logos` de `ignoreDependencies` des 3 apps — livré via [PR #160](https://github.com/univ-lehavre/atlas/pull/160)
-- [x] Examiner les 7 alertes Dependabot remontées suite à l'activation du Dependency graph le 2026-05-19 — toutes fermées automatiquement le 2026-05-21 par les bumps Dependabot mergés (cookie, esbuild, js-yaml, ajv, vite, ws, protobufjs). Vérifié le 2026-05-22 : 0 alerte Dependabot ouverte.
-- [x] **Triage complet des alertes CodeQL restantes** (post-[PR #194](https://github.com/univ-lehavre/atlas/pull/194)) — inventaire réel 39 alertes (vs "25+4" estimé) ; 26 dismissées + 13 fixes code (PR triage). Détail dans l'[archive ci-dessous](#2026-05-22--triage-codeql-post-194).
+> Pour le contexte technique (architecture, qualité, sécurité, collaboration),
+> voir [`docs/`](docs/). Cette TODO ne couvre que **ce qui reste à faire**, **ce
+> qui est en attente d'arbitrage**, et **les décisions** qui pilotent les futurs
+> chantiers. Les détails de chaque chantier closé sont dans l'[Archive](#archive).
 
 ---
 
-## Backlog d'issues à créer
+## Décisions clés
 
-Items différés (issus de la PR #127, trop volumineux pour y être inclus — chacun mérite sa propre PR/issue) :
+Choix structurants pris au fil des chantiers, conservés ici pour que tout
+contributeur retrouve le « pourquoi » sans avoir à fouiller l'historique.
 
-**Hors DevSecOps**
+### Architecture / techno
 
-- [ ] `packages/crf-project-template/` (trame déclarative avec Effect Schema)
-- [ ] Helper TS pour parser le CSV REDCap + générer des fake records
-- [ ] Abstraction CLI partagée (réduire le boilerplate des 3 CLIs citation-like)
-- [ ] Tests `bin/` pour `cli/crf` (couverture 22.7% → 50%+)
-- [x] Déplacement des composants UI des apps vers un package partagé — livré via [PR #190](https://github.com/univ-lehavre/atlas/pull/190) : les 15 composants Svelte de `apps/amarre/src/lib/ui/` sont dans `ui/atlas-ui/` (package `@univ-lehavre/atlas-ui`), prévisualisés via Storybook 10. Bootstrap centralisé dans le package (plus de CDN). Brand identity injectée via props (logos, alt-text, platformName) — cf. [PR #192](https://github.com/univ-lehavre/atlas/pull/192).
-- [ ] **`atlas-ui` : système de theming optionnel** — exposer des points d'extension pour : palettes de couleurs (variants Bootstrap custom : `--bs-primary` etc.), familles de fontes (au-delà de Gambetta hardcodée dans amarre), tailles de base (rem-scale, line-height, spacing). Cibles : autres apps du monorepo qui consommeraient atlas-ui avec leur propre identité visuelle, sans forker les composants. Pistes à cadrer :
-  - Variables CSS custom exposées par `@univ-lehavre/atlas-ui/client` (override au niveau consumer)
-  - Ou prop `theme` sur un composant racine (Provider pattern)
-  - Ou export de SCSS sources pour rebuild Bootstrap (`atlas-ui/scss`)
-  - Storybook : ajouter un addon `@storybook/addon-themes` ou switcher manuel pour prévisualiser chaque palette
-  - Décider si l'identité amarre reste hardcodée dans `apps/amarre/static/` ou si elle remonte dans un thème nommé.
-- [ ] **Dispatcher les tests entre les 5 niveaux et `atlas-ui`** — après l'extraction des composants vers `ui/atlas-ui/`, les tests level-1 UI actuellement dans [apps/amarre/tests/ui/](apps/amarre/tests/ui/) testent en réalité des composants qui ne vivent plus dans amarre. À migrer vers `ui/atlas-ui/tests/ui/` (avec les fixtures correspondantes). amarre garde uniquement les tests de routes / services / `+page.svelte` / `hooks.server.ts`. Les niveaux 2 à 5 restent en place (contract dans `sandbox/crf-sandbox/`, intégration dans `apps/amarre/tests/integration/`, E2E dans `sandbox/amarre-sandbox/`). En bonus : stories Storybook et tests level-1 partageraient les mêmes fixtures (cf. discussion archi initiale). Cf. [apps/amarre/tests/README.md](apps/amarre/tests/README.md) pour la pyramide actuelle.
-- [ ] **Brancher les niveaux 2 à 5 d'amarre sur pre-push (et CI)** — aujourd'hui seul le niveau 1 protège réellement les PRs. `pnpm test:coverage` du `lefthook` pre-push et du job `test` de [`.github/workflows/ci.yml`](.github/workflows/ci.yml) tourne via turbo, mais : N2 est exclu par config dans [sandbox/crf-sandbox/vitest.config.ts](sandbox/crf-sandbox/vitest.config.ts), N3/N4 sont `describe.skipIf(!reachable)` (pas de docker ni dans le hook ni dans le runner CI), N5 (Playwright) n'est dans aucun pipeline. Pistes : (a) job CI dédié `services:` Postgres/Redis/MariaDB + démarrage Appwrite/REDCap via docker compose puis `pnpm -F atlas-crf-sandbox test:contract:amarre && pnpm -F amarre test:integration && pnpm -F amarre-sandbox test:smoke` ; (b) variante pre-push allégée qui exige la stack `pnpm -F amarre-sandbox start` à jour avant de pousser, ou skip propre sinon. Trade-off : temps de CI (~5 min ajoutés pour la stack docker) vs couverture réelle de la pyramide. Cf. [apps/amarre/tests/RUNBOOK.md](apps/amarre/tests/RUNBOOK.md) → "Intégration des 5 niveaux dans pre-commit / pre-push / CI".
-- [ ] **Dockeriser sillage-app dans sillage-sandbox** — `apps/sillage` est lancée hors du compose (`pnpm -F atlas-sillage dev` sur le host). Pour anticiper les dépendances R (project-graph-shiny) et Python (ecrin.py / cahier-reports), il faut un service `app` dans `sandbox/sillage-sandbox/docker-compose.yaml` qui run sillage build-once et expose :5173. Étapes : (a) `apps/sillage/Dockerfile` multi-stage (node:24-alpine builder + adapter-node runtime), (b) service `app` dans le compose avec port mapping 5173:3000 et env vars depuis `.env.local` généré, (c) update `write-sillage-env.sh` pour pointer Appwrite/REDCap via le DNS interne docker (genre `http://baas:80/v1`) au lieu de `localhost`, (d) README qui documente `pnpm dev` (HMR rapide, host) vs `docker compose up` (prod-like, full stack incluant l'app). Pré-requis pour la phase qui ajoute les services R/Python.
-- [ ] **Sandbox sillage : volumes volatils par défaut** — actuellement `sillage-sandbox/docker-compose.yaml` déclare des volumes nommés persistants (`baas-uploads`, `baas-cache`, `baas-config`, `baas-certificates`, `baas-mongodb-data`). L'état survit donc à `docker compose down` mais en pratique on rebootstrappe systématiquement et le drift d'état (cf. l'item suivant) cause plus de bug que de bénéfice. Convertir en volumes anonymes / tmpfs pour que chaque `pnpm start` parte d'un état fresh — évite aussi les conflits d'état entre les sandboxes amarre/sillage qui partagent le projet REDCap id=1. Implique d'accepter un cold-bootstrap (~30-60s) à chaque relance.
-- [ ] **Bug d'idempotence Appwrite après `docker compose down`/`up`** — observé dans la session du 2026-05-21 : un cycle `docker compose down` (sans `-v`) suivi d'`up -d` perd l'état applicatif Appwrite (le projet `amarre` n'existe plus, retour `project_not_found` sur `/v1/...`). Pourtant le volume `baas-mongodb-data` est nommé et préservé. Hypothèses : Appwrite ne lit pas son state au cold-restart, ou MongoDB perd l'auth (root password drift). Workaround actuel : rejouer `pnpm bootstrap:baas` qui est idempotent. À creuser : pourquoi le state Appwrite ne survit pas à un down/up alors que les volumes sont là — diagnostiquer via `docker volume inspect amarre-sandbox_baas-mongodb-data` et `mongosh` direct dans le conteneur.
-- [x] **Aligner `node-appwrite` (SDK 25.x = Appwrite 1.9.5) avec le server (`appwrite/appwrite:1.9.0`)** — **Décision 2026-05-22** : on garde SDK 25.x + server 1.9.0 (image latest, sortie 2026-04-01). Le warning « SDK built for 1.9.5, server 1.9.0 » au boot dev/smoke est accepté comme bruit jusqu'à la sortie d'`appwrite/appwrite:1.9.5` server-side. Raison du choix : (a) le downgrade SDK vers 24.1.0 (cible 1.9.4) ou 22.x (cible 1.8.x) ferait perdre `TablesDB` que `apps/ecrin` consomme déjà (cf [§6.4](#64-authentification-et-sessions) — dédup baas) ; (b) l'option « server only » 1.9.5 sortira naturellement, le warning disparaîtra alors sans toucher au code. Réévaluer si Appwrite tarde > 6 mois ou si le warning gagne en sévérité.
-- [ ] **Parité visuelle amarre prod vs local (atlas-amarre)** — la prod sur https://amarre.univ-lehavre.fr et le local servi par `pnpm -F amarre dev` ont des couleurs de background différentes (et possiblement d'autres divergences visuelles). Cause probable : depuis l'extraction des composants vers `@univ-lehavre/atlas-ui` ([PR #190](https://github.com/univ-lehavre/atlas/pull/190)), certaines variables CSS ou rules SCSS Bootstrap custom de la prod ne remontent plus jusqu'au local. Investigation : (a) extraire le HTML/CSS rendu côté prod et le diff avec le rendu local ; (b) vérifier que `@univ-lehavre/atlas-ui/client` charge bien la même version de Bootstrap CSS + tous les overrides custom ; (c) cf. l'item « atlas-ui : système de theming optionnel » qui couvre une partie du problème.
-- [ ] **Réviser le workflow UI d'amarre — drift vs `univ-lehavre/amarre` standalone** — l'app dans atlas/apps/amarre/ et le dépôt standalone https://github.com/univ-lehavre/amarre ont divergé (le standalone n'a pas reçu les évolutions atlas, et inversement certains patterns du standalone manquent ici). Audit nécessaire : (a) diff structurel apps/amarre/ vs univ-lehavre/amarre, (b) identifier les divergences fonctionnelles (routes, hooks, UI) vs cosmétiques, (c) statuer sur ce qui doit être porté dans atlas (atlas reste la source canonique per décision 2026-05-19, cf [À arbitrer](#sort-du-dépôt-standalone-univ-lehavreamarre)). Lié à l'item Parité visuelle ci-dessus.
-- [ ] **Publier les 7 CLIs sur GitHub Packages** (`atlas-citation-cli`, `atlas-net-cli`, `atlas-stats-cli`, `atlas-crf-stats-cli`, `atlas-researcher-profiles-cli`, `atlas-crf-cli`, `atlas-crf-openapi`) — n'ont jamais déclenché de release, pas `private` mais absents du registry. Vérifier que les changesets les détectent, créer un premier changeset par package, vérifier que `pnpm release` les pousse bien sur `npm.pkg.github.com`. Documenter l'install côté consommateur (auth GH requis).
-- [x] **Marquer 3 packages comme `"private": true`** (livré le 2026-05-22) :
-  - `apps/atlas-dashboard/package.json` (app SvelteKit, déployée via Appwrite Sites)
-  - `apps/crf-dashboard/package.json` (idem)
-  - `sandbox/crf-sandbox/package.json` (sandbox Docker local, pas un package npm distribuable)
-- [x] `sandbox/amarre-sandbox/` (environnement Docker local Amarre + Appwrite + REDCap) — squelette livré (cf. [§Sandbox Amarre](#sandbox-amarre--appwrite--crf-en-local)) ; reste l'export du dictionnaire CRF minimum à automatiser
+- **2026-05-27** — Monorepo organisé en **8 catégories** (`apps`, `assets`,
+  `packages`, `services`, `cli`, `ui`, `config`, `sandbox`) avec règles enforcées
+  par `pnpm audit:structure`. Voir [docs/architecture/monorepo.md](docs/architecture/monorepo.md). PR #211.
+- **2026-05-27** — `packages/logos` splitté en **`assets/logos`** (fichiers statiques
+  uniquement) + **`cli/logos`** (CLI d'installation). Permet d'enforcer la règle
+  « pas de `bin` dans `packages/` ». PR #211.
+- **2026-05-28** — **Volumes anonymes** dans `sandbox/sillage-sandbox/` (Appwrite
+  - MongoDB). Cold-bootstrap ~30-60s par `pnpm start`, accepté en échange de
+    l'isolation d'état. Contourne le bug Appwrite après down/up. PR #215.
+- **Effect** pour la programmation fonctionnelle ; les erreurs sont des valeurs
+  typées, pas des exceptions. Patterns Effect/Hono explicitement autorisés malgré
+  les règles ESLint fonctionnelles strictes.
+- **SvelteKit** pour toutes les apps (rendu serveur + navigateur depuis une seule
+  source) ; **Hono** pour les services HTTP ; **Bootstrap** comme système de design
+  de base.
+- **REDCap** (CRF) pour les formulaires structurés, **Appwrite** comme BaaS
+  (auth/DB/storage). REDCap porte les formulaires administratifs uniquement,
+  aucune donnée clinique.
+- **Couches** des CLIs : la logique métier vit dans `packages/*`, les `cli/*-cli`
+  restent thins (parsing args + I/O terminal). Enforcement par `audit:structure`.
 
-**DevSecOps (renvoient aux phases ci-dessous)**
+### Scope / périmètre
 
-- [x] Phase 1 — CodeQL workflow (voir [§1.1](#11-codeql)) — workflow livré via PR #156, reste vérif Security tab + nomination security champion
-- [x] Phase 4.3 — npm provenance via OIDC : `NPM_CONFIG_PROVENANCE=true` + `id-token: write` + doc `npm audit signatures` (voir [§4.3](#43-npm-provenance-via-oidc))
-- [x] Phase 4.4 — SBOM CycloneDX : workflow `sbom.yml` (cdxgen 12.4.4, spec 1.6, artefact 90j, doc dans `docs/security/sbom/`) (voir [§4.4](#44-sbom-software-bill-of-materials))
-- [x] Phase 5.3 — branch protection sur `main` activée via API le 2026-05-19 (voir [§5.3](#53-branch-protection-sur-main))
-- [x] Phase 6.3 — HTTP headers de sécurité livrés (CSP via `kit.csp` + 5 headers via `hooks.server.ts`, sur amarre + ecrin + find-an-expert). `connect-src` tightening → `'self'` livré le 2026-05-26 (cf. [§6.3](#63-en-têtes-http-de-sécurité)).
-- [x] Phase 6.5 — rate limiting sur les endpoints publics ([packages/auth/src/rate-limit.ts](packages/auth/src/rate-limit.ts) + usages dans amarre/ecrin/find-an-expert ; cf. [§6.5](#65-rate-limiting))
-- [x] Phase 7 — OWASP ZAP baseline : workflow `zap-baseline.yml` livré en `workflow_dispatch` (cf. [§7.1](#71-owasp-zap-baseline)). Schedule nightly reste à arbitrer.
-- [x] Phase 8 — observabilité + runbook incident : runbook complet livré dans [docs/security/incident-response.md](docs/security/incident-response.md) (cadre 8.1/8.2/8.3 + scénarios). Exécution DSI (alerting + politique sauvegarde) à conduire en interne.
+- **2026-05-19** — Le dépôt standalone `univ-lehavre/amarre` reste figé (dernier
+  commit 2026-02-06). **atlas est la source canonique** pour les futurs développements
+  ; sync historique via PR #155.
+- **2026-05-22** — `node-appwrite` SDK 25.x conservé malgré server 1.9.0 (warning
+  toléré). Downgrade impossible : SDK 24.x perd `TablesDB` utilisé par `apps/ecrin`.
+  Réévaluer si Appwrite tarde > 6 mois sur la sortie de 1.9.5.
+- **2026-05-22** — 3 paquets internes marqués `private: true` :
+  `apps/atlas-dashboard`, `apps/crf-dashboard`, `sandbox/crf-sandbox`. Pas distribués
+  sur npm.
+- **2026-05-27** — Neutralisation du framing institutionnel dans la documentation
+  (université, recherche, chercheurs). Le dépôt reste à l'org GitHub
+  `univ-lehavre` pour l'identité GitHub/npm, mais la doc ne le positionne plus
+  comme « plateforme de recherche ». PR #211, #212.
+
+### Processus / gouvernance
+
+- **Documentation cible un public non-expert**. Tout terme technique est défini
+  sur place ou pointe vers [docs/glossary.md](docs/glossary.md). PR #208, #211.
+- **Doc en français** (`lang: fr-FR` côté VitePress).
+- **Conventional Commits** appliqués par commitlint ; scopes limités à la liste
+  d'allowed-scopes (voir `commitlint.config.js`).
+- **Hooks Git via lefthook**, jamais bypassés. Voir [docs/quality/hooks.md](docs/quality/hooks.md).
+- **Branch protection** sur `main` (activée 2026-05-19) : status checks requis,
+  force-push bloqué. Signatures de commits non requises (commits locaux non signés) ;
+  admins bypass autorisé (bus-factor=1).
+- **Releases npm signées par OIDC** : `--provenance` activé sur les deux registres
+  (npm public + GitHub Packages). Vérification consommateur via
+  `npm audit signatures`.
+- **SLA de remédiation des findings sécurité** (Critical 7j, High 30j, Medium 90j,
+  Low/Info opportuniste). Documenté dans [docs/quality/security.md](docs/quality/security.md).
+
+### Dérogations (exceptions explicites)
+
+- **`cli/crf-openapi`** : nom de paquet sans suffixe `-cli` (historique). Exception
+  listée dans `scripts/audit/workspace-structure.mjs`.
+- **`packages/citation`** : 4 `ignoreDependencies` knip (`@effect/experimental`,
+  `@effect/platform-node`, `@xenova/transformers`, `uuid`) — utilisées dynamiquement.
+- **`cli/crf`** : `commands/api/commands.ts` en `ignore` knip — knip ne trace pas
+  la chaîne d'imports Effect/CLI ; le fichier reste testé via mock direct depuis
+  `commands.test.ts`.
+- **`ui/atlas-ui`** : marqué `private: true` mais déclare `svelte` en
+  `peerDependencies` (respecte la règle de catégorie pour une future
+  publication).
+- **`apps/ecrin`** : ne migre pas vers le package partagé `@univ-lehavre/atlas-baas`
+  car utilise `TablesDB` (non exposé par le package). À uniformiser quand
+  `TablesDB` deviendra le standard partagé.
+- **`apps/ecrin`** : `validateSignupEmail` reste local (lookup `isAlliance` async,
+  erreur `NotPartOfAllianceError` au lieu de `NotAnEmailError`). Le reste des
+  validators est re-exporté du package.
+- **Cookies UI find-an-expert** (theme, font, dark-mode, locale) : `SameSite=Lax`
+  sans `Secure`. Non sensibles, lus côté client par design.
+- **CSP `style-src 'unsafe-inline'`** conservé pour les `style=` inline Svelte
+  et Bootstrap.
+- **`audit:security` à `--audit-level=moderate`** : tightening au cas par cas
+  (vérifier 0 alerte moderate avant chaque montée du seuil).
+- **Rate-limit absent** sur `/auth/login` (secret magic URL haute entropie) et
+  `/health` (lightweight). Rate-limit `in-memory` mono-instance — à migrer vers
+  Redis/Upstash si scale-out.
+
+---
+
+## En cours / à faire
+
+Items concrets et actionnables, par thème.
+
+### Hors DevSecOps
+
+- [ ] `packages/crf-project-template/` (trame déclarative avec Effect Schema).
+- [ ] Helper TS pour parser le CSV REDCap + générer des fake records.
+- [ ] Abstraction CLI partagée (réduire le boilerplate des CLIs citation-like).
+- [ ] **`atlas-ui` : système de theming optionnel** — exposer des points
+      d'extension (palettes Bootstrap custom, fontes, spacing). Pistes : variables
+      CSS custom exposées par `@univ-lehavre/atlas-ui/client`, prop `theme` sur un
+      composant racine, export SCSS, addon Storybook themes.
+- [ ] **Dispatcher les tests entre les 5 niveaux et `atlas-ui`** — les tests
+      level-1 UI dans `apps/amarre/tests/ui/` testent en réalité des composants
+      d'`ui/atlas-ui/`. À migrer (avec les fixtures). Stories Storybook et tests
+      level-1 partageraient les mêmes fixtures.
+- [ ] **Brancher les niveaux 2 à 5 d'amarre sur pre-push et CI** — aujourd'hui
+      seul N1 protège les PRs. Trade-off temps CI (~5 min ajoutés pour la stack
+      docker) vs couverture réelle de la pyramide.
+- [ ] **Dockeriser sillage-app dans sillage-sandbox** — service `app` dans le
+      compose qui run sillage build-once et expose :5173. Prérequis pour les futurs
+      services R/Python.
+- [ ] **Parité visuelle amarre prod vs local** — divergences de couleurs/CSS
+      depuis l'extraction vers `@univ-lehavre/atlas-ui` (PR #190). Lié au theming
+      ci-dessus.
+- [ ] **Réviser le workflow UI d'amarre — drift vs `univ-lehavre/amarre`
+      standalone** — diff structurel à faire, statuer sur ce qui doit être porté
+      dans atlas.
+- [ ] **Publier les 7 CLIs sur GitHub Packages** (`atlas-citation-cli`,
+      `atlas-net-cli`, `atlas-stats-cli`, `atlas-crf-stats-cli`,
+      `atlas-researcher-profiles-cli`, `atlas-crf-cli`, `atlas-crf-openapi`) —
+      n'ont jamais déclenché de release. Vérifier détection Changesets, créer un
+      premier changeset par paquet, vérifier `pnpm release` pousse sur
+      `npm.pkg.github.com`. Documenter l'install côté consommateur.
+- [ ] **Sandbox amarre — dictionnaire CRF** : exporter le dictionnaire CRF
+      minimum dans `sandbox/amarre-sandbox/fixtures/` + script d'import REDCap, pour
+      automatiser entièrement `bootstrap-crf.sh`.
+- [ ] **Couverture CLIs restantes** : appliquer la stratégie utilisée pour
+      `cli/crf` (PR #214) et `cli/net` (PR #216) sur `cli/biblio` (0%),
+      `cli/citation`, `cli/atlas-stats`, `cli/crf-stats`, `cli/researcher-profiles`.
+
+### DevSecOps
+
+- [ ] **Phase 1.2 Semgrep (optionnel)** — évaluer avec `p/typescript`,
+      `p/svelte`, `p/owasp-top-ten`. Si retenu : workflow `semgrep.yml` sur PR
+      uniquement.
+- [ ] **Phase 1.1 limitation Svelte CodeQL** — l'extracteur JS/TS ne couvre pas
+      les `.svelte` (les `<script>` sont hors analyse). Compléter par lint Svelte
+      strict + revues ciblées.
+- [ ] **Phase 4.3 trigger release** — décommenter `push: main` dans
+      `release.yml` lors de la prochaine release réelle ; les premiers tarballs
+      publiés porteront la provenance OIDC.
+- [ ] **Phase 5.1 RGPD** — enrichir si besoin la mention RGPD et données REDCap
+      dans `SECURITY.md` ; référencer une politique sécurité institutionnelle
+      existante si applicable.
+- [ ] **Phase 5.2 CODEOWNERS** — nominer un second mainteneur (bus-factor=1
+      actuellement).
+- [ ] **Phase 5.3 branch protection** : activer signatures de commits requises
+      (une fois GPG/SSH configuré) ; activer codeowners review obligatoire (dépend
+      du second mainteneur) ; inclure les administrateurs dans les règles.
+- [ ] **Phase 6.1 environnements** — vérifier qu'Appwrite Sites déploie depuis
+      `main` uniquement ; configurer un preview par PR ou un site `staging` depuis
+      une branche protégée.
+- [ ] **Phase 6.2 variables d'env** — audit console Appwrite : tous les secrets
+      runtime y sont, aucun dans le repo. Discipline `PUBLIC_*` vs privé. Documenter
+      dans `docs/security/env-vars.md`.
+- [ ] **Phase 6.3 validation externe** — valider headers HTTP avec
+      [securityheaders.com](https://securityheaders.com) (objectif note A) et
+      [Mozilla Observatory](https://observatory.mozilla.org).
+- [ ] **Phase 7.1 nightly ZAP** — arbitrer entre (a) nightly contre prod
+      (besoin URLs figées + opérateurs infra prévenus), (b) nightly contre
+      `sandbox/amarre-sandbox/` (lourd CI, couvre amarre seul), (c) PR previews
+      (hors périmètre Appwrite Sites).
+- [ ] **Phase 7.2 tests sécurité étendus** — anti-XSS basique (inputs non
+      réfléchis), payloads malformés explicites, 401 sur endpoints AUTH sans session.
+- [ ] **Phase 7.3 revue trimestrielle** — planifier (rappel calendrier ou
+      `/schedule`). Checklist : alertes CodeQL, déps obsolètes, headers HTTP, logs
+      Appwrite, accès secrets.
+- [ ] **Phase 8.1 alerting Appwrite** — confirmer auprès des opérateurs infra
+      qui consulte les logs Appwrite et à quelle fréquence ; brancher alertes
+      basiques (5xx > seuil, latence p95 anormale, auth fail rate > seuil — seuils
+      suggérés dans le runbook).
+- [ ] **Phase 8.3 sauvegarde** — confirmer hébergement Appwrite (self-hosted
+      vs Appwrite Cloud), figer politique de sauvegarde (fréquence, rétention,
+      géo), valider RPO/RTO suggérés. Premier test de restauration dans les 12 mois
+      via `sandbox/amarre-sandbox/`.
+
+### Audit `cli/crf` — étape suivante
+
+- [ ] Tester `commands/api/index.ts` et `commands/server/index.ts` (bin entry
+      points) — setup `@effect/cli` plus lourd que les autres fichiers. Couverture
+      globale `cli/crf` actuellement à 64.6% statements ; ces deux fichiers la
+      remonteraient au-delà de 90%.
+
+### Actions manuelles UI GitHub
+
+- [ ] Annoncer `brew install gitleaks` aux contributeurs pour le pre-commit
+      local.
 
 ---
 
@@ -73,443 +208,146 @@ Items qui demandent une décision avant action.
 
 ### RGPD / PRIVACY.md
 
-Initialement retiré du périmètre de la PR #127 (_"le repo est du code, pas une politique RGPD"_). À reprendre comme item indépendant, en se posant d'abord la question du **cadrage** :
+Initialement retiré du périmètre PR #127 (« le repo est du code, pas une
+politique RGPD »). Cadrage à reprendre :
 
-- [ ] Cadrer le périmètre : ce repo héberge du **code source**, pas des données personnelles. Mais des considérations indirectes existent — à trancher pour chacune :
-  - Métadonnées des commits (email des contributeurs externes) : suffit-il d'un renvoi vers la politique GitHub ?
-  - Données collectées par les apps déployées (amarre, ecrin, find-an-expert) : relève des **apps** elles-mêmes, pas du repo — où documenter ?
-  - Dépendances tierces appelant des services externes (OpenAlex, Appwrite, Sentry si activé…) : à inventorier
-  - Logs côté Appwrite (IP, user-agent…) : qui est responsable de traitement ?
-- [ ] Décider : un seul `PRIVACY.md` à la racine ? Une politique par app dans `apps/*/PRIVACY.md` ? Ou renvoi vers une politique ULHN existante ?
-- [ ] Identifier le **responsable de traitement** (probablement l'Université Le Havre Normandie / DSI, pas le repo lui-même)
-- [ ] Rédiger le contenu une fois le cadrage figé (sortir du périmètre TODO si délégué à la DSI)
-
-### Sort du dépôt standalone `univ-lehavre/amarre`
-
-- [x] **Décision 2026-05-19** : le dépôt standalone reste **en l'état** (dernier commit 2026-02-06), gardé tel quel comme historique. atlas est la source canonique pour les futurs développements (sync via [PR #155](https://github.com/univ-lehavre/atlas/pull/155)).
+- Métadonnées des commits (emails contributeurs externes) : suffit-il d'un
+  renvoi vers la politique GitHub ?
+- Données collectées par les apps déployées (amarre, ecrin, find-an-expert) :
+  relève des apps elles-mêmes — où documenter ?
+- Dépendances tierces appelant des services externes (OpenAlex, Appwrite…) :
+  à inventorier.
+- Logs Appwrite (IP, user-agent) : qui est responsable de traitement ?
+- Forme : un `PRIVACY.md` racine ? Une politique par app ? Renvoi vers une
+  politique institutionnelle existante ?
+- Identifier le **responsable de traitement** (probablement les opérateurs
+  d'infrastructure, pas le repo lui-même).
 
 ### Security champion CodeQL
 
-- [ ] Nommer un _security champion_ responsable du triage des alertes CodeQL (cf. [§1.1](#11-codeql)). Idéalement un second mainteneur pour le bus-factor (cf. [§5.2](#52-codeowners)).
-- [ ] Limitation Svelte de CodeQL : l'extracteur JS/TS ne couvre pas les `.svelte` (les `<script>` sont hors analyse). Définir un complément (lint Svelte strict, revues manuelles ciblées).
-
----
-
-## Actions manuelles UI GitHub
-
-À faire dans les Settings du dépôt (hors code, mais nécessaires pour la gouvernance) :
-
-- [x] Activer **Secret Scanning** + **Push Protection** (activés via API le 2026-05-19)
-- [x] Activer **branch protection** sur `main` (activée via API le 2026-05-19, voir [§5.3](#53-branch-protection-sur-main) pour le détail)
-- [ ] Annoncer `brew install gitleaks` aux contributeurs pour le pre-commit local
-
----
-
-## Sandbox Amarre + Appwrite + CRF en local
-
-Objectif : un environnement Docker reproductible pour faire tourner [apps/amarre/](apps/amarre/) bout-en-bout en local, avec une instance Appwrite self-hosted et une instance CRF (REDCap) — pour itérer sur l'app sans dépendre des instances de prod.
-
-**Localisation** : nouveau package `sandbox/amarre-sandbox/` à côté de [sandbox/crf-sandbox/](sandbox/crf-sandbox/) (qui reste dédié à la validation contract/security de l'API CRF). Le nouveau package réutilise la stack CRF existante via la directive `include:` de Docker Compose v2.20+ et ajoute Appwrite + le wiring Amarre.
-
-### Périmètre
-
-- [x] Squelette `sandbox/amarre-sandbox/` : `docker-compose.yaml` (avec `include:` de `../crf-sandbox/docker/docker-compose.yml`), `README.md`, `package.json`, scripts, `.env.example`, `.gitignore`
-- [x] Stack BaaS (Appwrite) self-hosted **minimale** ajoutée au compose (3 conteneurs : `baas`, `baas-mariadb`, `baas-redis` ; sans traefik ni workers — suffisant pour Account/Users/Database utilisés par amarre)
-- [x] Script `bootstrap-baas.sh` (renommé sans la marque) : valide les credentials du projet contre `/v1/users`. La création initiale projet + clé reste **semi-manuelle** via la console web Appwrite (limitation API admin documentée dans le README)
-- [x] Script `bootstrap-crf.sh` : délègue à `pnpm -F crf-sandbox docker:install`, récupère le token écrit dans `crf-sandbox/docker/config/.env.test`, l'inscrit dans `.env`. Création du projet REDCap + dictionnaire reste manuelle (cf. ligne dictionnaire ci-dessous)
-- [x] Script `bootstrap.sh` orchestrateur : `wait-for` healthcheck BaaS, enchaîne baas → crf → écrit `apps/amarre/.env.local` via `write-amarre-env.sh`
-- [x] Décision : Amarre tourne en `pnpm -F amarre dev` sur l'hôte (rapide à itérer) ; conteneurisation pas dans ce premier livrable
-- [ ] **Reste à faire** : exporter le dictionnaire CRF minimum (champs `record_id`, `created_at`, `demandeur_statut`, `mobilite_type`, `invitation_type`, `invite_nom`, `mobilite_universite_*`, `*_complete`, `avis_*_position`) dans `sandbox/amarre-sandbox/fixtures/` + script d'import REDCap, pour automatiser entièrement le `bootstrap-crf.sh`
-
-### Points d'attention
-
-- Bootstrap Appwrite par API n'est pas trivial : la création initiale du projet/clé passe traditionnellement par la console web. Évaluer si l'API admin Appwrite suffit, sinon documenter les étapes manuelles
-- Couplage léger avec `crf-sandbox` (noms de services, ports) — si le compose de `crf-sandbox` change, amarre-sandbox casse. Acceptable tant que la convention est explicitée dans le README
-- L'allowlist email d'Amarre (`ALLOWED_DOMAINS_REGEXP`) doit autoriser un domaine de test (ex. `@example\.org`) pour les comptes locaux
-- Pas de noms de marques dans le code/identifiants (cf. convention repo) : `amarre-sandbox`, pas `redcap-sandbox` ; variables `CRF_*` plutôt que `REDCAP_*` côté scripts
-
----
-
-## Phase 0 — Vérifications préalables (à faire en premier)
-
-### 0.1 Audit du token REDCap à la racine
-
-- [x] Vérifier que `redcap-token.csv` est bien dans `.gitignore` — couvert par le pattern `*-token.csv` (ligne 59)
-- [x] Vérifier qu'il n'a jamais été commité : `git log --all --full-history -- redcap-token.csv` — aucun historique
-- [ ] Si commité un jour : rotation immédiate du token côté REDCap + purge de l'historique (`git filter-repo`) + force-push coordonné avec l'équipe — N/A
-- [ ] Déplacer le fichier hors du dépôt (ex : `~/.config/atlas/redcap-token.csv`) et adapter le chargement applicatif
-
-### 0.2 Inventaire des secrets en circulation
-
-- [x] Lister tous les secrets attendus — voir [docs/security/secrets.md](docs/security/secrets.md) : TURBO_TOKEN, PAT_TOKEN, NPM_TOKEN, GITHUB_TOKEN (GH Actions) ; APPWRITE_KEY + IDs + ALLOWED_DOMAINS_REGEXP + REDCAP_API_TOKEN + OPENALEX_API_TOKEN (Appwrite Console) ; tokens.csv + GITHUB_TOKEN local (dashboards)
-- [x] Pour chacun : emplacement de stockage (GH Secrets, Appwrite Console, fichier `.env` local) + owner + procédure de rotation — documenté dans [docs/security/secrets.md](docs/security/secrets.md)
-- [x] Documenter la procédure de rotation — section "Procédure de rotation générique" + "Procédure d'urgence" dans [docs/security/secrets.md](docs/security/secrets.md)
-
-### 0.3 Cartographie des surfaces exposées
-
-- [ ] URLs Appwrite Sites prod (amarre, ecrin, find-an-expert) et previews — structure documentée dans [docs/security/surfaces.md](docs/security/surfaces.md), URLs concrètes _à compléter par l'admin Appwrite_
-- [x] Lister les endpoints API publics — [docs/security/surfaces.md](docs/security/surfaces.md) couvre les 3 apps déployées (amarre, ecrin, find-an-expert) + les 2 dashboards locaux
-- [x] Identifier les routes nécessitant authentification vs publiques — classification `🌐 PUBLIC` / `🔒 AUTH` / `🏠 LOCAL` pour chaque endpoint. 3 points d'attention identifiés : `ecrin /graphs`, `find-an-expert /institutions/search`, `find-an-expert /repositories/[id]` sont publics — à arbitrer (gate auth ou rate limit, cf. Phase 6.5)
-
----
-
-## Phase 1 — Sécurité du code (SAST)
-
-### 1.1 CodeQL
-
-- [x] Créer `.github/workflows/codeql.yml` avec langages `javascript-typescript` (via [PR #156](https://github.com/univ-lehavre/atlas/pull/156))
-- [x] Déclencheurs : `push` sur main, `pull_request` sur main, `schedule` hebdomadaire (lundi 03:17 UTC) + `workflow_dispatch`
-- [x] Activer les query suites `security-extended` et `security-and-quality`
-- [x] Vérifier après premier run que les alertes remontent dans l'onglet Security du dépôt GitHub — confirmé via les triages successifs (#194 le 2026-05-21 puis #198 le 2026-05-22)
-- [ ] Définir un _security champion_ responsable du triage des alertes (cf. [À arbitrer](#à-arbitrer))
-- [ ] Limitation Svelte : l'extracteur JS/TS de CodeQL ne parse pas les `.svelte` (les `<script>` sont hors couverture). À documenter et compléter par des revues + lint Svelte.
-
-### 1.2 Semgrep (optionnel, complémentaire)
-
-- [ ] Évaluer Semgrep avec les règles `p/typescript`, `p/svelte`, `p/owasp-top-ten`
-- [ ] Si retenu : workflow `.github/workflows/semgrep.yml` sur PR uniquement (pas en push pour limiter le bruit)
-
-### 1.3 Politique de triage
-
-- [x] SLA de remédiation par sévérité défini (Critical 7j, High 30j, Medium 90j/trimestre, Low/Info opportuniste) + application pratique (compteur, escalade, dérive sur upstream) + lien avec les triages déjà conduits (#194, #198, Dependabot 2026-05-21).
-- [x] Documenté dans [docs/quality/security.md → Triage des findings — SLA](https://univ-lehavre.github.io/atlas/quality/security#triage-des-findings-sla-de-remediation) (la refonte de la documentation #208 a déplacé le contenu détaillé hors de SECURITY.md, qui reste concis et pointe vers le site).
-
----
-
-## Phase 2 — Secrets
-
-### 2.1 GitHub natif
-
-- [x] Activer **Secret Scanning** — activé via API le 2026-05-19
-- [x] Activer **Push Protection** — activé via API le 2026-05-19 (bloque les push contenant des secrets détectés)
-- [x] Activer **Dependabot alerts** et **security updates** — activés le 2026-05-19 (7 alertes existantes remontées : 6 moderate + 1 low, à triager)
-
-### 2.2 Gitleaks en CI et pre-commit
-
-- [x] Ajouter `gitleaks` au pre-commit lefthook (workflow rapide sur fichiers staged) — `lefthook.yml`, tolérant à l'absence locale du binaire
-- [x] Workflow `.github/workflows/gitleaks.yml` sur PR (scan complet de l'historique des commits de la PR) — via `gitleaks-action@v2.3.9` épinglé SHA
-- [x] Créer `.gitleaks.toml` avec règles custom pour les patterns REDCap (token 32 char hex) et Appwrite — règles custom + allowlist
-
-### 2.3 Audit historique
-
-- [x] Lancer `gitleaks detect --source . --log-opts="--all"` une fois pour scanner tout l'historique — fait via `workflow_dispatch`, 18 findings cartographiés (cf. [archive](#2026-05-19--faux-positifs-gitleaks))
-- [x] Traiter chaque finding : rotation, purge si nécessaire, ajout en whitelist sinon — tous identifiés comme faux positifs, allowlist ciblée via #145
-
----
-
-## Phase 3 — Dépendances (SCA)
-
-### 3.1 Dependabot
-
-- [x] Créer `.github/dependabot.yml` avec écosystèmes : `npm` (groupé par workspace), `github-actions` — schedule lundi 6h Europe/Paris
-- [x] Stratégie : groupage des minors/patches, PRs séparées pour les majors
-- [x] Auto-merge des patches après CI verte — [.github/workflows/dependabot-auto-merge.yml](.github/workflows/dependabot-auto-merge.yml) ; couvre patches partout + minors sur devDeps. Validé en prod via auto-merge de PR #149 le 2026-05-19. Prérequis Settings : _Allow auto-merge_ à activer côté UI.
-
-### 3.2 Dependency Review Action
-
-- [x] Workflow [.github/workflows/dependency-review.yml](.github/workflows/dependency-review.yml) déclenché sur `pull_request` — livré via [PR #161](https://github.com/univ-lehavre/atlas/pull/161)
-- [x] Bloquer les vulnérabilités `high` et au-dessus (`fail-on-severity: high`)
-- [x] Bloquer les licences non listées dans l'allowlist — `MIT, MIT-0, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD, Unlicense, CC0-1.0, CC-BY-4.0, Python-2.0, MPL-2.0, BlueOak-1.0.0, Zlib, WTFPL` (SPDX canoniques, aligné sur `scripts/audit/licenses.mjs`)
-- [x] Prérequis Settings : Dependency graph activé (2026-05-19) — débloque aussi les Dependabot alerts (7 vulnérabilités remontées le 2026-05-19 : 6 moderate + 1 low, à examiner — cf. [Prochaines actions](#prochaines-actions))
-
-### 3.3 Renforcement de `pnpm audit`
-
-- [x] `audit:security` passé à `--audit-level=moderate` (2026-05-26). Vérifié au préalable : 0 alerte moderate, donc le pre-push hook reste vert sans exception. Si une advisory moderate remonte plus tard sans patch upstream, documenter ici la décision (override `pnpm.overrides`, `--ignore` ciblé, etc.).
-
----
-
-## Phase 4 — Durcissement de la supply chain
-
-### 4.1 Épingler les GitHub Actions par SHA
-
-- [x] Remplacer `actions/checkout@v6` → `actions/checkout@<sha> # v6.x.x`
-- [x] Idem pour `pnpm/action-setup@v5`, `actions/setup-node@v6`, `actions/cache@v5` (10 occurrences pinées dans la PR #127)
-- [x] Intégrer dans Dependabot (`github-actions` ecosystem) — fait via `.github/dependabot.yml`
-- [x] Concerne : [.github/workflows/ci.yml](.github/workflows/ci.yml), [.github/workflows/docs.yml](.github/workflows/docs.yml), [.github/workflows/release.yml](.github/workflows/release.yml), [.github/workflows/gitleaks.yml](.github/workflows/gitleaks.yml), [.github/workflows/codeql.yml](.github/workflows/codeql.yml)
-
-### 4.2 Permissions minimales par job
-
-- [x] Actuellement `permissions: contents: read` au top de ci.yml
-- [x] `permissions:` explicites présents dans `release.yml`, `docs.yml`, `gitleaks.yml`, `codeql.yml`
-- [x] Pour `release.yml` : `id-token: write` ajouté en même temps que Phase 4.3
-
-### 4.3 npm provenance via OIDC
-
-- [x] `--provenance` activé sur les deux chemins de publish : `NPM_CONFIG_PROVENANCE=true` au niveau du job `release.yml` (capté par `pnpm changeset publish` qui délègue à `npm publish` pour la registry npm), et `--provenance` explicite sur `pnpm publish` dans [scripts/release/publish-packages.sh](scripts/release/publish-packages.sh) pour la registry GitHub Packages.
-- [x] Workflow `release.yml` : permission `id-token: write` ajoutée (requise pour minter l'attestation OIDC in-toto).
-- [x] Vérification côté consommateur documentée dans [SECURITY.md → Vérifier l'origine d'un package atlas](SECURITY.md) : `npm audit signatures` + `npm view … .dist.attestations`.
-- [ ] **À activer lors de la prochaine release réelle** : décommenter le trigger `push: main` dans [release.yml](.github/workflows/release.yml) (actuellement en pause). Les premiers tarballs publiés porteront alors la provenance.
-
-### 4.4 SBOM (Software Bill of Materials)
-
-- [x] Workflow [.github/workflows/sbom.yml](.github/workflows/sbom.yml) — `@cyclonedx/cdxgen@12.4.4` épinglé, CycloneDX 1.6, déclenché sur `push: main` + `workflow_dispatch`. Le SBOM `sbom-cyclonedx-<sha>.json` est uploadé comme artefact (rétention 90j) avec un résumé dans le step summary.
-- [x] Artefact attaché au run du workflow (visible dans [Actions → SBOM](https://github.com/univ-lehavre/atlas/actions/workflows/sbom.yml)). Pas attaché à la release elle-même (à brancher plus tard dans release.yml si besoin via `workflow_call`).
-- [x] Dossier [docs/security/sbom/](docs/security/sbom/README.md) créé avec README expliquant : où trouver l'artefact, comment l'utiliser (osv-scanner, Dependency-Track), comment snapshoter manuellement en cas d'audit. Convention de nommage `atlas-YYYYMMDD-<sha>.json` pour les snapshots commités. Aucun JSON commité pour l'instant.
-
----
-
-## Phase 5 — Politique et gouvernance
-
-### 5.1 SECURITY.md
-
-- [x] Créer `SECURITY.md` à la racine
-- [x] Contenu : versions supportées, contact, procédure de divulgation responsable, SLA (accusé 72h, évaluation 7j, correctif haute 30j / moyenne 90j, divulgation publique +30j après correctif)
-- [ ] Mention RGPD et données REDCap (sensibles santé selon usage) — à enrichir si besoin
-- [ ] Référencer la politique sécurité de l'Université Le Havre Normandie si elle existe
-
-### 5.2 CODEOWNERS
-
-- [x] Créer `.github/CODEOWNERS`
-- [x] Owners sur : `packages/auth/`, `packages/baas/`, `packages/crf-client/`, `packages/crf-core/`, `services/crf/`, `.github/workflows/`, root config
-- [ ] Au minimum : `@pierre-olivier.chasset`, idéalement un second mainteneur pour le bus-factor
-
-### 5.3 Branch protection sur `main`
-
-Activée via API le 2026-05-19. Configuration appliquée :
-
-- [x] Règle créée pour `main`
-- [x] Required PR (0 approbation requise, vu bus-factor=1 ; status checks gardent la sécurité)
-- [x] Required status checks : `Lint`, `Typecheck`, `Test`, `Build`, `Audit`, `Documentation`, `Scan for secrets` (gitleaks), `Analyze (javascript-typescript)` (CodeQL), `Review dependencies`
-- [ ] Required signed commits — **désactivé pour l'instant** (commits locaux non signés ; à réactiver une fois GPG/SSH signing configuré localement)
-- [x] Block force-push
-- [ ] Inclure les administrateurs dans les règles — **désactivé** (admins bypass, pour hotfix solo bus-factor=1)
-- [ ] Codeowners review obligatoire — désactivé (à activer quand un second mainteneur sera ajouté, cf. [§5.2](#52-codeowners))
-
-### 5.4 Politique de contribution
-
-- [x] Mettre à jour [CONTRIBUTING.md](CONTRIBUTING.md) avec la section "Security", Code of Conduct (Contributor Covenant 2.1) et CLA léger
-
----
-
-## Phase 6 — Spécificités Appwrite Sites (amarre, ecrin)
-
-### 6.1 Séparation des environnements
-
-- [ ] Vérifier qu'Appwrite Sites déploie depuis `main` uniquement (pas `dev` ou branches arbitraires)
-- [ ] Configurer un environnement **preview** par PR si Appwrite Sites le supporte
-- [ ] Sinon : un site Appwrite "staging" déployé depuis une branche `staging` protégée
-
-### 6.2 Variables d'environnement
-
-- [ ] Audit côté console Appwrite : tous les secrets runtime y sont, rien dans le repo
-- [ ] Vérifier la discipline `PUBLIC_*` vs privé dans SvelteKit (les `PUBLIC_*` sont exposés au navigateur — aucune clé sensible)
-- [ ] Documenter dans `docs/security/env-vars.md` la liste exhaustive et le ownership
-
-### 6.3 En-têtes HTTP de sécurité
-
-Configurés via `kit.csp` (svelte.config.js, avec nonces auto pour les scripts d'hydration) + `hooks.server.ts` (HSTS gated sur HTTPS, autres headers toujours). Couvre les 3 apps SvelteKit (amarre, ecrin, find-an-expert).
-
-- [x] `Content-Security-Policy` — strict (default/script/font/img/object/frame-ancestors/form-action/base-uri) ; `style-src 'unsafe-inline'` conservé pour les `style=` inline Svelte et Bootstrap
-- [x] `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload` — uniquement quand `event.url.protocol === 'https:'`
-- [x] `X-Content-Type-Options: nosniff`
-- [x] `Referrer-Policy: strict-origin-when-cross-origin`
-- [x] `Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()`
-- [x] `X-Frame-Options: DENY` (defense-in-depth, redondant avec CSP `frame-ancestors 'none'`)
-- [x] **Tighteneur `connect-src`** : passé à `'self'` (2026-05-26) sur amarre + ecrin + find-an-expert. Vérifié : aucun import du SDK browser `appwrite` (uniquement `node-appwrite` côté serveur), aucune fetch client-side vers Appwrite/REDCap/OpenAlex. Tous les appels externes passent par les routes `/api/v1/` du serveur SvelteKit qui font le proxy. La config env-var-based prévue à l'origine s'avère inutile.
-- [x] **Dette test résolue** : tests handler ajoutés en Phase 7.2 pour les 6 endpoints rate-limités, **plus tests `hooks.server.ts`** sur les 3 apps (3 cas chacun : headers statiques, HSTS gated HTTPS, population de `event.locals.userId` quand session valide). Seuils ajustés : amarre 42/52/36/43 et ecrin 28/18/27/28 restaurés à leur valeur d'origine. **find-an-expert baissé temporairement** à 58/41/40/58 après dédup validators (les branches de validation ont migré dans `@univ-lehavre/atlas-auth`, hors périmètre de coverage local) — à remonter en migrant aussi les tests des validators dans le package.
-- [ ] Valider avec [securityheaders.com](https://securityheaders.com) — objectif : note A minimum (après déploiement)
-- [ ] Tester aussi avec [Mozilla Observatory](https://observatory.mozilla.org)
-
-### 6.4 Authentification et sessions
-
-- [x] Cookies de session : `httpOnly: true` (rendu explicite — était implicite via le default SvelteKit), `secure: true`, `sameSite: 'strict'` (plus strict que minimum Lax), `path: '/'`, `expires` — appliqué dans les 4 setters (`packages/auth/src/index.ts` + services des 3 apps).
-- [x] Vérifier les flux d'auth — aucun `localStorage` ni `sessionStorage` dans tout le repo (audit `grep -rn` sur apps + packages clean). Cookies UI find-an-expert (theme, font, dark-mode, locale) en `SameSite=Lax`, sans `Secure` — non sensible, lus côté client par design.
-- [x] Protection CSRF — SvelteKit `csrf: { checkOrigin: true }` actif par défaut (aucun override dans les `svelte.config.js`). Confirmé par audit.
-- [x] **Dédup session/auth** : les 3 services par-app sont désormais des thin wrappers (~30 lignes) autour de `createAuthService` du package partagé. La logique cookie + admin/session client + validation est centralisée dans `packages/auth/src/index.ts`. ecrin garde `deleteUser`, amarre/ecrin gardent le câblage `resolveUserId` (REDCap `fetchUserId`), find-an-expert utilise le factory tel quel (no resolveUserId).
-- [x] **Dédup baas client** : amarre + find-an-expert ont leur `$lib/server/baas/index.ts` réécrit en thin wrapper (~25 lignes) autour de `createAdminClient` / `createSessionClient` du package partagé `@univ-lehavre/atlas-baas`. La signature locale (sans config, qui est dérivée de l'env de l'app) reste identique pour ne pas toucher les consumers (hooks.server.ts, services). **ecrin volontairement laissé en local** : utilise `TablesDB` (API typée récente d'Appwrite) que le package partagé n'expose pas (il fournit `Databases`). À uniformiser en étendant le package quand `TablesDB` deviendra le standard partagé.
-- [x] **Dédup userRepository** : amarre `$lib/server/baas/userRepository.ts` + find-an-expert `$lib/server/user/repository.ts` sont des thin subclasses (~10 lignes) qui étendent `BaasUserRepository` du package partagé en injectant `adminConfig` local. L'API à constructeur sans argument est préservée — consumers (`new BaasUserRepository()`) inchangés.
-- [x] **Dédup validators auth** : amarre + find-an-expert ont leur `validators/auth.ts` réécrit en re-exports du package `@univ-lehavre/atlas-auth` (`validateMagicUrlLogin`, `validateUserId`, `checkRequestBody`) et `@univ-lehavre/atlas-validators` (`ensureJsonContentType`, `parseJsonBody`). `validateSignupEmail` est wrappé pour injecter `ALLOWED_DOMAINS_REGEXP` depuis l'env. **ecrin volontairement gardé local** sur `validateSignupEmail` : utilise une lookup async `isAlliance` (lecture base Appwrite) au lieu d'une regex statique, et lève `NotPartOfAllianceError` au lieu de `NotAnEmailError`. Le reste est re-exporté du package.
-
-### 6.5 Rate limiting
-
-Implémentation : utilitaire `createRateLimiter` dans [packages/auth/src/rate-limit.ts](packages/auth/src/rate-limit.ts) — fenêtre fixe par-clé (IP), in-memory, ~80 lignes. API : `check(key)` retourne `{ ok, remaining, resetAt }` ; helper `rateLimitHeaders(result, limit)` pour les headers `X-RateLimit-*` + `Retry-After` quand refusé.
-
-- [x] Rate-limit sur les 3 endpoints publics flagués dans [docs/security/surfaces.md](docs/security/surfaces.md) :
-  - `ecrin /graphs` — 30 req/min/IP (atténue l'énumération brute de `record_id`)
-  - `find-an-expert /institutions/search` — 30 req/min/IP (protège `OPENALEX_API_TOKEN` de l'abus de quota)
-  - `find-an-expert /repositories/[id]` — 60 req/min/IP (lightweight)
-- [x] Rate-limit anti-spam sur les 3 endpoints `/auth/signup` (amarre + ecrin + find-an-expert) — 5 req/min/IP (déclenche un envoi d'email)
-- [ ] **Limitations connues** (à arbitrer plus tard) :
-  - In-memory : multi-instance (load balancer) → chaque instance compte séparément. OK en single-instance adapter-node, à migrer vers Redis/Upstash si scale-out
-  - Fenêtre fixe (pas glissante) : burst possible en fin de fenêtre
-  - Pas de rate-limit sur `/auth/login` (magic URL secret haute entropie) ni sur `/health` (lightweight) — à considérer si besoin
-
----
-
-## Phase 7 — DAST et tests de sécurité dynamiques
-
-### 7.1 OWASP ZAP baseline
-
-- [x] Workflow [.github/workflows/zap-baseline.yml](.github/workflows/zap-baseline.yml) livré en `workflow_dispatch` uniquement (URL cible passée en input). Premier jalon prudent : la décision sur le schedule nightly reste à arbitrer (URLs prod absentes du repo + coordination DSI ULHN nécessaire).
-- [ ] **Déclencheur nightly** : à activer après arbitrage. Trois pistes documentées dans [docs/security/dast.md → Phase 2](docs/security/dast.md) : (a) nightly contre prod (besoin URLs figées + DSI prévenue), (b) nightly contre stack docker-compose `sandbox/amarre-sandbox/` (lourd CI, couvre amarre seul), (c) PR previews (hors périmètre Appwrite Sites).
-- [x] Action `zaproxy/action-baseline@v0.15.0` (SHA `6c5a007541891231cd9e0ddec25d4f25c59c9874`).
-- [x] Rapport remonté en artefact `zap_scan` (HTML + MD + JSON, 90j) + issue auto-créée par l'action.
-- [x] Seuil d'échec configurable en input (`fail_action: warn|fail`), faux positifs gérés via [`.zap/rules.tsv`](.zap/rules.tsv) (documentation inline du format + procédure d'ajout).
-
-### 7.2 Tests de sécurité applicatifs
-
-Premier lot livré : tests Vitest pour les 6 endpoints rate-limités (Phase 6.5). Couvrent les chemins succès / 400 (paramètre manquant) / 429 (saturation rate-limit) / isolation par-IP, plus la présence des headers `X-RateLimit-*` et `Retry-After`. A remonté la couverture globale, permettant la restauration des seuils baissés en Phase 6.3/6.5.
-
-- [x] Tests handler `ecrin /graphs` — 4 cas (200, 400 missing param, 429 saturation, isolation par IP)
-- [x] Tests handler `find-an-expert /institutions/search` — 2 cas (200 + headers, 429)
-- [x] Tests handler `find-an-expert /repositories/[id]` — 2 cas (200, 429)
-- [x] Tests handlers `/auth/signup` × 3 apps — 2 cas chacun (200, 429 anti-spam)
-- [ ] **Étendre** : ajouter tests pour les autres catégories listées initialement — payloads malformés (cas explicites), 401 sur endpoints AUTH sans session (déjà partiellement testé sur amarre /surveys/new), anti-XSS basique (vérifier que les inputs ne sont pas réfléchis tels quels)
-- [x] Test handler `hooks.server.ts` × 3 apps qui mocke `createSessionClient` et vérifie les 5 headers de sécurité (Phase 6.3)
-
-### 7.3 Revue de sécurité périodique
-
-- [ ] Planifier une revue trimestrielle (utiliser `/schedule` ou un rappel calendrier)
-- [ ] Checklist : alertes CodeQL, dépendances obsolètes, en-têtes HTTP, logs Appwrite, accès aux secrets
-
----
-
-## Phase 8 — Observabilité et réponse aux incidents
-
-### 8.1 Logs et alerting
-
-- [x] **Cadre documenté** dans [§5 du runbook](docs/security/incident-response.md) : sources de logs (Appwrite Console, Appwrite Sites runtime, GitHub Actions, GitHub Audit log, REDCap) + rétention + ce qu'on y trouve.
-- [ ] **Exécution DSI** : confirmer auprès de la DSI ULHN qui consulte les logs Appwrite et à quelle fréquence ; valeur de rétention exacte ; brancher les alertes basiques (5xx > seuil, latence p95 anormale, auth fail rate > seuil — seuils suggérés dans le runbook).
-- [x] Logs d'auth Appwrite identifiés (création de session, logout, signup, suppression compte). Pas d'agrégation externe — la console Appwrite suffit pour l'investigation ponctuelle.
-
-### 8.2 Runbook incident
-
-- [x] [docs/security/incident-response.md](docs/security/incident-response.md) livré : classification sévérité P0–P3, signaux de détection par source, 5 phases (détection → confinement → éradication → récupération → post-mortem), obligations RGPD (CNIL 72h), checklist de clôture, historique des incidents (vide).
-- [x] Confinement détaillé pour 4 scénarios concrets : secret compromis, compte Appwrite compromis, package npm compromis, fuite données perso.
-- [x] Contacts : mainteneur + DSI ULHN (coordonnées à compléter en interne) + CNIL + GitHub Security + npm Security + Vanderbilt REDCap.
-
-### 8.3 Sauvegardes et restauration
-
-- [x] **Cadre documenté** dans [§6 du runbook](docs/security/incident-response.md) : périmètre (Appwrite, REDCap, secrets, SBOMs), suggestion RPO 24h / RTO 4-24h selon app, procédure de test de restauration annuel via `sandbox/amarre-sandbox/`.
-- [ ] **Décision DSI** : confirmer si Appwrite est self-hosted ULHN ou Appwrite Cloud ; figer la politique de sauvegarde (fréquence, rétention, géo) ; valider les RPO/RTO suggérés ou les ajuster.
-- [ ] **Premier test de restauration** : à planifier dans les 12 mois suivant la validation DSI, sur `sandbox/amarre-sandbox/`.
-
----
-
-## Ordre de priorité recommandé
-
-État au 2026-05-26 : **Sprints 1–4 entièrement bouclés côté code**. Les phases DevSecOps actives qui restent sont des items DSI (alerting Appwrite 8.1, politique sauvegarde 8.3, nightly ZAP 7.1) ou de gouvernance (security champion, second mainteneur). Les chantiers hors DevSecOps (theming atlas-ui, parité visuelle, sillage docker, etc.) continuent en parallèle.
-
-**Sprint 1 (bloquants sécurité)**
-
-- [x] Phase 0.1 (audit token REDCap) ; Phase 0.2/0.3 ✅ livrés via [PR #171](https://github.com/univ-lehavre/atlas/pull/171) (`docs/security/secrets.md` + `surfaces.md`)
-- [x] Phase 2.1 (Secret Scanning + Push Protection + Dependabot alerts) — activés via API GitHub le 2026-05-19
-- [x] Phase 5.1 (SECURITY.md) ✅ livré via PR #127
-- [x] Phase 5.3 (branch protection main) — activée via API le 2026-05-19
-
-**Sprint 2 (fondations)**
-
-- [x] Phase 1.1 (CodeQL) ✅ livré via [PR #156](https://github.com/univ-lehavre/atlas/pull/156)
-- [x] Phase 1.3 (politique de triage / SLA) ✅ livré le 2026-05-26 dans [docs/quality/security.md](https://univ-lehavre.github.io/atlas/quality/security#triage-des-findings-sla-de-remediation)
-- [x] Phase 3.1 (Dependabot) ✅ livré + auto-merge patches via `.github/workflows/dependabot-auto-merge.yml`
-- [x] Phase 3.2 (Dependency Review Action) ✅ livré via [PR #161](https://github.com/univ-lehavre/atlas/pull/161)
-- [x] Phase 3.3 (audit:security à --audit-level=moderate) ✅ livré le 2026-05-26 (cf. [§3.3](#33-renforcement-de-pnpm-audit))
-- [x] Phase 4.1 (pin actions SHA) ✅ livré via PR #127 (+ #156, #161)
-- [x] Phase 4.2 (permissions minimales par job) ✅ — `id-token: write` ajouté sur release.yml (2026-05-22)
-
-**Sprint 3 (supply chain et Appwrite)**
-
-- [x] Phase 4.3 (npm provenance via OIDC) ✅ livré le 2026-05-22 (cf. [§4.3](#43-npm-provenance-via-oidc))
-- [x] Phase 4.4 (SBOM CycloneDX) ✅ livré le 2026-05-22 (cf. [§4.4](#44-sbom-software-bill-of-materials))
-- [x] Phase 6.3 (headers HTTP de sécurité) ✅ livré via PR #171 ; `connect-src` tightening livré le 2026-05-26
-- [x] Phase 6.4 (cookies session hardening + audit localStorage + CSRF) ✅ livré via PR #171
-- [x] Phase 2.2 (gitleaks) ✅ livré via PR #127 + stabilisation #141/#143/#144/#145
-
-**Sprint 4 (finalisation)**
-
-- [x] Phase 7.1 (OWASP ZAP baseline) ✅ livré en `workflow_dispatch` le 2026-05-26 ; nightly schedule à arbitrer (cf. [§7.1](#71-owasp-zap-baseline))
-- [x] Phase 6.5 (rate limiting) ✅ livré en local (branche `devsecops/rate-limiting-phase-6-5`) — pas encore mergé
-- [x] Phase 7.2 (tests sécurité applicatifs) ✅ : handlers rate-limités + hooks.server.ts × 3 apps livrés ; reste à étendre sur anti-XSS et payloads malformés explicites
-- [x] Phase 8 (observabilité, runbook incident) ✅ runbook livré le 2026-05-26 ; exécution DSI en cours (cf. [§8](#phase-8--observabilité-et-réponse-aux-incidents))
-- [x] Phase 5.2 (CODEOWNERS) ✅ livré via PR #127 ; nomination d'un second mainteneur ouverte
-- [x] Phase 5.4 (CONTRIBUTING) ✅ livré via PR #127
-
-**Hors plan initial mais réalisé en session 2026-05-19**
-
-- [x] Dédup `authService` × 3 apps via `createAuthService` (packages/auth) — ~150 lignes supprimées
-- [x] Dédup baas client × 2 apps (amarre + find-an-expert ; ecrin gardé pour TablesDB) — ~80 lignes supprimées
-- [x] Dédup `BaasUserRepository` × 2 apps via subclass thin de `packages/baas`
-- [x] Fix logos `vite-plugin-static-copy` v3→v4 régression via prepare script (PR #157)
-- [x] Décision standalone `univ-lehavre/amarre` (gardé en l'état)
-- [x] Bump amarre/ecrin/find-an-expert : white background header/footer (PR #159)
-- [x] Dependabot — reduce PR noise (1 PR groupée/écosystème, max 1 ouverte simultanée)
-- [x] Cleanup `knip.json` (PR #160) + dette cosmétique (`<span class="">` vide, dead code commenté)
-
-À l'issue de ce backlog, le dépôt satisfait honnêtement le qualificatif **DevSecOps** pour la partie développement _et_ déploiement (amarre, ecrin, find-an-expert).
+- Nommer un **security champion** responsable du triage des alertes CodeQL.
+- Idéalement un second mainteneur pour le bus-factor (cf. CODEOWNERS).
 
 ---
 
 ## Archive
 
-Historique des chantiers closés, gardé pour traçabilité.
+Historique des chantiers closés, par ordre antéchronologique.
+
+### 2026-05-28 — Couverture CLIs et sandbox/sillage volumes
+
+- **#214** — `cli/crf` couverture **10.5% → 64.6% statements** (`shared/terminal`
+  - `shared/context` + `commands/api/commands` testés). Au passage : 2 hints
+    knip `Remove from ignore` nettoyés.
+- **#215** — `sandbox/sillage-sandbox/` : volumes nommés Appwrite/MongoDB passés
+  en anonymes, `scripts/start.sh` wipe en début de session. Cold-bootstrap par
+  défaut, contourne le bug d'idempotence Appwrite après down/up.
+- **#216** — `cli/net` couverture **0% → 50.5% statements** (`output/steps` et
+  `config/context` à 100% ; `runDiagnostics` exporté et testé via mock
+  `@univ-lehavre/atlas-net`).
+
+### 2026-05-27 — Refonte monorepo + documentation
+
+- **#211** — Catégorie `assets/` créée (8ᵉ) ; `packages/logos` splitté en
+  `assets/logos` + `cli/logos` (atlas-logos-cli@1.0.0). `ui/atlas-ui` déclare
+  `svelte` en peerDeps. README et `docs/` refondus pour un public non-expert.
+  Framing institutionnel retiré, jargon DevSecOps "Phase X.Y" nettoyé.
+  Placeholders apps et zero-trust.md supprimés.
+- **#212** — `CONTRIBUTING.md` et `SECURITY.md` alignés (refs institutionnelles
+  retirées, URLs doc converties en chemins relatifs).
+- **#213** — Nettoyage hints knip (`packages/citation`, `sandbox/crf-sandbox-core`).
+
+### Sprints DevSecOps — vue d'ensemble (clôturés 2026-05-26)
+
+À l'issue des Sprints 1-4, le dépôt satisfait honnêtement le qualificatif
+**DevSecOps** pour la partie développement et déploiement (amarre, ecrin,
+find-an-expert).
+
+**Sprint 1 — Bloquants sécurité** : audit token REDCap, inventaire secrets,
+surfaces exposées (PR #171), Secret Scanning + Push Protection + Dependabot
+alerts (activés via API GitHub 2026-05-19), `SECURITY.md` (PR #127), branch
+protection main (2026-05-19).
+
+**Sprint 2 — Fondations** : CodeQL (PR #156), politique triage / SLA
+(2026-05-26), Dependabot + auto-merge patches, Dependency Review Action
+(PR #161), pin GitHub Actions par SHA (PR #127, #156, #161), permissions
+minimales par job.
+
+**Sprint 3 — Supply chain et Appwrite** : npm provenance via OIDC (2026-05-22),
+SBOM CycloneDX (2026-05-22), headers HTTP de sécurité (PR #171,
+`connect-src` tightening 2026-05-26), cookies session hardening + CSRF
+(PR #171), gitleaks (PR #127, stabilisation #141/#143/#144/#145).
+
+**Sprint 4 — Finalisation** : OWASP ZAP baseline en `workflow_dispatch`
+(2026-05-26), rate limiting (branche `devsecops/rate-limiting-phase-6-5`),
+tests sécurité handlers rate-limités + `hooks.server.ts` × 3 apps, runbook
+incident (2026-05-26), CODEOWNERS (PR #127), `CONTRIBUTING.md` (PR #127).
+
+**Hors plan initial** : dédup `authService` × 3 apps (~150 lignes), dédup baas
+client × 2 apps (~80 lignes), dédup `BaasUserRepository` × 2 apps, dédup
+validators auth, fix logos `vite-plugin-static-copy` → prepare script
+(PR #157), bumps apps white background header/footer (PR #159), Dependabot
+noise reduction, cleanup knip + dette cosmétique (PR #160).
 
 ### 2026-05-22 — Triage CodeQL post-#194
 
-Inventaire réel : **39 alertes ouvertes** (vs "25 warnings + 4 notes" annoncés dans la TODO précédente).
+39 alertes inventoriées (vs « 25+4 » estimés au lancement). **26 dismissées +
+13 fixes code** sur la branche `codeql/triage-post-194`.
 
-**Fix code (13 alertes via PR triage, branche `codeql/triage-post-194`)** :
+**Fix code** : 5 × `js/insecure-temporary-file` (`mkdtempSync`) dans
+`packages/citation-validate/`, 2 × `js/shell-command-*` (`execFileSync`) dans
+`cli/crf-openapi/`, 1 × `js/file-system-race` (TOCTOU
+`existsSync`+`writeFileSync` → `try { readFileSync } catch (ENOENT)`) dans
+`apps/amarre/scripts/manage-baselines.ts`, 1 × `js/comparison-between-incompatible-types`
+(branche redondante supprimée), 4 × `js/unused-local-variable`.
 
-| Alerte(s)          | Règle                                                                   | Localisation                                                                                                                        | Fix                                                                         |
-| ------------------ | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| #10 (error) + #11  | `js/shell-command-{constructed-from-input, injection-from-environment}` | `cli/crf-openapi/src/extractor/index.ts:59`                                                                                         | `execSync` → `execFileSync` (args array, pas de shell)                      |
-| #15-#19 (×5)       | `js/insecure-temporary-file`                                            | `packages/citation-validate/src/store/{loader,saver}.test.ts`                                                                       | `join(tmpdir(), …${Date.now()})` → `mkdtempSync(tmpdir(), 'atlas-…-')`      |
-| #14                | `js/file-system-race`                                                   | `apps/amarre/scripts/manage-baselines.ts:67-77`                                                                                     | TOCTOU `existsSync`+`writeFileSync` → `try { readFileSync } catch (ENOENT)` |
-| #37                | `js/comparison-between-incompatible-types`                              | `apps/crf-dashboard/src/routes/api/logs/+server.ts:65`                                                                              | Branche `cache !== null` redondante supprimée (déjà court-circuitée)        |
-| #33, #34, #35, #36 | `js/unused-local-variable` (notes)                                      | `apps/ecrin/.../build-name.ts`, `packages/citation-validate/.../updater-effect.test.ts`, `packages/crf-core/.../validation.test.ts` | Suppression dead code/imports                                               |
+**Dismissals** : 9 × `js/polynomial-redos` dans `cli/crf-openapi` (won't fix,
+outil offline, input trusted), 16 × `js/file-access-to-http` dans
+tests/sandbox (used in tests), 1 × false positive sur
+`packages/atlas-stats/src/github.ts` (URL hardcodée, header `Authorization`
+seul vient du fichier).
 
-**Dismissed (26 alertes via gh API)** :
+### 2026-05-19 — Faux positifs Gitleaks (saga 5 PRs)
 
-| # alertes                         | Règle                    | Localisation                                                       | Raison                                                                                                                                                         |
-| --------------------------------- | ------------------------ | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| #1-#9 (×9)                        | `js/polynomial-redos`    | `cli/crf-openapi/src/core/parsers/{help-php,schemas,index-php}.ts` | `won't fix` — outil CLI offline parsant des sources REDCap upstream téléchargées manuellement ; input trusted, pas user-provided ; DoS limité à la machine dev |
-| #21-#32, #39, #40, #42, #43 (×16) | `js/file-access-to-http` | `sandbox/crf-sandbox/tests/`, `sandbox/amarre-sandbox/tests/e2e/`  | `used in tests` — code test/sandbox lisant token de test depuis `.env.test` pour fetcher `localhost:8888` ; pas de prod                                        |
-| #20 (×1)                          | `js/file-access-to-http` | `packages/atlas-stats/src/github.ts:9`                             | `false positive` — pattern d'auth token GitHub API standard (URL hardcodée, seul le header `Authorization` vient d'un file)                                    |
+L'historique du dépôt (migration trademark #125 + renames antérieurs)
+contenait de nombreux paths obsolètes matchant les règles gitleaks. Saga
+close après cinq PRs :
 
-État final attendu après merge + re-scan CodeQL : **0 alerte ouverte**.
+- **#141** (41 findings) — règle `redcap-api-token` durcie (contexte
+  d'affectation requis) + allowlist `\.md$` + patterns fixtures.
+- **#143** (26) — allowlist path élargie en `(?:^|/)tests/fixtures/`.
+- **#144** (18) — **changement de stratégie** : scan push main en mode diff
+  (`before..after`) au lieu de l'historique complet.
+- **#145** (18 → 0) — allowlist ciblée des 3 paths historiques restants
+  (préféré à `git filter-repo` jugé disproportionné pour des fixtures).
 
-### 2026-05-19 — Workflows post-merge PR #127
+**Stratégie finale** documentée dans `.github/workflows/gitleaks.yml` et
+`.gitleaks.toml` :
 
-- [x] CI : success
-- [x] Deploy Documentation : success (fix VitePress validé)
-- [x] Release : success
-- [x] Gitleaks : 3 itérations nécessaires (cf. ci-dessous), résolu en passant le scan main en mode diff-only via PR #144
+- Sur **PR** : scan du diff de la PR (`base.sha..head.sha`).
+- Sur **push main** : scan des nouveaux commits du push (`before..after`).
+- Sur **workflow_dispatch** : scan complet de l'historique, à lancer pour
+  audit ponctuel (renvoie maintenant **0 finding**).
 
-### 2026-05-19 — Faux positifs Gitleaks
+### 2026-05-19 — Dependabot premier passage
 
-Saga close après cinq PRs ✅. L'historique du repo (migration trademark #125 + renames antérieurs) contenait de nombreux fichiers aux paths obsolètes qui matchaient les règles gitleaks.
+8 PRs ouvertes par le premier run, toutes mergées :
 
-| # PR                                | Findings | Sources                                                                                                        | Correction                                                                                                         |
-| ----------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| #141                                | 41       | JSDoc `RedcapToken('A1B2…')` + doc `.md` exemples                                                              | Règle `redcap-api-token` durcie (contexte d'affectation requis) + allowlist `\.md$` + patterns fixtures            |
-| #143                                | 26       | `packages/redcap/tests/fixtures/projects.json` (path historique d'avant migration trademark)                   | Allowlist path élargie de `sandbox/crf-sandbox/tests/fixtures/.*` → `(?:^\|/)tests/fixtures/`                      |
-| #144                                | 18       | `packages/amarre/scripts/`, `packages/redcap-sandbox/.env.test` (autres paths historiques)                     | **Changement de stratégie** : scan push main en mode diff (`before..after`) au lieu de l'historique complet        |
-| Audit `workflow_dispatch` post-#144 | 18       | Inventaire complet : 3 fichiers obsolètes (sandbox `.env.test`, amarre `generate-openapi.ts` + `openapi.json`) | Inspection des contenus : 100% faux positifs (fixtures localhost + exemples doc OpenAPI), aucun vrai secret oublié |
-| #145                                | 18 → 0   | Les 3 paths historiques ci-dessus                                                                              | Allowlist ciblée des paths historiques (préféré à un `git filter-repo` jugé disproportionné pour des fixtures)     |
-
-**Stratégie finale**, documentée dans [.github/workflows/gitleaks.yml](.github/workflows/gitleaks.yml) et [.gitleaks.toml](.gitleaks.toml) :
-
-- Sur **PR** : scan du diff de la PR (`base.sha..head.sha`)
-- Sur **push main** : scan uniquement les nouveaux commits du push (`before..after`)
-- Sur **workflow_dispatch** : scan complet de l'historique, à lancer manuellement pour audit ponctuel (renvoie maintenant **0 finding**)
-
-Garanties préservées : tout nouveau secret est détecté soit par le scan PR, soit par le scan push main (les deux en mode diff).
-
-### 2026-05-19 — Dependabot : premier passage
-
-8 PRs ouvertes par le premier run de `.github/dependabot.yml`, toutes mergées le 2026-05-19 :
-
-**GitHub Actions (3 PRs)** : `actions/upload-pages-artifact` 4 → 5 (#130), `pnpm/action-setup` digest bump (#129), `actions/deploy-pages` 4 → 5 (#128).
-
-**npm groupes (5 PRs)** : `eslint-prettier` (#138 — `eslint-plugin-n` 17→18), `typescript-tooling` (#137 — `@napi-rs/canvas` 0.1.100→1.0.0), `vitest`, `sveltekit`, `node-appwrite` 24→25 (#140) + `@commitlint/cli` 20.5.2→21.0.1 (#136) + `@commitlint/config-conventional` 20.5.0→21.0.1 (#139).
-
-Suivi actif déplacé dans [Prochaines actions](#prochaines-actions) (vérif bumps majors + auto-merge patches).
+- **GitHub Actions (3)** : `actions/upload-pages-artifact` 4 → 5 (#130),
+  `pnpm/action-setup` digest bump (#129), `actions/deploy-pages` 4 → 5 (#128).
+- **npm groupes (5)** : eslint-prettier (#138 — `eslint-plugin-n` 17→18),
+  typescript-tooling (#137 — `@napi-rs/canvas` 0.x→1.x validé à l'exécution),
+  vitest, sveltekit, `node-appwrite` 24→25 (#140) + `@commitlint/cli`
+  20.5.2 → 21.0.1 (#136) + `@commitlint/config-conventional` 20.5.0 → 21.0.1
+  (#139).
 
 ### 2026-05-19 — Sync amarre upstream (PR #155)
 
-L'app `amarre` dans atlas avait été importée le 2026-01-27 depuis `univ-lehavre/amarre`. Le dépôt standalone a ensuite reçu 3 commits le 2026-02-06 qui n'avaient pas été reportés. Synchronisation faite via PR #155.
+L'app `amarre` dans atlas avait été importée le 2026-01-27 depuis
+`univ-lehavre/amarre`. Le dépôt standalone a ensuite reçu 3 commits le
+2026-02-06 qui n'avaient pas été reportés. Synchronisation faite via PR #155 :
 
-- [x] Port `1db30df` — composante/labo signing requirements basés sur `invitation_type`
-- [x] Port `8486e79` — mock test survey list avec `invitation_type`
-- [x] Port `b035655` — wording du modal RGPD `CreateRequest.svelte` + lien vers formulaire
-
-Suivi actif déplacé dans [Prochaines actions](#prochaines-actions) (vérifs dev) et [À arbitrer](#sort-du-dépôt-standalone-univ-lehavreamarre) (sort du standalone).
+- `1db30df` — composante/labo signing requirements basés sur `invitation_type`.
+- `8486e79` — mock test survey list avec `invitation_type`.
+- `b035655` — wording du modal RGPD `CreateRequest.svelte` + lien vers
+  formulaire.
