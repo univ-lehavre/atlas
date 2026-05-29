@@ -28,6 +28,12 @@ export {
   type RateLimitOk,
   type RateLimitDenied,
 } from './rate-limit.js';
+export {
+  createLoginHandler,
+  createLogoutHandler,
+  type LoginHandlerService,
+  type LogoutHandlerService,
+} from './handlers.js';
 
 /**
  * Configuration for the auth service.
