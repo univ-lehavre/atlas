@@ -6,6 +6,8 @@ Pour la procédure de gestion d'incident (compromission supposée, divulgation r
 
 > Pages d'origine : `docs/security/{secrets,surfaces,dast,sbom/README}.md`, fusionnées le 2026-05-26 lors de la refonte de la documentation.
 
+> **Périmètre.** Le chantier DevSecOps côté dépôt est considéré complet ; les items dépendant d'acteurs externes (équipes ops, infra de preview, second mainteneur) sont reportés sine die. Voir [ADR 0001](../decisions/0001-devsecops-perimetre-repo-sine-die.md) pour la décision de cadrage et [`TODO.md` → Reporté sine die](https://github.com/univ-lehavre/atlas/blob/main/TODO.md#reporté-sine-die--dépendances-externes) pour le suivi des items.
+
 [[toc]]
 
 ## Secrets — inventaire et rotation

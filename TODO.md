@@ -11,92 +11,14 @@
 
 ## Décisions clés
 
-Choix structurants pris au fil des chantiers, conservés ici pour que tout
-contributeur retrouve le « pourquoi » sans avoir à fouiller l'historique.
+Les choix structurants du dépôt sont tracés sous forme d'**ADR**
+(Architecture Decision Records) dans [`docs/decisions/`](docs/decisions/).
 
-### Architecture / techno
+Chaque ADR isole une décision : contexte qui l'a forcée, alternative
+écartée, conséquences assumées. C'est là qu'un contributeur retrouve le
+« pourquoi » d'un choix sans fouiller l'historique Git.
 
-- **2026-05-27** — Monorepo organisé en **8 catégories** (`apps`, `assets`,
-  `packages`, `services`, `cli`, `ui`, `config`, `sandbox`) avec règles enforcées
-  par `pnpm audit:structure`. Voir [docs/architecture/monorepo.md](docs/architecture/monorepo.md). PR #211.
-- **2026-05-27** — `packages/logos` splitté en **`assets/logos`** (fichiers statiques
-  uniquement) + **`cli/logos`** (CLI d'installation). Permet d'enforcer la règle
-  « pas de `bin` dans `packages/` ». PR #211.
-- **2026-05-28** — **Volumes anonymes** dans `sandbox/sillage-sandbox/` (Appwrite
-  - MongoDB). Cold-bootstrap ~30-60s par `pnpm start`, accepté en échange de
-    l'isolation d'état. Contourne le bug Appwrite après down/up. PR #215.
-- **Effect** pour la programmation fonctionnelle ; les erreurs sont des valeurs
-  typées, pas des exceptions. Patterns Effect/Hono explicitement autorisés malgré
-  les règles ESLint fonctionnelles strictes.
-- **SvelteKit** pour toutes les apps (rendu serveur + navigateur depuis une seule
-  source) ; **Hono** pour les services HTTP ; **Bootstrap** comme système de design
-  de base.
-- **REDCap** (CRF) pour les formulaires structurés, **Appwrite** comme BaaS
-  (auth/DB/storage). REDCap porte les formulaires administratifs uniquement,
-  aucune donnée clinique.
-- **Couches** des CLIs : la logique métier vit dans `packages/*`, les `cli/*-cli`
-  restent thins (parsing args + I/O terminal). Enforcement par `audit:structure`.
-
-### Scope / périmètre
-
-- **2026-05-19** — Le dépôt standalone `univ-lehavre/amarre` reste figé (dernier
-  commit 2026-02-06). **atlas est la source canonique** pour les futurs développements
-  ; sync historique via PR #155.
-- **2026-05-22** — `node-appwrite` SDK 25.x conservé malgré server 1.9.0 (warning
-  toléré). Downgrade impossible : SDK 24.x perd `TablesDB` utilisé par `apps/ecrin`.
-  Réévaluer si Appwrite tarde > 6 mois sur la sortie de 1.9.5.
-- **2026-05-22** — 3 paquets internes marqués `private: true` :
-  `apps/atlas-dashboard`, `apps/crf-dashboard`, `sandbox/crf-sandbox`. Pas distribués
-  sur npm.
-- **2026-05-27** — Neutralisation du framing institutionnel dans la documentation
-  (université, recherche, chercheurs). Le dépôt reste à l'org GitHub
-  `univ-lehavre` pour l'identité GitHub/npm, mais la doc ne le positionne plus
-  comme « plateforme de recherche ». PR #211, #212.
-
-### Processus / gouvernance
-
-- **Documentation cible un public non-expert**. Tout terme technique est défini
-  sur place ou pointe vers [docs/glossary.md](docs/glossary.md). PR #208, #211.
-- **Doc en français** (`lang: fr-FR` côté VitePress).
-- **Conventional Commits** appliqués par commitlint ; scopes limités à la liste
-  d'allowed-scopes (voir `commitlint.config.js`).
-- **Hooks Git via lefthook**, jamais bypassés. Voir [docs/quality/hooks.md](docs/quality/hooks.md).
-- **Branch protection** sur `main` (activée 2026-05-19) : status checks requis,
-  force-push bloqué. Signatures de commits non requises (commits locaux non signés) ;
-  admins bypass autorisé (bus-factor=1).
-- **Releases npm signées par OIDC** : `--provenance` activé sur les deux registres
-  (npm public + GitHub Packages). Vérification consommateur via
-  `npm audit signatures`.
-- **SLA de remédiation des findings sécurité** (Critical 7j, High 30j, Medium 90j,
-  Low/Info opportuniste). Documenté dans [docs/quality/security.md](docs/quality/security.md).
-
-### Dérogations (exceptions explicites)
-
-- **`cli/crf-openapi`** : nom de paquet sans suffixe `-cli` (historique). Exception
-  listée dans `scripts/audit/workspace-structure.mjs`.
-- **`packages/citation`** : 4 `ignoreDependencies` knip (`@effect/experimental`,
-  `@effect/platform-node`, `@xenova/transformers`, `uuid`) — utilisées dynamiquement.
-- **`cli/crf`** : `commands/api/commands.ts` en `ignore` knip — knip ne trace pas
-  la chaîne d'imports Effect/CLI ; le fichier reste testé via mock direct depuis
-  `commands.test.ts`.
-- **`ui/atlas-ui`** : marqué `private: true` mais déclare `svelte` en
-  `peerDependencies` (respecte la règle de catégorie pour une future
-  publication).
-- **`apps/ecrin`** : ne migre pas vers le package partagé `@univ-lehavre/atlas-baas`
-  car utilise `TablesDB` (non exposé par le package). À uniformiser quand
-  `TablesDB` deviendra le standard partagé.
-- **`apps/ecrin`** : `validateSignupEmail` reste local (lookup `isAlliance` async,
-  erreur `NotPartOfAllianceError` au lieu de `NotAnEmailError`). Le reste des
-  validators est re-exporté du package.
-- **Cookies UI find-an-expert** (theme, font, dark-mode, locale) : `SameSite=Lax`
-  sans `Secure`. Non sensibles, lus côté client par design.
-- **CSP `style-src 'unsafe-inline'`** conservé pour les `style=` inline Svelte
-  et Bootstrap.
-- **`audit:security` à `--audit-level=moderate`** : tightening au cas par cas
-  (vérifier 0 alerte moderate avant chaque montée du seuil).
-- **Rate-limit absent** sur `/auth/login` (secret magic URL haute entropie) et
-  `/health` (lightweight). Rate-limit `in-memory` mono-instance — à migrer vers
-  Redis/Upstash si scale-out.
+Voir l'[index des ADR](docs/decisions/README.md) pour la liste complète.
 
 ---
 
@@ -144,35 +66,10 @@ Items concrets et actionnables, par thème.
 
 ### DevSecOps
 
-- [ ] **Phase 5.1 RGPD** — enrichir si besoin la mention RGPD et données REDCap
-      dans `SECURITY.md` ; référencer une politique sécurité institutionnelle
-      existante si applicable.
-- [ ] **Phase 5.2 CODEOWNERS** — nominer un second mainteneur (bus-factor=1
-      actuellement).
-- [ ] **Phase 5.3 branch protection** : activer signatures de commits requises
-      (une fois GPG/SSH configuré) ; activer codeowners review obligatoire (dépend
-      du second mainteneur) ; inclure les administrateurs dans les règles.
-- [ ] **Phase 6.1 environnements** — vérifier qu'Appwrite Sites déploie depuis
-      `main` uniquement ; configurer un preview par PR ou un site `staging` depuis
-      une branche protégée.
-- [ ] **Phase 6.3 validation externe** — valider headers HTTP avec
-      [securityheaders.com](https://securityheaders.com) (objectif note A) et
-      [Mozilla Observatory](https://observatory.mozilla.org).
-- [ ] **Phase 7.1 nightly ZAP** — arbitrer entre (a) nightly contre prod
-      (besoin URLs figées + opérateurs infra prévenus), (b) nightly contre
-      `sandbox/amarre-sandbox/` (lourd CI, couvre amarre seul), (c) PR previews
-      (hors périmètre Appwrite Sites).
-- [ ] **Phase 7.3 revue trimestrielle** — planifier (rappel calendrier ou
-      `/schedule`). Checklist : alertes CodeQL, déps obsolètes, headers HTTP, logs
-      Appwrite, accès secrets.
-- [ ] **Phase 8.1 alerting Appwrite** — confirmer auprès des opérateurs infra
-      qui consulte les logs Appwrite et à quelle fréquence ; brancher alertes
-      basiques (5xx > seuil, latence p95 anormale, auth fail rate > seuil — seuils
-      suggérés dans le runbook).
-- [ ] **Phase 8.3 sauvegarde** — confirmer hébergement Appwrite (self-hosted
-      vs Appwrite Cloud), figer politique de sauvegarde (fréquence, rétention,
-      géo), valider RPO/RTO suggérés. Premier test de restauration dans les 12 mois
-      via `sandbox/amarre-sandbox/`.
+Le **périmètre dépôt** est complet — voir
+[ADR 0001](docs/decisions/0001-devsecops-perimetre-repo-sine-die.md).
+Les items qui dépendent d'acteurs ou d'infrastructure externes sont
+suivis sous [Reporté sine die](#reporté-sine-die--dépendances-externes).
 
 ### Audit `cli/crf` — étape suivante
 
@@ -185,6 +82,66 @@ Items concrets et actionnables, par thème.
 
 - [ ] Annoncer `brew install gitleaks` aux contributeurs pour le pre-commit
       local.
+
+---
+
+## Reporté sine die — dépendances externes
+
+Items du chantier DevSecOps qui dépendent d'un acteur ou d'une
+infrastructure hors du dépôt. Décision de cadrage :
+[ADR 0001](docs/decisions/0001-devsecops-perimetre-repo-sine-die.md). Chaque
+entrée précise **qui bloque** et **par quel signal** elle serait
+réouverte.
+
+- [ ] **Phase 5.1 RGPD** — enrichir si besoin la mention RGPD et données
+      REDCap dans `SECURITY.md` ; référencer une politique sécurité
+      institutionnelle existante si applicable.
+  - **Bloquant** : décision projet sur le périmètre RGPD à documenter.
+  - **Débloque par** : demande conformité, audit RGPD, arbitrage
+    [À arbitrer → RGPD / PRIVACY.md](#rgpd--privacymd).
+- [ ] **Phase 5.2 CODEOWNERS** — nominer un second mainteneur
+      (bus-factor=1 actuellement).
+  - **Bloquant** : décision projet sur l'équipe étendue.
+  - **Débloque par** : arrivée d'un second contributeur durable.
+- [ ] **Phase 5.3 branch protection (tightening)** : signatures de
+      commits requises ; codeowners review obligatoire ; règles incluant
+      les administrateurs.
+  - **Bloquant** : configuration GPG/SSH côté contributeurs + second
+    mainteneur (Phase 5.2).
+  - **Débloque par** : levée de Phase 5.2 + configuration GPG distribuée.
+- [ ] **Phase 6.1 environnements** — Appwrite Sites depuis `main`
+      uniquement ; preview par PR ou site `staging` depuis branche
+      protégée.
+  - **Bloquant** : opérateurs infra Appwrite.
+  - **Débloque par** : revue de la chaîne de déploiement Appwrite Sites.
+- [ ] **Phase 6.3 validation externe** — valider headers HTTP avec
+      [securityheaders.com](https://securityheaders.com) (objectif note A)
+      et [Mozilla Observatory](https://observatory.mozilla.org).
+  - **Bloquant** : déploiement stable avec URLs publiques figées (Phase 6.1).
+  - **Débloque par** : levée de Phase 6.1.
+- [ ] **Phase 7.1 nightly ZAP** — arbitrer entre (a) nightly contre prod
+      (URLs figées + opérateurs infra prévenus), (b) nightly contre
+      `sandbox/amarre-sandbox/` (lourd CI, couvre amarre seul), (c) PR
+      previews (hors périmètre Appwrite Sites).
+  - **Bloquant** : décision sur la cible (Phase 6.1) + budget CI.
+  - **Débloque par** : levée de Phase 6.1.
+- [ ] **Phase 7.3 revue trimestrielle** — checklist : alertes CodeQL,
+      déps obsolètes, headers HTTP, logs Appwrite, accès secrets.
+  - **Bloquant** : poser un rappel calendrier ou `/schedule` ; nécessite
+    un second mainteneur (Phase 5.2) pour partager la charge.
+  - **Débloque par** : levée de Phase 5.2 ou décision de tenir la revue en
+    solo.
+- [ ] **Phase 8.1 alerting Appwrite** — confirmer auprès des opérateurs
+      infra qui consulte les logs et à quelle fréquence ; brancher
+      alertes 5xx/latence/auth-fail (seuils dans le runbook).
+  - **Bloquant** : opérateurs infra Appwrite.
+  - **Débloque par** : prise de contact ops Appwrite.
+- [ ] **Phase 8.3 sauvegarde** — confirmer hébergement Appwrite
+      (self-hosted vs Cloud), figer politique (fréquence, rétention,
+      géo), valider RPO/RTO. Premier test de restauration dans les 12
+      mois via `sandbox/amarre-sandbox/`.
+  - **Bloquant** : opérateurs infra Appwrite.
+  - **Débloque par** : prise de contact ops Appwrite.
 
 ---
 
