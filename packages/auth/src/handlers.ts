@@ -215,3 +215,60 @@ export const createSignupHandler = (config: SignupHandlerConfig): RequestHandler
     }
   };
 };
+
+// me ------------------------------------------------------------------
+
+/**
+ * Service required by {@link createMeHandler}. The factory keeps the
+ * `Profile` shape opaque so each app can return whatever its UI needs
+ * (`{ id, email, labels }` for amarre/ecrin, an enriched object for
+ * other consumers, etc.).
+ */
+export interface MeHandlerService {
+  /**
+   * Returns the profile for the given userId. The factory passes a
+   * verified `string` (non-empty) — service-level errors (`not found`,
+   * persistence failure, etc.) should throw `ApplicationError`
+   * subclasses so they surface with the correct HTTP status.
+   */
+  readonly getProfile: (userId: string) => Promise<unknown>;
+}
+
+/**
+ * Creates a `GET /api/v1/me` handler.
+ *
+ * Reads `locals.userId` (populated by the session hook). When missing
+ * or not a non-empty string, returns 401 with code `unauthenticated`
+ * (the contract amarre and ecrin have always exposed — different from
+ * the `session_error` raised by `createLogoutHandler` which relies on
+ * `validateUserId`). When present, delegates to `service.getProfile`
+ * and wraps the response in the shared envelope.
+ *
+ * @example
+ * ```ts
+ * import { createMeHandler } from '@univ-lehavre/atlas-auth';
+ * import { getProfile } from '$lib/server/services/profile';
+ *
+ * export const GET = createMeHandler({ getProfile });
+ * ```
+ */
+export const createMeHandler = (service: MeHandlerService): RequestHandler => {
+  return async ({ locals }) => {
+    try {
+      const userId = (locals as { userId?: unknown }).userId;
+      if (typeof userId !== 'string' || userId.length === 0) {
+        return jsonResponse(
+          {
+            data: null,
+            error: { code: 'unauthenticated', message: 'User not authenticated' },
+          },
+          { status: 401 }
+        );
+      }
+      const payload = await service.getProfile(userId);
+      return jsonResponse({ data: payload, error: null }, { status: 200 });
+    } catch (error: unknown) {
+      return mapErrorToResponse(error);
+    }
+  };
+};

@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
-import { createLoginHandler, createLogoutHandler, createSignupHandler } from './handlers.js';
+import {
+  createLoginHandler,
+  createLogoutHandler,
+  createMeHandler,
+  createSignupHandler,
+} from './handlers.js';
 
 const cookies = (): Cookies =>
   ({
@@ -303,6 +308,76 @@ describe('createSignupHandler', () => {
     });
 
     const res = await POST(signupEventFor(signupJsonReq({ email: 'a@b' }), '203.0.113.7') as never);
+
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error.code).toBe('internal_error');
+  });
+});
+
+describe('createMeHandler', () => {
+  it('returns 401 with code "unauthenticated" when no userId in locals', async () => {
+    const getProfile = vi.fn();
+    const GET = createMeHandler({ getProfile });
+    const res = await GET({ locals: {} } as never);
+
+    expect(res.status).toBe(401);
+    const body = await res.json();
+    expect(body).toEqual({
+      data: null,
+      error: { code: 'unauthenticated', message: 'User not authenticated' },
+    });
+    expect(getProfile).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 when userId is not a non-empty string', async () => {
+    const getProfile = vi.fn();
+    const GET = createMeHandler({ getProfile });
+    const res1 = await GET({ locals: { userId: '' } } as never);
+    const res2 = await GET({ locals: { userId: 42 } } as never);
+
+    expect(res1.status).toBe(401);
+    expect(res2.status).toBe(401);
+    expect(getProfile).not.toHaveBeenCalled();
+  });
+
+  it('returns 200 with the profile wrapped in the data envelope when authenticated', async () => {
+    const getProfile = vi.fn().mockResolvedValueOnce({
+      id: 'abc123',
+      email: 'user@example.com',
+      labels: ['amarre'],
+    });
+    const GET = createMeHandler({ getProfile });
+    const res = await GET({ locals: { userId: 'abc123' } } as never);
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toEqual({
+      data: { id: 'abc123', email: 'user@example.com', labels: ['amarre'] },
+      error: null,
+    });
+    expect(getProfile).toHaveBeenCalledWith('abc123');
+  });
+
+  it('propagates an ApplicationError from getProfile (e.g. UserIdValidationError)', async () => {
+    const { UserIdValidationError } = await import('@univ-lehavre/atlas-errors');
+    const getProfile = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new UserIdValidationError('Operation failed', { cause: 'Invalid userId format' })
+      );
+    const GET = createMeHandler({ getProfile });
+    const res = await GET({ locals: { userId: 'not-hex' } } as never);
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe('userid_validation_error');
+  });
+
+  it('maps a non-ApplicationError thrown by getProfile to 500', async () => {
+    const getProfile = vi.fn().mockRejectedValueOnce(new Error('boom'));
+    const GET = createMeHandler({ getProfile });
+    const res = await GET({ locals: { userId: 'abc123' } } as never);
 
     expect(res.status).toBe(500);
     const body = await res.json();
