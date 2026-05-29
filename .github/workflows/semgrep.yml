@@ -3,12 +3,19 @@ name: Semgrep
 # Phase 1.2 DevSecOps : SAST complémentaire à CodeQL.
 #
 # Semgrep apporte deux choses que CodeQL ne couvre pas dans atlas :
-#  - une matrice de règles spécifiques à Svelte (`p/svelte`), donc une
-#    analyse réelle des `<script>` SvelteKit que CodeQL ignore (cf. note
-#    en tête de codeql.yml) ;
+#  - les règles `p/typescript` (langage que CodeQL traite via JS, donc
+#    moins de patterns TS-spécifiques) ;
 #  - les patterns OWASP Top 10 packagés (`p/owasp-top-ten`) que CodeQL
 #    couvre partiellement via `security-extended` mais avec un angle
 #    différent.
+#
+# Note Svelte : il n'y a pas de pack `p/svelte` officiel dans le
+# registry Semgrep (HTTP 404 à l'install). Les patterns Svelte sont
+# couverts en amont par les règles ESLint strictes activées en Phase
+# 1.1 (`svelte/no-at-html-tags`, `svelte/no-target-blank`,
+# `svelte/no-dom-manipulating`, etc., cf.
+# `config/shared-config/eslint/svelte.js`). À ré-évaluer si un pack
+# Semgrep Svelte voit le jour.
 #
 # Trigger : PR uniquement, pour limiter le bruit et garder le scan
 # proche du diff. Les findings ERROR (severity 'error') font échouer la
@@ -60,12 +67,17 @@ jobs:
         run: python3 -m pip install --user "semgrep==1.137.0"
 
       - name: Run Semgrep
+        # `BASE_REF` est posé via `env:` plutôt qu'interpolé directement
+        # dans le `run:` pour éviter l'injection shell — c'est le pattern
+        # recommandé par Semgrep lui-même (rule sg.run/pkzk, sur lequel
+        # ce workflow se serait fait jeter à sa propre première exécution).
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          if [ -n "${{ github.base_ref }}" ]; then
-            BASELINE=$(git merge-base origin/${{ github.base_ref }} HEAD)
+          if [ -n "$BASE_REF" ]; then
+            BASELINE=$(git merge-base "origin/$BASE_REF" HEAD)
             semgrep scan \
               --config p/typescript \
-              --config p/svelte \
               --config p/owasp-top-ten \
               --baseline-commit "$BASELINE" \
               --severity ERROR \
@@ -75,7 +87,6 @@ jobs:
             # workflow_dispatch : pas de base PR, on scanne tout le repo.
             semgrep scan \
               --config p/typescript \
-              --config p/svelte \
               --config p/owasp-top-ten \
               --severity ERROR \
               --error \
