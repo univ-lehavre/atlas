@@ -27,6 +27,45 @@ describe('POST /api/v1/auth/signup (rate-limited)', () => {
     vi.resetModules();
   });
 
+  it('returns 400 when checkRequestBody rejects a missing required field', async () => {
+    const validators = await import('$lib/server/validators/auth');
+    const errors = await import('@univ-lehavre/atlas-errors');
+    (validators.checkRequestBody as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new errors.RequestBodyValidationError('Missing required field', {
+        cause: 'email is required',
+      })
+    );
+
+    const mod = await import('../../../../../src/routes/api/v1/auth/signup/+server');
+    const res = await mod.POST({
+      request: buildRequest({}),
+      fetch: vi.fn(),
+      getClientAddress: () => '203.0.113.10',
+    } as never);
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe('request_body_validation_error');
+  });
+
+  it('returns 400 when validateSignupEmail rejects a malformed email', async () => {
+    const validators = await import('$lib/server/validators/auth');
+    (validators.checkRequestBody as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      email: 'not-an-email',
+    });
+
+    const mod = await import('../../../../../src/routes/api/v1/auth/signup/+server');
+    const res = await mod.POST({
+      request: buildRequest({ email: 'not-an-email' }),
+      fetch: vi.fn(),
+      getClientAddress: () => '203.0.113.20',
+    } as never);
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe('invalid_email');
+  });
+
   it('returns 200 with token metadata when signup succeeds', async () => {
     const services = await import('$lib/server/services/auth');
     (services.signupWithEmail as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
