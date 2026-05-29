@@ -31,8 +31,11 @@ export {
 export {
   createLoginHandler,
   createLogoutHandler,
+  createSignupHandler,
   type LoginHandlerService,
   type LogoutHandlerService,
+  type SignupHandlerConfig,
+  type SignupTokenLike,
 } from './handlers.js';
 
 /**

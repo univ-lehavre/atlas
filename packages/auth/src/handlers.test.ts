@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Cookies } from '@sveltejs/kit';
-import { createLoginHandler, createLogoutHandler } from './handlers.js';
+import { createLoginHandler, createLogoutHandler, createSignupHandler } from './handlers.js';
 
 const cookies = (): Cookies =>
   ({
@@ -154,6 +154,155 @@ describe('createLogoutHandler', () => {
       locals: { userId: 'abc123' },
       cookies: cookies(),
     } as never);
+
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.error.code).toBe('internal_error');
+  });
+});
+
+const signupJsonReq = (body: Record<string, unknown>): Request =>
+  new Request('https://example.com/api/v1/auth/signup', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+const signupEventFor = (
+  request: Request,
+  ip = '203.0.113.1'
+): { request: Request; getClientAddress: () => string } => ({
+  request,
+  getClientAddress: () => ip,
+});
+
+describe('createSignupHandler', () => {
+  it('returns 200 with createdAt when signup succeeds (default JSON extractor)', async () => {
+    const validateEmail = vi.fn().mockResolvedValueOnce('user@example.com');
+    const signupWithEmail = vi
+      .fn()
+      .mockResolvedValueOnce({ $createdAt: '2026-01-01T00:00:00.000Z' });
+    const POST = createSignupHandler({ validateEmail, signupWithEmail });
+
+    const res = await POST(signupEventFor(signupJsonReq({ email: 'user@example.com' })) as never);
+
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toEqual({
+      data: { signedUp: true, createdAt: '2026-01-01T00:00:00.000Z' },
+      error: null,
+    });
+    expect(res.headers.get('X-RateLimit-Limit')).toBe('5');
+    expect(validateEmail).toHaveBeenCalledWith('user@example.com');
+    expect(signupWithEmail).toHaveBeenCalledWith(
+      'user@example.com',
+      expect.objectContaining({ request: expect.any(Request) })
+    );
+  });
+
+  it('uses the provided extractEmail strategy (e.g. FormData)', async () => {
+    const formReq = new Request('https://example.com/api/v1/auth/signup', {
+      method: 'POST',
+      body: (() => {
+        const form = new FormData();
+        form.set('email', 'user@example.com');
+        return form;
+      })(),
+    });
+
+    const validateEmail = vi.fn().mockResolvedValueOnce('user@example.com');
+    const signupWithEmail = vi.fn().mockResolvedValueOnce({ $createdAt: 't' });
+    const extractEmail = vi.fn(async (request: Request) => {
+      const form = await request.formData();
+      return form.get('email');
+    });
+
+    const POST = createSignupHandler({ extractEmail, validateEmail, signupWithEmail });
+    const res = await POST(signupEventFor(formReq) as never);
+
+    expect(res.status).toBe(200);
+    expect(extractEmail).toHaveBeenCalledTimes(1);
+    expect(validateEmail).toHaveBeenCalledWith('user@example.com');
+  });
+
+  it('returns 429 with Retry-After when the rate limit is hit', async () => {
+    const validateEmail = vi.fn(async (e: unknown) => e as string);
+    const signupWithEmail = vi.fn().mockResolvedValue({ $createdAt: 't' });
+    const POST = createSignupHandler({
+      validateEmail,
+      signupWithEmail,
+      rateLimit: { limit: 2, windowMs: 60_000 },
+    });
+
+    const ip = '203.0.113.42';
+    await POST(signupEventFor(signupJsonReq({ email: 'a@b' }), ip) as never);
+    await POST(signupEventFor(signupJsonReq({ email: 'a@b' }), ip) as never);
+    const third = await POST(signupEventFor(signupJsonReq({ email: 'a@b' }), ip) as never);
+
+    expect(third.status).toBe(429);
+    expect(third.headers.get('Retry-After')).toMatch(/^\d+$/);
+    const body = await third.json();
+    expect(body.error.code).toBe('rate_limited');
+    expect(signupWithEmail).toHaveBeenCalledTimes(2);
+  });
+
+  it('isolates the rate limit per client IP', async () => {
+    const validateEmail = vi.fn(async (e: unknown) => e as string);
+    const signupWithEmail = vi.fn().mockResolvedValue({ $createdAt: 't' });
+    const POST = createSignupHandler({
+      validateEmail,
+      signupWithEmail,
+      rateLimit: { limit: 1, windowMs: 60_000 },
+    });
+
+    const res1 = await POST(
+      signupEventFor(signupJsonReq({ email: 'a@b' }), '203.0.113.1') as never
+    );
+    const res2 = await POST(
+      signupEventFor(signupJsonReq({ email: 'a@b' }), '203.0.113.2') as never
+    );
+
+    expect(res1.status).toBe(200);
+    expect(res2.status).toBe(200);
+  });
+
+  it('returns 400 when extractEmail throws an ApplicationError (missing field)', async () => {
+    const POST = createSignupHandler({
+      validateEmail: vi.fn(),
+      signupWithEmail: vi.fn(),
+    });
+    const res = await POST(signupEventFor(signupJsonReq({}), '203.0.113.5') as never);
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe('request_body_validation_error');
+  });
+
+  it('propagates a validateEmail rejection as 400 (e.g. NotAnEmailError)', async () => {
+    const { NotAnEmailError } = await import('@univ-lehavre/atlas-errors');
+    const validateEmail = vi
+      .fn()
+      .mockRejectedValueOnce(new NotAnEmailError('Invalid', { cause: 'malformed' }));
+    const signupWithEmail = vi.fn();
+    const POST = createSignupHandler({ validateEmail, signupWithEmail });
+
+    const res = await POST(
+      signupEventFor(signupJsonReq({ email: 'not-an-email' }), '203.0.113.6') as never
+    );
+
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error.code).toBe('invalid_email');
+    expect(signupWithEmail).not.toHaveBeenCalled();
+  });
+
+  it('maps a non-ApplicationError thrown by signupWithEmail to 500', async () => {
+    const POST = createSignupHandler({
+      validateEmail: vi.fn(async (e: unknown) => e as string),
+      signupWithEmail: vi.fn().mockRejectedValueOnce(new Error('boom')),
+    });
+
+    const res = await POST(signupEventFor(signupJsonReq({ email: 'a@b' }), '203.0.113.7') as never);
 
     expect(res.status).toBe(500);
     const body = await res.json();
