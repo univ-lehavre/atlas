@@ -2,7 +2,6 @@ import {
   validateSignupEmail as sharedValidateSignupEmail,
   validateMagicUrlLogin,
   validateUserId,
-  checkRequestBody,
 } from '@univ-lehavre/atlas-auth';
 import { ensureJsonContentType, parseJsonBody } from '@univ-lehavre/atlas-validators';
 import { ALLOWED_DOMAINS_REGEXP } from '$env/static/private';
@@ -13,10 +12,4 @@ import { ALLOWED_DOMAINS_REGEXP } from '$env/static/private';
 export const validateSignupEmail = (email?: unknown): Promise<string> =>
   sharedValidateSignupEmail(email, { allowedDomainsRegexp: ALLOWED_DOMAINS_REGEXP });
 
-export {
-  validateMagicUrlLogin,
-  validateUserId,
-  checkRequestBody,
-  ensureJsonContentType,
-  parseJsonBody,
-};
+export { validateMagicUrlLogin, validateUserId, ensureJsonContentType, parseJsonBody };
