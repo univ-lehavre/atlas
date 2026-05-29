@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-amarre-sandbox",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Local Docker sandbox for the amarre app: bundles a CRF (REDCap) instance, a self-hosted BaaS (Appwrite), and the wiring scripts needed to run amarre end-to-end without depending on production services.",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

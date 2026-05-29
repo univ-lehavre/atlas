@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-redcap-client
 
+## 3.0.2
+
+### Patch Changes
+
+- Updated dependencies [[`69d3dfd`](https://github.com/univ-lehavre/atlas/commit/69d3dfd5754c9ce6ac4e832b0fc28f2830be6772)]:
+  - @univ-lehavre/atlas-crf-core@2.0.1
+
 ## 3.0.1
 
 ### Patch Changes

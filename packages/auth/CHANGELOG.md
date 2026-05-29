@@ -1,5 +1,90 @@
 # @univ-lehavre/atlas-auth
 
+## 2.2.0
+
+### Minor Changes
+
+- [#219](https://github.com/univ-lehavre/atlas/pull/219) [`b09cef1`](https://github.com/univ-lehavre/atlas/commit/b09cef1b12c3f4c8428362727e9772db57148e49) Thanks [@chasset](https://github.com/chasset)! - Add `createLoginHandler` and `createLogoutHandler` factories exposing
+  the shared `+server.ts` shape used by `apps/amarre/` and `apps/ecrin/`
+  for `/api/v1/auth/login` and `/api/v1/auth/logout`. Each app's handler
+  becomes a one-line composition over `createAuthService`'s `login` /
+  `logout` methods:
+
+  ```ts
+  import { createLoginHandler } from '@univ-lehavre/atlas-auth';
+  import { login } from '$lib/server/services/auth';
+  export const POST = createLoginHandler({ login });
+  ```
+
+  The factories preserve the existing response envelope
+  (`{ data: { loggedIn: true } | { loggedOut: true }, error: null }`) and
+  the existing error mapping (`mapErrorToApiResponse` from
+  `@univ-lehavre/atlas-errors`). No behavior change for the apps that
+  migrate ; the apps' `+server.ts` files lose ~25 lines of repeated
+  boilerplate each.
+
+  `apps/find-an-expert/` is intentionally not migrated in this round
+  because its handler currently returns the un-enveloped
+  `{ loggedIn: true }`. Aligning find-an-expert with the shared envelope
+  will land in a follow-up PR.
+
+- [#222](https://github.com/univ-lehavre/atlas/pull/222) [`142ac8e`](https://github.com/univ-lehavre/atlas/commit/142ac8e8a6d0a899680281f843056f49a1b80157) Thanks [@chasset](https://github.com/chasset)! - Add `createMeHandler` factory closing the auth handler quartet
+  (login/logout/signup/me). Reads `locals.userId` ; returns 401 with
+  code `unauthenticated` when missing or not a non-empty string (the
+  existing amarre/ecrin contract) ; delegates to `service.getProfile`
+  when present and wraps the result in the shared `{ data, error }`
+  envelope.
+
+  The factory keeps the profile type opaque (`Promise<unknown>`) so each
+  app can return whatever shape its UI consumes — `{ id, email, labels }`
+  for amarre/ecrin today.
+
+  apps/amarre and apps/ecrin `/api/v1/me/+server.ts` are migrated and
+  drop from ~18 lines to 3. The amarre handler test
+  (`tests/routes/api/v1/me.test.ts`, added in [#218](https://github.com/univ-lehavre/atlas/issues/218) before the factory
+  existed) is removed — the factory tests in
+  `packages/auth/src/handlers.test.ts` own the contract for both apps.
+
+  ecrin gets a small fix as a side effect : its previous handler used
+  `console.log(error)` and always returned 500 instead of going through
+  `mapErrorToApiResponse`. With the factory in place, `ApplicationError`
+  subclasses now surface with their proper HTTP status code.
+
+  find-an-expert `/api/v1/users/me` is not migrated for the same reason
+  as login/logout/signup : its response is un-enveloped (`json(payload)`
+  directly). Aligning FAE will land in the follow-up envelope PR.
+
+- [#219](https://github.com/univ-lehavre/atlas/pull/219) [`b09cef1`](https://github.com/univ-lehavre/atlas/commit/b09cef1b12c3f4c8428362727e9772db57148e49) Thanks [@chasset](https://github.com/chasset)! - Add `createSignupHandler` factory completing the auth handler trio
+  started in the login/logout PR. Wraps the shared rate-limited signup
+  flow (Phase 6.5 DevSecOps) and exposes three strategy points covering
+  the cross-app divergences :
+  - `extractEmail` — defaults to JSON body via `checkRequestBody` ; ecrin
+    passes a `FormData`-based override.
+  - `validateEmail` — amarre uses `validateSignupEmail` from this package
+    with its `ALLOWED_DOMAINS_REGEXP`, ecrin uses its local
+    `isAlliance`-backed validator.
+  - `signupWithEmail` — receives the validated email plus the full
+    SvelteKit event so each app can build its service context
+    (`{ fetch }`, `{ fetch, cookies }`, etc.).
+
+  The default rate limit is 5 req/min/IP, overridable via the
+  `rateLimit` option. Responses always carry `X-RateLimit-*` headers ;
+  429 adds `Retry-After`. The success payload is the existing envelope
+  `{ data: { signedUp: true, createdAt? }, error: null }` — `createdAt`
+  is now exposed everywhere (was missing on ecrin previously ;
+  additive, non-breaking).
+
+  amarre and ecrin signup handlers are migrated and drop from ~25-30
+  lines to ~10. The redundant amarre tests at
+  `tests/routes/api/v1/auth/{login,logout,signup}.test.ts` (introduced
+  in [#218](https://github.com/univ-lehavre/atlas/issues/218) before the factory existed) are removed — the factory tests
+  in `packages/auth/src/handlers.test.ts` now own that contract for both
+  apps.
+
+  find-an-expert signup is **not** migrated for the same reason as
+  login/logout : its response is un-enveloped (`{ signedUp: true, ... }`).
+  Aligning FAE will land in the follow-up envelope PR.
+
 ## 2.1.0
 
 ### Minor Changes

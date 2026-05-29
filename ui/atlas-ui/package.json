@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-ui",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shared Svelte UI components for the atlas monorepo, previewed via Storybook.",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
