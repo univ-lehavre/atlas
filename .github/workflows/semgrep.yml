@@ -67,9 +67,15 @@ jobs:
         run: python3 -m pip install --user "semgrep==1.137.0"
 
       - name: Run Semgrep
+        # `BASE_REF` est posé via `env:` plutôt qu'interpolé directement
+        # dans le `run:` pour éviter l'injection shell — c'est le pattern
+        # recommandé par Semgrep lui-même (rule sg.run/pkzk, sur lequel
+        # ce workflow se serait fait jeter à sa propre première exécution).
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          if [ -n "${{ github.base_ref }}" ]; then
-            BASELINE=$(git merge-base origin/${{ github.base_ref }} HEAD)
+          if [ -n "$BASE_REF" ]; then
+            BASELINE=$(git merge-base "origin/$BASE_REF" HEAD)
             semgrep scan \
               --config p/typescript \
               --config p/owasp-top-ten \
