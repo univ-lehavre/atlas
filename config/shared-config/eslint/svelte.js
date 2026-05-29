@@ -221,8 +221,20 @@ export function svelte(options = {}) {
       rules: {
         // Svelte 5 runes compatibility
         "svelte/valid-compile": "error",
-        "svelte/no-at-html-tags": "warn",
-        "svelte/require-each-key": "warn",
+        // Phase 1.1 DevSecOps — durcissement pour compenser la
+        // non-couverture des .svelte par CodeQL (extracteur JS/TS,
+        // ignore les <script> Svelte). Les règles ci-dessous couvrent
+        // XSS, supply chain et qualité de markup.
+        "svelte/no-at-html-tags": "error", // XSS : pas de {@html} sans eslint-disable explicite
+        "svelte/no-target-blank": [
+          "error",
+          { allowReferrer: false, enforceDynamicLinks: "always" },
+        ], // window.opener / reverse-tabnabbing
+        "svelte/no-dom-manipulating": "error", // pas de innerHTML/insertAdjacentHTML direct
+        "svelte/no-svelte-internal": "error", // interdit `svelte/internal` (API privée mutante)
+        "svelte/no-unused-svelte-ignore": "error", // pas de directive d'ignore obsolète
+        "svelte/require-each-key": "error", // perf + idempotence des updates
+        "svelte/button-has-type": "error", // a11y + protection contre les submits implicites
         "svelte/no-reactive-functions": "error",
         "svelte/no-reactive-literals": "error",
         // Disable rules that conflict with Svelte patterns

@@ -78,6 +78,7 @@
       <a
         href="/api/v1/health"
         target="_blank"
+        rel="noopener noreferrer"
         class="text-xs text-warning-600 dark:text-warning-400 hover:underline flex-shrink-0"
       >
         {content.checkStatusLabel}
