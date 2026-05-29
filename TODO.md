@@ -144,15 +144,6 @@ Items concrets et actionnables, par thème.
 
 ### DevSecOps
 
-- [ ] **Phase 1.2 Semgrep (optionnel)** — évaluer avec `p/typescript`,
-      `p/svelte`, `p/owasp-top-ten`. Si retenu : workflow `semgrep.yml` sur PR
-      uniquement.
-- [ ] **Phase 1.1 limitation Svelte CodeQL** — l'extracteur JS/TS ne couvre pas
-      les `.svelte` (les `<script>` sont hors analyse). Compléter par lint Svelte
-      strict + revues ciblées.
-- [ ] **Phase 4.3 trigger release** — décommenter `push: main` dans
-      `release.yml` lors de la prochaine release réelle ; les premiers tarballs
-      publiés porteront la provenance OIDC.
 - [ ] **Phase 5.1 RGPD** — enrichir si besoin la mention RGPD et données REDCap
       dans `SECURITY.md` ; référencer une politique sécurité institutionnelle
       existante si applicable.
@@ -164,9 +155,6 @@ Items concrets et actionnables, par thème.
 - [ ] **Phase 6.1 environnements** — vérifier qu'Appwrite Sites déploie depuis
       `main` uniquement ; configurer un preview par PR ou un site `staging` depuis
       une branche protégée.
-- [ ] **Phase 6.2 variables d'env** — audit console Appwrite : tous les secrets
-      runtime y sont, aucun dans le repo. Discipline `PUBLIC_*` vs privé. Documenter
-      dans `docs/security/env-vars.md`.
 - [ ] **Phase 6.3 validation externe** — valider headers HTTP avec
       [securityheaders.com](https://securityheaders.com) (objectif note A) et
       [Mozilla Observatory](https://observatory.mozilla.org).
@@ -174,8 +162,6 @@ Items concrets et actionnables, par thème.
       (besoin URLs figées + opérateurs infra prévenus), (b) nightly contre
       `sandbox/amarre-sandbox/` (lourd CI, couvre amarre seul), (c) PR previews
       (hors périmètre Appwrite Sites).
-- [ ] **Phase 7.2 tests sécurité étendus** — anti-XSS basique (inputs non
-      réfléchis), payloads malformés explicites, 401 sur endpoints AUTH sans session.
 - [ ] **Phase 7.3 revue trimestrielle** — planifier (rappel calendrier ou
       `/schedule`). Checklist : alertes CodeQL, déps obsolètes, headers HTTP, logs
       Appwrite, accès secrets.
@@ -233,6 +219,53 @@ politique RGPD »). Cadrage à reprendre :
 ## Archive
 
 Historique des chantiers closés, par ordre antéchronologique.
+
+### 2026-05-29 — Finalisation DevSecOps + factories auth
+
+- **Phase 4.3** — `push: main` décommenté dans
+  [.github/workflows/release.yml](.github/workflows/release.yml) : les merges
+  sur `main` consommant un changeset déclenchent désormais la PR « chore:
+  version packages » puis la publication avec provenance OIDC.
+- **Phase 1.2 Semgrep** — workflow
+  [.github/workflows/semgrep.yml](.github/workflows/semgrep.yml) sur PR avec
+  `p/typescript`, `p/svelte`, `p/owasp-top-ten`. Semgrep installé via
+  `pip install semgrep==1.137.0` (épinglé). Mode `--severity=ERROR` ; les
+  WARNING restent visibles mais n'empêchent pas le merge.
+- **Phase 1.1 lint Svelte strict** — durcissement de
+  [config/shared-config/eslint/svelte.js](config/shared-config/eslint/svelte.js) :
+  `svelte/no-at-html-tags`, `svelte/no-target-blank`, `svelte/no-dom-manipulating`,
+  `svelte/no-svelte-internal`, `svelte/no-unused-svelte-ignore`,
+  `svelte/button-has-type`, `svelte/require-each-key` passés à `error`. Couvre
+  XSS, reverse-tabnabbing, supply chain et a11y — compense la non-couverture
+  des `.svelte` par CodeQL. Fix collatéral : `ConnectivityBanner.svelte` reçoit
+  `rel="noopener noreferrer"`.
+- **Phase 6.2 env vars** — nouvelle section
+  [docs/quality/security.md](docs/quality/security.md) sur la discipline
+  `PUBLIC_*` vs privé en SvelteKit, recensement croisé du parc de variables
+  d'env du dépôt + script d'audit.
+- **Phase 7.2 tests sécurité étendus** — anti-XSS smoke sur FAE
+  `/institutions/search` (vérifie que la query n'est pas réfléchie dans le
+  body, ni en happy path ni en erreur), 401 sur ecrin `/auth/delete` et
+  `/users` (handlers AUTH non couverts par les factories — ecrin `/me` est
+  couvert par #222).
+
+### 2026-05-29 — Factories auth (login/logout/signup/me)
+
+- **#219** — `createLoginHandler` + `createLogoutHandler` extraits dans
+  `@univ-lehavre/atlas-auth/handlers`. amarre + ecrin
+  `/api/v1/auth/{login,logout}` passent de ~20 lignes à 3. find-an-expert
+  non migrée (envelope `{ loggedIn: true }` sans wrap `{ data, error }`).
+- **#220** — `createSignupHandler` avec 3 stratégies (`extractEmail`,
+  `validateEmail`, `signupWithEmail` qui reçoit l'event complet) +
+  `rateLimit` configurable. amarre passe à 9 lignes ; ecrin idem avec
+  `extractEmail` `FormData` override. `createdAt` désormais exposé sur ecrin
+  (changement additif). Suppression des tests amarre redondants de #218.
+- **#221** — Refonte du README de `packages/auth` autour des deux niveaux
+  d'API (service bas niveau + handlers haut niveau), correction du champ
+  `appwrite:` → `baas:`, retrait du framing institutionnel.
+- **#222** — `createMeHandler` ferme le quartet. amarre + ecrin `/me` passent
+  à 3 lignes ; ecrin gagne un fix d'erreur (anciennement `console.log` + 500
+  systématique → mapping HTTP correct via `mapErrorToApiResponse`).
 
 ### 2026-05-28 — Couverture CLIs et sandbox/sillage volumes
 

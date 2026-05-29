@@ -1,15 +1,16 @@
 name: Release
 
-# Releases are paused — `push: main` was disabled while the
-# `secrets.NPM_TOKEN` and `@univ-lehavre` scope ownership are sorted
-# out. Re-enable by uncommenting the `push` trigger below ; the
-# `workflow_dispatch` trigger keeps the door open for a manual one-off
-# run from the Actions tab.
+# Phase 4.3 DevSecOps : releases automatiques. Chaque merge sur `main`
+# qui consomme un changeset déclenche soit l'ouverture (ou la mise à
+# jour) de la PR « chore: version packages », soit — si cette PR est
+# déjà mergée — le publish vers npm public + GitHub Packages avec
+# provenance OIDC. `workflow_dispatch` reste disponible pour les runs
+# manuels (re-publication, rejouage post-incident).
 on:
   workflow_dispatch:
-  # push:
-  #   branches:
-  #     - main
+  push:
+    branches:
+      - main
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 

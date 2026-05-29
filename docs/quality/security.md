@@ -71,6 +71,52 @@ Apps de monitoring/admin, en principe non déployées en prod publique. Tournent
 - `*-token.csv` — tokens REDCap par projet (cf. crf-dashboard)
 - `redcap-token.csv` à la racine — historique : voir [TODO.md](https://github.com/univ-lehavre/atlas/blob/main/TODO.md) §0.1 (jamais commité, audité 2026-05-19)
 
+### Discipline `PUBLIC_*` vs privé (SvelteKit)
+
+SvelteKit expose deux familles de variables d'environnement, avec une frontière stricte :
+
+| Famille                                                     | Lu par                                        | Critère d'admission                                                       |
+| ----------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------- |
+| `$env/static/private`, `$env/dynamic/private`               | Code serveur uniquement (`+server.ts`, hooks) | Tout ce qui n'a pas vocation à être lu par le navigateur                  |
+| `$env/static/public` (préfixe **`PUBLIC_`** dans le `.env`) | Bundle navigateur **et** serveur              | Identifiants/URLs publics par construction (project ID Appwrite, URL API) |
+
+**Règles d'or** :
+
+1. **Toute variable préfixée `PUBLIC_` est publique** — incluse dans le bundle navigateur servi à n'importe quel client. Ne jamais y mettre une clé API serveur, un token, une regex de validation sensible, un identifiant de table interne.
+2. **Inversement, toute valeur non-préfixée ne sera jamais lue côté navigateur** — SvelteKit refuse l'import à la compilation. C'est la garantie sur laquelle s'appuient `APPWRITE_KEY`, `REDCAP_API_TOKEN`, etc.
+3. **Aucune variable d'env n'est commitée** : les `.env.example` ne contiennent que des _placeholders_, jamais des valeurs réelles (même de dev).
+
+### Discipline observée dans atlas
+
+Recensement croisé `apps/*/src/lib/server/**` vs `apps/*/src/lib/**` (non-server) :
+
+| Pattern                    | Côté         | Exemple atlas                                       | Conforme à la discipline ? |
+| -------------------------- | ------------ | --------------------------------------------------- | -------------------------- |
+| `PUBLIC_APPWRITE_ENDPOINT` | navigateur   | URL exposée par le SDK Appwrite browser             | Oui — URL publique         |
+| `PUBLIC_APPWRITE_PROJECT`  | navigateur   | ID projet exposé par le SDK Appwrite browser        | Oui — ID public            |
+| `PUBLIC_LOGIN_URL`         | navigateur   | URL de l'app pour générer les magic links           | Oui                        |
+| `PUBLIC_REDCAP_URL`        | navigateur   | URL d'une instance REDCap (publique, sans le token) | Oui                        |
+| `APPWRITE_KEY`             | serveur seul | Clé API serveur Appwrite                            | Oui — privée               |
+| `APPWRITE_DB_ID` etc.      | serveur seul | IDs internes de base / collection                   | Oui — non exposés          |
+| `REDCAP_API_TOKEN`         | serveur seul | Token API REDCap (32 hex)                           | Oui — privée               |
+| `OPENALEX_API_TOKEN`       | serveur seul | Token API OpenAlex                                  | Oui — privée               |
+| `ALLOWED_DOMAINS_REGEXP`   | serveur seul | Regex d'allowlist signup                            | Oui — privée               |
+
+**Audit récurrent** (à conduire au minimum lors de chaque revue trimestrielle, cf. [§7.3 dans TODO.md](https://github.com/univ-lehavre/atlas/blob/main/TODO.md)) :
+
+```bash
+# 1. Tout PUBLIC_* est-il bien public ? (rien de sensible glissé là)
+grep -rn 'PUBLIC_' apps/*/.env.example
+
+# 2. Aucune valeur réelle ne traîne dans les .env.example commités
+grep -rnE 'PUBLIC_[A-Z_]+=https?://[^.]+\.' apps/*/.env.example  # doit lister uniquement des hosts d'exemple
+
+# 3. Aucune fuite côté navigateur d'une variable non-PUBLIC_
+grep -rn '\$env/static/private\|\$env/dynamic/private' apps/*/src/lib | grep -v server  # doit être vide
+```
+
+Un import de `$env/static/private` depuis un fichier consommé par le bundle navigateur (cf. `apps/*/src/lib/**` hors `server/`) est rejeté à la compilation par SvelteKit — c'est la garantie statique du compilateur, pas une convention. La règle de discipline ci-dessus ne vise qu'à éviter les faux pas en amont.
+
 ### Procédure de rotation générique
 
 1. **Identifier** le secret à rotater et l'app/workflow consommateur.
