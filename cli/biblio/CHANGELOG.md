@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-biblio-cli
 
+## 1.0.6
+
+### Patch Changes
+
+- Updated dependencies [[`69d3dfd`](https://github.com/univ-lehavre/atlas/commit/69d3dfd5754c9ce6ac4e832b0fc28f2830be6772)]:
+  - @univ-lehavre/atlas-citation-validate@2.0.1
+
 ## 1.0.5
 
 ### Patch Changes

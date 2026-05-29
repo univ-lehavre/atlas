@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-crf-client",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Clinical research form (CRF / REDCap) API client for Atlas - Effect-based typed client",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

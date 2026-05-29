@@ -1,5 +1,106 @@
 # @univ-lehavre/amarre
 
+## 3.1.0
+
+### Minor Changes
+
+- [#190](https://github.com/univ-lehavre/atlas/pull/190) [`45d32a3`](https://github.com/univ-lehavre/atlas/commit/45d32a3e368fdd117ceb48160a4b397a7a74060a) Thanks [@chasset](https://github.com/chasset)! - Extract the 15 Svelte UI components from `apps/amarre/src/lib/ui/` to a new shared design-system package `@univ-lehavre/atlas-ui` (live at `ui/atlas-ui/`), previewed via Storybook 10.
+
+  For amarre, imports change shape :
+
+  ```ts
+  // before
+  import Signup from '$lib/ui/Signup.svelte';
+
+  // after
+  import Signup from '@univ-lehavre/atlas-ui/Signup.svelte';
+  // or
+  import { Signup } from '@univ-lehavre/atlas-ui';
+  ```
+
+  Plus :
+  - **Bootstrap is now an npm dependency** (`bootstrap@5.3.8` + `bootstrap-icons@1.13.1`) owned by `ui/atlas-ui`. Amarre's `+layout.svelte` imports `@univ-lehavre/atlas-ui/client` which pulls the CSS + JS bundle. The CDN `<link>` / `<script>` tags previously in `apps/amarre/src/app.html` are gone. Bumping Bootstrap = bumping one dep in one package.
+  - **Two amarre-coupled components were generalized** (Collaborate, Request) : they now take a plain `RequestRecord` interface (re-exported from atlas-ui) instead of the zod-inferred `SurveyRequestItem`. The server-side type/validator in amarre is unchanged — the structural compatibility lets amarre's richer type be assigned where atlas-ui expects the minimal one.
+
+  The level-1 UI tests in `apps/amarre/tests/ui/` still pass against the moved components (imports updated to `@univ-lehavre/atlas-ui/X.svelte`). A follow-up PR will move those tests + their fixtures into `ui/atlas-ui/tests/` so stories and tests share a single source of truth.
+
+  Run the gallery :
+
+  ```bash
+  pnpm -F @univ-lehavre/atlas-ui storybook
+  # → http://localhost:6006
+  ```
+
+### Patch Changes
+
+- [#193](https://github.com/univ-lehavre/atlas/pull/193) [`e1beb61`](https://github.com/univ-lehavre/atlas/commit/e1beb61bb7704749e2da2d3e63a5f7eb28cd0c9c) Thanks [@chasset](https://github.com/chasset)! - Level-5 of the amarre test pyramid : Playwright `@playwright/test` smoke E2E driving the full stack (Appwrite + Mailpit + REDCap + amarre dev) end-to-end in a real browser.
+  - New `sandbox/amarre-sandbox/tests/e2e/smoke.spec.ts` (1 test) : signup via the modal → poll Mailpit → visit magic-link → assert authenticated → create a request via the `/api/v1/surveys/new` endpoint → reload and assert the Compléter section appears → logout → assert anonymous state.
+  - New `sandbox/amarre-sandbox/playwright.config.ts` : Chromium project, `webServer` auto-spawns amarre dev with `reuseExistingServer: true`, traces / screenshots / videos retained on failure.
+  - New helpers in `sandbox/amarre-sandbox/tests/e2e/fixtures/` :
+    - `preflight.ts` — Mailpit + Appwrite reachability probes (read `apps/amarre/.env.local` for project + key).
+    - `mailpit.ts` — purge, polling, magic-link extraction.
+    - `appwrite.ts` — admin-API user cleanup.
+  - New scripts in `sandbox/amarre-sandbox/package.json` : `test:smoke`, `test:smoke:headed`.
+  - `apps/amarre/src/routes/+layout.svelte` : Bootstrap JS dynamic-imported in `onMount` so SSR doesn't choke on the UMD bundle's `window` references. CSS still loads at module init via `@univ-lehavre/atlas-ui/client`.
+
+  The suite self-skips via `test.skip(!stackReady, …)` when Mailpit or Appwrite aren't reachable, so `pnpm test:smoke` is safe to run without docker — it just reports "skipped". To exercise the full flow :
+
+  ```bash
+  pnpm -F @univ-lehavre/atlas-amarre-sandbox start         # docker up + bootstrap
+  pnpm -F @univ-lehavre/atlas-amarre-sandbox test:smoke    # runs the smoke
+  ```
+
+  The legacy `scripts/test-e2e-ui.ts` (a raw tsx Playwright script with the same scenario) is left in place for now — phase G of the pyramid plan will remove it once the @playwright/test suite has stabilised in CI.
+
+- [#195](https://github.com/univ-lehavre/atlas/pull/195) [`d253870`](https://github.com/univ-lehavre/atlas/commit/d2538701dc2b0dcba2ba4bdaaa29db91e1b4cffd) Thanks [@chasset](https://github.com/chasset)! - Closes phase G of the amarre test pyramid (post-level-5 housekeeping) and ships a per-user RUNBOOK so any new contributor can run the 5 levels end-to-end from a fresh clone.
+
+  **Cleanup**
+  - Drop the orphan drift-detector utility (`tests/utils/drift-detector.ts` + `tests/integration/drift-detection.test.ts` + `tests/baselines/` + the matching glob in the root `clean` script). Level-2 contract-amarre supersedes it.
+  - Drop the four legacy `scripts/test-e2e*.ts` (tsx scripts predating the Playwright migration). `start.sh`, sandbox README and the smoke spec now point to `pnpm test:smoke`.
+  - Move `tests/server/validators/auth.test.ts` to `tests/lib/server/validators/` so the unit test tree mirrors `src/lib/`.
+
+  **New RUNBOOK** (`apps/amarre/tests/RUNBOOK.md`)
+  - Machine prereqs + first-run recipe (clone → install → `playwright install chromium` → `start`).
+  - Real-data preload via `SEED_MODE=prod` / `.env.prod` with privacy notes.
+  - Per-level command / prereqs / failure-pattern matrix.
+  - Honest "integration in pre-commit / pre-push / CI" table that calls out the actual coverage (level 1 only — N3/N4 self-skip when no docker stack, N2/N5 not wired at all).
+
+  **DX fixes uncovered while running the new RUNBOOK end-to-end**
+  - `pnpm start` now auto-detects `SEED_MODE` from `PROD_CRF_URL` + `PROD_CRF_TOKEN` presence — no more silently defaulting to fake data when prod creds are sitting in `.env.prod`. Explicit `SEED_MODE=...` still overrides.
+  - Four cryptic failures are now structured errors guiding the recovery path :
+    - `bootstrap-crf` / `seed-fake-data` when the gitignored `data-dictionaries/127-amarre-v1.json` is missing (`pnpm crf:dictionaries:export --apply` hint).
+    - `pull-from-prod` when the prod project uses a primary key that differs from the local data dictionary's first field.
+    - `pull-from-prod` reads `record_autonumbering_enabled` from the local project and matches `forceAutoNumber` automatically.
+    - The Playwright smoke surfaces the response body when `POST /api/v1/surveys/new` returns non-2xx.
+  - Fix a race in the Playwright smoke : Bootstrap JS is dynamic-imported in `apps/amarre/src/routes/+layout.svelte`'s `onMount`, the click for the signup modal could fire before `data-bs-toggle` was wired. Test now gates on `window.bootstrap` before the first modal interaction.
+  - `+layout.svelte` re-exposes the Bootstrap exports on `window.bootstrap` after the dynamic import so the contract matches what the raw UMD bundle did pre-Vite (the ESM wrapper otherwise hides them).
+  - Document that `pnpm start` does not leave the amarre dev server running (Playwright spawns and kills its own webServer for the smoke) — both the start.sh final message and the RUNBOOK "Services up" table now spell it out.
+
+  **Docker pins**
+  - `axllent/mailpit:latest` was timing out SMTP sessions before Appwrite's `baas-worker-mails` could finish its `MAIL FROM` exchange. Pin to `axllent/mailpit:v1.20`, add `MP_SMTP_AUTH_ALLOW_INSECURE=true` + `MP_SMTP_DISABLE_RDNS=true`.
+  - Pin `appwrite/appwrite:1.9.0` exact (was floating `:1.9` series tag) so future patch releases don't run schema migrations silently across `docker compose pull`.
+
+- [#198](https://github.com/univ-lehavre/atlas/pull/198) [`69d3dfd`](https://github.com/univ-lehavre/atlas/commit/69d3dfd5754c9ce6ac4e832b0fc28f2830be6772) Thanks [@chasset](https://github.com/chasset)! - Triage complet des 39 alertes CodeQL ouvertes restantes après [#194](https://github.com/univ-lehavre/atlas/issues/194) : 13 fixes en code + 26 dismissals justifiés via gh API (état final attendu après re-scan : 0 alerte ouverte).
+
+  **Fixes code**
+  - `cli/crf-openapi/src/extractor/index.ts` : `execSync(`unzip … ${zipPath} …`)` → `execFileSync('unzip', [...])` (pas de shell, args en tableau). Ferme `js/shell-command-constructed-from-input` (erreur) + `js/shell-command-injection-from-environment`.
+  - `packages/citation-validate/src/store/{loader,saver}.test.ts` : remplace les paths tmp prévisibles (`join(tmpdir(), `…-${Date.now()}.json`)`) par `mkdtempSync(join(tmpdir(), 'atlas-…-'))`. Ferme 5 × `js/insecure-temporary-file`.
+  - `apps/amarre/scripts/manage-baselines.ts` : élimine la TOCTOU `existsSync` + `readFileSync` + `writeFileSync` au profit d'un `try { readFileSync } catch (ENOENT)`. Ferme `js/file-system-race`.
+  - `apps/crf-dashboard/src/routes/api/logs/+server.ts` : supprime la branche `(cache !== null && isCacheStale(cache))` déjà court-circuitée par le `|| cache === null` en amont. Ferme `js/comparison-between-incompatible-types`.
+  - Suppression dead code/imports inutilisés (4 × `js/unused-local-variable` note) :
+    - `apps/ecrin/src/lib/transformers/build-name.ts` : helpers `getID`, `getECRcode` jamais exportés ni utilisés (+ import `ECR` orphelin).
+    - `packages/citation-validate/src/events/updater-effect.test.ts` : helper `provideStores` défini mais les tests appellent `Effect.provideService` inline.
+    - `packages/crf-core/src/validation/validation.test.ts` : imports `EMAIL_PATTERN`, `RECORD_ID_PATTERN`, `VERSION_PATTERN` (testés indirectement via leurs validators).
+
+  **Dismissals (gh API)**
+  - 9 × `js/polynomial-redos` dans `cli/crf-openapi/src/core/parsers/` (`won't fix`) : outil CLI offline parsant des sources REDCap upstream téléchargées manuellement ; input trusted, pas user-provided ; risque DoS limité à la machine de dev.
+  - 16 × `js/file-access-to-http` dans `sandbox/crf-sandbox/tests/`, `sandbox/amarre-sandbox/tests/e2e/` (`used in tests`) : code test/sandbox lisant un token de test depuis `.env.test` pour fetcher `localhost:8888` — pas de prod.
+  - 1 × `js/file-access-to-http` dans `packages/atlas-stats/src/github.ts` (`false positive`) : pattern d'auth GitHub API standard (URL hardcodée, seul l'`Authorization` header dérive d'un file).
+
+- Updated dependencies [[`b09cef1`](https://github.com/univ-lehavre/atlas/commit/b09cef1b12c3f4c8428362727e9772db57148e49), [`142ac8e`](https://github.com/univ-lehavre/atlas/commit/142ac8e8a6d0a899680281f843056f49a1b80157), [`b09cef1`](https://github.com/univ-lehavre/atlas/commit/b09cef1b12c3f4c8428362727e9772db57148e49), [`fc5dfb6`](https://github.com/univ-lehavre/atlas/commit/fc5dfb6244bc116ecae3fb51ceb8828f7dad2cd7)]:
+  - @univ-lehavre/atlas-auth@2.2.0
+  - @univ-lehavre/atlas-ui@0.1.1
+
 ## 3.0.4
 
 ### Patch Changes
