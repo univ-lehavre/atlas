@@ -40,7 +40,7 @@
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
     "changeset:add": "changeset",
-    "changeset:version": "changeset version && pnpm exec prettier --no-config --write '**/CHANGELOG.md'",
+    "changeset:version": "changeset version && pnpm exec prettier --write '**/CHANGELOG.md'",
     "changeset:publish": "turbo build --filter='!./apps/**' && changeset publish",
     "release": "turbo build --filter='!./apps/**' && ./scripts/release/publish-packages.sh",
     "release:deprecate-renamed": "./scripts/release/deprecate-renamed-packages.sh",
