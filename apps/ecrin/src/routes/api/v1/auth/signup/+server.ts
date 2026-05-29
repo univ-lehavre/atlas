@@ -1,40 +1,21 @@
-import { json, type RequestHandler } from '@sveltejs/kit';
-import { createRateLimiter, rateLimitHeaders } from '@univ-lehavre/atlas-auth';
+import { createSignupHandler } from '@univ-lehavre/atlas-auth';
 
 import { signupWithEmail } from '$lib/server/services/authService';
 import { validateSignupEmail } from '$lib/validators/server/auth';
-import { mapErrorToResponse } from '$lib/errors/mapper';
 
-// Rate-limit anti-spam/brute-force par-IP : signup déclenche un email
-// vers l'adresse soumise (Phase 6.5 DevSecOps).
-const limiter = createRateLimiter({ limit: 5, windowMs: 60_000 });
-
-export const POST: RequestHandler = async ({ request, fetch, cookies, getClientAddress }) => {
-  const rate = limiter.check(getClientAddress());
-  if (!rate.ok) {
-    return json(
-      {
-        data: null,
-        error: { code: 'rate_limited', message: 'Trop de tentatives, réessayez plus tard.' },
-      },
-      { status: 429, headers: rateLimitHeaders(rate, limiter.limit) }
-    );
-  }
-
-  try {
-    // Parse form data
+// Spécificités ecrin :
+//   - le formulaire poste un `multipart/form-data` (pas du JSON comme amarre)
+//   - validateSignupEmail est local (lookup async `isAlliance`)
+//   - signupWithEmail attend `{ fetch, cookies }`
+//
+// La factory ajoute `createdAt` à la réponse (vs `{ data: { signedUp: true } }`
+// précédemment). Champ supplémentaire purement additif — non-breaking.
+export const POST = createSignupHandler({
+  extractEmail: async (request) => {
     const form = await request.formData();
-    const unsecuredEmail = String(form.get('email') || '').trim();
-    const email = await validateSignupEmail(unsecuredEmail);
-
-    // Perform signup
-    await signupWithEmail(email, { fetch, cookies });
-
-    return json(
-      { data: { signedUp: true }, error: null },
-      { status: 200, headers: rateLimitHeaders(rate, limiter.limit) }
-    );
-  } catch (error: unknown) {
-    return mapErrorToResponse(error);
-  }
-};
+    return String(form.get('email') || '').trim();
+  },
+  validateEmail: validateSignupEmail,
+  signupWithEmail: (email, event) =>
+    signupWithEmail(email, { fetch: event.fetch, cookies: event.cookies }),
+});
