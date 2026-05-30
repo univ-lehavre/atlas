@@ -22,23 +22,28 @@ export default defineConfig({
     expect: { requireAssertions: true },
 
     coverage: coverageConfig({
-      reporter: process.env.CI ? 'text' : ['text', 'html', 'lcov'],
+      // 'json' requis dans les deux modes pour que `coverage-final.json`
+      // soit lu par `scripts/audit/coverage-report.mjs`. 'lcov' conservé
+      // en local pour les éventuels outils tiers ; le default de
+      // shared-config est aussi ['text', 'json'] en CI.
+      reporter: process.env.CI ? ['text', 'json'] : ['text', 'html', 'lcov', 'json'],
       reportsDirectory: './coverage',
-      include: ['src/lib/**/*.ts'],
-      exclude: [
-        'src/lib/**/*.test.ts',
-        'src/lib/**/*.spec.ts',
-        'src/lib/**/index.ts',
-        'src/lib/**/*.d.ts',
-      ],
-      // Seuils baissés après dédup validators (les branches de validation ont
-      // migré dans @univ-lehavre/atlas-auth, hors périmètre de coverage local).
-      // À remonter en migrant aussi les tests des validators dans le package.
+      // Phase 2.3 — include élargi à `src/**` pour mesurer aussi
+      // routes/, endpoints et hooks.server.ts. Avant : seul `src/lib/**`
+      // était mesuré, les routes restaient invisibles.
+      include: ['src/**/*.{ts,svelte}'],
+      exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/index.ts', 'src/**/*.d.ts'],
+      // Phase 2.3 — Seuils à (réel mesuré 2026-05-30 avec include
+      // élargi à `src/**/*.{ts,svelte}` − 2 pts) :
+      // 19.34/10.86/14.31/21.10. La baisse vs avant (~58/41/40/58)
+      // vient du dénominateur ×4 : `src/routes/**` et composants
+      // Svelte étaient invisibles auparavant. Renforcement en Phase 3.
+      // Voir docs/decisions/0019-derogations-workspace-audit.md.
       thresholds: {
-        statements: 58,
-        branches: 41,
-        functions: 40,
-        lines: 58,
+        statements: 17,
+        branches: 8,
+        functions: 12,
+        lines: 19,
       },
     }),
 

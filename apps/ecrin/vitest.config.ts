@@ -8,11 +8,12 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
     coverage: coverageConfig({
-      // Seuils restaurés à leur valeur d'origine après ajout des tests
-      // handlers /graphs et /auth/signup (Phase 7.2). hooks.server.ts reste
-      // partiellement non couvert mais la couverture globale repasse au-dessus
-      // du seuil grâce aux nouveaux tests.
-      thresholds: { statements: 28, branches: 18, functions: 27, lines: 28 },
+      // Phase 2.2 — Resserrés à (réel mesuré 2026-05-30 − 2 pts) :
+      // 40.14/27.61/33.33/41.13. La couverture réelle dépasse les
+      // anciens seuils de 12 points (statements) ; on ferme l'écart
+      // pour que toute régression de routes/handlers soit signalée
+      // immédiatement. Renforcement supplémentaire en Phase 3.
+      thresholds: { statements: 38, branches: 25, functions: 31, lines: 39 },
     }),
   },
   resolve: {
