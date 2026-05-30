@@ -26,6 +26,7 @@
     "@types/node": "^25.9.1",
     "@univ-lehavre/atlas-logos-cli": "workspace:*",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "@univ-lehavre/atlas-test-utils-sveltekit": "workspace:*",
     "eslint": "^10.4.0",
     "prettier": "^3.8.3",
     "prettier-plugin-svelte": "^3.5.2",

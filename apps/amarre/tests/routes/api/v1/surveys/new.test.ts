@@ -107,4 +107,38 @@ describe('POST /api/v1/surveys/new (anti-derive OpenAPI)', () => {
     expect(body.error).toBeNull();
     expect(body.data).toMatchObject({ newRequestCreated: 1 });
   });
+
+  it('mappe les erreurs upstream sur une réponse JSON (payload malformé)', async () => {
+    // L'endpoint n'a pas de body côté client : le "payload malformé"
+    // utile à tester est un payload upstream invalide remonté par
+    // `/api/v1/me`. On force ce cas et on vérifie que `mapErrorToResponse`
+    // remonte bien une enveloppe JSON ≠ 200.
+    const services = await import('$lib/server/services/surveys');
+    const newRequest = services.newRequest as unknown as ReturnType<typeof vi.fn>;
+    newRequest.mockClear();
+
+    const mockFetch = vi.fn(async (input: RequestInfo | URL) => {
+      const url = input.toString();
+      if (url === '/api/v1/me') {
+        // Réponse malformée : json() jette → le handler doit mapper
+        // l'erreur en réponse JSON.
+        return {
+          json: vi.fn().mockRejectedValue(new Error('malformed JSON in upstream response')),
+        };
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+
+    const mod = await import('../../../../../src/routes/api/v1/surveys/new/+server');
+    const res = await mod.POST({
+      locals: { userId: 'user_1' },
+      fetch: mockFetch,
+    } as never);
+
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(res.headers.get('content-type')).toContain('application/json');
+    const body = await res.json();
+    expect(body).toMatchObject({ data: null, error: { code: expect.any(String) } });
+    expect(newRequest).not.toHaveBeenCalled();
+  });
 });

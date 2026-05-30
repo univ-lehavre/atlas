@@ -190,8 +190,11 @@ volumes:
 networks:
   baas-net:
     driver: bridge
-  # Déclaré ici pour pouvoir l'attacher au service `baas`. Le réseau réel
-  # est défini par crf-sandbox/docker/docker-compose.yml (inclus ci-dessus)
-  # — Compose le déduplique au merge.
-  redcap-net:
-    external: false
+  # `redcap-net` est défini par `crf-sandbox/docker/docker-compose.yml`
+  # (inclus ci-dessus via `include:`). On ne le redéclare PAS ici : sur
+  # Docker Compose v2 strict (utilisé par GitHub Actions), redéclarer
+  # le même nom avec une signature différente (`external: false` vs
+  # `driver: bridge`) déclenche « networks.redcap-net conflicts with
+  # imported resource » au parse-time. Le service `baas` peut référencer
+  # `redcap-net` sans le redéclarer — Compose résout la référence dans
+  # les imports.
