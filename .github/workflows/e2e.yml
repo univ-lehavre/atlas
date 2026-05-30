@@ -83,7 +83,7 @@ jobs:
 
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@d2fcbd1c0e64b58b29bca6671a76d59cb1c19a83 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: amarre-playwright-report
           path: sandbox/amarre-sandbox/playwright-report/
@@ -134,7 +134,7 @@ jobs:
 
       - name: Upload Playwright report on failure
         if: failure()
-        uses: actions/upload-artifact@d2fcbd1c0e64b58b29bca6671a76d59cb1c19a83 # v5
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: sillage-playwright-report
           path: sandbox/sillage-sandbox/playwright-report/
