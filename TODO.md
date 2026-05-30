@@ -22,6 +22,18 @@ Voir l'[index des ADR](docs/decisions/README.md) pour la liste complète.
 
 ---
 
+## Audits
+
+Les rapports d'audit transverses du dépôt sont consignés sous
+[`docs/audit/`](docs/audit/). Dernier audit en date :
+[2026-05-29 — Audit complet](docs/audit/2026-05-29.md) (workflow
+multi-agents, 22 dimensions, 51 findings retenus dont 8 High).
+
+Les findings actionnables remontent ici (section « En cours / à faire »)
+ou ouvrent un ADR si leur résolution implique une décision structurante.
+
+---
+
 ## En cours / à faire
 
 Items concrets et actionnables, par thème.
