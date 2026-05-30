@@ -90,20 +90,23 @@ expérimental non publié) :
 **Temporairement sous-testés** (renforcement planifié, voir [plan de
 résorption 2026-05-30](https://github.com/univ-lehavre/atlas/blob/main/docs/plans/2026-05-30-resorption.md)) :
 
-| Paquet                    | Seuils actuels (S/B/F/L) | Cible Phase | Raison de l'exemption temporaire                                                                                                |
-| ------------------------- | ------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/atlas-stats`    | 6/2/9/6                  | Phase 3     | Include élargi à `src/**` en Phase 1.4 ; tests `cache/cli/github/npm` ajoutés en Phase 3.                                       |
-| `services/crf`            | 17/14/24/18              | Phase 3.1   | Microservice ingestion REDCap sous-testé ; renforcement en Phase 3 (cible : 70% statements min.).                               |
-| `apps/ecrin`              | 38/25/31/39              | Phase 3     | Seuils resserrés en Phase 2.2 (réel ≈ 40/28/33/41) ; routes API restent à couvrir en Phase 3.                                   |
-| `apps/amarre`             | 48/55/29/52              | Phase 2.1   | Seuils resserrés en Phase 2.1 au réel mesuré (50.92/57.14/31.25/54.87).                                                         |
-| `apps/find-an-expert`     | 17/8/12/19               | Phase 3     | Include élargi à `src/**/*.{ts,svelte}` en Phase 2.3 (dénominateur ×4) ; routes Svelte et endpoints non testés, ajouts Phase 3. |
-| `cli/biblio`              | 0/0/0/0                  | Phase 3     | À 0% statements ; tests prévus Phase 3 (alignement sur `cli/crf` et `cli/net`).                                                 |
-| `cli/citation`            | 0/0/0/0                  | Phase 3     | Idem.                                                                                                                           |
-| `cli/atlas-stats`         | 0/0/0/0                  | Phase 3     | Idem.                                                                                                                           |
-| `cli/crf-stats`           | 0/0/0/0                  | Phase 3     | Idem.                                                                                                                           |
-| `cli/researcher-profiles` | 0/0/0/0                  | Phase 3     | Idem.                                                                                                                           |
-| `cli/crf`                 | 62/62/76/60              | Phase 3     | Seuils resserrés en Phase 2.6 au réel (64.59/64.70/78.43/62.71) ; bin entry points à tester en Phase 3 pour passer > 90%.       |
-| `cli/net`                 | 48/42/38/49              | Phase 3     | Seuils resserrés en Phase 2.6 au réel (50.48/44.11/40.00/51.51) ; renforcement à 80% en Phase 3.                                |
+| Paquet                | Seuils actuels (S/B/F/L) | Cible Phase suivante | Raison de l'exemption temporaire                                                                                                                                 |
+| --------------------- | ------------------------ | -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/amarre`         | 48/55/29/52              | Phase ultérieure     | Seuils resserrés en Phase 2.1 au réel mesuré (50.92/57.14/31.25/54.87). Renforcement nécessite un effort UI/SvelteKit hors scope Phase 3.                        |
+| `apps/ecrin`          | 38/25/31/39              | Phase ultérieure     | Seuils resserrés en Phase 2.2 au réel (40.14/27.61/33.33/41.13). Routes API à couvrir, idem.                                                                     |
+| `apps/find-an-expert` | 17/8/12/19               | Phase ultérieure     | Include élargi à `src/**/*.{ts,svelte}` en Phase 2.3 (dénominateur ×4). Renforcement routes Svelte et endpoints à venir.                                         |
+| `cli/crf`             | 62/62/76/60              | Phase ultérieure     | Seuils resserrés en Phase 2.6 au réel (64.59/64.70/78.43/62.71). Les bin entry points (api/index, server/index) ont un setup `@effect/cli` lourd à instrumenter. |
+| `cli/net`             | 48/42/38/49              | Phase ultérieure     | Seuils resserrés en Phase 2.6 au réel (50.48/44.11/40.00/51.51). Renforcement à 80%+ à planifier.                                                                |
+
+**Renforcés en Phase 3 — historique** : la Phase 3 du plan de résorption a fait passer 6 paquets de 0–17% à 93–100% statements ; ils sortent donc de ce tableau et passent à la cible générale 80% :
+
+- `services/crf` : 17.54% → **93.56%** (5 fichiers test routes + middleware ajoutés).
+- `packages/atlas-stats` : 6.72% → **renforcé** (4 fichiers test cache/cli/github/npm).
+- `cli/biblio` : 0% → **100%** (commands/index intégralement couvert).
+- `cli/citation` : 0% → **98.13%** (config/prompts/commands testés).
+- `cli/atlas-stats` : 0% → **94.73%** (config/output/commands testés).
+- `cli/crf-stats` : 0% → **94.90%** (config/output/commands testés).
+- `cli/researcher-profiles` : 0% → **94.49%** (9 fichiers test sur 10 modules).
 
 Toute exemption supplémentaire doit être ajoutée à ce tableau dans la
 PR qui l'introduit. Tout seuil temporairement abaissé doit pointer la

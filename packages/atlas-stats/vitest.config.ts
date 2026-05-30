@@ -4,14 +4,11 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     coverage: coverageConfig({
-      // Include élargi de `src/compute.ts` à tout `src/**`. Les seuils
-      // ci-dessous sont temporairement abaissés à la couverture réelle
-      // observée le 2026-05-30 (6.72 / 2.16 / 9.37 / 6.34) moins une marge
-      // d'un point, le temps que la Phase 3 du plan de résorption ajoute
-      // les tests manquants (cache.ts, cli.ts, github.ts, npm.ts).
-      // Voir docs/decisions/0019-derogations-workspace-audit.md.
+      // Phase 3.7 — Seuils relevés après ajout de 47 tests sur cache, cli,
+      // github, npm. Réel mesuré 2026-05-30 : 95.96/89.18/100.00/96.97.
+      // Marge de 3 pts.
       include: ["src/**/*.ts"],
-      thresholds: { statements: 6, branches: 2, functions: 9, lines: 6 },
+      thresholds: { statements: 92, branches: 86, functions: 95, lines: 93 },
     }),
   },
 });
