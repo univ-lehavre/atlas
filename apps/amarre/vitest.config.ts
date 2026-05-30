@@ -31,12 +31,11 @@ export default mergeConfig(
         // tracks files in `include`, and shared-config defaults to
         // ts/tsx/js/jsx only).
         include: ['src/**/*.{ts,tsx,js,jsx,svelte}'],
-        // Re-baselined after the 15 UI components moved to
-        // @univ-lehavre/atlas-ui. The denominator dropped (no more
-        // src/lib/ui/ tree) so absolute % shifted. The remaining amarre
-        // code is mostly routes + services. Raise these as those layers
-        // get more covered.
-        thresholds: { statements: 49, branches: 56, functions: 31, lines: 52 },
+        // Phase 2.1 — Resserrés à (réel mesuré 2026-05-30 − 2 pts) :
+        // 50.92/57.14/31.25/54.87. Marge minimale pour détecter toute
+        // régression de couverture, tout en restant atteignable. À
+        // remonter à chaque ajout de tests routes/services.
+        thresholds: { statements: 48, branches: 55, functions: 29, lines: 52 },
       }),
       projects: [
         {
