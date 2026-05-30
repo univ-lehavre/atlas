@@ -9,10 +9,11 @@ export default withMermaid(
     lang: "fr-FR",
     base: "/atlas/",
     rewrites: {
-      // L'index des ADR est en README.md (convention GitHub) ; on le
-      // remappe sur index.md pour que `/decisions/` résolve dans
+      // Les index des sections sont en README.md (convention GitHub) ;
+      // on les remappe sur index.md pour que `/section/` résolve dans
       // VitePress.
       "decisions/README.md": "decisions/index.md",
+      "audit/README.md": "audit/index.md",
     },
     ignoreDeadLinks: [
       // URLs localhost utilisées comme exemples dans la doc CI/dev (pas
@@ -25,6 +26,7 @@ export default withMermaid(
         { text: "Qualité", link: "/quality/ci-pipeline" },
         { text: "Collaboration", link: "/collaboration/workflow" },
         { text: "Décisions", link: "/decisions/" },
+        { text: "Audits", link: "/audit/" },
         { text: "Glossaire", link: "/glossary" },
       ],
       sidebar: {
@@ -143,6 +145,18 @@ export default withMermaid(
               {
                 text: "0019 — Dérogations workspace audit",
                 link: "/decisions/0019-derogations-workspace-audit",
+              },
+            ],
+          },
+        ],
+        "/audit/": [
+          {
+            text: "Audits",
+            items: [
+              { text: "Index", link: "/audit/" },
+              {
+                text: "2026-05-29 — Audit complet",
+                link: "/audit/2026-05-29",
               },
             ],
           },
