@@ -72,6 +72,42 @@ règle. Toute dérogation **doit** être enregistrée :
   `low`. Tightening au cas par cas : avant chaque montée du seuil, on
   vérifie qu'il y a 0 alerte moderate.
 
+### Seuils de couverture de tests
+
+Cible générale : `pnpm coverage:report` exécuté en CI et pre-push exige
+qu'un paquet **publié ou déployé** atteigne **80% de statements** (voir
+[`scripts/audit/coverage-report.mjs`](https://github.com/univ-lehavre/atlas/blob/main/scripts/audit/coverage-report.mjs)).
+Les paquets ci-dessous sont **explicitement exemptés** ou autorisés à
+déclarer un seuil inférieur, avec la raison.
+
+**Exemptés par nature** (aucun code exécutable à couvrir, ou code
+expérimental non publié) :
+
+- [`assets/logos`](https://github.com/univ-lehavre/atlas/tree/main/assets/logos) — paquet d'assets statiques (SVG/PNG) sans logique. Le seul script présent est un check de présence.
+- [`apps/atlas-dashboard`](https://github.com/univ-lehavre/atlas/tree/main/apps/atlas-dashboard), [`apps/crf-dashboard`](https://github.com/univ-lehavre/atlas/tree/main/apps/crf-dashboard) — dashboards internes, `private: true` ([ADR 0011](0011-paquets-internes-private.md)), pas déployés, contenu visualisation pure.
+- [`sandbox/crf-sandbox`](https://github.com/univ-lehavre/atlas/tree/main/sandbox/crf-sandbox) — banc d'essai par construction, hors périmètre tests.
+
+**Temporairement sous-testés** (renforcement planifié, voir [plan de
+résorption 2026-05-30](https://github.com/univ-lehavre/atlas/blob/main/docs/plans/2026-05-30-resorption.md)) :
+
+| Paquet                    | Seuils actuels (S/B/F/L) | Cible Phase | Raison de l'exemption temporaire                                                                  |
+| ------------------------- | ------------------------ | ----------- | ------------------------------------------------------------------------------------------------- |
+| `packages/atlas-stats`    | 6/2/9/6                  | Phase 3     | Include élargi à `src/**` en Phase 1.4 ; tests `cache/cli/github/npm` ajoutés en Phase 3.         |
+| `services/crf`            | 17/14/24/18              | Phase 3.1   | Microservice ingestion REDCap sous-testé ; renforcement en Phase 3 (cible : 70% statements min.). |
+| `apps/ecrin`              | 28/18/27/28              | Phase 2-3   | Routes API peu couvertes ; resserrement Phase 2.2, renforcement Phase 3.                          |
+| `apps/amarre`             | 49/56/31/52              | Phase 2.1   | Seuils déclarés inférieurs à la couverture réelle (écart 25 pts) ; resserrement Phase 2.1.        |
+| `cli/biblio`              | 0/0/0/0                  | Phase 3     | À 0% statements ; tests prévus Phase 3 (alignement sur `cli/crf` et `cli/net`).                   |
+| `cli/citation`            | 0/0/0/0                  | Phase 3     | Idem.                                                                                             |
+| `cli/atlas-stats`         | 0/0/0/0                  | Phase 3     | Idem.                                                                                             |
+| `cli/crf-stats`           | 0/0/0/0                  | Phase 3     | Idem.                                                                                             |
+| `cli/researcher-profiles` | 0/0/0/0                  | Phase 3     | Idem.                                                                                             |
+| `cli/crf`                 | 0/0/0/0                  | Phase 2     | Couverture réelle ~64% (PR #214) mais seuil déclaré à 0 ; à resserrer Phase 2.                    |
+| `cli/net`                 | 0/0/0/0                  | Phase 2     | Couverture réelle ~50% (PR #216) ; à resserrer Phase 2.                                           |
+
+Toute exemption supplémentaire doit être ajoutée à ce tableau dans la
+PR qui l'introduit. Tout seuil temporairement abaissé doit pointer la
+phase qui le rétablira.
+
 ### Rate-limit
 
 - **Rate-limit absent** sur `/auth/login` (secret magic URL haute

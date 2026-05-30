@@ -103,6 +103,18 @@ pre-push:
       run: pnpm test:coverage
       priority: 3
 
+    coverage-report:
+      # Phase 1.2 : vérifie que chaque paquet vitest a bien un rapport de
+      # coverage (échec si « missing ») et, à terme, que la couverture
+      # atteint la cible. Cible passée à 0 pendant les Phases 1-3, puis
+      # resserrée à 80 en fin de Phase 3.
+      run: pnpm coverage:report 0
+      priority: 4
+
+    test-scripts:
+      run: pnpm test:scripts
+      priority: 4
+
     cpd:
       run: pnpm audit:duplicates
       priority: 4
