@@ -14,6 +14,7 @@ export default withMermaid(
       // VitePress.
       "decisions/README.md": "decisions/index.md",
       "audit/README.md": "audit/index.md",
+      "plans/README.md": "plans/index.md",
     },
     ignoreDeadLinks: [
       // URLs localhost utilisées comme exemples dans la doc CI/dev (pas
@@ -27,6 +28,7 @@ export default withMermaid(
         { text: "Collaboration", link: "/collaboration/workflow" },
         { text: "Décisions", link: "/decisions/" },
         { text: "Audits", link: "/audit/" },
+        { text: "Plans", link: "/plans/" },
         { text: "Glossaire", link: "/glossary" },
       ],
       sidebar: {
@@ -157,6 +159,22 @@ export default withMermaid(
               {
                 text: "2026-05-29 — Audit complet",
                 link: "/audit/2026-05-29",
+              },
+            ],
+          },
+        ],
+        "/plans/": [
+          {
+            text: "Plans",
+            items: [
+              { text: "Index", link: "/plans/" },
+              {
+                text: "2026-05-30 — Plan de résorption",
+                link: "/plans/2026-05-30-resorption",
+              },
+              {
+                text: "2026-05-30 — Rapport de validation",
+                link: "/plans/2026-05-30-resorption-validation",
               },
             ],
           },
