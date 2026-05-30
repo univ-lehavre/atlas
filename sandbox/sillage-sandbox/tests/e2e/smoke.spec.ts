@@ -29,6 +29,10 @@ const stackReady = await isStackReachable();
 const TEST_PREFIX = "sillage-e2e-";
 const testEmail = (): string => `${TEST_PREFIX}${Date.now()}@example.org`;
 
+// Phase 4.8 — Retries configurés au cas où la stack docker (Appwrite +
+// MongoDB + Mailpit) répond lentement sur le premier essai.
+test.describe.configure({ retries: 1 });
+
 test.describe("sillage smoke — full stack", () => {
   test.skip(
     !stackReady,
@@ -37,14 +41,16 @@ test.describe("sillage smoke — full stack", () => {
 
   let capturedUserId: string | null = null;
 
-  test.beforeEach(async () => {
+  test.beforeEach(async ({ context }) => {
     await purgeMailpit();
+    await context.clearCookies();
     capturedUserId = null;
   });
 
-  test.afterEach(async () => {
+  test.afterEach(async ({ context }) => {
     if (capturedUserId) await deleteAppwriteUser(capturedUserId);
     await purgeMailpit();
+    await context.clearCookies();
   });
 
   test("signup → magic-link → authenticated → logout", async ({ page }) => {

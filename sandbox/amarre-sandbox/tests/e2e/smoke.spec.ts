@@ -31,6 +31,12 @@ const stackReady = await isStackReachable();
 const TEST_PREFIX = "amarre-e2e-";
 const testEmail = (): string => `${TEST_PREFIX}${Date.now()}@example.org`;
 
+// Phase 4.8 — Retries configurés au cas où la stack docker (Appwrite +
+// Mailpit + REDCap) répond lentement sur le premier essai. `retries: 1`
+// laisse une seconde chance avant l'échec ; Playwright relance
+// l'intégralité du test (fresh page, fresh Bootstrap state).
+test.describe.configure({ retries: 1 });
+
 test.describe("amarre smoke — full stack", () => {
   test.skip(
     !stackReady,
@@ -39,14 +45,20 @@ test.describe("amarre smoke — full stack", () => {
 
   let capturedUserId: string | null = null;
 
-  test.beforeEach(async () => {
+  // Cleanup explicite avant chaque test : purge Mailpit (boîte vierge)
+  // et reset l'éventuelle session Bootstrap. Sans ça, un test précédent
+  // qui aurait laissé une modal ouverte ou un cookie de session
+  // pollue le suivant.
+  test.beforeEach(async ({ context }) => {
     await purgeMailpit();
+    await context.clearCookies();
     capturedUserId = null;
   });
 
-  test.afterEach(async () => {
+  test.afterEach(async ({ context }) => {
     if (capturedUserId) await deleteAppwriteUser(capturedUserId);
     await purgeMailpit();
+    await context.clearCookies();
   });
 
   test("signup → magic-link → create request → logout", async ({ page }) => {

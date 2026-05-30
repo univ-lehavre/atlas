@@ -33,17 +33,15 @@ export default defineConfig({
       // était mesuré, les routes restaient invisibles.
       include: ['src/**/*.{ts,svelte}'],
       exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/index.ts', 'src/**/*.d.ts'],
-      // Phase 2.3 — Seuils à (réel mesuré 2026-05-30 avec include
-      // élargi à `src/**/*.{ts,svelte}` − 2 pts) :
-      // 19.34/10.86/14.31/21.10. La baisse vs avant (~58/41/40/58)
-      // vient du dénominateur ×4 : `src/routes/**` et composants
-      // Svelte étaient invisibles auparavant. Renforcement en Phase 3.
-      // Voir docs/decisions/0019-derogations-workspace-audit.md.
+      // Phase 4.4 — Resserrés après ajout de 14 fichiers test endpoint
+      // (200/401/anti-XSS sur 8 endpoints, payload malformé).
+      // Réel mesuré 2026-05-30 (post-Phase 4) :
+      // 24.80/14.58/17.89/27.38. Marge de 2 pts.
       thresholds: {
-        statements: 17,
-        branches: 8,
-        functions: 12,
-        lines: 19,
+        statements: 22,
+        branches: 12,
+        functions: 15,
+        lines: 25,
       },
     }),
 

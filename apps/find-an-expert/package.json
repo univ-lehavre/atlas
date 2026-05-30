@@ -28,6 +28,7 @@
     "@types/swagger-ui-dist": "^3.30.6",
     "@univ-lehavre/atlas-logos-cli": "workspace:*",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "@univ-lehavre/atlas-test-utils-sveltekit": "workspace:*",
     "@vitest/coverage-v8": "^4.1.7",
     "eslint": "^10.4.0",
     "jscpd": "^4.0.9",

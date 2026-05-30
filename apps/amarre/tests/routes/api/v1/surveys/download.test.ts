@@ -38,4 +38,24 @@ describe('GET /api/v1/surveys/download (anti-derive OpenAPI)', () => {
     expect(body.error).toBeNull();
     expect(body.data).toEqual(mockSurveyData);
   });
+
+  it('mappe les erreurs upstream sur une réponse JSON (payload malformé)', async () => {
+    // L'endpoint n'a pas de body/query, mais il dépend d'un service
+    // amont qui peut renvoyer un payload qu'il ne sait pas
+    // décoder/valider. On vérifie que le mapper relaie alors une
+    // réponse JSON cohérente (≠ 200) plutôt qu'une 500 brute non
+    // documentée.
+    const services = await import('$lib/server/services/surveys');
+    const downloadSurvey = services.downloadSurvey as unknown as ReturnType<typeof vi.fn>;
+
+    downloadSurvey.mockRejectedValueOnce(new Error('upstream returned malformed payload'));
+
+    const mod = await import('../../../../../src/routes/api/v1/surveys/download/+server');
+    const res = await mod.GET({ locals: { userId: 'user_1' }, fetch: vi.fn() } as never);
+
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(res.headers.get('content-type')).toContain('application/json');
+    const body = await res.json();
+    expect(body).toMatchObject({ data: null, error: { code: expect.any(String) } });
+  });
 });

@@ -31,11 +31,11 @@ export default mergeConfig(
         // tracks files in `include`, and shared-config defaults to
         // ts/tsx/js/jsx only).
         include: ['src/**/*.{ts,tsx,js,jsx,svelte}'],
-        // Phase 2.1 — Resserrés à (réel mesuré 2026-05-30 − 2 pts) :
-        // 50.92/57.14/31.25/54.87. Marge minimale pour détecter toute
-        // régression de couverture, tout en restant atteignable. À
-        // remonter à chaque ajout de tests routes/services.
-        thresholds: { statements: 48, branches: 55, functions: 29, lines: 52 },
+        // Phase 4.5 — Resserrés après ajout des tests d'endpoints
+        // co-localisés sous `src/**/server.test.ts`. Réel mesuré
+        // 2026-05-30 (post-Phase 4) : 54.27/57.14/34.37/58.53.
+        // Marge de 2 pts.
+        thresholds: { statements: 52, branches: 55, functions: 32, lines: 56 },
       }),
       projects: [
         {
@@ -44,9 +44,10 @@ export default mergeConfig(
             name: 'unit',
             environment: 'node',
             // Everything except the `tests/ui/` and `tests/integration/`
-            // trees. Keeps the original pre-pyramid test layout working
-            // unchanged.
-            include: ['tests/**/*.test.ts'],
+            // trees. Inclut aussi les tests d'endpoints co-localisés
+            // sous `src/**` (pattern moderne ajouté en Phase 4.5 du
+            // plan de résorption).
+            include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
             exclude: ['tests/ui/**', 'tests/integration/**', 'node_modules/**', 'dist/**'],
           },
         },

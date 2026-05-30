@@ -1,0 +1,146 @@
+name: E2E (Playwright)
+
+# Phase 4.1 — Lance les smoke tests Playwright des sandboxes amarre et
+# sillage en CI. La stack docker complète (Appwrite + Mailpit + REDCap
+# pour amarre, MongoDB + Appwrite pour sillage) est démarrée par
+# `pnpm start`, puis on attend que les services répondent avant de
+# lancer les tests.
+#
+# Triggers :
+#   - schedule : nightly à 03:00 UTC (réduit le bruit sur les PR
+#     classiques, capte les régressions de stack docker au pire
+#     toutes les 24h).
+#   - workflow_dispatch : déclenchement manuel pour debugger.
+#   - pull_request : uniquement quand le diff touche les sandboxes,
+#     les apps concernées ou ce workflow lui-même.
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/amarre/**"
+      - "apps/sillage/**"
+      - "sandbox/amarre-sandbox/**"
+      - "sandbox/sillage-sandbox/**"
+      - ".github/workflows/e2e.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  amarre-e2e:
+    name: E2E amarre
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers (chromium only)
+        run: pnpm --filter=@univ-lehavre/atlas-amarre-sandbox exec playwright install --with-deps chromium
+
+      - name: Create amarre .env from .env.example
+        run: cp apps/amarre/.env.example apps/amarre/.env 2>/dev/null || true
+
+      - name: Start sandbox stack (Appwrite + Mailpit + REDCap)
+        run: pnpm --filter=@univ-lehavre/atlas-amarre-sandbox start
+        timeout-minutes: 10
+
+      - name: Wait for Appwrite to be reachable
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost/v1/health > /dev/null 2>&1; then
+              echo "Appwrite ready after ${i}0s"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Appwrite did not become ready within 5 minutes" >&2
+          exit 1
+
+      - name: Run Playwright smoke
+        run: pnpm --filter=@univ-lehavre/atlas-amarre-sandbox test:smoke
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@d2fcbd1c0e64b58b29bca6671a76d59cb1c19a83 # v5
+        with:
+          name: amarre-playwright-report
+          path: sandbox/amarre-sandbox/playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Stop sandbox stack
+        if: always()
+        run: pnpm --filter=@univ-lehavre/atlas-amarre-sandbox stop
+
+  sillage-e2e:
+    name: E2E sillage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers (chromium only)
+        run: pnpm --filter=@univ-lehavre/atlas-sillage-sandbox exec playwright install --with-deps chromium
+
+      - name: Start sandbox stack (Appwrite + MongoDB)
+        run: pnpm --filter=@univ-lehavre/atlas-sillage-sandbox start
+        timeout-minutes: 10
+
+      - name: Wait for Appwrite to be reachable
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost/v1/health > /dev/null 2>&1; then
+              echo "Appwrite ready after ${i}0s"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Appwrite did not become ready within 5 minutes" >&2
+          exit 1
+
+      - name: Run Playwright smoke
+        run: pnpm --filter=@univ-lehavre/atlas-sillage-sandbox test:smoke
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@d2fcbd1c0e64b58b29bca6671a76d59cb1c19a83 # v5
+        with:
+          name: sillage-playwright-report
+          path: sandbox/sillage-sandbox/playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Stop sandbox stack
+        if: always()
+        run: pnpm --filter=@univ-lehavre/atlas-sillage-sandbox stop

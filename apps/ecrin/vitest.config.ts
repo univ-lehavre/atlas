@@ -8,12 +8,10 @@ export default defineConfig({
     globals: true,
     include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
     coverage: coverageConfig({
-      // Phase 2.2 — Resserrés à (réel mesuré 2026-05-30 − 2 pts) :
-      // 40.14/27.61/33.33/41.13. La couverture réelle dépasse les
-      // anciens seuils de 12 points (statements) ; on ferme l'écart
-      // pour que toute régression de routes/handlers soit signalée
-      // immédiatement. Renforcement supplémentaire en Phase 3.
-      thresholds: { statements: 38, branches: 25, functions: 31, lines: 39 },
+      // Phase 4.3 — Resserrés après ajout de 10 fichiers test endpoint
+      // (200/401/payload malformé). Réel mesuré 2026-05-30 (post-Phase
+      // 4) : 54.18/36.56/39.81/55.78. Marge de 2 pts.
+      thresholds: { statements: 52, branches: 34, functions: 37, lines: 53 },
     }),
   },
   resolve: {

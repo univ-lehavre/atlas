@@ -60,4 +60,24 @@ describe('GET /api/v1/surveys/list (anti-derive OpenAPI)', () => {
     expect(body.error).toBeNull();
     expect(Array.isArray(body.data)).toBe(true);
   });
+
+  it('mappe les erreurs upstream sur une réponse JSON (payload malformé)', async () => {
+    // L'endpoint n'a ni body ni query ; le "payload malformé" pertinent
+    // ici est un payload upstream que `listRequests` ne sait pas
+    // valider. On vérifie que le handler ne laisse pas fuiter une 500
+    // HTML mais renvoie bien l'enveloppe JSON normalisée par
+    // mapErrorToResponse.
+    const services = await import('$lib/server/services/surveys');
+    const listRequests = services.listRequests as unknown as ReturnType<typeof vi.fn>;
+
+    listRequests.mockRejectedValueOnce(new Error('upstream returned malformed payload'));
+
+    const mod = await import('../../../../../src/routes/api/v1/surveys/list/+server');
+    const res = await mod.GET({ locals: { userId: 'user_1' }, fetch: vi.fn() } as never);
+
+    expect(res.status).toBeGreaterThanOrEqual(400);
+    expect(res.headers.get('content-type')).toContain('application/json');
+    const body = await res.json();
+    expect(body).toMatchObject({ data: null, error: { code: expect.any(String) } });
+  });
 });
