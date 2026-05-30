@@ -1,7 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { relative } from "node:path";
-import { fileURLToPath } from "node:url";
 
 // Parse args separately so the helper is testable.
 // Usage: node coverage-report.mjs [target] [--strict] [--max-skipped=N]
@@ -135,10 +134,11 @@ const summarizeRows = (rows) => {
 const SHORT_PREFIX = "@univ-lehavre/atlas-";
 const shortName = (name) => name.replace(SHORT_PREFIX, "");
 
+// Try to read the file directly rather than stat-then-read. Avoids a
+// TOCTOU (time-of-check to time-of-use) gap that CodeQL flags as a
+// potential file-system race condition.
 const countLines = (path) => {
   try {
-    if (!existsSync(path)) return null;
-    if (!statSync(path).isFile()) return null;
     return readFileSync(path, "utf8").split("\n").length;
   } catch {
     return null;
