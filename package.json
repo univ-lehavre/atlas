@@ -26,6 +26,8 @@
     "test": "turbo test",
     "test:coverage": "turbo test:coverage",
     "coverage:report": "node scripts/audit/coverage-report.mjs",
+    "coverage:report:strict": "node scripts/audit/coverage-report.mjs --strict",
+    "test:scripts": "node --test scripts/audit/*.test.mjs",
     "ci:checks": "turbo run format:check check lint typecheck test:coverage build",
     "audit:security": "pnpm audit --audit-level=moderate",
     "audit:licenses": "node scripts/audit/licenses.mjs",

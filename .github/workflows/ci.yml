@@ -119,6 +119,14 @@ jobs:
 
       - run: pnpm test:coverage
 
+      # Phase 1.2 : agrège les rapports vitest et échoue si un paquet
+      # devient « missing » (test config présent, coverage data absente).
+      # La cible passe à 0 le temps que les Phases 2-3 remontent la
+      # couverture, puis sera resserrée à 80 en fin de Phase 3.
+      - run: pnpm coverage:report 0
+
+      - run: pnpm test:scripts
+
   build:
     name: Build
     runs-on: ubuntu-latest
