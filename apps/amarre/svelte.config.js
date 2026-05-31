@@ -1,5 +1,6 @@
 import adapter from '@sveltejs/adapter-node';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import { defaultCspDirectives } from '@univ-lehavre/atlas-sveltekit-csp';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -8,31 +9,16 @@ const config = {
   kit: {
     adapter: adapter(),
 
-    // Content Security Policy — Phase 6.3 DevSecOps.
-    // - `mode: 'auto'` : hash en prerender, nonce en SSR (adapter-node).
-    // - `script-src 'self'` strict : SvelteKit injecte automatiquement des
-    //   nonces dans ses scripts d'hydration ; tout autre script inline ou
-    //   externe est bloqué.
-    // - `style-src 'unsafe-inline'` : nécessaire pour les `style="..."` des
-    //   templates Svelte et les inline-styles Bootstrap. À durcir plus tard.
-    // - `connect-src 'self'` : aucune fetch client-side vers un service externe
-    //   (les appels Appwrite/REDCap passent tous par les routes `/api/v1/`
-    //   du serveur SvelteKit). Vérifié 2026-05-26 — pas d'import du SDK
-    //   browser `appwrite`, uniquement `node-appwrite` côté serveur.
+    // Content Security Policy — Phase 6.3 DevSecOps, factorisée Phase 9.2.
+    // Les directives par défaut viennent de `@univ-lehavre/atlas-sveltekit-csp`
+    // (voir packages/sveltekit-csp/src/csp.ts pour la justification de
+    // chaque directive et la dérogation `style-src 'unsafe-inline'`
+    // documentée dans ADR 0019). Aucun override : amarre n'appelle
+    // aucun service externe depuis le browser (tous les appels Appwrite
+    // passent par les routes `/api/v1/` du serveur SvelteKit).
     csp: {
       mode: 'auto',
-      directives: {
-        'default-src': ["'self'"],
-        'script-src': ["'self'"],
-        'style-src': ["'self'", "'unsafe-inline'"],
-        'img-src': ["'self'", 'data:', 'blob:'],
-        'font-src': ["'self'"],
-        'connect-src': ["'self'"],
-        'frame-ancestors': ["'none'"],
-        'form-action': ["'self'"],
-        'base-uri': ["'self'"],
-        'object-src': ["'none'"],
-      },
+      directives: defaultCspDirectives(),
     },
   },
 };

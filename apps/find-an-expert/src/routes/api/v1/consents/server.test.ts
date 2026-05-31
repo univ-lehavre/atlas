@@ -5,8 +5,26 @@ vi.mock('$lib/server/consent', () => ({
   getAllConsents: vi.fn(),
 }));
 
+// Mock duck-type le contrat ApplicationError → flat shape utilisé par
+// `withHandler`, sans réimporter le vrai module (sinon Vitest construit
+// une 2e instance de la classe et `instanceof` casse côté handler).
 vi.mock('$lib/server/http', () => ({
   mapErrorToResponse: vi.fn((error: Error) => new Response(error.message, { status: 500 })),
+  flatErrorMapper: vi.fn(
+    (error: unknown): { body: { code: string; message: string }; status: number } => {
+      const e = error as { code?: unknown; message?: unknown; httpStatus?: unknown };
+      if (typeof e.code === 'string' && typeof e.httpStatus === 'number') {
+        return {
+          body: { code: e.code, message: String(e.message ?? '') },
+          status: e.httpStatus,
+        };
+      }
+      return {
+        body: { code: 'unexpected_error', message: 'Unknown error' },
+        status: 500,
+      };
+    }
+  ),
 }));
 
 describe('GET /api/v1/consents', () => {

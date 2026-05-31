@@ -1,11 +1,7 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { withHandler } from '@univ-lehavre/atlas-sveltekit-handler';
+import { flatErrorMapper } from '$lib/server/http';
 
-import { mapErrorToResponse } from '$lib/server/http';
-
-/**
- * Response structure for contributors endpoint.
- */
 interface ContributorsResponse {
   contributors: never[];
   message: string;
@@ -13,22 +9,12 @@ interface ContributorsResponse {
 
 /**
  * GET /api/v1/repositories/:id/contributors
- * Returns the list of contributors for the repository.
- *
- * Path parameters:
- * - id: Repository identifier (currently accepts any value, uses current repo)
- *
- * Note: This is a stub endpoint. Full implementation pending.
+ * Returns the list of contributors. Stub endpoint, full implementation pending.
  */
-export const GET: RequestHandler = async () => {
-  try {
-    const response: ContributorsResponse = {
-      contributors: [],
-      message: 'Contributors endpoint not yet implemented',
-    };
-
-    return json(response);
-  } catch (error: unknown) {
-    return mapErrorToResponse(error);
-  }
-};
+export const GET: RequestHandler = withHandler(
+  async (): Promise<ContributorsResponse> => ({
+    contributors: [],
+    message: 'Contributors endpoint not yet implemented',
+  }),
+  { mapError: flatErrorMapper }
+);

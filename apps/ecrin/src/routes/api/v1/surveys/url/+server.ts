@@ -1,31 +1,17 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { withHandler } from '@univ-lehavre/atlas-sveltekit-handler';
+import { ApplicationError } from '@univ-lehavre/atlas-errors';
 import { REDCAP_API_TOKEN, REDCAP_URL } from '$env/static/private';
 import { getSurveyUrl } from '$lib/server/services/surveysService';
 
-export const GET: RequestHandler = async ({ locals }) => {
-  try {
-    const id = locals.userId;
-    if (!id)
-      return json(
-        { data: null, error: { code: 'unauthenticated', message: 'No authenticated user' } },
-        { status: 401 }
-      );
+export const GET: RequestHandler = withHandler(async ({ locals }) => {
+  const id = locals.userId;
+  if (!id) throw new ApplicationError('unauthenticated', 401, 'No authenticated user');
 
-    const result = await getSurveyUrl(REDCAP_API_TOKEN, REDCAP_URL, id);
+  const result = await getSurveyUrl(REDCAP_API_TOKEN, REDCAP_URL, id);
 
-    if (result.includes('"error":'))
-      return json(
-        { data: null, error: { code: 'invalid_url', message: 'Invalid or missing URL' } },
-        { status: 422 }
-      );
+  if (result.includes('"error":'))
+    throw new ApplicationError('invalid_url', 422, 'Invalid or missing URL');
 
-    return json({ data: { url: result }, error: null });
-  } catch (error) {
-    console.error('Error fetching survey URL:', error);
-    return json(
-      { data: null, error: { code: 'internal_error', message: 'Unexpected error' } },
-      { status: 500 }
-    );
-  }
-};
+  return { data: { url: result }, error: null };
+});

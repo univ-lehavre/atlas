@@ -15,19 +15,6 @@ vi.mock('$lib/server/services/authService', () => ({
   deleteUser: vi.fn(),
 }));
 
-vi.mock('$lib/errors/mapper', async () => {
-  const { mapErrorToApiResponse } = await import('@univ-lehavre/atlas-errors');
-  return {
-    mapErrorToResponse: (error: unknown): Response => {
-      const { body, status } = mapErrorToApiResponse(error);
-      return Response.json(body, {
-        status,
-        headers: { 'content-type': 'application/json' },
-      });
-    },
-  };
-});
-
 describe('POST /api/v1/auth/delete (AUTH)', () => {
   beforeEach(() => {
     vi.resetModules();

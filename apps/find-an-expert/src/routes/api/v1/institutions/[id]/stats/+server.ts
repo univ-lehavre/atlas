@@ -1,37 +1,24 @@
 import type { RequestHandler } from './$types';
-import { json } from '@sveltejs/kit';
+import { withHandler } from '@univ-lehavre/atlas-sveltekit-handler';
+import { ApplicationError } from '@univ-lehavre/atlas-errors';
 import { getInstitutionStats } from '$lib/server/citation';
-import { mapErrorToResponse } from '$lib/server/http';
+import { flatErrorMapper } from '$lib/server/http';
 
 /**
  * GET /api/v1/institutions/:id/stats
  * Returns comprehensive statistics for a single institution over the last 5 years.
- * Includes works count (all types), articles count, and authors count.
- *
- * Requires authentication.
- *
- * Path parameters:
- * - id: OpenAlex institution ID
  */
-export const GET: RequestHandler = async ({ params, locals }) => {
-  try {
-    // Require authentication
-    if (!locals.userId) {
-      return json({ code: 'unauthenticated', message: 'User not authenticated' }, { status: 401 });
-    }
+export const GET: RequestHandler = withHandler(
+  async ({ params, locals }) => {
+    if (!locals.userId)
+      throw new ApplicationError('unauthenticated', 401, 'User not authenticated');
 
     const institutionId = params.id;
 
-    if (!institutionId) {
-      return json(
-        { code: 'missing_parameter', message: 'Institution ID is required' },
-        { status: 400 }
-      );
-    }
+    if (!institutionId)
+      throw new ApplicationError('missing_parameter', 400, 'Institution ID is required');
 
-    const result = await getInstitutionStats([institutionId]);
-    return json(result);
-  } catch (error: unknown) {
-    return mapErrorToResponse(error);
-  }
-};
+    return getInstitutionStats([institutionId]);
+  },
+  { mapError: flatErrorMapper }
+);

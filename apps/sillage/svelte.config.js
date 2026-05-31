@@ -1,5 +1,6 @@
 import adapter from '@sveltejs/adapter-node';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
+import { defaultCspDirectives } from '@univ-lehavre/atlas-sveltekit-csp';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -7,6 +8,19 @@ const config = {
 
   kit: {
     adapter: adapter(),
+
+    // Content Security Policy — Phase 9.2 DevSecOps.
+    // Sillage utilise les directives par défaut de
+    // `@univ-lehavre/atlas-sveltekit-csp` (voir packages/sveltekit-csp/
+    // src/csp.ts pour la justification de chaque directive et la
+    // dérogation `style-src 'unsafe-inline'` documentée dans ADR 0019).
+    // Aucun override : sillage n'appelle aucun service externe depuis
+    // le browser, tous les appels Appwrite passent par les routes
+    // serveur SvelteKit.
+    csp: {
+      mode: 'auto',
+      directives: defaultCspDirectives(),
+    },
   },
 };
 

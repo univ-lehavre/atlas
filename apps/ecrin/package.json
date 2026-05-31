@@ -42,6 +42,8 @@
     "@univ-lehavre/atlas-auth": "workspace:*",
     "@univ-lehavre/atlas-baas": "workspace:*",
     "@univ-lehavre/atlas-errors": "workspace:*",
+    "@univ-lehavre/atlas-sveltekit-csp": "workspace:*",
+    "@univ-lehavre/atlas-sveltekit-handler": "workspace:*",
     "@univ-lehavre/atlas-validators": "workspace:*",
     "appwrite": "^25.2.0",
     "graphology": "^0.26.0",

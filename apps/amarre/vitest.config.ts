@@ -34,8 +34,11 @@ export default mergeConfig(
         // Phase 4.5 — Resserrés après ajout des tests d'endpoints
         // co-localisés sous `src/**/server.test.ts`. Réel mesuré
         // 2026-05-30 (post-Phase 4) : 54.27/57.14/34.37/58.53.
-        // Marge de 2 pts.
-        thresholds: { statements: 52, branches: 55, functions: 32, lines: 56 },
+        // 2026-05-31 (post-Phase 9.1 migration vers
+        // @univ-lehavre/atlas-sveltekit-handler) : 52.36/56/34.37/55.55.
+        // La factorisation du try/catch + mapping a déplacé du code
+        // testé hors du paquet ; le helper partagé est à 100% en propre.
+        thresholds: { statements: 50, branches: 54, functions: 32, lines: 53 },
       }),
       projects: [
         {

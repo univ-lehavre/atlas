@@ -1,19 +1,11 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { withHandler } from '@univ-lehavre/atlas-sveltekit-handler';
+import { ApplicationError } from '@univ-lehavre/atlas-errors';
 import { downloadSurvey } from '$lib/server/services/surveys';
-import { mapErrorToResponse } from '$lib/errors/mapper';
 
-export const GET: RequestHandler = async ({ locals, fetch }) => {
-  try {
-    const id = locals.userId;
-    if (!id)
-      return json(
-        { data: null, error: { code: 'unauthenticated', message: 'No authenticated user' } },
-        { status: 401 }
-      );
-    const result = await downloadSurvey(id, { fetch });
-    return json({ data: result, error: null });
-  } catch (error) {
-    return mapErrorToResponse(error);
-  }
-};
+export const GET: RequestHandler = withHandler(async ({ locals, fetch }) => {
+  const id = locals.userId;
+  if (!id) throw new ApplicationError('unauthenticated', 401, 'No authenticated user');
+  const result = await downloadSurvey(id, { fetch });
+  return { data: result, error: null };
+});

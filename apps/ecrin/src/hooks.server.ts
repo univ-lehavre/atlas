@@ -1,3 +1,5 @@
+import { applySecurityHeaders } from '@univ-lehavre/atlas-sveltekit-csp';
+
 import { SessionError } from '$lib/errors';
 import { createSessionClient } from '$lib/baas/server';
 
@@ -16,23 +18,12 @@ export const handle: Handle = async ({ event, resolve }) => {
   }
   const response = await resolve(event);
 
-  // Security headers — Phase 6.3 DevSecOps. CSP gérée par kit.csp dans
-  // svelte.config.js (avec nonces auto pour les scripts d'hydration).
-  if (event.url.protocol === 'https:') {
-    response.headers.set(
-      'Strict-Transport-Security',
-      'max-age=63072000; includeSubDomains; preload'
-    );
-  }
-  response.headers.set('X-Content-Type-Options', 'nosniff');
-  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set(
-    'Permissions-Policy',
-    'camera=(), microphone=(), geolocation=(), payment=()'
-  );
-  // X-Frame-Options redondant avec CSP `frame-ancestors 'none'`, conservé
-  // en defense-in-depth pour les vieux navigateurs.
-  response.headers.set('X-Frame-Options', 'DENY');
+  // Security headers — Phase 6.3 DevSecOps, factorisée Phase 9.2.
+  // CSP est gérée par kit.csp dans svelte.config.js (avec nonces auto
+  // pour les scripts d'hydration). Les cinq autres headers statiques
+  // viennent de `@univ-lehavre/atlas-sveltekit-csp` pour rester alignés
+  // entre toutes les apps SvelteKit du monorepo.
+  applySecurityHeaders(response, event);
 
   return response;
 };
