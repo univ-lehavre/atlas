@@ -40,6 +40,9 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0017 | [Releases npm signées par OIDC sur deux registres](0017-releases-npm-oidc-deux-registres.md)       | Accepted |
 | 0018 | [SLA de remédiation des findings sécurité](0018-sla-remediation-findings.md)                       | Accepted |
 | 0019 | [Dérogations explicites au workspace audit](0019-derogations-workspace-audit.md)                   | Accepted |
+| 0020 | [Lint Svelte au preset strict](0020-svelte-eslint-strict.md)                                       | Accepted |
+| 0021 | [Politique de dépendances pour les sandboxes](0021-sandbox-deps-policy.md)                         | Accepted |
+| 0022 | [Convention de nommage `atlas-` pour les paquets publiés](0022-naming-convention.md)               | Accepted |
 
 ## Quand ouvrir un ADR
 
