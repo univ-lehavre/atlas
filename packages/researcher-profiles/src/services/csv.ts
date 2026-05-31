@@ -26,6 +26,7 @@ export const cellOrEmpty = (value: string | undefined): string => value ?? "";
 
 export const toRow = (record: Record<string, string>): ResearcherRow =>
   Object.fromEntries(
+    // eslint-disable-next-line security/detect-object-injection -- `col` provient de ALL_COLUMNS, valeur connue à la compilation
     ALL_COLUMNS.map((col) => [col, cellOrEmpty(record[col])]),
   ) as unknown as ResearcherRow;
 

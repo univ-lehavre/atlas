@@ -8,10 +8,10 @@ import { applyPatches } from '$lib/patches.js';
 
 export const load = async (): Promise<{ monthly: MonthlyPoint[]; cachedAt: number | null }> => {
   const cache = await readCache();
-  return cache !== null
-    ? {
+  return cache === null
+    ? { monthly: [], cachedAt: null }
+    : {
         monthly: computeMonthlyCalendar(applyPatches(enrichLogs(cache.logs))),
         cachedAt: cache.savedAt,
-      }
-    : { monthly: [], cachedAt: null };
+      };
 };

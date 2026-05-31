@@ -15,16 +15,18 @@
       showSuccessAlert = true;
       const timer = setTimeout(() => {
         showSuccessAlert = false;
-        const modalElement = document.getElementById("SignUp");
+        const modalElement = document.querySelector("#SignUp");
         if (modalElement) {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const modal = (window as any).bootstrap?.Modal?.getInstance(
+          const modal = (globalThis as any).bootstrap?.Modal?.getInstance(
             modalElement,
           );
           modal?.hide();
         }
       }, 5000);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+      };
     }
   });
 
@@ -34,7 +36,9 @@
       const timer = setTimeout(() => {
         showErrorAlert = false;
       }, 5000);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+      };
     }
   });
 </script>

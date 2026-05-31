@@ -13,6 +13,7 @@ beforeEach(() => {
 describe('POST /api/v1/auth/logout — 200', () => {
   it('returns 200 when the session is closed successfully', async () => {
     const authService = await import('$lib/server/services/auth');
+    // eslint-disable-next-line unicorn/no-useless-undefined -- mockResolvedValueOnce exige un argument explicite
     (authService.logout as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
 
     // `validateUserId` (paquet atlas-auth) exige un ID hexadécimal — on
@@ -71,7 +72,7 @@ describe('POST /api/v1/auth/logout — payload malformé', () => {
     const event = createRouteEvent({
       method: 'POST',
       url: 'https://example.com/api/v1/auth/logout',
-      locals: { userId: 12345 as unknown as string },
+      locals: { userId: 12_345 as unknown as string },
     });
     const res = await mod.POST(event as never);
 

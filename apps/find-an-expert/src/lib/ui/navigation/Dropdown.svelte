@@ -55,7 +55,7 @@
 
   /** Scroll to selected item when dropdown opens */
   const scrollToSelected = (node: HTMLElement): void => {
-    const selected = node.querySelector('[data-selected="true"]') as HTMLElement | null;
+    const selected = node.querySelector<HTMLElement>('[data-selected="true"]');
     if (selected) {
       const containerHeight = node.clientHeight;
       const selectedTop = selected.offsetTop;

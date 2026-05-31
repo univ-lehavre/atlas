@@ -61,7 +61,7 @@ describe('validateMagicUrlLogin', () => {
   });
 
   it('should throw for missing secret', () => {
-    // eslint-disable-next-line unicorn/no-useless-undefined
+    // eslint-disable-next-line unicorn/no-useless-undefined -- on teste explicitement le passage d'undefined
     expect(() => validateMagicUrlLogin('userId', undefined)).toThrow(MagicUrlLoginValidationError);
   });
 
@@ -85,7 +85,7 @@ describe('validateUserId', () => {
   });
 
   it('should throw SessionError for missing userId', () => {
-    // eslint-disable-next-line unicorn/no-useless-undefined
+    // eslint-disable-next-line unicorn/no-useless-undefined -- on teste explicitement le passage d'undefined
     expect(() => validateUserId(undefined)).toThrow(SessionError);
   });
 

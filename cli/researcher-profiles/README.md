@@ -3,6 +3,7 @@
 CLI de résolution et d'écriture de profils chercheurs via OpenAlex et REDCap.
 
 For each researcher, the CLI:
+
 1. Searches OpenAlex by name (with and without middle name) and by ORCID
 2. Displays author profiles and a sample of works found
 3. Asks for confirmation before writing to REDCap
@@ -10,10 +11,10 @@ For each researcher, the CLI:
 
 ## Prerequisites
 
-| Variable | Description |
-|---|---|
-| `REDCAP_API_URL` | REDCap API URL (e.g. `https://redcap.example.com/api/`) |
-| `REDCAP_API_TOKEN` | REDCap API token |
+| Variable              | Description                                             |
+| --------------------- | ------------------------------------------------------- |
+| `REDCAP_API_URL`      | REDCap API URL (e.g. `https://redcap.example.com/api/`) |
+| `REDCAP_API_TOKEN`    | REDCap API token                                        |
 | `OPENALEX_USER_AGENT` | OpenAlex user agent (e.g. `mailto:contact@example.com`) |
 
 ## Commands
@@ -52,12 +53,12 @@ atlas-researcher-profiles from-crf
 
 The CLI reads from and writes to the `references_openalex` instrument.
 
-| Field | Role |
-|---|---|
-| `record_id` (= `userid`) | Primary key |
-| `last_name`, `middle_name`, `first_name` | Used to build search queries |
-| `orcid` | Used as a complementary search criterion |
-| `oa_references` | **Written by the CLI** — JSON array of `WorksResult[]` |
+| Field                                    | Role                                                   |
+| ---------------------------------------- | ------------------------------------------------------ |
+| `record_id` (= `userid`)                 | Primary key                                            |
+| `last_name`, `middle_name`, `first_name` | Used to build search queries                           |
+| `orcid`                                  | Used as a complementary search criterion               |
+| `oa_references`                          | **Written by the CLI** — JSON array of `WorksResult[]` |
 
 ## Library API
 
@@ -69,10 +70,10 @@ import {
   resolveAll,
   fetchResearchers,
   writeOaReferences,
-} from '@univ-lehavre/atlas-researcher-profiles';
+} from "@univ-lehavre/atlas-researcher-profiles";
 import type {
   ResearcherRow,
   OaReferencesRecord,
   CrfConnectionConfig,
-} from '@univ-lehavre/atlas-researcher-profiles';
+} from "@univ-lehavre/atlas-researcher-profiles";
 ```

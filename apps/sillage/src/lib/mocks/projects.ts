@@ -12,7 +12,7 @@
  * Inlined to avoid pulling the barrel import — see the comment in
  * `mocks/researchers.ts` for the rationale.
  */
-type ProjectSnapshot = {
+interface ProjectSnapshot {
   id: string;
   title: string;
   lead: string;
@@ -21,7 +21,7 @@ type ProjectSnapshot = {
   date: string;
   href: string;
   coverUrl?: string;
-};
+}
 type ProjectSnapshotList = readonly ProjectSnapshot[];
 
 export const mockProjectPool: ProjectSnapshotList = [
@@ -156,13 +156,13 @@ export const mockProjectPool: ProjectSnapshotList = [
  *
  * Shape mirrored from `@univ-lehavre/atlas-ui` (QuestionnaireEntry).
  */
-type QuestionnaireEntry = {
+interface QuestionnaireEntry {
   id: string;
   label: string;
   description: string;
   href: string;
   disabled?: boolean;
-};
+}
 type QuestionnaireEntryList = readonly QuestionnaireEntry[];
 
 export const priorityQuestionnaires: QuestionnaireEntryList = [

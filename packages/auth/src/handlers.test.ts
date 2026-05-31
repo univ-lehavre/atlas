@@ -101,7 +101,7 @@ describe('createLoginHandler', () => {
 
 describe('createLogoutHandler', () => {
   it('returns 200 when service.logout resolves', async () => {
-    // eslint-disable-next-line unicorn/no-useless-undefined
+    // eslint-disable-next-line unicorn/no-useless-undefined -- mockResolvedValueOnce(undefined) explicite Promise<void>
     const logout = vi.fn<() => Promise<void>>().mockResolvedValueOnce(undefined);
     const POST = createLogoutHandler({ logout });
     const res = await POST({

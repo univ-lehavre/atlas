@@ -27,7 +27,7 @@
     bind:showHeading
     {variant}
   >
-    <SectionTile title={!showHeading ? "Administrer" : ""} />
+    <SectionTile title={showHeading ? "" : "Administrer"} />
 
     <div class="flex-shrink-0">
       <CardItem>

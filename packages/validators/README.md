@@ -46,14 +46,14 @@ const body = await validateAndParseJsonBody(request);
 
 ## API
 
-| Function | Description |
-|----------|-------------|
-| `isEmail(email)` | Validates if a string is a valid email |
-| `isHexadecimal(str)` | Validates if a string contains only hexadecimal characters |
-| `normalizeEmail(email)` | Normalizes an email (lowercase, without subaddressing) |
-| `ensureJsonContentType(request)` | Checks that Content-Type is application/json |
-| `parseJsonBody(request)` | Parses and validates the JSON body of a request |
-| `validateAndParseJsonBody(request)` | Combines ensureJsonContentType and parseJsonBody |
+| Function                            | Description                                                |
+| ----------------------------------- | ---------------------------------------------------------- |
+| `isEmail(email)`                    | Validates if a string is a valid email                     |
+| `isHexadecimal(str)`                | Validates if a string contains only hexadecimal characters |
+| `normalizeEmail(email)`             | Normalizes an email (lowercase, without subaddressing)     |
+| `ensureJsonContentType(request)`    | Checks that Content-Type is application/json               |
+| `parseJsonBody(request)`            | Parses and validates the JSON body of a request            |
+| `validateAndParseJsonBody(request)` | Combines ensureJsonContentType and parseJsonBody           |
 
 ## Scripts
 

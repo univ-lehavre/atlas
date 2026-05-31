@@ -39,7 +39,13 @@
         <LinkButton href="/" variant="primary" icon="lucide:home"
           >{errors.buttons.backToHome}</LinkButton
         >
-        <Button variant="outline" icon="lucide:arrow-left" onclick={() => history.back()}>
+        <Button
+          variant="outline"
+          icon="lucide:arrow-left"
+          onclick={() => {
+            history.back();
+          }}
+        >
           {errors.buttons.goBack}
         </Button>
       </ButtonGroup>

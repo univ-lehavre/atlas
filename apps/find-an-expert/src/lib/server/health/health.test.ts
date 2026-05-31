@@ -143,7 +143,7 @@ describe('performHealthCheck', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.createAdminClient.mockReturnValue({ databases: mocks.databases });
-    global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 } as Response);
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 } as Response);
     mocks.databases.get.mockResolvedValue({ name: 'Atlas' });
     mocks.databases.getCollection.mockImplementation(
       async (_databaseId: string, collectionId: string) => ({
@@ -183,7 +183,7 @@ describe('performHealthCheck', () => {
         apiKeyValid: true,
       },
     });
-    expect(global.fetch).toHaveBeenCalledWith('https://appwrite.example.test/v1/health', {
+    expect(globalThis.fetch).toHaveBeenCalledWith('https://appwrite.example.test/v1/health', {
       method: 'HEAD',
       signal: expect.any(AbortSignal),
     });
@@ -203,7 +203,7 @@ describe('performHealthCheck', () => {
   });
 
   it('should check internet connectivity when Appwrite is unreachable', async () => {
-    vi.mocked(global.fetch)
+    vi.mocked(globalThis.fetch)
       .mockRejectedValueOnce(new Error('lookup failed', { cause: { code: 'ENOTFOUND' } }))
       .mockResolvedValueOnce({ ok: true, status: 200 } as Response);
 

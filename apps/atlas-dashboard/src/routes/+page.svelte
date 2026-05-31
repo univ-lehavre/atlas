@@ -7,7 +7,10 @@
 
   const { data }: { data: PageData } = $props();
 
-  type PeriodOption = { value: Period; label: string };
+  interface PeriodOption {
+    value: Period;
+    label: string;
+  }
   const PERIOD_OPTIONS: PeriodOption[] = [
     { value: 'day', label: 'Jour' },
     { value: 'week', label: 'Semaine' },
@@ -28,7 +31,7 @@
           stats = null;
           return;
         }
-        stats = body as DashboardStats;
+        stats = body;
       })
       .catch(() => {
         /* keep stale stats */
@@ -52,25 +55,42 @@
 
     source.onmessage = async (e: MessageEvent<string>) => {
       const msg = JSON.parse(e.data) as SseEvent;
-      if (msg.type === 'start') {
-        fetchLabel = 'Démarrage…';
-      } else if (msg.type === 'progress') {
-        fetchLabel = msg.label;
-        fetchStep = msg.step;
-        fetchSteps = msg.steps;
-      } else if (msg.type === 'cached') {
-        fetchLabel = 'Données déjà à jour';
-        source.close();
-        fetching = false;
-      } else if (msg.type === 'done') {
-        fetchLabel = 'Actualisation terminée';
-        source.close();
-        await invalidateAll();
-        fetching = false;
-      } else if (msg.type === 'error') {
-        fetchLabel = `Erreur : ${msg.message}`;
-        source.close();
-        fetching = false;
+      switch (msg.type) {
+        case 'start': {
+          fetchLabel = 'Démarrage…';
+
+          break;
+        }
+        case 'progress': {
+          fetchLabel = msg.label;
+          fetchStep = msg.step;
+          fetchSteps = msg.steps;
+
+          break;
+        }
+        case 'cached': {
+          fetchLabel = 'Données déjà à jour';
+          source.close();
+          fetching = false;
+
+          break;
+        }
+        case 'done': {
+          fetchLabel = 'Actualisation terminée';
+          source.close();
+          await invalidateAll();
+          fetching = false;
+
+          break;
+        }
+        case 'error': {
+          fetchLabel = `Erreur : ${msg.message}`;
+          source.close();
+          fetching = false;
+
+          break;
+        }
+        // No default
       }
     };
 
@@ -82,7 +102,7 @@
   };
 
   const cachedAt = $derived(
-    data.cachedAt !== null ? new Date(data.cachedAt).toLocaleString('fr-FR') : null
+    data.cachedAt === null ? null : new Date(data.cachedAt).toLocaleString('fr-FR')
   );
 
   const fmtRelative = (isoDate: string): string => {
@@ -98,8 +118,8 @@
   const fmtNumber = (n: number): string =>
     n >= 1_000_000
       ? `${(n / 1_000_000).toFixed(1)} M`
-      : n >= 1_000
-        ? `${(n / 1_000).toFixed(1)} k`
+      : n >= 1000
+        ? `${(n / 1000).toFixed(1)} k`
         : String(n);
 </script>
 

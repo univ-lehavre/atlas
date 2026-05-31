@@ -11,7 +11,7 @@ export const PATTERNS = {
 
   /** Matches exported functions: export const fn = () => or export function fn */
   exportedFunction:
-    /export\s+(?:const\s+\w+\s*=\s*(?:async\s*)?\([^)]*\)\s*(?::\s*[^=]+)?\s*=>|function\s+\w+)/g,
+    /export\s+(?:const\s+\w+\s*=\s*(?:async\s*)?\([^)]*\)\s*(?::[^=]+)?=>|function\s+\w+)/g,
 
   /** Matches exported types and interfaces */
   exportedType: /export\s+(?:type|interface)\s+\w+/g,

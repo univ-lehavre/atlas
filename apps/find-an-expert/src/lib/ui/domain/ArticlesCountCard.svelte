@@ -88,8 +88,8 @@
       }
 
       stats = await response.json();
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'An error occurred';
+    } catch (error_) {
+      error = error_ instanceof Error ? error_.message : 'An error occurred';
       stats = null;
     } finally {
       isLoading = false;
@@ -98,7 +98,7 @@
 
   $effect(() => {
     // Track organization and consent changes to trigger fetch
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
     const _trackDependency = `${selectedOrganizations.map((o) => o.id).join(',')}-${hasConsent}`;
 
     // Clear any existing timer

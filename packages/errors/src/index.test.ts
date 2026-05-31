@@ -163,7 +163,7 @@ describe('mapErrorToApiResponse', () => {
 
   it('should handle null/undefined', () => {
     expect(mapErrorToApiResponse(null).status).toBe(500);
-    // eslint-disable-next-line unicorn/no-useless-undefined
+    // eslint-disable-next-line unicorn/no-useless-undefined -- on teste explicitement le passage d'undefined comme valeur d'erreur
     expect(mapErrorToApiResponse(undefined).status).toBe(500);
   });
 });

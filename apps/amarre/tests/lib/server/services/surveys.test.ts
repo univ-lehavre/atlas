@@ -20,7 +20,7 @@ describe('surveys service - fetchUserId', () => {
 
     // Verify that the filterLogic has escaped the double quote
     expect(mockFetchCrfJSON).toHaveBeenCalledWith(
-      expect.objectContaining({ filterLogic: '[email] = "test\\"quote@example.com"' }),
+      expect.objectContaining({ filterLogic: String.raw`[email] = "test\"quote@example.com"` }),
       expect.any(Object)
     );
   });
@@ -33,11 +33,11 @@ describe('surveys service - fetchUserId', () => {
     mockFetchCrfJSON.mockResolvedValue([{ userid: 'user456' }]);
 
     const mockFetch = vi.fn() as unknown as Fetch;
-    await fetchUserId('test\\backslash@example.com', { fetch: mockFetch });
+    await fetchUserId(String.raw`test\backslash@example.com`, { fetch: mockFetch });
 
     // Verify that the filterLogic has escaped the backslash
     expect(mockFetchCrfJSON).toHaveBeenCalledWith(
-      expect.objectContaining({ filterLogic: '[email] = "test\\\\backslash@example.com"' }),
+      expect.objectContaining({ filterLogic: String.raw`[email] = "test\\backslash@example.com"` }),
       expect.any(Object)
     );
   });
@@ -67,11 +67,11 @@ describe('surveys service - fetchUserId', () => {
     mockFetchCrfJSON.mockResolvedValue([{ userid: 'user101' }]);
 
     const mockFetch = vi.fn() as unknown as Fetch;
-    await fetchUserId('test\\"mixed@example.com', { fetch: mockFetch });
+    await fetchUserId(String.raw`test\"mixed@example.com`, { fetch: mockFetch });
 
     // Verify that both backslashes and quotes are properly escaped
     expect(mockFetchCrfJSON).toHaveBeenCalledWith(
-      expect.objectContaining({ filterLogic: '[email] = "test\\\\\\"mixed@example.com"' }),
+      expect.objectContaining({ filterLogic: String.raw`[email] = "test\\\"mixed@example.com"` }),
       expect.any(Object)
     );
   });
@@ -90,7 +90,7 @@ describe('surveys service - downloadSurvey', () => {
 
     // Verify that the filterLogic has escaped the double quote
     expect(mockFetchCrfJSON).toHaveBeenCalledWith(
-      expect.objectContaining({ filterLogic: '[userid] = "user\\"123"' }),
+      expect.objectContaining({ filterLogic: String.raw`[userid] = "user\"123"` }),
       expect.any(Object)
     );
   });
@@ -126,7 +126,7 @@ describe('surveys service - listRequests', () => {
 
     // Verify that the filterLogic has escaped the double quote
     expect(mockFetchCrfJSON).toHaveBeenCalledWith(
-      expect.objectContaining({ filterLogic: '[userid] = "user\\"456"' }),
+      expect.objectContaining({ filterLogic: String.raw`[userid] = "user\"456"` }),
       expect.any(Object)
     );
   });

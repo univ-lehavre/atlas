@@ -52,10 +52,10 @@
       return request.mobilite_universite_eunicoast;
     } else if (request.mobilite_universite_gu8 !== "") {
       return request.mobilite_universite_gu8;
-    } else if (request.mobilite_universite_autre !== "") {
-      return request.mobilite_universite_autre;
-    } else {
+    } else if (request.mobilite_universite_autre === "") {
       return null;
+    } else {
+      return request.mobilite_universite_autre;
     }
   });
 </script>
@@ -82,65 +82,65 @@
       </div>
       {#if composanteShouldSign}
         <div
-          class="list-group-item list-group-item-{request.form_complete !== '2'
-            ? 'warning'
-            : request.demandeur_composante_complete === '2'
+          class="list-group-item list-group-item-{request.form_complete === '2'
+            ? request.demandeur_composante_complete === '2'
               ? 'success'
-              : 'info'}"
+              : 'info'
+            : 'warning'}"
         >
-          Ma composante {request.form_complete !== "2"
-            ? "attend mon formulaire"
-            : request.demandeur_composante_complete === "2"
+          Ma composante {request.form_complete === "2"
+            ? request.demandeur_composante_complete === "2"
               ? "a informé sa décision"
-              : "se concerte"}.
+              : "se concerte"
+            : "attend mon formulaire"}.
         </div>
       {/if}
       {#if laboShouldSign}
         <div
-          class="list-group-item list-group-item-{request.form_complete !== '2'
-            ? 'warning'
-            : request.labo_complete === '2'
+          class="list-group-item list-group-item-{request.form_complete === '2'
+            ? request.labo_complete === '2'
               ? 'success'
-              : 'info'}"
+              : 'info'
+            : 'warning'}"
         >
-          Mon laboratoire {request.form_complete !== "2"
-            ? "attend mon formulaire"
-            : request.labo_complete === "2"
+          Mon laboratoire {request.form_complete === "2"
+            ? request.labo_complete === "2"
               ? "a informé sa décision"
-              : "se concerte"}.
+              : "se concerte"
+            : "attend mon formulaire"}.
         </div>
       {/if}
       {#if encadrantShouldSign}
         <div
-          class="list-group-item list-group-item-{request.form_complete !== '2'
-            ? 'warning'
-            : request.encadrant_complete === '2'
+          class="list-group-item list-group-item-{request.form_complete === '2'
+            ? request.encadrant_complete === '2'
               ? 'success'
-              : 'info'}"
+              : 'info'
+            : 'warning'}"
         >
-          Mon encadrant {request.form_complete !== "2"
-            ? "attend mon formulaire"
-            : request.encadrant_complete === "2"
+          Mon encadrant {request.form_complete === "2"
+            ? request.encadrant_complete === "2"
               ? "a informé sa décision"
-              : "se concerte"}.
+              : "se concerte"
+            : "attend mon formulaire"}.
         </div>
       {/if}
       <div
-        class="list-group-item list-group-item-{request.form_complete !== '2'
-          ? 'info'
-          : request.validation_finale_complete === '2'
+        class="list-group-item list-group-item-{request.form_complete === '2'
+          ? request.validation_finale_complete === '2'
             ? 'success'
             : finalValidationShouldSign
               ? 'warning'
-              : 'info'}"
+              : 'info'
+          : 'info'}"
       >
-        {request.form_complete !== "2"
-          ? "Ma validation finale n'est pas disponible tant que mon formulaire n'est pas complet et que toutes les parties prenantes n'ont pas pris de décision"
-          : request.validation_finale_complete === "2"
+        {request.form_complete === "2"
+          ? request.validation_finale_complete === "2"
             ? "Ma validation finale est complète"
             : finalValidationShouldSign
               ? "Je dois compléter ma validation finale"
-              : "Je dois attendre la validation de toutes les parties prenantes avant d'effectuer ma validation finale"}.
+              : "Je dois attendre la validation de toutes les parties prenantes avant d'effectuer ma validation finale"
+          : "Ma validation finale n'est pas disponible tant que mon formulaire n'est pas complet et que toutes les parties prenantes n'ont pas pris de décision"}.
       </div>
     {/snippet}
     {#snippet links()}

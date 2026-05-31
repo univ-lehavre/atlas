@@ -15,6 +15,7 @@ import { matchResearchers } from "./match-researchers.js";
 
 const VERSION = "1.0.0";
 
+// eslint-disable-next-line security/detect-object-injection -- `name` est une clé connue passée par l'appelant interne
 const getEnv = (name: string): string => process.env[name] ?? "";
 
 const printHelp = (): void => {

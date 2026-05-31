@@ -426,4 +426,4 @@ describe('diagnostics', () => {
     });
   });
 });
-/* eslint-enable security/detect-object-injection */
+/* eslint-enable security/detect-object-injection -- fin du bloc de tests qui indexent par clés contrôlées */

@@ -14,7 +14,7 @@
     bind:showHeading
     {variant}
   >
-    <SectionTile title={!showHeading ? "Suivre" : ""} />
+    <SectionTile title={showHeading ? "" : "Suivre"} />
     {#each requests as request (request.record_id)}
       <Request {request} />
     {/each}

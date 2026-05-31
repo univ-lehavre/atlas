@@ -5,7 +5,7 @@
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/rapidoc@9/dist/rapidoc-min.js';
     script.type = 'module';
-    document.body.appendChild(script);
+    document.body.append(script);
   });
 </script>
 

@@ -75,18 +75,18 @@ const user = await userRepo.getById('user123');
 
 ### Functions
 
-| Function | Description |
-|----------|-------------|
-| `createAdminClient(config)` | Creates an Appwrite admin client |
+| Function                               | Description                        |
+| -------------------------------------- | ---------------------------------- |
+| `createAdminClient(config)`            | Creates an Appwrite admin client   |
 | `createSessionClient(config, cookies)` | Creates an Appwrite session client |
-| `createUserRepository(config)` | Creates a user repository |
+| `createUserRepository(config)`         | Creates a user repository          |
 
 ### Constants
 
-| Constant | Description |
-|----------|-------------|
-| `SESSION_COOKIE` | Session cookie name ('session') |
-| `ADMIN_LABEL` | Appwrite label for administrators ('admin') |
+| Constant         | Description                                 |
+| ---------------- | ------------------------------------------- |
+| `SESSION_COOKIE` | Session cookie name ('session')             |
+| `ADMIN_LABEL`    | Appwrite label for administrators ('admin') |
 
 ### Exported Types
 

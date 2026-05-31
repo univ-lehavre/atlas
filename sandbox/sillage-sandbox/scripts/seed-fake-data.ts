@@ -51,7 +51,6 @@ interface DataDictionary {
   fields: Field[];
 }
 
-type Record = Record_;
 type Record_ = { [field: string]: string };
 
 const parseEnv = async (): Promise<Record_> => {
@@ -100,7 +99,6 @@ const evaluateBranching = (expr: string, record: Record_): boolean => {
     .replace(/\bAND\b/gi, "&&")
     .replace(/\bOR\b/gi, "||");
   try {
-    // eslint-disable-next-line no-new-func
     return Boolean(new Function(`return (${js});`)());
   } catch {
     // Anything funky → treat as visible. Better to over-fill than skip
@@ -109,13 +107,7 @@ const evaluateBranching = (expr: string, record: Record_): boolean => {
   }
 };
 
-const SCENARIOS = [
-  "incomplete",
-  "awaiting_reviews",
-  "validated",
-  "refused",
-] as const;
-type Scenario = (typeof SCENARIOS)[number];
+type Scenario = "incomplete" | "awaiting_reviews" | "validated" | "refused";
 
 const pickScenario = (): Scenario => {
   const r = faker.number.float({ min: 0, max: 1 });

@@ -116,7 +116,7 @@ export const run = async (opts: RunOptions): Promise<void> => {
       threshold: opts.threshold,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- lastQuota peut être null si le SDK n'a pas remonté de quota
     if (lastQuota !== null) {
       showQuota(lastQuota, totalCredits, "OpenAlex quota");
     }

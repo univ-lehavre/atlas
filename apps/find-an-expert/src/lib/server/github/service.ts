@@ -9,13 +9,13 @@ import { emptyGitHubStats } from './types';
  */
 export const parseGitHubUrl = (url: string): TGitHubRepo | null => {
   // HTTPS format: https://github.com/owner/repo.git
-  const httpsMatch = url.match(/github\.com\/([^/]+)\/([^/.]+)/);
+  const httpsMatch = /github\.com\/([^/]+)\/([^/.]+)/.exec(url);
   if (httpsMatch) {
     return { owner: httpsMatch[1], repo: httpsMatch[2] };
   }
 
   // SSH format: git@github.com:owner/repo.git
-  const sshMatch = url.match(/github\.com:([^/]+)\/([^/.]+)/);
+  const sshMatch = /github\.com:([^/]+)\/([^/.]+)/.exec(url);
   if (sshMatch) {
     return { owner: sshMatch[1], repo: sshMatch[2] };
   }
@@ -126,9 +126,9 @@ const fetchGitHubCount = async (
     // GitHub returns total count in Link header for pagination
     const linkHeader = response.headers.get('Link');
     if (linkHeader) {
-      const lastMatch = linkHeader.match(/page=(\d+)>; rel="last"/);
+      const lastMatch = /page=(\d+)>; rel="last"/.exec(linkHeader);
       if (lastMatch) {
-        return parseInt(lastMatch[1], 10);
+        return Number.parseInt(lastMatch[1], 10);
       }
     }
 

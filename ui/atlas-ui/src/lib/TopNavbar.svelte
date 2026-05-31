@@ -12,7 +12,9 @@
     };
     updateOffset();
     window.addEventListener("resize", updateOffset);
-    return () => window.removeEventListener("resize", updateOffset);
+    return () => {
+      window.removeEventListener("resize", updateOffset);
+    };
   });
 </script>
 

@@ -72,4 +72,4 @@ const FILTER_LOGIC_ESCAPE_PATTERN = /["\\]/g;
  * the escape is the right contract to write.
  */
 export const escapeFilterLogicValue = (value: string): string =>
-  value.replace(FILTER_LOGIC_ESCAPE_PATTERN, (m) => (m === '\\' ? '\\\\' : '\\"'));
+  value.replaceAll(FILTER_LOGIC_ESCAPE_PATTERN, (m) => (m === '\\' ? '\\\\' : String.raw`\"`));

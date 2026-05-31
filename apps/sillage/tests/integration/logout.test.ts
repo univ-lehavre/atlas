@@ -2,13 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import type { RequestEvent } from '@sveltejs/kit';
 
 vi.mock('$lib/server/services/auth', () => ({
-  logout: vi.fn(async () => undefined),
+  logout: vi.fn(async () => {}),
 }));
 
 import { POST } from '../../src/routes/api/v1/auth/logout/+server';
 import { logout } from '$lib/server/services/auth';
 
-const makeEvent = (userId: string | undefined): RequestEvent =>
+const makeEvent = (userId: string | undefined = undefined): RequestEvent =>
   ({
     locals: { userId },
     cookies: { delete: vi.fn(), set: vi.fn(), get: vi.fn(), getAll: vi.fn(), serialize: vi.fn() },
@@ -27,7 +27,7 @@ describe('POST /api/v1/auth/logout', () => {
   });
 
   it('returns an error response when no session is present', async () => {
-    const res = await POST(makeEvent(undefined));
+    const res = await POST(makeEvent());
     expect(res.status).toBeGreaterThanOrEqual(400);
     const body = (await res.json()) as {
       data: unknown;

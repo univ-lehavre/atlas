@@ -93,8 +93,8 @@
 
       const data = await response.json();
       searchResults = data.institutions;
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'An error occurred while searching';
+    } catch (error_) {
+      error = error_ instanceof Error ? error_.message : 'An error occurred while searching';
       searchResults = [];
     } finally {
       isLoading = false;
@@ -211,7 +211,9 @@
           {#each searchResults as result (result.id)}
             <button
               type="button"
-              onclick={() => addOrganization(result)}
+              onclick={() => {
+                addOrganization(result);
+              }}
               class="w-full px-4 py-3 text-left hover:bg-primary-50 dark:hover:bg-primary-900/20 border-b border-secondary-100 dark:border-secondary-700 last:border-b-0 transition-colors"
             >
               <p class="font-medium text-secondary-900 dark:text-secondary-100">
@@ -289,7 +291,9 @@
               </div>
               <button
                 type="button"
-                onclick={() => removeOrganization(organization.id)}
+                onclick={() => {
+                  removeOrganization(organization.id);
+                }}
                 class="ml-3 p-1.5 text-secondary-400 hover:text-error-600 dark:hover:text-error-400 hover:bg-error-50 dark:hover:bg-error-900/20 rounded transition-colors"
                 aria-label="{content.removeLabel} {organization.displayName}"
               >

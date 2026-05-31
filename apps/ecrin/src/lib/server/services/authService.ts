@@ -40,7 +40,7 @@ export const signupWithEmail = async (
         return id ?? undefined;
       } catch (error) {
         console.error('Failed to fetch user ID from REDCap in signupWithEmail:', error);
-        return undefined;
+        return;
       }
     },
   });

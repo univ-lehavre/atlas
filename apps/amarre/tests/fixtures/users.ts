@@ -10,4 +10,4 @@ export const signedUser: TUser = {
   labels: [],
 };
 
-export const anonymousUser: undefined = undefined;
+export const anonymousUser = undefined;

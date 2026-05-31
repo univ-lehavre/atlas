@@ -33,7 +33,7 @@ describe('GET /api/v1/projects/community', () => {
     );
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      data: Array<{ id: string; title: string }>;
+      data: { id: string; title: string }[];
       error: unknown;
     };
     expect(body.data).toHaveLength(1);

@@ -166,6 +166,7 @@ const buildYearCounts = (
  * @param config - OpenAlex API configuration
  * @returns Effect containing institution statistics with rate limit info
  */
+// eslint-disable-next-line max-lines-per-function -- pipeline Effect cohérent (fetch → parse → agréger), split rendrait le flot moins lisible
 const getInstitutionStats = (
   institutionIds: string[],
   config: CitationConfig,
@@ -184,7 +185,8 @@ const getInstitutionStats = (
         responseTimeMs: 0,
         institutionCount: 0,
       })
-    : Effect.gen(function* () {
+    : // eslint-disable-next-line max-lines-per-function -- Effect.gen séquentiel HTTP→parse→agréger
+      Effect.gen(function* () {
         const baseURL = config.apiURL ?? OPENALEX_BASE_URL;
         const institutionsFilter = institutionIds.join("|");
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- years always has YEARS_LOOKBACK+1 elements

@@ -57,7 +57,7 @@ describe('GET /api/v1/surveys/url', () => {
     (services.getSurveyUrl as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('boom'));
     // L'endpoint logge l'erreur via console.error ; on le neutralise
     // pour garder une sortie de test propre.
-    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     const mod = await import('./+server');
     const res = await mod.GET(createRouteEvent({ locals: { userId: 'rec-3' } }) as never);

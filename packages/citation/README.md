@@ -39,19 +39,19 @@ OPENALEX_API_KEY=          # optional
 
 ### `src/fetch/`
 
-| Export | Description |
-|--------|-------------|
-| `searchAuthors(name)` | Searches OpenAlex authors by display name |
+| Export                                         | Description                                         |
+| ---------------------------------------------- | --------------------------------------------------- |
+| `searchAuthors(name)`                          | Searches OpenAlex authors by display name           |
 | `retrieve_articles(authorIds, institutionIds)` | Fetches articles for given authors and institutions |
-| `retrieve_articles_given_work_ids(workIds)` | Fetches articles by OpenAlex work IDs |
+| `retrieve_articles_given_work_ids(workIds)`    | Fetches articles by OpenAlex work IDs               |
 
 ### `src/group/`
 
 Utilitaires internes de similarité pour regrouper des chaînes d'affiliation:
 
-| Export | Description |
-|--------|-------------|
-| `groupBySimilarity(strings, threshold)` | Groups strings by Levenshtein similarity |
-| `groupBySimilarityWithScore(strings, threshold)` | Same, with per-group similarity score |
-| `groupByNGramSimilarity(strings, threshold)` | Groups strings by n-gram (bigram/trigram) Jaccard similarity |
-| `normalizeString(input, options)` | Normalizes a string (diacritics, punctuation, case) |
+| Export                                           | Description                                                  |
+| ------------------------------------------------ | ------------------------------------------------------------ |
+| `groupBySimilarity(strings, threshold)`          | Groups strings by Levenshtein similarity                     |
+| `groupBySimilarityWithScore(strings, threshold)` | Same, with per-group similarity score                        |
+| `groupByNGramSimilarity(strings, threshold)`     | Groups strings by n-gram (bigram/trigram) Jaccard similarity |
+| `normalizeString(input, options)`                | Normalizes a string (diacritics, punctuation, case)          |

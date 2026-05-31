@@ -25,7 +25,7 @@
   const partners = $derived(i18n.partners);
 
   const scrollToHowItWorks = (): void => {
-    document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
+    document.querySelector('#how-it-works')?.scrollIntoView({ behavior: 'smooth' });
   };
 </script>
 

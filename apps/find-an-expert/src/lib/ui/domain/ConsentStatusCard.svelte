@@ -87,7 +87,7 @@
     return date.toLocaleDateString('fr-FR', {
       month: 'short',
       day: 'numeric',
-      year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
+      year: date.getFullYear() === new Date().getFullYear() ? undefined : 'numeric',
     });
   };
 
@@ -108,8 +108,8 @@
 
       status = await response.json();
       hasConsent = status?.granted === true;
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to fetch consent status';
+    } catch (error_) {
+      error = error_ instanceof Error ? error_.message : 'Failed to fetch consent status';
       status = null;
       hasConsent = false;
     } finally {
@@ -139,8 +139,8 @@
       status = await response.json();
       hasConsent = true;
       currentTime = Date.now();
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to grant consent';
+    } catch (error_) {
+      error = error_ instanceof Error ? error_.message : 'Failed to grant consent';
     } finally {
       isSaving = false;
     }
@@ -168,8 +168,8 @@
       status = await response.json();
       hasConsent = false;
       currentTime = Date.now();
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to revoke consent';
+    } catch (error_) {
+      error = error_ instanceof Error ? error_.message : 'Failed to revoke consent';
     } finally {
       isSaving = false;
     }
@@ -181,9 +181,11 @@
     // Update current time every minute for relative dates
     const interval = setInterval(() => {
       currentTime = Date.now();
-    }, 60000);
+    }, 60_000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   });
 </script>
 

@@ -32,31 +32,31 @@ crf-api [options]
 
 ### Options
 
-| Option | Alias | Description | Default |
-|--------|-------|-------------|---------|
-| `--url <url>` | `-u` | REDCap API URL | `$REDCAP_API_URL` or `http://localhost:8080/api` |
-| `--token <token>` | `-t` | REDCap API token | `$REDCAP_API_TOKEN` |
-| `--ci` | `-c` | CI mode (no colors, no prompts) | Auto-detected |
-| `--json` | `-j` | Output results as JSON | `false` |
-| `--verbose` | | Enable verbose output | `false` |
-| `--quiet` | `-q` | Suppress non-essential output | `false` |
-| `--help` | `-h` | Show help | |
-| `--version` | | Show version | |
+| Option            | Alias | Description                     | Default                                          |
+| ----------------- | ----- | ------------------------------- | ------------------------------------------------ |
+| `--url <url>`     | `-u`  | REDCap API URL                  | `$REDCAP_API_URL` or `http://localhost:8080/api` |
+| `--token <token>` | `-t`  | REDCap API token                | `$REDCAP_API_TOKEN`                              |
+| `--ci`            | `-c`  | CI mode (no colors, no prompts) | Auto-detected                                    |
+| `--json`          | `-j`  | Output results as JSON          | `false`                                          |
+| `--verbose`       |       | Enable verbose output           | `false`                                          |
+| `--quiet`         | `-q`  | Suppress non-essential output   | `false`                                          |
+| `--help`          | `-h`  | Show help                       |                                                  |
+| `--version`       |       | Show version                    |                                                  |
 
 ### Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `REDCAP_API_URL` | REDCap API URL | No (has default) |
-| `REDCAP_API_TOKEN` | REDCap API token | Yes |
+| Variable           | Description      | Required         |
+| ------------------ | ---------------- | ---------------- |
+| `REDCAP_API_URL`   | REDCap API URL   | No (has default) |
+| `REDCAP_API_TOKEN` | REDCap API token | Yes              |
 
 ### Exit Codes
 
-| Code | Description |
-|------|-------------|
-| 0 | All tests passed |
-| 1 | Some tests failed |
-| 2 | Invalid configuration |
+| Code | Description           |
+| ---- | --------------------- |
+| 0    | All tests passed      |
+| 1    | Some tests failed     |
+| 2    | Invalid configuration |
 
 ### Examples
 
@@ -98,33 +98,33 @@ crf-server [options]
 
 ### Options
 
-| Option | Alias | Description | Default |
-|--------|-------|-------------|---------|
-| `--port <number>` | `-p` | Port to listen on | `$PORT` or `3000` |
-| `--host <host>` | `-H` | Host to bind to | `$HOST` or `0.0.0.0` |
-| `--no-rate-limit` | | Disable rate limiting | `$DISABLE_RATE_LIMIT` or `false` |
-| `--ci` | `-c` | CI mode (minimal output) | Auto-detected |
-| `--quiet` | `-q` | Suppress startup messages | `false` |
-| `--help` | `-h` | Show help | |
-| `--version` | | Show version | |
+| Option            | Alias | Description               | Default                          |
+| ----------------- | ----- | ------------------------- | -------------------------------- |
+| `--port <number>` | `-p`  | Port to listen on         | `$PORT` or `3000`                |
+| `--host <host>`   | `-H`  | Host to bind to           | `$HOST` or `0.0.0.0`             |
+| `--no-rate-limit` |       | Disable rate limiting     | `$DISABLE_RATE_LIMIT` or `false` |
+| `--ci`            | `-c`  | CI mode (minimal output)  | Auto-detected                    |
+| `--quiet`         | `-q`  | Suppress startup messages | `false`                          |
+| `--help`          | `-h`  | Show help                 |                                  |
+| `--version`       |       | Show version              |                                  |
 
 ### Environment Variables
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `REDCAP_API_URL` | REDCap API URL | Yes |
-| `REDCAP_API_TOKEN` | REDCap API token | Yes |
-| `PORT` | Server port | No (default: 3000) |
-| `HOST` | Server host | No (default: 0.0.0.0) |
-| `DISABLE_RATE_LIMIT` | Disable rate limiting | No (default: false) |
+| Variable             | Description           | Required              |
+| -------------------- | --------------------- | --------------------- |
+| `REDCAP_API_URL`     | REDCap API URL        | Yes                   |
+| `REDCAP_API_TOKEN`   | REDCap API token      | Yes                   |
+| `PORT`               | Server port           | No (default: 3000)    |
+| `HOST`               | Server host           | No (default: 0.0.0.0) |
+| `DISABLE_RATE_LIMIT` | Disable rate limiting | No (default: false)   |
 
 ### Exit Codes
 
-| Code | Description |
-|------|-------------|
-| 0 | Server stopped gracefully |
-| 1 | General error |
-| 2 | Invalid configuration |
+| Code | Description               |
+| ---- | ------------------------- |
+| 0    | Server stopped gracefully |
+| 1    | General error             |
+| 2    | Invalid configuration     |
 
 ### Examples
 
@@ -148,14 +148,14 @@ node --env-file=.env dist/bin/crf-server.js
 
 Once running, the server exposes:
 
-| Endpoint | Description |
-|----------|-------------|
-| `/health` | Health check endpoints |
-| `/api/v1/project/*` | REDCap project metadata |
-| `/api/v1/records/*` | REDCap records management |
-| `/api/v1/users/*` | REDCap users lookup |
-| `/docs` | Scalar API documentation UI |
-| `/openapi.json` | OpenAPI specification |
+| Endpoint            | Description                 |
+| ------------------- | --------------------------- |
+| `/health`           | Health check endpoints      |
+| `/api/v1/project/*` | REDCap project metadata     |
+| `/api/v1/records/*` | REDCap records management   |
+| `/api/v1/users/*`   | REDCap users lookup         |
+| `/docs`             | Scalar API documentation UI |
+| `/openapi.json`     | OpenAPI specification       |
 
 ---
 

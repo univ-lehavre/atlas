@@ -28,6 +28,17 @@ export const basePlugins = [
   n.configs["flat/recommended"],
   regexp.configs["flat/recommended"],
   eslintComments.recommended,
+  {
+    // Phase 5.5 — Chaque `eslint-disable*` doit s'expliquer après `--`.
+    // Empêche les disables silencieux qui s'accumulent au fil du temps.
+    // Pattern accepté : `eslint-disable-next-line svelte/X -- raison`.
+    rules: {
+      "@eslint-community/eslint-comments/require-description": [
+        "error",
+        { ignore: [] },
+      ],
+    },
+  },
 
   // Security
   security.configs.recommended,

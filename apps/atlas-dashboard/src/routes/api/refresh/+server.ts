@@ -85,8 +85,8 @@ export const GET = ({ url }: { url: URL }): Response => {
       };
 
       void run()
-        .catch((err: unknown) => {
-          send({ type: 'error', message: err instanceof Error ? err.message : String(err) });
+        .catch((error: unknown) => {
+          send({ type: 'error', message: error instanceof Error ? error.message : String(error) });
           controller.close();
         })
         .finally(() => {

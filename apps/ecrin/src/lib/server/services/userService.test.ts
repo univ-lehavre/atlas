@@ -6,7 +6,7 @@ vi.mock('$lib/crf/server', () => ({ fetchCrf: vi.fn() }));
 
 vi.mock('../../transformers/build-name', () => ({
   transformToName: vi.fn((first, middle, last) =>
-    `${first} ${middle} ${last}`.trim().replace(/\s+/g, ' ')
+    `${first} ${middle} ${last}`.trim().replaceAll(/\s+/g, ' ')
   ),
 }));
 

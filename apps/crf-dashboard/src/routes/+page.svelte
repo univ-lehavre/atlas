@@ -12,7 +12,7 @@
   const { data }: { data: PageData } = $props();
 
   const cachedAt = $derived(
-    data.cachedAt !== null ? new Date(data.cachedAt).toLocaleString('fr-FR') : null
+    data.cachedAt === null ? null : new Date(data.cachedAt).toLocaleString('fr-FR')
   );
 
   type Granularity = 'day' | 'week' | 'month' | 'quarter';
@@ -114,7 +114,9 @@
       { id, kind: meta.kind, code: meta.label, icon: meta.icon, message },
     ].slice(-5);
     if (!sticky) {
-      setTimeout(() => dismissNotification(id), durationMs);
+      setTimeout(() => {
+        dismissNotification(id);
+      }, durationMs);
     }
   };
 
@@ -137,35 +139,52 @@
         message?: string;
       };
 
-      if (msg.type === 'start') {
-        progressTotal = msg.total ?? 0;
-        statusMessage = 'Collecte en cours…';
-        pushNotification('COLLECT', `Collecte démarrée (${String(progressTotal)} projets).`);
-      } else if (msg.type === 'progress') {
-        progress = msg.done ?? 0;
-        statusMessage = `${String(progress)} / ${String(progressTotal)} projets`;
-        if (!progressNotified && progressTotal > 0) {
-          progressNotified = true;
-          pushNotification('COLLECT', 'Progression de la collecte en cours.');
+      switch (msg.type) {
+        case 'start': {
+          progressTotal = msg.total ?? 0;
+          statusMessage = 'Collecte en cours…';
+          pushNotification('COLLECT', `Collecte démarrée (${String(progressTotal)} projets).`);
+
+          break;
         }
-      } else if (msg.type === 'cached') {
-        statusMessage = 'Données récentes disponibles';
-        pushNotification('CACHE', 'Le cache est récent: aucune collecte nécessaire.');
-        source.close();
-        fetching = false;
-      } else if (msg.type === 'done') {
-        statusMessage = 'Mise à jour des graphiques…';
-        source.close();
-        await invalidateAll();
-        pushNotification('DONE', 'Actualisation terminée, graphiques mis à jour.');
-        fetching = false;
-      } else if (msg.type === 'error') {
-        statusMessage = 'Erreur lors de la collecte';
-        pushNotification('ERROR', msg.message ?? 'Erreur pendant la collecte REDCap.', {
-          durationMs: 7000,
-        });
-        source.close();
-        fetching = false;
+        case 'progress': {
+          progress = msg.done ?? 0;
+          statusMessage = `${String(progress)} / ${String(progressTotal)} projets`;
+          if (!progressNotified && progressTotal > 0) {
+            progressNotified = true;
+            pushNotification('COLLECT', 'Progression de la collecte en cours.');
+          }
+
+          break;
+        }
+        case 'cached': {
+          statusMessage = 'Données récentes disponibles';
+          pushNotification('CACHE', 'Le cache est récent: aucune collecte nécessaire.');
+          source.close();
+          fetching = false;
+
+          break;
+        }
+        case 'done': {
+          statusMessage = 'Mise à jour des graphiques…';
+          source.close();
+          await invalidateAll();
+          pushNotification('DONE', 'Actualisation terminée, graphiques mis à jour.');
+          fetching = false;
+
+          break;
+        }
+        case 'error': {
+          statusMessage = 'Erreur lors de la collecte';
+          pushNotification('ERROR', msg.message ?? 'Erreur pendant la collecte REDCap.', {
+            durationMs: 7000,
+          });
+          source.close();
+          fetching = false;
+
+          break;
+        }
+        // No default
       }
     };
 
@@ -248,7 +267,9 @@
           class="notice-close"
           type="button"
           aria-label="Fermer la notification"
-          onclick={() => dismissNotification(notification.id)}
+          onclick={() => {
+            dismissNotification(notification.id);
+          }}
         >
           ×
         </button>

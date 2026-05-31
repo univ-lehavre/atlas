@@ -31,7 +31,7 @@ describe('mapErrorToResponse', () => {
   });
 
   it('maps unknown to 500', async () => {
-    const response = mapErrorToResponse(undefined);
+    const response = mapErrorToResponse(new Error('unknown error'));
     expect(response.status).toBe(500);
     const body = await response.json();
     expect(body.error.code).toBe('internal_error');

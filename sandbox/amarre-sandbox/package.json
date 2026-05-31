@@ -29,7 +29,9 @@
     "test:smoke": "playwright test",
     "test:smoke:headed": "playwright test --headed",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "lint": "eslint scripts tests --max-warnings 0",
+    "lint:fix": "eslint scripts tests --fix"
   },
   "devDependencies": {
     "@faker-js/faker": "^10.4.0",
@@ -39,6 +41,7 @@
     "playwright": "^1.50.0",
     "prettier": "^3.8.3",
     "tsx": "^4.22.3",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "eslint": "^10.4.0"
   }
 }

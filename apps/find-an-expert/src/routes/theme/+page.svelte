@@ -150,7 +150,9 @@
             {#each getFontsByCategory(category.id) as pairing (pairing.name)}
               <DropdownItem
                 selected={themeStore.fontName === pairing.name}
-                onclick={() => selectFont(pairing.name)}
+                onclick={() => {
+                  selectFont(pairing.name);
+                }}
               >
                 <div class="flex-1 min-w-0">
                   <span
@@ -221,7 +223,9 @@
               {@const colors = getPalettePreviewColors(palette)}
               <DropdownItem
                 selected={themeStore.palette === palette}
-                onclick={() => selectPalette(palette)}
+                onclick={() => {
+                  selectPalette(palette);
+                }}
               >
                 <div class="flex-1 min-w-0">
                   <span

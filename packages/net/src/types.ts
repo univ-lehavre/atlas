@@ -373,4 +373,4 @@ export const SafeApiUrl = Brand.refined<SafeApiUrl>(isValidSafeApiUrl, (url) =>
     `Invalid safe API URL: "${url}" must be a valid HTTP/HTTPS URL without credentials, query string, or fragments`
   )
 );
-/* eslint-enable functional/no-conditional-statements */
+/* eslint-enable functional/no-conditional-statements -- fin du validateur ergonomique d'URLs */

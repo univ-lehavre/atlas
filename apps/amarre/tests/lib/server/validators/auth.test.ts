@@ -36,6 +36,7 @@ describe('validateMagicUrlLogin', () => {
   });
 
   it('rejects missing values', () => {
+    // eslint-disable-next-line unicorn/no-useless-undefined -- la signature exige un secret explicite
     expect(() => validateMagicUrlLogin('abcd', undefined)).toThrow();
   });
 
@@ -54,6 +55,7 @@ describe('validateUserId', () => {
   });
 
   it('rejects missing userId', () => {
+    // eslint-disable-next-line unicorn/no-useless-undefined -- la signature exige un userId explicite
     expect(() => validateUserId(undefined)).toThrow(SessionError);
   });
 

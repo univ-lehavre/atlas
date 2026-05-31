@@ -276,4 +276,4 @@ export const checkInternet = (options: TcpPingOptions = {}): Effect.Effect<Diagn
     timeoutMs: DEFAULT_INTERNET_CHECK_TIMEOUT_MS,
     ...options,
   });
-/* eslint-enable functional/no-expression-statements, functional/no-conditional-statements */
+/* eslint-enable functional/no-expression-statements, functional/no-conditional-statements -- fin du bloc impératif (probes réseau) */

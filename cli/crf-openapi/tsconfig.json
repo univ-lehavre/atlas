@@ -9,16 +9,8 @@
     "declaration": true,
     "declarationMap": true,
     "noPropertyAccessFromIndexSignature": false,
-    "types": [
-      "node"
-    ]
+    "types": ["node"]
   },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "upstream"
-  ]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "upstream"]
 }

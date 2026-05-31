@@ -25,6 +25,7 @@ describe('POST /api/v1/auth/login', () => {
 
   it('returns 200 with { loggedIn: true } when login succeeds', async () => {
     const services = await import('$lib/server/services/authService');
+    // eslint-disable-next-line unicorn/no-useless-undefined -- mockResolvedValueOnce exige un argument
     (services.login as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
 
     const mod = await import('./+server');

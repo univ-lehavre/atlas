@@ -86,32 +86,49 @@
 
     source.onmessage = async (e: MessageEvent<string>) => {
       const msg = JSON.parse(e.data) as SseEvent;
-      if (msg.type === 'start') {
-        fetchLabel = 'Démarrage…';
-      } else if (msg.type === 'progress') {
-        fetchLabel = msg.label;
-        fetchStep = msg.step;
-        fetchSteps = msg.steps;
-      } else if (msg.type === 'cached') {
-        fetchLabel = 'Données déjà à jour';
-        lastUpdatedAt = msg.cachedAt;
-        currentState = 'OK';
-        source.close();
-        await invalidateAll();
-        fetching = false;
-      } else if (msg.type === 'done') {
-        fetchLabel = 'Actualisation terminée';
-        lastUpdatedAt = msg.cachedAt;
-        currentState = 'OK';
-        source.close();
-        await invalidateAll();
-        fetching = false;
-      } else if (msg.type === 'error') {
-        fetchLabel = `Erreur : ${msg.message}`;
-        lastErrorAt = Date.now();
-        currentState = 'ERROR';
-        source.close();
-        fetching = false;
+      switch (msg.type) {
+        case 'start': {
+          fetchLabel = 'Démarrage…';
+
+          break;
+        }
+        case 'progress': {
+          fetchLabel = msg.label;
+          fetchStep = msg.step;
+          fetchSteps = msg.steps;
+
+          break;
+        }
+        case 'cached': {
+          fetchLabel = 'Données déjà à jour';
+          lastUpdatedAt = msg.cachedAt;
+          currentState = 'OK';
+          source.close();
+          await invalidateAll();
+          fetching = false;
+
+          break;
+        }
+        case 'done': {
+          fetchLabel = 'Actualisation terminée';
+          lastUpdatedAt = msg.cachedAt;
+          currentState = 'OK';
+          source.close();
+          await invalidateAll();
+          fetching = false;
+
+          break;
+        }
+        case 'error': {
+          fetchLabel = `Erreur : ${msg.message}`;
+          lastErrorAt = Date.now();
+          currentState = 'ERROR';
+          source.close();
+          fetching = false;
+
+          break;
+        }
+        // No default
       }
     };
 
@@ -184,17 +201,35 @@
         <thead>
           <tr>
             <th>
-              <button class="sort-btn" type="button" onclick={() => onSort('name')}>
+              <button
+                class="sort-btn"
+                type="button"
+                onclick={() => {
+                  onSort('name');
+                }}
+              >
                 Paquet <span class="sort-ind">{sortIndicator('name')}</span>
               </button>
             </th>
             <th>
-              <button class="sort-btn" type="button" onclick={() => onSort('version')}>
+              <button
+                class="sort-btn"
+                type="button"
+                onclick={() => {
+                  onSort('version');
+                }}
+              >
                 Version <span class="sort-ind">{sortIndicator('version')}</span>
               </button>
             </th>
             <th>
-              <button class="sort-btn" type="button" onclick={() => onSort('date')}>
+              <button
+                class="sort-btn"
+                type="button"
+                onclick={() => {
+                  onSort('date');
+                }}
+              >
                 Dernière publication <span class="sort-ind">{sortIndicator('date')}</span>
               </button>
             </th>

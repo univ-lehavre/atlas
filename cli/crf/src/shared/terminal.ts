@@ -310,7 +310,7 @@ export const promptSelect = async <T extends string>(
 
   const result = await p.select({
     message: options.message,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- @clack/prompts type Options est volontairement opaque
     options: selectOptions as any,
     initialValue: options.defaultValue,
   });

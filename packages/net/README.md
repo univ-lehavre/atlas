@@ -94,23 +94,23 @@ const url = SafeApiUrl('https://api.example.com/v1/'); // Secure URL
 
 ### Functions
 
-| Function | Description |
-|----------|-------------|
-| `dnsResolve(hostname)` | Resolves a hostname to an IP address |
-| `tcpPing(host, port, options?)` | Tests TCP connectivity |
-| `tlsHandshake(host, port, options?)` | Verifies TLS certificate |
-| `checkInternet(options?)` | Checks Internet connectivity |
+| Function                             | Description                          |
+| ------------------------------------ | ------------------------------------ |
+| `dnsResolve(hostname)`               | Resolves a hostname to an IP address |
+| `tcpPing(host, port, options?)`      | Tests TCP connectivity               |
+| `tlsHandshake(host, port, options?)` | Verifies TLS certificate             |
+| `checkInternet(options?)`            | Checks Internet connectivity         |
 
 ### Types
 
-| Type | Description |
-|------|-------------|
-| `Hostname` | RFC 1123 validated hostname or IP address |
-| `IpAddress` | Validated IPv4 or IPv6 address |
-| `Port` | Port number (1-65535) |
-| `TimeoutMs` | Timeout in milliseconds (0-600000) |
-| `SafeApiUrl` | Secure URL for API communication |
-| `DiagnosticStep` | Result of a diagnostic step |
+| Type             | Description                               |
+| ---------------- | ----------------------------------------- |
+| `Hostname`       | RFC 1123 validated hostname or IP address |
+| `IpAddress`      | Validated IPv4 or IPv6 address            |
+| `Port`           | Port number (1-65535)                     |
+| `TimeoutMs`      | Timeout in milliseconds (0-600000)        |
+| `SafeApiUrl`     | Secure URL for API communication          |
+| `DiagnosticStep` | Result of a diagnostic step               |
 
 ### Constants
 

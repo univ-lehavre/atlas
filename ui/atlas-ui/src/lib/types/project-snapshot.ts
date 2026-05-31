@@ -7,7 +7,7 @@
  * snapshot. The carousel surfaces these to authenticated visitors as
  * inspiration before they're invited to declare their own forms.
  */
-export type ProjectSnapshot = {
+export interface ProjectSnapshot {
   /** Stable identifier used as Svelte `{#each}` key. */
   id: string;
   /** Short, scannable project title. */
@@ -25,6 +25,6 @@ export type ProjectSnapshot = {
   /** Optional cover image URL — falls back to a generated gradient when
    *  absent. */
   coverUrl?: string;
-};
+}
 
 export type ProjectSnapshotList = readonly ProjectSnapshot[];

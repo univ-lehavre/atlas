@@ -24,29 +24,29 @@ atlas-net [options] [url]
 
 ### Arguments
 
-| Argument | Description | Required |
-|----------|-------------|----------|
-| `url` | Target URL to diagnose | No (interactive prompt if omitted) |
+| Argument | Description            | Required                           |
+| -------- | ---------------------- | ---------------------------------- |
+| `url`    | Target URL to diagnose | No (interactive prompt if omitted) |
 
 ### Options
 
-| Option | Alias | Description | Default |
-|--------|-------|-------------|---------|
-| `--ci` | `-c` | CI mode (no colors, no prompts) | Auto-detected |
-| `--json` | `-j` | Output results as JSON | `false` |
-| `--verbose` | `-v` | Enable verbose output | `false` |
-| `--quiet` | `-q` | Suppress non-essential output | `false` |
-| `--help` | `-h` | Show help | |
-| `--version` | | Show version | |
+| Option      | Alias | Description                     | Default       |
+| ----------- | ----- | ------------------------------- | ------------- |
+| `--ci`      | `-c`  | CI mode (no colors, no prompts) | Auto-detected |
+| `--json`    | `-j`  | Output results as JSON          | `false`       |
+| `--verbose` | `-v`  | Enable verbose output           | `false`       |
+| `--quiet`   | `-q`  | Suppress non-essential output   | `false`       |
+| `--help`    | `-h`  | Show help                       |               |
+| `--version` |       | Show version                    |               |
 
 ### Exit Codes
 
-| Code | Description |
-|------|-------------|
-| 0 | All diagnostics passed |
-| 1 | General error |
-| 2 | Invalid configuration |
-| 3 | Network connectivity failed |
+| Code | Description                 |
+| ---- | --------------------------- |
+| 0    | All diagnostics passed      |
+| 1    | General error               |
+| 2    | Invalid configuration       |
+| 3    | Network connectivity failed |
 
 ---
 

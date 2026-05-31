@@ -46,7 +46,9 @@
 
   onMount(() => {
     updateArrows();
-    const ro = new ResizeObserver(() => updateArrows());
+    const ro = new ResizeObserver(() => {
+      updateArrows();
+    });
     if (scroller) ro.observe(scroller);
     // Observer pour la tuile-titre (on prend le premier item comme SectionTile)
     let io: IntersectionObserver | undefined;
@@ -67,7 +69,7 @@
         },
         { root: scroller, threshold },
       );
-      const target = items?.firstElementChild as Element | null;
+      const target = items?.firstElementChild;
       if (target) io.observe(target);
     }
     return () => {
@@ -77,7 +79,7 @@
   });
 </script>
 
-<div class="hs-wrapper {variant !== 'none' ? `hs-${variant}` : ''}">
+<div class="hs-wrapper {variant === 'none' ? '' : `hs-${variant}`}">
   <div class="container">
     {#if headingText && showHeading}
       <div class="fw-bolder fs-3 mb-2" style="font-family: Gambetta;">
@@ -87,15 +89,15 @@
 
     <div class="position-relative hs-root">
       <div
-        class={`overflow-auto ${snap !== "none" ? "snap-x" : ""}`}
+        class={`overflow-auto ${snap === "none" ? "" : "snap-x"}`}
         style={`scroll-padding-inline: ${snapPadding}`}
         aria-label={ariaLabel}
         bind:this={scroller}
         onscroll={updateArrows}
       >
         <div
-          class={`d-flex flex-column flex-sm-row flex-sm-nowrap pe-3 py-1 ${snap !== "none" ? "snap-items" : ""}`}
-          style={(snap !== "none" ? `--snap-align: ${snap}; ` : "") +
+          class={`d-flex flex-column flex-sm-row flex-sm-nowrap pe-3 py-1 ${snap === "none" ? "" : "snap-items"}`}
+          style={(snap === "none" ? "" : `--snap-align: ${snap}; `) +
             `gap: var(--card-gap, 1rem);`}
           bind:this={items}
         >
@@ -112,7 +114,9 @@
             <button
               class="btn btn-light btn-sm shadow mb-2"
               aria-label="Scroll left"
-              onclick={() => scrollStep(-1)}
+              onclick={() => {
+                scrollStep(-1);
+              }}
             >
               <i class="bi bi-chevron-left"></i>
             </button>
@@ -121,7 +125,9 @@
             <button
               class="btn btn-light btn-sm shadow"
               aria-label="Scroll right"
-              onclick={() => scrollStep(1)}
+              onclick={() => {
+                scrollStep(1);
+              }}
             >
               <i class="bi bi-chevron-right"></i>
             </button>

@@ -32,8 +32,8 @@ export const parseNumstatLine = (line: string): ChangedFile | null => {
   const [addStr, delStr, path] = parts;
   if (!path) return null;
 
-  const additions = addStr === '-' ? 0 : parseInt(addStr, 10);
-  const deletions = delStr === '-' ? 0 : parseInt(delStr, 10);
+  const additions = addStr === '-' ? 0 : Number.parseInt(addStr, 10);
+  const deletions = delStr === '-' ? 0 : Number.parseInt(delStr, 10);
 
   if (isNaN(additions) || isNaN(deletions)) return null;
 

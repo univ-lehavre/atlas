@@ -65,6 +65,7 @@ const bucketKey = (granularity: Granularity, date: Date): string => {
     month: `${String(y)}-${pad2(m)}`,
     quarter: `${String(y)}-Q${String(Math.floor(m / 3) + 1)}`,
   };
+  // eslint-disable-next-line security/detect-object-injection -- `granularity` is a typed Granularity union, not user input
   return keys[granularity];
 };
 
@@ -82,6 +83,7 @@ const bucketDate = (granularity: Granularity, key: string): Date => {
       return new Date(Number(parts[0]), Number(parts[1]), 1);
     })(),
   };
+  // eslint-disable-next-line security/detect-object-injection -- `granularity` is a typed Granularity union, not user input
   return dates[granularity];
 };
 

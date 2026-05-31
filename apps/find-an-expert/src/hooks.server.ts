@@ -41,7 +41,7 @@ const isNetworkError = (error: unknown): boolean => {
 
 /** Track if we've already logged a connectivity error recently */
 let lastConnectivityErrorTime = 0;
-const CONNECTIVITY_ERROR_LOG_INTERVAL_MS = 60000; // Log at most once per minute
+const CONNECTIVITY_ERROR_LOG_INTERVAL_MS = 60_000; // Log at most once per minute
 
 /**
  * SvelteKit server hook that extracts user session from cookies.

@@ -54,14 +54,14 @@ export const load: PageServerLoad = async () => {
     ]);
 
     return {
-      stats: stats as TRepositoryStats,
+      stats: stats,
       error: null,
       githubUrls,
     };
-  } catch (err) {
+  } catch (error) {
     return {
       stats: null,
-      error: err instanceof Error ? err.message : 'Erreur lors du chargement des statistiques',
+      error: error instanceof Error ? error.message : 'Erreur lors du chargement des statistiques',
       githubUrls: null,
     };
   }

@@ -8,13 +8,13 @@
  * source records against the consent matrix before mapping into this
  * shape.
  */
-export type AnonymousResearcher = {
+export interface AnonymousResearcher {
   id: string;
   fullName: string;
   /** Absolute URL to a square portrait image (avatar). */
   photoUrl: string;
   /** Short bio surfaced on hover/focus — keep < 200 characters. */
   bio: string;
-};
+}
 
 export type AnonymousResearcherList = readonly AnonymousResearcher[];

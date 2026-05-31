@@ -7,7 +7,7 @@
 
 <div id="ask">
   <HorizontalScroller ariaLabel="Ask cards" headingText="Ask" bind:showHeading>
-    <SectionTile title={!showHeading ? 'Ask' : ''} />
+    <SectionTile title={showHeading ? '' : 'Ask'} />
     <div class="flex-shrink-0">
       <CardItem title="Data" description="I am looking for data to support my research."></CardItem>
     </div>

@@ -103,8 +103,7 @@ describe('createApp', () => {
     const { createApp } = (await import('./app.js')) as AppModule;
     const app = createApp({ port: 3001, disableRateLimit: true });
     app.get('/empty', () => {
-      // Deliberately empty message to exercise the onError fallback path.
-      // eslint-disable-next-line unicorn/error-message
+      // eslint-disable-next-line unicorn/error-message -- message vide volontaire pour exercer le fallback onError
       throw new Error('');
     });
     const res = await app.request('/empty');

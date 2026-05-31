@@ -43,8 +43,8 @@
   };
 
   const getSystemTheme = (): DisplayMode => {
-    if (typeof window === 'undefined') return 'light';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    if (globalThis.window === undefined) return 'light';
+    return globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   };
 
   /** Get the currently displayed theme (resolved from system if needed) */

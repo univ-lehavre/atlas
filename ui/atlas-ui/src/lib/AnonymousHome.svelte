@@ -54,7 +54,9 @@
       if (nextId === undefined) return;
       visibleIds = visibleIds.map((id, i) => (i === slotIdx ? nextId : id));
     }, rotationIntervalMs);
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+    };
   });
 </script>
 

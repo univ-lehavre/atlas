@@ -44,4 +44,4 @@ export const formatCertificateMessage = (cert: tls.PeerCertificate): string => {
   }
   return message;
 };
-/* eslint-enable functional/no-let, functional/no-conditional-statements, functional/no-expression-statements, @typescript-eslint/strict-boolean-expressions, @typescript-eslint/no-unnecessary-condition, unicorn/no-negated-condition */
+/* eslint-enable functional/no-let, functional/no-conditional-statements, functional/no-expression-statements, @typescript-eslint/strict-boolean-expressions, @typescript-eslint/no-unnecessary-condition, unicorn/no-negated-condition -- fin du bloc de formatage impératif */

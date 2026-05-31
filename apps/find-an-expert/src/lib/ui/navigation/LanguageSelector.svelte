@@ -106,7 +106,9 @@
 						{locale === localeState.current
             ? 'text-primary-600 dark:text-primary-400 font-medium'
             : 'text-secondary-700 dark:text-secondary-300'}"
-          onclick={() => selectLocale(locale)}
+          onclick={() => {
+            selectLocale(locale);
+          }}
           role="option"
           aria-selected={locale === localeState.current}
         >

@@ -88,7 +88,7 @@
   }
 
   /** Auto-refresh interval in milliseconds (1 minute) */
-  const AUTO_REFRESH_INTERVAL_MS = 60000;
+  const AUTO_REFRESH_INTERVAL_MS = 60_000;
 
   /** How often to update the freshness indicator (every second) */
   const FRESHNESS_UPDATE_INTERVAL_MS = 1000;
@@ -213,8 +213,8 @@
       health = data;
       lastChecked = new Date();
       currentTime = Date.now();
-    } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to fetch health status';
+    } catch (error_) {
+      error = error_ instanceof Error ? error_.message : 'Failed to fetch health status';
       health = null;
     } finally {
       isLoading = false;
@@ -368,7 +368,9 @@
           {#if canExpand}
             <button
               type="button"
-              onclick={() => toggleServiceExpanded(service.name)}
+              onclick={() => {
+                toggleServiceExpanded(service.name);
+              }}
               class="w-full flex items-center justify-between p-3 hover:bg-secondary-100 dark:hover:bg-secondary-600/50 transition-colors"
             >
               <div class="flex items-center gap-3">

@@ -83,7 +83,7 @@ const config: StorybookConfig = {
     cfg.resolve = {
       ...cfg.resolve,
       alias: {
-        ...(cfg.resolve?.alias ?? {}),
+        ...cfg.resolve?.alias,
         "$app/paths": here("app-paths.ts"),
         "$app/forms": here("app-forms.ts"),
       },

@@ -13,12 +13,12 @@
   let chart: (HTMLElement | SVGSVGElement) | null = null;
 
   const plotAction = (node: HTMLElement, opts: Plot.PlotOptions) => {
-    chart = Plot.plot(opts) as HTMLElement | SVGSVGElement;
+    chart = Plot.plot(opts);
     node.append(chart);
     return {
       update(newOpts: Plot.PlotOptions) {
         node.innerHTML = '';
-        chart = Plot.plot(newOpts) as HTMLElement | SVGSVGElement;
+        chart = Plot.plot(newOpts);
         node.append(chart);
       },
       destroy() {

@@ -5,13 +5,13 @@ import type { ProfileState } from '$lib/types/api/profile';
  * `@univ-lehavre/atlas-ui` (QuestionnaireEntry) — kept here without
  * importing the barrel to avoid the side-effects observed in phase 5.
  */
-type QuestionnaireEntry = {
+interface QuestionnaireEntry {
   id: string;
   label: string;
   description: string;
   href: string;
   disabled?: boolean;
-};
+}
 
 const isComplete = (status: string | null | undefined): boolean => status === '2';
 
@@ -30,7 +30,7 @@ const isComplete = (status: string | null | undefined): boolean => status === '2
  * from the mocks (their `disabled` defaults are ignored).
  */
 export const applyGating = (
-  entries: ReadonlyArray<QuestionnaireEntry>,
+  entries: readonly QuestionnaireEntry[],
   state: ProfileState
 ): QuestionnaireEntry[] => {
   const profileComplete = isComplete(state.researcher_profile_complete);
@@ -38,16 +38,20 @@ export const applyGating = (
 
   const computeDisabled = (entry: QuestionnaireEntry): boolean => {
     switch (entry.id) {
-      case 'researcher_profile':
+      case 'researcher_profile': {
         return false;
+      }
       case 'research_questions':
-      case 'publications':
+      case 'publications': {
         return !profileComplete;
-      case 'project_proposal':
+      }
+      case 'project_proposal': {
         return !publicationsComplete;
-      default:
+      }
+      default: {
         // Unknown instrument id — pass through whatever the entry had.
         return Boolean(entry.disabled);
+      }
     }
   };
 

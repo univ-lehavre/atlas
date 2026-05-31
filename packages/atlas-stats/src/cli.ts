@@ -173,6 +173,7 @@ export interface CollectAtlasStatsHooks {
   onWarning?: (message: string) => void;
 }
 
+// eslint-disable-next-line max-lines-per-function -- séquentielles GitHub→npm→downloads, refactor en sous-fonctions briserait la lecture linéaire des étapes
 export const collectAtlasStats = async (
   token: string,
   hooks: CollectAtlasStatsHooks = {},
@@ -308,6 +309,7 @@ export interface AtlasCliReport {
   };
 }
 
+// eslint-disable-next-line max-lines-per-function -- enrichit + agrège chaque CLI une fois, refactor ferait double passe sur les paquets
 export const buildAtlasCliReport = async (
   cache: AtlasStatsCache,
   period: Period,

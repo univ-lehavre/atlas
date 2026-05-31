@@ -11,7 +11,7 @@
 
 <div id="administrate">
   <HorizontalScroller ariaLabel="Administrate cards" headingText="Administrate" bind:showHeading>
-    <SectionTile title={!showHeading ? 'Administrate' : ''} />
+    <SectionTile title={showHeading ? '' : 'Administrate'} />
 
     <div class="flex-shrink-0">
       <CardItem title="My account">

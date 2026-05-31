@@ -214,6 +214,7 @@ const extractUserId = (results: readonly { readonly userid?: string }[]): string
  * 2. Select the appropriate adapter for that version
  * 3. Apply version-specific transformations to requests/responses
  */
+// eslint-disable-next-line max-lines-per-function -- builder closure du client REDCap : split par méthode forcerait à exposer l'état mutable du cache version
 const makeCrfClient = (rawConfig: CrfConfig, fetchFn: typeof fetch = fetch): CrfClient => {
   // REDCap returns HTTP 501 on POST when the API URL is missing the
   // trailing slash (e.g. `/api` instead of `/api/`). Normalise here so

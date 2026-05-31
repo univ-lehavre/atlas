@@ -14,7 +14,7 @@ describe('graphsService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = mockFetch;
+    globalThis.fetch = mockFetch;
   });
 
   describe('fetchRecordsFromCrf', () => {
