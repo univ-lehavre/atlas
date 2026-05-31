@@ -19,6 +19,14 @@ const CLI_IO_MIGRATION_PENDING = new Set([
   "@univ-lehavre/atlas-citation-validate",
 ]);
 
+// Paquets internes private : apps/* et sandbox/* doivent être private par
+// nature ; ces paquets-ci aussi (helpers internes non publiés sur npm).
+// Voir ADR 0011 — paquets internes private.
+const PRIVATE_INTERNAL_ALLOWED = new Set([
+  "@univ-lehavre/atlas-ui",
+  "@univ-lehavre/atlas-test-utils-sveltekit",
+]);
+
 // Deps that belong in cli/, never in packages/ dependencies
 const CLI_IO_DEPS = new Set([
   "@clack/prompts",
@@ -70,6 +78,10 @@ const RUNTIME_IMPORT_RE =
 // Matches any import (including type) for broader checks
 const ANY_IMPORT_RE =
   /^(?!\s*\/\/|^\s*\*)\s*import\s+.*from\s+['"]([^'"]+)['"]/gm;
+// Matches dynamic imports: `import('...')` or `await import('...')` —
+// Phase 6.5 a ajouté ce pattern aux scans pour capturer les imports
+// chargés à la volée (par exemple `await import('bootstrap/...js')`).
+const DYNAMIC_IMPORT_RE = /import\(\s*['"]([^'"]+)['"]\s*\)/g;
 
 function* iterSourceFiles(dir) {
   if (!existsSync(dir)) return;
@@ -85,7 +97,11 @@ function* iterSourceFiles(dir) {
     else if (
       entry.name.endsWith(".ts") ||
       entry.name.endsWith(".js") ||
-      entry.name.endsWith(".svelte")
+      entry.name.endsWith(".mjs") ||
+      entry.name.endsWith(".svelte") ||
+      // Phase 6.5 — fichiers Svelte 5 runes (state/derived/effect) co-localisés
+      entry.name.endsWith(".svelte.ts") ||
+      entry.name.endsWith(".svelte.js")
     )
       yield full;
   }
@@ -100,10 +116,49 @@ function findForbiddenImports(
   const hits = [];
   for (const file of iterSourceFiles(srcDir)) {
     const content = readFileSync(file, "utf8");
+    // Static imports (import ... from '...')
     for (const match of content.matchAll(new RegExp(re.source, re.flags))) {
       const mod = match[1];
       if (forbidden.some((f) => mod === f || mod.startsWith(f + "/"))) {
         hits.push({ file: file.replace(process.cwd() + "/", ""), module: mod });
+      }
+    }
+    // Phase 6.5 — dynamic imports : import('...') ou await import('...')
+    for (const match of content.matchAll(
+      new RegExp(DYNAMIC_IMPORT_RE.source, DYNAMIC_IMPORT_RE.flags),
+    )) {
+      const mod = match[1];
+      if (forbidden.some((f) => mod === f || mod.startsWith(f + "/"))) {
+        hits.push({ file: file.replace(process.cwd() + "/", ""), module: mod });
+      }
+    }
+  }
+  return hits;
+}
+
+// Phase 6.4 — Détecte les imports relatifs cross-workspace
+// (ex. `from '../../../apps/foo'`). Retourne `[{ file, module }]`.
+function findRelativeCrossWorkspaceImports(srcDir, currentDir) {
+  const hits = [];
+  const absCurrent = path.resolve(currentDir);
+  for (const file of iterSourceFiles(srcDir)) {
+    const content = readFileSync(file, "utf8");
+    const fileDir = path.dirname(file);
+    for (const match of [
+      ...content.matchAll(new RegExp(ANY_IMPORT_RE.source, ANY_IMPORT_RE.flags)),
+      ...content.matchAll(
+        new RegExp(DYNAMIC_IMPORT_RE.source, DYNAMIC_IMPORT_RE.flags),
+      ),
+    ]) {
+      const mod = match[1];
+      if (!mod.startsWith(".")) continue;
+      const resolved = path.resolve(fileDir, mod);
+      // Hit if the resolved path escapes the current workspace.
+      if (!resolved.startsWith(absCurrent + path.sep)) {
+        hits.push({
+          file: file.replace(process.cwd() + "/", ""),
+          module: mod,
+        });
       }
     }
   }
@@ -332,6 +387,15 @@ for (const [packageName, { root, dir, packageJson }] of workspaces) {
     if (hasBin) {
       errors.push(`${dir}: config/ must not have a "bin" field`);
     }
+    // Phase 6.7 — un paquet config/ doit exposer un champ `exports` propre
+    // (sinon ses consommateurs importent via des chemins fragiles vers
+    // src/). Une seule entrée `"."` au minimum, plus toutes les
+    // sous-arborescences exposées (./eslint, ./prettier, ./vitest…).
+    if (!packageJson.exports) {
+      errors.push(
+        `${dir}: config/ must declare an "exports" field — implicit deep imports breaks the public contract`,
+      );
+    }
   }
 
   if (root === "assets") {
@@ -398,6 +462,29 @@ for (const [packageName, { root, dir, packageJson }] of workspaces) {
       }
     }
   }
+
+  // ── Phase 6.2 — `private: true` enforcement (ADR 0011) ────────────────
+  //
+  // Les paquets `apps/*`, `sandbox/*` ainsi que la liste
+  // `PRIVATE_INTERNAL_ALLOWED` (helpers internes non publiés) doivent
+  // déclarer `"private": true` pour éviter une publication accidentelle.
+  // Les autres catégories (packages/, cli/, services/, config/, ui/,
+  // assets/) sont publiables : `private: true` y serait une erreur.
+  const isPrivate = packageJson.private === true;
+  const shouldBePrivate =
+    root === "apps" ||
+    root === "sandbox" ||
+    PRIVATE_INTERNAL_ALLOWED.has(packageName);
+  if (shouldBePrivate && !isPrivate) {
+    errors.push(
+      `${dir}: must declare "private": true (apps/sandbox or listed internal helper — see ADR 0011)`,
+    );
+  }
+  if (!shouldBePrivate && isPrivate) {
+    errors.push(
+      `${dir}: must not declare "private": true (publishable package — remove the field or add the name to PRIVATE_INTERNAL_ALLOWED with a justification)`,
+    );
+  }
 }
 
 // ── Cross-workspace import checks ────────────────────────────────────────────
@@ -410,6 +497,11 @@ const serviceNames = new Set(
 const appNames = new Set(
   [...workspaces.values()]
     .filter(({ root }) => root === "apps")
+    .map(({ packageJson }) => packageJson.name),
+);
+const cliNames = new Set(
+  [...workspaces.values()]
+    .filter(({ root }) => root === "cli")
     .map(({ packageJson }) => packageJson.name),
 );
 
@@ -439,6 +531,33 @@ for (const [packageName, { root, dir, packageJson }] of workspaces) {
         );
       }
     }
+  }
+
+  // Phase 6.1 — un cli/ ne doit pas dépendre d'un autre cli/ (ADR 0008).
+  // Les CLIs sont des thin wrappers vers packages/* ; mutualiser deux
+  // CLIs entre eux signifie qu'il manque un package/ partagé.
+  if (root === "cli") {
+    for (const cliName of cliNames) {
+      if (cliName !== packageName && cliName in allDeps) {
+        errors.push(
+          `${dir}: cli/ must not depend on another cli "${cliName}" — extract shared logic to packages/ (see ADR 0008)`,
+        );
+      }
+    }
+  }
+
+  // Phase 6.4 — scan imports relatifs cross-workspace
+  // (ex. `from '../../apps/foo/src/x'`). Les workspaces doivent
+  // communiquer via `@univ-lehavre/atlas-*` pour préserver la
+  // séparation des catégories.
+  const srcDir = path.join(dir, "src");
+  for (const { file, module: mod } of findRelativeCrossWorkspaceImports(
+    srcDir,
+    dir,
+  )) {
+    errors.push(
+      `${file}: relative import "${mod}" escapes the workspace — use a @univ-lehavre/atlas-* package dependency instead`,
+    );
   }
 }
 

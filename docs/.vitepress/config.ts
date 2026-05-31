@@ -152,6 +152,14 @@ export default withMermaid(
                 text: "0020 — Lint Svelte au preset strict",
                 link: "/decisions/0020-svelte-eslint-strict",
               },
+              {
+                text: "0021 — Politique deps sandboxes",
+                link: "/decisions/0021-sandbox-deps-policy",
+              },
+              {
+                text: "0022 — Convention de nommage atlas-",
+                link: "/decisions/0022-naming-convention",
+              },
             ],
           },
         ],
