@@ -39,8 +39,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@univ-lehavre/atlas-fetch-one-api-page": "workspace:*",
     "@univ-lehavre/atlas-citation-types": "workspace:*",
+    "@univ-lehavre/atlas-fetch-one-api-page": "workspace:*",
     "effect": "^3.21.2"
   },
   "devDependencies": {

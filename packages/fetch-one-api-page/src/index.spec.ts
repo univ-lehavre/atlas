@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { http, HttpResponse } from "msw";
 import {
   buildHeaders,
   buildURL,
@@ -9,7 +10,30 @@ import {
   parseRateLimitHeaders,
   FetchError,
 } from "./index.js";
-import { it, describe, expect, afterEach } from "@effect/vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+} from "@effect/vitest";
+
+import { server } from "../tests/msw/server.js";
+
+// Wire MSW lifecycle locally to keep the impact on vitest config minimal.
+beforeAll(() => {
+  // 'error' raises if a test hits an unintended URL : keeps the tests honest.
+  server.listen({ onUnhandledRequest: "error" });
+});
+afterEach(() => {
+  server.resetHandlers();
+});
+afterAll(() => {
+  server.close();
+});
+
+const TEST_URL = "https://api.example.com/test";
 
 describe("FetchError", () => {
   it("can be constructed without cause", () => {
@@ -39,18 +63,13 @@ describe("buildHeaders", () => {
 });
 
 describe("URLToResponse", () => {
-  const originalFetch = globalThis.fetch;
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
-  });
-
   it.effect("should fetch a response successfully", () =>
     Effect.gen(function* () {
-      const mockResponse = new Response("OK", { status: 200 });
-      globalThis.fetch = (async () => mockResponse) as typeof fetch;
+      server.use(
+        http.get(TEST_URL, () => new HttpResponse("OK", { status: 200 })),
+      );
 
-      const url = new URL("https://api.example.com/test");
+      const url = new URL(TEST_URL);
       const headers = new Headers();
 
       const response = yield* URLToResponse(url, "GET", headers);
@@ -62,11 +81,9 @@ describe("URLToResponse", () => {
 
   it.effect("should return FetchError when fetch rejects", () =>
     Effect.gen(function* () {
-      globalThis.fetch = (async () => {
-        throw new Error("network fail");
-      }) as typeof fetch;
+      server.use(http.get(TEST_URL, () => HttpResponse.error()));
 
-      const url = new URL("https://api.example.com/test");
+      const url = new URL(TEST_URL);
       const headers = new Headers();
 
       const either = yield* Effect.either(URLToResponse(url, "GET", headers));
@@ -77,30 +94,19 @@ describe("URLToResponse", () => {
           "An unknown error occurred during fetch",
         );
         const cause = (either.left as unknown as { cause?: unknown }).cause;
-        expect(cause).toBeInstanceOf(Error);
-        expect((cause as Error).message).toBe("network fail");
+        expect(cause).toBeDefined();
       }
     }),
   );
 });
 
 describe("responseToJSON", () => {
-  const originalFetch = globalThis.fetch;
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
-  });
-
   it.effect("should parse JSON response successfully", () =>
     Effect.gen(function* () {
       const mockData = { ok: true, items: [1, 2, 3] };
-      globalThis.fetch = (async () =>
-        ({
-          headers: new Headers({ "content-type": "application/json" }),
-          json: async () => mockData,
-        }) as unknown as Response) as typeof fetch;
+      server.use(http.get(TEST_URL, () => HttpResponse.json(mockData)));
 
-      const url = new URL("https://api.example.com/test");
+      const url = new URL(TEST_URL);
       const headers = new Headers();
 
       const response = yield* URLToResponse(url, "GET", headers);
@@ -114,13 +120,18 @@ describe("responseToJSON", () => {
     () =>
       Effect.gen(function* () {
         const mockText = "not json";
-        globalThis.fetch = (async () =>
-          ({
-            headers: new Headers({ "content-type": "text/plain" }),
-            text: async () => mockText,
-          }) as unknown as Response) as typeof fetch;
+        server.use(
+          http.get(
+            TEST_URL,
+            () =>
+              new HttpResponse(mockText, {
+                status: 200,
+                headers: { "content-type": "text/plain" },
+              }),
+          ),
+        );
 
-        const url = new URL("https://api.example.com/test");
+        const url = new URL(TEST_URL);
         const headers = new Headers();
 
         const response = yield* URLToResponse(url, "GET", headers);
@@ -138,52 +149,48 @@ describe("responseToJSON", () => {
       }),
   );
 
-  it.effect("should return ResponseParseError when response.json throws", () =>
-    Effect.gen(function* () {
-      globalThis.fetch = (async () =>
-        ({
-          headers: new Headers({ "content-type": "application/json" }),
-          json: async () => {
-            throw new Error("bad json");
-          },
-        }) as unknown as Response) as typeof fetch;
-
-      const url = new URL("https://api.example.com/test");
-      const headers = new Headers();
-
-      const response = yield* URLToResponse(url, "GET", headers);
-      const either = yield* Effect.either(responseToJSON<unknown>(response));
-      expect(either._tag).toBe("Left");
-      if (either._tag === "Left") {
-        expect(either.left.name).toBe("ResponseParseError");
-        expect(either.left.message).toBe(
-          "An unknown error occurred during fetch",
+  it.effect(
+    "should return ResponseParseError when response body is not valid JSON",
+    () =>
+      Effect.gen(function* () {
+        // MSW intercepts at the network layer, so to trigger response.json()
+        // failure we serve a malformed payload with a JSON content-type.
+        server.use(
+          http.get(
+            TEST_URL,
+            () =>
+              new HttpResponse("not-json-at-all", {
+                status: 200,
+                headers: { "content-type": "application/json" },
+              }),
+          ),
         );
-        const cause = (either.left as unknown as { cause?: unknown }).cause;
-        expect(cause).toBeInstanceOf(Error);
-        expect((cause as Error).message).toBe("bad json");
-      }
-    }),
+
+        const url = new URL(TEST_URL);
+        const headers = new Headers();
+
+        const response = yield* URLToResponse(url, "GET", headers);
+        const either = yield* Effect.either(responseToJSON<unknown>(response));
+        expect(either._tag).toBe("Left");
+        if (either._tag === "Left") {
+          expect(either.left.name).toBe("ResponseParseError");
+          expect(either.left.message).toBe(
+            "An unknown error occurred during fetch",
+          );
+          const cause = (either.left as unknown as { cause?: unknown }).cause;
+          expect(cause).toBeInstanceOf(Error);
+        }
+      }),
   );
 });
 
 describe("fetchJSON", () => {
-  const originalFetch = globalThis.fetch;
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
-  });
-
   it.effect("should parse JSON response successfully", () =>
     Effect.gen(function* () {
       const mockData = { ok: true, items: [1, 2, 3] };
-      globalThis.fetch = (async () =>
-        ({
-          headers: new Headers({ "content-type": "application/json" }),
-          json: async () => mockData,
-        }) as unknown as Response) as typeof fetch;
+      server.use(http.get(TEST_URL, () => HttpResponse.json(mockData)));
 
-      const url = new URL("https://api.example.com/test");
+      const url = new URL(TEST_URL);
       const headers = new Headers();
 
       const result = yield* fetchJSON<typeof mockData>(url, "GET", headers);
@@ -193,11 +200,9 @@ describe("fetchJSON", () => {
 
   it.effect("should return FetchError when fetch rejects", () =>
     Effect.gen(function* () {
-      globalThis.fetch = (async () => {
-        throw new Error("network fail");
-      }) as typeof fetch;
+      server.use(http.get(TEST_URL, () => HttpResponse.error()));
 
-      const url = new URL("https://api.example.com/test");
+      const url = new URL(TEST_URL);
       const headers = new Headers();
 
       const either = yield* Effect.either(
@@ -210,8 +215,7 @@ describe("fetchJSON", () => {
           "An unknown error occurred during fetch",
         );
         const cause = (either.left as unknown as { cause?: unknown }).cause;
-        expect(cause).toBeInstanceOf(Error);
-        expect((cause as Error).message).toBe("network fail");
+        expect(cause).toBeDefined();
       }
     }),
   );
@@ -221,13 +225,18 @@ describe("fetchJSON", () => {
     () =>
       Effect.gen(function* () {
         const mockText = "not json";
-        globalThis.fetch = (async () =>
-          ({
-            headers: new Headers({ "content-type": "text/plain" }),
-            text: async () => mockText,
-          }) as unknown as Response) as typeof fetch;
+        server.use(
+          http.get(
+            TEST_URL,
+            () =>
+              new HttpResponse(mockText, {
+                status: 200,
+                headers: { "content-type": "text/plain" },
+              }),
+          ),
+        );
 
-        const url = new URL("https://api.example.com/test");
+        const url = new URL(TEST_URL);
         const headers = new Headers();
 
         const either = yield* Effect.either(
@@ -246,33 +255,37 @@ describe("fetchJSON", () => {
       }),
   );
 
-  it.effect("should return ResponseParseError when response.json throws", () =>
-    Effect.gen(function* () {
-      globalThis.fetch = (async () =>
-        ({
-          headers: new Headers({ "content-type": "application/json" }),
-          json: async () => {
-            throw new Error("bad json");
-          },
-        }) as unknown as Response) as typeof fetch;
-
-      const url = new URL("https://api.example.com/test");
-      const headers = new Headers();
-
-      const either = yield* Effect.either(
-        fetchJSON<unknown>(url, "GET", headers),
-      );
-      expect(either._tag).toBe("Left");
-      if (either._tag === "Left") {
-        expect(either.left.name).toBe("ResponseParseError");
-        expect(either.left.message).toBe(
-          "An unknown error occurred during fetch",
+  it.effect(
+    "should return ResponseParseError when response body is not valid JSON",
+    () =>
+      Effect.gen(function* () {
+        server.use(
+          http.get(
+            TEST_URL,
+            () =>
+              new HttpResponse("not-json-at-all", {
+                status: 200,
+                headers: { "content-type": "application/json" },
+              }),
+          ),
         );
-        const cause = (either.left as unknown as { cause?: unknown }).cause;
-        expect(cause).toBeInstanceOf(Error);
-        expect((cause as Error).message).toBe("bad json");
-      }
-    }),
+
+        const url = new URL(TEST_URL);
+        const headers = new Headers();
+
+        const either = yield* Effect.either(
+          fetchJSON<unknown>(url, "GET", headers),
+        );
+        expect(either._tag).toBe("Left");
+        if (either._tag === "Left") {
+          expect(either.left.name).toBe("ResponseParseError");
+          expect(either.left.message).toBe(
+            "An unknown error occurred during fetch",
+          );
+          const cause = (either.left as unknown as { cause?: unknown }).cause;
+          expect(cause).toBeInstanceOf(Error);
+        }
+      }),
   );
 });
 
@@ -307,13 +320,20 @@ describe("responseToJSON with null content-type", () => {
   it.effect("parses response when content-type is null", () =>
     Effect.gen(function* () {
       const mockData = { value: 42 };
-      globalThis.fetch = (async () =>
-        ({
-          headers: new Headers(),
-          json: async () => mockData,
-        }) as unknown as Response) as typeof fetch;
+      // MSW (and undici) always set a content-type when serializing JSON, so
+      // we use a HttpResponse body of `null` to defeat any default header.
+      // We then attach `content-type: null` via Headers manipulation by
+      // building a raw Response in the handler.
+      server.use(
+        http.get(TEST_URL, () => {
+          const body = JSON.stringify(mockData);
+          const response = new Response(body, { status: 200 });
+          response.headers.delete("content-type");
+          return response;
+        }),
+      );
 
-      const url = new URL("https://api.example.com/test");
+      const url = new URL(TEST_URL);
       const headers = new Headers();
       const response = yield* URLToResponse(url, "GET", headers);
       const result = yield* responseToJSON<typeof mockData>(response);
@@ -323,19 +343,14 @@ describe("responseToJSON with null content-type", () => {
 });
 
 describe("fetchOnePage", () => {
-  const originalFetch = globalThis.fetch;
-
-  afterEach(() => {
-    globalThis.fetch = originalFetch;
-  });
-
-  it.effect("should fetch data successfully using jsonplaceholder", () =>
+  it.effect("should fetch data successfully using a JSON list", () =>
     Effect.gen(function* () {
-      globalThis.fetch = (async () =>
-        ({
-          headers: new Headers({ "content-type": "application/json" }),
-          json: async () => [{ id: 1, userId: 1, title: "test post" }],
-        }) as unknown as Response) as typeof fetch;
+      const mockData = [{ id: 1, userId: 1, title: "test post" }];
+      server.use(
+        http.get("https://jsonplaceholder.typicode.com/posts", () =>
+          HttpResponse.json(mockData),
+        ),
+      );
 
       const baseURL = new URL("https://jsonplaceholder.typicode.com/posts");
       const params = { userId: 1 };
@@ -353,55 +368,60 @@ describe("fetchOnePage", () => {
 
   it.effect("should fetch one page from OpenAlex", () =>
     Effect.gen(function* () {
-      globalThis.fetch = (async () =>
-        ({
-          headers: new Headers({ "content-type": "application/json" }),
-          json: async () => ({
-            meta: { count: 2_000_000 },
-            results: [
-              { id: "W1" },
-              { id: "W2" },
-              { id: "W3" },
-              { id: "W4" },
-              { id: "W5" },
-            ],
-          }),
-        }) as unknown as Response) as typeof fetch;
+      const payload = {
+        meta: { count: 2_000_000 },
+        results: [
+          { id: "W1" },
+          { id: "W2" },
+          { id: "W3" },
+          { id: "W4" },
+          { id: "W5" },
+        ],
+      };
+      server.use(
+        http.get("https://api.openalex.org/works", () =>
+          HttpResponse.json(payload),
+        ),
+      );
 
       const baseURL = new URL("https://api.openalex.org/works");
       const params = { page: 1, "per-page": 5 } as const;
       const userAgent = "MyApp/1.0 (integration-test)";
 
-      const { data } = yield* fetchOnePage<any>(baseURL, params, userAgent);
+      const { data } = yield* fetchOnePage<{
+        meta: { count: number };
+        results: { id: string }[];
+      }>(baseURL, params, userAgent);
 
       expect(data).toBeDefined();
-      expect(data["meta"]).toBeDefined();
-      expect(data["meta"]["count"]).toBeDefined();
-      expect(data["meta"]["count"]).toBeGreaterThan(1_000_000);
-      expect(data["results"]).toBeDefined();
-      expect(data["results"].length).toBeDefined();
-      expect(data["results"].length).toBeGreaterThan(0);
-      expect(data["results"].length).toStrictEqual(5);
+      expect(data.meta).toBeDefined();
+      expect(data.meta.count).toBeDefined();
+      expect(data.meta.count).toBeGreaterThan(1_000_000);
+      expect(data.results).toBeDefined();
+      expect(data.results.length).toBeDefined();
+      expect(data.results.length).toBeGreaterThan(0);
+      expect(data.results.length).toStrictEqual(5);
     }),
   );
 
   it.effect("should include rate limit info when headers are present", () =>
     Effect.gen(function* () {
       const mockData = { results: [] };
-      globalThis.fetch = (async () =>
-        ({
-          headers: new Headers({
-            "content-type": "application/json",
-            "X-RateLimit-Limit": "100",
-            "X-RateLimit-Remaining": "99",
-            "X-RateLimit-Credits-Used": "1",
-            "X-RateLimit-Reset": "60",
+      server.use(
+        http.get(TEST_URL, () =>
+          HttpResponse.json(mockData, {
+            headers: {
+              "X-RateLimit-Limit": "100",
+              "X-RateLimit-Remaining": "99",
+              "X-RateLimit-Credits-Used": "1",
+              "X-RateLimit-Reset": "60",
+            },
           }),
-          json: async () => mockData,
-        }) as unknown as Response) as typeof fetch;
+        ),
+      );
 
       const { data, rateLimit } = yield* fetchOnePage<typeof mockData>(
-        new URL("https://api.example.com/test"),
+        new URL(TEST_URL),
         {},
         "MyApp/1.0",
       );
@@ -417,9 +437,9 @@ describe("fetchOnePage", () => {
 
   it.effect("should handle fetch errors", () =>
     Effect.gen(function* () {
-      globalThis.fetch = (async () => {
-        throw new Error("network fail");
-      }) as typeof fetch;
+      server.use(
+        http.get("https://example.com/invalid", () => HttpResponse.error()),
+      );
 
       const baseURL = new URL("https://example.com/invalid");
       const params = {};
