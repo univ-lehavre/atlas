@@ -30,6 +30,13 @@ règle. Toute dérogation **doit** être enregistrée :
 
 - **`cli/crf-openapi`** — nom de paquet sans suffixe `-cli` (historique
   antérieur à la règle). Exception listée dans le script audit.
+  - **Pourquoi pas migré sous `packages/`** : le paquet est **hybride**
+    lib + bin (expose `core`, `extractor`, `comparator` via `exports`
+    **et** un bin `crf-openapi`). La règle `audit:structure` interdit
+    `bin` dans `packages/`. Une migration propre demande un split en
+    `packages/crf-openapi` (lib pure) + `cli/crf-openapi` (thin bin),
+    chantier qui dépasse Phase 7 du plan de résorption 2026-05-30.
+    Report explicite, à reprendre en Phase ultérieure.
 - **`ui/atlas-ui`** — marqué `private: true` ([ADR 0011](0011-paquets-internes-private.md))
   mais déclare `svelte` en `peerDependencies`. Le `peer` est respecté
   par anticipation d'une future publication.
@@ -44,6 +51,24 @@ règle. Toute dérogation **doit** être enregistrée :
   Knip ne trace pas la chaîne d'imports Effect/CLI complète ; le
   fichier reste **testé** via mock direct depuis
   `commands.test.ts`.
+
+### Hybride lib + CLI dans `packages/`
+
+- **`packages/citation-validate`** — déclare `@clack/prompts` en
+  `dependencies` directes alors que c'est une bibliothèque. Le module
+  `src/prompt/` (input.ts, transformer.ts) implémente des prompts
+  interactifs, et `src/actions/*.ts` + `src/events/*.ts` utilisent
+  `log` de `@clack/prompts` pour la sortie utilisateur.
+  - **Pourquoi pas migré vers `cli/biblio`** : le module `prompt/` est
+    profondément couplé à `actions/`, `events/`, `context/`, `store/`
+    (architecture Effect/Layer). Le déplacement propre demande
+    d'extraire un logger injectable et de découpler les prompts du
+    métier, refactor qui dépasse Phase 7 du plan de résorption
+    2026-05-30. Report explicite, à reprendre en Phase ultérieure
+    (probablement avec un agent spécialisé Effect).
+  - Aujourd'hui : seul `cli/biblio` consomme `citation-validate`. Le
+    couplage est documenté ; aucune autre app/lib ne hérite de
+    `@clack/prompts` indirectement.
 
 ### Apps : factorisation partielle
 
