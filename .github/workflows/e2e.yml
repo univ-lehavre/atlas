@@ -13,6 +13,21 @@ name: E2E (Playwright)
 #   - workflow_dispatch : déclenchement manuel pour debugger.
 #   - pull_request : uniquement quand le diff touche les sandboxes,
 #     les apps concernées ou ce workflow lui-même.
+#
+# Prérequis REDCap : les sandboxes amarre et sillage incluent toutes
+# deux le compose `sandbox/crf-sandbox/docker/docker-compose.yml` qui
+# bind-mount `sandbox/crf-sandbox/upstream/versions/16.1.9/redcap` et
+# `upstream/shared/edocs`. Ces dossiers ne sont pas committés (REDCap
+# est un logiciel propriétaire, son ZIP doit être obtenu séparément —
+# cf. `sandbox/crf-sandbox/scripts/prepare-crf-source.sh`). Sur un
+# runner GitHub public sans ZIP, le premier `docker compose up` échoue
+# avec « failed to create mountpoint /var/www/html/edocs: read-only
+# file system » avant même que Playwright tourne.
+#
+# Stratégie : un step préliminaire détecte la présence de REDCap. Si
+# absent, le job se termine en succès avec un avis explicite (pas
+# d'échec bloquant pour des dépendances externes manquantes). Les
+# autres steps sont conditionnés sur cette détection.
 
 on:
   schedule:
@@ -38,6 +53,7 @@ env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  REDCAP_VERSION: "16.1.9"
 
 jobs:
   amarre-e2e:
@@ -47,26 +63,50 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
+      - name: Detect REDCap source availability
+        id: redcap
+        run: |
+          ZIP="cli/crf-openapi/upstream/redcap${REDCAP_VERSION}.zip"
+          SOURCE="sandbox/crf-sandbox/upstream/versions/${REDCAP_VERSION}/redcap/api/index.php"
+          if [ -f "$ZIP" ] || [ -f "$SOURCE" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "REDCap source available — running full smoke."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::REDCap upstream not found (no ZIP at $ZIP and no extracted source at $SOURCE). E2E smoke skipped — provide redcap${REDCAP_VERSION}.zip via secret/self-hosted runner to enable."
+          fi
+
       - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+        if: steps.redcap.outputs.available == 'true'
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        if: steps.redcap.outputs.available == 'true'
         with:
           node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+        if: steps.redcap.outputs.available == 'true'
 
       - name: Install Playwright browsers (chromium only)
+        if: steps.redcap.outputs.available == 'true'
         run: pnpm --filter=@univ-lehavre/atlas-amarre-sandbox exec playwright install --with-deps chromium
 
+      - name: Prepare REDCap source tree
+        if: steps.redcap.outputs.available == 'true'
+        run: pnpm --filter=@univ-lehavre/atlas-crf-sandbox docker:prepare
+
       - name: Create amarre .env from .env.example
+        if: steps.redcap.outputs.available == 'true'
         run: cp apps/amarre/.env.example apps/amarre/.env 2>/dev/null || true
 
       - name: Start sandbox stack (Appwrite + Mailpit + REDCap)
+        if: steps.redcap.outputs.available == 'true'
         run: pnpm --filter=@univ-lehavre/atlas-amarre-sandbox start
         timeout-minutes: 10
 
       - name: Wait for Appwrite to be reachable
+        if: steps.redcap.outputs.available == 'true'
         run: |
           for i in {1..30}; do
             if curl -sf http://localhost/v1/health > /dev/null 2>&1; then
@@ -79,10 +119,11 @@ jobs:
           exit 1
 
       - name: Run Playwright smoke
+        if: steps.redcap.outputs.available == 'true'
         run: pnpm --filter=@univ-lehavre/atlas-amarre-sandbox test:smoke
 
       - name: Upload Playwright report on failure
-        if: failure()
+        if: failure() && steps.redcap.outputs.available == 'true'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: amarre-playwright-report
@@ -91,7 +132,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Stop sandbox stack
-        if: always()
+        if: always() && steps.redcap.outputs.available == 'true'
         run: pnpm --filter=@univ-lehavre/atlas-amarre-sandbox stop
 
   sillage-e2e:
@@ -101,23 +142,46 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
+      - name: Detect REDCap source availability
+        id: redcap
+        run: |
+          ZIP="cli/crf-openapi/upstream/redcap${REDCAP_VERSION}.zip"
+          SOURCE="sandbox/crf-sandbox/upstream/versions/${REDCAP_VERSION}/redcap/api/index.php"
+          if [ -f "$ZIP" ] || [ -f "$SOURCE" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "REDCap source available — running full smoke."
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::REDCap upstream not found (no ZIP at $ZIP and no extracted source at $SOURCE). E2E smoke skipped — provide redcap${REDCAP_VERSION}.zip via secret/self-hosted runner to enable."
+          fi
+
       - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+        if: steps.redcap.outputs.available == 'true'
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        if: steps.redcap.outputs.available == 'true'
         with:
           node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
+        if: steps.redcap.outputs.available == 'true'
 
       - name: Install Playwright browsers (chromium only)
+        if: steps.redcap.outputs.available == 'true'
         run: pnpm --filter=@univ-lehavre/atlas-sillage-sandbox exec playwright install --with-deps chromium
 
+      - name: Prepare REDCap source tree
+        if: steps.redcap.outputs.available == 'true'
+        run: pnpm --filter=@univ-lehavre/atlas-crf-sandbox docker:prepare
+
       - name: Start sandbox stack (Appwrite + MongoDB)
+        if: steps.redcap.outputs.available == 'true'
         run: pnpm --filter=@univ-lehavre/atlas-sillage-sandbox start
         timeout-minutes: 10
 
       - name: Wait for Appwrite to be reachable
+        if: steps.redcap.outputs.available == 'true'
         run: |
           for i in {1..30}; do
             if curl -sf http://localhost/v1/health > /dev/null 2>&1; then
@@ -130,10 +194,11 @@ jobs:
           exit 1
 
       - name: Run Playwright smoke
+        if: steps.redcap.outputs.available == 'true'
         run: pnpm --filter=@univ-lehavre/atlas-sillage-sandbox test:smoke
 
       - name: Upload Playwright report on failure
-        if: failure()
+        if: failure() && steps.redcap.outputs.available == 'true'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: sillage-playwright-report
@@ -142,5 +207,5 @@ jobs:
           if-no-files-found: ignore
 
       - name: Stop sandbox stack
-        if: always()
+        if: always() && steps.redcap.outputs.available == 'true'
         run: pnpm --filter=@univ-lehavre/atlas-sillage-sandbox stop
