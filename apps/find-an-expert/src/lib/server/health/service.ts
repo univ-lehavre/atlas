@@ -63,20 +63,25 @@ const checkUrl = async (
       } else if (error.cause && typeof error.cause === 'object' && 'code' in error.cause) {
         const cause = error.cause as { code: string; address?: string };
         switch (cause.code) {
-          case 'ETIMEDOUT':
+          case 'ETIMEDOUT': {
             errorMessage = `Connection timed out to ${cause.address || 'server'}`;
             break;
-          case 'ECONNREFUSED':
+          }
+          case 'ECONNREFUSED': {
             errorMessage = 'Connection refused - server may be down';
             break;
-          case 'ENOTFOUND':
+          }
+          case 'ENOTFOUND': {
             errorMessage = 'DNS lookup failed - hostname not found';
             break;
-          case 'ENETUNREACH':
+          }
+          case 'ENETUNREACH': {
             errorMessage = 'Network unreachable';
             break;
-          default:
+          }
+          default: {
             errorMessage = `Network error: ${cause.code}`;
+          }
         }
       } else {
         errorMessage = error.message;

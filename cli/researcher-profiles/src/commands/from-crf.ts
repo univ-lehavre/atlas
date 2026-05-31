@@ -132,7 +132,7 @@ export const fromCrf = async (
     );
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- lastQuota peut être null si le SDK n'a pas remonté de quota
     if (lastQuota !== null) {
       showQuota(lastQuota, totalCredits, "OpenAlex quota");
     }

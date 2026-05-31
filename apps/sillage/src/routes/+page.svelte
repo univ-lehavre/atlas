@@ -7,10 +7,10 @@
   let { data }: { data: PageData } = $props();
   let signupOpen = $state(false);
 
-  type SignupResponse = {
+  interface SignupResponse {
     data: { signedUp: true; createdAt: string } | null;
     error: { code: string; message: string } | null;
-  };
+  }
 
   async function handleSignup(email: string): Promise<void> {
     const res = await fetch('/api/v1/auth/signup', {

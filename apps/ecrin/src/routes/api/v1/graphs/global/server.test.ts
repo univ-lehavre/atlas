@@ -15,7 +15,7 @@ describe('GET /api/v1/graphs/global', () => {
 
   beforeEach(() => {
     vi.resetModules();
-    logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {

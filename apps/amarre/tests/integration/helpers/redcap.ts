@@ -30,7 +30,7 @@ export const isRedcapReachable = async (): Promise<boolean> => {
       // Bound the connect attempt so the test boot doesn't hang when the
       // docker is down — vitest's hookTimeout would catch it eventually
       // but a fast skip is better DX.
-      signal: AbortSignal.timeout(2_000),
+      signal: AbortSignal.timeout(2000),
     });
     return response.ok;
   } catch {
@@ -73,7 +73,7 @@ export const deleteRecordsByPrefix = async (prefix: string): Promise<void> => {
     }).toString(),
   });
   if (!exportRes.ok) return;
-  const rows = (await exportRes.json()) as Array<{ record_id: string; userid?: string }>;
+  const rows = (await exportRes.json()) as { record_id: string; userid?: string }[];
   const ids = rows
     .filter((r) => typeof r.userid === 'string' && r.userid.startsWith(prefix))
     .map((r) => r.record_id)
@@ -84,7 +84,7 @@ export const deleteRecordsByPrefix = async (prefix: string): Promise<void> => {
     content: 'record',
     action: 'delete',
   });
-  ids.forEach((id, i) => deleteBody.append(`records[${i}]`, id));
+  for (const [i, id] of ids.entries()) deleteBody.append(`records[${i}]`, id);
   await fetch(PUBLIC_REDCAP_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

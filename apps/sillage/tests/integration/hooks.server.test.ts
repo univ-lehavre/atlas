@@ -48,7 +48,7 @@ describe('hooks.server.handle', () => {
   it('leaves locals.userId undefined on Appwrite 401 (anonymous user)', async () => {
     const err = new AppwriteException('unauthenticated', 401, 'general_unauthorized', '');
     mocks.accountGet.mockRejectedValueOnce(err);
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const event = makeEvent();
     const res = await handle({ event, resolve });
     expect(res.status).toBe(200);
@@ -59,7 +59,7 @@ describe('hooks.server.handle', () => {
   it('logs and recovers on an unexpected Appwrite error (e.g. 500)', async () => {
     const err = new AppwriteException('server', 500, 'server_error', '');
     mocks.accountGet.mockRejectedValueOnce(err);
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const event = makeEvent();
     const res = await handle({ event, resolve });
     expect(res.status).toBe(200);

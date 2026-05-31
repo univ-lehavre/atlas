@@ -5,6 +5,7 @@
  * Extends TypeScript config with Svelte-specific rules.
  */
 
+import vitest from "@vitest/eslint-plugin";
 import functional from "eslint-plugin-functional";
 import sveltePlugin from "eslint-plugin-svelte";
 import globals from "globals";
@@ -208,7 +209,7 @@ export function svelte(options = {}) {
     // Svelte configuration
     ...sveltePlugin.configs["flat/recommended"],
     {
-      files: ["**/*.svelte"],
+      files: ["**/*.svelte", "**/*.svelte.ts", "**/*.svelte.js"],
       languageOptions: {
         globals: {
           ...globals.browser,
@@ -245,13 +246,20 @@ export function svelte(options = {}) {
         "functional/immutable-data": "off",
         "functional/no-let": "off",
         "functional/no-mixed-types": "off",
+        "functional/no-return-void": "off", // Svelte 5 event handlers are void by design
+        "functional/no-throw-statements": "off", // common in load() error throws
         "functional/functional-parameters": "off",
         "functional/prefer-immutable-types": "off",
         "@typescript-eslint/explicit-function-return-type": "off",
         "@typescript-eslint/strict-boolean-expressions": "off",
+        "@typescript-eslint/no-confusing-void-expression": "off", // template event handlers
+        "@typescript-eslint/no-non-null-assertion": "off", // SvelteKit page.data
         "no-console": "off",
         "prefer-const": "off", // $props() destructuring uses let
         "no-useless-assignment": "off", // false positive with $bindable()
+        // Svelte 5 components keep PascalCase by convention (matches usage in
+        // markup, distinguishes components from regular modules).
+        "unicorn/filename-case": "off",
       },
     },
 
@@ -295,6 +303,56 @@ export function svelte(options = {}) {
         "no-console": "off",
         "turbo/no-undeclared-env-vars": "off",
         "n/no-missing-import": "off",
+      },
+    },
+
+    // Vitest
+    {
+      files: ["**/*.test.ts", "**/*.spec.ts"],
+      plugins: { vitest },
+      rules: {
+        ...vitest.configs.recommended.rules,
+      },
+    },
+
+    // Disable type-aware and functional rules for test files.
+    // Vitest tests are imperative by design (`expect(...)`, `describe(...)`,
+    // mock builders), and the type-checked rules add noise without value
+    // on assertion-heavy code.
+    {
+      files: ["**/*.test.ts", "**/*.spec.ts", "**/tests/**/*.ts"],
+      extends: [tseslint.configs.disableTypeChecked],
+      rules: {
+        "functional/no-expression-statements": "off",
+        "functional/no-conditional-statements": "off",
+        "functional/no-throw-statements": "off",
+        "functional/no-try-statements": "off",
+        "functional/immutable-data": "off",
+        "functional/no-let": "off",
+        "functional/no-loop-statements": "off",
+        "functional/no-mixed-types": "off",
+        "functional/no-classes": "off",
+        "functional/prefer-immutable-types": "off",
+        "functional/functional-parameters": "off",
+        "@typescript-eslint/explicit-function-return-type": "off",
+        "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-unsafe-assignment": "off",
+        "@typescript-eslint/no-unsafe-member-access": "off",
+        "@typescript-eslint/no-unsafe-call": "off",
+        "@typescript-eslint/no-unsafe-return": "off",
+        "@typescript-eslint/no-unsafe-argument": "off",
+        "@typescript-eslint/strict-boolean-expressions": "off",
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/restrict-template-expressions": "off",
+        "@typescript-eslint/no-base-to-string": "off",
+        "@typescript-eslint/require-await": "off",
+        "max-lines-per-function": "off",
+        complexity: "off",
+        "no-console": "off",
+        "no-secrets/no-secrets": "off",
+        "vitest/no-conditional-expect": "off",
+        "n/no-extraneous-import": "off",
+        "turbo/no-undeclared-env-vars": "off",
       },
     },
 

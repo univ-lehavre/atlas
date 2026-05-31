@@ -188,10 +188,12 @@ export const matchResearchers = async (
   const matches: ResearcherMatch[] = corpus.flatMap((entryA, i) =>
     corpus.slice(i + 1).map((entryB, offset) => {
       const j = i + 1 + offset;
+      /* eslint-disable security/detect-object-injection -- index numériques bornés par la taille du corpus */
       const tfidfA = tfidfProfiles[i];
       const tfidfB = tfidfProfiles[j];
       const embA = embeddingProfiles[i];
       const embB = embeddingProfiles[j];
+      /* eslint-enable security/detect-object-injection -- fin du bloc de score pairwise */
 
       if (
         tfidfA === undefined ||

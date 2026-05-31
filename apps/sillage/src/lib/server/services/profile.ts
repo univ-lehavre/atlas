@@ -11,7 +11,7 @@ const COMPLETE_FIELDS = [
   'research_questions_complete',
   'publications_complete',
   'project_proposal_complete',
-] as const satisfies ReadonlyArray<keyof ProfileState>;
+] as const satisfies readonly (keyof ProfileState)[];
 
 type RawRow = Partial<Record<(typeof COMPLETE_FIELDS)[number], string>>;
 

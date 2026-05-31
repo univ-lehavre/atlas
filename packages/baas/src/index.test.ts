@@ -74,9 +74,9 @@ describe('createAdminClient', () => {
 describe('createSessionClient', () => {
   const mockCookies = {
     get: (name: string) => (name === SESSION_COOKIE ? 'session-token' : ''),
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    // eslint-disable-next-line @typescript-eslint/no-empty-function -- mock cookie no-op pour tests
     set: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    // eslint-disable-next-line @typescript-eslint/no-empty-function -- mock cookie no-op pour tests
     delete: () => {},
     serialize: () => '',
     getAll: () => [],
@@ -84,9 +84,9 @@ describe('createSessionClient', () => {
 
   const emptyCookies = {
     get: () => '',
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    // eslint-disable-next-line @typescript-eslint/no-empty-function -- mock cookie no-op pour tests
     set: () => {},
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    // eslint-disable-next-line @typescript-eslint/no-empty-function -- mock cookie no-op pour tests
     delete: () => {},
     serialize: () => '',
     getAll: () => [],

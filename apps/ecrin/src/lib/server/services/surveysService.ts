@@ -13,7 +13,7 @@ export const getSurveyUrl = async (
     record,
     returnFormat: 'json',
   } as const;
-  const DATA = new URLSearchParams(requestData as Record<string, string>).toString();
+  const DATA = new URLSearchParams(requestData).toString();
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
@@ -32,7 +32,7 @@ export const deleteSurveyRecord = async (token: string, url: string, record: str
     instrument: '',
     returnFormat: 'json',
   } as const;
-  const DATA = new URLSearchParams(requestData as Record<string, string>).toString();
+  const DATA = new URLSearchParams(requestData).toString();
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
@@ -58,7 +58,7 @@ export const downloadSurvey = async (token: string, url: string, record: string)
     exportDataAccessGroups: 'false',
     returnFormat: 'json',
   } as const;
-  const DATA = new URLSearchParams(requestData as Record<string, string>).toString();
+  const DATA = new URLSearchParams(requestData).toString();
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },

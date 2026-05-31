@@ -14,20 +14,26 @@ import type { ProfileState } from '$lib/types/api/profile';
  */
 const profileStateFetch = (
   state: ProfileState,
-  projects: ReadonlyArray<unknown> = []
+  projects: readonly unknown[] = []
 ): typeof globalThis.fetch =>
   vi.fn(async (input: RequestInfo | URL) => {
     const url = typeof input === 'string' ? input : input.toString();
     if (url.includes('/api/v1/projects/community')) {
-      return new Response(JSON.stringify({ data: projects, error: null }), {
+      return Response.json(
+        { data: projects, error: null },
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }
+      );
+    }
+    return Response.json(
+      { data: state, error: null },
+      {
         status: 200,
         headers: { 'content-type': 'application/json' },
-      });
-    }
-    return new Response(JSON.stringify({ data: state, error: null }), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    });
+      }
+    );
   }) as unknown as typeof globalThis.fetch;
 
 const makeEvent = (
@@ -44,13 +50,13 @@ const makeEvent = (
     fetch: fetchImpl,
   }) as unknown as RequestEvent;
 
-type LoadOutput = {
+interface LoadOutput {
   userId: string | null;
-  researchers: ReadonlyArray<{ id: string }>;
-  projects: ReadonlyArray<{ id: string }>;
-  questionnaires: ReadonlyArray<{ id: string; disabled?: boolean }>;
+  researchers: readonly { id: string }[];
+  projects: readonly { id: string }[];
+  questionnaires: readonly { id: string; disabled?: boolean }[];
   profileState: ProfileState;
-};
+}
 
 describe('+page.server load', () => {
   it('returns null userId when locals.userId is absent', async () => {

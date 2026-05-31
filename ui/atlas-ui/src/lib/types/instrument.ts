@@ -5,7 +5,7 @@
  * consumers use it to build the destination URL. The component itself
  * doesn't know about routing ; the parent passes the final `href`.
  */
-export type QuestionnaireEntry = {
+export interface QuestionnaireEntry {
   /** Stable identifier — typically the REDCap instrument slug. */
   id: string;
   /** Short, action-oriented label ("Mon profil"). */
@@ -18,6 +18,6 @@ export type QuestionnaireEntry = {
   /** Whether the entry is currently active. Disabled entries render
    *  greyed out with a tooltip-style hint. */
   disabled?: boolean;
-};
+}
 
 export type QuestionnaireEntryList = readonly QuestionnaireEntry[];

@@ -5,26 +5,26 @@
     // Charger Swagger UI depuis le CDN
     const script = document.createElement('script');
     script.src = 'https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js';
-    script.onload = () => {
+    script.addEventListener('load', () => {
       // @ts-expect-error SwaggerUIBundle est chargé depuis le CDN
-      window.SwaggerUIBundle({
+      globalThis.SwaggerUIBundle({
         dom_id: '#swagger-ui',
         url: '/api/v1/openapi.json',
         deepLinking: true,
         presets: [
           // @ts-expect-error SwaggerUIBundle est chargé depuis le CDN
-          window.SwaggerUIBundle.presets.apis,
+          globalThis.SwaggerUIBundle.presets.apis,
           // @ts-expect-error SwaggerUIStandalonePreset est chargé depuis le CDN
-          window.SwaggerUIStandalonePreset,
+          globalThis.SwaggerUIStandalonePreset,
         ],
         layout: 'StandaloneLayout',
       });
-    };
-    document.head.appendChild(script);
+    });
+    document.head.append(script);
 
     const standaloneScript = document.createElement('script');
     standaloneScript.src = 'https://unpkg.com/swagger-ui-dist@5/swagger-ui-standalone-preset.js';
-    document.head.appendChild(standaloneScript);
+    document.head.append(standaloneScript);
   });
 </script>
 

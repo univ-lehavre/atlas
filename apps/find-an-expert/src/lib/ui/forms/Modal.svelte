@@ -72,8 +72,12 @@
       <div
         class="relative rounded-lg shadow-xl overflow-hidden bg-white dark:bg-secondary-800"
         style="width: min(28rem, calc(100vw - 2rem))"
-        onclick={(e) => e.stopPropagation()}
-        onkeydown={(e) => e.stopPropagation()}
+        onclick={(e) => {
+          e.stopPropagation();
+        }}
+        onkeydown={(e) => {
+          e.stopPropagation();
+        }}
       >
         <!-- Header -->
         <div

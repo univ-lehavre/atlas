@@ -30,8 +30,15 @@ const chunk = <T>(arr: T[], size: number): T[][] =>
   );
 
 type Sender = (data: object) => void;
-type BatchState = { logs: RawLog[]; done: number };
-type FetchCtx = { apiUrl: string; total: number; send: Sender };
+interface BatchState {
+  logs: RawLog[];
+  done: number;
+}
+interface FetchCtx {
+  apiUrl: string;
+  total: number;
+  send: Sender;
+}
 
 const fetchBatch = async (
   batch: ProjectToken[],
@@ -137,12 +144,12 @@ export const GET = ({ url }: { url: URL }): Response => {
         controller.close();
       };
 
-      void run().catch(async (err: unknown) => {
+      void run().catch(async (error: unknown) => {
         const now = new Date();
         const errorId = `rdc-${now.toISOString()}-${Math.floor(Math.random() * 10_000)
           .toString()
           .padStart(4, '0')}`;
-        const { message, details } = normalizeError(err);
+        const { message, details } = normalizeError(error);
         const diagnostics =
           currentStage === 'fetch_logs'
             ? await diagnoseEndpointNetwork(env.REDCAP_API_URL ?? '')

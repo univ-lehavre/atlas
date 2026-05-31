@@ -12,7 +12,7 @@ import type { SurveyRequestItem } from '$lib/types/api/surveys';
  */
 const escapeFilterLogicValue = (value: string): string => {
   // Escape backslashes first, then double quotes
-  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return value.replaceAll('\\', '\\\\').replaceAll('"', String.raw`\"`);
 };
 
 export const getSurveyUrl = async (
@@ -125,7 +125,9 @@ export const listRequests = async (
   return result;
 };
 
-type contactId = { userid: string };
+interface contactId {
+  userid: string;
+}
 
 /**
  * Looks up the REDCap contact associated with the given email address and returns its userid.

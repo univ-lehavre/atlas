@@ -19,7 +19,7 @@
   let email = $state("");
   let submitting = $state(false);
   let errorMessage = $state<string | undefined>();
-  let isValidEmail = $derived(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+  let isValidEmail = $derived(/^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/.test(email));
 
   $effect(() => {
     const shouldOpen = open;
@@ -51,10 +51,10 @@
       await onSubmit(email);
       email = "";
       onClose();
-    } catch (err) {
+    } catch (error) {
       errorMessage =
-        err instanceof Error
-          ? err.message
+        error instanceof Error
+          ? error.message
           : "Something went wrong. Please try again.";
     } finally {
       submitting = false;

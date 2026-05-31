@@ -65,7 +65,7 @@ describe('GET /api/v1/me — payload malformé', () => {
     const event = createRouteEvent({
       method: 'GET',
       url: 'https://example.com/api/v1/me',
-      locals: { userId: 12345 as unknown as string },
+      locals: { userId: 12_345 as unknown as string },
     });
     const res = await mod.GET(event as never);
 

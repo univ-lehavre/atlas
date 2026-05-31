@@ -30,7 +30,7 @@
 
 <div id="options">
   <HorizontalScroller ariaLabel="Options cards" headingText="Options" bind:showHeading>
-    <SectionTile title={!showHeading ? 'Options' : ''} />
+    <SectionTile title={showHeading ? '' : 'Options'} />
 
     <div class="flex-shrink-0">
       <CardItem title="Container">
@@ -42,7 +42,9 @@
               name="radioDefault"
               id="radioDefault1"
               checked={selected === 'default'}
-              onchange={() => selectMode('default')}
+              onchange={() => {
+                selectMode('default');
+              }}
             />
             <label class="form-check-label" for="radioDefault1"> Default </label>
           </div>
@@ -53,7 +55,9 @@
               name="radioDefault"
               id="radioDefault2"
               checked={selected === 'w-75'}
-              onchange={() => selectMode('w-75')}
+              onchange={() => {
+                selectMode('w-75');
+              }}
             />
             <label class="form-check-label" for="radioDefault2"> W-75 </label>
           </div>
@@ -64,7 +68,9 @@
               name="radioDefault"
               id="radioDefault3"
               checked={selected === 'fluid'}
-              onchange={() => selectMode('fluid')}
+              onchange={() => {
+                selectMode('fluid');
+              }}
             />
             <label class="form-check-label" for="radioDefault3"> Fluid </label>
           </div>
@@ -82,7 +88,9 @@
               name="radioLayout"
               id="radioLayoutVertical"
               checked={$cardLayout === 'vertical'}
-              onchange={() => selectLayout('vertical')}
+              onchange={() => {
+                selectLayout('vertical');
+              }}
             />
             <label class="form-check-label" for="radioLayoutVertical"> Vertical </label>
           </div>
@@ -93,7 +101,9 @@
               name="radioLayout"
               id="radioLayoutHorizontal"
               checked={$cardLayout === 'horizontal'}
-              onchange={() => selectLayout('horizontal')}
+              onchange={() => {
+                selectLayout('horizontal');
+              }}
             />
             <label class="form-check-label" for="radioLayoutHorizontal"> Horizontal </label>
           </div>

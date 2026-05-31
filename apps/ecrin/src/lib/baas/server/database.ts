@@ -9,14 +9,14 @@ const getAllowedEmailsToSubscribe = async (): Promise<string[]> => {
   const emails: string[] = [];
   try {
     const { databases } = createAdminClient();
-    const result: Models.RowList<Models.DefaultRow> = await databases.listRows({
+    const result: Models.RowList = await databases.listRows({
       databaseId: APPWRITE_DB_ID,
       tableId: APPWRITE_TABLE_ID_ALLOWED_EMAIL_DOMAINS_TO_SUBSCRIBE,
     });
     console.log(result);
-    result.rows.forEach((item) => {
+    for (const item of result.rows) {
       emails.push(item.regexp);
-    });
+    }
   } catch (error) {
     console.error(error);
   }

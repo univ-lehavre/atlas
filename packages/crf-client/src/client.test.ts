@@ -24,6 +24,7 @@ const createMockFetch = (
 ) => {
   let callIndex = 0;
   return vi.fn().mockImplementation(() => {
+    // eslint-disable-next-line security/detect-object-injection -- `callIndex` est un compteur de mock contrôlé localement
     const response = responses[callIndex] ?? responses.at(-1);
     callIndex++;
 
@@ -733,7 +734,11 @@ describe('REDCap Client', () => {
     });
   });
 
-  describe('Integration Tests (requires Prism running)', () => {
+  // Skip le describe entier au lieu de skipper test par test : les
+  // tests d'intégration Prism requièrent un serveur local non disponible
+  // en CI. `describe.skip` est l'équivalent canonique vitest de `it.skip`.
+  // eslint-disable-next-line vitest/no-disabled-tests -- nécessite serveur Prism local, à activer manuellement quand `pnpm --filter=@univ-lehavre/atlas-prism start` tourne
+  describe.skip('Integration Tests (requires Prism running)', () => {
     const PRISM_URL = 'http://localhost:8080/api';
 
     const client = createCrfClient({
@@ -741,19 +746,19 @@ describe('REDCap Client', () => {
       token: CrfToken(VALID_TOKEN),
     });
 
-    it.skip('should get version', async () => {
+    it('should get version', async () => {
       const version = await Effect.runPromise(client.getVersion());
       expect(version).toBeDefined();
       expect(typeof version).toBe('string');
     });
 
-    it.skip('should get project info', async () => {
+    it('should get project info', async () => {
       const info = await Effect.runPromise(client.getProjectInfo());
       expect(info).toBeDefined();
       expect(info.project_id).toBeDefined();
     });
 
-    it.skip('should get instruments', async () => {
+    it('should get instruments', async () => {
       const instruments = await Effect.runPromise(client.getInstruments());
       expect(instruments).toBeDefined();
       expect(Array.isArray(instruments)).toBe(true);

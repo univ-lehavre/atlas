@@ -6,7 +6,7 @@ const MAILPIT_BASE_URL = process.env['MAILPIT_URL'] ?? 'http://localhost:8025';
 
 interface MailpitSummary {
   ID: string;
-  To: Array<{ Address: string }>;
+  To: { Address: string }[];
   Subject: string;
 }
 
@@ -22,7 +22,7 @@ interface MailpitMessage {
 export const isMailpitReachable = async (): Promise<boolean> => {
   try {
     const response = await fetch(`${MAILPIT_BASE_URL}/api/v1/messages?limit=1`, {
-      signal: AbortSignal.timeout(2_000),
+      signal: AbortSignal.timeout(2000),
     });
     return response.ok;
   } catch {
@@ -73,7 +73,7 @@ export const extractMagicLinkParams = (
   // Match a URL with userId + secret in any order, &amp;-tolerant.
   const linkMatch = content.match(/https?:\/\/[^\s"'<]+(?:userId|secret)=[^\s"'<]+/i);
   if (!linkMatch) return null;
-  const url = linkMatch[0].replace(/&amp;/g, '&');
+  const url = linkMatch[0].replaceAll('&amp;', '&');
   try {
     const parsed = new URL(url);
     const userId = parsed.searchParams.get('userId');

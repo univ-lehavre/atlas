@@ -6,12 +6,11 @@ import {
 } from '../../src/lib/server/services/projects';
 
 const okFetch = (rows: unknown): typeof globalThis.fetch =>
-  vi.fn(
-    async () =>
-      new Response(JSON.stringify(rows), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      })
+  vi.fn(async () =>
+    Response.json(rows, {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    })
   ) as unknown as typeof globalThis.fetch;
 
 describe('mapRedcapToProjectSnapshot', () => {
@@ -122,19 +121,18 @@ describe('getCommunityProjects', () => {
       throw new Error('redcap down');
     }) as unknown as typeof globalThis.fetch;
     // Silence the console.error emitted by the catch branch.
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const out = await getCommunityProjects({ fetch: failingFetch });
     expect(out).toEqual([]);
     expect(consoleSpy).toHaveBeenCalled();
   });
 
   it('sends a filterLogic scoped to validated projects', async () => {
-    const fetch = vi.fn(
-      async () =>
-        new Response(JSON.stringify([]), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        })
+    const fetch = vi.fn(async () =>
+      Response.json([], {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
     );
     await getCommunityProjects({
       fetch: fetch as unknown as typeof globalThis.fetch,

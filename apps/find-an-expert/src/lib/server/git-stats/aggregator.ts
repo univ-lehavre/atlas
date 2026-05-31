@@ -61,7 +61,7 @@ export const aggregatePeriodStats = (period: string, commits: TCommitStats[]): T
     additions,
     deletions,
     filesChanged,
-    authors: Array.from(authors),
+    authors: [...authors],
     codeDelta: emptyCodeDelta(),
     testDelta: emptyTestStats(),
   };

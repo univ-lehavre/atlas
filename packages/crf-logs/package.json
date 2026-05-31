@@ -25,10 +25,10 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "lint": "eslint src",
+    "lint": "eslint src --max-warnings 0",
     "lint:fix": "eslint src --fix",
-    "format": "prettier --write src",
-    "format:check": "prettier --check src",
+    "format": "prettier --write --ignore-path ../../.prettierignore .",
+    "format:check": "prettier --check --ignore-path ../../.prettierignore .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
     "test:coverage": "vitest run --coverage --passWithNoTests"

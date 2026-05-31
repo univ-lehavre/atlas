@@ -62,6 +62,7 @@ describe("computeRollingWindow", () => {
     ];
     const result = computeRollingWindow(entries);
     for (let i = 1; i < result.length; i++) {
+      // eslint-disable-next-line security/detect-object-injection -- `i` is a bounded loop counter, not user input
       expect(result[i]!.date.getTime()).toBeGreaterThanOrEqual(
         result[i - 1]!.date.getTime(),
       );

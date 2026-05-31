@@ -21,8 +21,8 @@ describe('/login +page.server load (magic link consumer)', () => {
     try {
       // @ts-expect-error — partial event stub.
       await load(makeEvent({ userId: 'abc', secret: 'def' }, fetchSpy));
-    } catch (err) {
-      thrown = err;
+    } catch (error) {
+      thrown = error;
     }
     expect(thrown).toBeDefined();
     expect((thrown as { status?: number }).status).toBe(302);
@@ -41,8 +41,8 @@ describe('/login +page.server load (magic link consumer)', () => {
     try {
       // @ts-expect-error — partial event stub.
       await load(makeEvent({ userId: 'abc' }));
-    } catch (err) {
-      thrown = err;
+    } catch (error) {
+      thrown = error;
     }
     expect(thrown).toBeDefined();
     // Validation errors are not SvelteKit redirects ; they bubble up
@@ -56,8 +56,8 @@ describe('/login +page.server load (magic link consumer)', () => {
     try {
       // @ts-expect-error — partial event stub.
       await load(makeEvent({}));
-    } catch (err) {
-      thrown = err;
+    } catch (error) {
+      thrown = error;
     }
     expect(thrown).toBeDefined();
   });

@@ -1,7 +1,7 @@
 import type { EAV } from '$lib/types';
 import { generateGraph } from '$lib/graph';
 import { REDCAP_API_TOKEN, REDCAP_URL } from '$env/static/private';
-import Graph from 'graphology';
+import type Graph from 'graphology';
 
 export const fetchRecordsFromCrf = async (params: Record<string, string>) => {
   const requestData = { token: REDCAP_API_TOKEN, ...params } as Record<string, string>;

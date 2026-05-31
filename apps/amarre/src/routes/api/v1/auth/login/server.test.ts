@@ -79,7 +79,7 @@ describe('POST /api/v1/auth/login — payload malformé', () => {
     const event = {
       request,
       cookies: {
-        get: () => undefined,
+        get: () => {},
         getAll: () => [],
         set: () => {},
         delete: () => {},

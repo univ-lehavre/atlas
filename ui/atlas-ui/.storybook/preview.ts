@@ -17,7 +17,7 @@ import "../src/lib/client";
 // with modals closed.
 if (typeof document !== "undefined") {
   const css = document.createElement("style");
-  css.dataset["atlasUi"] = "force-modals-open";
+  css.dataset.atlasUi = "force-modals-open";
   css.textContent = `
     .atlas-sb-force-modals .modal.fade {
       display: block !important;
@@ -33,7 +33,7 @@ if (typeof document !== "undefined") {
   if (
     !document.head.querySelector('style[data-atlas-ui="force-modals-open"]')
   ) {
-    document.head.appendChild(css);
+    document.head.append(css);
   }
 }
 

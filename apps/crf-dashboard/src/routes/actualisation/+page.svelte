@@ -71,7 +71,9 @@
       { id, kind: meta.kind, code: meta.label, icon: meta.icon, message },
     ].slice(-5);
     if (!sticky) {
-      setTimeout(() => dismissNotification(id), durationMs);
+      setTimeout(() => {
+        dismissNotification(id);
+      }, durationMs);
     }
   };
 
@@ -134,42 +136,59 @@
         message?: string;
       };
 
-      if (msg.type === 'start') {
-        progressTotal = msg.total ?? 0;
-        statusMessage = 'Collecte en cours…';
-        pushNotification('COLLECT', `Collecte démarrée (${String(progressTotal)} projets).`);
-      } else if (msg.type === 'progress') {
-        progress = msg.done ?? 0;
-        statusMessage = `${String(progress)} / ${String(progressTotal)} projets`;
-        if (!progressNotified && progressTotal > 0) {
-          progressNotified = true;
-          pushNotification('COLLECT', 'Progression de la collecte en cours.');
+      switch (msg.type) {
+        case 'start': {
+          progressTotal = msg.total ?? 0;
+          statusMessage = 'Collecte en cours…';
+          pushNotification('COLLECT', `Collecte démarrée (${String(progressTotal)} projets).`);
+
+          break;
         }
-      } else if (msg.type === 'cached') {
-        statusMessage = 'Données déjà à jour';
-        lastUpdatedAt = msg.cachedAt ?? lastUpdatedAt;
-        currentState = 'OK';
-        pushNotification('CACHE', 'Le cache a été vérifié et reste à jour.');
-        source.close();
-        await invalidateAll();
-        fetching = false;
-      } else if (msg.type === 'done') {
-        statusMessage = 'Actualisation terminée';
-        lastUpdatedAt = msg.cachedAt ?? Date.now();
-        currentState = 'OK';
-        pushNotification('DONE', 'Actualisation forcée terminée avec succès.');
-        source.close();
-        await invalidateAll();
-        fetching = false;
-      } else if (msg.type === 'error') {
-        statusMessage = 'Erreur lors de la collecte';
-        lastErrorAt = Date.now();
-        currentState = 'ERROR';
-        pushNotification('ERROR', msg.message ?? 'Erreur pendant la collecte REDCap.', {
-          durationMs: 7000,
-        });
-        source.close();
-        fetching = false;
+        case 'progress': {
+          progress = msg.done ?? 0;
+          statusMessage = `${String(progress)} / ${String(progressTotal)} projets`;
+          if (!progressNotified && progressTotal > 0) {
+            progressNotified = true;
+            pushNotification('COLLECT', 'Progression de la collecte en cours.');
+          }
+
+          break;
+        }
+        case 'cached': {
+          statusMessage = 'Données déjà à jour';
+          lastUpdatedAt = msg.cachedAt ?? lastUpdatedAt;
+          currentState = 'OK';
+          pushNotification('CACHE', 'Le cache a été vérifié et reste à jour.');
+          source.close();
+          await invalidateAll();
+          fetching = false;
+
+          break;
+        }
+        case 'done': {
+          statusMessage = 'Actualisation terminée';
+          lastUpdatedAt = msg.cachedAt ?? Date.now();
+          currentState = 'OK';
+          pushNotification('DONE', 'Actualisation forcée terminée avec succès.');
+          source.close();
+          await invalidateAll();
+          fetching = false;
+
+          break;
+        }
+        case 'error': {
+          statusMessage = 'Erreur lors de la collecte';
+          lastErrorAt = Date.now();
+          currentState = 'ERROR';
+          pushNotification('ERROR', msg.message ?? 'Erreur pendant la collecte REDCap.', {
+            durationMs: 7000,
+          });
+          source.close();
+          fetching = false;
+
+          break;
+        }
+        // No default
       }
     };
 
@@ -241,7 +260,13 @@
         <thead>
           <tr>
             <th>
-              <button class="sort-btn" type="button" onclick={() => onSort('projectId')}>
+              <button
+                class="sort-btn"
+                type="button"
+                onclick={() => {
+                  onSort('projectId');
+                }}
+              >
                 Projet
                 <span class="sort-indicator"
                   >{sortKey === 'projectId' ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}</span
@@ -249,7 +274,13 @@
               </button>
             </th>
             <th>
-              <button class="sort-btn" type="button" onclick={() => onSort('lastUpdatedAt')}>
+              <button
+                class="sort-btn"
+                type="button"
+                onclick={() => {
+                  onSort('lastUpdatedAt');
+                }}
+              >
                 Dernière mise à jour
                 <span class="sort-indicator"
                   >{sortKey === 'lastUpdatedAt' ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}</span
@@ -257,7 +288,13 @@
               </button>
             </th>
             <th>
-              <button class="sort-btn" type="button" onclick={() => onSort('status')}>
+              <button
+                class="sort-btn"
+                type="button"
+                onclick={() => {
+                  onSort('status');
+                }}
+              >
                 Statut
                 <span class="sort-indicator"
                   >{sortKey === 'status' ? (sortDirection === 'asc' ? '↑' : '↓') : '↕'}</span
@@ -302,7 +339,9 @@
           class="notice-close"
           type="button"
           aria-label="Fermer la notification"
-          onclick={() => dismissNotification(notification.id)}
+          onclick={() => {
+            dismissNotification(notification.id);
+          }}
         >
           ×
         </button>

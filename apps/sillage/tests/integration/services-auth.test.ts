@@ -7,7 +7,7 @@ import type { Cookies } from '@sveltejs/kit';
 const fakeService = vi.hoisted(() => ({
   signupWithEmail: vi.fn(async () => ({ $id: 'token-mock' })),
   login: vi.fn(async () => ({ $id: 'session-mock' })),
-  logout: vi.fn(async () => undefined),
+  logout: vi.fn(async () => {}),
 }));
 
 vi.mock('@univ-lehavre/atlas-auth', async (importOriginal) => {

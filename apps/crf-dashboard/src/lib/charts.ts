@@ -76,7 +76,11 @@ const ACTION_KEYS: ActionKey[] = [
   'actions_other',
 ];
 
-type ActionBarDatum = { date: Date; category: string; value: number };
+interface ActionBarDatum {
+  date: Date;
+  category: string;
+  value: number;
+}
 const toActionBars = (data: MonthlyPoint[]): ActionBarDatum[] =>
   data.flatMap((p) =>
     ACTION_KEYS.map((key) => ({

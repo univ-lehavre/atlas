@@ -4,12 +4,11 @@ import { getProfileState } from '../../src/lib/server/services/profile';
 import { EMPTY_PROFILE_STATE } from '$lib/types/api/profile';
 
 const mockFetch = (rows: unknown): typeof globalThis.fetch =>
-  vi.fn(
-    async () =>
-      new Response(JSON.stringify(rows), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      })
+  vi.fn(async () =>
+    Response.json(rows, {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    })
   ) as unknown as typeof globalThis.fetch;
 
 describe('getProfileState', () => {
@@ -65,12 +64,11 @@ describe('getProfileState', () => {
   });
 
   it('passes a filterLogic that scopes to the userid', async () => {
-    const fetch = vi.fn(
-      async () =>
-        new Response(JSON.stringify([]), {
-          status: 200,
-          headers: { 'content-type': 'application/json' },
-        })
+    const fetch = vi.fn(async () =>
+      Response.json([], {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })
     );
     await getProfileState('user-quoted', {
       fetch: fetch as unknown as typeof globalThis.fetch,

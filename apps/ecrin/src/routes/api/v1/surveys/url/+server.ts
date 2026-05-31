@@ -14,7 +14,7 @@ export const GET: RequestHandler = async ({ locals }) => {
 
     const result = await getSurveyUrl(REDCAP_API_TOKEN, REDCAP_URL, id);
 
-    if (result.match(/"error":/))
+    if (result.includes('"error":'))
       return json(
         { data: null, error: { code: 'invalid_url', message: 'Invalid or missing URL' } },
         { status: 422 }

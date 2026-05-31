@@ -47,7 +47,7 @@ describe('isExpectedAuthError', () => {
   it('should return false for non-error values', () => {
     expect(isExpectedAuthError('string')).toBe(false);
     expect(isExpectedAuthError(null)).toBe(false);
-    // eslint-disable-next-line unicorn/no-useless-undefined
+    // eslint-disable-next-line unicorn/no-useless-undefined -- on teste la valeur undefined explicitement
     expect(isExpectedAuthError(undefined)).toBe(false);
   });
 });

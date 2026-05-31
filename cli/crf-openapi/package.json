@@ -53,10 +53,10 @@
     "extract": "tsx src/bin/crf-openapi.ts extract",
     "compare": "tsx src/bin/crf-openapi.ts compare",
     "docs": "tsx src/bin/crf-openapi.ts docs",
-    "lint": "eslint src",
+    "lint": "eslint src --max-warnings 0",
     "lint:fix": "eslint src --fix",
-    "format": "prettier --write src",
-    "format:check": "prettier --check src",
+    "format": "prettier --write --ignore-path ../../.prettierignore .",
+    "format:check": "prettier --check --ignore-path ../../.prettierignore .",
     "test": "vitest run --passWithNoTests",
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },

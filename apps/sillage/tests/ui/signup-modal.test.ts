@@ -32,7 +32,7 @@ describe('<SignupModal>', () => {
   });
 
   it('calls onSubmit with the typed email and closes on success', async () => {
-    const onSubmit = vi.fn(async () => undefined);
+    const onSubmit = vi.fn(async () => {});
     const { container } = render(SignupModal, {
       open: true,
       onSubmit,

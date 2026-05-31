@@ -11,6 +11,6 @@
     headingText="Retrouver"
     bind:showHeading
   >
-    <SectionTile title={!showHeading ? "Retrouver" : ""} />
+    <SectionTile title={showHeading ? "" : "Retrouver"} />
   </HorizontalScroller>
 </div>

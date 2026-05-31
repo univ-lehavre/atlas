@@ -41,17 +41,17 @@ Ce package est une bibliothèque de workflow. Ses modules sont exportés pour ê
 
 ### Fetch
 
-| Export | Description |
-|--------|-------------|
-| `searchAuthorsByName(names, config)` | Search authors by name via `fetch-openalex` |
-| `searchAuthorsByORCID(orcids, config)` | Search authors by ORCID |
-| `searchWorksByAuthorIDs(ids, config)` | Fetch works by author IDs |
-| `searchWorksByORCID(orcid, config)` | Fetch works by ORCID |
-| `searchWorksByDOI(dois, config)` | Fetch works by DOI |
+| Export                                 | Description                                 |
+| -------------------------------------- | ------------------------------------------- |
+| `searchAuthorsByName(names, config)`   | Search authors by name via `fetch-openalex` |
+| `searchAuthorsByORCID(orcids, config)` | Search authors by ORCID                     |
+| `searchWorksByAuthorIDs(ids, config)`  | Fetch works by author IDs                   |
+| `searchWorksByORCID(orcid, config)`    | Fetch works by ORCID                        |
+| `searchWorksByDOI(dois, config)`       | Fetch works by DOI                          |
 
 ### Tools
 
-| Export | Description |
-|--------|-------------|
-| `buildIntegrity(data)` | Generates a UUID v5 hash from JSON-stable-stringified data, scoped to the context namespace |
-| `uniqueSorted<T>(values)` | Returns a deduplicated and sorted array |
+| Export                    | Description                                                                                 |
+| ------------------------- | ------------------------------------------------------------------------------------------- |
+| `buildIntegrity(data)`    | Generates a UUID v5 hash from JSON-stable-stringified data, scoped to the context namespace |
+| `uniqueSorted<T>(values)` | Returns a deduplicated and sorted array                                                     |

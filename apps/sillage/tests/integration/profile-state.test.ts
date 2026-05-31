@@ -23,7 +23,7 @@ describe('GET /api/v1/profile/state', () => {
   it('returns 401 unauthenticated when locals.userId is absent', async () => {
     const res = await GET(
       // @ts-expect-error — partial event stub.
-      makeEvent(undefined)
+      makeEvent()
     );
     expect(res.status).toBe(401);
     const body = (await res.json()) as {

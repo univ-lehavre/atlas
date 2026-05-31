@@ -14,15 +14,15 @@
   }
 
   let {
-    title = undefined,
-    description = undefined,
+    title,
+    description,
     imageSrc = null,
     imageAlt = "",
     width = "18rem",
-    bodyExtra = undefined,
-    actions = undefined,
-    links = undefined,
-    footer = undefined,
+    bodyExtra,
+    actions,
+    links,
+    footer,
   }: Props = $props();
 </script>
 

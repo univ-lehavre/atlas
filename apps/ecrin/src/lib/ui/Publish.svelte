@@ -7,7 +7,7 @@
 
 <div id="publish">
   <HorizontalScroller ariaLabel="Publish cards" headingText="Publish" bind:showHeading>
-    <SectionTile title={!showHeading ? 'Publish' : ''} />
+    <SectionTile title={showHeading ? '' : 'Publish'} />
     <div class="flex-shrink-0">
       <CardItem
         title="My data"

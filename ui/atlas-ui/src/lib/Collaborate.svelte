@@ -38,7 +38,7 @@
     bind:showHeading
     {variant}
   >
-    <SectionTile title={!showHeading ? "Déposer" : ""} />
+    <SectionTile title={showHeading ? "" : "Déposer"} />
     <div class="flex-shrink-0">
       <CardItem>
         {#snippet title()}

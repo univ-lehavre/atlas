@@ -65,7 +65,7 @@ const noopCookies = {
 
 export const createRouteEvent = <TLocals = Record<string, unknown>>(
   options: CreateRouteEventOptions<TLocals> = {},
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- helper générique : voir commentaire au retour
 ): RequestEvent<any, any> => {
   const {
     method = "GET",
@@ -111,6 +111,6 @@ export const createRouteEvent = <TLocals = Record<string, unknown>>(
   // helper can't reasonably enumerate every concrete shape, so we cast
   // through `any` to let any handler accept the event. The runtime
   // shape is still validated by the test itself.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- helper générique compatible n'importe quelle signature de RequestHandler
   return event as unknown as RequestEvent<any, any>;
 };

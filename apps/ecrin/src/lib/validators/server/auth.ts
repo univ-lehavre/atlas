@@ -1,5 +1,5 @@
 import { isEmail } from '@univ-lehavre/atlas-validators';
-import { validateMagicUrlLogin, validateUserId } from '@univ-lehavre/atlas-auth';
+
 import { NotAnEmailError, NotPartOfAllianceError } from '@univ-lehavre/atlas-errors';
 import { isAlliance } from '$lib/validators/server';
 
@@ -26,4 +26,4 @@ export const validateSignupEmail = async (email?: unknown): Promise<string> => {
   return email;
 };
 
-export { validateMagicUrlLogin, validateUserId };
+export { validateMagicUrlLogin, validateUserId } from '@univ-lehavre/atlas-auth';

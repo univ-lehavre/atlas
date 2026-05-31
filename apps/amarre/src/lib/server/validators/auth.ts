@@ -1,9 +1,5 @@
-import {
-  validateSignupEmail as sharedValidateSignupEmail,
-  validateMagicUrlLogin,
-  validateUserId,
-} from '@univ-lehavre/atlas-auth';
-import { ensureJsonContentType, parseJsonBody } from '@univ-lehavre/atlas-validators';
+import { validateSignupEmail as sharedValidateSignupEmail } from '@univ-lehavre/atlas-auth';
+
 import { ALLOWED_DOMAINS_REGEXP } from '$env/static/private';
 
 // `validateSignupEmail` du package prend la regex en argument ; on
@@ -12,4 +8,5 @@ import { ALLOWED_DOMAINS_REGEXP } from '$env/static/private';
 export const validateSignupEmail = (email?: unknown): Promise<string> =>
   sharedValidateSignupEmail(email, { allowedDomainsRegexp: ALLOWED_DOMAINS_REGEXP });
 
-export { validateMagicUrlLogin, validateUserId, ensureJsonContentType, parseJsonBody };
+export { validateMagicUrlLogin, validateUserId } from '@univ-lehavre/atlas-auth';
+export { ensureJsonContentType, parseJsonBody } from '@univ-lehavre/atlas-validators';

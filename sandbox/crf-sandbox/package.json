@@ -29,7 +29,7 @@
     "test:api": "tsx tests/api-smoke.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint tests",
+    "lint": "eslint tests --max-warnings 0",
     "lint:fix": "eslint tests --fix",
     "format": "prettier --write tests",
     "format:check": "prettier --check tests"

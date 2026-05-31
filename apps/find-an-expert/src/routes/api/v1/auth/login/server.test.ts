@@ -34,10 +34,13 @@ vi.mock('$lib/server/http', () => ({
   mapErrorToResponse: vi.fn((error: Error & { code?: string }) => {
     const code = error.code ?? 'error';
     const status = code === 'invalid_content_type' || code === 'invalid_json_body' ? 400 : 422;
-    return new Response(JSON.stringify({ code, message: error.message }), {
-      status,
-      headers: { 'content-type': 'application/json' },
-    });
+    return Response.json(
+      { code, message: error.message },
+      {
+        status,
+        headers: { 'content-type': 'application/json' },
+      }
+    );
   }),
 }));
 

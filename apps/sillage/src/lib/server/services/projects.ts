@@ -14,7 +14,7 @@ import { fetchCrfJSON } from '$lib/server/crf';
  * pseudonymise it for projects whose `project_proposal_identification_
  * level` is not `Identifiable`).
  */
-type RawProjectRow = {
+interface RawProjectRow {
   userid?: string;
   acronym?: string;
   title?: string;
@@ -23,7 +23,7 @@ type RawProjectRow = {
   keyword2?: string;
   keyword3?: string;
   project_proposal_complete?: string;
-};
+}
 
 const PROJECT_FIELDS = [
   'userid',
@@ -46,9 +46,9 @@ const stripTags = (raw: string | undefined): string => {
   let prev: string;
   do {
     prev = out;
-    out = out.replace(/<[^>]*>/g, '');
+    out = out.replaceAll(/<[^>]*>/g, '');
   } while (out !== prev);
-  return out.replace(/[<>]/g, '').trim();
+  return out.replaceAll(/[<>]/g, '').trim();
 };
 
 export const mapRedcapToProjectSnapshot = (row: RawProjectRow): CommunityProject | null => {
@@ -101,13 +101,13 @@ export const getCommunityProjects = async (context: {
     );
     if (!Array.isArray(rows)) return [];
     return rows.map(mapRedcapToProjectSnapshot).filter((p): p is CommunityProject => p !== null);
-  } catch (err: unknown) {
+  } catch (error: unknown) {
     // REDCap not bootstrapped yet, or transient outage. Log so the
     // operator can investigate, then surrender to the caller's
     // fallback (`+page.server.ts` swaps in the mock pool when this
     // returns empty).
-    // eslint-disable-next-line no-console
-    console.error('getCommunityProjects: REDCap read failed', err);
+
+    console.error('getCommunityProjects: REDCap read failed', error);
     return [];
   }
 };

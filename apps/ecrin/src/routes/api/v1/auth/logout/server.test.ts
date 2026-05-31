@@ -24,6 +24,7 @@ describe('POST /api/v1/auth/logout', () => {
 
   it('returns 200 with { loggedOut: true } when authenticated', async () => {
     const services = await import('$lib/server/services/authService');
+    // eslint-disable-next-line unicorn/no-useless-undefined -- mockResolvedValueOnce exige un argument
     (services.logout as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
 
     const mod = await import('./+server');

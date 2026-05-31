@@ -8,7 +8,7 @@
 
 <div id="collaborate">
   <HorizontalScroller ariaLabel="Collaborate cards" headingText="Collaborate" bind:showHeading>
-    <SectionTile title={!showHeading ? 'Collaborate' : ''} />
+    <SectionTile title={showHeading ? '' : 'Collaborate'} />
     <div class="flex-shrink-0">
       <CardItem
         title="Create my project"

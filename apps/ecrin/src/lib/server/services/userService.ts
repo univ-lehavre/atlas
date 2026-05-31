@@ -63,9 +63,9 @@ export const fetchUserId = async (fetch: Fetch, email: string): Promise<string |
 export const mapBaasUserToProfile = (user: Record<string, unknown> | null, fallbackId?: string) => {
   if (!user) return { id: fallbackId ?? null, email: null, name: null };
   const result = {
-    id: (user['$id'] as string) ?? fallbackId ?? null,
-    email: (user['email'] as string) ?? null,
-    labels: (user['labels'] as string[]) ?? [],
+    id: (user.$id as string) ?? fallbackId ?? null,
+    email: (user.email as string) ?? null,
+    labels: (user.labels as string[]) ?? [],
   };
   return result;
 };

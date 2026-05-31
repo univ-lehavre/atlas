@@ -20,7 +20,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   args: {
     open: true,
-    onClose: () => undefined,
+    onClose: () => {},
     onSubmit: async (email: string) => {
       console.log("submit", email);
     },
@@ -30,7 +30,7 @@ export const Default: Story = {
 export const FailingSubmit: Story = {
   args: {
     open: true,
-    onClose: () => undefined,
+    onClose: () => {},
     onSubmit: async () => {
       throw new Error("Adresse non autorisée pour cette plateforme.");
     },
@@ -40,7 +40,7 @@ export const FailingSubmit: Story = {
 export const CustomCopy: Story = {
   args: {
     open: true,
-    onClose: () => undefined,
+    onClose: () => {},
     title: "Rejoignez la communauté",
     description:
       "Indiquez votre email institutionnel ; un lien magique sera envoyé pour vous connecter.",

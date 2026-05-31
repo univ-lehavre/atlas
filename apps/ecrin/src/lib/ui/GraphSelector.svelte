@@ -1,8 +1,8 @@
 <script lang="ts">
   interface Props {
     users: { id: string; name: string }[];
-    selectedUser: string | undefined;
-    viewableSelector: boolean;
+    selectedUser?: string | undefined;
+    viewableSelector?: boolean;
   }
 
   let { users, selectedUser = $bindable(), viewableSelector = $bindable() }: Props = $props();

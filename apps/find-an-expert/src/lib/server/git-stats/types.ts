@@ -1,8 +1,7 @@
 import { z } from 'zod';
-import { GitHubStats, type TGitHubStats } from '$lib/server/github';
+import { GitHubStats } from '$lib/server/github';
 
 // Re-export GitHub types for convenience
-export type { TGitHubStats };
 
 /**
  * Statistics for a single commit.
@@ -113,3 +112,5 @@ export const emptyCodeDelta = (): TCodeDelta => ({
   modified: emptyCodeStats(),
   deleted: emptyCodeStats(),
 });
+
+export { type TGitHubStats } from '$lib/server/github';

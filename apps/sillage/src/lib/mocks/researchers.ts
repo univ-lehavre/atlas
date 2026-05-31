@@ -5,12 +5,12 @@
  * pre-existing typing issues. The Svelte compiler still cross-checks
  * the shape at the `<AnonymousHome researchers={...} />` call site.
  */
-type AnonymousResearcher = {
+interface AnonymousResearcher {
   id: string;
   fullName: string;
   photoUrl: string;
   bio: string;
-};
+}
 type AnonymousResearcherList = readonly AnonymousResearcher[];
 
 /**

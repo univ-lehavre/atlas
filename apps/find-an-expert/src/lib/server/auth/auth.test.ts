@@ -75,7 +75,7 @@ describe('RequestBodyValidationError', () => {
 
 describe('validateSignupEmail', () => {
   it('should throw for missing email', async () => {
-    await expect(validateSignupEmail(undefined)).rejects.toThrow(NotAnEmailError);
+    await expect(validateSignupEmail()).rejects.toThrow(NotAnEmailError);
   });
 
   it('should throw for null email', async () => {
@@ -106,6 +106,7 @@ describe('validateMagicUrlLogin', () => {
   });
 
   it('should throw if secret is missing', () => {
+    // eslint-disable-next-line unicorn/no-useless-undefined -- signature exige le secret
     expect(() => validateMagicUrlLogin('abc123', undefined)).toThrow(MagicUrlLoginValidationError);
   });
 
@@ -138,6 +139,7 @@ describe('validateUserId', () => {
   });
 
   it('should throw SessionError if userId is missing', () => {
+    // eslint-disable-next-line unicorn/no-useless-undefined -- signature exige le userId
     expect(() => validateUserId(undefined)).toThrow(SessionError);
   });
 

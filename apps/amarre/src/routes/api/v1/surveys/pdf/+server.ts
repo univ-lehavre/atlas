@@ -30,7 +30,7 @@ export const GET: RequestHandler = async ({ locals, fetch, url }) => {
         'Content-Disposition': `attachment; filename="formulaire_${recordId}.pdf"`,
       },
     });
-  } catch (err) {
-    return mapErrorToResponse(err);
+  } catch (error) {
+    return mapErrorToResponse(error);
   }
 };

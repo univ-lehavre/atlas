@@ -8,7 +8,7 @@
  * the result of `mapRedcapToProjectSnapshot()` ; consumers shouldn't
  * see the raw REDCap rows.
  */
-export type CommunityProject = {
+export interface CommunityProject {
   id: string;
   title: string;
   lead: string;
@@ -16,6 +16,6 @@ export type CommunityProject = {
   tags: readonly string[];
   date: string;
   href: string;
-};
+}
 
 export type CommunityProjectList = readonly CommunityProject[];

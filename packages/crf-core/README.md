@@ -31,17 +31,17 @@ import { parseVersion } from '@univ-lehavre/atlas-crf-core/version';
 
 ## Exports
 
-| Export | Description |
-|--------|-------------|
-| `/brands` | Branded types for typed identifiers |
-| `/errors` | REDCap error types |
-| `/version` | Version parsing and comparison |
-| `/content-types` | API content type definitions |
-| `/params` | Request parameter types |
-| `/adapters` | Version-specific adapters |
-| `/validation` | Validation utilities |
-| `/utils` | General utilities |
-| `/types` | Shared type definitions |
+| Export           | Description                         |
+| ---------------- | ----------------------------------- |
+| `/brands`        | Branded types for typed identifiers |
+| `/errors`        | REDCap error types                  |
+| `/version`       | Version parsing and comparison      |
+| `/content-types` | API content type definitions        |
+| `/params`        | Request parameter types             |
+| `/adapters`      | Version-specific adapters           |
+| `/validation`    | Validation utilities                |
+| `/utils`         | General utilities                   |
+| `/types`         | Shared type definitions             |
 
 ## Scripts
 

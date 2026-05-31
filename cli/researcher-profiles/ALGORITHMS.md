@@ -22,7 +22,7 @@ Chaque `WorksResult` expose `topics` (hiérarchie OpenAlex + score) et `keywords
 Chaque chercheur est représenté par un **vecteur creux** dont les dimensions sont les entités de la taxonomie OpenAlex (topic, subfield, field, domain, et optionnellement keywords) présentes dans ses travaux. La valeur de chaque dimension est le produit **TF × IDF** :
 
 - **TF (term frequency)** : somme des scores de confiance OpenAlex pour cette dimension sur l'ensemble des travaux du chercheur. Un chercheur qui publie beaucoup sur `Organic Chemistry` avec des scores élevés aura une forte valeur TF pour ce topic.
-- **IDF (inverse document frequency)** : `log(N / (df + 1) + 1)` où N est le nombre total de chercheurs et df (*document frequency*) le nombre de chercheurs ayant cette dimension dans leur profil. Une dimension présente chez tous les chercheurs (ex : `Physical Sciences`) est peu discriminante → faible IDF. Une spécialité rare → IDF élevé.
+- **IDF (inverse document frequency)** : `log(N / (df + 1) + 1)` où N est le nombre total de chercheurs et df (_document frequency_) le nombre de chercheurs ayant cette dimension dans leur profil. Une dimension présente chez tous les chercheurs (ex : `Physical Sciences`) est peu discriminante → faible IDF. Une spécialité rare → IDF élevé.
 
 Le vecteur final est **normalisé L2**, ce qui permet de comparer des chercheurs avec des volumes de publications très différents.
 
@@ -79,8 +79,8 @@ Le profil d'un chercheur est la **moyenne** de ces vecteurs sur tous ses travaux
 ### Modèle : `Xenova/all-MiniLM-L6-v2`
 
 - **Distillé** de `microsoft/MiniLM-L6-H384-uncased` : un grand modèle a été utilisé pour entraîner un modèle plus petit à reproduire ses représentations, réduisant la taille sans trop perdre en qualité.
-- **Fine-tuné** pour la similarité sémantique (tâche *sentence similarity*) : après distillation, le modèle a été entraîné spécifiquement sur des paires de phrases avec des scores de similarité humains, ce qui l'oriente vers cette tâche précise.
-- 384 dimensions, ~23 MB en ONNX quantifié. **ONNX** (Open Neural Network Exchange) est un format standard pour sérialiser des modèles de ML indépendamment du framework d'entraînement (PyTorch, TensorFlow…). *Quantifié* signifie que les poids sont compressés de float32 (4 octets) vers int8 (1 octet), réduisant le modèle de ~90 MB à ~23 MB avec une dégradation négligeable sur les tâches de similarité sémantique.
+- **Fine-tuné** pour la similarité sémantique (tâche _sentence similarity_) : après distillation, le modèle a été entraîné spécifiquement sur des paires de phrases avec des scores de similarité humains, ce qui l'oriente vers cette tâche précise.
+- 384 dimensions, ~23 MB en ONNX quantifié. **ONNX** (Open Neural Network Exchange) est un format standard pour sérialiser des modèles de ML indépendamment du framework d'entraînement (PyTorch, TensorFlow…). _Quantifié_ signifie que les poids sont compressés de float32 (4 octets) vers int8 (1 octet), réduisant le modèle de ~90 MB à ~23 MB avec une dégradation négligeable sur les tâches de similarité sémantique.
 - Tourne en Node.js via `@xenova/transformers` (ONNX Runtime WebAssembly) sans Python ni GPU.
 - Téléchargé une seule fois dans `~/.cache/huggingface/`.
 - Entraîné majoritairement sur de l'anglais ; performance dégradée sur textes multilingues.
@@ -156,6 +156,6 @@ similarity      = 0.5 × tfidfSim + 0.5 × embSim   (combinaison des deux signau
 complementarity = tel quel depuis le scorer         (conservé séparé, répond à une question différente)
 ```
 
-`similarity` et `complementarity` ne sont pas additionnés : l'un mesure *à quel point deux chercheurs se ressemblent*, l'autre *à quel point ils s'apportent mutuellement quelque chose de nouveau*. Les présenter ensemble dans le `MatchScore` permet au CLI de trier sur l'un ou l'autre selon le cas d'usage.
+`similarity` et `complementarity` ne sont pas additionnés : l'un mesure _à quel point deux chercheurs se ressemblent_, l'autre _à quel point ils s'apportent mutuellement quelque chose de nouveau_. Les présenter ensemble dans le `MatchScore` permet au CLI de trier sur l'un ou l'autre selon le cas d'usage.
 
 Le poids 50/50 est un choix conservateur en l'absence de données de validation. Les poids sont exposés comme paramètre (`EnsembleWeights`) pour permettre un ajustement futur sans modifier le code.

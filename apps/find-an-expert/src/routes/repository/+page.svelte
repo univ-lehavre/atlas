@@ -56,13 +56,13 @@
   /**
    * Activity table columns definition
    */
-  type HourlyStatRow = {
+  interface HourlyStatRow {
     period: string;
     commits: number;
     additions: number;
     deletions: number;
     authors: string[];
-  };
+  }
 
   const activityColumns = $derived([
     { key: 'period', label: repository.columns.period },

@@ -14,12 +14,14 @@ vi.mock('$lib/server/auth', () => ({
 }));
 
 vi.mock('$lib/server/http', () => ({
-  mapErrorToResponse: vi.fn(
-    (error: Error & { code?: string }) =>
-      new Response(JSON.stringify({ code: error.code ?? 'error', message: error.message }), {
+  mapErrorToResponse: vi.fn((error: Error & { code?: string }) =>
+    Response.json(
+      { code: error.code ?? 'error', message: error.message },
+      {
         status: error.code === 'invalid_user_id' ? 401 : 500,
         headers: { 'content-type': 'application/json' },
-      })
+      }
+    )
   ),
 }));
 
@@ -30,6 +32,7 @@ describe('POST /api/v1/auth/logout', () => {
 
   it('returns 200 when logout succeeds', async () => {
     const auth = await import('$lib/server/auth');
+    // eslint-disable-next-line unicorn/no-useless-undefined -- mockResolvedValueOnce exige un argument
     (auth.logout as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
 
     const mod = await import('./+server');

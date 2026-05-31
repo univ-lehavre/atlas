@@ -148,6 +148,10 @@ export default withMermaid(
                 text: "0019 — Dérogations workspace audit",
                 link: "/decisions/0019-derogations-workspace-audit",
               },
+              {
+                text: "0020 — Lint Svelte au preset strict",
+                link: "/decisions/0020-svelte-eslint-strict",
+              },
             ],
           },
         ],

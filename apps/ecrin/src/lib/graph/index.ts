@@ -28,7 +28,7 @@ export const generateGraph = (data: EAV[], circleSize = 10, edgeSize = 2): Graph
     color: WHITE,
     image: '/cptmp-big.png',
   });
-  ECR.forEach((ecr) => {
+  for (const ecr of ECR) {
     graph.addNode(ecr, {
       type: 'border',
       size: circleSize,
@@ -38,7 +38,7 @@ export const generateGraph = (data: EAV[], circleSize = 10, edgeSize = 2): Graph
       borderSize: 0.5,
     });
     graph.addEdge('cptmp', ecr, { size: edgeSize, type: 'arrow' });
-  });
+  }
   graph.addNode('eunicoast', {
     type: 'image',
     size: circleSize * 3,
@@ -46,7 +46,7 @@ export const generateGraph = (data: EAV[], circleSize = 10, edgeSize = 2): Graph
     label: 'EUNICoast',
     image: '/eunicoast-logo-only-big.png',
   });
-  HUBS.forEach((hub) => {
+  for (const hub of HUBS) {
     graph.addNode(hub, {
       type: 'border',
       size: circleSize,
@@ -56,7 +56,7 @@ export const generateGraph = (data: EAV[], circleSize = 10, edgeSize = 2): Graph
       borderSize: 0.5,
     });
     graph.addEdge('eunicoast', hub, { size: edgeSize, type: 'arrow' });
-  });
+  }
 
   const userIds: string[] = _.chain(data)
     .map((item) => item.record)
@@ -64,11 +64,9 @@ export const generateGraph = (data: EAV[], circleSize = 10, edgeSize = 2): Graph
     .value();
 
   for (const userId of userIds) {
-    const isActive =
-      data.length > 0 &&
-      data.filter(
-        (item) => item.record === userId && item.field_name === 'active' && item.value === 'Yes'
-      ).length > 0;
+    const isActive = data.some(
+      (item) => item.record === userId && item.field_name === 'active' && item.value === 'Yes'
+    );
     if (!isActive) continue;
 
     // Build and add the user node
@@ -94,20 +92,21 @@ export const generateGraph = (data: EAV[], circleSize = 10, edgeSize = 2): Graph
       .value();
     console.log('projectIds', projectIds);
     for (const projectId of projectIds) {
-      const label = data.filter(
-        (item) =>
-          item.record === userId &&
-          item.redcap_repeat_instrument === 'Your Upcoming Project' &&
-          item.redcap_repeat_instance === projectId &&
-          item.field_name === 'acronym'
-      )[0].value;
-      const projectAcronym: string = `${userId}|${label}`;
+      const label =
+        data.find(
+          (item) =>
+            item.record === userId &&
+            item.redcap_repeat_instrument === 'Your Upcoming Project' &&
+            item.redcap_repeat_instance === projectId &&
+            item.field_name === 'acronym'
+        )?.value ?? '';
+      const projectAcronym = `${userId}|${label}`;
 
       // Add the project node and the edge between the user and the project
       graph.addNode(projectAcronym, { type: 'circle', size: circleSize, label, color: GREEN });
       graph.addEdge(userId, projectAcronym, { size: edgeSize, type: 'arrow' });
       // Add the edges between the project and the ECRs
-      data
+      for (const ecr of data
         .filter(
           (item) =>
             item.record === userId &&
@@ -115,12 +114,11 @@ export const generateGraph = (data: EAV[], circleSize = 10, edgeSize = 2): Graph
             item.redcap_repeat_instance === projectId &&
             item.field_name === 'ecr'
         )
-        .map((item) => item.value)
-        .forEach((ecr) => {
-          graph.addEdge(ecr, projectAcronym, { size: edgeSize, type: 'arrow' });
-        });
+        .map((item) => item.value)) {
+        graph.addEdge(ecr, projectAcronym, { size: edgeSize, type: 'arrow' });
+      }
       // Add the edges between the project and the HUBs
-      data
+      for (const hub of data
         .filter(
           (item) =>
             item.record === userId &&
@@ -128,74 +126,71 @@ export const generateGraph = (data: EAV[], circleSize = 10, edgeSize = 2): Graph
             item.redcap_repeat_instance === projectId &&
             item.field_name === 'eunicoast'
         )
-        .map((item) => item.value)
-        .forEach((hub) => {
-          graph.addEdge(hub, projectAcronym, { size: edgeSize, type: 'arrow' });
-        });
+        .map((item) => item.value)) {
+        graph.addEdge(hub, projectAcronym, { size: edgeSize, type: 'arrow' });
+      }
 
       // Add the topic
-      const topic = data.filter(
-        (item) =>
-          item.record === userId &&
-          item.redcap_repeat_instrument === 'Your Upcoming Project' &&
-          item.redcap_repeat_instance === projectId &&
-          item.field_name === 'topic'
-      )[0].value;
+      const topic =
+        data.find(
+          (item) =>
+            item.record === userId &&
+            item.redcap_repeat_instrument === 'Your Upcoming Project' &&
+            item.redcap_repeat_instance === projectId &&
+            item.field_name === 'topic'
+        )?.value ?? '';
       if (!graph.hasNode(topic))
         graph.addNode(topic, { type: 'circle', size: circleSize, label: topic, color: BLUE });
       graph.addEdge(projectAcronym, topic, { size: edgeSize, type: 'arrow' });
       // Add the keywords
-      data
+      for (const kw of data
         .filter(
           (item) =>
             item.record === userId &&
             item.redcap_repeat_instrument === 'Your Upcoming Project' &&
             item.redcap_repeat_instance === projectId &&
-            item.field_name.match(/^topic_keyword/)
+            /^topic_keyword/.exec(item.field_name)
         )
-        .map((item) => item.value)
-        .forEach((kw) => {
-          if (!graph.hasNode(kw))
-            graph.addNode(kw, { type: 'circle', size: circleSize, label: kw, color: PURPLE });
-          graph.addEdge(kw, topic, { size: edgeSize, type: 'arrow' });
-        });
+        .map((item) => item.value)) {
+        if (!graph.hasNode(kw))
+          graph.addNode(kw, { type: 'circle', size: circleSize, label: kw, color: PURPLE });
+        graph.addEdge(kw, topic, { size: edgeSize, type: 'arrow' });
+      }
 
       // Add the methods
-      data
+      for (const method of data
         .filter(
           (item) =>
             item.record === userId &&
             item.redcap_repeat_instrument === 'Your Upcoming Project' &&
             item.redcap_repeat_instance === projectId &&
-            item.field_name.match(/^method\d$/)
+            /^method\d$/.exec(item.field_name)
         )
-        .map((item) => item.value)
-        .forEach((method) => {
-          if (!graph.hasNode(method))
-            graph.addNode(method, {
-              type: 'circle',
-              size: circleSize,
-              label: method,
-              color: MAGENTA,
-            });
-          graph.addEdge(method, projectAcronym, { size: edgeSize, type: 'arrow' });
-        });
+        .map((item) => item.value)) {
+        if (!graph.hasNode(method))
+          graph.addNode(method, {
+            type: 'circle',
+            size: circleSize,
+            label: method,
+            color: MAGENTA,
+          });
+        graph.addEdge(method, projectAcronym, { size: edgeSize, type: 'arrow' });
+      }
 
       // Add the zone
-      data
+      for (const zone of data
         .filter(
           (item) =>
             item.record === userId &&
             item.redcap_repeat_instrument === 'Your Upcoming Project' &&
             item.redcap_repeat_instance === projectId &&
-            item.field_name.match(/^zone\d$/)
+            /^zone\d$/.exec(item.field_name)
         )
-        .map((item) => item.value)
-        .forEach((zone) => {
-          if (!graph.hasNode(zone))
-            graph.addNode(zone, { type: 'circle', size: circleSize, label: zone, color: CYAN });
-          graph.addEdge(zone, projectAcronym, { size: edgeSize, type: 'arrow' });
-        });
+        .map((item) => item.value)) {
+        if (!graph.hasNode(zone))
+          graph.addNode(zone, { type: 'circle', size: circleSize, label: zone, color: CYAN });
+        graph.addEdge(zone, projectAcronym, { size: edgeSize, type: 'arrow' });
+      }
     }
   }
 

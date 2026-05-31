@@ -18,7 +18,7 @@ export const POST: RequestHandler = async ({ locals, fetch }) => {
       res.json()
     )) as SurveyListResponse;
 
-    if (requests && requests.data && allowed_request_creation(requests.data) === false)
+    if (requests && requests.data && !allowed_request_creation(requests.data))
       return json(
         {
           data: null,

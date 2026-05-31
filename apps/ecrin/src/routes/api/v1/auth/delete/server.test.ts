@@ -20,7 +20,7 @@ vi.mock('$lib/errors/mapper', async () => {
   return {
     mapErrorToResponse: (error: unknown): Response => {
       const { body, status } = mapErrorToApiResponse(error);
-      return new Response(JSON.stringify(body), {
+      return Response.json(body, {
         status,
         headers: { 'content-type': 'application/json' },
       });
@@ -47,6 +47,7 @@ describe('POST /api/v1/auth/delete (AUTH)', () => {
 
   it('200 with { deleted: true } when authenticated', async () => {
     const services = await import('$lib/server/services/authService');
+    // eslint-disable-next-line unicorn/no-useless-undefined -- mockResolvedValueOnce exige un argument
     (services.deleteUser as ReturnType<typeof vi.fn>).mockResolvedValueOnce(undefined);
 
     const mod = await import('./+server');

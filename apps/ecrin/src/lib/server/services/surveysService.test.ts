@@ -9,7 +9,7 @@ describe('surveysService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch = mockFetch;
+    globalThis.fetch = mockFetch;
   });
 
   describe('getSurveyUrl', () => {

@@ -48,21 +48,21 @@ try {
 
 ### Error Classes
 
-| Class | HTTP Code | Description |
-|-------|-----------|-------------|
-| `SessionError` | 401 | Missing or invalid session |
-| `InvalidJsonBodyError` | 400 | Invalid JSON request body |
-| `InvalidContentTypeError` | 400 | Content-Type not application/json |
-| `NotAnEmailError` | 400 | Invalid or unauthorized email |
-| `NotPartOfAllianceError` | 400 | Unauthorized email domain |
-| `MagicUrlLoginValidationError` | 400 | Invalid magic URL parameters |
-| `UserIdValidationError` | 400 | Invalid user ID |
-| `RequestBodyValidationError` | 400 | Invalid request body |
+| Class                          | HTTP Code | Description                       |
+| ------------------------------ | --------- | --------------------------------- |
+| `SessionError`                 | 401       | Missing or invalid session        |
+| `InvalidJsonBodyError`         | 400       | Invalid JSON request body         |
+| `InvalidContentTypeError`      | 400       | Content-Type not application/json |
+| `NotAnEmailError`              | 400       | Invalid or unauthorized email     |
+| `NotPartOfAllianceError`       | 400       | Unauthorized email domain         |
+| `MagicUrlLoginValidationError` | 400       | Invalid magic URL parameters      |
+| `UserIdValidationError`        | 400       | Invalid user ID                   |
+| `RequestBodyValidationError`   | 400       | Invalid request body              |
 
 ### Functions
 
-| Function | Description |
-|----------|-------------|
+| Function                       | Description                                    |
+| ------------------------------ | ---------------------------------------------- |
 | `mapErrorToApiResponse(error)` | Converts an error to a structured API response |
 
 ## Scripts

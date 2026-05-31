@@ -8,10 +8,7 @@
   let { project }: Props = $props();
 
   let accentHue = $derived(
-    Array.from(project.id).reduce(
-      (acc, ch) => (acc * 31 + ch.charCodeAt(0)) % 360,
-      0,
-    ),
+    [...project.id].reduce((acc, ch) => (acc * 31 + ch.charCodeAt(0)) % 360, 0),
   );
 </script>
 

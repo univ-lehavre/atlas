@@ -16,7 +16,7 @@
   // detect when Bootstrap's `data-bs-*` delegation is wired up.
   onMount(async () => {
     const bs = await import('bootstrap/dist/js/bootstrap.bundle.min.js');
-    (window as Window & { bootstrap?: unknown }).bootstrap = bs.default ?? bs;
+    (globalThis as unknown as Window & { bootstrap?: unknown }).bootstrap = bs.default ?? bs;
   });
 </script>
 

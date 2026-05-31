@@ -173,7 +173,7 @@ describe('getGitHubRepoFromPath', () => {
 describe('getGitHubStats', () => {
   beforeEach(() => {
     vi.resetModules();
-    global.fetch = vi.fn();
+    globalThis.fetch = vi.fn();
   });
 
   afterEach(() => {
@@ -204,7 +204,7 @@ describe('getGitHubStats', () => {
     };
     vi.mocked(simpleGit.default).mockReturnValue(mockGit as never);
 
-    vi.mocked(global.fetch).mockResolvedValue({
+    vi.mocked(globalThis.fetch).mockResolvedValue({
       ok: true,
       headers: new Headers(),
       json: () => Promise.resolve([{ id: 1 }]),
@@ -213,7 +213,7 @@ describe('getGitHubStats', () => {
     const result = await getGitHubStats('/path/to/repo');
 
     expect(result.repoUrl).toBe('https://github.com/owner/repo');
-    expect(global.fetch).toHaveBeenCalled();
+    expect(globalThis.fetch).toHaveBeenCalled();
   });
 
   it('should handle GitHub API errors gracefully', async () => {
@@ -228,7 +228,7 @@ describe('getGitHubStats', () => {
     };
     vi.mocked(simpleGit.default).mockReturnValue(mockGit as never);
 
-    vi.mocked(global.fetch).mockResolvedValue({
+    vi.mocked(globalThis.fetch).mockResolvedValue({
       ok: false,
       status: 403,
     } as Response);
