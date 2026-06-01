@@ -41,6 +41,60 @@ include:
   - path: ../crf-sandbox/docker/docker-compose.yml
 
 services:
+  # ── sillage app (SvelteKit / adapter-node) ──────────────────────────
+  # Build-once de l'app et exposition sur :5173, l'alternative dockerisée
+  # au `pnpm -F sillage dev` lancé sur l'hôte. Le sandbox ne dépend PAS de
+  # l'app au niveau npm (ADR 0021) : il la lance via Docker à partir de
+  # son Dockerfile, sans jamais l'importer.
+  #
+  # Contexte de build = racine du monorepo (../..), parce que le build
+  # pnpm a besoin du lockfile, du pnpm-workspace.yaml et des package.json
+  # des paquets workspace (@univ-lehavre/atlas-*) dont sillage dépend.
+  #
+  # Les PUBLIC_* sont inlinées au BUILD (SvelteKit `$env/static/public`),
+  # donc passées en `args:`. Côté browser, l'app appelle le BaaS et le CRF
+  # via l'hôte (localhost:8090 / 8888), pas via les noms de services
+  # Docker — d'où les valeurs `localhost:*` ci-dessous (le navigateur de
+  # l'utilisateur tourne sur l'hôte, pas dans le réseau Docker).
+  #
+  # Les variables PRIVÉES (APPWRITE_KEY, REDCAP_API_TOKEN,
+  # ALLOWED_DOMAINS_REGEXP) sont lues à l'EXÉCUTION par l'adapter Node :
+  # elles arrivent par `environment:` depuis `.env` (jamais en dur dans
+  # l'image). `pnpm bootstrap` remplit APPWRITE_KEY / CRF_API_TOKEN dans
+  # `.env` ; lance donc `pnpm bootstrap` avant de démarrer ce service.
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/sillage/Dockerfile
+      args:
+        PUBLIC_APPWRITE_ENDPOINT: ${PUBLIC_APPWRITE_ENDPOINT:-http://localhost:8090/v1}
+        PUBLIC_APPWRITE_PROJECT: ${APPWRITE_PROJECT_ID:-sillage}
+        PUBLIC_LOGIN_URL: ${PUBLIC_LOGIN_URL:-http://localhost:5173/login}
+        PUBLIC_REDCAP_URL: ${PUBLIC_CRF_URL:-http://localhost:8888/api/}
+    container_name: sillage-sandbox-app
+    ports:
+      - "${SILLAGE_APP_PORT:-5173}:5173"
+    environment:
+      # adapter-node : origine attendue pour la protection CSRF des POST.
+      # C'est l'origine SEULE (scheme+host+port), sans path — distincte de
+      # PUBLIC_LOGIN_URL qui, lui, inclut `/login`.
+      ORIGIN: ${SILLAGE_APP_ORIGIN:-http://localhost:5173}
+      # Variables privées lues au runtime (cf. $env/static/private).
+      APPWRITE_KEY: ${APPWRITE_KEY:-}
+      REDCAP_API_TOKEN: ${CRF_API_TOKEN:-}
+      ALLOWED_DOMAINS_REGEXP: ${ALLOWED_DOMAINS_REGEXP:-@(example\.org|univ-lehavre\.fr|sillage\.local)}
+      # Rappel runtime des PUBLIC_* (inoffensif : déjà figées au build).
+      PUBLIC_APPWRITE_ENDPOINT: ${PUBLIC_APPWRITE_ENDPOINT:-http://localhost:8090/v1}
+      PUBLIC_APPWRITE_PROJECT: ${APPWRITE_PROJECT_ID:-sillage}
+      PUBLIC_LOGIN_URL: ${PUBLIC_LOGIN_URL:-http://localhost:5173/login}
+      PUBLIC_REDCAP_URL: ${PUBLIC_CRF_URL:-http://localhost:8888/api/}
+    depends_on:
+      baas:
+        condition: service_started
+    networks:
+      - baas-net
+      - redcap-net
+
   baas:
     image: appwrite/appwrite:1.9.0
     container_name: sillage-sandbox-baas

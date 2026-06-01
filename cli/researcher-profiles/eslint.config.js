@@ -5,6 +5,7 @@ export default [
     tsconfigRootDir: import.meta.dirname,
     workspaceModules: [
       "@univ-lehavre/atlas-researcher-profiles",
+      "@univ-lehavre/atlas-cli-toolkit",
       "@univ-lehavre/atlas-citation-fetch",
       "@univ-lehavre/atlas-citation-types",
     ],

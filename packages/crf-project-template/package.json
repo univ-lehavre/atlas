@@ -1,0 +1,67 @@
+{
+  "name": "@univ-lehavre/atlas-crf-project-template",
+  "version": "1.0.0",
+  "description": "Declarative, typed CRF project template (instruments, fields, metadata) built with Effect Schema.",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "packages/crf-project-template"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/crf-project-template#readme",
+  "keywords": [
+    "crf",
+    "template",
+    "schema",
+    "effect",
+    "scaffold"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write --ignore-path ../../.prettierignore .",
+    "format:check": "prettier --check --ignore-path ../../.prettierignore .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@univ-lehavre/atlas-crf-core": "workspace:*",
+    "effect": "~3.21.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "eslint": "^10.4.1",
+    "prettier": "^3.8.3",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

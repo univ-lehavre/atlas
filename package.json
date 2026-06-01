@@ -207,6 +207,33 @@
       "limit": "2 KB"
     },
     {
+      "name": "crf-project-template",
+      "path": [
+        "packages/crf-project-template/dist/**/*.js",
+        "!packages/crf-project-template/dist/**/*.test.js",
+        "!packages/crf-project-template/dist/**/*.spec.js"
+      ],
+      "limit": "3 KB"
+    },
+    {
+      "name": "crf-fixtures",
+      "path": [
+        "packages/crf-fixtures/dist/**/*.js",
+        "!packages/crf-fixtures/dist/**/*.test.js",
+        "!packages/crf-fixtures/dist/**/*.spec.js"
+      ],
+      "limit": "5 KB"
+    },
+    {
+      "name": "cli-toolkit",
+      "path": [
+        "packages/cli-toolkit/dist/**/*.js",
+        "!packages/cli-toolkit/dist/**/*.test.js",
+        "!packages/cli-toolkit/dist/**/*.spec.js"
+      ],
+      "limit": "2 KB"
+    },
+    {
       "name": "services-crf",
       "path": [
         "services/crf/dist/**/*.js",

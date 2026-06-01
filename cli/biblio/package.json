@@ -40,6 +40,7 @@
     "@effect/sql": "~0.51.1",
     "@univ-lehavre/atlas-citation-types": "workspace:*",
     "@univ-lehavre/atlas-citation-validate": "workspace:*",
+    "@univ-lehavre/atlas-cli-toolkit": "workspace:*",
     "effect": "~3.21.2"
   },
   "devDependencies": {

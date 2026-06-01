@@ -1,0 +1,76 @@
+{
+  "name": "@univ-lehavre/atlas-cli-toolkit",
+  "version": "1.0.0",
+  "description": "Framework-agnostic CLI boilerplate for the atlas monorepo: env reading, argv flag parsing and fatal-error/exit-code handling.",
+  "author": "Pierre-Olivier Chasset",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "packages/cli-toolkit"
+  },
+  "bugs": {
+    "url": "https://github.com/univ-lehavre/atlas/issues"
+  },
+  "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/cli-toolkit#readme",
+  "keywords": [
+    "cli",
+    "argv",
+    "flags",
+    "env",
+    "exit-code"
+  ],
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./effect": {
+      "types": "./dist/effect.d.ts",
+      "import": "./dist/effect.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --max-warnings 0",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write --ignore-path ../../.prettierignore .",
+    "format:check": "prettier --check --ignore-path ../../.prettierignore .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "peerDependencies": {
+    "effect": "~3.21.2"
+  },
+  "peerDependenciesMeta": {
+    "effect": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1",
+    "effect": "~3.21.2",
+    "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "eslint": "^10.4.1",
+    "prettier": "^3.8.3",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.8"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

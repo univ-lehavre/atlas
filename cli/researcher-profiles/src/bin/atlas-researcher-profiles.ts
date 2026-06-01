@@ -3,9 +3,7 @@
  * Entry point for atlas-researcher-profiles CLI
  */
 
+import { runMain } from "@univ-lehavre/atlas-cli-toolkit";
 import { main } from "../commands/index.js";
 
-main().catch((error: unknown) => {
-  console.error("Fatal error:", error);
-  process.exit(1);
-});
+runMain(main);

@@ -24,6 +24,7 @@
     "bootstrap": "./scripts/bootstrap.sh",
     "bootstrap:baas": "tsx scripts/bootstrap-baas.ts",
     "bootstrap:crf": "tsx scripts/bootstrap-crf.ts",
+    "dictionary:import": "./scripts/import-dictionary.sh",
     "seed": "tsx scripts/seed-fake-data.ts",
     "pull:prod": "tsx scripts/pull-from-prod.ts",
     "test:smoke": "playwright test",

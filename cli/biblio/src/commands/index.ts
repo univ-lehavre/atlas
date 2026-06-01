@@ -1,4 +1,5 @@
-import { Config, Effect, Logger, LogLevel, RateLimiter } from "effect";
+import { Config, Effect, RateLimiter } from "effect";
+import { quiet } from "@univ-lehavre/atlas-cli-toolkit/effect";
 import { note } from "@clack/prompts";
 import {
   action2option,
@@ -136,8 +137,4 @@ const runnable = start().pipe(
 
 const DevToolsLive = DevTools.layer();
 
-runnable.pipe(
-  Logger.withMinimumLogLevel(LogLevel.None),
-  Effect.provide(DevToolsLive),
-  NodeRuntime.runMain,
-);
+quiet(runnable).pipe(Effect.provide(DevToolsLive), NodeRuntime.runMain);

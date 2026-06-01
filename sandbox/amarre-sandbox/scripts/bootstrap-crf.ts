@@ -40,6 +40,13 @@ const DATA_DICT_PATH = resolve(
   REPO_ROOT,
   "data-dictionaries/127-amarre-v1.json",
 );
+// Committed minimal fixture + its importer — used as the fully-automated
+// fallback when the (gitignored) full prod dictionary above is absent, so
+// a first-time `pnpm start` needs no manual export step.
+const FIXTURE_IMPORT_SCRIPT = resolve(
+  SANDBOX_DIR,
+  "scripts/import-dictionary.sh",
+);
 const CRF_SANDBOX_DIR = resolve(SANDBOX_DIR, "../crf-sandbox");
 const CRF_TOKEN_FILE = resolve(CRF_SANDBOX_DIR, "docker/config/.env.test");
 
@@ -208,28 +215,50 @@ interface DataDictionary {
   fields: DataDictionaryField[];
 }
 
+/**
+ * Fallback used when the full prod dictionary is not present locally :
+ * import the committed minimal fixture via `import-dictionary.sh`. This
+ * is what keeps a fresh `pnpm start` fully automated (no manual export).
+ * The script reads CRF_API_TOKEN / PUBLIC_CRF_URL from the environment,
+ * so we pass them through rather than persisting anything extra.
+ */
+const importMinimalFixture = async (
+  crfUrl: string,
+  token: string,
+): Promise<void> => {
+  console.log(
+    `  • Full dictionary absent → importing committed minimal fixture`,
+  );
+  await new Promise<void>((resolveP, rejectP) => {
+    const c = spawn("bash", [FIXTURE_IMPORT_SCRIPT], {
+      cwd: SANDBOX_DIR,
+      stdio: "inherit",
+      env: { ...process.env, CRF_API_TOKEN: token, PUBLIC_CRF_URL: crfUrl },
+    });
+    c.on("error", rejectP);
+    c.on("exit", (code) =>
+      code === 0
+        ? resolveP()
+        : rejectP(new Error(`import-dictionary.sh exited with code ${code}`)),
+    );
+  });
+};
+
 const importDataDictionary = async (
   crfUrl: string,
   token: string,
 ): Promise<void> => {
-  const raw = await readFile(DATA_DICT_PATH, "utf8").catch(() => {
-    throw new Error(
-      `Data dictionary not found at ${DATA_DICT_PATH}\n` +
-        `\n` +
-        `This file is gitignored (potentially sensitive : field labels +\n` +
-        `branching logic) so it must be generated locally before the first\n` +
-        `bootstrap. Two options :\n` +
-        `\n` +
-        `  1. Export from prod REDCap (requires REDCAP_API_TOKEN in repo .env\n` +
-        `     or redcap-token.csv at the repo root) :\n` +
-        `       pnpm crf:dictionaries:export --apply\n` +
-        `\n` +
-        `  2. Ask a teammate to send you the anonymised export and drop it\n` +
-        `     in data-dictionaries/ at the repo root.\n` +
-        `\n` +
-        `See apps/amarre/tests/RUNBOOK.md → "Préparer le data dictionary".`,
-    );
-  });
+  const raw = await readFile(DATA_DICT_PATH, "utf8").catch(() => null);
+  if (raw === null) {
+    // No prod export on disk — fall back to the committed minimal fixture
+    // so the bootstrap stays fully automated. To load the full dictionary
+    // instead, drop data-dictionaries/127-amarre-v1.json at the repo root
+    // (export via `pnpm crf:dictionaries:export --apply`, or ask a
+    // teammate for the anonymised file) and re-run the bootstrap. See
+    // apps/amarre/tests/RUNBOOK.md → "Préparer le data dictionary".
+    await importMinimalFixture(crfUrl, token);
+    return;
+  }
   const dict = JSON.parse(raw) as DataDictionary;
   if (!Array.isArray(dict.fields) || dict.fields.length === 0) {
     throw new Error(`No fields found in ${DATA_DICT_PATH}`);
