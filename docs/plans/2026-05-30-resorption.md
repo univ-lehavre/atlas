@@ -829,6 +829,16 @@
 
 ### Étape 10.4 — Parité visuelle amarre prod vs local
 
+> **Statut : reportée (2026-06-01).** Cette étape exige des **captures
+> de la prod amarre déployée** (Appwrite Sites) pour le diff visuel, non
+> accessibles depuis l'environnement d'exécution agentique. Elle est
+> volontairement sortie de la PR Phase 10 (#241) et reprise dès qu'une
+> capture de référence prod est disponible. Le filet de sécurité prévu
+> (snapshots Playwright dans `sandbox/amarre-sandbox/tests/e2e/`) sera
+> introduit à ce moment-là. Ce n'est pas une dette de code : aucune
+> divergence n'est connue à ce jour, c'est une vérification ponctuelle
+> à mener avec l'artefact prod en main.
+
 - **Goal:** Diff visuel entre prod et local ; corriger les divergences CSS post PR #190.
 - **Files (read):** `apps/amarre/src/`, `ui/atlas-ui/src/`, captures prod.
 - **Files (write):** corrections CSS dans atlas-ui ou apps/amarre selon source du drift.
@@ -839,6 +849,16 @@
 - **PR title suggéré:** `fix(amarre): restore visual parity with prod after atlas-ui extraction`
 
 ### Étape 10.5 — Réviser le workflow UI d'amarre vs `univ-lehavre/amarre` standalone
+
+> **Statut : déjà tranchée (2026-06-01) — voir
+> [ADR 0009](../decisions/0009-atlas-source-canonique-amarre.md).** La
+> décision visée par cette étape (atlas source canonique, standalone
+> `univ-lehavre/amarre` figé au 2026-02-06, sync historique réalisé en
+> PR #155 le 2026-05-19) est déjà actée et documentée. Rouvrir un remote
+>
+> - un ADR `0023-amarre-monorepo-vs-standalone` dupliquerait l'ADR 0009.
+>   Aucun port n'est dû ; l'étape est close sans action. (L'ADR 0023 a été
+>   attribué à un autre sujet : la dette `storybook:build`.)
 
 - **Goal:** Diff structurel entre repo monorepo et standalone, statuer sur ce qui doit être porté.
 - **Files (read):** `apps/amarre/`, `git remote add amarre-standalone https://github.com/univ-lehavre/amarre.git` + `git fetch amarre-standalone` + diff.
