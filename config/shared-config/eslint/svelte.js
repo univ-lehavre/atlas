@@ -33,6 +33,7 @@ export function svelte(options = {}) {
         "build/**",
         "dist/**",
         "coverage/**",
+        "storybook-static/**",
         "**/*.config.js",
         "**/*.config.ts",
         ...ignores,

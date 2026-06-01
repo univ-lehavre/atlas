@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { fade } from "svelte/transition";
   import type { AnonymousResearcherList } from "./types/anonymous-researcher";
 
@@ -33,7 +33,13 @@
     onSignupClick,
   }: Props = $props();
 
-  let visibleIds = $state<string[]>(researchers.slice(0, 8).map((r) => r.id));
+  // `visibleIds` is local rotation state seeded once from the initial
+  // pool ; subsequent prop changes shouldn't reset it (the swap timer
+  // owns it). `untrack` makes that one-time snapshot explicit and
+  // silences Svelte 5's `state_referenced_locally` warning.
+  let visibleIds = $state<string[]>(
+    untrack(() => researchers.slice(0, 8).map((r) => r.id)),
+  );
 
   let byId = $derived(new Map(researchers.map((r) => [r.id, r])));
   let visible = $derived(
@@ -177,15 +183,15 @@
   }
 
   .discover-tile {
-    background: #0a2540;
-    color: white;
+    background: var(--atlas-ui-color-primary, #0a2540);
+    color: var(--atlas-ui-color-on-primary, white);
     border: none;
-    border-radius: 0.75rem;
+    border-radius: var(--atlas-ui-radius, 0.75rem);
     transition: background 150ms ease-in-out;
   }
   .discover-tile:hover,
   .discover-tile:focus-visible {
-    background: #1e3a8a;
-    color: white;
+    background: var(--atlas-ui-color-primary-hover, #1e3a8a);
+    color: var(--atlas-ui-color-on-primary, white);
   }
 </style>

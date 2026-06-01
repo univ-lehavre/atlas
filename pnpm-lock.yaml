@@ -1800,6 +1800,12 @@ importers:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.1.2
         version: 7.1.2(svelte@5.55.9(@typescript-eslint/types@8.59.4))(vite@8.0.14(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
+      '@testing-library/jest-dom':
+        specifier: ^6.6.3
+        version: 6.9.1
+      '@testing-library/svelte':
+        specifier: ^5.2.6
+        version: 5.3.1(svelte@5.55.9(@typescript-eslint/types@8.59.4))(vite@8.0.14(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))(vitest@4.1.7)
       '@types/luxon':
         specifier: ^3.7.1
         version: 3.7.1
@@ -1809,9 +1815,15 @@ importers:
       '@univ-lehavre/atlas-shared-config':
         specifier: workspace:*
         version: link:../../config/shared-config
+      '@vitest/coverage-v8':
+        specifier: ^4.1.7
+        version: 4.1.7(vitest@4.1.7)
       eslint:
         specifier: ^10.4.0
         version: 10.4.0(jiti@2.7.0)
+      happy-dom:
+        specifier: ^20.8.8
+        version: 20.9.0
       prettier:
         specifier: ^3.8.3
         version: 3.8.3
@@ -1830,6 +1842,12 @@ importers:
       vite:
         specifier: ^8.0.14
         version: 8.0.14(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0)
+      vitest:
+        specifier: ^4.1.7
+        version: 4.1.7(@types/node@25.9.1)(@vitest/coverage-v8@4.1.7)(happy-dom@20.9.0)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.1)(typescript@6.0.3))(vite@8.0.14(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
+      vitest-axe:
+        specifier: ^0.1.0
+        version: 0.1.0(vitest@4.1.7)
 
 packages:
 
@@ -12925,7 +12943,7 @@ snapshots:
       '@types/ws': 8.18.1
       entities: 7.0.1
       whatwg-mimetype: 3.0.0
-      ws: 8.20.1
+      ws: 8.21.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate

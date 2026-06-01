@@ -82,7 +82,10 @@
 <div class="hs-wrapper {variant === 'none' ? '' : `hs-${variant}`}">
   <div class="container">
     {#if headingText && showHeading}
-      <div class="fw-bolder fs-3 mb-2" style="font-family: Gambetta;">
+      <div
+        class="fw-bolder fs-3 mb-2"
+        style="font-family: var(--atlas-ui-font-heading, Gambetta);"
+      >
         {headingText}
       </div>
     {/if}
@@ -98,7 +101,7 @@
         <div
           class={`d-flex flex-column flex-sm-row flex-sm-nowrap pe-3 py-1 ${snap === "none" ? "" : "snap-items"}`}
           style={(snap === "none" ? "" : `--snap-align: ${snap}; `) +
-            `gap: var(--card-gap, 1rem);`}
+            `gap: var(--card-gap, var(--atlas-ui-card-gap, 1rem));`}
           bind:this={items}
         >
           {@render children?.()}

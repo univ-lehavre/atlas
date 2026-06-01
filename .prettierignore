@@ -11,6 +11,7 @@ yarn.lock
 dist/
 build/
 **/coverage/
+**/storybook-static/
 
 # Generated files
 **/generated/**

@@ -122,6 +122,7 @@ expérimental non publié) :
 
 - [`assets/logos`](https://github.com/univ-lehavre/atlas/tree/main/assets/logos) — paquet d'assets statiques (SVG/PNG) sans logique. Vitest entièrement retiré en Phase 2.5 (aucun `vitest.config.ts`, aucune dépendance vitest, aucun script `test`).
 - [`apps/atlas-dashboard`](https://github.com/univ-lehavre/atlas/tree/main/apps/atlas-dashboard), [`apps/crf-dashboard`](https://github.com/univ-lehavre/atlas/tree/main/apps/crf-dashboard) — dashboards internes, `private: true` ([ADR 0011](0011-paquets-internes-private.md)), pas déployés, contenu visualisation pure.
+- [`ui/atlas-ui`](https://github.com/univ-lehavre/atlas/tree/main/ui/atlas-ui) — bibliothèque de composants Svelte 5 partagée, `private: true` ([ADR 0011](0011-paquets-internes-private.md)), non publiée. Depuis Phase 10.2/10.3 elle a une infra de tests level-1 (vitest + happy-dom + @testing-library/svelte) et des tests a11y axe-core (`vitest-axe`), mais la couverture globale reste basse : seuls les composants migrés depuis `apps/amarre` (`TopNavbar`, `Signup`, `CreateRequest`) sont couverts (≈77–95% en propre) ; la majorité des composants (home pages, carousels, tiles) restent à couvrir au fil des migrations level-1 des apps consommatrices. Pas de seuil global imposé tant que le paquet n'est pas publié.
 - [`sandbox/crf-sandbox`](https://github.com/univ-lehavre/atlas/tree/main/sandbox/crf-sandbox) — banc d'essai par construction, hors périmètre tests.
 
 **Temporairement sous-testés** (renforcement planifié, voir [plan de

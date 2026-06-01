@@ -123,14 +123,14 @@
 
   .signup-dialog {
     border: none;
-    border-radius: 0.75rem;
+    border-radius: var(--atlas-ui-radius, 0.75rem);
     padding: 0;
     max-width: 28rem;
     width: calc(100% - 2rem);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
   .signup-dialog::backdrop {
-    background: rgba(10, 37, 64, 0.55);
+    background: var(--atlas-ui-color-overlay, rgba(10, 37, 64, 0.55));
     backdrop-filter: blur(2px);
   }
 </style>

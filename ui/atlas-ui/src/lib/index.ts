@@ -45,3 +45,8 @@ export type {
 } from "./types/project-snapshot";
 export type { RequestRecord, RequestRecordList } from "./types/request";
 export { allowedRequestCreation } from "./utils/request";
+
+// Opt-in theming surface. Importing these has no effect on rendering
+// unless a consumer actually supplies a theme (see `../theme`).
+export { applyTheme, ThemeProvider } from "../theme/index";
+export type { AtlasUiTheme } from "../theme/index";

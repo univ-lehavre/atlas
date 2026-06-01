@@ -80,4 +80,14 @@ export default [
       "no-console": "off", // stories interactives loggent les events
     },
   },
+  {
+    // Level-1 component tests migrated from apps/amarre (Phase 10.2).
+    // Files keep the PascalCase name of the component under test
+    // (TopNavbar.test.ts ↔ TopNavbar.svelte) — same waiver amarre's
+    // eslint config grants its `tests/` tree.
+    files: ["tests/**/*.ts"],
+    rules: {
+      "unicorn/filename-case": "off",
+    },
+  },
 ];
