@@ -160,6 +160,14 @@ export default withMermaid(
                 text: "0022 — Convention de nommage atlas-",
                 link: "/decisions/0022-naming-convention",
               },
+              {
+                text: "0023 — storybook:build cassé en amont",
+                link: "/decisions/0023-storybook-build-casse-amont",
+              },
+              {
+                text: "0024 — Ranges ~ sur les paquets publiables",
+                link: "/decisions/0024-ranges-deps-publiables-tilde",
+              },
             ],
           },
         ],

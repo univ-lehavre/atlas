@@ -2,7 +2,7 @@
 //
 // The matchers (`toHaveNoViolations`) are registered in tests/setup.ts.
 //
-// TODO a11y: both modals ship the classic Bootstrap 5 closed-modal
+// TODO(chasset, 2026-06-01) a11y: both modals ship the classic Bootstrap 5 closed-modal
 // markup — `aria-hidden="true"` on the `.modal` root, which still
 // contains focusable elements (close button, inputs, submit). axe's
 // `aria-hidden-focus` rule flags this *static, closed* state. At runtime

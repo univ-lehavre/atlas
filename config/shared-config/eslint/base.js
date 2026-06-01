@@ -110,6 +110,26 @@ export const baseRules = [
     },
   },
 
+  // Format des annotations de dette — Phase 12.1. Impose la forme
+  // `TODO(owner, YYYY-MM-DD)` : une annotation doit porter un responsable
+  // et une date pour ne pas devenir une dette anonyme et sans échéance.
+  // La règle core `no-warning-comments` ne sait pas vérifier un format par
+  // regex ; on contourne en flaguant les formes NUES (`todo:`, `todo `
+  // suivi d'espace, idem fixme) — la forme conforme `TODO(owner, date)`
+  // est suivie d'une parenthèse, donc ne matche aucun de ces termes et
+  // passe. `location: "anywhere"` capture aussi celles en milieu de ligne.
+  {
+    rules: {
+      "no-warning-comments": [
+        "error",
+        {
+          terms: ["todo:", "todo ", "fixme:", "fixme ", "xxx", "hack"],
+          location: "anywhere",
+        },
+      ],
+    },
+  },
+
   // Code Quality
   {
     rules: {

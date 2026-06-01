@@ -28,29 +28,6 @@ import {
   listAcceptedWorks,
 } from "../prompt/index.js";
 
-/**
- * TODO  
-    // Institutions // Fiabilisation
-    INST_FIA = 'Fiabiliser les formes imprimées des institutions',
-    INST_FIA_Q1 = 'Sélectionnez l’institution à fiabiliser',
-    INST_FIA_Q2 = 'Sélectionnez les formes imprimées correspondantes à cette institution',
-  
-    AUTH_FPU = 'Fiabiliser les publications de ce chercheur',
-  
-    // Institutions // Fiabilisation
-    INST_RES = 'Fiabiliser les chercheurs d’une institution',
-  
-    // Auteurs // Ajout
-    AUTH_AFF = 'Ajouter une affilication pour ce chercheur',
-    AUTH_DOI = 'Ajouter une publication pour ce chercheur',
-  
-    // Actions tout le temps actives
-    ORCID = 'Sélectionner un chercheur',
-    ROR = 'Sélectionner une institution',
-    DOI = 'Sélectionner une publication',
-    EXIT = 'Quitter l’application',
-  */
-
 const actions: Action[] = [
   {
     name: "Fiabiliser les formes imprimées du patronyme de ce chercheur",

@@ -6,6 +6,18 @@
 
 > Documentation complète, illustrée et rédigée pour un public non-expert : voir le dossier [`docs/`](docs/).
 
+## Démarrage rapide
+
+Prérequis : [Node.js](https://nodejs.org) (version épinglée dans [`.nvmrc`](.nvmrc)) et [pnpm](https://pnpm.io).
+
+```bash
+pnpm install   # installe toutes les dépendances du monorepo
+pnpm dev       # lance les serveurs de développement (Turborepo)
+pnpm test      # exécute les tests
+```
+
+Pour contribuer (branche, commits, revue, merge), le point d'entrée canonique est [CONTRIBUTING.md](CONTRIBUTING.md), qui renvoie au [workflow de contribution](docs/collaboration/workflow.md) détaillé.
+
 ## Structure
 
 Huit catégories, **une responsabilité et un jeu de règles par catégorie** — c'est ce qui rend le dépôt lisible pour un nouveau contributeur :
