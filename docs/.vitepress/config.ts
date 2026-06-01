@@ -47,6 +47,7 @@ export default withMermaid(
             text: "Architecture",
             items: [
               { text: "Monorepo", link: "/architecture/monorepo" },
+              { text: "Carte des paquets", link: "/architecture/packages" },
               { text: "Flux de données", link: "/architecture/data-flow" },
               { text: "Choix techniques", link: "/architecture/tech-choices" },
             ],

@@ -116,6 +116,14 @@ pre-push:
       run: pnpm test:scripts
       priority: 4
 
+    docs-generate:
+      # La carte des paquets (docs/architecture/packages.md) est dérivée
+      # des package.json ; un changement de manifeste ou de README peut la
+      # périmer. On ne paie le coût que si l'un d'eux a bougé.
+      glob: "{**/package.json,*/*/README.md}"
+      run: pnpm docs:generate:check
+      priority: 4
+
     cpd:
       run: pnpm audit:duplicates
       priority: 4

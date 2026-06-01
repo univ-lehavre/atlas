@@ -256,3 +256,6 @@ jobs:
 
       - name: Outdated dependencies
         run: pnpm audit:versions
+
+      - name: Packages map up-to-date
+        run: pnpm docs:generate:check
