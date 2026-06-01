@@ -20,6 +20,15 @@ export default withMermaid(
       // URLs localhost utilisées comme exemples dans la doc CI/dev (pas
       // de la navigation, pas joignables depuis le runner GitHub Pages).
       /^http:\/\/localhost/,
+      // Liens vers des fichiers du dépôt situés HORS de `docs/` (config
+      // racine : `.nvmrc`, `.npmrc`, `.github/*`, `SECURITY.md`,
+      // `lefthook.yml`…). Ce sont de vraies cibles versionnées, mais
+      // VitePress ne construit que l'arbre `docs/` et les considère donc
+      // « mortes ». On les conserve telles quelles (relatives au dépôt) :
+      // elles fonctionnent dans GitHub (rendu Markdown du repo) et sur la
+      // page locale, pas besoin de les réécrire en URLs absolues.
+      // VitePress normalise ces liens en `./../../…`, d'où le motif.
+      /\.\.\/\.\.\//,
     ],
     themeConfig: {
       nav: [
