@@ -2,17 +2,15 @@
 
 import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
 import path from "node:path";
+import {
+  ROOTS,
+  readJson,
+  deps,
+  buildWorkspaceIndex,
+  buildDependencyGraph,
+  detectCycles,
+} from "./lib/workspace-index.mjs";
 
-const ROOTS = [
-  "apps",
-  "assets",
-  "cli",
-  "config",
-  "packages",
-  "sandbox",
-  "services",
-  "ui",
-];
 const NO_CLI_SUFFIX_ALLOWED = new Set(["@univ-lehavre/atlas-crf-openapi"]);
 // TODO: migrate src/prompt/ to cli/biblio — @clack/prompts belongs in cli/
 const CLI_IO_MIGRATION_PENDING = new Set([
@@ -64,11 +62,6 @@ const SERVER_ONLY_IMPORTS = [
 ];
 
 const errors = [];
-
-const readJson = (filePath) => JSON.parse(readFileSync(filePath, "utf8"));
-
-const deps = (packageJson, ...fields) =>
-  Object.assign({}, ...fields.map((f) => packageJson[f] ?? {}));
 
 // ── Source-file scanner ──────────────────────────────────────────────────────
 
@@ -167,65 +160,8 @@ function findRelativeCrossWorkspaceImports(srcDir, currentDir) {
 
 // ── Workspace index ──────────────────────────────────────────────────────────
 
-// workspaceName → { root, dir, packageJson }
-const workspaces = new Map();
-
-for (const root of ROOTS) {
-  if (!existsSync(root)) continue;
-  for (const entry of readdirSync(root)) {
-    const dir = path.join(root, entry);
-    if (!statSync(dir).isDirectory()) continue;
-    const packageJsonPath = path.join(dir, "package.json");
-    if (!existsSync(packageJsonPath)) continue;
-    const packageJson = readJson(packageJsonPath);
-    if (packageJson.name)
-      workspaces.set(packageJson.name, { root, dir, packageJson });
-  }
-}
-
-// ── Cycle detection ──────────────────────────────────────────────────────────
-
-function detectCycles() {
-  // Build adjacency: workspaceName → Set<workspaceName> (internal deps only)
-  const graph = new Map();
-  for (const [name, { packageJson }] of workspaces) {
-    const allDeps = deps(
-      packageJson,
-      "dependencies",
-      "devDependencies",
-      "peerDependencies",
-      "optionalDependencies",
-    );
-    graph.set(
-      name,
-      new Set(Object.keys(allDeps).filter((d) => workspaces.has(d))),
-    );
-  }
-
-  const visited = new Set();
-  const inStack = new Set();
-  const cycles = [];
-
-  function dfs(node, stack) {
-    visited.add(node);
-    inStack.add(node);
-    for (const neighbor of graph.get(node) ?? []) {
-      if (!visited.has(neighbor)) {
-        dfs(neighbor, [...stack, node]);
-      } else if (inStack.has(neighbor)) {
-        const cycleStart = stack.indexOf(neighbor);
-        cycles.push([...stack.slice(cycleStart), node, neighbor]);
-      }
-    }
-    inStack.delete(node);
-  }
-
-  for (const name of graph.keys()) {
-    if (!visited.has(name)) dfs(name, []);
-  }
-
-  return cycles;
-}
+// workspaceName → { root, dir, packageJson } — voir lib/workspace-index.mjs
+const workspaces = buildWorkspaceIndex();
 
 // ── Per-workspace checks ─────────────────────────────────────────────────────
 
@@ -563,7 +499,7 @@ for (const [packageName, { root, dir, packageJson }] of workspaces) {
 
 // ── Cycle detection ──────────────────────────────────────────────────────────
 
-const cycles = detectCycles();
+const cycles = detectCycles(buildDependencyGraph(workspaces));
 for (const cycle of cycles) {
   errors.push(`dependency cycle detected: ${cycle.join(" → ")}`);
 }
