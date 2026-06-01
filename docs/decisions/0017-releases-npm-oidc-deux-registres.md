@@ -64,3 +64,16 @@ ne vérifient pas encore la provenance.
 - Un incident de publication (un registre seul vert, l'autre rouge)
   ouvre un ticket d'investigation systématique.
 - La rotation des trusts OIDC est revue lors de l'audit semestriel.
+- **Tant que la publication npm passe par un `NPM_TOKEN` (et non
+  encore par le trust OIDC pur), ce token doit être un _automation
+  token_** : un token classique sur un compte à 2FA active échoue en CI
+  avec `EOTP This operation requires a one-time password` (constaté en
+  Phase 15). L'automation token contourne la 2FA pour la publication
+  programmatique. À retirer le jour où le trust OIDC npm est pleinement
+  configuré (publication sans token).
+- Le script [`scripts/release/publish-packages.sh`](https://github.com/univ-lehavre/atlas/blob/main/scripts/release/publish-packages.sh)
+  rend l'échec npm **non bloquant** pour la publication GitHub Packages
+  (registre de repli) et scanne **toutes** les catégories publiables
+  (`packages/`, `cli/`, `services/`, `config/`, `assets/`) — un bug
+  antérieur n'itérait que sur `packages/`, laissant les CLIs hors de
+  GitHub Packages.
