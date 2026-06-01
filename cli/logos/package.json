@@ -1,6 +1,11 @@
 {
   "name": "@univ-lehavre/atlas-logos-cli",
   "version": "2.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "cli/logos"
+  },
   "description": "CLI to copy Atlas logo assets into a target directory (typically a SvelteKit app's static/ folder)",
   "type": "module",
   "bin": {
