@@ -6,6 +6,7 @@ Atlas accueille les contributions — code, documentation, signalements de bug, 
 
 Avant d'ouvrir une Pull Request, lis les pages dédiées du site de documentation :
 
+- [Environnement de développement local](docs/collaboration/environnement-local.md) — Node, pnpm, dépendances et secrets
 - [Workflow de contribution](docs/collaboration/workflow.md) — branche, commits, revue, merge
 - [Style de code](docs/quality/code-style.md) — conventional commits, formatage, conventions de nommage
 - [Hooks Git](docs/quality/hooks.md) — pre-commit / pre-push automatiques

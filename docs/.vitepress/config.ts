@@ -63,6 +63,14 @@ export default withMermaid(
             text: "Collaboration",
             items: [
               { text: "Workflow", link: "/collaboration/workflow" },
+              {
+                text: "Environnement local",
+                link: "/collaboration/environnement-local",
+              },
+              {
+                text: "Paramétrage GitHub",
+                link: "/collaboration/parametrage-github",
+              },
               { text: "Releases", link: "/collaboration/releases" },
             ],
           },
