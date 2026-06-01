@@ -43,6 +43,8 @@ push ─────▶   │ typecheck│ ─┐
 
 ### `lint`
 
+Le [_lint_](../glossary.md) analyse le code **sans l'exécuter** pour repérer les erreurs de style et les motifs dangereux (variables non utilisées, expressions régulières coûteuses, oublis de formatage). C'est la première barrière : elle attrape les défauts les moins chers à corriger.
+
 ```bash
 pnpm format:check     # Prettier vérifie le formatage
 pnpm lint             # ESLint applique les règles de style/sécurité
@@ -50,12 +52,16 @@ pnpm lint             # ESLint applique les règles de style/sécurité
 
 ### `typecheck`
 
+Le [_typecheck_](../glossary.md) vérifie que tous les types TypeScript sont cohérents (une valeur déclarée comme texte n'est jamais utilisée comme nombre). Il attrape une classe entière de bugs avant même l'exécution.
+
 ```bash
 pnpm typecheck        # TypeScript vérifie les types
 pnpm svelte:check     # Vérification supplémentaire pour les fichiers .svelte
 ```
 
 ### `test`
+
+Les **tests** exécutent le code avec des données connues pour vérifier qu'il produit le résultat attendu (voir [Tests](./tests.md)). On mesure en plus la [_couverture_](../glossary.md) : la proportion du code réellement exercée par au moins un test.
 
 ```bash
 pnpm test:coverage    # Tous les tests avec mesure de couverture
@@ -72,12 +78,14 @@ pnpm audit:size       # Vérifie les budgets de taille de bundle
 
 ### `audit`
 
+L'**audit** inspecte les dépendances et le code à la recherche de vulnérabilités, de licences incompatibles, de code mort, de duplication ou de versions obsolètes. C'est le contrôle d'hygiène : il garde le projet sain dans la durée.
+
 ```bash
-pnpm audit:security    # Vulnérabilités npm connues
-pnpm audit:licenses    # Compatibilité des licences
-pnpm audit:unused      # Code mort (knip)
-pnpm audit:duplicates  # Duplication de code (jscpd)
-pnpm audit:versions    # Dépendances obsolètes (taze)
+pnpm audit:security    # Vulnérabilités npm connues (CVE)
+pnpm audit:licenses    # Compatibilité des licences des dépendances
+pnpm audit:unused      # Exports, imports et fichiers jamais utilisés (knip)
+pnpm audit:duplicates  # Blocs de code dupliqués, seuil 5 % (jscpd)
+pnpm audit:versions    # Dépendances avec une mise à jour disponible (taze)
 ```
 
 ### `docs`

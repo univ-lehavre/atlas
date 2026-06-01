@@ -34,6 +34,7 @@ export default withMermaid(
       nav: [
         { text: "Architecture", link: "/architecture/monorepo" },
         { text: "Qualité", link: "/quality/ci-pipeline" },
+        { text: "Sécurité", link: "/quality/security" },
         { text: "Collaboration", link: "/collaboration/workflow" },
         { text: "Décisions", link: "/decisions/" },
         { text: "Audits", link: "/audit/" },
