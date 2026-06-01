@@ -46,4 +46,20 @@ jobs:
             MIT, MIT-0, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD,
             Unlicense, CC0-1.0, CC-BY-3.0, CC-BY-4.0, Python-2.0,
             MPL-2.0, BlueOak-1.0.0, Zlib, WTFPL
+          # Exceptions par paquet (alignées sur la liste
+          # `PACKAGE_LICENSE_EXCEPTION_PREFIXES` de scripts/audit/licenses.mjs).
+          # @sentry/cli* : outil build-only de @sentry/sveltekit (upload de
+          # sourcemaps) en FSL-1.1-MIT (bascule en MIT après 2 ans). Atlas ne
+          # l'invoque pas (pas de plugin Vite Sentry, pas de token) et ne le
+          # distribue dans aucun paquet publié — Phase 13.3.
+          allow-dependencies-licenses: >-
+            pkg:npm/%40sentry/cli,
+            pkg:npm/%40sentry/cli-darwin,
+            pkg:npm/%40sentry/cli-linux-arm,
+            pkg:npm/%40sentry/cli-linux-arm64,
+            pkg:npm/%40sentry/cli-linux-i686,
+            pkg:npm/%40sentry/cli-linux-x64,
+            pkg:npm/%40sentry/cli-win32-arm64,
+            pkg:npm/%40sentry/cli-win32-i686,
+            pkg:npm/%40sentry/cli-win32-x64
           comment-summary-in-pr: on-failure
