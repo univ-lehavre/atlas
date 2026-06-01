@@ -32,7 +32,7 @@
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
-    "@clack/prompts": "^1.4.0",
+    "@clack/prompts": "~1.4.0",
     "@univ-lehavre/atlas-stats": "workspace:*"
   },
   "devDependencies": {

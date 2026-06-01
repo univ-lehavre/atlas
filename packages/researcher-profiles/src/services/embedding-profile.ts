@@ -5,8 +5,15 @@ export interface EmbeddingProfile {
   readonly vector: Float32Array;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- @xenova/transformers has no types
-type Pipeline = (text: string, opts: Record<string, unknown>) => Promise<any>;
+// @xenova/transformers ships no usable types for `pipeline`; we model only
+// the field we read (`data`, the feature-extraction tensor payload).
+interface FeatureExtractionOutput {
+  data: ArrayLike<number>;
+}
+type Pipeline = (
+  text: string,
+  opts: Record<string, unknown>,
+) => Promise<FeatureExtractionOutput>;
 
 let pipelineInstance: Pipeline | null = null;
 

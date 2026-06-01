@@ -17,7 +17,7 @@
         showSuccessAlert = false;
         const modalElement = document.querySelector("#SignUp");
         if (modalElement) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- bootstrap est chargé globalement (CDN) et n'est pas typé sur globalThis
           const modal = (globalThis as any).bootstrap?.Modal?.getInstance(
             modalElement,
           );

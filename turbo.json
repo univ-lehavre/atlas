@@ -1,9 +1,18 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": ["ATLAS_STATS_CACHE_PATH", "GITHUB_TOKEN"],
+  "globalDependencies": [".nvmrc", "pnpm-workspace.yaml"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "tsconfig.json",
+        "tsup.config.ts",
+        "svelte.config.js",
+        "vite.config.ts",
+        "postcss.config.*"
+      ],
       "outputs": ["dist/**", ".svelte-kit/**"]
     },
     "dev": {
@@ -11,28 +20,58 @@
       "persistent": true
     },
     "lint": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "eslint.config.js",
+        "tsconfig.json",
+        "prettier.config.js"
+      ]
     },
     "lint:fix": {
       "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "eslint.config.js",
+        "tsconfig.json",
+        "prettier.config.js"
+      ],
       "cache": false
     },
     "format": {
       "cache": false
     },
-    "format:check": {},
+    "format:check": {
+      "inputs": ["$TURBO_DEFAULT$", "prettier.config.js", ".prettierignore"]
+    },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "vitest.config.ts",
+        "vite.config.ts",
+        "tsconfig.json",
+        "svelte.config.js"
+      ]
     },
     "test:coverage": {
       "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "vitest.config.ts",
+        "vite.config.ts",
+        "tsconfig.json",
+        "svelte.config.js"
+      ],
       "outputs": ["coverage/**"]
     },
     "typecheck": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "tsconfig.json", "svelte.config.js"]
     },
     "check": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", "tsconfig.json", "svelte.config.js"]
     }
   }
 }

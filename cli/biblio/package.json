@@ -32,15 +32,15 @@
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
-    "@clack/prompts": "^1.4.0",
-    "@effect/cluster": "^0.58.2",
-    "@effect/experimental": "^0.60.0",
-    "@effect/platform-node": "^0.106.0",
-    "@effect/rpc": "^0.75.1",
-    "@effect/sql": "^0.51.1",
+    "@clack/prompts": "~1.4.0",
+    "@effect/cluster": "~0.58.2",
+    "@effect/experimental": "~0.60.0",
+    "@effect/platform-node": "~0.106.0",
+    "@effect/rpc": "~0.75.1",
+    "@effect/sql": "~0.51.1",
     "@univ-lehavre/atlas-citation-types": "workspace:*",
     "@univ-lehavre/atlas-citation-validate": "workspace:*",
-    "effect": "^3.21.2"
+    "effect": "~3.21.2"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",
