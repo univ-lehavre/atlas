@@ -16,7 +16,7 @@ export default [
   {
     files: ['src/**/*.ts', 'src/**/*.svelte'],
     rules: {
-      // TODO: corriger ces points quand le code applicatif sera revu.
+      // TODO(chasset, 2026-06-01): corriger ces points quand le code applicatif sera revu.
       // - filename-case : un fichier en camelCase (userRepository.ts) (1 occ.)
       // - no-unsafe-* : composants/serveurs construisent des objets dynamiques (8 occ.)
       // - no-base-to-string : FormData.get() retourne string|File (1 occ.)
