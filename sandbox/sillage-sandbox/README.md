@@ -6,6 +6,7 @@ Environnement Docker local pour faire tourner l'app [`apps/sillage/`](../../apps
 
 | Service                 | URL                   | Rôle                                         |
 | ----------------------- | --------------------- | -------------------------------------------- |
+| **sillage (app)**       | http://localhost:5173 | L'app SvelteKit dockerisée (opt-in)          |
 | **BaaS API (Appwrite)** | http://localhost:8090 | Sessions, comptes utilisateurs               |
 | **BaaS Console**        | http://localhost:8091 | Admin UI Appwrite (SPA séparée)              |
 | **CRF (REDCap)**        | http://localhost:8888 | Source des demandes sillage                  |
@@ -50,6 +51,29 @@ pnpm dev
 ```
 
 Ouvrir http://localhost:5173 et signer avec un email matchant `ALLOWED_DOMAINS_REGEXP` (par défaut `@univ-lehavre.fr`, `@example.org` ou `@sillage.local`). Le magic link arrive dans Mailpit (http://localhost:8025) — clique dessus, tu es loggué dans sillage.
+
+## sillage dockerisée (opt-in)
+
+Par défaut, l'app tourne sur l'hôte via `pnpm -F sillage dev` (hot-reload, idéal pour développer). Pour la faire tourner **dans Docker** au lieu de l'hôte — utile pour reproduire un environnement build-once proche de la prod, ou pour démarrer la stack complète d'un seul `docker compose` — un service `app` est défini dans [docker-compose.yaml](docker-compose.yaml). Il build l'image depuis [`apps/sillage/Dockerfile`](../../apps/sillage/Dockerfile) et l'expose sur http://localhost:5173.
+
+```bash
+# 1. provisionne d'abord la stack (Appwrite + REDCap + .env rempli)
+pnpm bootstrap          # remplit APPWRITE_KEY et CRF_API_TOKEN dans .env
+
+# 2. build + run l'app dockerisée (en plus des autres services)
+docker compose up -d --build app
+
+# 3. ouvre l'app
+open http://localhost:5173
+```
+
+Notes importantes :
+
+- **Build depuis la racine du monorepo.** Le `build.context` du service est `../..` : le build pnpm a besoin du `pnpm-lock.yaml`, du `pnpm-workspace.yaml` et des `package.json` des paquets workspace (`@univ-lehavre/atlas-*`) dont sillage dépend. Le `Dockerfile` est multi-stage (builder lourd → runner Alpine minimal, user non-root `node`).
+- **PUBLIC\_\* figées au build.** sillage lit `$env/static/public` (`PUBLIC_APPWRITE_ENDPOINT`, `PUBLIC_APPWRITE_PROJECT`, `PUBLIC_LOGIN_URL`, `PUBLIC_REDCAP_URL`). En SvelteKit ces valeurs sont **inlinées au build** : elles sont passées en `build.args` (depuis `.env`). Changer une de ces valeurs impose donc un `--build` (rebuild de l'image), pas un simple restart. Elles pointent vers l'**hôte** (`localhost:8090` / `8888`) parce que c'est le navigateur de l'utilisateur, sur l'hôte, qui appelle le BaaS et le CRF — pas le conteneur.
+- **Variables privées au runtime.** `APPWRITE_KEY`, `REDCAP_API_TOKEN` et `ALLOWED_DOMAINS_REGEXP` (`$env/static/private`) sont lues à l'exécution par l'adapter Node ; elles arrivent par `environment:` depuis `.env`. Aucun secret n'est figé dans l'image. Lance donc `pnpm bootstrap` **avant** `up app`, sinon `APPWRITE_KEY` / `CRF_API_TOKEN` sont vides et l'auth/CRF échoue.
+- **ADR 0021.** Le sandbox ne dépend pas de l'app au niveau npm : il la lance via Docker à partir de son `Dockerfile`, sans jamais l'importer. Le `package.json` du sandbox ne référence pas `@univ-lehavre/atlas-sillage`.
+- **Quand préférer quoi ?** `pnpm -F sillage dev` pour itérer (hot-reload). Le service `app` dockerisé pour valider le build de prod ou démarrer la stack entière d'un coup.
 
 ## Commandes
 
@@ -149,6 +173,7 @@ Le `webServer` de [`playwright.config.ts`](playwright.config.ts) spawn `pnpm -F 
 - **Appwrite minimal** : on déclare l'API + MongoDB + Redis + `worker-mails`. Pas de traefik, ni de workers Functions/Builds/Webhooks. Suffisant pour Account/Users/Sessions utilisés par sillage, insuffisant si sillage se met à utiliser Appwrite Functions ou Webhooks.
 - **Empreinte mémoire** : ~3-4 Go pour le full stack.
 - **Couplage réseau avec crf-sandbox** : si son `docker-compose.yml` renomme `mailpit` ou `redcap-net`, le branchement casse.
+- **Image `app` non hot-reload** : build-once. Toute modif du code de sillage (ou d'une PUBLIC\_\*) impose `docker compose up -d --build app`. Pour itérer, préférer `pnpm -F sillage dev` sur l'hôte.
 
 ## Convention de nommage
 

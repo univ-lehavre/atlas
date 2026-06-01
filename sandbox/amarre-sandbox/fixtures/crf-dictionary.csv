@@ -1,0 +1,13 @@
+"Variable / Field Name","Form Name","Section Header","Field Type","Field Label","Choices, Calculations, OR Slider Labels","Field Note","Text Validation Type OR Show Slider Number","Text Validation Min","Text Validation Max",Identifier?,"Branching Logic (Show field only if...)","Required Field?","Custom Alignment","Question Number (surveys only)","Matrix Group Name","Matrix Ranking?","Field Annotation"
+record_id,contact,,text,"Identifiant de la demande",,,,,,,,,,,,,
+email,contact,"Demandeur",text,"Adresse e-mail",,,email,,,y,,y,,,,,
+userid,contact,,text,"Identifiant utilisateur",,,,,,y,,,,,,,
+created_at,contact,,text,"Date de création",,,datetime_ymd,,,,,,,,,,
+demandeur_statut,form,"Profil du demandeur",radio,"Statut du demandeur","1, Doctorant | 2, Enseignant-chercheur | 3, Personnel administratif",,,,,,,y,,,,,
+mobilite_type,form,"Mobilité demandée",dropdown,"Type de mobilité","entrante, Mobilité entrante | sortante, Mobilité sortante",,,,,,[demandeur_statut]<>'',y,,,,,
+mobilite_pays,form,,text,"Pays de destination",,,,,,,[mobilite_type]='sortante',,,,,,
+duree_jours,form,,text,"Durée (en jours)",,"Nombre entier de jours",integer,1,365,,[mobilite_type]<>'',y,,,,,
+date_debut,form,,text,"Date de début",,,date_ymd,,,,[mobilite_type]<>'',,,,,,
+budget_estime,form,,text,"Budget estimé (€)",,,number,0,,,,,,,,,
+besoin_visa,form,,yesno,"Besoin d'un visa ?",,,,,,,[mobilite_type]='entrante',,,,,,
+commentaire,form,,notes,"Commentaire libre",,,,,,,,,,,,,

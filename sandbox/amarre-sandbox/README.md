@@ -53,20 +53,21 @@ Ouvrir http://localhost:5173 et signer avec un email matchant `ALLOWED_DOMAINS_R
 
 ## Commandes
 
-| Commande              | Effet                                                                |
-| --------------------- | -------------------------------------------------------------------- |
-| `pnpm start`          | Raccourci `docker:up` + `bootstrap` en un coup                       |
-| `pnpm stop`           | Arrête les conteneurs (volumes préservés)                            |
-| `pnpm docker:up`      | Démarre tous les conteneurs (BaaS + CRF + Mailpit)                   |
-| `pnpm docker:down`    | Arrête les conteneurs (volumes préservés)                            |
-| `pnpm docker:reset`   | Arrête + supprime les volumes (perte de données)                     |
-| `pnpm docker:logs`    | Tail des logs                                                        |
-| `pnpm bootstrap`      | Orchestrateur complet (BaaS + CRF + seed + .env amarre)              |
-| `pnpm bootstrap:baas` | Provisionne Appwrite (account root + org + projet + clé API)         |
-| `pnpm bootstrap:crf`  | Installe REDCap, crée un projet `amarre` dédié, importe la trame     |
-| `pnpm seed`           | Génère et importe N records synthétiques (défaut 120, voir `.env`)   |
-| `pnpm pull:prod`      | Pull opt-in des records de prod (nécessite `PROD_CRF_*` dans `.env`) |
-| `pnpm test:smoke`     | Playwright smoke level-5 ; auto-spawn d'amarre dev via webServer     |
+| Commande                 | Effet                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------- |
+| `pnpm start`             | Raccourci `docker:up` + `bootstrap` en un coup                                |
+| `pnpm stop`              | Arrête les conteneurs (volumes préservés)                                     |
+| `pnpm docker:up`         | Démarre tous les conteneurs (BaaS + CRF + Mailpit)                            |
+| `pnpm docker:down`       | Arrête les conteneurs (volumes préservés)                                     |
+| `pnpm docker:reset`      | Arrête + supprime les volumes (perte de données)                              |
+| `pnpm docker:logs`       | Tail des logs                                                                 |
+| `pnpm bootstrap`         | Orchestrateur complet (BaaS + CRF + seed + .env amarre)                       |
+| `pnpm bootstrap:baas`    | Provisionne Appwrite (account root + org + projet + clé API)                  |
+| `pnpm bootstrap:crf`     | Installe REDCap, crée un projet `amarre` dédié, importe la trame              |
+| `pnpm dictionary:import` | Importe le dictionnaire CRF minimal (`fixtures/crf-dictionary.csv`) via l'API |
+| `pnpm seed`              | Génère et importe N records synthétiques (défaut 120, voir `.env`)            |
+| `pnpm pull:prod`         | Pull opt-in des records de prod (nécessite `PROD_CRF_*` dans `.env`)          |
+| `pnpm test:smoke`        | Playwright smoke level-5 ; auto-spawn d'amarre dev via webServer              |
 
 > Les commandes `up`/`down`/`reset` sont préfixées `docker:` parce que `pnpm up` est une commande native pnpm (= `update`) qui shadow-erait nos scripts.
 
@@ -95,10 +96,32 @@ Les endpoints `/v1/teams`, `/v1/projects`, `/v1/projects/.../keys` sont ceux que
 2. INSERT SQL minimal dans `redcap_projects` pour créer un projet `amarre` dédié (auto-incremented id). Idempotent : si le projet existe déjà, on le réutilise.
 3. INSERT dans `redcap_user_rights` pour donner à `site_admin` un token API généré (16 bytes hex). `ON DUPLICATE KEY UPDATE` rend le step ré-entrant.
 4. Drop de la FK `redcap_data_dictionaries.doc_id` → `redcap_edocs_metadata.doc_id` : l'API metadata d'import insère avec `doc_id=0` (sentinelle) et violerait sinon la contrainte.
-5. Import du data dictionary [`data-dictionaries/127-amarre-v1.json`](../../data-dictionaries/127-amarre-v1.json) via `POST /api/?content=metadata&action=import` dans le projet amarre.
+5. Import du data dictionary via `POST /api/?content=metadata&action=import` dans le projet amarre. Deux sources possibles :
+   - **Dictionnaire complet** [`data-dictionaries/127-amarre-v1.json`](../../data-dictionaries/127-amarre-v1.json) **s'il est présent** à la racine du repo (gitignored — labels + branching logic potentiellement sensibles, généré via `pnpm crf:dictionaries:export --apply` ou fourni anonymisé par un·e collègue).
+   - **Fallback automatique** : si ce fichier est absent, le bootstrap importe le dictionnaire **minimal** committé [`fixtures/crf-dictionary.csv`](fixtures/crf-dictionary.csv) via [`scripts/import-dictionary.sh`](scripts/import-dictionary.sh). C'est ce qui rend un premier `pnpm start` **entièrement automatisé, sans étape manuelle**.
 6. Persistance de `CRF_API_TOKEN` (le token du projet amarre) dans `.env`.
 
 Le projet par défaut id=1 (créé par `install-crf.sh`) reste isolé et continue de servir les tests de contrat du `crf-sandbox`.
+
+#### Dictionnaire CRF minimal (fixture)
+
+[`fixtures/crf-dictionary.csv`](fixtures/crf-dictionary.csv) est un dictionnaire CRF **synthétique et minimal** (aucune donnée réelle/personnelle), au format CSV standard d'export d'un dictionnaire CRF — colonnes `Variable / Field Name`, `Form Name`, `Field Type`, `Field Label`, `Choices…`, `Branching Logic…`, etc., dans l'ordre canonique (l'API mappe les colonnes **par position**, pas par nom d'en-tête). Il couvre 2 instruments (`contact`, `form`) et des types de champs variés (`text` avec validations `email`/`integer`/`number`/`date`, `radio`, `dropdown`, `yesno`, `notes`) plus un exemple de branching logic (`[demandeur_statut]<>''`).
+
+[`scripts/import-dictionary.sh`](scripts/import-dictionary.sh) importe ce CSV dans l'instance CRF locale :
+
+- Lit `PUBLIC_CRF_URL` et `CRF_API_TOKEN` depuis l'environnement ou le `.env` provisionné par le bootstrap (l'env pré-défini gagne, pour permettre un override en ligne de commande). **Aucun secret n'est hardcodé.**
+- POST `content=metadata&action=import&format=csv` (le corps CSV est envoyé via `curl --data-urlencode "data@…"`).
+- **Idempotent** : l'endpoint remplace le dictionnaire du projet en bloc — ré-exécutable tel quel sur un projet en _development_.
+- Garde-fou : refuse une `PUBLIC_CRF_URL` qui ne pointe pas vers `localhost`/`127.0.0.1` (défense contre un `.env` réécrit qui exfiltrerait le token).
+
+Lancer manuellement (le bootstrap l'appelle automatiquement en fallback) :
+
+```bash
+# Pré-requis : `pnpm bootstrap:crf` joué (token + projet provisionnés)
+./scripts/import-dictionary.sh
+# ou cibler un autre CSV :
+CRF_DICTIONARY_FILE=/chemin/vers/dico.csv ./scripts/import-dictionary.sh
+```
 
 ### Mail-trap
 

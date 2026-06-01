@@ -8,15 +8,19 @@
 
 import { intro, log } from "@clack/prompts";
 import pc from "picocolors";
+import {
+  getEnv,
+  requireEnv,
+  hasFlag,
+  getFlagValue,
+  findUnknownFlags,
+} from "@univ-lehavre/atlas-cli-toolkit";
 import { run } from "./run.js";
 import { fromCrf } from "./from-crf.js";
 import { matchReferencesCommand } from "./match-references.js";
 import { matchResearchers } from "./match-researchers.js";
 
 const VERSION = "1.0.0";
-
-// eslint-disable-next-line security/detect-object-injection -- `name` est une clé connue passée par l'appelant interne
-const getEnv = (name: string): string => process.env[name] ?? "";
 
 const printHelp = (): void => {
   console.log(`
@@ -67,21 +71,23 @@ export const main = async (): Promise<void> => {
     process.exit(1);
   }
 
-  const crfUrl = getEnv("REDCAP_API_URL");
-  const crfToken = getEnv("REDCAP_API_TOKEN");
-  const citationUserAgent =
-    getEnv("OPENALEX_USER_AGENT") || "atlas-researcher-profiles/1.0.0";
-  const citationApiKey = getEnv("OPENALEX_API_TOKEN") || undefined;
-
-  if (crfUrl === "" || crfToken === "") {
+  const env = requireEnv(["REDCAP_API_URL", "REDCAP_API_TOKEN"]);
+  if (!env.ok) {
     log.error(
       "Missing required environment variables: REDCAP_API_URL and REDCAP_API_TOKEN",
     );
     process.exit(1);
   }
 
-  const allArgs = new Set(process.argv.slice(2));
-  const batch = allArgs.has("--batch") || allArgs.has("--yes");
+  const crfUrl = getEnv("REDCAP_API_URL");
+  const crfToken = getEnv("REDCAP_API_TOKEN");
+  const citationUserAgent = getEnv(
+    "OPENALEX_USER_AGENT",
+    "atlas-researcher-profiles/1.0.0",
+  );
+  const citationApiKey = getEnv("OPENALEX_API_TOKEN") || undefined;
+
+  const batch = hasFlag(process.argv.slice(2), "--batch", "--yes");
   const opts = {
     crfUrl,
     crfToken,
@@ -107,8 +113,9 @@ export const main = async (): Promise<void> => {
 
   if (command === "from-crf") {
     const args = process.argv.slice(3);
-    const knownFlags = new Set(["--batch", "--yes"]);
-    const unknownArgs = args.filter((a) => !knownFlags.has(a));
+    const unknownArgs = findUnknownFlags(args, {
+      booleanFlags: ["--batch", "--yes"],
+    });
     if (unknownArgs.length > 0) {
       log.error(
         `Unknown option(s) for from-crf: ${unknownArgs.map((a) => pc.bold(a)).join(", ")}`,
@@ -122,29 +129,17 @@ export const main = async (): Promise<void> => {
 
   if (command === "match-researchers") {
     const args = process.argv.slice(3);
-    const topIdx = args.indexOf("--top");
-    const topArg = topIdx !== -1 ? args[topIdx + 1] : undefined;
-    const outputArg = args.includes("--output")
-      ? args[args.indexOf("--output") + 1]
-      : "table";
-    const sortBy = args.includes("--complementarity")
+    const topArg = getFlagValue(args, "--top");
+    const outputArg = getFlagValue(args, "--output") ?? "table";
+    const sortBy = hasFlag(args, "--complementarity")
       ? "complementarity"
       : "similarity";
-    const keywords = args.includes("--keywords");
-    const chart = args.includes("--chart");
-    const knownFlags = new Set([
-      "--top",
-      "--output",
-      "--complementarity",
-      "--keywords",
-      "--chart",
-    ]);
-    const unknownArgs = args.filter(
-      (a, i) =>
-        !knownFlags.has(a) &&
-        args[i - 1] !== "--top" &&
-        args[i - 1] !== "--output",
-    );
+    const keywords = hasFlag(args, "--keywords");
+    const chart = hasFlag(args, "--chart");
+    const unknownArgs = findUnknownFlags(args, {
+      booleanFlags: ["--complementarity", "--keywords", "--chart"],
+      valueFlags: ["--top", "--output"],
+    });
     if (unknownArgs.length > 0) {
       log.error(
         `Unknown option(s) for match-researchers: ${unknownArgs.map((a) => pc.bold(a)).join(", ")}`,
@@ -179,14 +174,10 @@ export const main = async (): Promise<void> => {
 
   if (command === "match-references") {
     const args = process.argv.slice(3);
-    const thresholdIdx = args.indexOf("--threshold");
-    const batchFlags = new Set(["--batch", "--yes"]);
-    const unknownArgs = args.filter(
-      (a, i) =>
-        a !== "--threshold" &&
-        args[i - 1] !== "--threshold" &&
-        !batchFlags.has(a),
-    );
+    const unknownArgs = findUnknownFlags(args, {
+      booleanFlags: ["--batch", "--yes"],
+      valueFlags: ["--threshold"],
+    });
     if (unknownArgs.length > 0) {
       log.error(
         `Unknown option(s) for match-references: ${unknownArgs.map((a) => pc.bold(a)).join(", ")}`,
@@ -196,9 +187,9 @@ export const main = async (): Promise<void> => {
       );
       process.exit(1);
     }
-    const thresholdArg =
-      thresholdIdx !== -1 ? args[thresholdIdx + 1] : undefined;
-    if (thresholdIdx !== -1 && thresholdArg === undefined) {
+    const hasThreshold = hasFlag(args, "--threshold");
+    const thresholdArg = getFlagValue(args, "--threshold");
+    if (hasThreshold && thresholdArg === undefined) {
       log.error("--threshold requires a numeric value (e.g. --threshold 0.3)");
       process.exit(1);
     }
