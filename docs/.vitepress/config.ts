@@ -1,5 +1,17 @@
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitepress";
 import { withMermaid } from "vitepress-plugin-mermaid";
+
+// Sidebar de la Référence API, générée par `pnpm docs:api` (TypeDoc +
+// scripts/docs/generate-api-sidebar.ts) dans un fichier gitignoré. Si elle
+// n'a pas encore été produite (rare en dev), on retombe sur un menu minimal.
+const apiSidebarPath = fileURLToPath(
+  new URL("./data/api-sidebar.json", import.meta.url),
+);
+const apiSidebar = existsSync(apiSidebarPath)
+  ? JSON.parse(readFileSync(apiSidebarPath, "utf8"))
+  : [{ text: "Reference", items: [{ text: "Vue d'ensemble", link: "/api/" }] }];
 
 export default withMermaid(
   defineConfig({
@@ -29,7 +41,22 @@ export default withMermaid(
       // page locale, pas besoin de les réécrire en URLs absolues.
       // VitePress normalise ces liens en `./../../…`, d'où le motif.
       /\.\.\/\.\.\//,
+      // Référence API (`docs/api/**`) : générée par TypeDoc. Ses liens
+      // croisés — internes (TypeDoc émet des cibles que VitePress ne résout
+      // pas toujours, ex. `./type-aliases/index`, `./README`) comme externes
+      // (doc d'un SDK tiers tel Appwrite : `/docs/references/...`) — ne sont
+      // pas de notre ressort et n'ont pas à bloquer la build. La fraîcheur de
+      // l'API est garantie par sa régénération (`pnpm docs:api`), pas par le
+      // contrôle de liens morts. On neutralise les motifs émis par TypeDoc.
+      /\/docs\/references\//,
+      /(^|\/)(README|index)$/,
+      /\/type-aliases\/index$/,
+      /\/namespaces\//,
     ],
+    // `docs/api/_media/**` : copies internes de TypeDoc (README et ADR
+    // référencés depuis la JSDoc). Ce ne sont pas des pages du site ; on les
+    // exclut de la build pour ne pas hériter de leurs liens relatifs cassés.
+    srcExclude: ["**/api/_media/**"],
     themeConfig: {
       nav: [
         { text: "Architecture", link: "/architecture/monorepo" },
@@ -37,6 +64,7 @@ export default withMermaid(
         { text: "Sécurité", link: "/quality/security" },
         { text: "Collaboration", link: "/collaboration/workflow" },
         { text: "Décisions", link: "/decisions/" },
+        { text: "Référence API", link: "/api/" },
         { text: "Audits", link: "/audit/" },
         { text: "Plans", link: "/plans/" },
         { text: "Glossaire", link: "/glossary" },
@@ -243,6 +271,7 @@ export default withMermaid(
             ],
           },
         ],
+        "/api/": apiSidebar,
       },
       socialLinks: [
         { icon: "github", link: "https://github.com/univ-lehavre/atlas" },
