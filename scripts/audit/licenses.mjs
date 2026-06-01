@@ -1,6 +1,6 @@
-import { spawnSync } from "node:child_process"
-import { existsSync, readFileSync } from "node:fs"
-import { join } from "node:path"
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const ALLOWED_LICENSES = new Set([
   "MIT",
@@ -21,18 +21,31 @@ const ALLOWED_LICENSES = new Set([
   "Zlib",
   "WTFPL",
   "Public",
-  "Domain"
-])
+  "Domain",
+]);
 
 const PACKAGE_LICENSE_EXCEPTIONS = new Set([
   "@tybys/wasm-util",
   "fsevents",
   "png-js",
-  "flatbuffers"
-])
+  "flatbuffers",
+]);
+
+// Préfixes de paquets exemptés de l'allowlist de licences, avec leur raison.
+// Le match est par préfixe pour couvrir les variantes plateforme
+// (`@sentry/cli-darwin`, `@sentry/cli-linux-x64`, …).
+const PACKAGE_LICENSE_EXCEPTION_PREFIXES = [
+  // @sentry/cli* : outil build-only de @sentry/sveltekit (upload de
+  // sourcemaps). Licence FSL-1.1-MIT (Functional Source License, qui
+  // bascule en MIT après 2 ans). Atlas ne l'invoque PAS (pas de plugin
+  // Vite Sentry, pas d'auth token) et ne le distribue dans aucun paquet
+  // publié — c'est une dépendance transitive de dev jamais embarquée.
+  // Phase 13.3.
+  "@sentry/cli",
+];
 
 function extractLicenseTokens(value) {
-  if (typeof value !== "string" || value.trim() === "") return []
+  if (typeof value !== "string" || value.trim() === "") return [];
   return (value.match(/[A-Za-z0-9-.+]+/g) ?? []).filter(
     (token) =>
       token !== "OR" &&
@@ -40,12 +53,18 @@ function extractLicenseTokens(value) {
       token !== "WITH" &&
       token !== "SEE" &&
       token !== "LICENSE" &&
-      token !== "IN"
-  )
+      token !== "IN",
+  );
 }
 
 function isAllowedLicense(value, packageName) {
-  if (PACKAGE_LICENSE_EXCEPTIONS.has(packageName)) return true
+  if (PACKAGE_LICENSE_EXCEPTIONS.has(packageName)) return true;
+  if (
+    PACKAGE_LICENSE_EXCEPTION_PREFIXES.some((prefix) =>
+      packageName.startsWith(prefix),
+    )
+  )
+    return true;
 
   if (
     value === "UNKNOWN" &&
@@ -72,53 +91,53 @@ function isAllowedLicense(value, packageName) {
       packageName.startsWith("@turbo/") ||
       packageName.startsWith("@duckdb/node-bindings-"))
   ) {
-    return true
+    return true;
   }
 
-  if (value.startsWith("SEE LICENSE IN ")) return true
+  if (value.startsWith("SEE LICENSE IN ")) return true;
 
-  const tokens = extractLicenseTokens(value)
-  if (tokens.length === 0) return false
+  const tokens = extractLicenseTokens(value);
+  if (tokens.length === 0) return false;
   if (tokens.includes("GPL-3.0-or-later")) {
     return value.includes(" OR ")
       ? tokens.some((token) => ALLOWED_LICENSES.has(token))
-      : false
+      : false;
   }
-  return tokens.every((token) => ALLOWED_LICENSES.has(token))
+  return tokens.every((token) => ALLOWED_LICENSES.has(token));
 }
 
 function collectDependencyNodes(tree) {
-  const stack = [tree]
-  const nodes = []
+  const stack = [tree];
+  const nodes = [];
 
   while (stack.length > 0) {
-    const current = stack.pop()
-    if (!current || typeof current !== "object") continue
+    const current = stack.pop();
+    if (!current || typeof current !== "object") continue;
 
-    const deps = current.dependencies
-    if (!deps || typeof deps !== "object") continue
+    const deps = current.dependencies;
+    if (!deps || typeof deps !== "object") continue;
 
     for (const dep of Object.values(deps)) {
-      if (!dep || typeof dep !== "object") continue
-      nodes.push(dep)
-      stack.push(dep)
+      if (!dep || typeof dep !== "object") continue;
+      nodes.push(dep);
+      stack.push(dep);
     }
   }
 
-  return nodes
+  return nodes;
 }
 
 function readPackageLicense(packagePath) {
-  const packageJsonPath = join(packagePath, "package.json")
-  if (!existsSync(packageJsonPath)) return "UNKNOWN"
+  const packageJsonPath = join(packagePath, "package.json");
+  if (!existsSync(packageJsonPath)) return "UNKNOWN";
 
   try {
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"))
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
     return typeof packageJson.license === "string"
       ? packageJson.license
-      : "UNKNOWN"
+      : "UNKNOWN";
   } catch {
-    return "UNKNOWN"
+    return "UNKNOWN";
   }
 }
 
@@ -127,76 +146,83 @@ const run = spawnSync(
   ["-r", "list", "--json", "--prod", "--depth", "Infinity"],
   {
     encoding: "utf8",
-    maxBuffer: 64 * 1024 * 1024
-  }
-)
+    maxBuffer: 64 * 1024 * 1024,
+  },
+);
 
 if (run.status !== 0) {
-  process.stderr.write(run.stderr || run.stdout || "Failed to collect dependencies.\n")
-  process.exit(run.status ?? 1)
+  process.stderr.write(
+    run.stderr || run.stdout || "Failed to collect dependencies.\n",
+  );
+  process.exit(run.status ?? 1);
 }
 
-let projects
+let projects;
 try {
-  projects = JSON.parse(run.stdout)
+  projects = JSON.parse(run.stdout);
 } catch {
-  process.stderr.write("Unable to parse dependency tree from pnpm list.\n")
-  process.exit(1)
+  process.stderr.write("Unable to parse dependency tree from pnpm list.\n");
+  process.exit(1);
 }
 
-const externalPackages = new Map()
+const externalPackages = new Map();
 
 for (const project of projects) {
   for (const dep of collectDependencyNodes(project)) {
-    const path = dep.path
-    const name = dep.name ?? dep.from
-    const version = dep.version
+    const path = dep.path;
+    const name = dep.name ?? dep.from;
+    const version = dep.version;
 
-    if (typeof path !== "string" || !path.includes(`${join("node_modules", ".pnpm")}`)) {
-      continue
+    if (
+      typeof path !== "string" ||
+      !path.includes(`${join("node_modules", ".pnpm")}`)
+    ) {
+      continue;
     }
 
-    if (typeof name !== "string" || typeof version !== "string") continue
-    if (name.startsWith("@univ-lehavre/atlas-")) continue
+    if (typeof name !== "string" || typeof version !== "string") continue;
+    if (name.startsWith("@univ-lehavre/atlas-")) continue;
 
-    const id = `${name}@${version}`
+    const id = `${name}@${version}`;
     if (!externalPackages.has(id)) {
       externalPackages.set(id, {
         name,
         version,
-        license: readPackageLicense(path)
-      })
+        license: readPackageLicense(path),
+      });
     }
   }
 }
 
-const packages = Array.from(externalPackages.values())
+const packages = Array.from(externalPackages.values());
 if (packages.length === 0) {
-  process.stderr.write("License audit failed: no external packages were inspected.\n")
-  process.exit(1)
+  process.stderr.write(
+    "License audit failed: no external packages were inspected.\n",
+  );
+  process.exit(1);
 }
 
-const violations = []
+const violations = [];
 for (const pkg of packages) {
   if (!isAllowedLicense(pkg.license, pkg.name)) {
-    violations.push(pkg)
+    violations.push(pkg);
   }
 }
 
 if (violations.length === 0) {
   process.stdout.write(
-    `License audit passed (${packages.length} external production packages checked).\n`
-  )
-  process.exit(0)
+    `License audit passed (${packages.length} external production packages checked).\n`,
+  );
+  process.exit(0);
 }
 
-process.stderr.write("License audit failed. Non-allowed licenses found:\n")
+process.stderr.write("License audit failed. Non-allowed licenses found:\n");
 for (const violation of violations) {
   process.stderr.write(
-    `- ${violation.name}@${violation.version}: ${violation.license}\n`
-  )
+    `- ${violation.name}@${violation.version}: ${violation.license}\n`,
+  );
 }
 process.stderr.write(
-  `Allowed licenses: ${Array.from(ALLOWED_LICENSES).join(", ")}\n`
-)
-process.exit(1)
+  `Allowed licenses: ${Array.from(ALLOWED_LICENSES).join(", ")}\n`,
+);
+process.exit(1);

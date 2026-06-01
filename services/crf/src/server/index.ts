@@ -8,8 +8,13 @@
  */
 
 import { serve } from '@hono/node-server';
+import { startTelemetry } from './telemetry.js';
 import { createApp } from './app.js';
 import { env } from './env.js';
+
+// Start OpenTelemetry before anything else so the request middleware records
+// spans. No-op safe: returns undefined when tracing is not configured.
+startTelemetry();
 
 // Create and start the server
 const app = createApp({

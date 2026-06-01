@@ -7,6 +7,7 @@
  */
 
 import { Hono } from 'hono';
+import { httpInstrumentationMiddleware } from '@hono/otel';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import { openAPIRouteHandler } from 'hono-openapi';
@@ -92,6 +93,10 @@ export const createApp = (options: CreateAppOptions): Hono => {
 
   const app = new Hono();
 
+  // OpenTelemetry: one span per HTTP request (method, route, status, duration).
+  // No-op unless the OTel SDK is started — see ./telemetry.ts. When the SDK is
+  // off the OTel API resolves to no-op tracers, so this middleware is cheap.
+  app.use('*', httpInstrumentationMiddleware());
   app.use('*', logger());
   app.use('*', cors());
   if (!disableRateLimit) app.use('/api/*', apiRateLimiter);
