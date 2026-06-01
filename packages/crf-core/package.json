@@ -1,6 +1,11 @@
 {
   "name": "@univ-lehavre/atlas-crf-core",
   "version": "2.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "packages/crf-core"
+  },
   "description": "Pure functional core for clinical research form (CRF / REDCap) domain logic with Effect",
   "type": "module",
   "exports": {

@@ -1,6 +1,11 @@
 {
   "name": "@univ-lehavre/atlas-logos",
   "version": "3.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/univ-lehavre/atlas.git",
+    "directory": "assets/logos"
+  },
   "description": "Logos and brand assets for Atlas projects",
   "type": "module",
   "exports": {
