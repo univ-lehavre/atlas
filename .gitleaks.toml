@@ -14,7 +14,7 @@
 #   - Test fixtures and example files (`.env.example`, sandbox docker
 #     `.env.test`) intentionally contain look-alike values.
 #   - Known fixture patterns explicitly used in JSDoc / doc examples
-#     (`A1B2C3D4…`, `ABCDEF0123…`) — see PR #127 follow-up in TODO.md.
+#     (`A1B2C3D4…`, `ABCDEF0123…`).
 #   - `redcap-token.csv` is gitignored and never tracked, but we still
 #     blacklist its path defensively.
 

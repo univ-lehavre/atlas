@@ -8,8 +8,9 @@ représente l'état du dépôt à un instant T, pas une vue vivante.
 
 - **Format de nom** : `YYYY-MM-DD.md` (date à laquelle l'audit a été conduit).
 - **Méthode** : indiquée dans le rapport (outils utilisés, profondeur, périmètre couvert).
-- **Suivi** : les findings actionnables migrent dans [`TODO.md`](https://github.com/univ-lehavre/atlas/blob/main/TODO.md)
-  ou ouvrent un ADR si la résolution implique une décision structurante.
+- **Suivi** : les findings actionnables ouvrent une **issue GitHub**
+  (label `enhancement` ou `tech-debt`), ou un ADR si la résolution
+  implique une décision structurante.
 
 ## Index
 

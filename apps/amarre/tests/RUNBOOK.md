@@ -306,7 +306,7 @@ pnpm -F @univ-lehavre/atlas-amarre-sandbox pull:prod --yes  # non-interactif
 
 **En clair** : seul le niveau 1 (~85 tests) protège réellement les PRs en automatique. Les niveaux 3 et 4 sont _présents_ mais skipped en pipeline, les niveaux 2 et 5 sont totalement absents — une régression N2/N5 ne sera attrapée que par un dev qui pense à lancer la suite localement avec la stack up.
 
-Brancher N2-N5 sur pre-push / CI est un chantier listé dans [TODO.md](../../../TODO.md) (« Brancher les niveaux 2 à 5 d'amarre sur pre-push »). Trade-off : ~5 min ajoutés au job CI pour démarrer la stack docker complète, vs vraie couverture pyramide.
+Brancher N2-N5 sur pre-push / CI est suivi dans l'[issue #254](https://github.com/univ-lehavre/atlas/issues/254). Trade-off : ~5 min ajoutés au job CI pour démarrer la stack docker complète, vs vraie couverture pyramide.
 
 ## Reset complet (en cas de doute)
 
