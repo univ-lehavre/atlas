@@ -26,7 +26,7 @@
 
 <style>
   .footer {
-    background-color: #fff;
+    background-color: var(--atlas-ui-color-surface, #fff);
   }
 
   .logo {

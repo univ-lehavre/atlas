@@ -64,7 +64,7 @@
                 class="list-group list-group-flush fw-{userId
                   ? 'light'
                   : 'bold mb-1'}"
-                style="font-family: Gambetta;"
+                style="font-family: var(--atlas-ui-font-heading, Gambetta);"
               >
                 S'authentifier
               </div>
@@ -90,7 +90,7 @@
                 allowingNewRequests
                   ? 'bold mb-1'
                   : 'light'}"
-                style="font-family: Gambetta;"
+                style="font-family: var(--atlas-ui-font-heading, Gambetta);"
               >
                 Créer une nouvelle
               </div>

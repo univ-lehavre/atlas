@@ -54,7 +54,7 @@
               <i class="bi bi-box-arrow-in-right me-2"></i>
               <div
                 class="list-group list-group-flush fw-light"
-                style="font-family: Gambetta;"
+                style="font-family: var(--atlas-ui-font-heading, Gambetta);"
               >
                 S'authentifier
               </div>
@@ -71,7 +71,7 @@
                 <i class="bi bi-box-arrow-right me-2"></i>
                 <div
                   class="list-group list-group-flush fw-light"
-                  style="font-family: Gambetta;"
+                  style="font-family: var(--atlas-ui-font-heading, Gambetta);"
                 >
                   Se déconnecter
                 </div>
@@ -107,7 +107,7 @@
               <i class="bi bi-arrow-down me-2"></i>
               <div
                 class="list-group list-group-flush fw-light"
-                style="font-family: Gambetta;"
+                style="font-family: var(--atlas-ui-font-heading, Gambetta);"
               >
                 Télécharger
               </div>

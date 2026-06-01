@@ -99,7 +99,7 @@
   /* Fond marine sombre — rythme visuel entre la bande welcome (blanc)
      au-dessus et l'invite questionnaires (bg-light) en-dessous. */
   .carousel-section {
-    background: #0a2540;
+    background: var(--atlas-ui-color-primary, #0a2540);
   }
 
   /* Le carousel Bootstrap occupe 100% par défaut ; on borne sa largeur

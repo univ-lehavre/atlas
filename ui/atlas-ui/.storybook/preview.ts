@@ -6,6 +6,40 @@ import type { Preview } from "@storybook/svelte-vite";
 // future apps) inherits.
 import "../src/lib/client";
 
+// Opt-in theming tokens + helper. Importing `theme.css` only sets the
+// default custom properties (= the historical hardcoded values), so the
+// "Default" theme renders exactly as before. The toolbar lets reviewers
+// flip to an alternative palette to eyeball the theming surface.
+import "../src/theme/theme.css";
+import { applyTheme, type AtlasUiTheme } from "../src/theme/index";
+
+const ATLAS_UI_THEMES: Record<string, Partial<AtlasUiTheme>> = {
+  default: {},
+  forest: {
+    colorPrimary: "#1b4332",
+    colorPrimaryHover: "#2d6a4f",
+    colorOverlay: "rgba(27, 67, 50, 0.55)",
+    fontHeading: "Georgia, serif",
+  },
+};
+
+// Re-applies the toolbar-selected theme by (re)writing a single scoped
+// `<style>` rule in the preview head. Replacing the whole rule means
+// switching back to "default" leaves no residual override — no per-key
+// DOM mutation, so it stays a single side-effecting statement.
+const THEME_STYLE_ID = "atlas-ui-theme-vars";
+function applyToolbarTheme(name: string | undefined): void {
+  if (typeof document === "undefined") return;
+  const overrides = applyTheme(ATLAS_UI_THEMES[name ?? "default"] ?? {});
+  const existing = document.querySelector<HTMLStyleElement>(
+    `style#${THEME_STYLE_ID}`,
+  );
+  const styleEl = existing ?? document.createElement("style");
+  styleEl.id = THEME_STYLE_ID;
+  styleEl.textContent = overrides ? `:root { ${overrides} }` : "";
+  if (!existing) document.head.append(styleEl);
+}
+
 // Bootstrap modals (`.modal.fade`) start with `display: none` — they
 // rely on Bootstrap JS to add `.show` when the user clicks a
 // `data-bs-toggle="modal"` trigger. The preview iframe doesn't load
@@ -48,6 +82,21 @@ const preview: Preview = {
       ],
     },
   },
+  globalTypes: {
+    atlasUiTheme: {
+      description: "atlas-ui opt-in theme tokens",
+      defaultValue: "default",
+      toolbar: {
+        title: "Theme",
+        icon: "paintbrush",
+        items: [
+          { value: "default", title: "Default" },
+          { value: "forest", title: "Forest" },
+        ],
+        dynamicTitle: true,
+      },
+    },
+  },
   decorators: [
     (Story, context) => {
       if (typeof document !== "undefined") {
@@ -59,6 +108,11 @@ const preview: Preview = {
           "atlas-sb-force-modals",
           force,
         );
+
+        // Apply the toolbar-selected theme. "default" writes an empty
+        // rule, so the values declared in `theme.css` win (zero override).
+        const globals = context.globals as { atlasUiTheme?: string };
+        applyToolbarTheme(globals.atlasUiTheme);
       }
       return Story();
     },

@@ -239,12 +239,12 @@ Artefacts : `sandbox/amarre-sandbox/playwright-report/` (HTML reporter) + `test-
 
 ## Cheatsheet — où vit quoi
 
-| Helper                                                                                                                             | Rôle                                                                             |
-| ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| [helpers/redcap.ts](./integration/helpers/redcap.ts)                                                                               | `isRedcapReachable`, `deleteRecordsByPrefix`, `nodeContext`                      |
-| [helpers/appwrite.ts](./integration/helpers/appwrite.ts)                                                                           | `isAppwriteReachable`, `countSessions`, `deleteUserByEmail`                      |
-| [helpers/mailpit.ts](./integration/helpers/mailpit.ts)                                                                             | `isMailpitReachable`, `purgeMailpit`, `pollForMessage`, `extractMagicLinkParams` |
-| [fixtures/users.ts](./fixtures/users.ts), [fixtures/requests.ts](./fixtures/requests.ts), [fixtures/forms.ts](./fixtures/forms.ts) | Payloads typés partagés entre niveaux 1 et 3/4                                   |
+| Helper                                                                                   | Rôle                                                                             |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [helpers/redcap.ts](./integration/helpers/redcap.ts)                                     | `isRedcapReachable`, `deleteRecordsByPrefix`, `nodeContext`                      |
+| [helpers/appwrite.ts](./integration/helpers/appwrite.ts)                                 | `isAppwriteReachable`, `countSessions`, `deleteUserByEmail`                      |
+| [helpers/mailpit.ts](./integration/helpers/mailpit.ts)                                   | `isMailpitReachable`, `purgeMailpit`, `pollForMessage`, `extractMagicLinkParams` |
+| [fixtures/users.ts](./fixtures/users.ts), [fixtures/requests.ts](./fixtures/requests.ts) | Payloads typés partagés entre niveaux 1 et 3/4                                   |
 
 ## Données réelles vs fake (auto-détection)
 

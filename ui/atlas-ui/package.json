@@ -11,7 +11,9 @@
   },
   "files": [
     "src/lib",
-    "!src/lib/**/*.stories.*"
+    "src/theme",
+    "!src/lib/**/*.stories.*",
+    "!src/theme/ThemingDemo.svelte"
   ],
   "svelte": "./src/lib/index.ts",
   "types": "./src/lib/index.ts",
@@ -25,6 +27,12 @@
       "types": "./src/lib/client.ts",
       "default": "./src/lib/client.ts"
     },
+    "./theme": {
+      "types": "./src/theme/index.ts",
+      "svelte": "./src/theme/index.ts",
+      "default": "./src/theme/index.ts"
+    },
+    "./theme.css": "./src/theme/theme.css",
     "./*.svelte": {
       "types": "./src/lib/*.svelte",
       "svelte": "./src/lib/*.svelte",
@@ -34,6 +42,8 @@
   "scripts": {
     "storybook": "storybook dev -p 6006",
     "storybook:build": "storybook build",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
@@ -44,16 +54,22 @@
     "@storybook/addon-a11y": "^10.4.1",
     "@storybook/svelte-vite": "^10.4.1",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/svelte": "^5.2.6",
     "@types/luxon": "^3.7.1",
     "@types/node": "^25.9.1",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
+    "@vitest/coverage-v8": "^4.1.7",
     "eslint": "^10.4.0",
+    "happy-dom": "^20.8.8",
     "prettier": "^3.8.3",
     "prettier-plugin-svelte": "^3.5.2",
     "storybook": "^10.4.1",
     "svelte": "^5.55.9",
     "typescript": "^6.0.3",
-    "vite": "^8.0.14"
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7",
+    "vitest-axe": "^0.1.0"
   },
   "dependencies": {
     "@univ-lehavre/atlas-validators": "workspace:*",

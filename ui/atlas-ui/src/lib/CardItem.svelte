@@ -26,7 +26,10 @@
   }: Props = $props();
 </script>
 
-<div class="card h-100" style={`width: var(--card-width, ${width})`}>
+<div
+  class="card h-100"
+  style={`width: var(--card-width, var(--atlas-ui-card-width, ${width}))`}
+>
   {#if imageSrc}
     <img src={imageSrc} class="card-img-top" alt={imageAlt} />
   {/if}
@@ -34,12 +37,18 @@
   {#if title || description || bodyExtra}
     <div class="card-body">
       {#if title}
-        <div class="card-title fw-bolder fs-4" style="font-family: Gambetta;">
+        <div
+          class="card-title fw-bolder fs-4"
+          style="font-family: var(--atlas-ui-font-heading, Gambetta);"
+        >
           {@render title?.()}
         </div>
       {/if}
       {#if description}
-        <div class="card-text fw-light" style="font-family: Gambetta;">
+        <div
+          class="card-text fw-light"
+          style="font-family: var(--atlas-ui-font-heading, Gambetta);"
+        >
           {@render description?.()}
         </div>
       {/if}

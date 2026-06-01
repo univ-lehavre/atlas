@@ -1,0 +1,36 @@
+/*
+ * atlas-ui theme tokens.
+ *
+ * OPT-IN theming layer. These custom properties expose the handful of
+ * colours, fonts, spacings and radii that the shared components actually
+ * use. Every component consumes them through `var(--atlas-ui-*, <fallback>)`
+ * where `<fallback>` is the *current* hardcoded value, so:
+ *
+ *   - importing this file is OPTIONAL — components keep their fallbacks ;
+ *   - the default values declared here MATCH the historical hardcoded
+ *     values, so even when imported the rendering is unchanged ;
+ *   - a consumer overrides any subset (via `applyTheme(...)` inline styles,
+ *     the `ThemeProvider` component, or their own `:root` rules) without
+ *     touching the components.
+ *
+ * No brand names live in the token identifiers — `atlas-ui` is the package
+ * name and is the only allowed prefix.
+ */
+:root {
+  /* Colours */
+  --atlas-ui-color-primary: #0a2540;
+  --atlas-ui-color-primary-hover: #1e3a8a;
+  --atlas-ui-color-on-primary: #ffffff;
+  --atlas-ui-color-surface: #ffffff;
+  --atlas-ui-color-overlay: rgba(10, 37, 64, 0.55);
+
+  /* Typography */
+  --atlas-ui-font-heading: Gambetta;
+
+  /* Shape */
+  --atlas-ui-radius: 0.75rem;
+
+  /* Layout primitives shared by the card/scroller family */
+  --atlas-ui-card-width: 18rem;
+  --atlas-ui-card-gap: 1rem;
+}
