@@ -32,6 +32,30 @@ autorisés** malgré les règles ESLint fonctionnelles strictes qui sinon
 banniraient certaines constructions (par exemple la composition par
 opérateurs `pipe`/`yield*`).
 
+### Déclencher l'exécution au plus tard (aux consommateurs finaux)
+
+Un `Effect<A, E>` est une **description** d'un calcul, pas le calcul
+lui-même : rien ne s'exécute tant qu'on n'appelle pas `Effect.runSync`,
+`Effect.runPromise` ou un dérivé. **Ces déclencheurs doivent être appelés
+le plus tard possible**, uniquement par les **consommateurs finaux** —
+jamais au cœur d'une bibliothèque.
+
+- **Bibliothèque** (`packages/`) : retourne l'`Effect<A, E>` tel quel et
+  laisse l'appelant décider quand l'exécuter. Ne jamais appeler `runSync`/
+  `runPromise` à l'intérieur d'un paquet.
+- **Service HTTP** (`services/`) : `runPromise` dans le handler Hono,
+  c'est-à-dire au point d'entrée de la requête.
+- **CLI** (`cli/`) : `runSync` (ou `runPromise`) dans la commande, au
+  niveau du `bin`.
+- **App SvelteKit** (`apps/`) : `runPromise` dans un `+page.server.ts`,
+  une route API ou un hook serveur.
+
+**Pourquoi.** Déclencher tôt fige le calcul et fait perdre les bénéfices
+d'Effect : on ne peut plus composer, retenter, ni tester l'`Effect` sans
+maquetter son exécution. Plus on retarde le `run`, plus le code reste
+composable et performant — et les tests travaillent directement avec
+l'`Effect` typé, sans exécution réelle.
+
 ## Statut
 
 Accepted.

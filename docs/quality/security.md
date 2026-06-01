@@ -4,11 +4,25 @@ Cette page regroupe les pratiques de sécurité applicatives et opérationnelles
 
 Pour la procédure de gestion d'incident (compromission supposée, divulgation responsable), voir [Incident response](./incident-response.md).
 
-> Pages d'origine : `docs/security/{secrets,surfaces,dast,sbom/README}.md`, fusionnées le 2026-05-26 lors de la refonte de la documentation.
-
 > **Périmètre.** Le chantier DevSecOps côté dépôt est considéré complet ; les items dépendant d'acteurs externes (équipes ops, infra de preview, second mainteneur) sont reportés sine die. Voir [ADR 0001](../decisions/0001-devsecops-perimetre-repo-sine-die.md) pour la décision de cadrage **et le tableau de suivi des items sine die**.
 
 [[toc]]
+
+## DevSecOps — qu'est-ce que c'est ?
+
+Le [**DevSecOps**](../glossary.md) intègre la sécurité à **toutes** les étapes du développement (écriture du code, tests, intégration continue, déploiement) plutôt que comme un contrôle final isolé. L'idée : attraper un défaut de sécurité au plus tôt coûte beaucoup moins cher que de le corriger en production.
+
+**Pourquoi c'est important.** Une faille trouvée après mise en ligne expose des données et demande une réaction en urgence ; la même faille détectée à l'écriture du code se corrige en quelques minutes, sans risque.
+
+**Comment Atlas l'applique.** À chaque pull request, plusieurs garde-fous tournent automatiquement :
+
+- **analyse statique** du code ([CodeQL](../glossary.md), Semgrep) — cherche les motifs vulnérables sans exécuter le code ;
+- **détection de secrets** ([gitleaks](../glossary.md)) — empêche de committer un token ou une clé ;
+- **audit des dépendances** (vulnérabilités connues, licences) ;
+- **tests de sécurité** sur les endpoints (401, anti-XSS) ;
+- **scan dynamique** ([OWASP ZAP](../glossary.md)) sur une application en cours d'exécution.
+
+Le périmètre exact (ce qui est couvert côté dépôt, ce qui dépend d'acteurs externes) est cadré par [ADR 0001](../decisions/0001-devsecops-perimetre-repo-sine-die.md).
 
 ## Secrets — inventaire et rotation
 
@@ -119,6 +133,8 @@ grep -rn '\$env/static/private\|\$env/dynamic/private' apps/*/src/lib | grep -v 
 
 Un import de `$env/static/private` depuis un fichier consommé par le bundle navigateur (cf. `apps/*/src/lib/**` hors `server/`) est rejeté à la compilation par SvelteKit — c'est la garantie statique du compilateur, pas une convention. La règle de discipline ci-dessus ne vise qu'à éviter les faux pas en amont.
 
+**Que faire du résultat de l'audit ?** Si les trois commandes ci-dessus ne remontent rien, l'audit est concluant — on note simplement la date du passage. Si l'une d'elles révèle un secret exposé, on bascule sur la procédure correspondante ci-dessous : **rotation générique** pour un secret à renouveler proprement, **procédure d'urgence** si on suspecte une fuite active.
+
 ### Procédure de rotation générique
 
 1. **Identifier** le secret à rotater et l'app/workflow consommateur.
@@ -142,7 +158,7 @@ Cette procédure est résumée ici ; pour une réponse complète à un incident 
 
 ## Triage des findings — SLA de remédiation
 
-Délais maximums acceptables entre **détection** et **correctif déployé en prod**, par sévérité. Distinct du tempo de réponse à un incident actif (cf. [incident-response.md § Classification](./incident-response.md#1-classification-de-severite) pour les engagements P0–P3).
+Un [**SLA**](../glossary.md) (_Service Level Agreement_) est un engagement de délai. Ici, le délai maximum acceptable entre la **détection** d'un problème de sécurité et le **correctif déployé en production**, différencié par sévérité. Distinct du tempo de réponse à un incident actif (cf. [incident-response.md § Classification](./incident-response.md#1-classification-de-severite) pour les engagements P0–P3).
 
 | Sévérité       | Sources typiques                                                                                                                | Délai max (détection → fix déployé)   |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
