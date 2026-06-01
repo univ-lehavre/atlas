@@ -45,7 +45,7 @@
   "dependencies": {
     "@univ-lehavre/atlas-net": "workspace:*",
     "@univ-lehavre/atlas-crf-core": "workspace:*",
-    "effect": "^3.21.2"
+    "effect": "~3.21.2"
   },
   "devDependencies": {
     "@types/node": "^25.9.1",

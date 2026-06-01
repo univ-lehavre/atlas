@@ -39,8 +39,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "effect": "^3.21.2",
-    "qs": "^6.15.2"
+    "effect": "~3.21.2",
+    "qs": "~6.15.2"
   },
   "devDependencies": {
     "@effect/vitest": "^0.29.0",
