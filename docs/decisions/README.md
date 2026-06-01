@@ -45,6 +45,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0022 | [Convention de nommage `atlas-` pour les paquets publiés](0022-naming-convention.md)                   | Accepted |
 | 0023 | [`storybook:build` cassé en amont (Storybook 10.4 / Svelte 5.55)](0023-storybook-build-casse-amont.md) | Accepted |
 | 0024 | [Ranges `~` sur les `dependencies` des paquets publiables](0024-ranges-deps-publiables-tilde.md)       | Accepted |
+| 0025 | [Documentation à plusieurs niveaux (surface, profondeur, inline)](0025-documentation-multi-niveaux.md) | Accepted |
 
 ## Quand ouvrir un ADR
 
