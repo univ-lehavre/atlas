@@ -250,6 +250,9 @@ jobs:
       - name: Sync SvelteKit metadata
         run: pnpm --filter="./apps/**" exec svelte-kit sync
 
+      - name: Workspace structure
+        run: pnpm audit:structure
+
       - name: Security audit
         run: pnpm audit:security
 
@@ -264,6 +267,9 @@ jobs:
 
       - name: Outdated dependencies
         run: pnpm audit:versions
+
+      - name: Dependency specifier coherence
+        run: pnpm audit:dep-versions
 
       - name: Packages map up-to-date
         run: pnpm docs:generate:check
