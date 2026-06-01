@@ -124,6 +124,14 @@ pre-push:
       run: pnpm docs:generate:check
       priority: 4
 
+    audit-docs:
+      # Audite la doc rédigée (README, pages docs, ADR) : présence,
+      # liens internes, ADR référencés, pages orphelines. Déclenché quand
+      # un README, une page docs ou la nav VitePress change.
+      glob: "{**/README.md,docs/**/*.md,docs/.vitepress/config.ts}"
+      run: pnpm audit:docs
+      priority: 4
+
     cpd:
       run: pnpm audit:duplicates
       priority: 4
