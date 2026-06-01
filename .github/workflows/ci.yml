@@ -262,3 +262,6 @@ jobs:
 
       - name: Documentation audit
         run: pnpm audit:docs
+
+      - name: API entry points up-to-date
+        run: pnpm docs:api:check
