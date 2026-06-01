@@ -48,6 +48,7 @@
     "@types/qs": "^6.15.1",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "eslint": "^10.4.0",
+    "msw": "^2.14.6",
     "prettier": "^3.8.3",
     "typescript": "^6.0.3",
     "vitest": "^4.1.7"
