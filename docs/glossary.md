@@ -6,7 +6,7 @@ Définitions concises des termes techniques utilisés dans la documentation. Qua
 
 | Terme            | Définition                                                                                                                                                                            |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **monorepo**     | Un seul dépôt Git qui héberge plusieurs projets logiciels, avec des règles partagées (style, tests, CI). Atlas est organisé en sept catégories.                                       |
+| **monorepo**     | Un seul dépôt Git qui héberge plusieurs projets logiciels, avec des règles partagées (style, tests, CI). Atlas est organisé en huit catégories.                                       |
 | **workspace**    | Sous-projet d'un monorepo géré comme une unité indépendante (avec son `package.json`, ses dépendances, ses scripts). Les _workspaces_ d'Atlas sont listés dans `pnpm-workspace.yaml`. |
 | **pull request** | Proposition de modification publiée sur GitHub. Permet la revue de code et déclenche la CI avant fusion dans `main`.                                                                  |
 | **changeset**    | Fichier `.changeset/*.md` joint à une pull request pour décrire l'impact d'un changement (`patch`, `minor`, `major`) sur les paquets publiables.                                      |

@@ -15,7 +15,7 @@ hero:
 
 features:
   - title: Structure
-    details: Sept catégories — apps, packages, services, cli, ui, config, sandbox — une responsabilité par catégorie. Le placement d'un projet dans le dépôt indique d'emblée son rôle.
+    details: Huit catégories — apps, assets, packages, services, cli, ui, config, sandbox — une responsabilité par catégorie. Le placement d'un projet dans le dépôt indique d'emblée son rôle.
     link: /architecture/monorepo
   - title: Garde-fous qualité
     details: TypeScript strict, ESLint, Prettier, vérification de types, formatage automatique, conventions de commit. Chaque modification passe par la même série de contrôles.
@@ -36,6 +36,7 @@ Elle décrit :
 
 - **comment le dépôt est organisé** (la [structure du monorepo](/architecture/monorepo)),
 - **les garde-fous qui assurent la qualité et la sécurité** ([pipeline CI](/quality/ci-pipeline), [tests](/quality/tests), [sécurité](/quality/security), [hooks Git](/quality/hooks)),
-- **comment on collabore** dessus ([workflow](/collaboration/workflow), [releases](/collaboration/releases)).
+- **comment on collabore** dessus ([workflow](/collaboration/workflow), [releases](/collaboration/releases)),
+- **comment on la documente elle-même** (la [politique de documentation](/quality/documentation)).
 
 Si quelque chose n'est pas clair, [ouvre une issue](https://github.com/univ-lehavre/atlas/issues) — la documentation est une responsabilité partagée.

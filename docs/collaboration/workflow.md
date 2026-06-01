@@ -124,5 +124,5 @@ Si la PR fusionnée contenait un changeset, le bot **Changesets** ouvre automati
 ## Si tu débutes
 
 - Ouvrir une issue est toujours acceptable, même pour signaler qu'une phrase de la documentation est floue.
-- Lire [CONTRIBUTING.md](https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md) à la racine du dépôt pour les détails techniques (configuration locale, commandes utiles).
+- Lire [CONTRIBUTING.md](https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md) à la racine du dépôt pour les détails techniques, et [Environnement de développement local](./environnement-local.md) pour la configuration de la machine (Node, pnpm, hooks).
 - Demander un mentor sur ta première PR — un membre du projet revue le travail au fil de l'eau et explique les conventions.

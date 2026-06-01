@@ -37,7 +37,7 @@ describe('amarre hooks.server.ts handle', () => {
 
   it('sets the static security headers on every response', async () => {
     const mod = await import('../src/hooks.server');
-    const result = await mod.handle({
+    const result = await mod.session({
       event: buildEvent('https://example.com/'),
       resolve: async () => new Response('ok'),
     } as never);
@@ -52,7 +52,7 @@ describe('amarre hooks.server.ts handle', () => {
   it('sets Strict-Transport-Security only when the request is HTTPS', async () => {
     const mod = await import('../src/hooks.server');
 
-    const httpsResult = await mod.handle({
+    const httpsResult = await mod.session({
       event: buildEvent('https://example.com/'),
       resolve: async () => new Response('ok'),
     } as never);
@@ -60,7 +60,7 @@ describe('amarre hooks.server.ts handle', () => {
       'max-age=63072000; includeSubDomains; preload'
     );
 
-    const httpResult = await mod.handle({
+    const httpResult = await mod.session({
       event: buildEvent('http://localhost:5173/'),
       resolve: async () => new Response('ok'),
     } as never);
@@ -86,7 +86,7 @@ describe('amarre hooks.server.ts handle', () => {
 
     const event = buildEvent('https://example.com/');
     const mod = await import('../src/hooks.server');
-    await mod.handle({
+    await mod.session({
       event,
       resolve: async () => new Response('ok'),
     } as never);

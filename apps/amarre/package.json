@@ -46,6 +46,7 @@
     "vitest": "^4.1.8"
   },
   "dependencies": {
+    "@sentry/sveltekit": "~10.55.0",
     "@univ-lehavre/atlas-auth": "workspace:*",
     "@univ-lehavre/atlas-baas": "workspace:*",
     "@univ-lehavre/atlas-errors": "workspace:*",

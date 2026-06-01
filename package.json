@@ -54,36 +54,165 @@
   },
   "size-limit": [
     {
-      "path": "packages/net/dist/**/*.js",
-      "limit": "20 KB"
+      "name": "atlas-stats",
+      "path": [
+        "packages/atlas-stats/dist/**/*.js",
+        "!packages/atlas-stats/dist/**/*.test.js",
+        "!packages/atlas-stats/dist/**/*.spec.js"
+      ],
+      "limit": "12 KB"
     },
     {
-      "path": "services/crf/dist/**/*.js",
-      "limit": "100 KB"
+      "name": "auth",
+      "path": [
+        "packages/auth/dist/**/*.js",
+        "!packages/auth/dist/**/*.test.js",
+        "!packages/auth/dist/**/*.spec.js"
+      ],
+      "limit": "6 KB"
     },
     {
-      "path": "packages/citation-fetch/dist/**/*.js",
-      "limit": "140 KB"
+      "name": "baas",
+      "path": [
+        "packages/baas/dist/**/*.js",
+        "!packages/baas/dist/**/*.test.js",
+        "!packages/baas/dist/**/*.spec.js"
+      ],
+      "limit": "2 KB"
     },
     {
-      "path": "packages/researcher-profiles/dist/**/*.js",
-      "limit": "230 KB"
+      "name": "citation",
+      "path": [
+        "packages/citation/dist/**/*.js",
+        "!packages/citation/dist/**/*.test.js",
+        "!packages/citation/dist/**/*.spec.js"
+      ],
+      "limit": "14 KB"
     },
     {
-      "path": "packages/citation/dist/**/*.js",
-      "limit": "250 KB"
+      "name": "citation-fetch",
+      "path": [
+        "packages/citation-fetch/dist/**/*.js",
+        "!packages/citation-fetch/dist/**/*.test.js",
+        "!packages/citation-fetch/dist/**/*.spec.js"
+      ],
+      "limit": "9 KB"
     },
     {
-      "path": "packages/crf-client/dist/**/*.js",
-      "limit": "260 KB"
+      "name": "citation-types",
+      "path": [
+        "packages/citation-types/dist/**/*.js",
+        "!packages/citation-types/dist/**/*.test.js",
+        "!packages/citation-types/dist/**/*.spec.js"
+      ],
+      "limit": "2 KB"
     },
     {
-      "path": "packages/citation-validate/dist/**/*.js",
-      "limit": "700 KB"
+      "name": "citation-validate",
+      "path": [
+        "packages/citation-validate/dist/**/*.js",
+        "!packages/citation-validate/dist/**/*.test.js",
+        "!packages/citation-validate/dist/**/*.spec.js"
+      ],
+      "limit": "28 KB"
     },
     {
-      "path": "packages/crf-core/dist/**/*.js",
-      "limit": "750 KB"
+      "name": "crf-client",
+      "path": [
+        "packages/crf-client/dist/**/*.js",
+        "!packages/crf-client/dist/**/*.test.js",
+        "!packages/crf-client/dist/**/*.spec.js"
+      ],
+      "limit": "14 KB"
+    },
+    {
+      "name": "crf-core",
+      "path": [
+        "packages/crf-core/dist/**/*.js",
+        "!packages/crf-core/dist/**/*.test.js",
+        "!packages/crf-core/dist/**/*.spec.js"
+      ],
+      "limit": "28 KB"
+    },
+    {
+      "name": "crf-logs",
+      "path": [
+        "packages/crf-logs/dist/**/*.js",
+        "!packages/crf-logs/dist/**/*.test.js",
+        "!packages/crf-logs/dist/**/*.spec.js"
+      ],
+      "limit": "9 KB"
+    },
+    {
+      "name": "errors",
+      "path": [
+        "packages/errors/dist/**/*.js",
+        "!packages/errors/dist/**/*.test.js",
+        "!packages/errors/dist/**/*.spec.js"
+      ],
+      "limit": "3 KB"
+    },
+    {
+      "name": "fetch-one-api-page",
+      "path": [
+        "packages/fetch-one-api-page/dist/**/*.js",
+        "!packages/fetch-one-api-page/dist/**/*.test.js",
+        "!packages/fetch-one-api-page/dist/**/*.spec.js"
+      ],
+      "limit": "3 KB"
+    },
+    {
+      "name": "net",
+      "path": [
+        "packages/net/dist/**/*.js",
+        "!packages/net/dist/**/*.test.js",
+        "!packages/net/dist/**/*.spec.js"
+      ],
+      "limit": "9 KB"
+    },
+    {
+      "name": "researcher-profiles",
+      "path": [
+        "packages/researcher-profiles/dist/**/*.js",
+        "!packages/researcher-profiles/dist/**/*.test.js",
+        "!packages/researcher-profiles/dist/**/*.spec.js"
+      ],
+      "limit": "24 KB"
+    },
+    {
+      "name": "sveltekit-csp",
+      "path": [
+        "packages/sveltekit-csp/dist/**/*.js",
+        "!packages/sveltekit-csp/dist/**/*.test.js",
+        "!packages/sveltekit-csp/dist/**/*.spec.js"
+      ],
+      "limit": "3 KB"
+    },
+    {
+      "name": "sveltekit-handler",
+      "path": [
+        "packages/sveltekit-handler/dist/**/*.js",
+        "!packages/sveltekit-handler/dist/**/*.test.js",
+        "!packages/sveltekit-handler/dist/**/*.spec.js"
+      ],
+      "limit": "2 KB"
+    },
+    {
+      "name": "validators",
+      "path": [
+        "packages/validators/dist/**/*.js",
+        "!packages/validators/dist/**/*.test.js",
+        "!packages/validators/dist/**/*.spec.js"
+      ],
+      "limit": "2 KB"
+    },
+    {
+      "name": "services-crf",
+      "path": [
+        "services/crf/dist/**/*.js",
+        "!services/crf/dist/**/*.test.js"
+      ],
+      "limit": "60 KB"
     }
   ],
   "jscpd": {
