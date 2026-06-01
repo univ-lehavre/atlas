@@ -94,8 +94,20 @@ const buildReverseDeps = (graph) => {
   return reverse;
 };
 
-/** Échappe les caractères qui casseraient une cellule de tableau Markdown. */
-const cell = (s) => s.replace(/\|/g, "\\|");
+/**
+ * Rend une chaîne sûre pour une cellule de tableau Markdown : on neutralise
+ * tout ce qui casserait la cellule ou la ligne. Ordre important — on échappe
+ * d'abord les antislashs, puis les pipes ; on aplatit les retours à la ligne
+ * (qui termineraient la ligne du tableau) et on neutralise les balises HTML.
+ */
+const cell = (s) =>
+  String(s)
+    .replace(/\\/g, "\\\\") // antislash littéral d'abord
+    .replace(/\r?\n/g, " ") // retours à la ligne → espace
+    .replace(/\|/g, "\\|") // pipe → pipe échappé
+    .replace(/</g, "&lt;") // balises HTML neutralisées
+    .replace(/>/g, "&gt;")
+    .trim();
 
 /** Lien Markdown vers une liste de paquets (ou « — » si vide). */
 const linkList = (names, workspaces) => {

@@ -1,10 +1,8 @@
 #!/usr/bin/env node
 
-import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
+import { readdirSync, readFileSync, existsSync } from "node:fs";
 import path from "node:path";
 import {
-  ROOTS,
-  readJson,
   deps,
   buildWorkspaceIndex,
   buildDependencyGraph,
