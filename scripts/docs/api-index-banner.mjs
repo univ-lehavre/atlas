@@ -14,7 +14,7 @@
  * @module
  */
 
-import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, writeFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 const API_DIR = "docs/api";
@@ -26,13 +26,17 @@ const MARKER = "<!-- api-banner -->";
  * paquets) : TypeDoc recopie ces README dans `docs/api/<pkg>/index.md`, mais
  * le chemin relatif ne résout plus à ce nouvel emplacement et VitePress échoue
  * à la build. On neutralise ces images dans tous les fichiers générés.
+ *
+ * Utilise `withFileTypes` (un seul appel système, pas de `stat` séparé) et lit
+ * chaque fichier en une passe — pas de `existsSync`/`statSync` préalable, pour
+ * éviter tout schéma vérification-puis-usage (TOCTOU).
  */
 const stripLogoImages = (dir) => {
-  for (const entry of readdirSync(dir)) {
-    const full = path.join(dir, entry);
-    if (statSync(full).isDirectory()) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
       stripLogoImages(full);
-    } else if (entry.endsWith(".md")) {
+    } else if (entry.name.endsWith(".md")) {
       const before = readFileSync(full, "utf8");
       const after = before
         // Images markdown vers logos/ : ![alt](.../logos/x.svg)
@@ -62,16 +66,22 @@ const BANNER = `${MARKER}
 
 `;
 
-if (!existsSync(INDEX)) {
-  console.error(`api-index-banner: ${INDEX} introuvable (lance \`typedoc\` d'abord).`);
-  process.exit(1);
-}
-
 // 1. Nettoie les images de logo qui casseraient la build VitePress.
 stripLogoImages(API_DIR);
 
-// 2. Préfixe l'index du bandeau explicatif.
-const content = readFileSync(INDEX, "utf8");
+// 2. Préfixe l'index du bandeau explicatif. On lit directement (pas de
+// `existsSync` préalable : cela créerait un schéma vérification-puis-usage,
+// TOCTOU) et on traite l'absence du fichier comme l'erreur attendue.
+let content;
+try {
+  content = readFileSync(INDEX, "utf8");
+} catch (error) {
+  if (error.code === "ENOENT") {
+    console.error(`api-index-banner: ${INDEX} introuvable (lance \`typedoc\` d'abord).`);
+    process.exit(1);
+  }
+  throw error;
+}
 if (content.startsWith(MARKER)) {
   console.log("API index banner already present.");
   process.exit(0);
