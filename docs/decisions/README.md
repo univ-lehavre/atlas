@@ -48,6 +48,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0025 | [Documentation à plusieurs niveaux (surface, profondeur, inline)](0025-documentation-multi-niveaux.md) | Accepted |
 | 0026 | [Périmètre RGPD hors dépôt, questions ouvertes](0026-rgpd-perimetre.md)                                | Accepted |
 | 0027 | [Rôle de security champion : ouvert (vacant)](0027-security-champion.md)                               | Accepted |
+| 0028 | [Documentation vérifiable : un miroir contrôlable du code](0028-documentation-verifiable.md)           | Accepted |
 
 ## Quand ouvrir un ADR
 

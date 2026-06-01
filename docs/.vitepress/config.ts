@@ -236,6 +236,10 @@ export default withMermaid(
                 text: "0027 — Security champion (vacant)",
                 link: "/decisions/0027-security-champion",
               },
+              {
+                text: "0028 — Documentation vérifiable",
+                link: "/decisions/0028-documentation-verifiable",
+              },
             ],
           },
         ],
