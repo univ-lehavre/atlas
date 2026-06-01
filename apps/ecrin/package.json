@@ -51,12 +51,12 @@
     "graphology-layout": "^0.6.1",
     "graphology-layout-force": "^0.2.4",
     "graphology-layout-forceatlas2": "^0.10.1",
-    "lodash": "^4.18.1",
+    "lodash": "~4.18.1",
     "luxon": "^3.7.2",
-    "node-appwrite": "^25.2.0",
+    "node-appwrite": "~25.2.0",
     "openapi-response-validator": "^12.1.3",
     "sigma": "^3.0.3",
-    "uuid": "^14.0.0"
+    "uuid": "~14.0.0"
   },
   "private": true
 }

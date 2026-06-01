@@ -54,8 +54,8 @@
     "@univ-lehavre/atlas-sveltekit-csp": "workspace:*",
     "@univ-lehavre/atlas-sveltekit-handler": "workspace:*",
     "@univ-lehavre/atlas-validators": "workspace:*",
-    "effect": "^3.21.2",
-    "node-appwrite": "^25.2.0",
+    "effect": "~3.21.2",
+    "node-appwrite": "~25.2.0",
     "simple-git": "^3.36.0",
     "swagger-ui-dist": "^5.32.6",
     "zod": "^4.4.3"
