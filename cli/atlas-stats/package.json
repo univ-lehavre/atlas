@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-stats-cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "CLI interactif pour visualiser les statistiques GitHub et npm du dépôt Atlas",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
