@@ -91,6 +91,20 @@ pre-push:
       run: pnpm audit:licenses
       priority: 2
 
+    check-structure:
+      # Garde-fou ADR 0002 (8 catégories, nommage, dépendances interdites,
+      # cycles). Peu coûteux, on le lance systématiquement.
+      run: pnpm audit:structure
+      priority: 2
+
+    check-dep-versions:
+      # Cohérence des specifiers de version dans le workspace (un seul
+      # range par dépendance). Ne dépend que des manifestes : on glob-gate
+      # comme check-lockfile pour ne pas le payer sans raison.
+      glob: "{package.json,**/package.json}"
+      run: pnpm audit:dep-versions
+      priority: 2
+
     check-lockfile:
       # Only matters when package manifests or the lockfile changed
       # — otherwise this is a no-op `pnpm install` that still costs
