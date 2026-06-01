@@ -10,7 +10,7 @@
     "prepare": "svelte-kit sync || echo ''",
     "format": "prettier --write --ignore-path ../../.prettierignore .",
     "format:check": "prettier --check --ignore-path ../../.prettierignore .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "svelte-kit sync && tsc --noEmit",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",

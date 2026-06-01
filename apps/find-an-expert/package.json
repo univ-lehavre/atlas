@@ -7,7 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo '' && atlas-logos-install static/logos",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "svelte-kit sync && tsc --noEmit",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "format": "prettier --write --ignore-path ../../.prettierignore .",
