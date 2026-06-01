@@ -44,9 +44,9 @@
     "./vitest": "./vitest/index.js"
   },
   "dependencies": {
-    "@eslint-community/eslint-plugin-eslint-comments": "~4.7.1",
+    "@eslint-community/eslint-plugin-eslint-comments": "~4.7.2",
     "@eslint/js": "~10.0.1",
-    "@vitest/eslint-plugin": "~1.6.18",
+    "@vitest/eslint-plugin": "~1.6.19",
     "eslint-config-prettier": "~10.1.8",
     "eslint-plugin-barrel-files": "~3.0.1",
     "eslint-plugin-functional": "~9.0.5",
@@ -55,11 +55,11 @@
     "eslint-plugin-no-secrets": "~2.3.3",
     "eslint-plugin-regexp": "~3.1.0",
     "eslint-plugin-security": "~4.0.0",
-    "eslint-plugin-svelte": "~3.17.1",
-    "eslint-plugin-turbo": "~2.9.14",
+    "eslint-plugin-svelte": "~3.19.0",
+    "eslint-plugin-turbo": "~2.9.16",
     "eslint-plugin-unicorn": "~64.0.0",
     "globals": "~17.6.0",
-    "typescript-eslint": "~8.59.4"
+    "typescript-eslint": "~8.60.0"
   },
   "peerDependencies": {
     "eslint": "^10.0.0",
@@ -74,6 +74,6 @@
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "devDependencies": {
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   }
 }

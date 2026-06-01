@@ -61,7 +61,7 @@
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
-    "@clack/prompts": "~1.4.0",
+    "@clack/prompts": "~1.5.0",
     "@univ-lehavre/atlas-crf-core": "workspace:*",
     "picocolors": "~1.1.1",
     "yaml": "~2.9.0"
@@ -69,11 +69,11 @@
   "devDependencies": {
     "@types/node": "^25.9.1",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "eslint": "^10.4.0",
+    "eslint": "^10.4.1",
     "prettier": "^3.8.3",
-    "tsx": "^4.22.3",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.8"
   },
   "publishConfig": {
     "access": "public"
