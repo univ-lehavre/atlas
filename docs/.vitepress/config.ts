@@ -81,6 +81,10 @@ export default withMermaid(
                 link: "/collaboration/parametrage-github",
               },
               { text: "Releases", link: "/collaboration/releases" },
+              {
+                text: "Installer les CLIs",
+                link: "/collaboration/installer-les-clis",
+              },
             ],
           },
         ],

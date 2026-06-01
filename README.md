@@ -100,6 +100,7 @@ Tout est dans [`docs/`](docs/) :
 - [Architecture](docs/architecture/monorepo.md) — comment le dépôt est organisé
 - [Qualité & sécurité](docs/quality/ci-pipeline.md) — les garde-fous en détail
 - [Collaboration](docs/collaboration/workflow.md) — workflow pull request, releases, conventions
+- [Installer les CLIs](docs/collaboration/installer-les-clis.md) — utiliser les outils en ligne de commande publiés
 - [Glossaire](docs/glossary.md) — définitions des termes techniques
 
 Pour contribuer, lire [CONTRIBUTING.md](CONTRIBUTING.md). Pour signaler une vulnérabilité, voir [SECURITY.md](SECURITY.md).
