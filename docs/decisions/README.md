@@ -46,6 +46,8 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0023 | [`storybook:build` cassé en amont (Storybook 10.4 / Svelte 5.55)](0023-storybook-build-casse-amont.md) | Accepted |
 | 0024 | [Ranges `~` sur les `dependencies` des paquets publiables](0024-ranges-deps-publiables-tilde.md)       | Accepted |
 | 0025 | [Documentation à plusieurs niveaux (surface, profondeur, inline)](0025-documentation-multi-niveaux.md) | Accepted |
+| 0026 | [Périmètre RGPD hors dépôt, questions ouvertes](0026-rgpd-perimetre.md)                                | Accepted |
+| 0027 | [Rôle de security champion : ouvert (vacant)](0027-security-champion.md)                               | Accepted |
 
 ## Quand ouvrir un ADR
 
@@ -60,4 +62,5 @@ Un ADR se justifie quand :
 Un ADR n'est **pas** le bon endroit pour : une convention de code (→
 [`docs/quality/code-style.md`](../quality/code-style.md)), un guide
 opérationnel (→ README de paquet), une décision opérationnelle court-terme
-(→ [`TODO.md`](https://github.com/univ-lehavre/atlas/blob/main/TODO.md)).
+ou un chantier actionnable (→ une **issue GitHub**, label `enhancement`
+ou `tech-debt`).

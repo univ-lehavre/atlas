@@ -6,7 +6,7 @@ Pour la procédure de gestion d'incident (compromission supposée, divulgation r
 
 > Pages d'origine : `docs/security/{secrets,surfaces,dast,sbom/README}.md`, fusionnées le 2026-05-26 lors de la refonte de la documentation.
 
-> **Périmètre.** Le chantier DevSecOps côté dépôt est considéré complet ; les items dépendant d'acteurs externes (équipes ops, infra de preview, second mainteneur) sont reportés sine die. Voir [ADR 0001](../decisions/0001-devsecops-perimetre-repo-sine-die.md) pour la décision de cadrage et [`TODO.md` → Reporté sine die](https://github.com/univ-lehavre/atlas/blob/main/TODO.md#reporté-sine-die--dépendances-externes) pour le suivi des items.
+> **Périmètre.** Le chantier DevSecOps côté dépôt est considéré complet ; les items dépendant d'acteurs externes (équipes ops, infra de preview, second mainteneur) sont reportés sine die. Voir [ADR 0001](../decisions/0001-devsecops-perimetre-repo-sine-die.md) pour la décision de cadrage **et le tableau de suivi des items sine die**.
 
 [[toc]]
 
@@ -71,7 +71,7 @@ Apps de monitoring/admin, en principe non déployées en prod publique. Tournent
 - `apps/*/.env` — copie locale du `.env.example` avec valeurs réelles
 - `apps/*/.env.<host>` — variantes par environnement déployé (référence pour l'admin)
 - `*-token.csv` — tokens REDCap par projet (cf. crf-dashboard)
-- `redcap-token.csv` à la racine — historique : voir [TODO.md](https://github.com/univ-lehavre/atlas/blob/main/TODO.md) §0.1 (jamais commité, audité 2026-05-19)
+- `redcap-token.csv` à la racine — fichier de token externe, jamais commité (audité 2026-05-19, faux positifs gitleaks résorbés sur la même période)
 
 ### Discipline `PUBLIC_*` vs privé (SvelteKit)
 
@@ -104,7 +104,7 @@ Recensement croisé `apps/*/src/lib/server/**` vs `apps/*/src/lib/**` (non-serve
 | `OPENALEX_API_TOKEN`       | serveur seul | Token API OpenAlex                                  | Oui — privée               |
 | `ALLOWED_DOMAINS_REGEXP`   | serveur seul | Regex d'allowlist signup                            | Oui — privée               |
 
-**Audit récurrent** (à conduire au minimum lors de chaque revue trimestrielle, cf. [§7.3 dans TODO.md](https://github.com/univ-lehavre/atlas/blob/main/TODO.md)) :
+**Audit récurrent** (à conduire au minimum lors de chaque revue trimestrielle — item 7.3 du tableau sine die de [ADR 0001](../decisions/0001-devsecops-perimetre-repo-sine-die.md)) :
 
 ```bash
 # 1. Tout PUBLIC_* est-il bien public ? (rien de sensible glissé là)
@@ -136,7 +136,7 @@ Cette procédure est résumée ici ; pour une réponse complète à un incident 
 
 1. **Révoquer immédiatement** l'ancien secret (étape 4 avant tout le reste).
 2. **Audit** : `gh api repos/univ-lehavre/atlas/code-scanning/alerts` + onglet Security → Secret scanning pour vérifier si la fuite a été détectée.
-3. **Si le secret a été commité** : `git filter-repo` pour purger l'historique + force-push coordonné avec l'équipe (cf. [TODO.md](https://github.com/univ-lehavre/atlas/blob/main/TODO.md) §0.1 pour le cas REDCap).
+3. **Si le secret a été commité** : `git filter-repo` pour purger l'historique + force-push coordonné avec l'équipe.
 4. **Si secret runtime (Appwrite/REDCap)** : audit des logs côté émetteur pour identifier l'usage non autorisé.
 5. **Post-mortem** : documenter l'incident et la mitigation dans une issue dédiée.
 
@@ -162,11 +162,11 @@ Délais maximums acceptables entre **détection** et **correctif déployé en pr
 
 ### Lien avec les triages déjà conduits
 
-| Date       | Source     | Findings traités                            | Référence                                                                                   |
-| ---------- | ---------- | ------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| 2026-05-21 | CodeQL     | 2 alertes URL-substring + command-injection | [PR #194](https://github.com/univ-lehavre/atlas/pull/194)                                   |
-| 2026-05-22 | CodeQL     | 13 fixes code + 26 dismissals justifiés     | [PR #198](https://github.com/univ-lehavre/atlas/pull/198)                                   |
-| 2026-05-21 | Dependabot | 7 alertes auto-fermées par les bumps        | cf. [TODO.md → Prochaines actions](https://github.com/univ-lehavre/atlas/blob/main/TODO.md) |
+| Date       | Source     | Findings traités                            | Référence                                                 |
+| ---------- | ---------- | ------------------------------------------- | --------------------------------------------------------- |
+| 2026-05-21 | CodeQL     | 2 alertes URL-substring + command-injection | [PR #194](https://github.com/univ-lehavre/atlas/pull/194) |
+| 2026-05-22 | CodeQL     | 13 fixes code + 26 dismissals justifiés     | [PR #198](https://github.com/univ-lehavre/atlas/pull/198) |
+| 2026-05-21 | Dependabot | 7 alertes auto-fermées par les bumps        | résorbé via les PR Dependabot groupées                    |
 
 ## Surfaces exposées — apps et endpoints
 
@@ -272,10 +272,10 @@ Trois endpoints sont publics par décision implicite ou explicite — chacun mé
 
 ### Mitigations recommandées
 
-- **Rate limiting** sur tous les endpoints publics (cf. [TODO.md §6.5](https://github.com/univ-lehavre/atlas/blob/main/TODO.md))
+- **Rate limiting** sur tous les endpoints publics (en place ; store `in-memory` mono-instance, migration vers un store partagé reportée sine die — cf. [ADR 0001](../decisions/0001-devsecops-perimetre-repo-sine-die.md))
 - **Validation stricte** des inputs (`record`, `q`, `id`) avant requête en aval
 - **Logs d'accès** : tracer les accès à `/graphs` et `/institutions/search` pour détecter les patterns d'abus
-- **Headers HTTP de sécurité** sur les réponses (CSP, etc.) — cf. [TODO.md §6.3](https://github.com/univ-lehavre/atlas/blob/main/TODO.md)
+- **Headers HTTP de sécurité** sur les réponses (CSP, etc.) — factorisés dans `@univ-lehavre/atlas-sveltekit-csp` (cf. [ADR 0019](../decisions/0019-derogations-workspace-audit.md))
 
 ## DAST — Dynamic Application Security Testing
 

@@ -189,6 +189,18 @@ export default withMermaid(
                 text: "0024 — Ranges ~ sur les paquets publiables",
                 link: "/decisions/0024-ranges-deps-publiables-tilde",
               },
+              {
+                text: "0025 — Documentation à plusieurs niveaux",
+                link: "/decisions/0025-documentation-multi-niveaux",
+              },
+              {
+                text: "0026 — Périmètre RGPD hors dépôt",
+                link: "/decisions/0026-rgpd-perimetre",
+              },
+              {
+                text: "0027 — Security champion (vacant)",
+                link: "/decisions/0027-security-champion",
+              },
             ],
           },
         ],

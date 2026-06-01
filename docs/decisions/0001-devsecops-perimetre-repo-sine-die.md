@@ -4,8 +4,7 @@
 
 Le chantier DevSecOps a été planifié sous forme de phases (1.x à 8.x) couvrant
 SAST, dépendances, secrets, signatures, scans dynamiques (DAST), durcissement
-des en-têtes et politiques de sortie. Voir [docs/quality/security.md](../quality/security.md)
-et l'historique du chantier dans [`TODO.md`](https://github.com/univ-lehavre/atlas/blob/main/TODO.md).
+des en-têtes et politiques de sortie. Voir [docs/quality/security.md](../quality/security.md).
 
 Les phases **côté dépôt** (linting strict Svelte, Semgrep, CodeQL, audit
 dépendances, audit licences, structure workspace, signatures OIDC sur les
@@ -26,25 +25,34 @@ est inachevé alors que la partie sous contrôle du dépôt l'est.
 
 ## Décision
 
-Le chantier DevSecOps **côté dépôt** est considéré **complet**. Les items
-dépendant d'une coordination ou d'une décision externe (Phases 5.1, 5.2,
-5.3-tightening, 6.1, 6.3, 7.1, 7.3, 8.1, 8.3 — voir TODO.md) sont
+Le chantier DevSecOps **côté dépôt** est considéré **complet**. Les neuf
+items dépendant d'une coordination ou d'une décision externe sont
 **reportés sine die** et ne figurent plus dans la liste des chantiers
-actifs.
+actifs. Chacun est documenté ci-dessous avec son **bloquant** (l'acteur
+ou la décision attendue) et son **débloque par** (le signal concret qui
+justifierait d'ouvrir le chantier).
 
-Chaque item reporté reste documenté avec :
+| Phase | Item                                                                         | Bloquant                                                     | Débloque par                                                            |
+| ----- | ---------------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| 5.1   | Enrichir la mention RGPD / données REDCap dans `SECURITY.md`                 | Décision projet sur le périmètre RGPD à documenter           | Demande conformité, audit RGPD (cf. [ADR 0026](0026-rgpd-perimetre.md)) |
+| 5.2   | CODEOWNERS — nominer un second mainteneur (bus-factor = 1)                   | Décision projet sur l'équipe étendue                         | Arrivée d'un second contributeur durable                                |
+| 5.3   | Branch protection tightening (signatures commits, codeowners review, admins) | Configuration GPG/SSH côté contributeurs + second mainteneur | Levée de 5.2 + configuration GPG distribuée                             |
+| 6.1   | Environnements Appwrite Sites (preview par PR ou `staging`)                  | Opérateurs infra Appwrite                                    | Revue de la chaîne de déploiement Appwrite Sites                        |
+| 6.3   | Validation externe des headers (securityheaders.com, Mozilla Observatory)    | Déploiement stable avec URLs publiques figées (6.1)          | Levée de 6.1                                                            |
+| 7.1   | Nightly ZAP (cible prod vs sandbox vs PR previews à arbitrer)                | Décision sur la cible (6.1) + budget CI                      | Levée de 6.1                                                            |
+| 7.3   | Revue trimestrielle (CodeQL, déps, headers, logs, secrets)                   | Rappel calendrier + second mainteneur (5.2) pour la charge   | Levée de 5.2 ou décision de tenir la revue en solo                      |
+| 8.1   | Alerting Appwrite (5xx / latence / auth-fail)                                | Opérateurs infra Appwrite                                    | Prise de contact ops Appwrite                                           |
+| 8.3   | Sauvegarde Appwrite (politique fréquence / rétention / géo, RPO/RTO)         | Opérateurs infra Appwrite                                    | Prise de contact ops Appwrite                                           |
 
-- **Bloquant** : l'acteur ou la décision attendue (équipe ops, budget
-  infra, décision projet).
-- **Débloque par** : un signal concret qui justifierait d'ouvrir le
-  chantier (incident, audit externe, scale-out, demande métier).
-
-Le suivi opérationnel des items sine die vit dans [`TODO.md`](https://github.com/univ-lehavre/atlas/blob/main/TODO.md),
-section dédiée — pas dans cet ADR, qui ne porte que la décision de cadrage.
+Deux items « à arbitrer » liés ont leur propre ADR : le périmètre RGPD
+([ADR 0026](0026-rgpd-perimetre.md)) et le rôle de security champion pour
+le triage CodeQL ([ADR 0027](0027-security-champion.md)).
 
 ## Statut
 
-Accepted (2026-05-29).
+Accepted (2026-05-29). Révisé 2026-06-01 : le tableau de suivi des items
+sine die est désormais porté par cet ADR (et non plus par `TODO.md`,
+supprimé en fin de plan de résorption — cf. [ADR 0025](0025-documentation-multi-niveaux.md)).
 
 ## Conséquences
 
@@ -67,7 +75,7 @@ le signal ne soit identifié à temps.
   concret pour qu'un événement de la vie du projet déclenche la
   réouverture (incident sécurité, scale-out, audit externe).
 - Toute découverte d'un nouvel item DevSecOps côté repo (régression,
-  nouveau pattern à couvrir) ouvre un chantier normal dans `TODO.md`,
-  pas un report sine die.
+  nouveau pattern à couvrir) ouvre une **issue GitHub** (label
+  `tech-debt` ou `enhancement`), pas un report sine die.
 - Cette ADR est révisée si un audit externe (pentest, certification)
   impose la reprise d'un ou plusieurs items.

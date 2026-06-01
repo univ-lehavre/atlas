@@ -1,6 +1,6 @@
 # Plan de résorption — audit 2026-05-29
 
-> Date du plan : 2026-05-30. Audit de référence : [docs/audit/2026-05-29.md](../audit/2026-05-29.md). TODO de référence : [TODO.md](https://github.com/univ-lehavre/atlas/blob/main/TODO.md) (sera supprimé en fin de plan).
+> Date du plan : 2026-05-30. Audit de référence : [docs/audit/2026-05-29.md](../audit/2026-05-29.md). TODO de référence : `TODO.md` (supprimé en Phase 16 ; son contenu actif a été migré vers les ADR et des issues GitHub, son archive est dans l'historique Git).
 
 ## Introduction
 
