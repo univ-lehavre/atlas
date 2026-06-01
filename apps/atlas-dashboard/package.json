@@ -12,10 +12,10 @@
     "format:check": "prettier --check --ignore-path ../../.prettierignore .",
     "typecheck": "svelte-kit sync && tsc --noEmit",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "svelte-kit sync && eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
-    "test": "vitest run --passWithNoTests",
-    "test:coverage": "vitest run --coverage --passWithNoTests"
+    "test": "svelte-kit sync && vitest run --passWithNoTests",
+    "test:coverage": "svelte-kit sync && vitest run --coverage --passWithNoTests"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.5.4",

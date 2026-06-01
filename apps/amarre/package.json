@@ -12,14 +12,14 @@
     "typecheck": "svelte-kit sync && tsc --noEmit",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "svelte-kit sync && eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "openapi:generate": "tsx scripts/generate-openapi.ts",
-    "test": "vitest run",
+    "test": "svelte-kit sync && vitest run",
     "test:unit": "vitest run --project unit",
     "test:ui": "vitest run --project ui",
     "test:integration": "vitest run --project integration",
-    "test:coverage": "vitest run --coverage",
+    "test:coverage": "svelte-kit sync && vitest run --coverage",
     "knip": "knip"
   },
   "devDependencies": {
