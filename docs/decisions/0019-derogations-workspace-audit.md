@@ -14,6 +14,14 @@ en dur), ou les règles deviennent floues à force d'être contournées.
 La discipline est de **lister chaque dérogation** avec sa raison, pour
 que l'écart soit visible et révisable.
 
+> **Note sur les « Phase X.Y ».** Plusieurs entrées ci-dessous renvoient à
+> une « Phase X.Y » : il s'agit des étapes du
+> [plan de résorption 2026-05-30](../plans/2026-05-30-resorption.md), le
+> chantier de nettoyage technique et documentaire conduit de mai à
+> juin 2026. Ces mentions sont des repères historiques (quand et pourquoi
+> une dérogation a été introduite ou révisée) ; le plan reste la
+> référence pour leur signification.
+
 ## Décision
 
 Les dérogations actives sont listées ci-dessous, regroupées par

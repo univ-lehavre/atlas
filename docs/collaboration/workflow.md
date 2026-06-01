@@ -8,28 +8,31 @@ Cette page décrit le **flux standard de contribution** au dépôt Atlas, de l'i
 1. Issue (optionnel)
         │
         ▼
-2. Branche depuis main          ─┐
+2. Fork (contributeurs externes seulement)
+        │
+        ▼
+3. Branche depuis main          ─┐
         │                         │
         ▼                         │
-3. Commits (Conventional)         │  Hooks Git
+4. Commits (Conventional)         │  Hooks Git
         │                         │  (lefthook)
         ▼                         │
-4. Push                          ─┘
+5. Push                          ─┘
         │
         ▼
-5. Pull Request                  ─┐
+6. Pull Request                  ─┐
         │                         │
         ▼                         │  Intégration
-6. CI (lint, types, tests…)       │  continue (CI)
+7. CI (lint, types, tests…)       │  continue (CI)
         │                         │  (GitHub Actions)
         ▼                         │
-7. Revue de code                 ─┘
+8. Revue de code                 ─┘
         │
         ▼
-8. Merge dans main
+9. Merge dans main
         │
         ▼
-9. Release automatisée (si paquet publiable touché)
+10. Release automatisée (si paquet publiable touché)
 ```
 
 ## 1. Issue (optionnel mais conseillé)
@@ -38,9 +41,20 @@ Avant un changement non trivial, ouvrir une [issue](https://github.com/univ-leha
 
 Pour signaler un bug ou une remarque sur la documentation, l'issue suffit — **pas besoin de savoir coder**.
 
-## 2. Créer une branche
+## 2. Forker (contributeurs externes)
 
-Depuis `main` à jour :
+Tout le monde n'a pas le droit d'écrire directement sur le dépôt `univ-lehavre/atlas`. Si vous n'avez pas cet accès, vous devez d'abord créer un [**fork**](../glossary.md) : une copie personnelle du dépôt sur votre propre compte GitHub, où vous pouvez créer des branches librement et proposer vos changements via une pull request.
+
+1. Cliquer sur **Fork** en haut à droite de [github.com/univ-lehavre/atlas](https://github.com/univ-lehavre/atlas).
+2. GitHub crée `<votre-compte>/atlas`.
+3. Cloner votre fork : `git clone https://github.com/<votre-compte>/atlas.git`.
+4. Créer une branche (section suivante), puis ouvrir la pull request — GitHub compare automatiquement votre branche avec le `main` du dépôt principal.
+
+Si vous **avez** l'accès en écriture (mainteneur), sautez cette étape : vous travaillez directement sur une branche du dépôt principal.
+
+## 3. Créer une branche
+
+Depuis `main` à jour (du dépôt principal, ou de votre fork) :
 
 ```bash
 git switch main
@@ -50,7 +64,7 @@ git switch -c <type>/<description-courte>
 
 Convention de nommage (libre, mais lisible) : `feat/auth-redirect`, `fix/csp-connect-src`, `docs/clean-readme`.
 
-## 3. Commits
+## 4. Commits
 
 Tous les messages suivent **[Conventional Commits](https://www.conventionalcommits.org/)** :
 
@@ -64,7 +78,7 @@ Types courants : `feat` (nouvelle fonctionnalité), `fix` (correction), `docs`, 
 
 Le hook _commit-msg_ vérifie le format. Voir [Hooks Git](../quality/hooks.md).
 
-## 4. Push
+## 5. Push
 
 ```bash
 git push -u origin <branche>
@@ -72,7 +86,7 @@ git push -u origin <branche>
 
 Le hook _pre-push_ lance les audits, les tests et la détection de code mort sur l'ensemble du dépôt. Si quelque chose échoue, **corriger avant de pousser** plutôt que de contourner le hook.
 
-## 5. Ouvrir une pull request
+## 6. Ouvrir une pull request
 
 Sur GitHub, cliquer sur **Compare & pull request** dans le bandeau qui apparaît après le push. Le modèle de PR pose les bonnes questions :
 
@@ -88,7 +102,7 @@ pnpm changeset:add
 
 L'outil pose deux questions : quels paquets sont touchés ? Quel type de changement (`patch`, `minor`, `major`) ? Le fichier `.changeset/*.md` ainsi créé doit être commité dans la PR.
 
-## 6. CI
+## 7. CI
 
 À l'ouverture et à chaque push sur la PR, GitHub Actions lance :
 
@@ -99,7 +113,7 @@ L'outil pose deux questions : quels paquets sont touchés ? Quel type de changem
 
 Voir [Pipeline CI](../quality/ci-pipeline.md). Tant que tout n'est pas vert, la PR ne peut pas être fusionnée.
 
-## 7. Revue de code
+## 8. Revue de code
 
 Au moins **une revue** approuvée par un autre contributeur (ou par le mainteneur) est requise avant fusion. La revue couvre :
 
@@ -110,14 +124,14 @@ Au moins **une revue** approuvée par un autre contributeur (ou par le mainteneu
 
 Le reviewer peut demander des modifications via les commentaires GitHub. Itérer dans la même branche — pas besoin d'ouvrir une nouvelle PR.
 
-## 8. Merge
+## 9. Merge
 
 Le mainteneur fusionne la PR dans `main`. Le choix entre **squash** (un seul commit) et **merge commit** (préserve l'historique de la branche) dépend de la PR :
 
 - **Squash** par défaut : une PR = un commit dans `main`. Plus propre, plus lisible dans `git log`.
 - **Merge commit** pour les PR multi-étapes où chaque commit individuel est utile à conserver (refactor incrémental, migration en plusieurs étapes).
 
-## 9. Release (si publiable)
+## 10. Release (si publiable)
 
 Si la PR fusionnée contenait un changeset, le bot **Changesets** ouvre automatiquement une PR **« Version Packages »** qui agrège les changesets en bumps de version et met à jour les `CHANGELOG.md`. La fusion de cette PR déclenche la publication npm. Voir [Releases](./releases.md).
 
