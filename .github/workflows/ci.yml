@@ -259,3 +259,6 @@ jobs:
 
       - name: Packages map up-to-date
         run: pnpm docs:generate:check
+
+      - name: Documentation audit
+        run: pnpm audit:docs

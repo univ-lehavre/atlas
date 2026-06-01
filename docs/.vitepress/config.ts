@@ -65,6 +65,7 @@ export default withMermaid(
               { text: "Tests", link: "/quality/tests" },
               { text: "Style de code", link: "/quality/code-style" },
               { text: "Hooks Git", link: "/quality/hooks" },
+              { text: "Documentation", link: "/quality/documentation" },
               { text: "Sécurité", link: "/quality/security" },
               {
                 text: "Réponse aux incidents",
