@@ -229,6 +229,10 @@ export default withMermaid(
                 text: "2026-05-30 — Rapport de validation",
                 link: "/plans/2026-05-30-resorption-validation",
               },
+              {
+                text: "Documentation vérifiable",
+                link: "/plans/documentation-verifiable",
+              },
             ],
           },
         ],
