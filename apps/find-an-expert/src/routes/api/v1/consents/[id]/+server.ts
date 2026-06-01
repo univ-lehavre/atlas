@@ -1,118 +1,66 @@
 import type { RequestHandler } from './$types';
-import { json } from '@sveltejs/kit';
+import { withHandler } from '@univ-lehavre/atlas-sveltekit-handler';
+import { ApplicationError } from '@univ-lehavre/atlas-errors';
 import { getConsentStatus, grantConsent, revokeConsent, ConsentType } from '$lib/server/consent';
-import { mapErrorToResponse } from '$lib/server/http';
+import { flatErrorMapper } from '$lib/server/http';
 
 /**
  * GET /api/v1/consents/:id
  * Returns the consent status for a specific consent type.
- *
- * Path parameters:
- * - id: The consent type (e.g., "openalex_email")
- *
- * Response:
- * - consentType: The consent type
- * - granted: true if granted, false if revoked, null if never asked
- * - updatedAt: ISO timestamp of last update, null if never asked
  */
-export const GET: RequestHandler = async ({ params, locals }) => {
-  try {
-    if (!locals.userId) {
-      return json({ code: 'unauthenticated', message: 'User not authenticated' }, { status: 401 });
-    }
+export const GET: RequestHandler = withHandler(
+  async ({ params, locals }) => {
+    if (!locals.userId)
+      throw new ApplicationError('unauthenticated', 401, 'User not authenticated');
 
     const parseResult = ConsentType.safeParse(params.id);
-    if (!parseResult.success) {
-      return json(
-        { code: 'not_found', message: `Consent type '${params.id}' not found` },
-        { status: 404 }
-      );
-    }
+    if (!parseResult.success)
+      throw new ApplicationError('not_found', 404, `Consent type '${params.id}' not found`);
 
-    const status = await getConsentStatus(locals.userId, parseResult.data);
-    return json(status);
-  } catch (error: unknown) {
-    return mapErrorToResponse(error);
-  }
-};
+    return getConsentStatus(locals.userId, parseResult.data);
+  },
+  { mapError: flatErrorMapper }
+);
 
 /**
  * PUT /api/v1/consents/:id
  * Updates the consent status for a specific consent type.
- *
- * Path parameters:
- * - id: The consent type (e.g., "openalex_email")
- *
- * Body:
- * - granted (required): boolean - true to grant, false to revoke
- *
- * Response:
- * - consentType: The consent type
- * - granted: true if granted, false if revoked
- * - updatedAt: ISO timestamp of the update
  */
-export const PUT: RequestHandler = async ({ params, request, locals }) => {
-  try {
-    if (!locals.userId) {
-      return json({ code: 'unauthenticated', message: 'User not authenticated' }, { status: 401 });
-    }
+export const PUT: RequestHandler = withHandler(
+  async ({ params, request, locals }) => {
+    if (!locals.userId)
+      throw new ApplicationError('unauthenticated', 401, 'User not authenticated');
 
     const parseResult = ConsentType.safeParse(params.id);
-    if (!parseResult.success) {
-      return json(
-        { code: 'not_found', message: `Consent type '${params.id}' not found` },
-        { status: 404 }
-      );
-    }
+    if (!parseResult.success)
+      throw new ApplicationError('not_found', 404, `Consent type '${params.id}' not found`);
 
     const body = await request.json();
 
-    if (typeof body.granted !== 'boolean') {
-      return json(
-        { code: 'invalid_parameter', message: 'granted must be a boolean' },
-        { status: 400 }
-      );
-    }
+    if (typeof body.granted !== 'boolean')
+      throw new ApplicationError('invalid_parameter', 400, 'granted must be a boolean');
 
-    const status = body.granted
-      ? await grantConsent(locals.userId, parseResult.data)
-      : await revokeConsent(locals.userId, parseResult.data);
-
-    return json(status);
-  } catch (error: unknown) {
-    return mapErrorToResponse(error);
-  }
-};
+    return body.granted
+      ? grantConsent(locals.userId, parseResult.data)
+      : revokeConsent(locals.userId, parseResult.data);
+  },
+  { mapError: flatErrorMapper }
+);
 
 /**
  * DELETE /api/v1/consents/:id
  * Revokes the consent for a specific consent type.
- *
- * Path parameters:
- * - id: The consent type (e.g., "openalex_email")
- *
- * Response:
- * - consentType: The consent type
- * - granted: false
- * - updatedAt: ISO timestamp of the revocation
  */
-export const DELETE: RequestHandler = async ({ params, locals }) => {
-  try {
-    if (!locals.userId) {
-      return json({ code: 'unauthenticated', message: 'User not authenticated' }, { status: 401 });
-    }
+export const DELETE: RequestHandler = withHandler(
+  async ({ params, locals }) => {
+    if (!locals.userId)
+      throw new ApplicationError('unauthenticated', 401, 'User not authenticated');
 
     const parseResult = ConsentType.safeParse(params.id);
-    if (!parseResult.success) {
-      return json(
-        { code: 'not_found', message: `Consent type '${params.id}' not found` },
-        { status: 404 }
-      );
-    }
+    if (!parseResult.success)
+      throw new ApplicationError('not_found', 404, `Consent type '${params.id}' not found`);
 
-    const status = await revokeConsent(locals.userId, parseResult.data);
-    return json(status);
-  } catch (error: unknown) {
-    return mapErrorToResponse(error);
-  }
-};
+    return revokeConsent(locals.userId, parseResult.data);
+  },
+  { mapError: flatErrorMapper }
+);

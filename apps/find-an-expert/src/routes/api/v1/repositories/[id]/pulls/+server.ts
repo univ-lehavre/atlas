@@ -1,12 +1,8 @@
-import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-
+import { withHandler } from '@univ-lehavre/atlas-sveltekit-handler';
 import { getGitHubStats } from '$lib/server/github';
-import { mapErrorToResponse } from '$lib/server/http';
+import { flatErrorMapper } from '$lib/server/http';
 
-/**
- * Response structure for pull requests endpoint.
- */
 interface PullRequestsResponse {
   open: number;
   closed: number;
@@ -15,22 +11,12 @@ interface PullRequestsResponse {
 /**
  * GET /api/v1/repositories/:id/pulls
  * Returns GitHub pull request statistics for the repository.
- *
- * Path parameters:
- * - id: Repository identifier (currently accepts any value, uses current repo)
  */
-export const GET: RequestHandler = async () => {
-  try {
+export const GET: RequestHandler = withHandler(
+  async (): Promise<PullRequestsResponse> => {
     const repoPath = process.cwd();
     const stats = await getGitHubStats(repoPath);
-
-    const response: PullRequestsResponse = {
-      open: stats.pullRequests.open,
-      closed: stats.pullRequests.closed,
-    };
-
-    return json(response);
-  } catch (error: unknown) {
-    return mapErrorToResponse(error);
-  }
-};
+    return { open: stats.pullRequests.open, closed: stats.pullRequests.closed };
+  },
+  { mapError: flatErrorMapper }
+);

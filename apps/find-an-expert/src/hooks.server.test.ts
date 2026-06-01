@@ -1,4 +1,14 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+
+/**
+ * Read `svelte.config.js` as raw text rather than importing it (see
+ * apps/amarre/tests/hooks.server.test.ts for the rationale).
+ * Vitest sets `process.cwd()` to the package root.
+ */
+const readSvelteConfig = (): string =>
+  readFileSync(path.join(process.cwd(), 'svelte.config.js'), 'utf8');
 
 const mocks = vi.hoisted(() => ({
   createSessionClient: vi.fn(),
@@ -51,6 +61,14 @@ describe('find-an-expert hooks.server.ts handle', () => {
       resolve: async () => new Response('ok'),
     } as never);
     expect(httpResult.headers.get('strict-transport-security')).toBeNull();
+  });
+
+  it('wires the shared CSP helper in svelte.config.js (Phase 9.2)', () => {
+    const source = readSvelteConfig();
+    expect(source).toContain("from '@univ-lehavre/atlas-sveltekit-csp'");
+    expect(source).toContain('defaultCspDirectives()');
+    expect(source).toContain('csp:');
+    expect(source).toContain('directives: defaultCspDirectives()');
   });
 
   it('populates event.locals.userId and email when the session is valid', async () => {

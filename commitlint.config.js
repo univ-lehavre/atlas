@@ -54,6 +54,8 @@ export default {
         "crf-stats",
         "researcher-profiles",
         "sillage",
+        "sveltekit-csp",
+        "sveltekit-handler",
         "ui",
         "validators",
       ],

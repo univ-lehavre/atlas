@@ -219,6 +219,20 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # knip (audit:unused) résout le graphe d'imports des apps SvelteKit
+      # à partir de `.svelte-kit/`. Or les `svelte.config.js` importent
+      # `@univ-lehavre/atlas-sveltekit-csp` (Phase 9.2) : tant que ce
+      # paquet n'est pas buildé, `svelte-kit sync` (lifecycle `prepare`)
+      # échoue silencieusement et `.svelte-kit/` reste absent. On build
+      # uniquement les paquets workspace puis on régénère `.svelte-kit/`
+      # via `svelte-kit sync` (qui n'a PAS besoin des `$env` runtime,
+      # contrairement à un `vite build` complet d'app).
+      - name: Build workspace packages
+        run: pnpm --filter="./packages/**" --filter="./ui/**" build
+
+      - name: Sync SvelteKit metadata
+        run: pnpm --filter="./apps/**" exec svelte-kit sync
+
       - name: Security audit
         run: pnpm audit:security
 

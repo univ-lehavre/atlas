@@ -153,6 +153,12 @@ importers:
       '@univ-lehavre/atlas-errors':
         specifier: workspace:*
         version: link:../../packages/errors
+      '@univ-lehavre/atlas-sveltekit-csp':
+        specifier: workspace:*
+        version: link:../../packages/sveltekit-csp
+      '@univ-lehavre/atlas-sveltekit-handler':
+        specifier: workspace:*
+        version: link:../../packages/sveltekit-handler
       '@univ-lehavre/atlas-ui':
         specifier: workspace:*
         version: link:../../ui/atlas-ui
@@ -241,6 +247,9 @@ importers:
       '@univ-lehavre/atlas-stats':
         specifier: workspace:*
         version: link:../../packages/atlas-stats
+      '@univ-lehavre/atlas-sveltekit-csp':
+        specifier: workspace:*
+        version: link:../../packages/sveltekit-csp
     devDependencies:
       '@sveltejs/adapter-node':
         specifier: ^5.5.4
@@ -290,6 +299,9 @@ importers:
       '@univ-lehavre/atlas-crf-logs':
         specifier: workspace:*
         version: link:../../packages/crf-logs
+      '@univ-lehavre/atlas-sveltekit-csp':
+        specifier: workspace:*
+        version: link:../../packages/sveltekit-csp
     devDependencies:
       '@sveltejs/adapter-node':
         specifier: ^5.5.4
@@ -348,6 +360,12 @@ importers:
       '@univ-lehavre/atlas-errors':
         specifier: workspace:*
         version: link:../../packages/errors
+      '@univ-lehavre/atlas-sveltekit-csp':
+        specifier: workspace:*
+        version: link:../../packages/sveltekit-csp
+      '@univ-lehavre/atlas-sveltekit-handler':
+        specifier: workspace:*
+        version: link:../../packages/sveltekit-handler
       '@univ-lehavre/atlas-validators':
         specifier: workspace:*
         version: link:../../packages/validators
@@ -454,6 +472,12 @@ importers:
       '@univ-lehavre/atlas-errors':
         specifier: workspace:*
         version: link:../../packages/errors
+      '@univ-lehavre/atlas-sveltekit-csp':
+        specifier: workspace:*
+        version: link:../../packages/sveltekit-csp
+      '@univ-lehavre/atlas-sveltekit-handler':
+        specifier: workspace:*
+        version: link:../../packages/sveltekit-handler
       '@univ-lehavre/atlas-validators':
         specifier: workspace:*
         version: link:../../packages/validators
@@ -554,6 +578,9 @@ importers:
       '@univ-lehavre/atlas-errors':
         specifier: workspace:*
         version: link:../../packages/errors
+      '@univ-lehavre/atlas-sveltekit-csp':
+        specifier: workspace:*
+        version: link:../../packages/sveltekit-csp
       '@univ-lehavre/atlas-ui':
         specifier: workspace:*
         version: link:../../ui/atlas-ui
@@ -1505,6 +1532,61 @@ importers:
       prettier:
         specifier: ^3.8.3
         version: 3.8.3
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.7
+        version: 4.1.7(@types/node@25.9.1)(@vitest/coverage-v8@4.1.7)(happy-dom@20.9.0)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.1)(typescript@6.0.3))(vite@8.0.14(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
+
+  packages/sveltekit-csp:
+    devDependencies:
+      '@sveltejs/kit':
+        specifier: '>=2.58.0'
+        version: 2.61.1(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.55.9(@typescript-eslint/types@8.59.4))(vite@8.0.14(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0)))(svelte@5.55.9(@typescript-eslint/types@8.59.4))(typescript@6.0.3)(vite@8.0.14(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      eslint:
+        specifier: ^10.4.0
+        version: 10.4.0(jiti@2.7.0)
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.15)(tsx@4.22.3)(typescript@6.0.3)(yaml@2.9.0)
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vitest:
+        specifier: ^4.1.7
+        version: 4.1.7(@types/node@25.9.1)(@vitest/coverage-v8@4.1.7)(happy-dom@20.9.0)(jsdom@29.1.1(@noble/hashes@1.8.0))(msw@2.14.6(@types/node@25.9.1)(typescript@6.0.3))(vite@8.0.14(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
+
+  packages/sveltekit-handler:
+    dependencies:
+      '@univ-lehavre/atlas-errors':
+        specifier: workspace:*
+        version: link:../errors
+    devDependencies:
+      '@sveltejs/kit':
+        specifier: '>=2.58.0'
+        version: 2.61.1(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.55.9(@typescript-eslint/types@8.59.4))(vite@8.0.14(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0)))(svelte@5.55.9(@typescript-eslint/types@8.59.4))(typescript@6.0.3)(vite@8.0.14(@types/node@25.9.1)(esbuild@0.28.0)(jiti@2.7.0)(tsx@4.22.3)(yaml@2.9.0))
+      '@univ-lehavre/atlas-shared-config':
+        specifier: workspace:*
+        version: link:../../config/shared-config
+      '@univ-lehavre/atlas-test-utils-sveltekit':
+        specifier: workspace:*
+        version: link:../test-utils-sveltekit
+      eslint:
+        specifier: ^10.4.0
+        version: 10.4.0(jiti@2.7.0)
+      prettier:
+        specifier: ^3.8.3
+        version: 3.8.3
+      tsup:
+        specifier: ^8.5.1
+        version: 8.5.1(jiti@2.7.0)(postcss@8.5.15)(tsx@4.22.3)(typescript@6.0.3)(yaml@2.9.0)
       typescript:
         specifier: ^6.0.3
         version: 6.0.3

@@ -90,6 +90,18 @@ règle. Toute dérogation **doit** être enregistrée :
   inline générés par Svelte et Bootstrap (voir [ADR 0006](0006-sveltekit-hono-bootstrap.md)).
   Le retrait est tracé sous Phase 5.3-tightening (sine die, voir
   [ADR 0001](0001-devsecops-perimetre-repo-sine-die.md)).
+  - Depuis Phase 9.2 (2026-05-31), la liste des directives CSP par
+    défaut et les cinq security headers statiques (HSTS, X-Content-Type-
+    Options, Referrer-Policy, Permissions-Policy, X-Frame-Options) sont
+    factorisés dans
+    [`packages/sveltekit-csp`](https://github.com/univ-lehavre/atlas/tree/main/packages/sveltekit-csp)
+    (`@univ-lehavre/atlas-sveltekit-csp`). Toutes les apps SvelteKit
+    (`amarre`, `ecrin`, `find-an-expert`, `sillage`, `atlas-dashboard`,
+    `crf-dashboard`) consomment ce helper via `defaultCspDirectives()`
+    dans leur `svelte.config.js` et `applySecurityHeaders()` dans leur
+    `hooks.server.ts`. La dérogation `style-src 'unsafe-inline'` reste
+    explicite — elle est commentée à l'emplacement où elle est définie
+    (`packages/sveltekit-csp/src/csp.ts`) et pointe vers le présent ADR.
 
 ### Audits dépendances
 
@@ -115,14 +127,14 @@ expérimental non publié) :
 **Temporairement sous-testés** (renforcement planifié, voir [plan de
 résorption 2026-05-30](https://github.com/univ-lehavre/atlas/blob/main/docs/plans/2026-05-30-resorption.md)) :
 
-| Paquet                          | Seuils actuels (S/B/F/L) | Cible Phase suivante | Raison de l'exemption temporaire                                                                                                                                   |
-| ------------------------------- | ------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `apps/amarre`                   | 52/55/32/56              | Phase ultérieure     | Seuils resserrés en Phase 4.5 après ajout de tests endpoints (réel 54.27/57.14/34.37/58.53). UI Svelte et services métier restent à couvrir.                       |
-| `apps/ecrin`                    | 52/34/37/53              | Phase ultérieure     | Seuils resserrés en Phase 4.3 (réel 54.18/36.56/39.81/55.78). 14 endpoints API couverts ; UI Svelte et services à couvrir.                                         |
-| `apps/find-an-expert`           | 22/12/15/25              | Phase ultérieure     | Seuils resserrés en Phase 4.4 (réel 24.80/14.58/17.89/27.38). 17 endpoints API couverts ; routes Svelte et content dominent encore le dénominateur.                |
-| `cli/crf`                       | 62/62/76/60              | Phase ultérieure     | Seuils resserrés en Phase 2.6 au réel (64.59/64.70/78.43/62.71). Les bin entry points (api/index, server/index) ont un setup `@effect/cli` lourd.                  |
-| `cli/net`                       | 48/42/38/49              | Phase ultérieure     | Seuils resserrés en Phase 2.6 au réel (50.48/44.11/40.00/51.51). Renforcement à 80%+ à planifier.                                                                  |
-| `packages/test-utils-sveltekit` | 80/95/35/80              | Stable               | Helper paquet créé en Phase 4.2. `functions` à 35 parce que `noopCookies.{get,set,…}` (stubs requis par le type `RequestEvent['cookies']`) ne sont jamais appelés. |
+| Paquet                          | Seuils actuels (S/B/F/L) | Cible Phase suivante | Raison de l'exemption temporaire                                                                                                                                                                                         |
+| ------------------------------- | ------------------------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/amarre`                   | 50/54/32/53              | Phase ultérieure     | Seuils Phase 9.1 (réel 52.36/56/34.37/55.55) après migration vers `@univ-lehavre/atlas-sveltekit-handler` (le try/catch+mapping factorisé n'est plus compté localement). UI Svelte et services métier restent à couvrir. |
+| `apps/ecrin`                    | 52/34/37/53              | Phase ultérieure     | Seuils resserrés en Phase 4.3 (réel 54.18/36.56/39.81/55.78). 14 endpoints API couverts ; UI Svelte et services à couvrir.                                                                                               |
+| `apps/find-an-expert`           | 22/12/15/25              | Phase ultérieure     | Seuils resserrés en Phase 4.4 (réel 24.80/14.58/17.89/27.38). 17 endpoints API couverts ; routes Svelte et content dominent encore le dénominateur.                                                                      |
+| `cli/crf`                       | 62/62/76/60              | Phase ultérieure     | Seuils resserrés en Phase 2.6 au réel (64.59/64.70/78.43/62.71). Les bin entry points (api/index, server/index) ont un setup `@effect/cli` lourd.                                                                        |
+| `cli/net`                       | 48/42/38/49              | Phase ultérieure     | Seuils resserrés en Phase 2.6 au réel (50.48/44.11/40.00/51.51). Renforcement à 80%+ à planifier.                                                                                                                        |
+| `packages/test-utils-sveltekit` | 80/95/35/80              | Stable               | Helper paquet créé en Phase 4.2. `functions` à 35 parce que `noopCookies.{get,set,…}` (stubs requis par le type `RequestEvent['cookies']`) ne sont jamais appelés.                                                       |
 
 **Renforcés en Phase 3 — historique** : la Phase 3 du plan de résorption a fait passer 6 paquets de 0–17% à 93–100% statements ; ils sortent donc de ce tableau et passent à la cible générale 80% :
 

@@ -1,7 +1,8 @@
 import type { RequestHandler } from './$types';
-import { json } from '@sveltejs/kit';
+import { withHandler } from '@univ-lehavre/atlas-sveltekit-handler';
+import { ApplicationError } from '@univ-lehavre/atlas-errors';
 import { getInstitutionStats } from '$lib/server/citation';
-import { mapErrorToResponse } from '$lib/server/http';
+import { flatErrorMapper } from '$lib/server/http';
 
 /** Maximum number of institutions allowed in a single request */
 const MAX_INSTITUTIONS = 10;
@@ -9,51 +10,34 @@ const MAX_INSTITUTIONS = 10;
 /**
  * GET /api/v1/institutions/stats
  * Returns comprehensive statistics for the specified institutions over the last 5 years.
- * Includes works count (all types), articles count, and authors count.
- *
- * Requires authentication.
- *
- * Query parameters:
- * - ids (required): Comma-separated OpenAlex institution IDs (max 10)
  */
-export const GET: RequestHandler = async ({ url, locals }) => {
-  try {
-    // Require authentication
-    if (!locals.userId) {
-      return json({ code: 'unauthenticated', message: 'User not authenticated' }, { status: 401 });
-    }
+export const GET: RequestHandler = withHandler(
+  async ({ url, locals }) => {
+    if (!locals.userId)
+      throw new ApplicationError('unauthenticated', 401, 'User not authenticated');
 
     const idsParam = url.searchParams.get('ids');
 
-    if (!idsParam) {
-      return json(
-        { code: 'missing_parameter', message: 'ids parameter is required' },
-        { status: 400 }
-      );
-    }
+    if (!idsParam)
+      throw new ApplicationError('missing_parameter', 400, 'ids parameter is required');
 
     const institutionIds = idsParam.split(',').filter(Boolean);
 
-    if (institutionIds.length === 0) {
-      return json(
-        { code: 'invalid_parameter', message: 'At least one institution ID is required' },
-        { status: 400 }
+    if (institutionIds.length === 0)
+      throw new ApplicationError(
+        'invalid_parameter',
+        400,
+        'At least one institution ID is required'
       );
-    }
 
-    if (institutionIds.length > MAX_INSTITUTIONS) {
-      return json(
-        {
-          code: 'too_many_institutions',
-          message: `Maximum ${MAX_INSTITUTIONS} institutions allowed`,
-        },
-        { status: 400 }
+    if (institutionIds.length > MAX_INSTITUTIONS)
+      throw new ApplicationError(
+        'too_many_institutions',
+        400,
+        `Maximum ${MAX_INSTITUTIONS} institutions allowed`
       );
-    }
 
-    const result = await getInstitutionStats(institutionIds);
-    return json(result);
-  } catch (error: unknown) {
-    return mapErrorToResponse(error);
-  }
-};
+    return getInstitutionStats(institutionIds);
+  },
+  { mapError: flatErrorMapper }
+);

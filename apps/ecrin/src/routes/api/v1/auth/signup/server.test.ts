@@ -8,10 +8,6 @@ vi.mock('$lib/validators/server/auth', () => ({
   validateSignupEmail: vi.fn(async (email: string) => email),
 }));
 
-vi.mock('$lib/errors/mapper', () => ({
-  mapErrorToResponse: vi.fn((error: Error) => new Response(error.message, { status: 500 })),
-}));
-
 const buildRequest = (email: string): Request => {
   const form = new FormData();
   form.append('email', email);

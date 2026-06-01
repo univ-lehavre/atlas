@@ -1,24 +1,16 @@
-import { json } from '@sveltejs/kit';
-import { listUsersFromCrf } from '$lib/server/services/userService';
 import type { RequestHandler } from './$types';
+import { withHandler } from '@univ-lehavre/atlas-sveltekit-handler';
+import { ApplicationError } from '@univ-lehavre/atlas-errors';
+import { listUsersFromCrf } from '$lib/server/services/userService';
 
-export const GET: RequestHandler = async ({ locals, fetch }) => {
-  try {
-    if (!locals.userId) {
-      return json(
-        { data: null, error: { code: 'unauthenticated', message: 'User not authenticated' } },
-        { status: 401 }
-      );
-    }
+// Migration vers `withHandler` (Phase 9.1) :
+// - 401 `unauthenticated` quand `locals.userId` est absent (préservé),
+// - 500 mappé par `@univ-lehavre/atlas-errors` quand le service amont
+//   échoue (le message est désormais celui de l'erreur, et non plus
+//   la chaîne générique 'Unexpected error' qui masquait l'origine).
+export const GET: RequestHandler = withHandler(async ({ locals, fetch }) => {
+  if (!locals.userId) throw new ApplicationError('unauthenticated', 401, 'User not authenticated');
 
-    const users = await listUsersFromCrf(fetch);
-
-    return json({ data: users, error: null });
-  } catch (error: unknown) {
-    console.log(error);
-    return json(
-      { data: null, error: { code: 'internal_error', message: 'Unexpected error' } },
-      { status: 500 }
-    );
-  }
-};
+  const users = await listUsersFromCrf(fetch);
+  return { data: users, error: null };
+});
