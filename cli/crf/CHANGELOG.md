@@ -1,5 +1,15 @@
 # @univ-lehavre/atlas-crf-cli
 
+## 3.0.3
+
+### Patch Changes
+
+- [#250](https://github.com/univ-lehavre/atlas/pull/250) [`178dca4`](https://github.com/univ-lehavre/atlas/commit/178dca44aef7696c148adb6152b9f6885f25528e) Thanks [@chasset](https://github.com/chasset)! - Première publication de ces 8 CLIs sur les registres npm (npmjs.org +
+  GitHub Packages). Le code est inchangé ; ce bump `patch` déclenche
+  simplement leur release initiale via le pipeline Changesets existant
+  (cf. [ADR 0017](docs/decisions/0017-releases-npm-oidc-deux-registres.md)).
+  `atlas-biblio-cli` était déjà publié et n'est pas concerné.
+
 ## 3.0.2
 
 ### Patch Changes
