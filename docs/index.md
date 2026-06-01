@@ -7,36 +7,61 @@ hero:
   tagline: Plusieurs projets logiciels dans un seul dépôt Git.<br>Applications, bibliothèques, serveurs, outils en ligne de commande.<br>Mêmes règles, même chaîne de qualité.<br>Cette organisation est appelée monorepo.
   actions:
     - theme: brand
-      text: Découvrir le monorepo
+      text: Je découvre
       link: /architecture/monorepo
     - theme: alt
-      text: Les garde-fous qualité
-      link: /quality/ci-pipeline
+      text: Je veux lire le code
+      link: /architecture/comprendre-le-code
 
 features:
-  - title: Structure
-    details: Huit catégories — apps, assets, packages, services, cli, ui, config, sandbox — une responsabilité par catégorie. Le placement d'un projet dans le dépôt indique d'emblée son rôle.
+  - title: Je découvre
+    details: Comprendre ce que fait le dépôt et comment il est organisé, sans prérequis technique. Les huit catégories, les garde-fous qualité, la manière de collaborer.
     link: /architecture/monorepo
-  - title: Garde-fous qualité
-    details: TypeScript strict, ESLint, Prettier, vérification de types, formatage automatique, conventions de commit. Chaque modification passe par la même série de contrôles.
-    link: /quality/code-style
-  - title: Sécurité
-    details: Détection de secrets, analyse statique (CodeQL), scan dynamique (OWASP ZAP), inventaire de dépendances (SBOM), audits npm et licences, releases signées par OIDC.
-    link: /quality/security
-  - title: Collaboration
-    details: Pull request, conventions de commit, hooks Git locaux qui bloquent en avance ce qui échouerait en CI, releases automatisées par Changesets.
-    link: /collaboration/workflow
+  - title: Je veux lire le code
+    details: Entrer dans le code par le bon endroit. Par où commencer selon ce qu'on cherche, quels paquets lire ensemble, comment une donnée circule.
+    link: /architecture/comprendre-le-code
+  - title: La carte des paquets
+    details: Pour chaque paquet — son rôle, ce dont il dépend, qui le consomme. Générée depuis le code, donc toujours à jour.
+    link: /architecture/packages
+  - title: La référence API
+    details: Les signatures publiques (fonctions, types) de chaque paquet, générées par TypeDoc à partir du code. En anglais, niveau expert.
+    link: /api/
 ---
 
-## Pour qui est cette documentation
+## Deux entrées, selon ce que tu cherches
 
-Cette documentation est rédigée pour être lisible par un public non-expert, qu'il ou elle code ou non. Quand un terme technique est introduit, il est défini sur place ou renvoie au [glossaire](/glossary).
+Cette documentation sert deux publics. Choisis ta porte d'entrée.
 
-Elle décrit :
+### Je découvre — pour comprendre, sans coder
 
-- **comment le dépôt est organisé** (la [structure du monorepo](/architecture/monorepo)),
-- **les garde-fous qui assurent la qualité et la sécurité** ([pipeline CI](/quality/ci-pipeline), [tests](/quality/tests), [sécurité](/quality/security), [hooks Git](/quality/hooks)),
-- **comment on collabore** dessus ([workflow](/collaboration/workflow), [releases](/collaboration/releases)),
-- **comment on la documente elle-même** (la [politique de documentation](/quality/documentation)).
+Rédigée pour un public **non-expert** : quand un terme technique apparaît, il est
+défini sur place ou renvoie au [glossaire](/glossary).
+
+| Pour savoir…                  | Va voir                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| comment le dépôt est organisé | [Structure du monorepo](/architecture/monorepo)                          |
+| ce qui garantit la qualité    | [Pipeline CI](/quality/ci-pipeline), [tests](/quality/tests)             |
+| ce qui garantit la sécurité   | [Sécurité](/quality/security)                                            |
+| comment on collabore          | [Workflow](/collaboration/workflow), [releases](/collaboration/releases) |
+| comment on documente          | [Politique de documentation](/quality/documentation)                     |
+
+### Je veux lire le code — pour l'expert info/data
+
+Pour un **développeur ou data scientist** qui veut se faire une idée du code sans
+tout lire.
+
+| Pour…                                      | Va voir                                                |
+| ------------------------------------------ | ------------------------------------------------------ |
+| savoir **par où entrer** dans le code      | [Comprendre le code](/architecture/comprendre-le-code) |
+| voir **qui fait quoi / qui dépend de qui** | [Carte des paquets](/architecture/packages)            |
+| suivre **le parcours d'une donnée**        | [Flux de données](/architecture/data-flow)             |
+| lire les **signatures publiques**          | [Référence API](/api/)                                 |
+| comprendre **le _pourquoi_ d'un choix**    | [Décisions (ADR)](/decisions/)                         |
+
+> **Pourquoi cette doc reflète fidèlement le code.** La carte des paquets et la
+> référence API sont **générées depuis le code** et vérifiées à jour à chaque
+> intégration ; les pages rédigées sont **auditées** (liens, références, pages
+> orphelines). Une doc qui dérive du code casse la CI — voir
+> [ADR 0028](/decisions/0028-documentation-verifiable).
 
 Si quelque chose n'est pas clair, [ouvre une issue](https://github.com/univ-lehavre/atlas/issues) — la documentation est une responsabilité partagée.
