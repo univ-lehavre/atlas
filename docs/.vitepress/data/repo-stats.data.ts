@@ -7,9 +7,9 @@
  * @module
  */
 
-import { readFileSync, existsSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync, existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -22,6 +22,7 @@ export interface CodeStats {
   types: number;
   interfaces: number;
   constants: number;
+  tsdocComments: number;
 }
 
 /**
@@ -50,10 +51,13 @@ export interface TimelineEntry {
 export interface PackageStats {
   name: string;
   path: string;
+  version: string;
   code: CodeStats;
   tests: TestStats;
   latestCommit: string | null;
   commitCount: number;
+  prCount: number;
+  releaseCount: number;
   linesAdded: number;
   linesDeleted: number;
 }
@@ -73,6 +77,7 @@ export interface RepoStats {
   packages: PackageStats[];
   timeline: {
     daily: TimelineEntry[];
+    weekly: TimelineEntry[];
     monthly: TimelineEntry[];
   };
   current: {
@@ -96,10 +101,18 @@ const emptyStats: RepoStats = {
   packages: [],
   timeline: {
     daily: [],
+    weekly: [],
     monthly: [],
   },
   current: {
-    code: { files: 0, functions: 0, types: 0, interfaces: 0, constants: 0 },
+    code: {
+      files: 0,
+      functions: 0,
+      types: 0,
+      interfaces: 0,
+      constants: 0,
+      tsdocComments: 0,
+    },
     tests: { files: 0, describes: 0, tests: 0 },
   },
 };
@@ -110,18 +123,20 @@ export { data };
 
 export default {
   load(): RepoStats {
-    const statsPath = resolve(__dirname, 'repo-stats.json');
+    const statsPath = resolve(__dirname, "repo-stats.json");
 
     if (!existsSync(statsPath)) {
-      console.warn('⚠️ repo-stats.json not found. Run "pnpm stats:generate" to generate it.');
+      console.warn(
+        '⚠️ repo-stats.json not found. Run "pnpm stats:generate" to generate it.',
+      );
       return emptyStats;
     }
 
     try {
-      const content = readFileSync(statsPath, 'utf-8');
+      const content = readFileSync(statsPath, "utf-8");
       return JSON.parse(content) as RepoStats;
     } catch (error) {
-      console.error('Error loading repo-stats.json:', error);
+      console.error("Error loading repo-stats.json:", error);
       return emptyStats;
     }
   },
