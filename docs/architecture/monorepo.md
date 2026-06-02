@@ -171,3 +171,33 @@ Trois outils principaux organisent la vie quotidienne du dépôt :
 - **[pnpm](https://pnpm.io/)** (gestionnaire de paquets) installe les dépendances en partageant un cache global et isole chaque sous-projet via les _workspaces_ (fichier [`pnpm-workspace.yaml`](https://github.com/univ-lehavre/atlas/blob/main/pnpm-workspace.yaml))
 - **[turbo](https://turbo.build/)** (orchestrateur de tâches) parallélise les commandes (`build`, `test`, `lint`…) à travers les sous-projets et met en cache les résultats : un projet déjà construit n'est pas reconstruit
 - **[Changesets](https://github.com/changesets/changesets)** gère le versionnage : chaque pull request qui modifie un paquet publiable joint un fichier `.changeset/*.md` décrivant le changement et son impact (`patch`, `minor`, `major`)
+
+## Répertoires hors-workspace
+
+Les huit catégories ci-dessus décrivent les **sous-projets** (workspaces pnpm).
+À côté, quelques répertoires racine **ne sont pas des workspaces** : ils portent
+l'outillage, les correctifs de dépendances et les données de test. Chacun a son
+propre README.
+
+| Répertoire                                                              | Rôle                                                                                                                                                             |
+| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`scripts/`](https://github.com/univ-lehavre/atlas/tree/main/scripts)   | Automatisations transverses, **non publiables** : audits (`audit/`), génération de documentation (`docs/`), publication (`release/`), trames CRF (`crf-trame/`). |
+| [`patches/`](https://github.com/univ-lehavre/atlas/tree/main/patches)   | Correctifs locaux appliqués à des dépendances externes (patches pnpm), versionnés et documentés.                                                                 |
+| [`fixtures/`](https://github.com/univ-lehavre/atlas/tree/main/fixtures) | Jeux de données de test versionnés (ex. dictionnaires REDCap anonymisés), consommés par les tests d'intégration.                                                 |
+
+- **`scripts/`** regroupe ce qui fait vivre le dépôt sans être livré sur npm :
+  l'audit de structure ([`audit/`](https://github.com/univ-lehavre/atlas/tree/main/scripts/audit)),
+  les générateurs de la documentation
+  ([`docs/`](https://github.com/univ-lehavre/atlas/tree/main/scripts/docs) — carte
+  des paquets, référence API, statistiques du dépôt), les scripts de publication
+  ([`release/`](https://github.com/univ-lehavre/atlas/tree/main/scripts/release))
+  et la génération des trames et fixtures CRF
+  ([`crf-trame/`](https://github.com/univ-lehavre/atlas/tree/main/scripts/crf-trame)).
+- **`patches/`** conserve les correctifs maintenus dans le dépôt pour ajuster une
+  dépendance externe quand c'est nécessaire — chaque patch documente une
+  modification locale appliquée par le gestionnaire de paquets.
+- **`fixtures/`** porte les données de test partagées : par exemple
+  [`crf-projects/`](https://github.com/univ-lehavre/atlas/tree/main/fixtures/crf-projects),
+  des dictionnaires de données REDCap-importables et **anonymisés** (substitution
+  déterministe de _fake names_, aucune donnée réelle), générés par
+  `scripts/crf-trame/`.
