@@ -94,6 +94,7 @@ export default withMermaid(
             text: "Qualité & sécurité",
             items: [
               { text: "Pipeline CI", link: "/quality/ci-pipeline" },
+              { text: "Tableau de bord", link: "/quality/tableau-de-bord" },
               { text: "Tests", link: "/quality/tests" },
               { text: "Style de code", link: "/quality/code-style" },
               { text: "Hooks Git", link: "/quality/hooks" },
