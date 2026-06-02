@@ -129,16 +129,21 @@ export const relativeMarkdownLinks = (markdown) =>
   );
 
 /**
- * Références ADR **cliquables** d'un texte : un `decisions/NNNN-slug.md` cible
- * d'un lien Markdown `[texte](…/decisions/NNNN-slug.md)`. On ignore
- * volontairement les mentions en prose ou en `code span` (ex. un plan qui
- * *propose* de créer tel ADR) : ce ne sont pas des liens, donc pas des liens
- * morts. Seul un lien réel, censé être suivi, doit pointer vers un ADR existant.
+ * Références ADR **cliquables et internes** d'un texte : un
+ * `decisions/NNNN-slug.md` cible d'un lien Markdown **relatif**
+ * `[texte](…/decisions/NNNN-slug.md)`. On ignore volontairement :
+ * - les mentions en prose ou en `code span` (ex. un plan qui *propose* de créer
+ *   tel ADR) : ce ne sont pas des liens, donc pas des liens morts ;
+ * - les **URLs absolues** (`https://…/decisions/NNNN.md`), qui pointent vers un
+ *   autre dépôt (ex. les ADR du dépôt `cluster`) et ne sont pas vérifiables
+ *   contre `docs/decisions/` d'`atlas`. Le char-class `[^):]*` exclut tout lien
+ *   contenant `:` — donc tout schéma `http://`/`https://`.
+ * Seul un lien interne réel doit pointer vers un ADR existant du dépôt.
  */
 export const adrReferences = (markdown) =>
   [
     ...markdown.matchAll(
-      /\]\([^)]*decisions\/(\d{4}-[a-z0-9-]+)\.md(?:#[^)]*)?\)/g,
+      /\]\([^):]*decisions\/(\d{4}-[a-z0-9-]+)\.md(?:#[^)]*)?\)/g,
     ),
   ].map((m) => m[1]);
 

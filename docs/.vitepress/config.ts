@@ -240,6 +240,14 @@ export default withMermaid(
                 text: "0028 — Documentation vérifiable",
                 link: "/decisions/0028-documentation-verifiable",
               },
+              {
+                text: "0029 — Pipeline collaborations (DataOps)",
+                link: "/decisions/0029-architecture-pipeline-collaborations",
+              },
+              {
+                text: "0030 — RGPD profilage collaborations",
+                link: "/decisions/0030-rgpd-profilage-collaborations",
+              },
             ],
           },
         ],
@@ -271,6 +279,10 @@ export default withMermaid(
               {
                 text: "Documentation vérifiable",
                 link: "/plans/documentation-verifiable",
+              },
+              {
+                text: "Pipeline de collaborations",
+                link: "/plans/2026-06-02-pipeline-collaborations",
               },
             ],
           },
