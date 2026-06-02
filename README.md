@@ -107,4 +107,29 @@ Pour contribuer, lire [CONTRIBUTING.md](CONTRIBUTING.md). Pour signaler une vuln
 
 ## Licence
 
-[MIT](LICENSE)
+[MIT](LICENSE) — le logiciel est fourni « tel quel », sans garantie, et les
+auteurs ne sont pas responsables des dommages liés à son usage.
+
+## Responsabilité & conformité
+
+La licence MIT écarte la garantie **technique** entre les auteurs et les
+utilisateurs du code ; elle **ne traite pas** des obligations **réglementaires**
+liées à l'exploitation de l'outil, et ne saurait écarter une règle d'ordre
+public comme le RGPD.
+
+Certains composants (par exemple le pipeline de recommandation de
+collaborations) **traitent des données à caractère personnel**. Dans ce cas :
+
+- **le responsable de traitement est l'établissement qui déploie et exploite une
+  instance**, pas le dépôt ni ses auteurs ;
+- ce responsable doit assurer **sa propre conformité** : base légale,
+  information des personnes, droit d'opposition et droit à l'effacement,
+  analyse d'impact si nécessaire ;
+- les auteurs ne fournissent **aucune garantie de conformité** ; l'outil est
+  conçu pour être _techniquement capable_ de conformité (cf. la ré-dérivabilité
+  des données et le droit d'opposition décrits dans
+  [ADR 0030](docs/decisions/0030-rgpd-profilage-collaborations.md)), mais
+  l'actionner relève du déployeur.
+
+Ce partage de responsabilité est cohérent avec la nature **générique et
+open-source** de l'outil ([ADR 0031](docs/decisions/0031-outil-generique-open-source.md)).
