@@ -105,6 +105,53 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 
 > **Tous les artefacts de cette phase vivent dans le dépôt `cluster`, pas dans `atlas`.** Chaque addon suit le patron existant `platform/<addon>/` (cf. `platform/metrics-server/`, `platform/network-policies/`), déployé via Ansible (`bootstrap/`) et **validé d'abord sur le banc Vagrant** (`test/single-node` puis `test/multi-node`) avant tout passage sur le cluster réel. Déclenche le **palier 2** de [ADR cluster 0016](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0016-observabilite.md) et **ajoute les composants stateful** de la plateforme (CloudNativePG, Dagster, Marquez).
 
+### Pour l'agent qui reprend cette phase
+
+> Cette section rend la Phase 1 **auto-porteuse** : un agent lancé dans le dépôt
+> `cluster` doit pouvoir l'exécuter sans contexte externe. Le plan détaillé
+> (étapes 1.1→1.8) est dans le dépôt `atlas`
+> (`docs/plans/2026-06-02-pipeline-collaborations.md`) ; les **livrables**, eux,
+> sont dans `cluster`.
+
+- **Où travailler.** Dans le dépôt **`cluster`** (Ansible + manifestes K8s). Le
+  dépôt `atlas` n'est lu que pour ce plan ; aucun fichier n'y est modifié en
+  Phase 1.
+- **Patron d'un addon.** Copier la structure d'un addon existant —
+  [`platform/metrics-server/`](https://github.com/univ-lehavre/cluster/tree/main/platform/metrics-server)
+  est la référence (manifestes + `manage.sh` + README + tâche/role Ansible sous
+  `bootstrap/`). Chaque nouvel addon suit `platform/<addon>/`.
+- **Conventions du dépôt cluster** (différentes d'`atlas`) :
+  - **Commits** : Conventional Commits, vérifiés par `commitlint` via **lefthook**
+    (hook `commit-msg`) ; **pas d'email** dans le message ; **jamais** de
+    `--no-verify`. Sujet en minuscules.
+  - **Branche + PR** : jamais de commit direct sur `main` ; une PR par étape, le
+    `PR title` est donné à chaque étape.
+  - **Lint/validation** : `pnpm lint` (enchaîne `format:check`, `yamllint`,
+    `shellcheck`, `kubeconform`, `ansible-lint`, `jscpd`, puis `test:shell`) ;
+    `pnpm test:shell` = `bats test/unit/`. Le `Justfile` donne les raccourcis
+    (`just lint`, `just test-unit`, `just checks`).
+- **Banc Vagrant.** Les étapes valident sur le banc : `test/single-node/` puis
+  `test/multi-node/` (3 VMs Debian, `Vagrantfile` + `run-phases.sh`). **Le monter
+  prend plusieurs minutes** (`vagrant up`, VirtualBox requis). Si le banc n'est
+  **pas** disponible dans l'environnement de l'agent, voir le mode dégradé
+  ci-dessous.
+- **ADR cluster.** Le dépôt `cluster` a sa propre suite d'ADR sous
+  `docs/decisions/` (format Nygard léger, même esprit qu'`atlas`). Au démarrage,
+  le **prochain numéro libre est `0020`** (les ADR vont jusqu'à `0019`) ;
+  **vérifier `docs/decisions/` avant de numéroter** (d'autres ADR ont pu être
+  ajoutés depuis la rédaction de ce plan). Chaque étape qui demande un « ADR
+  cluster … » crée le fichier numéroté suivant et l'ajoute à l'index.
+- **Mode dégradé (pas de banc disponible).** Si l'agent ne peut pas lancer le
+  banc Vagrant : **écrire les manifestes/rôles et les faire passer `pnpm lint`**
+  (kubeconform + ansible-lint valident la forme sans cluster), puis **marquer
+  explicitement le critère « validé sur `test/multi-node` » comme _à exécuter par
+  un humain_** dans la description de la PR. Ne pas prétendre une validation
+  end-to-end qui n'a pas eu lieu (cf. principe « rapporter fidèlement »). Le
+  déploiement sur le cluster réel reste, dans tous les cas, une action humaine.
+- **Ordre conseillé.** Suivre le chemin critique : 1.1 → 1.2 → 1.3, puis 1.4 et
+  1.5 (après 1.1), puis 1.6 → 1.7 → 1.8. Une PR par étape, mergée avant la
+  suivante quand elle en dépend.
+
 **Objectif.** Relever le socle pour une plateforme DataOps **exposable, observable et stateful** : exposition HTTPS (MetalLB + ingress-nginx + cert-manager), GitOps (Argo CD), monitoring **complet** (kube-prometheus-stack + Loki, `ServiceMonitor` Ceph activé), **PostgreSQL managé via CloudNativePG** (event log Dagster **+** index pgvector), **Dagster** (`dagster-k8s` : daemon + webserver + run workers, event log Postgres), **Marquez** (store de lineage OpenLineage).
 **Dépendances.** Aucune technique vis-à-vis de la Phase 0 (infra pure). **Bloque le déploiement** des Phases 2 (OBC/Argo CD), 3–4 (Dagster, Postgres) et 5–6 (ingress/TLS).
 **Parallélisable ?** 1.1 (MetalLB) → 1.2 (ingress) → 1.3 (cert-manager). 1.4 (Argo CD) et 1.5 (monitoring) indépendants après 1.1. 1.6 (CloudNativePG) prérequis de 1.7 (Dagster, event log Postgres) et de 1.8 (Marquez, store Postgres). 1.7/1.8 après 1.4 (déployés en GitOps).
