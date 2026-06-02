@@ -110,7 +110,10 @@ périmètre paramétrable).
   d'une personne opposée est exclue de la **partition courante servie**
   (régénération depuis `curated` filtré sur le registre d'opposition à jour, ou
   masquage à la lecture, et purge des lignes de l'index). L'immuabilité reste un
-  invariant de **traçabilité**, pas un droit de conservation indéfinie.
+  invariant de **traçabilité**, pas un droit de conservation indéfinie. Le
+  mécanisme complet (registre d'opposition, régénération, masquage, purge de
+  l'index, SLA) est spécifié dans
+  [Ré-dérivabilité du mart et de l'index](../architecture/re-derivabilite-mart-index.md).
 - **Pas d'endpoint anonyme listant des chercheurs.** `atlas-api` exige une
   **authentification** sur toute route exposant des personnes ou des
   recommandations nominatives.
@@ -135,6 +138,29 @@ données réelles reste conditionnée à l'arbitrage du DPO de l'établissement
 exploitant** sur les bases légales et le responsable de traitement : tant que cet
 arbitrage n'a pas eu lieu, le pipeline ne traite pas de données personnelles
 réelles (jeux de test/synthétiques uniquement).
+
+### Demande d'arbitrage tracée (2026-06-02)
+
+Conformément à l'étape 0.3 du plan
+[pipeline-collaborations](../plans/2026-06-02-pipeline-collaborations.md), la
+demande d'arbitrage institutionnel est **tracée ici** (gate phase 0). Points à
+trancher par le référent données / DPO de l'établissement exploitant, dans la
+continuité des questions ouvertes Q2/Q6 de l'[ADR 0026](0026-rgpd-perimetre.md) :
+
+1. **Base légale** à valider : mission d'intérêt public (art. 6.1.e) pour les
+   chercheurs de l'établissement ; intérêt légitime (art. 6.1.f, avec test de
+   mise en balance) pour les chercheurs d'établissements partenaires.
+2. **Responsable de traitement** à identifier explicitement (l'établissement
+   exploitant l'instance).
+3. **Information des personnes** profilées et modalités d'exercice du **droit
+   d'opposition** (art. 21) et du **droit à l'effacement**.
+4. **Valeur du SLA** de propagation d'une opposition (cf.
+   [Ré-dérivabilité du mart et de l'index](../architecture/re-derivabilite-mart-index.md), §5).
+5. Nécessité éventuelle d'une **analyse d'impact (AIPD/DPIA)**.
+
+**Effet du gate :** ouvert pour le développement sur **données synthétiques /
+fixtures** ; **fermé** pour tout déploiement en **production avec données
+nominatives réelles** tant que cet arbitrage n'est pas revenu.
 
 ## Conséquences
 
