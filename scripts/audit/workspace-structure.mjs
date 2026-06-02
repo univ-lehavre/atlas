@@ -10,7 +10,9 @@ import {
 } from "./lib/workspace-index.mjs";
 
 const NO_CLI_SUFFIX_ALLOWED = new Set(["@univ-lehavre/atlas-crf-openapi"]);
-// TODO: migrate src/prompt/ to cli/biblio — @clack/prompts belongs in cli/
+// TODO(chasset, 2026-06-01): migrate src/prompt/ to cli/biblio — @clack/prompts
+// belongs in cli/ (cf. ADR 0019 ; TODO jumeau dans
+// packages/citation-validate/eslint.config.js)
 const CLI_IO_MIGRATION_PENDING = new Set([
   "@univ-lehavre/atlas-citation-validate",
 ]);
