@@ -265,6 +265,10 @@ export default withMermaid(
                 text: "0033 — Contrat d'interface cluster",
                 link: "/decisions/0033-contrat-interface-cluster",
               },
+              {
+                text: "0034 — CI adaptative par chemin",
+                link: "/decisions/0034-ci-adaptative-par-chemin",
+              },
             ],
           },
         ],

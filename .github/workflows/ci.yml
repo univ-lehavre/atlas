@@ -19,6 +19,60 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  # Détecte si la PR touche du code exécutable ou seulement de la
+  # documentation. Les jobs lourds (Test/Build/Typecheck) consultent
+  # `outputs.code` pour court-circuiter leur travail coûteux SANS jamais se
+  # rendre `skipped` — un check requis `skipped` resterait « Pending » et
+  # bloquerait le merge (cf. ADR 0034). Conservateur : tout fichier hors de la
+  # liste blanche documentaire compte comme du code.
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Classify changed files
+        id: filter
+        env:
+          # Sur une PR, on diffe contre la base de fusion ; sur un push (main),
+          # `base` est vide et on force `code=true` (la branche protégée valide
+          # toujours tout).
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BASE_SHA}" ]; then
+            echo "Push (pas une PR) → pipeline complet."
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files="$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}")"
+          echo "Fichiers modifiés :"
+          echo "${files}"
+          # Liste blanche documentaire (ADR 0034) : un fichier qui matche l'un
+          # de ces motifs est « doc ». Si TOUS les fichiers matchent, la PR est
+          # documentaire (code=false) ; sinon code=true.
+          code=false
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              docs/*) ;;                       # toute la documentation VitePress
+              *.md) ;;                         # tout Markdown (README, ADR, plans…)
+              *.mdx) ;;
+              LICENSE|LICENSE.*) ;;            # licence
+              *.editorconfig|.editorconfig) ;; # confort éditeur
+              fixtures/*.txt|fixtures/*.csv|fixtures/*.json) ;; # fixtures texte
+              *) code=true; echo "→ hors liste blanche : $f" ;;
+            esac
+          done <<< "${files}"
+          echo "code=${code}" >> "$GITHUB_OUTPUT"
+          echo "Résultat : code=${code}"
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -57,25 +111,37 @@ jobs:
     name: Typecheck
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Court-circuit step-level (ADR 0034) : le job tourne toujours (le check
+    # requis est rapporté), mais ses étapes lourdes sont sautées si la PR ne
+    # touche pas de code → le job sort « success », jamais « skipped ».
+    needs: [changes]
+    env:
+      RUN: ${{ needs.changes.outputs.code == 'true' }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - if: env.RUN == 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+      - if: env.RUN == 'true'
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      - if: env.RUN == 'true'
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version-file: .nvmrc
           cache: pnpm
 
       - name: Create SvelteKit env files
+        if: env.RUN == 'true'
         run: |
           for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
             cp "$app/.env.example" "$app/.env" 2>/dev/null || true
           done
 
-      - run: pnpm install --frozen-lockfile
+      - if: env.RUN == 'true'
+        run: pnpm install --frozen-lockfile
 
       - name: Turbo cache
+        if: env.RUN == 'true'
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: .turbo
@@ -83,33 +149,49 @@ jobs:
           restore-keys: |
             turbo-v2-${{ runner.os }}-
 
-      - run: pnpm typecheck
+      - if: env.RUN == 'true'
+        run: pnpm typecheck
 
-      - run: pnpm svelte:check
+      - if: env.RUN == 'true'
+        run: pnpm svelte:check
+
+      - name: Skipped (PR documentaire)
+        if: env.RUN != 'true'
+        run: echo "PR sans code exécutable — typecheck non requis (ADR 0034)."
 
   test:
     name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # Court-circuit step-level (ADR 0034) : voir le job `typecheck`.
+    needs: [changes]
+    env:
+      RUN: ${{ needs.changes.outputs.code == 'true' }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - if: env.RUN == 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+      - if: env.RUN == 'true'
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      - if: env.RUN == 'true'
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version-file: .nvmrc
           cache: pnpm
 
       - name: Create SvelteKit env files
+        if: env.RUN == 'true'
         run: |
           for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
             cp "$app/.env.example" "$app/.env" 2>/dev/null || true
           done
 
-      - run: pnpm install --frozen-lockfile
+      - if: env.RUN == 'true'
+        run: pnpm install --frozen-lockfile
 
       - name: Turbo cache
+        if: env.RUN == 'true'
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: .turbo
@@ -117,7 +199,8 @@ jobs:
           restore-keys: |
             turbo-v2-${{ runner.os }}-
 
-      - run: pnpm test:coverage
+      - if: env.RUN == 'true'
+        run: pnpm test:coverage
 
       # Phase 1.2 + 3.8 : agrège les rapports vitest et échoue si un
       # paquet devient « missing » (test config présent, coverage data
@@ -127,34 +210,50 @@ jobs:
       # services/crf, packages/atlas-stats) ; sera remontée vers 80
       # quand les exemptions résiduelles (cli/net, find-an-expert)
       # seront renforcées à leur tour.
-      - run: pnpm coverage:report 40
+      - if: env.RUN == 'true'
+        run: pnpm coverage:report 40
 
-      - run: pnpm test:scripts
+      - if: env.RUN == 'true'
+        run: pnpm test:scripts
+
+      - name: Skipped (PR documentaire)
+        if: env.RUN != 'true'
+        run: echo "PR sans code exécutable — tests non requis (ADR 0034)."
 
   build:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [lint, typecheck, test]
+    # Court-circuit step-level (ADR 0034). `needs` inclut `changes` pour lire le
+    # drapeau ; les `needs` lint/typecheck/test restent (ordre du pipeline).
+    needs: [changes, lint, typecheck, test]
+    env:
+      RUN: ${{ needs.changes.outputs.code == 'true' }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - if: env.RUN == 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
-      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+      - if: env.RUN == 'true'
+        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
 
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      - if: env.RUN == 'true'
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version-file: .nvmrc
           cache: pnpm
 
       - name: Create SvelteKit env files
+        if: env.RUN == 'true'
         run: |
           for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
             cp "$app/.env.example" "$app/.env" 2>/dev/null || true
           done
 
-      - run: pnpm install --frozen-lockfile
+      - if: env.RUN == 'true'
+        run: pnpm install --frozen-lockfile
 
       - name: Turbo cache
+        if: env.RUN == 'true'
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: .turbo
@@ -162,10 +261,16 @@ jobs:
           restore-keys: |
             turbo-v2-${{ runner.os }}-
 
-      - run: pnpm build
+      - if: env.RUN == 'true'
+        run: pnpm build
 
       - name: Check bundle sizes
+        if: env.RUN == 'true'
         run: pnpm audit:size
+
+      - name: Skipped (PR documentaire)
+        if: env.RUN != 'true'
+        run: echo "PR sans code exécutable — build non requis (ADR 0034)."
 
   docs:
     name: Documentation
