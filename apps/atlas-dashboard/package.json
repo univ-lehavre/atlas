@@ -2,6 +2,7 @@
   "name": "@univ-lehavre/atlas-dashboard",
   "version": "1.0.3",
   "private": true,
+  "description": "Internal dashboard tracking npm and GitHub stats (releases, downloads) of the published Atlas packages",
   "type": "module",
   "scripts": {
     "dev": "vite dev",

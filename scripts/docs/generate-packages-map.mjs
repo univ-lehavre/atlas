@@ -168,34 +168,67 @@ export const generateBody = (cwd = ".") => {
     lines.push("");
   }
 
-  // ── Graphe Mermaid (un sous-graphe par catégorie) ───────────────────────
-  lines.push("## Graphe des dépendances internes", "");
+  // ── Graphes Mermaid : un graphe par racine (app/CLI) ────────────────────
+  // Un graphe global de 43 nœuds / 114 arêtes est illisible. On le découpe :
+  // pour chaque RACINE (paquet que personne ne consomme — typiquement une app
+  // ou un CLI, le « point d'entrée » d'un livrable), on dessine uniquement son
+  // sous-arbre de dépendances transitives. Chaque graphe répond à « pour
+  // comprendre tel livrable, de quoi dépend-il, directement et indirectement ».
+  lines.push("## Graphes de dépendances par livrable", "");
   lines.push(
-    "Chaque flèche `A --> B` signifie « A dépend de B » (dépendance interne au",
-    "monorepo, tous champs confondus). Les paquets sont regroupés par catégorie.",
+    "Le graphe complet (toutes les dépendances internes d'un coup) est",
+    "illisible. On le découpe **par livrable** : chaque application ou outil en",
+    "ligne de commande — un paquet que personne d'autre ne consomme — a son",
+    "propre graphe, limité à ses **dépendances transitives**. Une flèche",
+    "`A --> B` signifie « A dépend de B » (tous champs de dépendances confondus).",
+    "Un livrable sans dépendance interne n'a pas de graphe.",
     "",
   );
-  lines.push("```mermaid", "flowchart LR");
-  for (const category of CATEGORY_ORDER) {
-    const names = byCategory.get(category) ?? [];
-    if (names.length === 0) continue;
-    lines.push(`  subgraph ${category}`);
-    for (const name of names) {
-      const short = name.replace("@univ-lehavre/", "");
-      lines.push(`    ${mermaidId(name)}["${short}"]`);
+
+  // Racines = paquets que personne ne consomme (reverse-deps vide).
+  const roots = [...workspaces.keys()]
+    .filter((name) => (reverse.get(name) ?? []).length === 0)
+    .sort((a, b) => {
+      const ra = ROOTS.indexOf(workspaces.get(a).root);
+      const rb = ROOTS.indexOf(workspaces.get(b).root);
+      return ra - rb || a.localeCompare(b);
+    });
+
+  for (const root of roots) {
+    // Fermeture transitive des dépendances de `root` (DFS), arêtes incluses.
+    const subNodes = new Set([root]);
+    const subEdges = [];
+    const stack = [root];
+    while (stack.length > 0) {
+      const node = stack.pop();
+      for (const dep of [...(graph.get(node) ?? [])].sort()) {
+        subEdges.push([node, dep]);
+        if (!subNodes.has(dep)) {
+          subNodes.add(dep);
+          stack.push(dep);
+        }
+      }
     }
-    lines.push("  end");
+    // Un livrable sans dépendance interne : pas de graphe (table suffit).
+    if (subEdges.length === 0) continue;
+
+    const short = root.replace("@univ-lehavre/", "");
+    const readme = path.join(workspaces.get(root).dir, "README.md");
+    const heading = existsSync(readme)
+      ? `[\`${short}\`](../../${readme})`
+      : `\`${short}\``;
+    lines.push(`### ${heading}`, "");
+    lines.push("```mermaid", "flowchart TD");
+    for (const name of [...subNodes].sort()) {
+      const label = name.replace("@univ-lehavre/", "");
+      lines.push(`  ${mermaidId(name)}["${label}"]`);
+    }
+    subEdges.sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
+    for (const [from, to] of subEdges) {
+      lines.push(`  ${mermaidId(from)} --> ${mermaidId(to)}`);
+    }
+    lines.push("```", "");
   }
-  // Arêtes (triées pour le déterminisme).
-  const edges = [];
-  for (const [name, targets] of graph) {
-    for (const target of targets) edges.push([name, target]);
-  }
-  edges.sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
-  for (const [from, to] of edges) {
-    lines.push(`  ${mermaidId(from)} --> ${mermaidId(to)}`);
-  }
-  lines.push("```", "");
 
   return lines.join("\n").trimEnd() + "\n";
 };
