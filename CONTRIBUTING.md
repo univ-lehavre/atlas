@@ -18,7 +18,7 @@ Pour signaler une **vulnérabilité**, n'ouvre pas d'issue publique. Suis la pro
 
 ## Code de conduite
 
-Atlas adopte le [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/). En contribuant, tu acceptes ses termes : respect mutuel, accueil des critiques constructives, pas de harcèlement ni de discrimination.
+Atlas adopte le [Contributor Covenant v2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct/), dont le texte est repris dans [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). En contribuant, tu acceptes ses termes : respect mutuel, accueil des critiques constructives, pas de harcèlement ni de discrimination.
 
 Signalement d'un comportement inacceptable : ouvrir un [GitHub Private Vulnerability Report](https://github.com/univ-lehavre/atlas/security/advisories/new) — le canal n'est pas exclusivement « sécurité technique », tout signalement confidentiel y est accepté. Tous les rapports sont traités confidentiellement.
 
