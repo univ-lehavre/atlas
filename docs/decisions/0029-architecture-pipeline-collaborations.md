@@ -28,10 +28,11 @@ Plusieurs briques existent déjà et sont réutilisables **telles quelles** :
   pagination ;
 - `services/crf/src/server/app.ts` : patron de service Hono + OpenAPI 3.1 +
   Scalar, à cloner ;
-- `apps/find-an-expert` : PWA SvelteKit avec authentification et **consentement**
-  via Appwrite (`node-appwrite`, cf. [ADR 0010](0010-node-appwrite-sdk-25.md)),
-  incluant le dispositif `consent-events` / `current-consents` / `ConsentType` —
-  source de vérité du périmètre RGPD ;
+- `apps/find-an-expert` : PWA SvelteKit avec authentification et un **dispositif
+  d'événements** via Appwrite (`node-appwrite`, cf. [ADR 0010](0010-node-appwrite-sdk-25.md)),
+  incluant les modules `consent-events` / `current-consents` / `ConsentType` —
+  réinterprété ici comme **registre d'opposition** RGPD (il **retire** les
+  personnes opposées, cf. [ADR 0030](0030-rgpd-profilage-collaborations.md)) ;
 - `packages/researcher-profiles/src/services/embedding-profile.ts` : embeddings
   ONNX `all-MiniLM-L6-v2`, CPU, sans Python — réutilisés tels quels comme source
   des vecteurs de l'index sémantique ;
@@ -339,8 +340,8 @@ Le « modèle » se décline en **deux temps**, sur le même point d'extension
 
 - **`atlas-api`** (service long-vivant) : lit le mart et l'index, sert l'API
   (métier + exploration).
-- **`find-an-expert`** (PWA + son backend SvelteKit/Appwrite) : auth,
-  consentement, UI, `/summary`.
+- **`find-an-expert`** (PWA + son backend SvelteKit/Appwrite) : auth, registre
+  d'opposition (dispositif `consent-events` réinterprété), UI, `/summary`.
 - **Le pipeline** (raw → dbt staging/curated/marts → index) : **assets Dagster**
   matérialisés à la demande / au schedule, pas un service de calcul en ligne. Il
   ne tient d'état métier qu'au travers des artefacts S3 et de l'index dérivé ;
@@ -410,15 +411,22 @@ d'un mart ou d'un index nominatif).
 **Garde-fous.**
 
 - **RGPD préalable** : [ADR 0030](0030-rgpd-profilage-collaborations.md) est la
-  **gate phase 0**, bloquante avant tout code sur données réelles. Le périmètre
-  des chercheurs profilés est **borné par le consentement existant**
-  (`consent-events` / `ConsentType` de `find-an-expert`) ; le mart **et l'index
-  dérivé** sont **ré-dérivables** pour intégrer le droit à l'effacement ;
-  l'authentification est exigée sur toute route nominative, **y compris les
-  routes d'exploration** ; base légale et responsable de traitement restent
-  institutionnels/DPO. Cet ADR **rouvre** [ADR 0026](0026-rgpd-perimetre.md) pour
-  le cas précis du profilage (la collecte d'un nouveau type de donnée personnelle
-  par une app déployée — déclencheur explicite de 0026), sans le contredire.
+  **gate phase 0**, bloquante avant tout code sur données réelles. Le traitement
+  repose sur une **base légale d'intérêt public / intérêt légitime — pas le
+  consentement — en _opt-out_** : tout chercheur du périmètre d'ingestion est
+  profilé par défaut, sauf opposition. Le dispositif `consent-events` /
+  `ConsentType` de `find-an-expert` sert de **registre d'opposition** (il
+  **retire** les personnes s'étant opposées au titre de l'art. 21 RGPD). L'outil
+  est **générique/multi-tenant** : chaque établissement exploite une instance
+  dont il est **responsable de traitement**, et la déclaration des alliances par
+  l'utilisateur **filtre l'affichage**, pas l'ingestion. Le mart **et l'index
+  dérivé** sont **ré-dérivables** pour intégrer le droit d'opposition et le droit
+  à l'effacement ; l'authentification est exigée sur toute route nominative, **y
+  compris les routes d'exploration** ; base légale et responsable de traitement
+  restent institutionnels/DPO. Cet ADR **rouvre** [ADR 0026](0026-rgpd-perimetre.md)
+  pour le cas précis du profilage (la collecte d'un nouveau type de donnée
+  personnelle par une app déployée — déclencheur explicite de 0026), sans le
+  contredire.
 - **Nommage** : convention du dépôt — aucun nom de marque dans un identifiant.
   On emploie `citation` (jamais la marque) dans tout identifiant : bucket
   `s3://citation`, namespaces `citation-ingest` / `citation-marts` /

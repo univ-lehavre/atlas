@@ -248,6 +248,10 @@ export default withMermaid(
                 text: "0030 — RGPD profilage collaborations",
                 link: "/decisions/0030-rgpd-profilage-collaborations",
               },
+              {
+                text: "0031 — Outil générique open-source",
+                link: "/decisions/0031-outil-generique-open-source",
+              },
             ],
           },
         ],

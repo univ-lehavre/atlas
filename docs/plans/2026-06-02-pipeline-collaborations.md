@@ -18,7 +18,7 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 
 - **Dépôt `atlas`** (ce dépôt) : les ADR 0029/0030 ; l'asset Dagster d'ingestion (réutilise `citation-fetch` _tel quel_) ; l'ingestion **neuve** des `referenced_works` ; l'accès lakehouse DuckDB↔S3↔Parquet (httpfs/secret RGW/COPY, **neuf**) ; les **modèles dbt** (`staging`/`curated`/`marts`) dont la **feature citations croisées** ; le contrat `manifest.json` + partitions immuables + `schema_version` (validateur dans `packages/citation`) ; les suites **Great Expectations** ; le **chargement de l'index Postgres/pgvector** ; le 3ᵉ signal sur `EnsembleWeights` ; `atlas-api` (métier + exploration) ; les résumés extractifs ; la PWA `find-an-expert` ; la signature d'images. **Seuls les manifestes _applicatifs_** (Deployment/Service/Ingress/`Application` Argo CD de ses propres composants, définitions d'assets Dagster) vivent ici.
 - **Dépôt `cluster`** (séparé, `../cluster`) : **tout l'addon d'infrastructure** — ingress-nginx, cert-manager, MetalLB, Argo CD, kube-prometheus-stack, Loki, **CloudNativePG**, **Dagster (`dagster-k8s`)**, **Marquez** — déployé via `platform/<addon>/` + Ansible (`bootstrap/`), **validé d'abord sur les bancs Vagrant** (`test/single-node` puis `test/multi-node`). **Aucun manifeste d'infra ne vit dans `atlas`.**
-- **Données** : périmètre des chercheurs profilés **borné par le consentement existant** (`consent-events` Appwrite, `ConsentType openalex_email` de `find-an-expert`). Aucune ingestion de donnée réelle avant la levée du gate RGPD (Phase 0).
+- **Données** : périmètre profilé en **opt-out**, base légale d'intérêt public / intérêt légitime (pas le consentement) — tout chercheur du périmètre d'ingestion est profilé par défaut, sauf opposition. Le dispositif `consent-events` Appwrite (`ConsentType openalex_email` de `find-an-expert`) sert de **registre d'opposition** (il **retire** les personnes s'étant opposées). L'outil est **générique/multi-tenant** : la déclaration des alliances par l'utilisateur **filtre l'affichage**, pas l'ingestion. Aucune ingestion de donnée réelle avant la levée du gate RGPD (Phase 0).
 
 ### Principes directeurs
 
@@ -61,32 +61,32 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 
 ## Phase 0 — Gate RGPD (BLOQUANT)
 
-**Objectif.** Acter le cadre RGPD du profilage de collaborations _avant_ toute ingestion de donnée réelle. L'[ADR 0030](../decisions/0030-rgpd-profilage-collaborations.md) **rouvre** [ADR 0026](../decisions/0026-rgpd-perimetre.md) pour le cas précis du profilage (sans le contredire), borne le périmètre au consentement, pose la ré-dérivabilité du mart **et de l'index dérivé**, et trace la demande d'arbitrage institutionnel (base légale, responsable de traitement).
+**Objectif.** Acter le cadre RGPD du profilage de collaborations _avant_ toute ingestion de donnée réelle. L'[ADR 0030](../decisions/0030-rgpd-profilage-collaborations.md) **rouvre** [ADR 0026](../decisions/0026-rgpd-perimetre.md) pour le cas précis du profilage (sans le contredire), pose une **base légale d'intérêt public / intérêt légitime en opt-out** (le dispositif `consent-events` devient un **registre d'opposition**), acte le caractère **générique/multi-tenant** (déclaration des alliances = filtre d'affichage), pose la ré-dérivabilité du mart **et de l'index dérivé**, et trace la demande d'arbitrage institutionnel (base légale, responsable de traitement).
 **Dépendances.** Aucune. **Bloque tout le reste** pour ce qui touche aux données nominatives réelles.
 **Parallélisable ?** Non en interne (0.1 → 0.2 → 0.3 séquentiels par dépendance documentaire).
-**Critère de sortie de phase.** ADR 0030 `Accepted` ; la ré-dérivabilité du mart **et de l'index pgvector** est spécifiée (régénération/masquage by-design) ; le périmètre ingéré est défini comme « ensemble des chercheurs ayant un consentement actif dans `consent-events` » ; la demande d'arbitrage base légale/DPO est **tracée** (issue `blocker:rgpd` ou courriel horodaté référencé dans l'ADR). `pnpm docs:build` vert.
+**Critère de sortie de phase.** ADR 0030 `Accepted` ; la ré-dérivabilité du mart **et de l'index pgvector** est spécifiée (régénération/masquage by-design) ; le périmètre servi est défini comme « ensemble des chercheurs du périmètre d'ingestion **hors opposition** (registre d'opposition `consent-events`) » ; la demande d'arbitrage base légale/DPO est **tracée** (issue `blocker:rgpd` ou courriel horodaté référencé dans l'ADR). `pnpm docs:build` vert.
 
 ### Étape 0.1 — Acter l'ADR 0030 (gate RGPD, profilage)
 
-- **Goal :** Écrire l'ADR qui rouvre 0026 pour le profilage nominatif, pose les bornes techniques (périmètre = consentement, ré-dérivabilité, auth obligatoire **y compris routes d'exploration**), et nomme le risque EU AI Act (scoring d'individus, recommandations nominatives).
+- **Goal :** Écrire l'ADR qui rouvre 0026 pour le profilage nominatif, pose les bornes techniques (base légale d'intérêt public / intérêt légitime en **opt-out**, registre d'opposition, ré-dérivabilité, auth obligatoire **y compris routes d'exploration**), acte le caractère **générique/multi-tenant** (déclaration des alliances = filtre d'affichage), et nomme le risque EU AI Act (scoring d'individus, recommandations nominatives).
 - **Files (read) :** `docs/decisions/0026-rgpd-perimetre.md`, `docs/decisions/0029-architecture-pipeline-collaborations.md`, `docs/decisions/README.md`, `apps/find-an-expert/` (modules `consent-events`, `current-consents`, `ConsentType`, `/api/v1/consents`, `ConsentStatusCard`).
 - **Files (write) :** `docs/decisions/0030-rgpd-profilage-collaborations.md`, `docs/decisions/README.md` (entrée index).
 - **Invariants à préserver :** ADR 0026 non amendé (0030 le **rouvre**) ; format Nygard léger (`## Contexte` / `## Décision` avec `###` / `## Statut` `Accepted (2026-06-02)` / `## Conséquences` `**Bénéfices.**` / `**Prix à payer.**` / `**Garde-fous.**`).
 - **Validation :** `pnpm docs:build` ; liens relatifs `[NNNN](NNNN-slug.md)` vérifiés.
 - **Done criteria :**
   1. ADR 0030 présent, `Accepted (2026-06-02)`, liant 0026 et 0029.
-  2. Acte : périmètre = consentement actif ; mart **et index dérivé ré-dérivables** ; auth obligatoire sur toute route nominative (y compris `/search` et filtres d'exploration) ; mention EU AI Act.
+  2. Acte : base légale d'intérêt public / intérêt légitime, périmètre en **opt-out** (registre d'opposition `consent-events`) ; outil **générique/multi-tenant** (déclaration des alliances = filtre d'affichage) ; mart **et index dérivé ré-dérivables** ; auth obligatoire sur toute route nominative (y compris `/search` et filtres d'exploration) ; mention EU AI Act.
   3. `## Garde-fous` renvoie au gate de ce plan (« aucune ingestion réelle avant arbitrage tracé »).
 - **PR title :** `docs(adr): gate RGPD profilage de collaborations (ADR 0030)`
 
 ### Étape 0.2 — Concevoir la ré-dérivabilité du mart et de l'index
 
-- **Goal :** Spécifier comment une révocation de consentement se propage à un mart de partitions immuables **et à l'index pgvector dérivé** : régénération de la partition courante par re-dérivation depuis `curated` filtré sur le périmètre consenti à T, masquage rétroactif des partitions historiques, **et purge/recharge des lignes correspondantes dans l'index Postgres** (qui n'est pas source de vérité, donc régénérable).
+- **Goal :** Spécifier comment une **opposition** se propage à un mart de partitions immuables **et à l'index pgvector dérivé** : régénération de la partition courante par re-dérivation depuis `curated` filtré sur le **registre d'opposition à T** (on **exclut** les personnes opposées), masquage rétroactif des partitions historiques, **et purge/recharge des lignes correspondantes dans l'index Postgres** (qui n'est pas source de vérité, donc régénérable).
 - **Files (read) :** ADR 0030, ADR 0029 (interface Parquet + index dérivé), `packages/citation-types`.
 - **Files (write) :** page dédiée dans `docs/architecture/` (« ré-dérivabilité du mart et de l'index »), référencée par l'ADR 0030.
 - **Invariants à préserver :** immutabilité des partitions de production (on n'écrit jamais en place) ; la ré-dérivation produit une **nouvelle** partition `run=<id>`, l'ancienne marquée obsolète ; l'index est régénéré, jamais traité comme autorité du contrat.
 - **Validation :** `pnpm docs:build` ; revue de cohérence « partitions immuables » + « mart ré-dérivable » + « index dérivé purgeable ».
-- **Done criteria :** Document décrivant (a) source de vérité du périmètre (`consent-events`), (b) régénération de la partition mart, (c) masquage à la lecture pour l'historique, (d) purge/recharge de l'index pgvector, (e) SLA de propagation d'une révocation.
+- **Done criteria :** Document décrivant (a) registre d'opposition (`consent-events`, qui **retire** les personnes opposées), (b) régénération de la partition mart, (c) masquage à la lecture pour l'historique, (d) purge/recharge de l'index pgvector, (e) SLA de propagation d'une opposition.
 - **PR title :** `docs(architecture): ré-dérivabilité du mart et de l'index sous RGPD`
 
 ### Étape 0.3 — Tracer la demande d'arbitrage base légale / DPO
@@ -197,7 +197,7 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 **Objectif.** **Asset Dagster d'ingestion** (schedule mensuel) qui ingère le delta de publications via `citation-fetch` **réutilisé _tel quel_** (Effect, rate-limit 1 req/s, `from_updated_date=watermark`) vers `s3://citation/raw`, **plus** l'ingestion **neuve** des `referenced_works` (références bibliographiques, **volumétrie lourde**) — matière première du signal citations croisées. Watermark persisté pour le delta. Greffé sur le `cli/citation` existant (`@univ-lehavre/atlas-citation-cli`).
 **Dépendances.** Phase 0 levée (données réelles ; dev possible sur fixtures avant). Phase 1 pour le déploiement (Dagster, Argo CD, OBC). Le **secret S3** et le **bucket** viennent de l'`ObjectBucketClaim` déjà déclaré côté cluster.
 **Parallélisable ?** 2.1 (asset delta + image) et 2.4 (watermark) avant 2.2 (références). 2.3 (packaging code-location Dagster + déploiement) après 2.1.
-**Critère de sortie de phase.** L'asset `raw_citations` matérialisé par Dagster sur un sous-périmètre consenti écrit des objets dans `s3://citation/raw/dt=YYYY-MM/run=<id>/` (publications + références), le watermark avance, le rate-limit 1 req/s est respecté, aucune réécriture en place ; le run apparaît dans l'event log Dagster. `pnpm ci:checks` vert.
+**Critère de sortie de phase.** L'asset `raw_citations` matérialisé par Dagster sur un sous-périmètre d'ingestion (hors opposition) écrit des objets dans `s3://citation/raw/dt=YYYY-MM/run=<id>/` (publications + références), le watermark avance, le rate-limit 1 req/s est respecté, aucune réécriture en place ; le run apparaît dans l'event log Dagster. `pnpm ci:checks` vert.
 
 ### Étape 2.1 — Asset Dagster `raw_citations` (réutilise `citation-fetch`)
 
@@ -263,7 +263,7 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 - **Goal :** Initialiser le **projet dbt** (`dbt-duckdb`, `profiles.yml` pointant le backend S3 de 3.1) et écrire les couches `staging` (typage/nettoyage des `works`, `authorships`, `referenced_works`) et `curated` (`works` canoniques, `authorships`, `edges` = arêtes article→référence dédupliquées). Tests dbt (`not_null`, `unique`, `relationships`) sur chaque couche.
 - **Files (read) :** schéma du brut (Phase 2), `packages/citation-types`, accès lakehouse 3.1.
 - **Files (write) :** projet dbt (`models/staging/`, `models/curated/`, `dbt_project.yml`, `profiles.yml`, schemas/tests), matérialisation `curated` en Parquet `s3://citation/curated/dt=YYYY-MM/run=<id>/`, assets dbt exposés à Dagster (`dagster-dbt`).
-- **Invariants à préserver :** déduplication déterministe (même brut → même curated) ; partitions immuables ; filtrage sur le **périmètre consenti** (lien Phase 0) ; modèles nommés sans marque (`stg_citation_*`, `curated_*`).
+- **Invariants à préserver :** déduplication déterministe (même brut → même curated) ; partitions immuables ; filtrage sur le **périmètre servi (hors opposition)** via le registre d'opposition (lien Phase 0) ; modèles nommés sans marque (`stg_citation_*`, `curated_*`).
 - **Validation :** `pnpm ci:checks` ; `dbt build` (ou via Dagster) sur fixtures : `staging`/`curated` produits, **tests dbt verts**, dédup vérifiée (pas de doublon d'arête).
 - **Done criteria :** projet dbt opérationnel, `curated` en Parquet partitionné, tests dbt verts, assets exposés à Dagster.
 - **PR title :** `feat(citation): projet dbt-duckdb (staging → curated)`
@@ -273,7 +273,7 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 - **Goal :** Calculer le signal **cœur** comme **modèle dbt `marts`** : pour chaque paire de chercheurs (A, B), le nombre de **citations croisées article↔article** (un article de A cite/est cité par un article de B). 100 % de nouveau code métier ; aucune feature de référence n'existe aujourd'hui.
 - **Files (read) :** `edges`/`curated` (3.2), `packages/researcher-profiles/src/`, `match-formatter.ts` (alignement des champs explicatifs).
 - **Files (write) :** modèle dbt `marts/collab_pairs` calculant `cross_citations` (+ direction, fenêtre temporelle), table de fait des **paires** de chercheurs ; tests dbt singuliers sur la feature.
-- **Invariants à préserver :** déterminisme strict (même curated → mêmes valeurs) ; pas de fuite hors périmètre consenti ; symétrie/asymétrie documentée (A cite B vs B cite A).
+- **Invariants à préserver :** déterminisme strict (même curated → mêmes valeurs) ; pas de fuite hors périmètre servi (les personnes opposées sont exclues) ; symétrie/asymétrie documentée (A cite B vs B cite A).
 - **Validation :** `pnpm ci:checks` ; **golden test** sur fixtures à citations croisées connues : valeur calculée == valeur attendue ; test dbt singulier vert.
 - **Done criteria :** feature `cross_citations` calculée (modèle dbt), golden test vert, sémantique documentée.
 - **PR title :** `feat(citation): feature citations croisées (modèle dbt)`
@@ -310,13 +310,13 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 
 ### Étape 3.7 — Ré-dérivabilité du mart (implémentation Phase 0)
 
-- **Goal :** Implémenter le mécanisme spécifié en 0.2 : régénération de la partition courante depuis `curated` filtré sur le consentement à T (re-run dbt), masquage des partitions historiques pour les chercheurs ayant révoqué, **+** purge/recharge des lignes correspondantes dans l'index pgvector (Phase 4).
-- **Files (read) :** spec 0.2, `consent-events` (source de vérité), mart 3.4.
+- **Goal :** Implémenter le mécanisme spécifié en 0.2 : régénération de la partition courante depuis `curated` filtré sur le **registre d'opposition à T** (re-run dbt, on **exclut** les personnes opposées), masquage des partitions historiques pour les chercheurs s'étant opposés, **+** purge/recharge des lignes correspondantes dans l'index pgvector (Phase 4).
+- **Files (read) :** spec 0.2, `consent-events` (registre d'opposition), mart 3.4.
 - **Files (write) :** liste d'exclusion dérivée de `consent-events`, paramétrage dbt de filtrage, asset Dagster de ré-dérivation (nouveau `run=<id>`), procédure de masquage à la lecture.
-- **Invariants à préserver :** immutabilité préservée (on régénère, on ne modifie pas) ; révocation effective dans le SLA défini en 0.2 ; masquage couvrant l'historique sans réécrire les anciennes partitions.
-- **Validation :** `pnpm ci:checks` ; test : un chercheur révoqué disparaît du mart régénéré et est masqué à la lecture de l'historique.
+- **Invariants à préserver :** immutabilité préservée (on régénère, on ne modifie pas) ; opposition effective dans le SLA défini en 0.2 ; masquage couvrant l'historique sans réécrire les anciennes partitions.
+- **Validation :** `pnpm ci:checks` ; test : un chercheur s'étant opposé disparaît du mart régénéré et est masqué à la lecture de l'historique.
 - **Done criteria :** régénération + masquage testés, conformes à l'ADR 0030.
-- **PR title :** `feat(citation): ré-dérivabilité du mart sous révocation`
+- **PR title :** `feat(citation): ré-dérivabilité du mart sous opposition`
 
 ---
 
@@ -325,7 +325,7 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 **Objectif.** Charger le mart dans **PostgreSQL** (CloudNativePG, Phase 1.6) pour l'**exploration** et la **recherche** : schéma `works`/`authorships`/`pairs`, **FTS `tsvector`** sur titres/topics/mots-clés (lexical), **colonne `vector(384)` + index pgvector** sur les embeddings `all-MiniLM-L6-v2` **réutilisés** (produits par `researcher-profiles`, CPU, aucun nouveau modèle). **Job/asset Dagster de matérialisation mart→Postgres**. L'index est **dérivé** du mart (régénérable), **jamais** source de vérité du contrat.
 **Dépendances.** Phase 3 (mart + manifest validables). Phase 1 (CloudNativePG + pgvector). Phase 0 (ré-dérivabilité — l'index est purgeable, 3.7).
 **Parallélisable ?** 4.1 (schéma + migrations) avant 4.2 (chargement FTS) et 4.3 (chargement vecteurs). 4.4 (asset Dagster d'orchestration du chargement) après 4.1–4.3.
-**Critère de sortie de phase.** Un asset Dagster charge la dernière partition **validée** (contrat 3.6) du mart dans Postgres ; une recherche FTS et une recherche vectorielle (kNN pgvector) renvoient des résultats cohérents sur fixtures ; un chercheur révoqué est purgé de l'index ; le chargement est idempotent (recharge = remplacement de la partition, pas de doublon). `pnpm ci:checks` vert.
+**Critère de sortie de phase.** Un asset Dagster charge la dernière partition **validée** (contrat 3.6) du mart dans Postgres ; une recherche FTS et une recherche vectorielle (kNN pgvector) renvoient des résultats cohérents sur fixtures ; un chercheur s'étant opposé est purgé de l'index ; le chargement est idempotent (recharge = remplacement de la partition, pas de doublon). `pnpm ci:checks` vert.
 
 ### Étape 4.1 — Schéma Postgres + migrations (`works`/`authorships`/`pairs`)
 
@@ -342,7 +342,7 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 - **Goal :** Charger titres/topics/mots-clés du mart dans les colonnes `tsvector`, index GIN, pour la recherche plein-texte.
 - **Files (read) :** mart (3.4), schéma 4.1, validateur de contrat 3.6.
 - **Files (write) :** loader lexical (lit le Parquet validé, peuple `tsvector`), index GIN, requêtes FTS de base (réutilisées par `atlas-api` Phase 5).
-- **Invariants à préserver :** **validation du contrat avant chargement** (refus d'une `schema_version` inconnue) ; chargement par **remplacement de partition** (idempotent, pas de doublon) ; périmètre consenti uniquement.
+- **Invariants à préserver :** **validation du contrat avant chargement** (refus d'une `schema_version` inconnue) ; chargement par **remplacement de partition** (idempotent, pas de doublon) ; périmètre servi (hors opposition) uniquement.
 - **Validation :** `pnpm ci:checks` ; sur fixtures : une requête FTS renvoie les œuvres attendues, ranking cohérent.
 - **Done criteria :** FTS chargé et indexé (GIN), requête lexicale testée.
 - **PR title :** `feat(citation): chargement FTS tsvector (lexical)`
@@ -362,7 +362,7 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 - **Goal :** Orchestrer le chargement (4.2 + 4.3) comme **asset Dagster `index_load`** en aval du mart (lineage OpenLineage continué jusqu'à l'index), avec validation du contrat et idempotence par partition.
 - **Files (read) :** loaders 4.2/4.3, validateur 3.6, schedule du pipeline (3.4).
 - **Files (write) :** asset `index_load` (dépend de l'asset mart), asset check de cohérence (count Postgres == `row_count` du manifest), wiring OpenLineage.
-- **Invariants à préserver :** l'index n'est chargé qu'à partir d'une partition **validée** ; recharge = remplacement (pas de doublon) ; purge des chercheurs révoqués propagée (lien 3.7).
+- **Invariants à préserver :** l'index n'est chargé qu'à partir d'une partition **validée** ; recharge = remplacement (pas de doublon) ; purge des chercheurs s'étant opposés propagée (lien 3.7).
 - **Validation :** `pnpm ci:checks` ; sur banc/fixtures : l'asset `index_load` se matérialise après le mart, l'asset check de cohérence passe, le lineage va jusqu'à l'index dans Marquez.
 - **Done criteria :** asset `index_load` orchestré, cohérence vérifiée, lineage complet.
 - **PR title :** `feat(citation): asset Dagster de chargement de l'index`
@@ -421,7 +421,7 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 - **Goal :** Le **second rôle** (demande explicite) : `/search` (recherche **lexicale FTS** _et_ **sémantique pgvector**, Phase 4), **filtrage structuré** `/works` `/authorships` `/pairs` (filtres chercheur/run/partition/institution/période → **vérification/débogage** de l'indexation), `/stats` (compteurs par partition/run). En **lecture seule** sur l'index Postgres ; **n'invalide pas** le contrat Parquet (qui reste batch).
 - **Files (read) :** module d'accès Postgres (4.1), requêtes FTS (4.2) et kNN (4.3).
 - **Files (write) :** endpoints d'exploration dans `atlas-api` (schémas OpenAPI 3.1 typés, pagination, filtres), client de l'index Postgres.
-- **Invariants à préserver :** **auth obligatoire y compris ici** ([ADR 0030](../decisions/0030-rgpd-profilage-collaborations.md) : toute route nominative, exploration comprise) ; lecture seule (aucune écriture via l'API) ; périmètre consenti ; cardinalité maîtrisée (pas de fuite de volumétrie).
+- **Invariants à préserver :** **auth obligatoire y compris ici** ([ADR 0030](../decisions/0030-rgpd-profilage-collaborations.md) : toute route nominative, exploration comprise) ; lecture seule (aucune écriture via l'API) ; périmètre servi (hors opposition) ; cardinalité maîtrisée (pas de fuite de volumétrie).
 - **Validation :** `pnpm ci:checks` ; `/search?mode=lexical` et `?mode=semantic` renvoient des résultats cohérents sur fixtures ; un filtre par run/partition isole la bonne tranche ; accès non authentifié refusé.
 - **Done criteria :** `/search` (lexical+sémantique), filtres structurés, `/stats` opérationnels et authentifiés.
 - **PR title :** `feat(atlas-api): exploration /search + filtres structurés + /stats`
@@ -441,7 +441,7 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 ## Phase 6 — PWA `find-an-expert` + exposition (dépôt `atlas`)
 
 **Objectif.** Transformer `find-an-expert` (SvelteKit) en **PWA** (`vite-plugin-pwa`, Workbox, Dexie offline), brancher la consommation d'`atlas-api` (**recommandations + résumé + recherche**), garantir la qualité via **Lighthouse CI**, exposer via **ingress + TLS** (Phase 1) avec **auth obligatoire** (Appwrite).
-**Dépendances.** Phase 5 (`atlas-api`). Phase 1 (ingress + TLS). Auth/consentement Appwrite déjà présents dans `find-an-expert`.
+**Dépendances.** Phase 5 (`atlas-api`). Phase 1 (ingress + TLS). Auth Appwrite et dispositif `consent-events` (réinterprété en registre d'opposition) déjà présents dans `find-an-expert`.
 **Parallélisable ?** 6.1 (PWA) et 6.3 (Lighthouse CI) indépendants de 6.2 (intégration API). 6.4 (exposition) en dernier.
 **Critère de sortie de phase.** `find-an-expert` est installable (PWA), consomme recommandations/résumés/recherche via `atlas-api` derrière auth, fonctionne hors-ligne (Dexie) pour les données déjà chargées, passe les seuils Lighthouse CI, est exposée en HTTPS via l'ingress. `pnpm ci:checks` vert.
 
@@ -450,7 +450,7 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 - **Goal :** Rendre `find-an-expert` installable et résiliente hors-ligne.
 - **Files (read) :** `apps/find-an-expert/` (SvelteKit, auth/consentement Appwrite).
 - **Files (write) :** config `vite-plugin-pwa`/Workbox (manifest web, service worker, stratégies de cache), store Dexie pour le cache offline.
-- **Invariants à préserver :** auth Appwrite et flux de consentement (`ConsentStatusCard`, `/api/v1/consents`) **inchangés** ; pas de cache offline de données nominatives non consenties ; [ADR 0020](../decisions/0020-svelte-eslint-strict.md) (ESLint Svelte strict).
+- **Invariants à préserver :** flux d'auth Appwrite et dispositif `consent-events` (`ConsentStatusCard`, `/api/v1/consents`) **inchangés** (réinterprétés comme registre d'opposition) ; pas de cache offline de données nominatives de personnes opposées ; [ADR 0020](../decisions/0020-svelte-eslint-strict.md) (ESLint Svelte strict).
 - **Validation :** `pnpm ci:checks` ; build PWA ; service worker enregistré ; installation testée.
 - **Done criteria :** app installable, service worker actif, cache offline Dexie fonctionnel.
 - **PR title :** `feat(find-an-expert): PWA (vite-plugin-pwa + Workbox + Dexie)`
@@ -460,7 +460,7 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 - **Goal :** Consommer `/recommendations`, `/summary` **et `/search`** d'`atlas-api` depuis la PWA, derrière auth.
 - **Files (read) :** OpenAPI d'`atlas-api` (Phase 5), `find-an-expert` (couche data).
 - **Files (write) :** client API typé (généré depuis l'OpenAPI), vues recommandations + résumé + **recherche**, gestion d'erreur (contrat refusé → message clair).
-- **Invariants à préserver :** appels authentifiés uniquement ; affichage borné au périmètre consenti ; pas d'appel non authentifié à `atlas-api`.
+- **Invariants à préserver :** appels authentifiés uniquement ; affichage filtré par les alliances/projets déclarés par l'utilisateur (filtre d'affichage), sur le périmètre servi (hors opposition) ; pas d'appel non authentifié à `atlas-api`.
 - **Validation :** `pnpm ci:checks` ; test e2e/composant : une recommandation + son résumé + une recherche s'affichent pour un utilisateur authentifié de fixture.
 - **Done criteria :** reco + résumés + recherche affichés derrière auth, erreurs gérées.
 - **PR title :** `feat(find-an-expert): consommation d'atlas-api (reco + résumé + recherche)`
