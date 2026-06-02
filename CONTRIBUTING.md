@@ -27,8 +27,14 @@ Signalement d'un comportement inacceptable : ouvrir un [GitHub Private Vulnerabi
 En contribuant à Atlas, tu confirmes que :
 
 1. **Originalité** : la contribution est ton travail original, ou tu as la permission de la soumettre sous les mêmes termes.
-2. **Licence** : tes contributions sont sous licence [MIT](LICENSE), comme le reste du projet.
-3. **Brevets** : si ta contribution implique une invention brevetable, tu accordes une licence de brevet non-exclusive et libre de royalties à tous les utilisateurs d'Atlas (selon la clause de brevet de l'Apache License 2.0, citée ici par clarté).
-4. **Sans garantie** : les contributions sont fournies « telles quelles ».
+2. **Licence** : tes contributions sont sous licence [MIT](LICENSE), comme le reste du projet — tu accordes donc à quiconque le droit de les utiliser, copier, modifier et redistribuer selon ces termes.
+3. **Sans garantie** : les contributions sont fournies « telles quelles » (clause de la licence MIT).
+
+> **Note sur les brevets.** La licence MIT ne comporte **pas** de clause de
+> licence de brevet explicite (contrairement à l'Apache-2.0). En soumettant du
+> code sous MIT, tu en autorises l'usage selon les termes de la licence, mais le
+> projet n'exige aucune cession de brevet formelle. Si la couverture brevet
+> devenait un enjeu (contributeurs détenant des brevets, adoption industrielle),
+> le passage à l'Apache-2.0 serait à reconsidérer — ce choix relèverait d'un ADR.
 
 Tu conserves le copyright sur tes contributions — Atlas ne le revendique pas. Aucun formulaire à remplir : ouvrir une PR vaut acceptation de ces termes (DCO-style via l'identité de l'auteur du commit).
