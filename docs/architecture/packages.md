@@ -97,72 +97,31 @@ Pour la vue d'ensemble par catégorie et les règles transverses, voir
 | [`atlas-crf-sandbox`](../../sandbox/crf-sandbox/README.md)         | CRF (REDCap) testing sandbox - Docker environment and contract tests for validating OpenAPI specs                                                                                                           | [`atlas-shared-config`](../../config/shared-config/README.md) | —            |
 | [`atlas-sillage-sandbox`](../../sandbox/sillage-sandbox/README.md) | Local Docker sandbox for the sillage app: bundles a CRF (REDCap) instance, a self-hosted BaaS (Appwrite), and the wiring scripts needed to run sillage end-to-end without depending on production services. | [`atlas-shared-config`](../../config/shared-config/README.md) | —            |
 
-## Graphe des dépendances internes
+## Graphes de dépendances par livrable
 
-Chaque flèche `A --> B` signifie « A dépend de B » (dépendance interne au
-monorepo, tous champs confondus). Les paquets sont regroupés par catégorie.
+Le graphe complet (toutes les dépendances internes d'un coup) est
+illisible. On le découpe **par livrable** : chaque application ou outil en
+ligne de commande — un paquet que personne d'autre ne consomme — a son
+propre graphe, limité à ses **dépendances transitives**. Une flèche
+`A --> B` signifie « A dépend de B » (tous champs de dépendances confondus).
+Un livrable sans dépendance interne n'a pas de graphe.
+
+### [`atlas-amarre`](../../apps/amarre/README.md)
 
 ```mermaid
-flowchart LR
-  subgraph apps
-    _univ_lehavre_atlas_amarre["atlas-amarre"]
-    _univ_lehavre_atlas_crf_dashboard["atlas-crf-dashboard"]
-    _univ_lehavre_atlas_dashboard["atlas-dashboard"]
-    _univ_lehavre_atlas_ecrin["atlas-ecrin"]
-    _univ_lehavre_atlas_find_an_expert["atlas-find-an-expert"]
-    _univ_lehavre_atlas_sillage["atlas-sillage"]
-  end
-  subgraph services
-    _univ_lehavre_atlas_crf["atlas-crf"]
-  end
-  subgraph packages
-    _univ_lehavre_atlas_auth["atlas-auth"]
-    _univ_lehavre_atlas_baas["atlas-baas"]
-    _univ_lehavre_atlas_citation["atlas-citation"]
-    _univ_lehavre_atlas_citation_fetch["atlas-citation-fetch"]
-    _univ_lehavre_atlas_citation_types["atlas-citation-types"]
-    _univ_lehavre_atlas_citation_validate["atlas-citation-validate"]
-    _univ_lehavre_atlas_cli_toolkit["atlas-cli-toolkit"]
-    _univ_lehavre_atlas_crf_client["atlas-crf-client"]
-    _univ_lehavre_atlas_crf_core["atlas-crf-core"]
-    _univ_lehavre_atlas_crf_fixtures["atlas-crf-fixtures"]
-    _univ_lehavre_atlas_crf_logs["atlas-crf-logs"]
-    _univ_lehavre_atlas_crf_project_template["atlas-crf-project-template"]
-    _univ_lehavre_atlas_errors["atlas-errors"]
-    _univ_lehavre_atlas_fetch_one_api_page["atlas-fetch-one-api-page"]
-    _univ_lehavre_atlas_net["atlas-net"]
-    _univ_lehavre_atlas_researcher_profiles["atlas-researcher-profiles"]
-    _univ_lehavre_atlas_stats["atlas-stats"]
-    _univ_lehavre_atlas_sveltekit_csp["atlas-sveltekit-csp"]
-    _univ_lehavre_atlas_sveltekit_handler["atlas-sveltekit-handler"]
-    _univ_lehavre_atlas_test_utils_sveltekit["atlas-test-utils-sveltekit"]
-    _univ_lehavre_atlas_validators["atlas-validators"]
-  end
-  subgraph cli
-    _univ_lehavre_atlas_biblio_cli["atlas-biblio-cli"]
-    _univ_lehavre_atlas_citation_cli["atlas-citation-cli"]
-    _univ_lehavre_atlas_crf_cli["atlas-crf-cli"]
-    _univ_lehavre_atlas_crf_openapi["atlas-crf-openapi"]
-    _univ_lehavre_atlas_crf_stats_cli["atlas-crf-stats-cli"]
-    _univ_lehavre_atlas_logos_cli["atlas-logos-cli"]
-    _univ_lehavre_atlas_net_cli["atlas-net-cli"]
-    _univ_lehavre_atlas_researcher_profiles_cli["atlas-researcher-profiles-cli"]
-    _univ_lehavre_atlas_stats_cli["atlas-stats-cli"]
-  end
-  subgraph ui
-    _univ_lehavre_atlas_ui["atlas-ui"]
-  end
-  subgraph config
-    _univ_lehavre_atlas_shared_config["atlas-shared-config"]
-  end
-  subgraph assets
-    _univ_lehavre_atlas_logos["atlas-logos"]
-  end
-  subgraph sandbox
-    _univ_lehavre_atlas_amarre_sandbox["atlas-amarre-sandbox"]
-    _univ_lehavre_atlas_crf_sandbox["atlas-crf-sandbox"]
-    _univ_lehavre_atlas_sillage_sandbox["atlas-sillage-sandbox"]
-  end
+flowchart TD
+  _univ_lehavre_atlas_amarre["atlas-amarre"]
+  _univ_lehavre_atlas_auth["atlas-auth"]
+  _univ_lehavre_atlas_baas["atlas-baas"]
+  _univ_lehavre_atlas_errors["atlas-errors"]
+  _univ_lehavre_atlas_logos["atlas-logos"]
+  _univ_lehavre_atlas_logos_cli["atlas-logos-cli"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_sveltekit_csp["atlas-sveltekit-csp"]
+  _univ_lehavre_atlas_sveltekit_handler["atlas-sveltekit-handler"]
+  _univ_lehavre_atlas_test_utils_sveltekit["atlas-test-utils-sveltekit"]
+  _univ_lehavre_atlas_ui["atlas-ui"]
+  _univ_lehavre_atlas_validators["atlas-validators"]
   _univ_lehavre_atlas_amarre --> _univ_lehavre_atlas_auth
   _univ_lehavre_atlas_amarre --> _univ_lehavre_atlas_baas
   _univ_lehavre_atlas_amarre --> _univ_lehavre_atlas_errors
@@ -173,56 +132,76 @@ flowchart LR
   _univ_lehavre_atlas_amarre --> _univ_lehavre_atlas_test_utils_sveltekit
   _univ_lehavre_atlas_amarre --> _univ_lehavre_atlas_ui
   _univ_lehavre_atlas_amarre --> _univ_lehavre_atlas_validators
-  _univ_lehavre_atlas_amarre_sandbox --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_baas
   _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_errors
   _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_validators
   _univ_lehavre_atlas_baas --> _univ_lehavre_atlas_errors
   _univ_lehavre_atlas_baas --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_biblio_cli --> _univ_lehavre_atlas_citation_types
-  _univ_lehavre_atlas_biblio_cli --> _univ_lehavre_atlas_citation_validate
-  _univ_lehavre_atlas_biblio_cli --> _univ_lehavre_atlas_cli_toolkit
-  _univ_lehavre_atlas_biblio_cli --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_citation --> _univ_lehavre_atlas_fetch_one_api_page
-  _univ_lehavre_atlas_citation --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_citation_cli --> _univ_lehavre_atlas_citation
-  _univ_lehavre_atlas_citation_cli --> _univ_lehavre_atlas_cli_toolkit
-  _univ_lehavre_atlas_citation_cli --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_citation_types
-  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_fetch_one_api_page
-  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_citation_types --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_citation_validate --> _univ_lehavre_atlas_citation_fetch
-  _univ_lehavre_atlas_citation_validate --> _univ_lehavre_atlas_citation_types
-  _univ_lehavre_atlas_citation_validate --> _univ_lehavre_atlas_fetch_one_api_page
-  _univ_lehavre_atlas_citation_validate --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_cli_toolkit --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_crf --> _univ_lehavre_atlas_crf_client
-  _univ_lehavre_atlas_crf --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_crf_cli --> _univ_lehavre_atlas_crf
-  _univ_lehavre_atlas_crf_cli --> _univ_lehavre_atlas_crf_client
-  _univ_lehavre_atlas_crf_cli --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_crf_client --> _univ_lehavre_atlas_crf_core
-  _univ_lehavre_atlas_crf_client --> _univ_lehavre_atlas_net
-  _univ_lehavre_atlas_crf_client --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_crf_core --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_errors --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_logos_cli --> _univ_lehavre_atlas_logos
+  _univ_lehavre_atlas_sveltekit_csp --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_test_utils_sveltekit
+  _univ_lehavre_atlas_test_utils_sveltekit --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_ui --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_ui --> _univ_lehavre_atlas_validators
+  _univ_lehavre_atlas_validators --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_validators --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-crf-dashboard`](../../apps/crf-dashboard/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_crf_dashboard["atlas-crf-dashboard"]
+  _univ_lehavre_atlas_crf_logs["atlas-crf-logs"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_sveltekit_csp["atlas-sveltekit-csp"]
   _univ_lehavre_atlas_crf_dashboard --> _univ_lehavre_atlas_crf_logs
   _univ_lehavre_atlas_crf_dashboard --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_crf_dashboard --> _univ_lehavre_atlas_sveltekit_csp
-  _univ_lehavre_atlas_crf_fixtures --> _univ_lehavre_atlas_crf_core
-  _univ_lehavre_atlas_crf_fixtures --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_crf_logs --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_crf_openapi --> _univ_lehavre_atlas_crf_core
-  _univ_lehavre_atlas_crf_openapi --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_crf_project_template --> _univ_lehavre_atlas_crf_core
-  _univ_lehavre_atlas_crf_project_template --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_crf_sandbox --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_crf_stats_cli --> _univ_lehavre_atlas_crf_logs
-  _univ_lehavre_atlas_crf_stats_cli --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_sveltekit_csp --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-dashboard`](../../apps/atlas-dashboard/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_dashboard["atlas-dashboard"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_stats["atlas-stats"]
+  _univ_lehavre_atlas_sveltekit_csp["atlas-sveltekit-csp"]
   _univ_lehavre_atlas_dashboard --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_dashboard --> _univ_lehavre_atlas_stats
   _univ_lehavre_atlas_dashboard --> _univ_lehavre_atlas_sveltekit_csp
+  _univ_lehavre_atlas_stats --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_sveltekit_csp --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-ecrin`](../../apps/ecrin/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_auth["atlas-auth"]
+  _univ_lehavre_atlas_baas["atlas-baas"]
+  _univ_lehavre_atlas_ecrin["atlas-ecrin"]
+  _univ_lehavre_atlas_errors["atlas-errors"]
+  _univ_lehavre_atlas_logos["atlas-logos"]
+  _univ_lehavre_atlas_logos_cli["atlas-logos-cli"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_sveltekit_csp["atlas-sveltekit-csp"]
+  _univ_lehavre_atlas_sveltekit_handler["atlas-sveltekit-handler"]
+  _univ_lehavre_atlas_test_utils_sveltekit["atlas-test-utils-sveltekit"]
+  _univ_lehavre_atlas_validators["atlas-validators"]
+  _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_baas
+  _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_validators
+  _univ_lehavre_atlas_baas --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_baas --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_ecrin --> _univ_lehavre_atlas_auth
   _univ_lehavre_atlas_ecrin --> _univ_lehavre_atlas_baas
   _univ_lehavre_atlas_ecrin --> _univ_lehavre_atlas_errors
@@ -232,6 +211,45 @@ flowchart LR
   _univ_lehavre_atlas_ecrin --> _univ_lehavre_atlas_sveltekit_handler
   _univ_lehavre_atlas_ecrin --> _univ_lehavre_atlas_test_utils_sveltekit
   _univ_lehavre_atlas_ecrin --> _univ_lehavre_atlas_validators
+  _univ_lehavre_atlas_errors --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_logos_cli --> _univ_lehavre_atlas_logos
+  _univ_lehavre_atlas_sveltekit_csp --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_test_utils_sveltekit
+  _univ_lehavre_atlas_test_utils_sveltekit --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_validators --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_validators --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-find-an-expert`](../../apps/find-an-expert/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_auth["atlas-auth"]
+  _univ_lehavre_atlas_baas["atlas-baas"]
+  _univ_lehavre_atlas_citation_fetch["atlas-citation-fetch"]
+  _univ_lehavre_atlas_citation_types["atlas-citation-types"]
+  _univ_lehavre_atlas_errors["atlas-errors"]
+  _univ_lehavre_atlas_fetch_one_api_page["atlas-fetch-one-api-page"]
+  _univ_lehavre_atlas_find_an_expert["atlas-find-an-expert"]
+  _univ_lehavre_atlas_logos["atlas-logos"]
+  _univ_lehavre_atlas_logos_cli["atlas-logos-cli"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_sveltekit_csp["atlas-sveltekit-csp"]
+  _univ_lehavre_atlas_sveltekit_handler["atlas-sveltekit-handler"]
+  _univ_lehavre_atlas_test_utils_sveltekit["atlas-test-utils-sveltekit"]
+  _univ_lehavre_atlas_validators["atlas-validators"]
+  _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_baas
+  _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_validators
+  _univ_lehavre_atlas_baas --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_baas --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_citation_types
+  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_fetch_one_api_page
+  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_citation_types --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_errors --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_fetch_one_api_page --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_find_an_expert --> _univ_lehavre_atlas_auth
@@ -245,9 +263,176 @@ flowchart LR
   _univ_lehavre_atlas_find_an_expert --> _univ_lehavre_atlas_test_utils_sveltekit
   _univ_lehavre_atlas_find_an_expert --> _univ_lehavre_atlas_validators
   _univ_lehavre_atlas_logos_cli --> _univ_lehavre_atlas_logos
+  _univ_lehavre_atlas_sveltekit_csp --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_test_utils_sveltekit
+  _univ_lehavre_atlas_test_utils_sveltekit --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_validators --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_validators --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-sillage`](../../apps/sillage/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_auth["atlas-auth"]
+  _univ_lehavre_atlas_baas["atlas-baas"]
+  _univ_lehavre_atlas_errors["atlas-errors"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_sillage["atlas-sillage"]
+  _univ_lehavre_atlas_sveltekit_csp["atlas-sveltekit-csp"]
+  _univ_lehavre_atlas_ui["atlas-ui"]
+  _univ_lehavre_atlas_validators["atlas-validators"]
+  _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_baas
+  _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_validators
+  _univ_lehavre_atlas_baas --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_baas --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_errors --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_auth
+  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_baas
+  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_sveltekit_csp
+  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_ui
+  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_validators
+  _univ_lehavre_atlas_sveltekit_csp --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_ui --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_ui --> _univ_lehavre_atlas_validators
+  _univ_lehavre_atlas_validators --> _univ_lehavre_atlas_errors
+  _univ_lehavre_atlas_validators --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-biblio-cli`](../../cli/biblio/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_biblio_cli["atlas-biblio-cli"]
+  _univ_lehavre_atlas_citation_fetch["atlas-citation-fetch"]
+  _univ_lehavre_atlas_citation_types["atlas-citation-types"]
+  _univ_lehavre_atlas_citation_validate["atlas-citation-validate"]
+  _univ_lehavre_atlas_cli_toolkit["atlas-cli-toolkit"]
+  _univ_lehavre_atlas_fetch_one_api_page["atlas-fetch-one-api-page"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_biblio_cli --> _univ_lehavre_atlas_citation_types
+  _univ_lehavre_atlas_biblio_cli --> _univ_lehavre_atlas_citation_validate
+  _univ_lehavre_atlas_biblio_cli --> _univ_lehavre_atlas_cli_toolkit
+  _univ_lehavre_atlas_biblio_cli --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_citation_types
+  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_fetch_one_api_page
+  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_citation_types --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_citation_validate --> _univ_lehavre_atlas_citation_fetch
+  _univ_lehavre_atlas_citation_validate --> _univ_lehavre_atlas_citation_types
+  _univ_lehavre_atlas_citation_validate --> _univ_lehavre_atlas_fetch_one_api_page
+  _univ_lehavre_atlas_citation_validate --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_cli_toolkit --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_fetch_one_api_page --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-citation-cli`](../../cli/citation/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_citation["atlas-citation"]
+  _univ_lehavre_atlas_citation_cli["atlas-citation-cli"]
+  _univ_lehavre_atlas_cli_toolkit["atlas-cli-toolkit"]
+  _univ_lehavre_atlas_fetch_one_api_page["atlas-fetch-one-api-page"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_citation --> _univ_lehavre_atlas_fetch_one_api_page
+  _univ_lehavre_atlas_citation --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_citation_cli --> _univ_lehavre_atlas_citation
+  _univ_lehavre_atlas_citation_cli --> _univ_lehavre_atlas_cli_toolkit
+  _univ_lehavre_atlas_citation_cli --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_cli_toolkit --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_fetch_one_api_page --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-crf-cli`](../../cli/crf/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_crf["atlas-crf"]
+  _univ_lehavre_atlas_crf_cli["atlas-crf-cli"]
+  _univ_lehavre_atlas_crf_client["atlas-crf-client"]
+  _univ_lehavre_atlas_crf_core["atlas-crf-core"]
+  _univ_lehavre_atlas_net["atlas-net"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_crf --> _univ_lehavre_atlas_crf_client
+  _univ_lehavre_atlas_crf --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_crf_cli --> _univ_lehavre_atlas_crf
+  _univ_lehavre_atlas_crf_cli --> _univ_lehavre_atlas_crf_client
+  _univ_lehavre_atlas_crf_cli --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_crf_client --> _univ_lehavre_atlas_crf_core
+  _univ_lehavre_atlas_crf_client --> _univ_lehavre_atlas_net
+  _univ_lehavre_atlas_crf_client --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_crf_core --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_net --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-crf-openapi`](../../cli/crf-openapi/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_crf_core["atlas-crf-core"]
+  _univ_lehavre_atlas_crf_openapi["atlas-crf-openapi"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_crf_core --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_crf_openapi --> _univ_lehavre_atlas_crf_core
+  _univ_lehavre_atlas_crf_openapi --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-crf-stats-cli`](../../cli/crf-stats/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_crf_logs["atlas-crf-logs"]
+  _univ_lehavre_atlas_crf_stats_cli["atlas-crf-stats-cli"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_crf_logs --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_crf_stats_cli --> _univ_lehavre_atlas_crf_logs
+  _univ_lehavre_atlas_crf_stats_cli --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-net-cli`](../../cli/net/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_net["atlas-net"]
+  _univ_lehavre_atlas_net_cli["atlas-net-cli"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
   _univ_lehavre_atlas_net --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_net_cli --> _univ_lehavre_atlas_net
   _univ_lehavre_atlas_net_cli --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-researcher-profiles-cli`](../../cli/researcher-profiles/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_citation_fetch["atlas-citation-fetch"]
+  _univ_lehavre_atlas_citation_types["atlas-citation-types"]
+  _univ_lehavre_atlas_cli_toolkit["atlas-cli-toolkit"]
+  _univ_lehavre_atlas_crf_client["atlas-crf-client"]
+  _univ_lehavre_atlas_crf_core["atlas-crf-core"]
+  _univ_lehavre_atlas_fetch_one_api_page["atlas-fetch-one-api-page"]
+  _univ_lehavre_atlas_net["atlas-net"]
+  _univ_lehavre_atlas_researcher_profiles["atlas-researcher-profiles"]
+  _univ_lehavre_atlas_researcher_profiles_cli["atlas-researcher-profiles-cli"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_citation_types
+  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_fetch_one_api_page
+  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_citation_types --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_cli_toolkit --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_crf_client --> _univ_lehavre_atlas_crf_core
+  _univ_lehavre_atlas_crf_client --> _univ_lehavre_atlas_net
+  _univ_lehavre_atlas_crf_client --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_crf_core --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_fetch_one_api_page --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_net --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_researcher_profiles --> _univ_lehavre_atlas_citation_fetch
   _univ_lehavre_atlas_researcher_profiles --> _univ_lehavre_atlas_citation_types
   _univ_lehavre_atlas_researcher_profiles --> _univ_lehavre_atlas_crf_client
@@ -257,26 +442,69 @@ flowchart LR
   _univ_lehavre_atlas_researcher_profiles_cli --> _univ_lehavre_atlas_cli_toolkit
   _univ_lehavre_atlas_researcher_profiles_cli --> _univ_lehavre_atlas_researcher_profiles
   _univ_lehavre_atlas_researcher_profiles_cli --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_auth
-  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_baas
-  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_errors
-  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_sveltekit_csp
-  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_ui
-  _univ_lehavre_atlas_sillage --> _univ_lehavre_atlas_validators
-  _univ_lehavre_atlas_sillage_sandbox --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-stats-cli`](../../cli/atlas-stats/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_stats["atlas-stats"]
+  _univ_lehavre_atlas_stats_cli["atlas-stats-cli"]
   _univ_lehavre_atlas_stats --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_stats_cli --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_stats_cli --> _univ_lehavre_atlas_stats
-  _univ_lehavre_atlas_sveltekit_csp --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_errors
-  _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_test_utils_sveltekit
-  _univ_lehavre_atlas_test_utils_sveltekit --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_ui --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_ui --> _univ_lehavre_atlas_validators
-  _univ_lehavre_atlas_validators --> _univ_lehavre_atlas_errors
-  _univ_lehavre_atlas_validators --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-crf-fixtures`](../../packages/crf-fixtures/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_crf_core["atlas-crf-core"]
+  _univ_lehavre_atlas_crf_fixtures["atlas-crf-fixtures"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_crf_core --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_crf_fixtures --> _univ_lehavre_atlas_crf_core
+  _univ_lehavre_atlas_crf_fixtures --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-crf-project-template`](../../packages/crf-project-template/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_crf_core["atlas-crf-core"]
+  _univ_lehavre_atlas_crf_project_template["atlas-crf-project-template"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_crf_core --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_crf_project_template --> _univ_lehavre_atlas_crf_core
+  _univ_lehavre_atlas_crf_project_template --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-amarre-sandbox`](../../sandbox/amarre-sandbox/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_amarre_sandbox["atlas-amarre-sandbox"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_amarre_sandbox --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-crf-sandbox`](../../sandbox/crf-sandbox/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_crf_sandbox["atlas-crf-sandbox"]
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_crf_sandbox --> _univ_lehavre_atlas_shared_config
+```
+
+### [`atlas-sillage-sandbox`](../../sandbox/sillage-sandbox/README.md)
+
+```mermaid
+flowchart TD
+  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_sillage_sandbox["atlas-sillage-sandbox"]
+  _univ_lehavre_atlas_sillage_sandbox --> _univ_lehavre_atlas_shared_config
 ```
 
 <!-- AUTO-GENERATED:packages-map END -->
