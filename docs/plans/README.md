@@ -16,6 +16,7 @@ Plans d'action pour résorber les findings issus des [audits](../audit/) du dép
 
 ## Index
 
-| Date plan  | Audit de référence                         | Plan                                             | Validation                                                     | Statut     |
-| ---------- | ------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------------- | ---------- |
-| 2026-05-30 | [Audit 2026-05-29](../audit/2026-05-29.md) | [Plan de résorption](./2026-05-30-resorption.md) | [Rapport de validation](./2026-05-30-resorption-validation.md) | À exécuter |
+| Date plan  | Audit de référence                         | Plan                                                      | Validation                                                     | Statut              |
+| ---------- | ------------------------------------------ | --------------------------------------------------------- | -------------------------------------------------------------- | ------------------- |
+| 2026-05-30 | [Audit 2026-05-29](../audit/2026-05-29.md) | [Plan de résorption](./2026-05-30-resorption.md)          | [Rapport de validation](./2026-05-30-resorption-validation.md) | Terminé (16 phases) |
+| 2026-06-01 | Revue de la documentation                  | [Documentation vérifiable](./documentation-verifiable.md) | —                                                              | Terminé             |
