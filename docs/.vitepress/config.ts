@@ -81,6 +81,10 @@ export default withMermaid(
               },
               { text: "Carte des paquets", link: "/architecture/packages" },
               { text: "Flux de données", link: "/architecture/data-flow" },
+              {
+                text: "Ré-dérivabilité (RGPD)",
+                link: "/architecture/re-derivabilite-mart-index",
+              },
               { text: "Choix techniques", link: "/architecture/tech-choices" },
             ],
           },
@@ -252,6 +256,10 @@ export default withMermaid(
               {
                 text: "0031 — Outil générique open-source",
                 link: "/decisions/0031-outil-generique-open-source",
+              },
+              {
+                text: "0032 — KPI : généré vs snapshot",
+                link: "/decisions/0032-kpi-determinisme-vs-snapshot",
               },
             ],
           },
