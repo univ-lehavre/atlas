@@ -188,6 +188,18 @@ describe("adrReferences", () => {
     const md = "créer `docs/decisions/0028-futur.md` plus tard";
     assert.deepEqual(adrReferences(md), []);
   });
+
+  it("ignore une URL absolue vers un autre dépôt", () => {
+    const md =
+      "[ADR cluster](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0004-erasure-coding.md)";
+    assert.deepEqual(adrReferences(md), []);
+  });
+
+  it("capture un lien interne mais pas l'URL absolue dans le même texte", () => {
+    const md =
+      "voir [local](../decisions/0029-x.md) et [distant](https://h/decisions/0099-y.md)";
+    assert.deepEqual(adrReferences(md), ["0029-x"]);
+  });
 });
 
 describe("navLinks", () => {
