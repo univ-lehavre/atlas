@@ -260,6 +260,10 @@ export default withMermaid(
                 text: "0032 — KPI : généré vs snapshot",
                 link: "/decisions/0032-kpi-determinisme-vs-snapshot",
               },
+              {
+                text: "0033 — Contrat d'interface cluster",
+                link: "/decisions/0033-contrat-interface-cluster",
+              },
             ],
           },
         ],
