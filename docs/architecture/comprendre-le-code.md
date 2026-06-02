@@ -60,9 +60,10 @@ session.
 5. Côté app : les `hooks.server.ts` et les routes `src/routes/api/v1/auth/*` d'une
    app comme [`ecrin`](../../apps/ecrin/README.md) montrent l'assemblage.
 
-### Données cliniques (CRF / REDCap)
+### Données structurées de formulaires (CRF / REDCap)
 
-Comment Atlas lit et valide les données structurées des formulaires.
+Comment Atlas lit et valide les données structurées des formulaires (aucune
+donnée de santé ni sensible — voir [ADR 0007](../decisions/0007-redcap-appwrite-plateformes.md)).
 
 1. **[`crf-core`](../../packages/crf-core/README.md)** — le cœur fonctionnel
    (Effect) : types du domaine, validation, et les **brands** (identifiants typés :
