@@ -81,6 +81,10 @@ export default withMermaid(
               },
               { text: "Carte des paquets", link: "/architecture/packages" },
               { text: "Flux de données", link: "/architecture/data-flow" },
+              {
+                text: "Ré-dérivabilité (RGPD)",
+                link: "/architecture/re-derivabilite-mart-index",
+              },
               { text: "Choix techniques", link: "/architecture/tech-choices" },
             ],
           },
