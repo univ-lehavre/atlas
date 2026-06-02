@@ -12,7 +12,7 @@ Atlas s'appuie sur une **pyramide de tests** : on écrit beaucoup de petits test
 | **4. Authentification** | vitest, _self-skipping_                                | Flux complet de _magic link_ contre une instance Appwrite locale | ~secondes             |
 | **5. Smoke end-to-end** | [Playwright](https://playwright.dev/), _self-skipping_ | Parcours utilisateur complet dans un navigateur réel             | ~dizaines de secondes |
 
-> **Trois outils externes apparaissent ici.** [**REDCap**](../glossary.md) est la plateforme de saisie de formulaires de recherche médicale qu'Atlas pilote ; [**Appwrite**](../glossary.md) est le _backend-as-a-service_ qui gère l'authentification et le stockage ; [**Docker**](../glossary.md) est la plateforme de conteneurs qui fait tourner ces deux services en local, à l'identique sur chaque machine. Les définitions complètes sont au [glossaire](../glossary.md).
+> **Trois outils externes apparaissent ici.** [**REDCap**](../glossary.md) est la plateforme généraliste de saisie de formulaires structurés qu'Atlas pilote ; [**Appwrite**](../glossary.md) est le _backend-as-a-service_ qui gère l'authentification et le stockage ; [**Docker**](../glossary.md) est la plateforme de conteneurs qui fait tourner ces deux services en local, à l'identique sur chaque machine. Les définitions complètes sont au [glossaire](../glossary.md).
 
 Les niveaux 3, 4 et 5 sont dits _self-skipping_ : ils se désactivent automatiquement quand l'environnement requis (REDCap local, Appwrite local, navigateur Playwright) n'est pas démarré. Cela permet à un contributeur sans Docker installé de lancer `pnpm test` sans erreur — les tests adaptés s'exécutent, les autres sont skippés avec un message clair.
 

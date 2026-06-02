@@ -37,7 +37,7 @@ Appwrite est open-source et conforme SOC-2, RGPD et HIPAA.
 
 ## Capture de données structurées
 
-**[REDCap](https://project-redcap.org/)** (Research Electronic Data Capture) pour les formulaires structurés portés par les applications. REDCap est une plateforme open-source de capture de données via formulaires en ligne, développée par Vanderbilt University.
+**[REDCap](https://project-redcap.org/)** (Research Electronic Data Capture) pour les formulaires structurés portés par les applications. REDCap est une plateforme open-source **généraliste** de capture de données via formulaires en ligne, développée par Vanderbilt University ; née dans la recherche, elle est aujourd'hui utilisée pour tout type de collecte structurée (enquêtes, suivis, administration).
 
 | Métrique                 | Valeur                                 |
 | ------------------------ | -------------------------------------- |
@@ -47,7 +47,7 @@ Appwrite est open-source et conforme SOC-2, RGPD et HIPAA.
 | Conformité               | RGPD, HIPAA, 21 CFR Part 11            |
 | Coût                     | Gratuit pour les membres du consortium |
 
-Dans Atlas, REDCap porte exclusivement des formulaires administratifs (conventions, profils, propositions de projet) ; aucune donnée clinique au sens médical.
+Les certifications de conformité ci-dessus (dont HIPAA, 21 CFR Part 11) attestent du niveau de sécurité de la plateforme ; elles n'impliquent **pas** qu'Atlas y traite des données de santé. Dans Atlas, REDCap porte exclusivement des formulaires structurés administratifs (conventions, profils, propositions de projet) : **aucune donnée de santé ni donnée sensible** n'y est saisie.
 
 ## Tests
 
