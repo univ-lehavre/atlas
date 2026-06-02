@@ -53,6 +53,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0030 | [Profilage de collaborations : gate RGPD, base légale et droit d'opposition](0030-rgpd-profilage-collaborations.md)                | Accepted |
 | 0031 | [Outil générique open-source : contribution inter-établissements](0031-outil-generique-open-source.md)                             | Accepted |
 | 0032 | [KPI documentés : généré déterministe (diff-checké) vs snapshot (append-only)](0032-kpi-determinisme-vs-snapshot.md)               | Accepted |
+| 0033 | [Contrat d'interface entre l'application (`atlas`) et le cluster](0033-contrat-interface-cluster.md)                               | Accepted |
 
 ## Quand ouvrir un ADR
 
