@@ -256,6 +256,10 @@ export default withMermaid(
                 text: "0031 — Outil générique open-source",
                 link: "/decisions/0031-outil-generique-open-source",
               },
+              {
+                text: "0032 — KPI : généré vs snapshot",
+                link: "/decisions/0032-kpi-determinisme-vs-snapshot",
+              },
             ],
           },
         ],
