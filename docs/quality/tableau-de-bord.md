@@ -11,14 +11,22 @@ Cette page rassemble des **indicateurs de robustesse** du dépôt et leur
 Les chiffres ci-dessous sont **générés** à partir du dépôt
 (`pnpm stats:generate`), jamais saisis à la main.
 
-> Cette page est une **première version** : la vue d'ensemble et les
-> dynamiques du dépôt sont branchées ; les courbes d'évolution de la
-> couverture, des vulnérabilités et de la dette arrivent dans les
-> incréments suivants.
+> Les **courbes d'évolution mensuelle** (pull requests, lignes de code,
+> activité, robustesse statique) — dérivées de l'historique Git et vérifiées
+> à jour en CI — sont sur la page [Évolution du dépôt](./evolution-git.md).
+> Les courbes de **couverture exécutée**, de vulnérabilités et de dette
+> (mesures de l'état présent) arrivent dans les incréments suivants.
 
 ## Dynamique du dépôt
 
 <RepoDynamics />
+
+## Évolution dans le temps
+
+L'[**évolution mensuelle du dépôt**](./evolution-git.md) — _pull requests_,
+volume de code, commits et contributeurs, et **robustesse statique** (ratios
+tests/source et densité de documentation) — est retracée sur une page dédiée,
+entièrement **dérivée de l'historique Git** et donc reproductible.
 
 ## Pour aller plus loin
 
