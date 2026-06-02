@@ -40,7 +40,8 @@ flowchart LR
 ## Le parcours d'une donnée à travers les paquets
 
 La vue ci-dessus est macro (plateformes). Pour l'expert, voici le chemin **à
-travers le code** d'une donnée clinique, de la source à l'application :
+travers le code** d'une donnée structurée de formulaire, de la source à
+l'application :
 
 ```mermaid
 flowchart LR
