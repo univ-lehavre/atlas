@@ -1,0 +1,28 @@
+---
+import { getCollection, render } from "astro:content";
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+
+// Génère une page de documentation par README de paquet, lu EN PLACE depuis le
+// monorepo (collection packageReadmes, ADR 0036). Aucune copie : la source
+// unique reste le README près du code.
+export async function getStaticPaths() {
+  const readmes = await getCollection("packageReadmes");
+  return readmes.map((entry) => {
+    // Le glob slugifie l'id en "cli/crf/readme" → on retire le segment final
+    // "readme" pour une URL propre "/packages/cli/crf".
+    const slug = entry.id.replace(/\/readme$/i, "");
+    return { params: { slug }, props: { entry, slug } };
+  });
+}
+
+const { entry, slug } = Astro.props;
+const { Content } = await render(entry);
+
+// Titre dérivé du premier H1 du README (ils n'ont pas de frontmatter).
+const h1 = entry.body?.match(/^#\s+(.+)$/m);
+const title = h1 ? h1[1] : slug;
+---
+
+<StarlightPage frontmatter={{ title }}>
+  <Content />
+</StarlightPage>
