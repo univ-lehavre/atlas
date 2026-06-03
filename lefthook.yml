@@ -136,9 +136,9 @@ pre-push:
       priority: 4
 
     docs-generate:
-      # La carte des paquets (docs/architecture/packages.md) est dérivée
-      # des package.json ; un changement de manifeste ou de README peut la
-      # périmer. On ne paie le coût que si l'un d'eux a bougé.
+      # La carte des paquets (docs/src/content/docs/architecture/packages.md)
+      # est dérivée des package.json ; un changement de manifeste ou de README
+      # peut la périmer. On ne paie le coût que si l'un d'eux a bougé.
       glob: "{**/package.json,*/*/README.md}"
       run: pnpm docs:generate:check
       priority: 4
@@ -146,8 +146,8 @@ pre-push:
     audit-docs:
       # Audite la doc rédigée (README, pages docs, ADR) : présence,
       # liens internes, ADR référencés, pages orphelines. Déclenché quand
-      # un README, une page docs ou la nav VitePress change.
-      glob: "{**/README.md,docs/**/*.md,docs/.vitepress/config.ts}"
+      # un README, une page docs (.md/.mdx) ou la nav Astro change.
+      glob: "{**/README.md,docs/src/content/docs/**/*.{md,mdx},docs/astro.config.mjs}"
       run: pnpm audit:docs
       priority: 4
 
