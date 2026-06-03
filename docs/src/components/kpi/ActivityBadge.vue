@@ -42,6 +42,6 @@ const available = computed(() => stats.repository.totalCommits > 0);
 
 .kpi-inline-item {
   font-size: 0.9rem;
-  color: var(--vp-c-text-2);
+  color: var(--sl-color-gray-3);
 }
 </style>

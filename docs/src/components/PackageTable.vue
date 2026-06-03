@@ -33,25 +33,25 @@ defineProps<{
 }>();
 
 const formatRelativeDate = (dateString: string | null) => {
-  if (!dateString) return '-';
+  if (!dateString) return "-";
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) return "Aujourd'hui";
-  if (diffDays === 1) return 'Hier';
+  if (diffDays === 1) return "Hier";
   if (diffDays < 7) return `Il y a ${diffDays} jours`;
   if (diffDays < 30) {
     const weeks = Math.floor(diffDays / 7);
-    return `Il y a ${weeks} semaine${weeks > 1 ? 's' : ''}`;
+    return `Il y a ${weeks} semaine${weeks > 1 ? "s" : ""}`;
   }
   if (diffDays < 365) {
     const months = Math.floor(diffDays / 30);
     return `Il y a ${months} mois`;
   }
   const years = Math.floor(diffDays / 365);
-  return `Il y a ${years} an${years > 1 ? 's' : ''}`;
+  return `Il y a ${years} an${years > 1 ? "s" : ""}`;
 };
 </script>
 
@@ -95,8 +95,12 @@ const formatRelativeDate = (dateString: string | null) => {
       <tbody>
         <tr v-for="pkg in packages" :key="pkg.name">
           <td class="package-name">
-            <a :href="`https://github.com/univ-lehavre/atlas/tree/main/${pkg.path}`" target="_blank" rel="noopener">
-              <code>{{ pkg.name.replace('@univ-lehavre/atlas-', '') }}</code>
+            <a
+              :href="`https://github.com/univ-lehavre/atlas/tree/main/${pkg.path}`"
+              target="_blank"
+              rel="noopener"
+            >
+              <code>{{ pkg.name.replace("@univ-lehavre/atlas-", "") }}</code>
             </a>
           </td>
           <td class="version">
@@ -107,12 +111,18 @@ const formatRelativeDate = (dateString: string | null) => {
           <td class="numeric hide-below-xxl">{{ pkg.prCount }}</td>
           <td class="numeric hide-below-xxl">{{ pkg.commitCount }}</td>
           <td class="numeric hide-below-xxl">{{ pkg.code.files }}</td>
-          <td class="numeric hide-below-xxl">{{ pkg.linesAdded + pkg.linesDeleted }}</td>
-          <td class="numeric hide-below-xxl">{{ pkg.code.types + pkg.code.interfaces }}</td>
+          <td class="numeric hide-below-xxl">
+            {{ pkg.linesAdded + pkg.linesDeleted }}
+          </td>
+          <td class="numeric hide-below-xxl">
+            {{ pkg.code.types + pkg.code.interfaces }}
+          </td>
           <td class="numeric hide-below-xxl">{{ pkg.code.functions }}</td>
           <td class="numeric hide-below-xxl">{{ pkg.code.tsdocComments }}</td>
           <td class="numeric hide-below-xxl">{{ pkg.tests.tests }}</td>
-          <td class="numeric date hide-below-xxl">{{ formatRelativeDate(pkg.latestCommit) }}</td>
+          <td class="numeric date hide-below-xxl">
+            {{ formatRelativeDate(pkg.latestCommit) }}
+          </td>
         </tr>
       </tbody>
     </table>
@@ -135,11 +145,11 @@ const formatRelativeDate = (dateString: string | null) => {
 .package-table td {
   padding: 0.75rem 1rem;
   text-align: left;
-  border-bottom: 1px solid var(--vp-c-divider);
+  border-bottom: 1px solid var(--sl-color-gray-5);
 }
 
 .package-table th {
-  background-color: var(--vp-c-bg-soft);
+  background-color: var(--sl-color-gray-6);
   font-weight: 600;
   white-space: nowrap;
   text-align: center;
@@ -168,25 +178,25 @@ const formatRelativeDate = (dateString: string | null) => {
 .package-name code {
   font-size: 0.85rem;
   padding: 0.15rem 0.4rem;
-  background-color: var(--vp-c-bg-soft);
+  background-color: var(--sl-color-gray-6);
   border-radius: 4px;
 }
 
 .version code {
   font-size: 0.8rem;
   padding: 0.1rem 0.35rem;
-  background-color: var(--vp-c-brand-soft);
-  color: var(--vp-c-brand-1);
+  background-color: var(--sl-color-accent-low);
+  color: var(--sl-color-text-accent);
   border-radius: 4px;
 }
 
 .date {
   white-space: nowrap;
-  color: var(--vp-c-text-2);
+  color: var(--sl-color-gray-3);
 }
 
 .package-table tbody tr:hover {
-  background-color: var(--vp-c-bg-soft);
+  background-color: var(--sl-color-gray-6);
 }
 
 /* Hide detailed columns on screens smaller than md (768px) */

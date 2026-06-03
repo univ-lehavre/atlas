@@ -16,8 +16,16 @@ export default defineConfig({
     vue(),
     starlight({
       title: "Atlas",
-      defaultLocale: "fr",
-      locales: { fr: { label: "Français", lang: "fr-FR" } },
+      // Site MONOLINGUE en français : le locale `root` n'ajoute aucun préfixe
+      // d'URL et lit les pages à plat dans src/content/docs/. NE PAS utiliser
+      // `defaultLocale` + `locales: { fr: … }` : Starlight traiterait alors `fr`
+      // comme un locale NON-racine, attendrait les pages sous src/content/docs/fr/
+      // et servirait les routes sous /fr/ — ce qui fait 404 toutes les pages
+      // existantes en dev (le build, lui, masque le défaut). Cf. guide i18n
+      // Starlight : « single language site » = un locale `root`.
+      locales: {
+        root: { label: "Français", lang: "fr" },
+      },
       social: [
         {
           icon: "github",

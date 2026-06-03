@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { data as repoStats } from '../data/repo-stats';
-import PackageTable from './PackageTable.vue';
+import { computed } from "vue";
+import { data as repoStats } from "../data/repo-stats";
+import PackageTable from "./PackageTable.vue";
 
 const formatDate = (dateString: string | null) => {
-  if (!dateString) return '-';
+  if (!dateString) return "-";
   const date = new Date(dateString);
-  return date.toLocaleDateString('fr-FR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  return date.toLocaleDateString("fr-FR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 };
 
 const generatedAt = computed(() => {
-  if (!repoStats.generatedAt) return '';
+  if (!repoStats.generatedAt) return "";
   const date = new Date(repoStats.generatedAt);
-  return date.toLocaleDateString('fr-FR', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+  return date.toLocaleDateString("fr-FR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 });
 </script>
@@ -30,16 +30,20 @@ const generatedAt = computed(() => {
   <div class="repo-dynamics">
     <!-- Package table -->
     <div class="section">
-      <h2>État des packages <span class="badge">{{ repoStats.packages.length }}</span></h2>
+      <h2>
+        État des packages
+        <span class="badge">{{ repoStats.packages.length }}</span>
+      </h2>
       <PackageTable :packages="repoStats.packages" />
     </div>
 
     <!-- Footer -->
     <div class="footer">
       <p>
-        Premier commit : <strong>{{ formatDate(repoStats.repository.firstCommit) }}</strong>
-        ·
-        Dernier commit : <strong>{{ formatDate(repoStats.repository.lastCommit) }}</strong>
+        Premier commit :
+        <strong>{{ formatDate(repoStats.repository.firstCommit) }}</strong> ·
+        Dernier commit :
+        <strong>{{ formatDate(repoStats.repository.lastCommit) }}</strong>
       </p>
       <p class="generated-at" v-if="generatedAt">
         Statistiques générées le {{ generatedAt }}
@@ -71,9 +75,9 @@ const generatedAt = computed(() => {
 .footer {
   margin-top: 2rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--vp-c-divider);
+  border-top: 1px solid var(--sl-color-gray-5);
   font-size: 0.9rem;
-  color: var(--vp-c-text-2);
+  color: var(--sl-color-gray-3);
 }
 
 .footer p {
@@ -90,8 +94,8 @@ const generatedAt = computed(() => {
   padding: 0.15rem 0.5rem;
   font-size: 0.8rem;
   font-weight: 600;
-  background-color: var(--vp-c-brand-soft);
-  color: var(--vp-c-brand-1);
+  background-color: var(--sl-color-accent-low);
+  color: var(--sl-color-text-accent);
   border-radius: 10px;
   margin-left: 0.5rem;
   vertical-align: middle;
