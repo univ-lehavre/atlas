@@ -1,6 +1,6 @@
 {
   "name": "atlas",
-  "description": "REDCap API monorepo",
+  "description": "Generalist monorepo bundling several software projects under a shared quality pipeline",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
   "repository": {

@@ -270,6 +270,10 @@ export default withMermaid(
                 text: "0034 — CI adaptative par chemin",
                 link: "/decisions/0034-ci-adaptative-par-chemin",
               },
+              {
+                text: "0035 — Dépôt généraliste ouvert",
+                link: "/decisions/0035-depot-generaliste-ouvert",
+              },
             ],
           },
         ],
