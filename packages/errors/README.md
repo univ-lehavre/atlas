@@ -76,7 +76,7 @@ pnpm -F @univ-lehavre/atlas-errors lint     # ESLint
 
 ## Documentation
 
-- [API Documentation](../../docs/api/@univ-lehavre/atlas-errors/)
+- [API Documentation](/atlas/api/univ-lehavre/atlas-errors/)
 
 ## Organization
 

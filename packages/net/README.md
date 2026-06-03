@@ -125,7 +125,7 @@ import {
 
 ## Documentation
 
-- [API Documentation](../../docs/api/@univ-lehavre/atlas-net/)
+- [API Documentation](/atlas/api/univ-lehavre/atlas-net/)
 
 ## Organization
 

@@ -26,7 +26,7 @@ import {
   internalDepsOf,
 } from "../audit/lib/workspace-index.mjs";
 
-const OUTPUT = "docs-astro/src/content/docs/architecture/packages.md";
+const OUTPUT = "docs/src/content/docs/architecture/packages.md";
 const START = "<!-- AUTO-GENERATED:packages-map START -->";
 const END = "<!-- AUTO-GENERATED:packages-map END -->";
 

@@ -1,6 +1,6 @@
 packages:
   - apps/*
-  - docs-astro
+  - docs
   - assets/*
   - cli/*
   - config/*

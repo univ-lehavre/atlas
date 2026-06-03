@@ -103,7 +103,7 @@ pnpm -F @univ-lehavre/atlas-baas lint     # ESLint
 
 ## Documentation
 
-- [API Documentation](../../docs/api/@univ-lehavre/atlas-baas/)
+- [API Documentation](/atlas/api/univ-lehavre/atlas-baas/)
 
 ## Organization
 

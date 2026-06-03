@@ -42,11 +42,12 @@
     "docs:generate": "node scripts/docs/generate-packages-map.mjs",
     "docs:generate:check": "node scripts/docs/generate-packages-map.mjs --check",
     "stats:generate": "tsx scripts/docs/generate-repo-stats.ts",
-    "docs:api": "typedoc && node scripts/docs/api-index-banner.mjs && tsx scripts/docs/generate-api-sidebar.ts",
+    "docs:api": "typedoc && node scripts/docs/api-index-banner.mjs",
     "docs:api:check": "node scripts/docs/check-api-entrypoints.mjs",
-    "docs:dev": "pnpm stats:generate && pnpm docs:api && vitepress dev docs",
-    "docs:build": "pnpm stats:generate && pnpm docs:api && vitepress build docs",
-    "docs:preview": "vitepress preview docs",
+    "docs:prepare": "pnpm stats:generate && pnpm docs:generate && pnpm docs:api",
+    "docs:dev": "pnpm docs:prepare && pnpm --filter @univ-lehavre/atlas-docs docs:dev",
+    "docs:build": "pnpm docs:prepare && pnpm --filter @univ-lehavre/atlas-docs docs:build",
+    "docs:preview": "pnpm --filter @univ-lehavre/atlas-docs docs:preview",
     "changeset:add": "changeset",
     "changeset:version": "changeset version && pnpm exec prettier --write '**/CHANGELOG.md'",
     "changeset:publish": "turbo build --filter='!./apps/**' && changeset publish",
@@ -55,7 +56,7 @@
     "crf:dictionaries:export": "tsx scripts/crf-trame/export-data-dictionaries.ts",
     "crf:fixtures:generate": "tsx scripts/crf-trame/generate-test-fixtures.ts",
     "others": "git -C . ls-files --others | grep -v -e 'node_modules' -e '.svelte-kit' ",
-    "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/.vitepress/cache' 'docs/api' '**/upstream/versions' '**/.DS_Store' 'docs/.vitepress/data/repo-stats.json' 'docs/.vitepress/dist' 'docs/.vitepress/.temp' 'docs/.vitepress/vite-ssg-*.json'",
+    "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/api' 'docs/.astro' 'docs/src/data/repo-stats.json' '**/upstream/versions' '**/.DS_Store'",
     "prepare": "lefthook install"
   },
   "size-limit": [
@@ -298,7 +299,7 @@
       "services/crf"
     ],
     "entryPointStrategy": "packages",
-    "out": "docs/api",
+    "out": "docs/.generated/api",
     "plugin": [
       "typedoc-plugin-markdown"
     ],
@@ -320,18 +321,13 @@
     "@size-limit/file": "^12.1.0",
     "@univ-lehavre/atlas-crf-client": "workspace:*",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "effect": "^3.21.2",
     "@vitest/coverage-v8": "^4.1.8",
-    "chart.js": "^4.5.1",
-    "cytoscape": "^3.33.4",
-    "cytoscape-cose-bilkent": "^4.1.0",
-    "dayjs": "^1.11.21",
     "debug": "^4.4.3",
+    "effect": "^3.21.2",
     "eslint": "^10.4.1",
     "jscpd": "^4.0.9",
     "knip": "^6.15.0",
     "lefthook": "^2.1.9",
-    "mermaid": "^11.15.0",
     "prettier": "^3.8.3",
     "prettier-plugin-svelte": "^3.5.2",
     "simple-git": "^3.36.0",
@@ -341,11 +337,7 @@
     "turbo": "^2.9.16",
     "typedoc": "^0.28.19",
     "typedoc-plugin-markdown": "^4.11.0",
-    "vitepress": "^1.6.4",
-    "vitepress-openapi": "^0.2.0",
-    "vitepress-plugin-mermaid": "^2.0.17",
-    "vitest": "^4.1.8",
-    "vue-chartjs": "^5.3.3"
+    "vitest": "^4.1.8"
   },
   "packageManager": "pnpm@10.33.2"
 }

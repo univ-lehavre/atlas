@@ -148,7 +148,7 @@ export const adrReferences = (markdown) =>
   ].map((m) => m[1]);
 
 /** Racine du contenu de documentation (Starlight). */
-const DOCS_ROOT = path.join("docs-astro", "src", "content", "docs");
+const DOCS_ROOT = path.join("docs", "src", "content", "docs");
 
 /**
  * Toutes les pages de contenu (`.md`/`.mdx`) de la documentation Starlight.
@@ -325,7 +325,7 @@ export const auditDocumentation = (cwd = ".") => {
   }
 
   // B9 — pages docs non orphelines (joignables depuis la nav Starlight)
-  const configPath = path.join(cwd, "docs-astro", "astro.config.mjs");
+  const configPath = path.join(cwd, "docs", "astro.config.mjs");
   const configSource = readText(configPath);
   if (configSource !== null) {
     const nav = navLinks(configSource);

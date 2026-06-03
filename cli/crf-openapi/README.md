@@ -82,7 +82,7 @@ pnpm -F @univ-lehavre/atlas-crf-openapi lint     # ESLint
 
 ## Documentation
 
-- [API Documentation](../../docs/api/@univ-lehavre/atlas-crf-openapi/)
+- [API Documentation](/atlas/api/univ-lehavre/atlas-crf-openapi/)
 
 ## Organization
 

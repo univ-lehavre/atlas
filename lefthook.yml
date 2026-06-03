@@ -44,8 +44,13 @@ pre-commit:
     format:
       # Run prettier only on the files actually staged, not the whole
       # monorepo. Skips when nothing in {staged_files} matches the glob.
+      # On filtre les chemins encore présents sur le disque : un commit qui
+      # supprime ou renomme des fichiers passe leurs anciens chemins dans
+      # {staged_files}, et `prettier --check` échoue sur un chemin absent.
       glob: "*.{js,jsx,ts,tsx,svelte,md,mdx,json,yml,yaml,css,scss,html}"
-      run: pnpm exec prettier --check {staged_files}
+      run: |
+        existing=$(for f in {staged_files}; do [ -f "$f" ] && printf '%s ' "$f"; done)
+        [ -z "$existing" ] || pnpm exec prettier --check $existing
 
     lint:
       # ESLint flat configs live per-package (apps/*/eslint.config.js etc.).

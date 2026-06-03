@@ -62,7 +62,7 @@ pnpm -F @univ-lehavre/atlas-crf test:integration # Integration tests
 
 ## Documentation
 
-- [Données structurées de formulaires (CRF) : flux et contrats](../../docs/architecture/data-flow.md)
+- [Données structurées de formulaires (CRF) : flux et contrats](/atlas/architecture/data-flow)
 - Documentation interactive du service: `GET /docs`
 - Spécification OpenAPI du service: `GET /openapi.json`
 

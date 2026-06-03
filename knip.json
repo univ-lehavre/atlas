@@ -3,11 +3,11 @@
   "workspaces": {
     ".": {
       "project": ["*.{js,ts}"],
-      "ignoreDependencies": [
-        "eslint",
-        "prettier-plugin-svelte",
-        "@braintree/sanitize-url"
-      ]
+      "ignoreDependencies": ["eslint", "prettier-plugin-svelte"]
+    },
+    "docs": {
+      "ignore": ["src/components/kpi/kpi-card.css"],
+      "ignoreDependencies": ["astro-mermaid"]
     },
     "packages/net": {
       "project": ["src/**/*.ts"]
@@ -125,16 +125,8 @@
   },
   "ignoreDependencies": [
     "@univ-lehavre/atlas-shared-config",
-    "vitepress-openapi",
     "@modyfi/vite-plugin-yaml",
     "simple-git",
-    "chart.js",
-    "vue-chartjs",
-    "mermaid",
-    "vitepress-plugin-mermaid",
-    "dayjs",
-    "debug",
-    "cytoscape",
-    "cytoscape-cose-bilkent"
+    "debug"
   ]
 }
