@@ -275,6 +275,10 @@ export default withMermaid(
                 text: "0035 — Dépôt généraliste ouvert",
                 link: "/decisions/0035-depot-generaliste-ouvert",
               },
+              {
+                text: "0036 — Migration VitePress → Astro",
+                link: "/decisions/0036-migration-vitepress-astro-starlight",
+              },
             ],
           },
         ],
