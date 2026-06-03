@@ -42,7 +42,23 @@ const PACKAGE_LICENSE_EXCEPTION_PREFIXES = [
   // publié — c'est une dépendance transitive de dev jamais embarquée.
   // Phase 13.3.
   "@sentry/cli",
+  // @img/sharp-libvips-* : binaires natifs de libvips (LGPL-3.0-or-later)
+  // embarqués par `sharp`, l'optimiseur d'images de la chaîne de build Astro
+  // (ADR 0036). Ce sont des dépendances **build-only** de la documentation,
+  // jamais distribuées dans un paquet npm publié. La LGPL n'impose pas
+  // l'ouverture de notre code (usage d'une bibliothèque, sans modification).
+  "@img/sharp-libvips",
 ];
+
+// Paquets dont le `package.json` ne déclare PAS de licence (`UNKNOWN` pour
+// l'audit) mais dont la licence réelle est connue et permissive, vérifiée
+// dans leur fichier LICENSE distribué.
+const PACKAGE_LICENSE_KNOWN_UNDECLARED = new Set([
+  // khroma : utilitaire de couleurs tiré par mermaid (diagrammes de la doc,
+  // ADR 0036). Son package.json omet le champ `license`, mais son fichier
+  // `license` indique « MIT © Fabio Spampinato ». Dépendance build-only.
+  "khroma",
+]);
 
 function extractLicenseTokens(value) {
   if (typeof value !== "string" || value.trim() === "") return [];
@@ -65,6 +81,13 @@ function isAllowedLicense(value, packageName) {
     )
   )
     return true;
+
+  // Paquets sans licence déclarée mais dont la licence réelle (fichier LICENSE)
+  // est connue et permissive. Le nom peut porter une version (`khroma@2.1.0`).
+  if (value === "UNKNOWN") {
+    const bareName = packageName.replace(/@[^@]+$/, "");
+    if (PACKAGE_LICENSE_KNOWN_UNDECLARED.has(bareName)) return true;
+  }
 
   if (
     value === "UNKNOWN" &&
