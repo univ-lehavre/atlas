@@ -4,6 +4,10 @@ Un **monorepo** est un seul dépôt Git qui héberge plusieurs projets logiciels
 
 Atlas organise ses projets en **huit catégories**. Chaque catégorie a une responsabilité précise et des **règles propres** : framework imposé, dépendances autorisées ou interdites, présence ou absence d'un point d'entrée exécutable, etc. Le placement d'un sous-projet dans une catégorie indique d'emblée son rôle, et les règles sont vérifiées automatiquement par `pnpm audit:structure`.
 
+<PackagesBadge />
+
+<ActivityBadge />
+
 ## Vue d'ensemble
 
 | Catégorie                                                               | Contenu                                                      | Convention de nommage                                 | Publié sur npm ?      |

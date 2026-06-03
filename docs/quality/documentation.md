@@ -6,6 +6,8 @@ organiser** les différents niveaux de détail, et **quel ton** adopter.
 Chaque réponse est tracée par une _décision d'architecture_ (ADR) ; cette
 page consolide la politique et renvoie aux ADR pour le _pourquoi_.
 
+<DocBadge />
+
 > Une ADR (_Architecture Decision Record_) note **pourquoi** un choix a
 > été fait, son contexte et l'alternative écartée. Cette page note
 > **comment** appliquer ces choix au quotidien.

@@ -2,6 +2,8 @@
 
 Atlas s'appuie sur une **pyramide de tests** : on écrit beaucoup de petits tests rapides à la base, et peu de gros tests lents au sommet. Cette répartition garantit qu'on peut faire confiance au code sans payer un temps d'exécution énorme à chaque modification.
 
+<CoverageBadge />
+
 ## La pyramide à cinq niveaux
 
 | Niveau                  | Outil                                                  | Quoi                                                             | Coût d'exécution      |
