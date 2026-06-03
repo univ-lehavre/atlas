@@ -8,7 +8,7 @@ Le dépôt produit des alertes de sécurité automatisées : CodeQL (SAST),
 Semgrep, Dependabot, gitleaks, audit licences. Leur **triage** (confirmer,
 dismisser avec justification, ouvrir un fix) demande une responsabilité
 nommée — sinon les alertes s'accumulent sans propriétaire et la
-[politique de SLA de remédiation](0018-sla-remediation-findings) n'a
+[politique de SLA de remédiation](/atlas/decisions/0018-sla-remediation-findings/) n'a
 personne pour la tenir.
 
 Jusqu'ici, ce rôle de **security champion** vivait comme un item « à
@@ -30,7 +30,7 @@ responsabilités, pas de redondance).
 
 - **Compétence** : capacité à lire une alerte CodeQL/Semgrep et à juger
   vrai positif / faux positif avec justification écrite.
-- **Disponibilité** : peut tenir le SLA de [ADR 0018](0018-sla-remediation-findings)
+- **Disponibilité** : peut tenir le SLA de [ADR 0018](/atlas/decisions/0018-sla-remediation-findings/)
   (triage sous le délai défini par sévérité).
 - **Indépendance** : idéalement **distinct** du mainteneur qui écrit le
   plus de code, pour une vraie séparation des responsabilités.
@@ -58,9 +58,9 @@ unique reste un point faible.
 **Garde-fous.**
 
 - L'arrivée d'un second contributeur durable (cf. Phase 5.2 du tableau
-  sine die de [ADR 0001](0001-devsecops-perimetre-repo-sine-die))
+  sine die de [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/))
   rouvre cette décision pour attribuer le rôle.
-- Le SLA de [ADR 0018](0018-sla-remediation-findings) reste la
+- Le SLA de [ADR 0018](/atlas/decisions/0018-sla-remediation-findings/) reste la
   référence opérationnelle pour le triage, quel que soit le titulaire.
 - L'audit semestriel vérifie que le triage est effectivement tenu, même
   par un mainteneur unique.

@@ -6,10 +6,10 @@ title: "0035 — Dépôt généraliste ouvert : neutralité de domaine pour la c
 
 Atlas est un **dépôt de code ouvert** (public, licence MIT) dont la vocation est
 d'**attirer le plus grand nombre de contributeurs**. Plusieurs ADR servent déjà
-cette vocation par fragments : [0012](0012-neutralisation-framing-institutionnel)
-neutralise le framing institutionnel, [0013](0013-documentation-public-non-expert-fr)
-vise un public non-expert, [0022](0022-naming-convention) bannit les marques
-des identifiants, [0031](0031-outil-generique-open-source) acte l'outil
+cette vocation par fragments : [0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/)
+neutralise le framing institutionnel, [0013](/atlas/decisions/0013-documentation-public-non-expert-fr/)
+vise un public non-expert, [0022](/atlas/decisions/0022-naming-convention/) bannit les marques
+des identifiants, [0031](/atlas/decisions/0031-outil-generique-open-source/) acte l'outil
 générique et multi-tenant.
 
 Il manquait la **règle-chapeau** qui les fédère et s'applique à _tout_ ce qui est
@@ -33,9 +33,9 @@ décourageant les contributeurs d'autres domaines.
 > qu'un contributeur de n'importe quel horizon puisse le reprendre.** La visée
 > généraliste prime : on n'ancre jamais le dépôt dans un cas d'usage unique.
 
-Cette règle **chapeaute** [0012](0012-neutralisation-framing-institutionnel),
-[0013](0013-documentation-public-non-expert-fr),
-[0022](0022-naming-convention) et [0031](0031-outil-generique-open-source) :
+Cette règle **chapeaute** [0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/),
+[0013](/atlas/decisions/0013-documentation-public-non-expert-fr/),
+[0022](/atlas/decisions/0022-naming-convention/) et [0031](/atlas/decisions/0031-outil-generique-open-source/) :
 elle en est le principe directeur, eux en sont les applications spécifiques.
 
 ### Règles applicables
@@ -46,8 +46,8 @@ elle en est le principe directeur, eux en sont les applications spécifiques.
    (`citation-fetch`, `crf-client`), pas le produit qui l'incarne
    (`openalex-fetch`). Les valeurs propres à une instance (établissement, hôte,
    périmètre, branding) vivent dans la **configuration**, pas dans le code.
-   _(Prolonge [0022](0022-naming-convention) et
-   [0031](0031-outil-generique-open-source).)_
+   _(Prolonge [0022](/atlas/decisions/0022-naming-convention/) et
+   [0031](/atlas/decisions/0031-outil-generique-open-source/).)_
 
    **Nuance : nommer une marque qu'on intègre réellement est légitime.** Quand un
    composant **est** un client, une intégration ou un parseur d'un service
@@ -68,9 +68,9 @@ elle en est le principe directeur, eux en sont les applications spécifiques.
    commentaires et la JSDoc sont en **anglais neutre et standard** — registre
    d'ouverture internationale, sans jargon local non expliqué. _(La documentation
    rédigée reste en français pour son public, cf.
-   [0013](0013-documentation-public-non-expert-fr) ; l'anglais concerne le
+   [0013](/atlas/decisions/0013-documentation-public-non-expert-fr/) ; l'anglais concerne le
    **code** et sa référence dérivée, cf.
-   [0028](0028-documentation-verifiable).)_
+   [0028](/atlas/decisions/0028-documentation-verifiable/).)_
 
 4. **Les ADR ne décident que pour le dépôt de code.** Un ADR acte des choix
    **techniques internes au dépôt** (architecture, conventions, outillage). Il ne
@@ -78,14 +78,14 @@ elle en est le principe directeur, eux en sont les applications spécifiques.
    arbitrage DPO, choix de déploiement, politique d'établissement. Ces décisions
    relèvent de chaque exploitant ; l'ADR peut **décrire le mécanisme générique**
    qui les rend possibles, jamais les **valeurs** d'une instance. _(Cohérent avec
-   [0030](0030-rgpd-profilage-collaborations) et
-   [0031](0031-outil-generique-open-source).)_
+   [0030](/atlas/decisions/0030-rgpd-profilage-collaborations/) et
+   [0031](/atlas/decisions/0031-outil-generique-open-source/).)_
 
 ## Statut
 
-Accepted (2026-06-03). Fédère [0012](0012-neutralisation-framing-institutionnel),
-[0013](0013-documentation-public-non-expert-fr),
-[0022](0022-naming-convention) et [0031](0031-outil-generique-open-source)
+Accepted (2026-06-03). Fédère [0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/),
+[0013](/atlas/decisions/0013-documentation-public-non-expert-fr/),
+[0022](/atlas/decisions/0022-naming-convention/) et [0031](/atlas/decisions/0031-outil-generique-open-source/)
 sans les remplacer ; elle en est le principe directeur commun.
 
 ## Conséquences
@@ -107,8 +107,8 @@ vocabulaire spécialisé.
 
 - **En revue de PR**, tout identifiant, exemple ou phrase qui ancre le dépôt dans
   une marque, un domaine ou un établissement est signalé et corrigé avant merge.
-- Le **nommage** suit [0022](0022-naming-convention) ; le **framing**,
-  [0012](0012-neutralisation-framing-institutionnel). Cet ADR en est la
+- Le **nommage** suit [0022](/atlas/decisions/0022-naming-convention/) ; le **framing**,
+  [0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/). Cet ADR en est la
   justification commune à citer.
 - Un **ADR qui tranche une décision d'organisme** (base légale, DPO,
   déploiement) sort de son périmètre : on le recadre sur le **mécanisme

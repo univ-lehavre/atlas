@@ -121,13 +121,13 @@ pnpm test:security         # Security/fuzz tests
 
 ## Amarre contract tests
 
-The `tests/contract-amarre/` suite exercises the REDCap endpoints used by [`apps/amarre`](../../apps/amarre/). It targets a dedicated `amarre` project provisioned by `pnpm test:setup` :
+The `tests/contract-amarre/` suite exercises the REDCap endpoints used by [`apps/amarre`](https://github.com/univ-lehavre/atlas/tree/main/apps/amarre). It targets a dedicated `amarre` project provisioned by `pnpm test:setup` :
 
 1. Mint a super-API token for `site_admin` via the Control Center AJAX endpoint (auth=none gives super-user access by default on the sandbox).
 2. `POST /api/?content=project&action=import` with the super-token to create a fresh project.
-3. `POST /api/?content=metadata&action=import` with the project's regular token to load [`data-dictionaries/127-amarre-v1.json`](../../data-dictionaries/127-amarre-v1.json).
+3. `POST /api/?content=metadata&action=import` with the project's regular token to load [`data-dictionaries/127-amarre-v1.json`](https://github.com/univ-lehavre/atlas/blob/main/data-dictionaries/127-amarre-v1.json).
 
-No SQL is executed (this is a project policy — REDCap is touched exclusively through its HTTP API, web endpoints included). The helpers live in [`tests/fixtures/redcap-admin.ts`](tests/fixtures/redcap-admin.ts) and are idempotent across runs: a cached token in `.env.test` is reused if it still resolves to a project titled `amarre`.
+No SQL is executed (this is a project policy — REDCap is touched exclusively through its HTTP API, web endpoints included). The helpers live in [`tests/fixtures/redcap-admin.ts`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/crf-sandbox/tests/fixtures/redcap-admin.ts) and are idempotent across runs: a cached token in `.env.test` is reused if it still resolves to a project titled `amarre`.
 
 ## Test Fixtures
 

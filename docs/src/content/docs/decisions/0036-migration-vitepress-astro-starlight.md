@@ -20,7 +20,7 @@ Conséquence vérifiée :
   pnpm — mais il est **fragile** : tout futur _bump_ de Vite/SvelteKit ou
   contrainte de CVE peut le faire basculer sans préavis.
 
-C'est la **même famille de problème** que l'[ADR 0023](0023-storybook-build-casse-amont.md)
+C'est la **même famille de problème** que l'[ADR 0023](/atlas/decisions/0023-storybook-build-casse-amont/)
 (`storybook:build` cassé par rolldown) : une incompatibilité d'écosystème, pas
 un défaut de notre code.
 
@@ -33,7 +33,7 @@ Les issues de sortie par épinglage ont été explorées et **écartées** :
   pages critiques** (carte des paquets, flux de données, évolution, monorepo) —
   déclare un _peer_ figé sur `vitepress: ^1.0.0` et **ne supporte pas la v2**.
 
-Le dépôt est **généraliste et ouvert** ([ADR 0035](0035-depot-generaliste-ouvert.md)) :
+Le dépôt est **généraliste et ouvert** ([ADR 0035](/atlas/decisions/0035-depot-generaliste-ouvert/)) :
 une chaîne de documentation qui se casse au moindre _bump_ et dont le dev local
 est inutilisable décourage les contributeurs. Il faut un outil **découplé** de
 la chaîne Vite des applications.
@@ -89,9 +89,9 @@ VitePress était cassé.
 ## Statut
 
 Accepted (2026-06-03). Remplace l'outillage acté implicitement autour de
-VitePress ; conséquence directe de la contrainte décrite par l'[ADR 0023](0023-storybook-build-casse-amont.md)
+VitePress ; conséquence directe de la contrainte décrite par l'[ADR 0023](/atlas/decisions/0023-storybook-build-casse-amont/)
 (rolldown) appliquée à la documentation, et au service de l'ouverture posée par
-l'[ADR 0035](0035-depot-generaliste-ouvert.md).
+l'[ADR 0035](/atlas/decisions/0035-depot-generaliste-ouvert/).
 
 ## Conséquences
 
@@ -113,10 +113,10 @@ confine à `docs/`).
 - La migration est **progressive** : VitePress reste en place jusqu'à ce
   qu'Astro le remplace entièrement ; on ne retire VitePress qu'à la dernière
   étape, une fois la CI verte sur Astro.
-- L'**anti-dérive** ([ADR 0028](0028-documentation-verifiable.md)) est rétablie
+- L'**anti-dérive** ([ADR 0028](/atlas/decisions/0028-documentation-verifiable/)) est rétablie
   avant le retrait de VitePress : `audit:docs` réécrit pour la nav Starlight,
   contrôle des liens et des pages orphelines maintenu.
-- La documentation **reste en français** ([ADR 0013](0013-documentation-public-non-expert-fr.md))
+- La documentation **reste en français** ([ADR 0013](/atlas/decisions/0013-documentation-public-non-expert-fr/))
   et le **déploiement reste GitHub Pages** sous `/atlas/`.
 - Le _workspace_ `docs/` isole les dépendances Astro du reste du monorepo : la
   chaîne Vite des applications n'est pas affectée.

@@ -20,7 +20,7 @@ Aussi, deux paquets coexistent sous le même token de nom :
 - `packages/atlas-stats` → `@univ-lehavre/atlas-stats` (bibliothèque)
 - `cli/atlas-stats` → `@univ-lehavre/atlas-stats-cli` (CLI consommateur)
 
-C'est cohérent avec [ADR 0008](0008-clis-thins-logique-dans-packages)
+C'est cohérent avec [ADR 0008](/atlas/decisions/0008-clis-thins-logique-dans-packages/)
 (« CLIs thins, logique métier dans `packages/` ») : la bibliothèque
 porte le token nu (`atlas-stats`) et le CLI ajoute le suffixe `-cli`.
 
@@ -43,7 +43,7 @@ où :
   `citation-validate`, `researcher-profiles`…) ;
 - le suffixe `-cli` est obligatoire pour les paquets de `cli/` (sauf
   dérogation explicite listée dans
-  [ADR 0019](0019-derogations-workspace-audit), actuellement uniquement
+  [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/), actuellement uniquement
   `cli/crf-openapi`).
 
 ### Pour les paquets privés
@@ -71,7 +71,7 @@ monorepo, pas uniquement de stratégie npm.
 L'audit (finding 7) recommandait potentiellement de consolider
 `packages/atlas-stats` + `cli/atlas-stats` sous un même nom. Cette
 proposition **n'est pas retenue** : la séparation est conforme à
-[ADR 0008](0008-clis-thins-logique-dans-packages) (CLI thin vs lib
+[ADR 0008](/atlas/decisions/0008-clis-thins-logique-dans-packages/) (CLI thin vs lib
 métier) et la version actuelle (`atlas-stats` lib + `atlas-stats-cli`
 CLI) est canonique. Un renommage n'apporterait aucune valeur et
 casserait la liste d'allowed-scopes de commitlint.
@@ -97,7 +97,7 @@ C'est volontairement plus visible qu'un changement de scope seul.
 **Garde-fous.**
 
 - Toute proposition de nom sans `atlas-` exige une dérogation listée
-  dans [ADR 0019](0019-derogations-workspace-audit).
+  dans [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/).
 - L'audit semestriel passe la liste des paquets en revue ; si un
   préfixe différent émerge (par ex. `redcap-*`), cet ADR est superseded
   par un nouveau qui formalise la nouvelle convention.

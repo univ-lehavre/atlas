@@ -29,7 +29,7 @@ le coût de migration en cas de changement de stratégie devient prohibitif.
   donnée sensible** n'est saisie dans REDCap depuis ce monorepo.
 - **Appwrite** est utilisé comme BaaS (auth / base / stockage). Les
   apps déployées (`amarre`, `ecrin`, `find-an-expert`) utilisent le
-  SDK officiel `node-appwrite` côté serveur (voir [ADR 0010](0010-node-appwrite-sdk-25)).
+  SDK officiel `node-appwrite` côté serveur (voir [ADR 0010](/atlas/decisions/0010-node-appwrite-sdk-25/)).
 
 Toute extension du périmètre REDCap vers des données de santé ou sensibles
 demande une révision explicite de cet ADR.
@@ -55,7 +55,7 @@ n'élimine pas le coût.
 **Garde-fous.**
 
 - Les secrets REDCap et Appwrite sont inventoriés dans
-  [docs/quality/security.md](../quality/security) avec leur procédure
+  [docs/quality/security.md](/atlas/quality/security/) avec leur procédure
   de rotation.
 - Les SDK Appwrite sont pinnés et leur upgrade fait l'objet d'une PR
   isolée pour faciliter le rollback.

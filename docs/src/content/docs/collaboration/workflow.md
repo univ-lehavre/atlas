@@ -45,7 +45,7 @@ Pour signaler un bug ou une remarque sur la documentation, l'issue suffit — **
 
 ## 2. Forker (contributeurs externes)
 
-Tout le monde n'a pas le droit d'écrire directement sur le dépôt `univ-lehavre/atlas`. Si vous n'avez pas cet accès, vous devez d'abord créer un [**fork**](../glossary) : une copie personnelle du dépôt sur votre propre compte GitHub, où vous pouvez créer des branches librement et proposer vos changements via une pull request.
+Tout le monde n'a pas le droit d'écrire directement sur le dépôt `univ-lehavre/atlas`. Si vous n'avez pas cet accès, vous devez d'abord créer un [**fork**](/atlas/glossary/) : une copie personnelle du dépôt sur votre propre compte GitHub, où vous pouvez créer des branches librement et proposer vos changements via une pull request.
 
 1. Cliquer sur **Fork** en haut à droite de [github.com/univ-lehavre/atlas](https://github.com/univ-lehavre/atlas).
 2. GitHub crée `<votre-compte>/atlas`.
@@ -78,7 +78,7 @@ type(scope): description courte en impératif
 
 Types courants : `feat` (nouvelle fonctionnalité), `fix` (correction), `docs`, `refactor`, `test`, `chore`, `ci`, `build`.
 
-Le hook _commit-msg_ vérifie le format. Voir [Hooks Git](../quality/hooks).
+Le hook _commit-msg_ vérifie le format. Voir [Hooks Git](/atlas/quality/hooks/).
 
 ## 5. Push
 
@@ -113,7 +113,7 @@ L'outil pose deux questions : quels paquets sont touchés ? Quel type de changem
 - `gitleaks.yml` : détection de secrets
 - `dependency-review.yml` : revue des nouvelles dépendances
 
-Voir [Pipeline CI](../quality/ci-pipeline). Tant que tout n'est pas vert, la PR ne peut pas être fusionnée.
+Voir [Pipeline CI](/atlas/quality/ci-pipeline/). Tant que tout n'est pas vert, la PR ne peut pas être fusionnée.
 
 ## 8. Revue de code
 
@@ -135,10 +135,10 @@ Le mainteneur fusionne la PR dans `main`. Le choix entre **squash** (un seul com
 
 ## 10. Release (si publiable)
 
-Si la PR fusionnée contenait un changeset, le bot **Changesets** ouvre automatiquement une PR **« Version Packages »** qui agrège les changesets en bumps de version et met à jour les `CHANGELOG.md`. La fusion de cette PR déclenche la publication npm. Voir [Releases](./releases).
+Si la PR fusionnée contenait un changeset, le bot **Changesets** ouvre automatiquement une PR **« Version Packages »** qui agrège les changesets en bumps de version et met à jour les `CHANGELOG.md`. La fusion de cette PR déclenche la publication npm. Voir [Releases](/atlas/collaboration/releases/).
 
 ## Si tu débutes
 
 - Ouvrir une issue est toujours acceptable, même pour signaler qu'une phrase de la documentation est floue.
-- Lire [CONTRIBUTING.md](https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md) à la racine du dépôt pour les détails techniques, et [Environnement de développement local](./environnement-local) pour la configuration de la machine (Node, pnpm, hooks).
+- Lire [CONTRIBUTING.md](https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md) à la racine du dépôt pour les détails techniques, et [Environnement de développement local](/atlas/collaboration/environnement-local/) pour la configuration de la machine (Node, pnpm, hooks).
 - Demander un mentor sur ta première PR — un membre du projet revue le travail au fil de l'eau et explique les conventions.

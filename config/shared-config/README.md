@@ -82,8 +82,6 @@ pnpm -F @univ-lehavre/atlas-shared-config lint    # ESLint
 
 ## Documentation
 
-- [API Documentation](https://univ-lehavre.github.io/atlas/api/@univ-lehavre/atlas-shared-config/)
-
 ## Organization
 
 This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.

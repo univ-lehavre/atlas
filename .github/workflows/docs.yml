@@ -67,15 +67,9 @@ jobs:
           restore-keys: |
             turbo-v2-${{ runner.os }}-
 
-      # TypeDoc (lancé par `docs:build` via `docs:api`) résout les types
-      # importés depuis les paquets frères à partir de leurs `.d.ts` buildés.
-      # Sans ce build préalable, TypeDoc échoue (`TS2307: Cannot find module
-      # '@univ-lehavre/atlas-...'`) et le déploiement entier plante.
-      - name: Build workspace packages
-        run: pnpm build --filter="!./apps/**"
-
-      # Pipeline complet Astro Starlight (ADR 0036) : génère les statistiques,
-      # la carte des paquets, la référence API TypeDoc, puis construit le site.
+      # Pipeline Astro Starlight (ADR 0036) : génère les statistiques et la carte
+      # des paquets, puis construit le site. Ne lit que les sources (README,
+      # package.json, git) — pas d'artefact buildé, donc pas de build workspace.
       - name: Build Astro Starlight site
         run: pnpm docs:build
 

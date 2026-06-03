@@ -174,4 +174,4 @@ pnpm -F @univ-lehavre/atlas-auth typecheck   # tsc --noEmit
 
 ## License
 
-[MIT](../../LICENSE)
+[MIT](https://github.com/univ-lehavre/atlas/blob/main/LICENSE)

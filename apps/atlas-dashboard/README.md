@@ -6,7 +6,7 @@ qui présente les statistiques **npm et GitHub** des paquets `@univ-lehavre/atla
 
 Ce n'est pas une application produit destinée à des utilisateurs finaux, mais un
 **tableau de bord d'observation du dépôt**. Les données proviennent du paquet
-[`@univ-lehavre/atlas-stats`](../../packages/atlas-stats/README.md) (API GitHub
+[`@univ-lehavre/atlas-stats`](https://github.com/univ-lehavre/atlas/blob/main/packages/atlas-stats/README.md) (API GitHub
 Releases + registre npm), mises en cache et rafraîchies à la demande.
 
 ## Ce qu'il affiche

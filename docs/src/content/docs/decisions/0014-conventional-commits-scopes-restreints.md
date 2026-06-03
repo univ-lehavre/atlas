@@ -23,7 +23,7 @@ deux problèmes en imposant `type(scope): description`.
 
 Tous les commits respectent **Conventional Commits**, vérifié par
 [commitlint](https://github.com/univ-lehavre/atlas/blob/main/commitlint.config.js) en hook `commit-msg` (voir
-[ADR 0015](0015-hooks-git-lefthook-jamais-bypass)).
+[ADR 0015](/atlas/decisions/0015-hooks-git-lefthook-jamais-bypass/)).
 
 Les **scopes** sont **restreints à une liste fermée** (`allowed-scopes`
 dans `commitlint.config.js`) qui correspond aux paquets et chantiers
@@ -53,7 +53,7 @@ onboarding rapide.
 - La liste des scopes autorisés est mise à jour quand un nouveau paquet
   est créé.
 - Le README mentionne la convention et pointe vers
-  [docs/collaboration/workflow.md](../collaboration/workflow) pour
+  [docs/collaboration/workflow.md](/atlas/collaboration/workflow/) pour
   les détails.
-- Voir [ADR 0015](0015-hooks-git-lefthook-jamais-bypass) pour la
+- Voir [ADR 0015](/atlas/decisions/0015-hooks-git-lefthook-jamais-bypass/) pour la
   règle « jamais de bypass ».

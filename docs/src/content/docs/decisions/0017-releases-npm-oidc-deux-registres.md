@@ -62,7 +62,7 @@ ne vérifient pas encore la provenance.
 **Garde-fous.**
 
 - La pipeline de release est documentée dans
-  [docs/collaboration/releases.md](../collaboration/releases).
+  [docs/collaboration/releases.md](/atlas/collaboration/releases/).
 - Un incident de publication (un registre seul vert, l'autre rouge)
   ouvre un ticket d'investigation systématique.
 - La rotation des trusts OIDC est revue lors de l'audit semestriel.

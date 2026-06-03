@@ -6,7 +6,7 @@ Cette page récapitule les outils et plateformes retenus par Atlas, et **pourquo
 
 ## Langage
 
-**[TypeScript](https://www.typescriptlang.org/)** sur tout le dépôt — un langage qui ajoute des types statiques à JavaScript. Le mode `strictTypeChecked` est activé : les erreurs de typage bloquent la compilation. Voir [Style de code](../quality/code-style).
+**[TypeScript](https://www.typescriptlang.org/)** sur tout le dépôt — un langage qui ajoute des types statiques à JavaScript. Le mode `strictTypeChecked` est activé : les erreurs de typage bloquent la compilation. Voir [Style de code](/atlas/quality/code-style/).
 
 ## Front-end
 
@@ -57,7 +57,7 @@ Les certifications de conformité ci-dessus (dont HIPAA, 21 CFR Part 11) atteste
 
 **[Playwright](https://playwright.dev/)** pour les tests de bout en bout (_end-to-end_) : pilote un vrai navigateur (Chromium, Firefox, WebKit) pour valider les parcours utilisateur complets.
 
-Voir [Tests](../quality/tests) pour la pyramide à cinq niveaux.
+Voir [Tests](/atlas/quality/tests/) pour la pyramide à cinq niveaux.
 
 ## Gestion du dépôt
 

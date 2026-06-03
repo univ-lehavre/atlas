@@ -2,7 +2,7 @@
 title: Hooks Git
 ---
 
-Quelques mots de vocabulaire d'abord ([glossaire complet](../glossary)) : [**Git**](../glossary) est le système de contrôle de version qui enregistre l'historique du code ; un [**commit**](../glossary) est un enregistrement daté de modifications accompagné d'un message ; un [**push**](../glossary) envoie ses commits vers GitHub ; une [**pull request**](../glossary) propose de fusionner une branche dans `main`, avec revue.
+Quelques mots de vocabulaire d'abord ([glossaire complet](/atlas/glossary/)) : [**Git**](/atlas/glossary/) est le système de contrôle de version qui enregistre l'historique du code ; un [**commit**](/atlas/glossary/) est un enregistrement daté de modifications accompagné d'un message ; un [**push**](/atlas/glossary/) envoie ses commits vers GitHub ; une [**pull request**](/atlas/glossary/) propose de fusionner une branche dans `main`, avec revue.
 
 Un **hook Git** est un petit script que Git lance automatiquement à certains moments du cycle de vie d'un commit (avant un commit, au moment de rédiger le message, avant un push…). Atlas s'en sert pour vérifier en local — sur la machine du contributeur — ce qui sera vérifié de toute façon en CI. Avantage : on découvre les erreurs immédiatement, sans attendre 3 min de pipeline pour une virgule oubliée.
 

@@ -54,14 +54,14 @@ relever les fautes de format.
 (installation lefthook). Les commits sont parfois ralentis (format
 d'un gros refactor, typecheck cascadant). Un contributeur qui force
 malgré tout `--no-verify` casse l'invariant — risque mitigé par la
-revue de code et par la branch protection (voir [ADR 0016](0016-branch-protection-main)).
+revue de code et par la branch protection (voir [ADR 0016](/atlas/decisions/0016-branch-protection-main/)).
 
 **Garde-fous.**
 
 - Les hooks restent **rapides** (< 10s sur un commit moyen) ; si un
   hook devient lent, il est déplacé en `pre-push` ou en CI seule.
 - La règle « jamais de `--no-verify` » est documentée dans
-  [docs/quality/hooks.md](../quality/hooks) et appliquée par revue
+  [docs/quality/hooks.md](/atlas/quality/hooks/) et appliquée par revue
   de code.
 - Si un hook empêche un commit légitime, on l'ajuste — on ne le
   contourne pas.

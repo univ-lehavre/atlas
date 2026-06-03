@@ -6,10 +6,10 @@ title: "Ré-dérivabilité du mart et de l'index : propagation d'une opposition 
 > RGPD (art. 21) se propage** au mart Parquet (partitions immuables) et à l'index
 > pgvector dérivé, **sans jamais réécrire une partition de production en place**.
 >
-> Cadre : [ADR 0029 — Architecture du pipeline collaborations](../decisions/0029-architecture-pipeline-collaborations)
+> Cadre : [ADR 0029 — Architecture du pipeline collaborations](/atlas/decisions/0029-architecture-pipeline-collaborations/)
 > (immutabilité des partitions, contrat Parquet + `manifest.json`) et
 > [ADR 0030 — Profilage de collaborations : gate RGPD, base légale et droit
-> d'opposition](../decisions/0030-rgpd-profilage-collaborations)
+> d'opposition](/atlas/decisions/0030-rgpd-profilage-collaborations/)
 > (ré-dérivabilité by-design, registre d'opposition, SLA).
 
 ---
@@ -397,9 +397,9 @@ Aucune phase manipulant des **données réelles** ne démarre tant que :
 
 ## Références
 
-- [ADR 0029 — Architecture du pipeline collaborations](../decisions/0029-architecture-pipeline-collaborations)
+- [ADR 0029 — Architecture du pipeline collaborations](/atlas/decisions/0029-architecture-pipeline-collaborations/)
   — partitions immuables, contrat Parquet + `manifest.json`, index pgvector dérivé.
 - [ADR 0030 — Profilage de collaborations : gate RGPD, base légale et droit
-  d'opposition](../decisions/0030-rgpd-profilage-collaborations) — base légale
+  d'opposition](/atlas/decisions/0030-rgpd-profilage-collaborations/) — base légale
   (art. 6.1.e/f), droit d'opposition (art. 21), ré-dérivabilité, registre
   d'opposition, SLA, gate phase 0.

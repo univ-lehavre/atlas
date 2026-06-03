@@ -2,7 +2,7 @@
 title: Plan de résorption — audit 2026-05-29
 ---
 
-> Date du plan : 2026-05-30. Audit de référence : [docs/audit/2026-05-29.md](../audit/2026-05-29). TODO de référence : `TODO.md` (supprimé en Phase 16 ; son contenu actif a été migré vers les ADR et des issues GitHub, son archive est dans l'historique Git).
+> Date du plan : 2026-05-30. Audit de référence : [docs/audit/2026-05-29.md](/atlas/audit/2026-05-29/). TODO de référence : `TODO.md` (supprimé en Phase 16 ; son contenu actif a été migré vers les ADR et des issues GitHub, son archive est dans l'historique Git).
 
 ## Introduction
 
@@ -10,7 +10,7 @@ title: Plan de résorption — audit 2026-05-29
 
 - 51 findings retenus de l'audit 2026-05-29 (8 High / 27 Medium / 14 Low / 2 Info).
 - Items actifs de TODO.md (sections « En cours / à faire » et « À arbitrer »).
-- Les items « Reporté sine die » sont cadrés par [ADR 0001](../decisions/0001-devsecops-perimetre-repo-sine-die) et resteront sine die. Le plan les sort juste de TODO.md (ils restent dans l'ADR).
+- Les items « Reporté sine die » sont cadrés par [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/) et resteront sine die. Le plan les sort juste de TODO.md (ils restent dans l'ADR).
 - Les items « Archive » de TODO.md sont préservés (migrés vers `CHANGELOG.md` ou `docs/audit/`) puis le fichier est supprimé.
 
 ### Principes directeurs
@@ -853,7 +853,7 @@ title: Plan de résorption — audit 2026-05-29
 ### Étape 10.5 — Réviser le workflow UI d'amarre vs `univ-lehavre/amarre` standalone
 
 > **Statut : déjà tranchée (2026-06-01) — voir
-> [ADR 0009](../decisions/0009-atlas-source-canonique-amarre).** La
+> [ADR 0009](/atlas/decisions/0009-atlas-source-canonique-amarre/).** La
 > décision visée par cette étape (atlas source canonique, standalone
 > `univ-lehavre/amarre` figé au 2026-02-06, sync historique réalisé en
 > PR #155 le 2026-05-19) est déjà actée et documentée. Rouvrir un remote

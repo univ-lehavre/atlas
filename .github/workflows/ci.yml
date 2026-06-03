@@ -305,14 +305,9 @@ jobs:
           restore-keys: |
             turbo-v2-${{ runner.os }}-
 
-      # TypeDoc (lancé par `docs:build` via `docs:api`) résout les types
-      # importés depuis les paquets frères à partir de leurs `.d.ts` buildés.
-      # Chaque job CI part d'un checkout neuf sans `dist/`, donc on build les
-      # paquets workspace d'abord (le cache turbo rend l'opération quasi
-      # instantanée quand le job `build` a déjà tourné sur le même SHA).
-      - name: Build workspace packages
-        run: pnpm build --filter="!./apps/**"
-
+      # `docs:build` ne lit que les sources (README de paquets, package.json
+      # pour la carte, historique git pour les stats) — aucun artefact buildé.
+      # Pas de build workspace préalable nécessaire.
       - name: Build Astro Starlight site
         run: pnpm docs:build
 
@@ -387,6 +382,3 @@ jobs:
 
       - name: Documentation audit
         run: pnpm audit:docs
-
-      - name: API entry points up-to-date
-        run: pnpm docs:api:check

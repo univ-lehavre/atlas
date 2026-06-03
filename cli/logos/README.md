@@ -36,6 +36,6 @@ Copie tous les fichiers `.png`, `.svg` et `.jpg` du paquet `@univ-lehavre/atlas-
 
 ## Pourquoi ce CLI
 
-Les logos sont des **assets statiques** versionnés dans [`assets/logos/`](../../assets/logos/). Les apps SvelteKit ont besoin que ces fichiers soient présents dans leur dossier `static/` pour les servir via leurs URLs publiques.
+Les logos sont des **assets statiques** versionnés dans [`assets/logos/`](https://github.com/univ-lehavre/atlas/tree/main/assets/logos). Les apps SvelteKit ont besoin que ces fichiers soient présents dans leur dossier `static/` pour les servir via leurs URLs publiques.
 
 Ce CLI résout la dépendance `@univ-lehavre/atlas-logos`, lit son répertoire et copie les assets — alternative robuste à un plugin Vite ou à un symlink manuel.

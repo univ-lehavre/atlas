@@ -53,7 +53,7 @@ Les paquets `sandbox/*` suivent ces règles de dépendances :
      un import JS/TS. Cette séparation préserve la possibilité de
      supprimer ou renommer un sandbox sans casser les autres au niveau
      npm.
-3. **Marqués `private: true`** (cf. [ADR 0011](0011-paquets-internes-private)) —
+3. **Marqués `private: true`** (cf. [ADR 0011](/atlas/decisions/0011-paquets-internes-private/)) —
    garantit aucune publication accidentelle.
 
 ### Enforcement
@@ -93,4 +93,4 @@ l'app indépendamment.
 - L'audit semestriel passe la liste en revue.
 
 Cette politique est référencée dans
-[`docs/architecture/monorepo.md`](../architecture/monorepo).
+[`docs/architecture/monorepo.md`](/atlas/architecture/monorepo/).

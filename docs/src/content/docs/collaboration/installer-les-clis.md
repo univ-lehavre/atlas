@@ -5,7 +5,7 @@ title: "Installer les CLIs d'Atlas"
 Atlas publie ses outils en ligne de commande comme paquets npm publics.
 Tu peux les installer depuis l'un des **deux registres** sur lesquels ils
 sont publiés (voir
-[ADR 0017](../decisions/0017-releases-npm-oidc-deux-registres)) :
+[ADR 0017](/atlas/decisions/0017-releases-npm-oidc-deux-registres/)) :
 
 - **npm public** (`registry.npmjs.org`) — registre primaire, aucune
   configuration nécessaire ;
@@ -82,6 +82,6 @@ npm audit signatures
 
 Les versions suivent [Semantic Versioning](https://semver.org). Les
 ranges des dépendances publiées sont resserrés en `~` (patch seulement,
-voir [ADR 0024](../decisions/0024-ranges-deps-publiables-tilde)) : une
+voir [ADR 0024](/atlas/decisions/0024-ranges-deps-publiables-tilde/)) : une
 mise à jour `minor` passe par une décision explicite, jamais
 automatiquement chez le consommateur.

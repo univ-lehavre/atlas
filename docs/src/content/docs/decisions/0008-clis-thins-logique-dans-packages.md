@@ -55,6 +55,6 @@ la frontière entre primitive et orchestration).
 - `audit:structure` rejette les CLIs qui définissent leur logique
   inline.
 - Le pattern attendu est documenté dans
-  [docs/architecture/monorepo.md](../architecture/monorepo#cli).
+  [docs/architecture/monorepo.md](/atlas/architecture/monorepo/#cli--outils-en-ligne-de-commande).
 - Les dérogations existantes (par exemple `cli/crf-openapi` qui n'a
-  pas le suffixe `-cli`) sont listées dans [ADR 0019](0019-derogations-workspace-audit).
+  pas le suffixe `-cli`) sont listées dans [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/).

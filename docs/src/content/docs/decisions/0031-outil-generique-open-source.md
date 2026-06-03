@@ -5,21 +5,21 @@ title: "0031 — Outil générique open-source : contribution inter-établisseme
 ## Contexte
 
 Le pipeline de recommandation de collaborations
-([ADR 0029](0029-architecture-pipeline-collaborations)) a d'abord été pensé
+([ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/)) a d'abord été pensé
 pour l'établissement qui le développe. Mais plusieurs choix déjà actés n'ont de
 sens que si l'outil est **générique et destiné à être repris** :
 
 - le dépôt `atlas` est **public** sous licence **MIT** ;
 - la documentation vise un **public non-expert** et **neutralise le framing
-  institutionnel** ([ADR 0013](0013-documentation-public-non-expert-fr),
-  [ADR 0012](0012-neutralisation-framing-institutionnel)) ;
+  institutionnel** ([ADR 0013](/atlas/decisions/0013-documentation-public-non-expert-fr/),
+  [ADR 0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/)) ;
 - les paquets sont **publiés** (npm OIDC,
-  [ADR 0017](0017-releases-npm-oidc-deux-registres)) sous un nommage
-  **générique sans marque** ([ADR 0022](0022-naming-convention), convention
+  [ADR 0017](/atlas/decisions/0017-releases-npm-oidc-deux-registres/)) sous un nommage
+  **générique sans marque** ([ADR 0022](/atlas/decisions/0022-naming-convention/), convention
   `citation` plutôt qu'`openalex`) ;
 - le traitement RGPD est **multi-tenant** : chaque établissement exploite sa
   propre instance dont il est responsable de traitement
-  ([ADR 0030](0030-rgpd-profilage-collaborations)), et l'utilisateur **déclare
+  ([ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/)), et l'utilisateur **déclare
   ses propres alliances** comme filtre d'affichage.
 
 Le constat qui force la décision : **un dépôt public, une licence MIT et un soin
@@ -55,13 +55,13 @@ et le modèle multi-tenant déjà actés ailleurs.
   d'établissement, de marque, d'URL ou d'hypothèse mono-tenant codés en dur. Ce
   qui est propre à une instance (établissement responsable, périmètre
   d'ingestion, base légale, branding) est **configuration**, pas code. Prolonge
-  [ADR 0022](0022-naming-convention) (pas de marque dans les identifiants) et
-  [ADR 0012](0012-neutralisation-framing-institutionnel).
+  [ADR 0022](/atlas/decisions/0022-naming-convention/) (pas de marque dans les identifiants) et
+  [ADR 0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/).
 - **Multi-tenant by-design.** Une instance = un établissement responsable de
-  traitement (cf. [ADR 0030](0030-rgpd-profilage-collaborations)). Le code ne
+  traitement (cf. [ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/)). Le code ne
   présuppose pas un responsable unique ni un périmètre fixe.
 - **Le soin DevSecOps est une fonctionnalité, pas un luxe.** CI, tests, audits,
-  documentation vérifiable ([ADR 0028](0028-documentation-verifiable)),
+  documentation vérifiable ([ADR 0028](/atlas/decisions/0028-documentation-verifiable/)),
   signature d'images (à venir) servent la **reprenabilité** par des
   contributeurs et déployeurs tiers. C'est ce qui rend le dépôt public crédible.
 - **Contribution ouverte, sans condition d'appartenance.** Un développeur de tout
@@ -74,10 +74,10 @@ et le modèle multi-tenant déjà actés ailleurs.
 ## Statut
 
 Accepted (2026-06-02). Étend
-[ADR 0012](0012-neutralisation-framing-institutionnel),
-[ADR 0013](0013-documentation-public-non-expert-fr) et
-[ADR 0022](0022-naming-convention) sans les remplacer ; cadre le modèle
-multi-tenant de [ADR 0030](0030-rgpd-profilage-collaborations).
+[ADR 0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/),
+[ADR 0013](/atlas/decisions/0013-documentation-public-non-expert-fr/) et
+[ADR 0022](/atlas/decisions/0022-naming-convention/) sans les remplacer ; cadre le modèle
+multi-tenant de [ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/).
 
 ## Conséquences
 
@@ -97,7 +97,7 @@ tenir dans la durée (revue, accueil des contributeurs, décisions partagées) :
 reste un effort continu. Le multi-tenant déporte la responsabilité de traitement
 sur **chaque**
 déployeur, qui doit faire son propre arbitrage RGPD (cf.
-[ADR 0030](0030-rgpd-profilage-collaborations)) — l'outil ne dispense personne
+[ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/)) — l'outil ne dispense personne
 de sa conformité.
 
 **Garde-fous.**
@@ -111,6 +111,6 @@ de sa conformité.
   ([`CONTRIBUTING.md`](https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md),
   [`CODE_OF_CONDUCT.md`](https://github.com/univ-lehavre/atlas/blob/main/CODE_OF_CONDUCT.md)) ; la **tenir à jour** (scopes,
   flux, canaux) au fil de l'évolution du projet est un garde-fou continu.
-- La neutralité de framing ([ADR 0012](0012-neutralisation-framing-institutionnel))
-  et le nommage générique ([ADR 0022](0022-naming-convention)) restent les
+- La neutralité de framing ([ADR 0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/))
+  et le nommage générique ([ADR 0022](/atlas/decisions/0022-naming-convention/)) restent les
   garde-fous opérationnels de la généricité.

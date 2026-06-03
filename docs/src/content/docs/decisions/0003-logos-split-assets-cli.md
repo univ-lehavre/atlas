@@ -11,7 +11,7 @@ L'ex-paquet `packages/logos` faisait deux choses :
    `static/logos/` d'une app SvelteKit à l'étape `prepare`.
 
 Cette cohabitation viole la règle « pas de `bin` dans `packages/` »
-fixée par [ADR 0002](0002-monorepo-huit-categories). Plus pernicieux,
+fixée par [ADR 0002](/atlas/decisions/0002-monorepo-huit-categories/). Plus pernicieux,
 elle force tout consommateur des fichiers à tirer aussi le runtime du
 CLI (`fs`, `path`, parsing d'options), ce qui pollue les `node_modules`
 côté apps déployées.

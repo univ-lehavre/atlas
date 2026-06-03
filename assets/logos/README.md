@@ -2,7 +2,7 @@
 
 Assets graphiques partagés des projets Atlas.
 
-Ce paquet ne contient **que des fichiers statiques** (PNG, SVG, JPG) : aucun code exécutable, aucune dépendance runtime. Il est consommé par les apps du monorepo via [`@univ-lehavre/atlas-logos-cli`](../../cli/logos/), qui copie ces fichiers dans le dossier `static/` d'une app SvelteKit.
+Ce paquet ne contient **que des fichiers statiques** (PNG, SVG, JPG) : aucun code exécutable, aucune dépendance runtime. Il est consommé par les apps du monorepo via [`@univ-lehavre/atlas-logos-cli`](https://github.com/univ-lehavre/atlas/tree/main/cli/logos), qui copie ces fichiers dans le dossier `static/` d'une app SvelteKit.
 
 ## Contenu
 
@@ -21,4 +21,4 @@ Ce paquet ne contient **que des fichiers statiques** (PNG, SVG, JPG) : aucun cod
 
 ## Installer ces assets dans une app
 
-Voir [`@univ-lehavre/atlas-logos-cli`](../../cli/logos/).
+Voir [`@univ-lehavre/atlas-logos-cli`](https://github.com/univ-lehavre/atlas/tree/main/cli/logos).

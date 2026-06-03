@@ -5,7 +5,7 @@ title: 0019 — Dérogations explicites au workspace audit
 ## Contexte
 
 Les règles transverses du monorepo — structure des catégories
-([ADR 0002](0002-monorepo-huit-categories)), CLIs thins ([ADR 0008](0008-clis-thins-logique-dans-packages)),
+([ADR 0002](/atlas/decisions/0002-monorepo-huit-categories/)), CLIs thins ([ADR 0008](/atlas/decisions/0008-clis-thins-logique-dans-packages/)),
 hygiène des dépendances (knip), durcissement sécurité (CSP, rate-limit) —
 sont vérifiées en CI et en pre-push. Quelques paquets ou pratiques ont
 des raisons légitimes de **ne pas suivre** ces règles.
@@ -18,7 +18,7 @@ que l'écart soit visible et révisable.
 
 > **Note sur les « Phase X.Y ».** Plusieurs entrées ci-dessous renvoient à
 > une « Phase X.Y » : il s'agit des étapes du
-> [plan de résorption 2026-05-30](../plans/2026-05-30-resorption), le
+> [plan de résorption 2026-05-30](/atlas/plans/2026-05-30-resorption/), le
 > chantier de nettoyage technique et documentaire conduit de mai à
 > juin 2026. Ces mentions sont des repères historiques (quand et pourquoi
 > une dérogation a été introduite ou révisée) ; le plan reste la
@@ -47,7 +47,7 @@ règle. Toute dérogation **doit** être enregistrée :
     `packages/crf-openapi` (lib pure) + `cli/crf-openapi` (thin bin),
     chantier qui dépasse Phase 7 du plan de résorption 2026-05-30.
     Report explicite, à reprendre en Phase ultérieure.
-- **`ui/atlas-ui`** — marqué `private: true` ([ADR 0011](0011-paquets-internes-private))
+- **`ui/atlas-ui`** — marqué `private: true` ([ADR 0011](/atlas/decisions/0011-paquets-internes-private/))
   mais déclare `svelte` en `peerDependencies`. Le `peer` est respecté
   par anticipation d'une future publication.
 
@@ -97,9 +97,9 @@ règle. Toute dérogation **doit** être enregistrée :
   `SameSite=Lax` **sans `Secure`**. Cookies non sensibles, lus côté
   client par design (rendu de la home page hors-ligne, sans session).
 - **CSP `style-src 'unsafe-inline'`** — conservé pour les `style=`
-  inline générés par Svelte et Bootstrap (voir [ADR 0006](0006-sveltekit-hono-bootstrap)).
+  inline générés par Svelte et Bootstrap (voir [ADR 0006](/atlas/decisions/0006-sveltekit-hono-bootstrap/)).
   Le retrait est tracé sous Phase 5.3-tightening (sine die, voir
-  [ADR 0001](0001-devsecops-perimetre-repo-sine-die)).
+  [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/)).
   - Depuis Phase 9.2 (2026-05-31), la liste des directives CSP par
     défaut et les cinq security headers statiques (HSTS, X-Content-Type-
     Options, Referrer-Policy, Permissions-Policy, X-Frame-Options) sont
@@ -131,8 +131,8 @@ déclarer un seuil inférieur, avec la raison.
 expérimental non publié) :
 
 - [`assets/logos`](https://github.com/univ-lehavre/atlas/tree/main/assets/logos) — paquet d'assets statiques (SVG/PNG) sans logique. Vitest entièrement retiré en Phase 2.5 (aucun `vitest.config.ts`, aucune dépendance vitest, aucun script `test`).
-- [`apps/atlas-dashboard`](https://github.com/univ-lehavre/atlas/tree/main/apps/atlas-dashboard), [`apps/crf-dashboard`](https://github.com/univ-lehavre/atlas/tree/main/apps/crf-dashboard) — dashboards internes, `private: true` ([ADR 0011](0011-paquets-internes-private)), pas déployés, contenu visualisation pure.
-- [`ui/atlas-ui`](https://github.com/univ-lehavre/atlas/tree/main/ui/atlas-ui) — bibliothèque de composants Svelte 5 partagée, `private: true` ([ADR 0011](0011-paquets-internes-private)), non publiée. Depuis Phase 10.2/10.3 elle a une infra de tests level-1 (vitest + happy-dom + @testing-library/svelte) et des tests a11y axe-core (`vitest-axe`), mais la couverture globale reste basse : seuls les composants migrés depuis `apps/amarre` (`TopNavbar`, `Signup`, `CreateRequest`) sont couverts (≈77–95% en propre) ; la majorité des composants (home pages, carousels, tiles) restent à couvrir au fil des migrations level-1 des apps consommatrices. Pas de seuil global imposé tant que le paquet n'est pas publié.
+- [`apps/atlas-dashboard`](https://github.com/univ-lehavre/atlas/tree/main/apps/atlas-dashboard), [`apps/crf-dashboard`](https://github.com/univ-lehavre/atlas/tree/main/apps/crf-dashboard) — dashboards internes, `private: true` ([ADR 0011](/atlas/decisions/0011-paquets-internes-private/)), pas déployés, contenu visualisation pure.
+- [`ui/atlas-ui`](https://github.com/univ-lehavre/atlas/tree/main/ui/atlas-ui) — bibliothèque de composants Svelte 5 partagée, `private: true` ([ADR 0011](/atlas/decisions/0011-paquets-internes-private/)), non publiée. Depuis Phase 10.2/10.3 elle a une infra de tests level-1 (vitest + happy-dom + @testing-library/svelte) et des tests a11y axe-core (`vitest-axe`), mais la couverture globale reste basse : seuls les composants migrés depuis `apps/amarre` (`TopNavbar`, `Signup`, `CreateRequest`) sont couverts (≈77–95% en propre) ; la majorité des composants (home pages, carousels, tiles) restent à couvrir au fil des migrations level-1 des apps consommatrices. Pas de seuil global imposé tant que le paquet n'est pas publié.
 - [`sandbox/crf-sandbox`](https://github.com/univ-lehavre/atlas/tree/main/sandbox/crf-sandbox) — banc d'essai par construction, hors périmètre tests.
 
 **Temporairement sous-testés** (renforcement planifié, voir [plan de
@@ -173,7 +173,7 @@ phase qui le rétablira.
   entropie, pas de credentials énumérables) et `/health`
   (lightweight, idempotent). Rate-limit ailleurs : `in-memory`
   mono-instance — à migrer vers Redis/Upstash si scale-out (item
-  sine die, voir [ADR 0001](0001-devsecops-perimetre-repo-sine-die)).
+  sine die, voir [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/)).
 
 ## Statut
 

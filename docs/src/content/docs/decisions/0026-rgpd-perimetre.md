@@ -70,6 +70,6 @@ pas eu lieu.
 - Une demande de conformité, un audit RGPD, ou la collecte d'un nouveau
   type de donnée personnelle par une app déployée rouvre cette décision.
 - L'item de suivi opérationnel correspondant (Phase 5.1) figure dans le
-  tableau sine die de [ADR 0001](0001-devsecops-perimetre-repo-sine-die).
+  tableau sine die de [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/).
 - `SECURITY.md` peut, si besoin, renvoyer vers une politique
   institutionnelle une fois celle-ci désignée.

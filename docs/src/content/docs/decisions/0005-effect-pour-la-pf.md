@@ -86,5 +86,5 @@ sur les paquets publiés).
   typées.
 - Toute nouvelle bibliothèque concurrente (rxjs, fp-ts, etc.) demande
   un ADR explicite qui motive l'écart par rapport à Effect.
-- Voir [docs/architecture/tech-choices.md](../architecture/tech-choices)
+- Voir [docs/architecture/tech-choices.md](/atlas/architecture/tech-choices/)
   pour la rationale détaillée et les patterns de référence.

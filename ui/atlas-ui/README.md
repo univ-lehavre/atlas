@@ -31,4 +31,4 @@ import { MyComponent } from "@univ-lehavre/atlas-ui";
 
 ## Rapport avec apps/amarre
 
-Cette migration vit dans [`docs/refactor-amarre-ui-migration.md`](../../docs/refactor-amarre-ui-migration.md) (à venir si on étend la doc). Pour l'historique : les 15 composants `apps/amarre/src/lib/ui/` ont été déplacés ici lors du big-bang initial. Les composants couplés à des types amarre (Collaborate, Request) ont été généralisés via des props typées.
+Cette migration vit dans [`docs/refactor-amarre-ui-migration.md`](https://github.com/univ-lehavre/atlas/blob/main/docs/refactor-amarre-ui-migration.md) (à venir si on étend la doc). Pour l'historique : les 15 composants `apps/amarre/src/lib/ui/` ont été déplacés ici lors du big-bang initial. Les composants couplés à des types amarre (Collaborate, Request) ont été généralisés via des props typées.

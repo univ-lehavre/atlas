@@ -4,25 +4,25 @@ title: Environnement de développement local
 
 Cette page décrit **ce qu'il faut installer sur sa machine** pour
 développer sur Atlas, et **pourquoi** chaque dépendance est nécessaire.
-Elle complète le [workflow de contribution](./workflow) (qui décrit le
+Elle complète le [workflow de contribution](/atlas/collaboration/workflow/) (qui décrit le
 flux branche → PR → merge) en répondant à la question d'amont :
 _comment obtenir un dépôt qui build et dont les hooks passent ?_
 
 > Un _hook Git_ est un script lancé automatiquement par Git à certains
 > moments (avant un commit, avant un push). Atlas les utilise pour
-> vérifier le code avant qu'il ne parte. Voir [Hooks Git](../quality/hooks).
+> vérifier le code avant qu'il ne parte. Voir [Hooks Git](/atlas/quality/hooks/).
 
 ## Dépendances obligatoires
 
 Deux outils suffisent à installer et faire tourner l'ensemble du
 monorepo.
 
-| Outil                             | Version       | Source de vérité                     | Rôle                                                                             |
-| --------------------------------- | ------------- | ------------------------------------ | -------------------------------------------------------------------------------- |
-| **[Node.js](https://nodejs.org)** | `>= 24` (LTS) | [`.nvmrc`](../../.nvmrc) → `24`      | Moteur JavaScript qui exécute le code et les outils                              |
-| **[pnpm](https://pnpm.io)**       | `10.33.2`     | `packageManager` dans `package.json` | Gestionnaire de paquets qui installe les dépendances et isole chaque sous-projet |
+| Outil                             | Version       | Source de vérité                                                          | Rôle                                                                             |
+| --------------------------------- | ------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **[Node.js](https://nodejs.org)** | `>= 24` (LTS) | [`.nvmrc`](https://github.com/univ-lehavre/atlas/blob/main/.nvmrc) → `24` | Moteur JavaScript qui exécute le code et les outils                              |
+| **[pnpm](https://pnpm.io)**       | `10.33.2`     | `packageManager` dans `package.json`                                      | Gestionnaire de paquets qui installe les dépendances et isole chaque sous-projet |
 
-La version de Node est **épinglée** dans [`.nvmrc`](../../.nvmrc). Avec
+La version de Node est **épinglée** dans [`.nvmrc`](https://github.com/univ-lehavre/atlas/blob/main/.nvmrc). Avec
 [`nvm`](https://github.com/nvm-sh/nvm) :
 
 ```bash
@@ -37,7 +37,7 @@ automatiquement à la première commande `pnpm` lancée dans le dépôt — pas
 d'installation manuelle.
 
 > **Pourquoi ces versions sont strictes.** Le fichier
-> [`.npmrc`](../../.npmrc) active `engine-strict=true` : `pnpm install`
+> [`.npmrc`](https://github.com/univ-lehavre/atlas/blob/main/.npmrc) active `engine-strict=true` : `pnpm install`
 > **échoue** si la version de Node ne satisfait pas le champ `engines`
 > (`>= 24`). C'est volontaire — cela garantit que tout le monde, et la CI,
 > construisent avec le même moteur, et évite les bugs « ça marche chez
@@ -60,7 +60,7 @@ pnpm install
 2. déclenche le script `prepare`, qui lance `lefthook install` et **pose
    les hooks Git** locaux dans `.git/hooks` ;
 3. applique le _hoisting_ de `@storybook/*` à la racine
-   (voir [`.npmrc`](../../.npmrc)) pour que la CLI Storybook résolve ses
+   (voir [`.npmrc`](https://github.com/univ-lehavre/atlas/blob/main/.npmrc)) pour que la CLI Storybook résolve ses
    paquets frères.
 
 Vérifier que tout fonctionne :
@@ -69,7 +69,7 @@ Vérifier que tout fonctionne :
 pnpm ci:checks   # rejoue en local la séquence de la CI (format, lint, types, tests, build)
 ```
 
-Voir [Pipeline CI](../quality/ci-pipeline) pour le détail de cette
+Voir [Pipeline CI](/atlas/quality/ci-pipeline/) pour le détail de cette
 commande.
 
 ## Dépendances optionnelles
@@ -78,9 +78,9 @@ Certains outils ne sont **pas obligatoires** : leur absence dégrade
 l'expérience locale mais ne bloque pas, car la CI rattrape la
 vérification correspondante sur la PR.
 
-| Outil                                                    | Conséquence si absent                                                                                                                                                                                     |
-| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **[gitleaks](https://github.com/gitleaks/gitleaks)** 8.x | Le hook _pre-commit_ passe en mode avertissement et **ne bloque pas** les commits contenant un secret ; la détection est alors déléguée à la CI ([`gitleaks.yml`](../../.github/workflows/gitleaks.yml)). |
+| Outil                                                    | Conséquence si absent                                                                                                                                                                                                                               |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[gitleaks](https://github.com/gitleaks/gitleaks)** 8.x | Le hook _pre-commit_ passe en mode avertissement et **ne bloque pas** les commits contenant un secret ; la détection est alors déléguée à la CI ([`gitleaks.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/gitleaks.yml)). |
 
 Installer `gitleaks` localement est **fortement recommandé** : il vaut
 mieux qu'un secret soit attrapé avant le commit que sur la PR.
@@ -111,15 +111,15 @@ scoop install gitleaks
 Le développement local **n'a besoin d'aucun secret** : le monorepo
 build, teste et lint sans token. Les jetons de registre npm
 (`NPM_TOKEN`, `NODE_AUTH_TOKEN`) sont injectés **uniquement au moment de
-la publication** par [`release.yml`](../../.github/workflows/release.yml),
-et délibérément **absents** de [`.npmrc`](../../.npmrc) pour que `pnpm`
+la publication** par [`release.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/release.yml),
+et délibérément **absents** de [`.npmrc`](https://github.com/univ-lehavre/atlas/blob/main/.npmrc) pour que `pnpm`
 ne tente pas de les résoudre en local (sinon : avertissement `Failed to
 replace env in config`).
 
 Les applications qui nécessitent une configuration runtime (clés
 d'API externes, par exemple) documentent leurs variables dans leur
 propre `README.md` — l'information vit au niveau le plus spécifique qui
-la contient (voir [politique de documentation](../quality/documentation)).
+la contient (voir [politique de documentation](/atlas/quality/documentation/)).
 
 ## Si quelque chose ne va pas
 
