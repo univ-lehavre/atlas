@@ -2,6 +2,8 @@
 title: Tableau de bord
 ---
 
+import RepoDynamics from "../../../components/RepoDynamics.vue";
+
 Cette page rassemble des **indicateurs de robustesse** du dépôt et leur
 évolution. Elle distingue deux familles de données :
 
@@ -21,7 +23,7 @@ Les chiffres ci-dessous sont **générés** à partir du dépôt
 
 ## Dynamique du dépôt
 
-<RepoDynamics />
+<RepoDynamics client:load />
 
 ## Évolution dans le temps
 
