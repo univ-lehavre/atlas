@@ -1,7 +1,7 @@
 {
   "name": "@univ-lehavre/atlas-crf",
   "version": "3.0.2",
-  "description": "CRF Service - HTTP microservice for REDCap",
+  "description": "CRF Service - HTTP microservice for complex reporting forms",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
   "repository": {
@@ -15,7 +15,7 @@
   "homepage": "https://github.com/univ-lehavre/atlas/tree/main/packages/crf#readme",
   "keywords": [
     "redcap",
-    "clinical-research",
+    "complex-forms",
     "api-client",
     "effect",
     "typescript",

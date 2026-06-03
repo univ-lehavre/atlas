@@ -1,7 +1,7 @@
 /**
  * CRF data-dictionary CSV parser.
  *
- * Parses the standard CSV export of a clinical research form (CRF) data
+ * Parses the standard CSV export of a complex reporting form (CRF) data
  * dictionary into a typed structure. The export uses human-readable column
  * headers (e.g. `"Variable / Field Name"`) which this module maps to the
  * canonical snake_case keys used by the CRF API (`field_name`, `form_name`,

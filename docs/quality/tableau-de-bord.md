@@ -28,16 +28,6 @@ volume de code, commits et contributeurs, et **robustesse statique** (ratios
 tests/source et densité de documentation) — est retracée sur une page dédiée,
 entièrement **dérivée de l'historique Git** et donc reproductible.
 
-## Couverture de tests dans le temps
-
-La **couverture mesurée par l'exécution des tests** ne se reconstruit pas depuis
-l'historique Git (elle dépend de l'exécution). Elle est donc **historisée** : un
-instantané daté est ajouté **une fois par jour** sur `main` à une série
-append-only (classe B de l'[ADR 0032](../decisions/0032-kpi-determinisme-vs-snapshot.md)).
-La courbe se remplit au fil des jours.
-
-<CoverageTrend />
-
 ## Pour aller plus loin
 
 - Les statistiques **npm et GitHub** (téléchargements, _releases_) sont

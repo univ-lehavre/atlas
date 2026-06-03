@@ -16,7 +16,7 @@ Les applications du monorepo ont besoin de deux capacités externalisables :
    self-host possible.
 
 REDCap est un outil de **collecte de données généraliste** (formulaires
-structurés, enquêtes, suivis), pas un outil spécifiquement clinique. Le risque
+structurés, enquêtes, suivis), adapté à tout domaine métier. Le risque
 clé est l'**enfermement métier** : si REDCap héberge des données **sensibles**,
 le coût de migration en cas de changement de stratégie devient prohibitif.
 

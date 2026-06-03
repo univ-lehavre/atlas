@@ -93,7 +93,7 @@ Définitions concises des termes techniques utilisés dans la documentation. Qua
 | **Appwrite**   | Plateforme open-source de _Backend-as-a-Service_ (auth, base de données, stockage, fonctions). Atlas s'en sert pour l'authentification et les métadonnées applicatives. |
 | **BaaS**       | _Backend-as-a-Service_. Service prêt-à-l'emploi qui remplace l'écriture d'un backend custom (auth, base de données, etc.).                                              |
 | **REDCap**     | _Research Electronic Data Capture_. Plateforme de capture de données structurées par formulaires en ligne. Atlas s'en sert pour les formulaires métier.                 |
-| **CRF**        | _Case Report Form_. Formulaire structuré de collecte de données.                                                                                                        |
+| **CRF**        | _Complex Reporting Form_. Formulaire structuré et complexe de collecte de données (champs typés, validations, branchements conditionnels). Aucune donnée de santé.      |
 | **OpenAlex**   | Base de données ouverte de la littérature académique (240M+ articles). Consommée en lecture par certaines apps d'Atlas.                                                 |
 
 ## Outillage IA
