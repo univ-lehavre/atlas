@@ -19,10 +19,14 @@
   margin-bottom: 0.75rem;
 }
 
+/* Grille à colonnes régulières : chaque métrique occupe une colonne de même
+   largeur, donc les chiffres ET les libellés s'alignent verticalement quelle
+   que soit la largeur du nombre (44, 32, 745…). Une grille flex laissait des
+   colonnes de largeurs inégales — d'où des libellés bancals. */
 .kpi-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 1rem 1.5rem;
 }
 
 .kpi-metric {
@@ -34,6 +38,7 @@
   font-size: 1.6rem;
   font-weight: 700;
   line-height: 1.1;
+  font-variant-numeric: tabular-nums;
   color: var(--sl-color-text-accent);
 }
 
