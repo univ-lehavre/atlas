@@ -52,11 +52,9 @@ jobs:
           # sourcemaps) en FSL-1.1-MIT (bascule en MIT après 2 ans). Atlas ne
           # l'invoque pas (pas de plugin Vite Sentry, pas de token) et ne le
           # distribue dans aucun paquet publié — Phase 13.3.
-          # @img/sharp-libvips-* : binaires natifs de libvips (LGPL) embarqués
-          # par `sharp`, l'optimiseur d'images de la chaîne de build Astro
-          # (ADR 0036) ; build-only, jamais distribués dans un paquet publié.
-          # khroma : utilitaire de couleurs de mermaid sans licence déclarée
-          # mais MIT d'après son fichier LICENSE ; build-only.
+          # khroma : utilitaire de couleurs de mermaid (diagrammes de la doc,
+          # ADR 0036) sans champ `license` dans son package.json, mais MIT
+          # d'après son fichier LICENSE distribué ; build-only.
           allow-dependencies-licenses: >-
             pkg:npm/%40sentry/cli,
             pkg:npm/%40sentry/cli-darwin,
@@ -67,15 +65,5 @@ jobs:
             pkg:npm/%40sentry/cli-win32-arm64,
             pkg:npm/%40sentry/cli-win32-i686,
             pkg:npm/%40sentry/cli-win32-x64,
-            pkg:npm/%40img/sharp-libvips-darwin-arm64,
-            pkg:npm/%40img/sharp-libvips-darwin-x64,
-            pkg:npm/%40img/sharp-libvips-linux-arm,
-            pkg:npm/%40img/sharp-libvips-linux-arm64,
-            pkg:npm/%40img/sharp-libvips-linux-ppc64,
-            pkg:npm/%40img/sharp-libvips-linux-riscv64,
-            pkg:npm/%40img/sharp-libvips-linux-s390x,
-            pkg:npm/%40img/sharp-libvips-linux-x64,
-            pkg:npm/%40img/sharp-libvips-linuxmusl-arm64,
-            pkg:npm/%40img/sharp-libvips-linuxmusl-x64,
             pkg:npm/khroma
           comment-summary-in-pr: on-failure

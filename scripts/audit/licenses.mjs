@@ -42,12 +42,6 @@ const PACKAGE_LICENSE_EXCEPTION_PREFIXES = [
   // publié — c'est une dépendance transitive de dev jamais embarquée.
   // Phase 13.3.
   "@sentry/cli",
-  // @img/sharp-libvips-* : binaires natifs de libvips (LGPL-3.0-or-later)
-  // embarqués par `sharp`, l'optimiseur d'images de la chaîne de build Astro
-  // (ADR 0036). Ce sont des dépendances **build-only** de la documentation,
-  // jamais distribuées dans un paquet npm publié. La LGPL n'impose pas
-  // l'ouverture de notre code (usage d'une bibliothèque, sans modification).
-  "@img/sharp-libvips",
 ];
 
 // Paquets dont le `package.json` ne déclare PAS de licence (`UNKNOWN` pour

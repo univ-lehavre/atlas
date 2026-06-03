@@ -9,6 +9,13 @@ packages:
   - services/*
   - ui/*
 
+ignoredOptionalDependencies:
+  # sharp (optionalDependency d'astro) tire @img/sharp-libvips-* en LGPL.
+  # On ne l'installe pas : la doc n'utilise pas le service d'images Astro
+  # (logos servis statiquement depuis public/). Évite la licence LGPL sans
+  # exception à maintenir (ADR 0036).
+  - sharp
+
 onlyBuiltDependencies:
   - "@duckdb/node-api"
   - "@parcel/watcher"
@@ -18,7 +25,6 @@ onlyBuiltDependencies:
   - lefthook
   - msgpackr-extract
   - protobufjs
-  - sharp
   - tesseract.js
   - unrs-resolver
   - vue-demi
