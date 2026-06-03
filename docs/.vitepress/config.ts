@@ -134,6 +134,7 @@ export default withMermaid(
             text: "Architecture Decision Records",
             items: [
               { text: "Index", link: "/decisions/" },
+              { text: "Parcours thématique", link: "/decisions/parcours" },
               {
                 text: "0001 — DevSecOps périmètre repo, sine die",
                 link: "/decisions/0001-devsecops-perimetre-repo-sine-die",
