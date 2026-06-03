@@ -53,6 +53,7 @@ Les applications du dépôt sont bâties sur un socle commun et durci.
 | **En-têtes de sécurité (CSP)**  | _Content-Security-Policy_ et en-têtes durcis via un paquet dédié — `packages/sveltekit-csp`.                  |
 | **Programmation fonctionnelle** | Effect pour la gestion typée des erreurs et des effets — [ADR 0005](/atlas/decisions/0005-effect-pour-la-pf). |
 | **Lint strict**                 | Preset Svelte strict — [ADR 0020](/atlas/decisions/0020-svelte-eslint-strict).                                |
+| **Accessibilité**               | Règles a11y au lint + tests axe-core (`vitest-axe`) — [Accessibilité](/atlas/quality/accessibilite/).         |
 
 ## Gestion des dépendances et publication
 
