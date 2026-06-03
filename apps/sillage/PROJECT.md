@@ -85,7 +85,7 @@ Utilitaire central à créer : `src/lib/server/consent/audience.ts`. Tests unita
 | [@univ-lehavre/atlas-auth](../../packages/auth/)                        | Magic-link Appwrite, hooks SvelteKit                               |
 | [@univ-lehavre/atlas-baas](../../packages/baas/)                        | Appwrite client factory                                            |
 | [@univ-lehavre/atlas-errors](../../packages/errors/)                    | Erreurs HTTP typées                                                |
-| [@univ-lehavre/atlas-logos](../../packages/logos/)                      | Logos institutionnels (ULHN, EUNICoast, France 2030, Région)       |
+| [@univ-lehavre/atlas-logos](../../assets/logos/)                        | Logos institutionnels (ULHN, EUNICoast, France 2030, Région)       |
 | [@univ-lehavre/atlas-ui](../../ui/atlas-ui/)                            | DS Svelte (HorizontalScroller, CardItem, MainTitle, Administrate…) |
 | [@univ-lehavre/atlas-validators](../../packages/validators/)            | Validators emails, JSON                                            |
 | [@univ-lehavre/atlas-crf-sandbox-core](../../sandbox/crf-sandbox-core/) | Scripts génériques de bootstrap (utilisé par la sandbox)           |

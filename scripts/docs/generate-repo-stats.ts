@@ -7,7 +7,7 @@
  * - Git commit history aggregated by day and month
  * - Current codebase metrics (functions, types, tests)
  *
- * Output is written to docs/.vitepress/data/repo-stats.json
+ * Output is written to docs/src/data/repo-stats.json
  *
  * @example
  * ```bash
@@ -19,7 +19,7 @@
 
 import { execFileSync } from "node:child_process";
 import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { join, relative, dirname } from "node:path";
 import {
   GitAnalyzer,
   aggregateByDay,
@@ -137,7 +137,7 @@ async function readPackageInfo(
 /**
  * Output path for generated statistics.
  */
-const OUTPUT_PATH = "docs/.vitepress/data/repo-stats.json";
+const OUTPUT_PATH = "docs/src/data/repo-stats.json";
 
 /**
  * Main function to generate repository statistics.
@@ -295,7 +295,7 @@ async function main(): Promise<void> {
   };
 
   // Ensure output directory exists
-  const outputDir = join(repoPath, "docs/.vitepress/data");
+  const outputDir = dirname(outputPath);
   await mkdir(outputDir, { recursive: true });
 
   // Write output

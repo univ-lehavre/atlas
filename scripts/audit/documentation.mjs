@@ -147,21 +147,23 @@ export const adrReferences = (markdown) =>
     ),
   ].map((m) => m[1]);
 
+/** Racine du contenu de documentation (Starlight). */
+const DOCS_ROOT = path.join("docs", "src", "content", "docs");
+
 /**
- * Toutes les pages markdown sous `docs/`, hors API générée et hors `_media`.
- * Chemins relatifs à `docs/`, sans extension (ex. `quality/security`).
+ * Toutes les pages de contenu (`.md`/`.mdx`) de la documentation Starlight.
+ * Chemins relatifs à la racine du contenu, sans extension (ex. `quality/security`).
  */
 export const listDocsPages = (cwd = ".") => {
-  const root = path.join(cwd, "docs");
+  const root = path.join(cwd, DOCS_ROOT);
   const pages = [];
   const walk = (dir) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name === "api" || entry.name === ".vitepress") continue;
         walk(full);
-      } else if (entry.name.endsWith(".md")) {
-        pages.push(path.relative(root, full).replace(/\.md$/, ""));
+      } else if (entry.name.endsWith(".md") || entry.name.endsWith(".mdx")) {
+        pages.push(path.relative(root, full).replace(/\.mdx?$/, ""));
       }
     }
   };
@@ -170,28 +172,36 @@ export const listDocsPages = (cwd = ".") => {
 };
 
 /**
- * Liens internes (`link: "/x"`) déclarés dans la nav/sidebar de la config
- * VitePress, normalisés en chemins de page (`/x/` → `x/index`, `/x` → `x`).
- * Parsing textuel volontairement simple : la nav est statique aujourd'hui ;
- * si elle devenait programmatique, ce rituel casserait et devrait évoluer.
+ * Sources de navigation déclarées dans la config Starlight (`astro.config.mjs`) :
+ * les dossiers couverts par un `autogenerate: { directory: "x" }` et les pages
+ * explicitement liées (`link: "/x/"`). Parsing textuel volontairement simple :
+ * la sidebar est statique aujourd'hui ; si elle devenait programmatique, ce
+ * contrôle casserait et devrait évoluer.
  */
-export const navLinks = (configSource) =>
-  new Set(
-    [...configSource.matchAll(/link:\s*"(\/[^"]*)"/g)]
-      .map((m) => m[1].replace(/^\//, ""))
-      .map((l) => (l === "" || l.endsWith("/") ? `${l}index` : l)),
+export const navLinks = (configSource) => {
+  const directories = new Set(
+    [...configSource.matchAll(/directory:\s*"([^"]+)"/g)].map((m) => m[1]),
   );
+  const links = new Set(
+    [...configSource.matchAll(/link:\s*"(\/[^"]*)"/g)].map((m) =>
+      m[1].replace(/^\/|\/$/g, ""),
+    ),
+  );
+  return { directories, links };
+};
 
 /**
- * Pages `docs/**` injoignables depuis la nav. Une page de section en
- * `README.md` est remappée sur `index` (rewrites VitePress) ; `index` (accueil)
- * et les index de section sont considérés atteints s'ils sont liés.
+ * Pages de contenu injoignables depuis la nav Starlight. Une page est atteinte
+ * si son dossier de premier niveau est couvert par un `autogenerate.directory`,
+ * ou si elle est explicitement liée. L'accueil (`index`) est toujours atteint.
  */
-export const findOrphanPages = (pages, links) =>
+export const findOrphanPages = (pages, nav) =>
   pages.filter((page) => {
-    if (page === "index") return false; // page d'accueil
-    const asIndex = page.replace(/\/README$/, "/index");
-    return !links.has(page) && !links.has(asIndex);
+    if (page === "index") return false; // page d'accueil (splash)
+    const topDir = page.split("/")[0];
+    if (nav.directories.has(topDir)) return false; // dossier autogénéré
+    if (nav.links.has(page)) return false; // lien explicite
+    return true;
   });
 
 /**
@@ -283,8 +293,12 @@ export const auditDocumentation = (cwd = ".") => {
 
   // ── Pages docs : ADR référencés, liens, orphelines ──────────────────────
   const pages = listDocsPages(cwd);
+  const decisionsDir = path.join(cwd, DOCS_ROOT, "decisions");
   for (const page of pages) {
-    const pagePath = path.join(cwd, "docs", `${page}.md`);
+    const mdx = path.join(cwd, DOCS_ROOT, `${page}.mdx`);
+    const pagePath = existsSync(mdx)
+      ? mdx
+      : path.join(cwd, DOCS_ROOT, `${page}.md`);
     const content = readText(pagePath);
     if (content === null) continue;
 
@@ -292,29 +306,32 @@ export const auditDocumentation = (cwd = ".") => {
     for (const link of relativeMarkdownLinks(content)) {
       const target = path.resolve(path.dirname(pagePath), link);
       if (!existsSync(target)) {
-        blocking.push(`[B6] docs/${page}.md : lien interne mort → ${link}`);
+        blocking.push(`[B6] ${page} : lien interne mort → ${link}`);
       }
     }
 
     // B7 — ADR référencé existe (pages docs)
     for (const adr of adrReferences(content)) {
-      const adrPath = path.join(cwd, "docs", "decisions", `${adr}.md`);
-      if (!existsSync(adrPath)) {
+      // En Starlight les ADR sont liés sans extension ; on vérifie les deux.
+      const exists =
+        existsSync(path.join(decisionsDir, `${adr}.md`)) ||
+        existsSync(path.join(decisionsDir, `${adr}.mdx`));
+      if (!exists) {
         blocking.push(
-          `[B7] docs/${page}.md : ADR référencé inexistant → decisions/${adr}.`,
+          `[B7] ${page} : ADR référencé inexistant → decisions/${adr}.`,
         );
       }
     }
   }
 
-  // B9 — pages docs non orphelines (joignables depuis la nav VitePress)
-  const configPath = path.join(cwd, "docs", ".vitepress", "config.ts");
+  // B9 — pages docs non orphelines (joignables depuis la nav Starlight)
+  const configPath = path.join(cwd, "docs", "astro.config.mjs");
   const configSource = readText(configPath);
   if (configSource !== null) {
-    const links = navLinks(configSource);
-    for (const orphan of findOrphanPages(pages, links)) {
+    const nav = navLinks(configSource);
+    for (const orphan of findOrphanPages(pages, nav)) {
       blocking.push(
-        `[B9] docs/${orphan}.md : page orpheline (absente de la nav config.ts).`,
+        `[B9] ${orphan} : page orpheline (dossier absent de la sidebar Starlight).`,
       );
     }
   }

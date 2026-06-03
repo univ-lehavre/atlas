@@ -44,8 +44,13 @@ pre-commit:
     format:
       # Run prettier only on the files actually staged, not the whole
       # monorepo. Skips when nothing in {staged_files} matches the glob.
+      # On filtre les chemins encore présents sur le disque : un commit qui
+      # supprime ou renomme des fichiers passe leurs anciens chemins dans
+      # {staged_files}, et `prettier --check` échoue sur un chemin absent.
       glob: "*.{js,jsx,ts,tsx,svelte,md,mdx,json,yml,yaml,css,scss,html}"
-      run: pnpm exec prettier --check {staged_files}
+      run: |
+        existing=$(for f in {staged_files}; do [ -f "$f" ] && printf '%s ' "$f"; done)
+        [ -z "$existing" ] || pnpm exec prettier --check $existing
 
     lint:
       # ESLint flat configs live per-package (apps/*/eslint.config.js etc.).
@@ -131,9 +136,9 @@ pre-push:
       priority: 4
 
     docs-generate:
-      # La carte des paquets (docs/architecture/packages.md) est dérivée
-      # des package.json ; un changement de manifeste ou de README peut la
-      # périmer. On ne paie le coût que si l'un d'eux a bougé.
+      # La carte des paquets (docs/src/content/docs/architecture/packages.md)
+      # est dérivée des package.json ; un changement de manifeste ou de README
+      # peut la périmer. On ne paie le coût que si l'un d'eux a bougé.
       glob: "{**/package.json,*/*/README.md}"
       run: pnpm docs:generate:check
       priority: 4
@@ -141,8 +146,8 @@ pre-push:
     audit-docs:
       # Audite la doc rédigée (README, pages docs, ADR) : présence,
       # liens internes, ADR référencés, pages orphelines. Déclenché quand
-      # un README, une page docs ou la nav VitePress change.
-      glob: "{**/README.md,docs/**/*.md,docs/.vitepress/config.ts}"
+      # un README, une page docs (.md/.mdx) ou la nav Astro change.
+      glob: "{**/README.md,docs/src/content/docs/**/*.{md,mdx},docs/astro.config.mjs}"
       run: pnpm audit:docs
       priority: 4
 

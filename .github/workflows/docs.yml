@@ -70,18 +70,19 @@ jobs:
       # TypeDoc (lancé par `docs:build` via `docs:api`) résout les types
       # importés depuis les paquets frères à partir de leurs `.d.ts` buildés.
       # Sans ce build préalable, TypeDoc échoue (`TS2307: Cannot find module
-      # '@univ-lehavre/atlas-...'`) et le déploiement entier plante — c'est
-      # exactement l'étape que le job Documentation de `ci.yml` exécute déjà.
+      # '@univ-lehavre/atlas-...'`) et le déploiement entier plante.
       - name: Build workspace packages
         run: pnpm build --filter="!./apps/**"
 
-      - name: Build VitePress site
+      # Pipeline complet Astro Starlight (ADR 0036) : génère les statistiques,
+      # la carte des paquets, la référence API TypeDoc, puis construit le site.
+      - name: Build Astro Starlight site
         run: pnpm docs:build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: docs/.vitepress/dist
+          path: docs/dist
 
   deploy:
     name: Deploy to GitHub Pages

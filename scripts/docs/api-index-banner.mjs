@@ -17,8 +17,8 @@
 import { readFileSync, writeFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
-const API_DIR = "docs/api";
-const INDEX = "docs/api/index.md";
+const API_DIR = "docs/.generated/api";
+const INDEX = "docs/.generated/api/index.md";
 const MARKER = "<!-- api-banner -->";
 
 /**
@@ -77,7 +77,9 @@ try {
   content = readFileSync(INDEX, "utf8");
 } catch (error) {
   if (error.code === "ENOENT") {
-    console.error(`api-index-banner: ${INDEX} introuvable (lance \`typedoc\` d'abord).`);
+    console.error(
+      `api-index-banner: ${INDEX} introuvable (lance \`typedoc\` d'abord).`,
+    );
     process.exit(1);
   }
   throw error;

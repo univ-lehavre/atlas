@@ -1,0 +1,83 @@
+---
+title: Atlas
+description: Un dépôt, plusieurs projets, une chaîne de qualité commune.
+template: splash
+hero:
+  tagline: |
+    Plusieurs projets logiciels dans un seul dépôt Git — applications,
+    bibliothèques, serveurs, outils en ligne de commande. Mêmes règles,
+    même chaîne de qualité. Cette organisation est appelée monorepo.
+  actions:
+    - text: Je découvre
+      link: /atlas/architecture/monorepo/
+      icon: right-arrow
+      variant: primary
+    - text: Je veux lire le code
+      link: /atlas/architecture/comprendre-le-code/
+      icon: open-book
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## Deux entrées, selon ce que tu cherches
+
+Cette documentation sert deux publics. Choisis ta porte d'entrée.
+
+<CardGrid>
+  <Card title="Je découvre" icon="open-book">
+    Comprendre ce que fait le dépôt et comment il est organisé, **sans
+    prérequis technique** : les huit catégories, les garde-fous qualité, la
+    manière de collaborer.
+
+    [Structure du monorepo →](/atlas/architecture/monorepo/)
+
+  </Card>
+  <Card title="Je veux lire le code" icon="seti:typescript">
+    Entrer dans le code **par le bon endroit** : par où commencer selon ce
+    qu'on cherche, quels paquets lire ensemble, comment une donnée circule.
+
+    [Comprendre le code →](/atlas/architecture/comprendre-le-code/)
+
+  </Card>
+  <Card title="La carte des paquets" icon="list-format">
+    Pour chaque paquet — son rôle, ce dont il dépend, qui le consomme.
+    **Générée depuis le code**, donc toujours à jour.
+
+    [Carte des paquets →](/atlas/architecture/packages/)
+
+  </Card>
+  <Card title="La référence API" icon="document">
+    Les signatures publiques (fonctions, types) de chaque paquet, générées
+    par TypeDoc à partir du code. En anglais, niveau expert.
+
+    [Référence API →](/atlas/api/)
+
+  </Card>
+</CardGrid>
+
+### Je découvre — pour comprendre, sans coder
+
+Rédigée pour un public **non-expert** : quand un terme technique apparaît, il est
+défini sur place ou renvoie au [glossaire](/atlas/glossary/).
+
+| Pour savoir…                  | Va voir                                                                                |
+| ----------------------------- | -------------------------------------------------------------------------------------- |
+| comment le dépôt est organisé | [Structure du monorepo](/atlas/architecture/monorepo/)                                 |
+| ce qui garantit la qualité    | [Pipeline CI](/atlas/quality/ci-pipeline/), [tests](/atlas/quality/tests/)             |
+| ce qui garantit la sécurité   | [Sécurité](/atlas/quality/security/)                                                   |
+| comment on collabore          | [Workflow](/atlas/collaboration/workflow/), [releases](/atlas/collaboration/releases/) |
+| comment on documente          | [Politique de documentation](/atlas/quality/documentation/)                            |
+
+### Je veux lire le code — pour l'expert info/data
+
+Pour un **développeur ou data scientist** qui veut se faire une idée du code sans
+tout lire.
+
+| Pour…                                      | Va voir                                                       |
+| ------------------------------------------ | ------------------------------------------------------------- |
+| savoir **par où entrer** dans le code      | [Comprendre le code](/atlas/architecture/comprendre-le-code/) |
+| voir **qui fait quoi / qui dépend de qui** | [Carte des paquets](/atlas/architecture/packages/)            |
+| suivre **le parcours d'une donnée**        | [Flux de données](/atlas/architecture/data-flow/)             |
+| lire les **signatures publiques**          | [Référence API](/atlas/api/)                                  |
+| comprendre **le _pourquoi_ d'un choix**    | [Décisions (ADR)](/atlas/decisions/)                          |

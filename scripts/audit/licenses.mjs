@@ -44,6 +44,16 @@ const PACKAGE_LICENSE_EXCEPTION_PREFIXES = [
   "@sentry/cli",
 ];
 
+// Paquets dont le `package.json` ne déclare PAS de licence (`UNKNOWN` pour
+// l'audit) mais dont la licence réelle est connue et permissive, vérifiée
+// dans leur fichier LICENSE distribué.
+const PACKAGE_LICENSE_KNOWN_UNDECLARED = new Set([
+  // khroma : utilitaire de couleurs tiré par mermaid (diagrammes de la doc,
+  // ADR 0036). Son package.json omet le champ `license`, mais son fichier
+  // `license` indique « MIT © Fabio Spampinato ». Dépendance build-only.
+  "khroma",
+]);
+
 function extractLicenseTokens(value) {
   if (typeof value !== "string" || value.trim() === "") return [];
   return (value.match(/[A-Za-z0-9-.+]+/g) ?? []).filter(
@@ -65,6 +75,13 @@ function isAllowedLicense(value, packageName) {
     )
   )
     return true;
+
+  // Paquets sans licence déclarée mais dont la licence réelle (fichier LICENSE)
+  // est connue et permissive. Le nom peut porter une version (`khroma@2.1.0`).
+  if (value === "UNKNOWN") {
+    const bareName = packageName.replace(/@[^@]+$/, "");
+    if (PACKAGE_LICENSE_KNOWN_UNDECLARED.has(bareName)) return true;
+  }
 
   if (
     value === "UNKNOWN" &&

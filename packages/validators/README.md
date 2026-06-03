@@ -66,7 +66,7 @@ pnpm -F @univ-lehavre/atlas-validators lint     # ESLint
 
 ## Documentation
 
-- [API Documentation](../../docs/api/@univ-lehavre/atlas-validators/)
+- [API Documentation](/atlas/api/univ-lehavre/atlas-validators/)
 
 ## Organization
 
@@ -81,15 +81,15 @@ Atlas is developed as part of two projects led by Le Havre Normandie University:
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
+    <img src="https://raw.githubusercontent.com/univ-lehavre/atlas/main/assets/logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
-    <img src="../logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="20">
+    <img src="https://raw.githubusercontent.com/univ-lehavre/atlas/main/assets/logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://eunicoast.eu/">
-    <img src="../logos/eunicoast.png" alt="EUNICoast" height="20">
+    <img src="https://raw.githubusercontent.com/univ-lehavre/atlas/main/assets/logos/eunicoast.png" alt="EUNICoast" height="20">
   </a>
 </p>
 

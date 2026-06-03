@@ -32,3 +32,6 @@ docs/.vitepress/dist/
 # REDCap OpenAPI specific
 tools/dev/redcap-openapi/sandbox/
 tools/dev/redcap-openapi/specs/
+
+# Specs OpenAPI externes (REDCap) servies comme assets — non formatées
+docs/public/openapi/

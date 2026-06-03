@@ -29,7 +29,7 @@ Pour un usage interactif en terminal, voir `@univ-lehavre/atlas-citation-cli` da
 
 Requires a `.env` file:
 
-```env
+```ini
 OPENALEX_API_URL=https://api.openalex.org
 PER_PAGE=25
 OPENALEX_API_KEY=          # optional

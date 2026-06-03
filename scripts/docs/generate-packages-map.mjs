@@ -26,7 +26,7 @@ import {
   internalDepsOf,
 } from "../audit/lib/workspace-index.mjs";
 
-const OUTPUT = "docs/architecture/packages.md";
+const OUTPUT = "docs/src/content/docs/architecture/packages.md";
 const START = "<!-- AUTO-GENERATED:packages-map START -->";
 const END = "<!-- AUTO-GENERATED:packages-map END -->";
 
@@ -55,11 +55,21 @@ const CATEGORY_ORDER = [
 ];
 
 /**
+ * URL de la page de doc d'un paquet dans Starlight. Les README sont inclus en
+ * place (route /packages/<dir>, cf. ADR 0036) ; `dir` est le chemin du paquet
+ * dans le monorepo (ex. `packages/crf-core` → `/atlas/packages/packages/crf-core`).
+ */
+const readmeUrl = (dir) => `/atlas/packages/${dir}`;
+
+/**
  * Rôle d'un paquet : `description` du package.json, sinon premier paragraphe
  * du README, sinon une mention explicite (que l'audit signalera).
  */
 const roleOf = (dir, packageJson) => {
-  if (typeof packageJson.description === "string" && packageJson.description.trim())
+  if (
+    typeof packageJson.description === "string" &&
+    packageJson.description.trim()
+  )
     return packageJson.description.trim();
   const readme = path.join(dir, "README.md");
   if (existsSync(readme)) {
@@ -116,7 +126,7 @@ const linkList = (names, workspaces) => {
     .map((n) => {
       const ws = workspaces.get(n);
       const readme = ws ? path.join(ws.dir, "README.md") : null;
-      const rel = readme && existsSync(readme) ? `../../${readme}` : null;
+      const rel = readme && existsSync(readme) ? readmeUrl(ws.dir) : null;
       const short = n.replace("@univ-lehavre/", "");
       return rel ? `[\`${short}\`](${rel})` : `\`${short}\``;
     })
@@ -125,6 +135,116 @@ const linkList = (names, workspaces) => {
 
 /** Identifiant Mermaid sûr pour un nom de paquet. */
 const mermaidId = (name) => name.replace(/[@/-]/g, "_");
+
+/**
+ * Classe un paquet racine (consommé par aucun autre paquet interne) selon la
+ * RAISON pour laquelle personne ne l'appelle. Chaque raison correspond à un
+ * sous-tableau de la section « Paquets racines », avec son intention propre :
+ * un livrable au sommet de l'arbre est attendu, un paquet interne orphelin
+ * mérite l'œil. L'ordre des clés fixe l'ordre d'affichage des sous-sections.
+ *
+ * @param {{root: string, packageJson: object}} info
+ * @returns {"deliverable" | "cli" | "sandbox" | "published-library" | "internal-orphan"}
+ */
+const classifyRoot = ({ root, packageJson }) => {
+  if (root === "apps" || root === "services") return "deliverable";
+  if (root === "cli") return "cli";
+  if (root === "sandbox") return "sandbox";
+  // packages / ui / config / assets : bibliothèque. Publiée → livrable pour
+  // l'extérieur ; privée → personne ne l'appelle ni en interne ni en aval.
+  return packageJson.private === true ? "internal-orphan" : "published-library";
+};
+
+/** Sous-sections de « Paquets racines », dans l'ordre, avec leur préambule. */
+const ROOT_GROUPS = [
+  {
+    key: "deliverable",
+    title: "Livrables applicatifs",
+    intro:
+      "Applications et services : on les **déploie et on les exécute**, pas " +
+      "on ne les importe. Être au sommet de l'arbre est leur nature même.",
+  },
+  {
+    key: "cli",
+    title: "Outils en ligne de commande",
+    intro:
+      "Points d'entrée lancés par un humain ou un script. Ils consomment des " +
+      "bibliothèques internes mais ne sont eux-mêmes jamais importés (les CLIs " +
+      "restent fins, la logique vit dans `packages/` — cf. ADR 0008).",
+  },
+  {
+    key: "published-library",
+    title: "Bibliothèques publiées sans consommateur interne",
+    intro:
+      "Paquets **publiables** (non `private`) qu'aucun autre paquet du dépôt " +
+      "n'importe : leur public est **en aval**, hors du monorepo. C'est " +
+      "légitime — un paquet peut être livré pour d'autres sans qu'on s'en " +
+      "serve ici.",
+  },
+  {
+    key: "sandbox",
+    title: "Bancs d'essai",
+    intro:
+      "Démonstrateurs isolés : ils consomment le reste du dépôt pour l'illustrer " +
+      "mais ne sont jamais consommés en retour (cf. ADR 0021).",
+  },
+  {
+    key: "internal-orphan",
+    title: "Paquets internes sans consommateur",
+    intro:
+      "Paquets **privés** (`private: true`) que personne n'importe et qui ne " +
+      "sont pas publiés : ni consommateur interne, ni public aval. À surveiller " +
+      "— code potentiellement mort, ou point d'entrée pas encore raccordé.",
+  },
+];
+
+/**
+ * Section « Paquets racines » : pour chaque raison d'être racine, un tableau
+ * des paquets concernés avec leur rôle. Répond explicitement à « quels paquets
+ * ne sont jamais appelés par d'autres, et pourquoi ».
+ *
+ * @param {Map<string, {root: string, dir: string, packageJson: object}>} workspaces
+ * @param {string[]} roots - Noms des paquets racines (reverse-deps vide), triés.
+ * @returns {string[]} Lignes Markdown.
+ */
+const renderRootPackages = (workspaces, roots) => {
+  const grouped = new Map(ROOT_GROUPS.map((g) => [g.key, []]));
+  for (const name of roots) {
+    grouped.get(classifyRoot(workspaces.get(name))).push(name);
+  }
+
+  const lines = ["## Paquets racines", ""];
+  lines.push(
+    "Un paquet est **racine** quand aucun autre paquet du dépôt ne le consomme.",
+    "La colonne « Consommé par » de la carte ci-dessus le marque d'un « — ». Ce",
+    "n'est pas un défaut en soi : un livrable est racine par construction. Les",
+    "sous-sections ci-dessous regroupent ces paquets **par raison** d'être",
+    "racine, de l'attendu (un livrable au sommet) au suspect (un paquet interne",
+    "que plus personne n'appelle).",
+    "",
+  );
+
+  for (const group of ROOT_GROUPS) {
+    const names = grouped.get(group.key);
+    if (names.length === 0) continue;
+    lines.push(`### ${group.title}`, "", group.intro, "");
+    lines.push("| Paquet | Catégorie | Rôle |", "| --- | --- | --- |");
+    for (const name of names) {
+      const { dir, packageJson, root } = workspaces.get(name);
+      const short = name.replace("@univ-lehavre/", "");
+      const readme = path.join(dir, "README.md");
+      const nameCell = existsSync(readme)
+        ? `[\`${short}\`](${readmeUrl(dir)})`
+        : `\`${short}\``;
+      lines.push(
+        `| ${nameCell} | \`${root}/\` | ${cell(roleOf(dir, packageJson))} |`,
+      );
+    }
+    lines.push("");
+  }
+
+  return lines;
+};
 
 /**
  * Génère le corps Markdown (entre les marqueurs).
@@ -158,15 +278,32 @@ export const generateBody = (cwd = ".") => {
       const short = name.replace("@univ-lehavre/", "");
       const readme = path.join(dir, "README.md");
       const nameCell = existsSync(readme)
-        ? `[\`${short}\`](../../${readme})`
+        ? `[\`${short}\`](${readmeUrl(dir)})`
         : `\`${short}\``;
       const role = cell(roleOf(dir, packageJson));
-      const dependsOn = linkList(internalDepsOf(packageJson, workspaces), workspaces);
+      const dependsOn = linkList(
+        internalDepsOf(packageJson, workspaces),
+        workspaces,
+      );
       const consumedBy = linkList(reverse.get(name) ?? [], workspaces);
       lines.push(`| ${nameCell} | ${role} | ${dependsOn} | ${consumedBy} |`);
     }
     lines.push("");
   }
+
+  // Racines = paquets que personne ne consomme (reverse-deps vide). Tri par
+  // catégorie (ordre ROOTS) puis nom — partagé par la section descriptive et
+  // par les graphes Mermaid ci-dessous.
+  const roots = [...workspaces.keys()]
+    .filter((name) => (reverse.get(name) ?? []).length === 0)
+    .sort((a, b) => {
+      const ra = ROOTS.indexOf(workspaces.get(a).root);
+      const rb = ROOTS.indexOf(workspaces.get(b).root);
+      return ra - rb || a.localeCompare(b);
+    });
+
+  // ── Section descriptive « Paquets racines » ─────────────────────────────
+  lines.push(...renderRootPackages(workspaces, roots));
 
   // ── Graphes Mermaid : un graphe par racine (app/CLI) ────────────────────
   // Un graphe global de 43 nœuds / 114 arêtes est illisible. On le découpe :
@@ -184,15 +321,6 @@ export const generateBody = (cwd = ".") => {
     "Un livrable sans dépendance interne n'a pas de graphe.",
     "",
   );
-
-  // Racines = paquets que personne ne consomme (reverse-deps vide).
-  const roots = [...workspaces.keys()]
-    .filter((name) => (reverse.get(name) ?? []).length === 0)
-    .sort((a, b) => {
-      const ra = ROOTS.indexOf(workspaces.get(a).root);
-      const rb = ROOTS.indexOf(workspaces.get(b).root);
-      return ra - rb || a.localeCompare(b);
-    });
 
   for (const root of roots) {
     // Fermeture transitive des dépendances de `root` (DFS), arêtes incluses.
@@ -213,9 +341,10 @@ export const generateBody = (cwd = ".") => {
     if (subEdges.length === 0) continue;
 
     const short = root.replace("@univ-lehavre/", "");
-    const readme = path.join(workspaces.get(root).dir, "README.md");
+    const dir = workspaces.get(root).dir;
+    const readme = path.join(dir, "README.md");
     const heading = existsSync(readme)
-      ? `[\`${short}\`](../../${readme})`
+      ? `[\`${short}\`](${readmeUrl(dir)})`
       : `\`${short}\``;
     lines.push(`### ${heading}`, "");
     lines.push("```mermaid", "flowchart TD");
@@ -223,7 +352,9 @@ export const generateBody = (cwd = ".") => {
       const label = name.replace("@univ-lehavre/", "");
       lines.push(`  ${mermaidId(name)}["${label}"]`);
     }
-    subEdges.sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
+    subEdges.sort(
+      (a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]),
+    );
     for (const [from, to] of subEdges) {
       lines.push(`  ${mermaidId(from)} --> ${mermaidId(to)}`);
     }
@@ -233,13 +364,17 @@ export const generateBody = (cwd = ".") => {
   return lines.join("\n").trimEnd() + "\n";
 };
 
-/** Assemble la page complète (intro manuelle FR + corps généré). */
+/** Assemble la page complète (frontmatter Starlight + intro FR + corps généré). */
 const renderPage = (body) =>
-  `# Carte des paquets
+  `---
+title: Carte des paquets
+---
 
 Cette page liste **tous les paquets du monorepo** : leur rôle, leur catégorie,
 et leurs dépendances internes — qui consomme quoi. Elle répond à la question
-« pour comprendre un paquet, lesquels dois-je lire ? ».
+« pour comprendre un paquet, lesquels dois-je lire ? ». Une section dédiée
+recense les [paquets racines](#paquets-racines) — ceux qu'aucun autre paquet
+n'appelle — et explique, pour chacun, pourquoi.
 
 > **Page générée.** Le contenu ci-dessous est dérivé des \`package.json\` par
 > \`scripts/docs/generate-packages-map.mjs\`. Ne l'éditez pas à la main : lancez
@@ -247,7 +382,7 @@ et leurs dépendances internes — qui consomme quoi. Elle répond à la questio
 > vérifiée en CI (plan « Documentation vérifiable »).
 
 Pour la vue d'ensemble par catégorie et les règles transverses, voir
-[la structure du monorepo](./monorepo.md).
+[la structure du monorepo](./monorepo).
 
 ${START}
 

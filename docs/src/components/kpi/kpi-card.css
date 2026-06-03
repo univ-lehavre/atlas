@@ -1,0 +1,54 @@
+/* Style commun aux encarts KPI dispatchés dans les pages thématiques.
+   Mutualisé pour garder une cohérence visuelle entre des composants
+   sur-mesure (ADR 0028 : la doc reste lisible et homogène). */
+
+.kpi-card {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 0;
+  background: var(--sl-color-gray-6);
+}
+
+.kpi-head {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--sl-color-gray-3);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.75rem;
+}
+
+.kpi-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.kpi-metric {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpi-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--sl-color-text-accent);
+}
+
+.kpi-label {
+  font-size: 0.8rem;
+  color: var(--sl-color-gray-3);
+}
+
+.kpi-foot {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--sl-color-gray-3);
+}
+
+.kpi-empty {
+  font-style: italic;
+  color: var(--sl-color-gray-3);
+}

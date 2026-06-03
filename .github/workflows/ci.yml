@@ -313,7 +313,7 @@ jobs:
       - name: Build workspace packages
         run: pnpm build --filter="!./apps/**"
 
-      - name: Build VitePress site
+      - name: Build Astro Starlight site
         run: pnpm docs:build
 
   audit:

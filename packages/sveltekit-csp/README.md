@@ -14,10 +14,10 @@ extracts both pieces into one helper so every app inherits the same
 conservative defaults.
 
 The defaults preserve the explicit derogations recorded in
-[ADR 0019](../../docs/decisions/0019-derogations-workspace-audit.md) — in
+[ADR 0019](/atlas/decisions/0019-derogations-workspace-audit) — in
 particular `style-src 'unsafe-inline'` for Svelte and Bootstrap inline
 styles. Tightening is tracked sine die under
-[ADR 0001](../../docs/decisions/0001-devsecops-perimetre-repo-sine-die.md).
+[ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die).
 
 ## Usage
 

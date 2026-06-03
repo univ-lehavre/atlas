@@ -27,7 +27,7 @@ Le package expose les briques de workflow utilisées par le CLI `atlas-biblio`: 
 
 Requires a `.env` file:
 
-```env
+```ini
 USER_AGENT=my-app/1.0
 RATE_LIMIT={"limit":1,"interval":"1 seconds"}
 API_URL=https://api.openalex.org
