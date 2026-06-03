@@ -25,6 +25,36 @@ export default defineConfig({
           href: "https://github.com/univ-lehavre/atlas",
         },
       ],
+      // Sidebar par sections (reprend la structure VitePress). Syntaxe
+      // Starlight ≥ 0.39 : un groupe a un `label` et des `items`, dont une
+      // entrée `autogenerate` qui construit le groupe depuis l'arborescence.
+      sidebar: [
+        {
+          label: "Architecture",
+          items: [{ autogenerate: { directory: "architecture" } }],
+        },
+        {
+          label: "Qualité & sécurité",
+          items: [{ autogenerate: { directory: "quality" } }],
+        },
+        {
+          label: "Collaboration",
+          items: [{ autogenerate: { directory: "collaboration" } }],
+        },
+        {
+          label: "Décisions",
+          items: [{ autogenerate: { directory: "decisions" } }],
+        },
+        {
+          label: "Audits",
+          items: [{ autogenerate: { directory: "audit" } }],
+        },
+        {
+          label: "Plans",
+          items: [{ autogenerate: { directory: "plans" } }],
+        },
+        { label: "Glossaire", link: "/glossary/" },
+      ],
     }),
     mdx(),
   ],
