@@ -1,7 +1,7 @@
 {
   "name": "@univ-lehavre/atlas-crf-openapi",
   "version": "2.0.2",
-  "description": "Clinical research form (CRF / REDCap) source analysis, OpenAPI spec extraction, and API documentation tools",
+  "description": "Complex reporting form (CRF) source analysis, OpenAPI spec extraction, and API documentation tools",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
   "repository": {

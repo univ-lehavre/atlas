@@ -114,7 +114,7 @@ export const createApp = (options: CreateAppOptions): Hono => {
         info: {
           title: 'CRF Service API',
           version: '1.0.0',
-          description: 'Case Report Form - HTTP microservice exposing a REST API for REDCap',
+          description: 'Complex reporting form (CRF) - HTTP microservice exposing a REST API',
         },
         servers: [{ url: `http://localhost:${String(port)}`, description: 'Local development' }],
         tags: [

@@ -10,7 +10,7 @@
       "capabilities": {
         "reportId": "3",
         "surveyInstrument": "demographics",
-        "fileUploadField": "patient_document"
+        "fileUploadField": "subject_document"
       },
       "expected": {
         "metadata": 113,
@@ -28,7 +28,7 @@
       "capabilities": {
         "reportId": "4",
         "surveyInstrument": "demographics",
-        "fileUploadField": "patient_document"
+        "fileUploadField": "subject_document"
       },
       "expected": {
         "metadata": 90,

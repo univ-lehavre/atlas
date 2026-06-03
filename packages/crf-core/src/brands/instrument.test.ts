@@ -31,7 +31,7 @@ describe('InstrumentName', () => {
 
     it('should match names with underscores', () => {
       expect(INSTRUMENT_NAME_PATTERN.test('my_survey')).toBe(true);
-      expect(INSTRUMENT_NAME_PATTERN.test('patient_demographics')).toBe(true);
+      expect(INSTRUMENT_NAME_PATTERN.test('record_demographics')).toBe(true);
       expect(INSTRUMENT_NAME_PATTERN.test('survey_1_part_a')).toBe(true);
     });
 
@@ -136,7 +136,7 @@ describe('FieldName', () => {
   describe('FieldName validator', () => {
     it('should accept valid field names', () => {
       expect(() => FieldName('record_id')).not.toThrow();
-      expect(() => FieldName('patient_age')).not.toThrow();
+      expect(() => FieldName('record_age')).not.toThrow();
     });
 
     it('should throw for invalid names', () => {
