@@ -3,7 +3,11 @@
   "workspaces": {
     ".": {
       "project": ["*.{js,ts}"],
-      "ignoreDependencies": ["eslint", "prettier-plugin-svelte"]
+      "ignoreDependencies": [
+        "eslint",
+        "prettier-plugin-svelte",
+        "@braintree/sanitize-url"
+      ]
     },
     "packages/net": {
       "project": ["src/**/*.ts"]

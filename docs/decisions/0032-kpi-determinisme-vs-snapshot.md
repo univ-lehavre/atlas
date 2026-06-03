@@ -91,6 +91,15 @@ Accepted (2026-06-02). Étend [ADR 0028](0028-documentation-verifiable.md)
 (documentation vérifiable) sans la remplacer ; en applique le principe à des
 données partiellement non déterministes.
 
+> **Note (2026-06-03).** La **règle de classification A/B/C reste en vigueur** :
+> elle dicte comment traiter toute métrique documentée. En revanche, le
+> **mécanisme de série append-only de la classe B** (le fichier
+> `kpi-history.json` et le job planifié qui l'alimentait) a été **retiré** : à
+> ce jour, aucune métrique de classe B n'est historisée. Les sections B
+> ci-dessous décrivent donc le **modèle à appliquer** si une telle métrique est
+> réintroduite, pas un dispositif actuellement déployé. Les métriques de classe
+> A (graphes dérivés de Git, diff-checkés) restent en place.
+
 ## Conséquences
 
 **Bénéfices.** L'anti-dérive est préservé là où il a un sens (données
