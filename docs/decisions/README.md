@@ -17,6 +17,10 @@ Chaque ADR est numéroté en séquence (`NNNN-titre-en-kebab-case.md`).
 Une fois acté, un ADR n'est pas réécrit : il est **superseded** par un
 nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 
+> **Nouveau venu ?** Le [parcours thématique](./parcours.md) regroupe ces
+> décisions par sujet et propose un tour cohérent — par où commencer, comment
+> elles s'articulent. L'index ci-dessous reste la référence par numéro.
+
 ## Index
 
 | #    | Titre                                                                                                                              | Statut   |
