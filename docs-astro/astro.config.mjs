@@ -54,6 +54,7 @@ export default defineConfig({
           items: [{ autogenerate: { directory: "plans" } }],
         },
         { label: "Glossaire", link: "/glossary/" },
+        { label: "Référence API", link: "/api/" },
       ],
     }),
     mdx(),
