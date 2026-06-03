@@ -43,6 +43,7 @@ export interface PackageStats {
   name: string;
   path: string;
   version: string | null;
+  private: boolean;
   code: CodeStats;
   tests: TestStats;
   latestCommit: string | null;
