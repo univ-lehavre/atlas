@@ -137,6 +137,116 @@ const linkList = (names, workspaces) => {
 const mermaidId = (name) => name.replace(/[@/-]/g, "_");
 
 /**
+ * Classe un paquet racine (consommé par aucun autre paquet interne) selon la
+ * RAISON pour laquelle personne ne l'appelle. Chaque raison correspond à un
+ * sous-tableau de la section « Paquets racines », avec son intention propre :
+ * un livrable au sommet de l'arbre est attendu, un paquet interne orphelin
+ * mérite l'œil. L'ordre des clés fixe l'ordre d'affichage des sous-sections.
+ *
+ * @param {{root: string, packageJson: object}} info
+ * @returns {"deliverable" | "cli" | "sandbox" | "published-library" | "internal-orphan"}
+ */
+const classifyRoot = ({ root, packageJson }) => {
+  if (root === "apps" || root === "services") return "deliverable";
+  if (root === "cli") return "cli";
+  if (root === "sandbox") return "sandbox";
+  // packages / ui / config / assets : bibliothèque. Publiée → livrable pour
+  // l'extérieur ; privée → personne ne l'appelle ni en interne ni en aval.
+  return packageJson.private === true ? "internal-orphan" : "published-library";
+};
+
+/** Sous-sections de « Paquets racines », dans l'ordre, avec leur préambule. */
+const ROOT_GROUPS = [
+  {
+    key: "deliverable",
+    title: "Livrables applicatifs",
+    intro:
+      "Applications et services : on les **déploie et on les exécute**, pas " +
+      "on ne les importe. Être au sommet de l'arbre est leur nature même.",
+  },
+  {
+    key: "cli",
+    title: "Outils en ligne de commande",
+    intro:
+      "Points d'entrée lancés par un humain ou un script. Ils consomment des " +
+      "bibliothèques internes mais ne sont eux-mêmes jamais importés (les CLIs " +
+      "restent fins, la logique vit dans `packages/` — cf. ADR 0008).",
+  },
+  {
+    key: "published-library",
+    title: "Bibliothèques publiées sans consommateur interne",
+    intro:
+      "Paquets **publiables** (non `private`) qu'aucun autre paquet du dépôt " +
+      "n'importe : leur public est **en aval**, hors du monorepo. C'est " +
+      "légitime — un paquet peut être livré pour d'autres sans qu'on s'en " +
+      "serve ici.",
+  },
+  {
+    key: "sandbox",
+    title: "Bancs d'essai",
+    intro:
+      "Démonstrateurs isolés : ils consomment le reste du dépôt pour l'illustrer " +
+      "mais ne sont jamais consommés en retour (cf. ADR 0021).",
+  },
+  {
+    key: "internal-orphan",
+    title: "Paquets internes sans consommateur",
+    intro:
+      "Paquets **privés** (`private: true`) que personne n'importe et qui ne " +
+      "sont pas publiés : ni consommateur interne, ni public aval. À surveiller " +
+      "— code potentiellement mort, ou point d'entrée pas encore raccordé.",
+  },
+];
+
+/**
+ * Section « Paquets racines » : pour chaque raison d'être racine, un tableau
+ * des paquets concernés avec leur rôle. Répond explicitement à « quels paquets
+ * ne sont jamais appelés par d'autres, et pourquoi ».
+ *
+ * @param {Map<string, {root: string, dir: string, packageJson: object}>} workspaces
+ * @param {string[]} roots - Noms des paquets racines (reverse-deps vide), triés.
+ * @returns {string[]} Lignes Markdown.
+ */
+const renderRootPackages = (workspaces, roots) => {
+  const grouped = new Map(ROOT_GROUPS.map((g) => [g.key, []]));
+  for (const name of roots) {
+    grouped.get(classifyRoot(workspaces.get(name))).push(name);
+  }
+
+  const lines = ["## Paquets racines", ""];
+  lines.push(
+    "Un paquet est **racine** quand aucun autre paquet du dépôt ne le consomme.",
+    "La colonne « Consommé par » de la carte ci-dessus le marque d'un « — ». Ce",
+    "n'est pas un défaut en soi : un livrable est racine par construction. Les",
+    "sous-sections ci-dessous regroupent ces paquets **par raison** d'être",
+    "racine, de l'attendu (un livrable au sommet) au suspect (un paquet interne",
+    "que plus personne n'appelle).",
+    "",
+  );
+
+  for (const group of ROOT_GROUPS) {
+    const names = grouped.get(group.key);
+    if (names.length === 0) continue;
+    lines.push(`### ${group.title}`, "", group.intro, "");
+    lines.push("| Paquet | Catégorie | Rôle |", "| --- | --- | --- |");
+    for (const name of names) {
+      const { dir, packageJson, root } = workspaces.get(name);
+      const short = name.replace("@univ-lehavre/", "");
+      const readme = path.join(dir, "README.md");
+      const nameCell = existsSync(readme)
+        ? `[\`${short}\`](${readmeUrl(dir)})`
+        : `\`${short}\``;
+      lines.push(
+        `| ${nameCell} | \`${root}/\` | ${cell(roleOf(dir, packageJson))} |`,
+      );
+    }
+    lines.push("");
+  }
+
+  return lines;
+};
+
+/**
  * Génère le corps Markdown (entre les marqueurs).
  *
  * @param {string} [cwd]
@@ -181,6 +291,20 @@ export const generateBody = (cwd = ".") => {
     lines.push("");
   }
 
+  // Racines = paquets que personne ne consomme (reverse-deps vide). Tri par
+  // catégorie (ordre ROOTS) puis nom — partagé par la section descriptive et
+  // par les graphes Mermaid ci-dessous.
+  const roots = [...workspaces.keys()]
+    .filter((name) => (reverse.get(name) ?? []).length === 0)
+    .sort((a, b) => {
+      const ra = ROOTS.indexOf(workspaces.get(a).root);
+      const rb = ROOTS.indexOf(workspaces.get(b).root);
+      return ra - rb || a.localeCompare(b);
+    });
+
+  // ── Section descriptive « Paquets racines » ─────────────────────────────
+  lines.push(...renderRootPackages(workspaces, roots));
+
   // ── Graphes Mermaid : un graphe par racine (app/CLI) ────────────────────
   // Un graphe global de 43 nœuds / 114 arêtes est illisible. On le découpe :
   // pour chaque RACINE (paquet que personne ne consomme — typiquement une app
@@ -197,15 +321,6 @@ export const generateBody = (cwd = ".") => {
     "Un livrable sans dépendance interne n'a pas de graphe.",
     "",
   );
-
-  // Racines = paquets que personne ne consomme (reverse-deps vide).
-  const roots = [...workspaces.keys()]
-    .filter((name) => (reverse.get(name) ?? []).length === 0)
-    .sort((a, b) => {
-      const ra = ROOTS.indexOf(workspaces.get(a).root);
-      const rb = ROOTS.indexOf(workspaces.get(b).root);
-      return ra - rb || a.localeCompare(b);
-    });
 
   for (const root of roots) {
     // Fermeture transitive des dépendances de `root` (DFS), arêtes incluses.
@@ -257,7 +372,9 @@ title: Carte des paquets
 
 Cette page liste **tous les paquets du monorepo** : leur rôle, leur catégorie,
 et leurs dépendances internes — qui consomme quoi. Elle répond à la question
-« pour comprendre un paquet, lesquels dois-je lire ? ».
+« pour comprendre un paquet, lesquels dois-je lire ? ». Une section dédiée
+recense les [paquets racines](#paquets-racines) — ceux qu'aucun autre paquet
+n'appelle — et explique, pour chacun, pourquoi.
 
 > **Page générée.** Le contenu ci-dessous est dérivé des \`package.json\` par
 > \`scripts/docs/generate-packages-map.mjs\`. Ne l'éditez pas à la main : lancez

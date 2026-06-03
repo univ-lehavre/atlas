@@ -4,7 +4,9 @@ title: Carte des paquets
 
 Cette page liste **tous les paquets du monorepo** : leur rôle, leur catégorie,
 et leurs dépendances internes — qui consomme quoi. Elle répond à la question
-« pour comprendre un paquet, lesquels dois-je lire ? ».
+« pour comprendre un paquet, lesquels dois-je lire ? ». Une section dédiée
+recense les [paquets racines](#paquets-racines) — ceux qu'aucun autre paquet
+n'appelle — et explique, pour chacun, pourquoi.
 
 > **Page générée.** Le contenu ci-dessous est dérivé des `package.json` par
 > `scripts/docs/generate-packages-map.mjs`. Ne l'éditez pas à la main : lancez
@@ -98,6 +100,62 @@ Pour la vue d'ensemble par catégorie et les règles transverses, voir
 | [`atlas-amarre-sandbox`](/atlas/packages/sandbox/amarre-sandbox)   | Local Docker sandbox for the amarre app: bundles a CRF (REDCap) instance, a self-hosted BaaS (Appwrite), and the wiring scripts needed to run amarre end-to-end without depending on production services.   | [`atlas-shared-config`](/atlas/packages/config/shared-config) | —            |
 | [`atlas-crf-sandbox`](/atlas/packages/sandbox/crf-sandbox)         | CRF (REDCap) testing sandbox - Docker environment and contract tests for validating OpenAPI specs                                                                                                           | [`atlas-shared-config`](/atlas/packages/config/shared-config) | —            |
 | [`atlas-sillage-sandbox`](/atlas/packages/sandbox/sillage-sandbox) | Local Docker sandbox for the sillage app: bundles a CRF (REDCap) instance, a self-hosted BaaS (Appwrite), and the wiring scripts needed to run sillage end-to-end without depending on production services. | [`atlas-shared-config`](/atlas/packages/config/shared-config) | —            |
+
+## Paquets racines
+
+Un paquet est **racine** quand aucun autre paquet du dépôt ne le consomme.
+La colonne « Consommé par » de la carte ci-dessus le marque d'un « — ». Ce
+n'est pas un défaut en soi : un livrable est racine par construction. Les
+sous-sections ci-dessous regroupent ces paquets **par raison** d'être
+racine, de l'attendu (un livrable au sommet) au suspect (un paquet interne
+que plus personne n'appelle).
+
+### Livrables applicatifs
+
+Applications et services : on les **déploie et on les exécute**, pas on ne les importe. Être au sommet de l'arbre est leur nature même.
+
+| Paquet                                                        | Catégorie | Rôle                                                                                                   |
+| ------------------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------ |
+| [`atlas-amarre`](/atlas/packages/apps/amarre)                 | `apps/`   | Application de gestion des conventions.                                                                |
+| [`atlas-crf-dashboard`](/atlas/packages/apps/crf-dashboard)   | `apps/`   | Tableau de bord interne — vue d'ensemble des dictionnaires REDCap et de leur conformité.               |
+| [`atlas-dashboard`](/atlas/packages/apps/atlas-dashboard)     | `apps/`   | Internal dashboard tracking npm and GitHub stats (releases, downloads) of the published Atlas packages |
+| [`atlas-ecrin`](/atlas/packages/apps/ecrin)                   | `apps/`   | Application de gestion des projets et de leurs dossiers d'avis éthiques.                               |
+| [`atlas-find-an-expert`](/atlas/packages/apps/find-an-expert) | `apps/`   | Outil de recherche d'expertise, basé sur l'agrégation des publications via OpenAlex.                   |
+| [`atlas-sillage`](/atlas/packages/apps/sillage)               | `apps/`   | Plateforme communautaire de mise en relation autour de projets ECRIN.                                  |
+
+### Outils en ligne de commande
+
+Points d'entrée lancés par un humain ou un script. Ils consomment des bibliothèques internes mais ne sont eux-mêmes jamais importés (les CLIs restent fins, la logique vit dans `packages/` — cf. ADR 0008).
+
+| Paquet                                                                     | Catégorie | Rôle                                                                                               |
+| -------------------------------------------------------------------------- | --------- | -------------------------------------------------------------------------------------------------- |
+| [`atlas-biblio-cli`](/atlas/packages/cli/biblio)                           | `cli/`    | CLI entry point for OpenAlex bibliographic data validation                                         |
+| [`atlas-citation-cli`](/atlas/packages/cli/citation)                       | `cli/`    | CLI for OpenAlex citation graph researcher data curation                                           |
+| [`atlas-crf-cli`](/atlas/packages/cli/crf)                                 | `cli/`    | CRF CLI - REDCap connectivity test and CRF server management                                       |
+| [`atlas-crf-openapi`](/atlas/packages/cli/crf-openapi)                     | `cli/`    | Complex reporting form (CRF) source analysis, OpenAPI spec extraction, and API documentation tools |
+| [`atlas-crf-stats-cli`](/atlas/packages/cli/crf-stats)                     | `cli/`    | CLI to test CRF (REDCap) project tokens and inspect API responses                                  |
+| [`atlas-net-cli`](/atlas/packages/cli/net)                                 | `cli/`    | Network diagnostic CLI for Atlas                                                                   |
+| [`atlas-researcher-profiles-cli`](/atlas/packages/cli/researcher-profiles) | `cli/`    | Researcher profiles CLI: fetch OpenAlex works from CSV or REDCap and write to REDCap               |
+| [`atlas-stats-cli`](/atlas/packages/cli/atlas-stats)                       | `cli/`    | CLI interactif pour visualiser les statistiques GitHub et npm du dépôt Atlas                       |
+
+### Bibliothèques publiées sans consommateur interne
+
+Paquets **publiables** (non `private`) qu'aucun autre paquet du dépôt n'importe : leur public est **en aval**, hors du monorepo. C'est légitime — un paquet peut être livré pour d'autres sans qu'on s'en serve ici.
+
+| Paquet                                                                        | Catégorie   | Rôle                                                                                                                 |
+| ----------------------------------------------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------- |
+| [`atlas-crf-fixtures`](/atlas/packages/packages/crf-fixtures)                 | `packages/` | CRF data-dictionary CSV parser and deterministic fake-record generator for tests and fixtures in the atlas monorepo. |
+| [`atlas-crf-project-template`](/atlas/packages/packages/crf-project-template) | `packages/` | Declarative, typed CRF project template (instruments, fields, metadata) built with Effect Schema.                    |
+
+### Bancs d'essai
+
+Démonstrateurs isolés : ils consomment le reste du dépôt pour l'illustrer mais ne sont jamais consommés en retour (cf. ADR 0021).
+
+| Paquet                                                             | Catégorie  | Rôle                                                                                                                                                                                                        |
+| ------------------------------------------------------------------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`atlas-amarre-sandbox`](/atlas/packages/sandbox/amarre-sandbox)   | `sandbox/` | Local Docker sandbox for the amarre app: bundles a CRF (REDCap) instance, a self-hosted BaaS (Appwrite), and the wiring scripts needed to run amarre end-to-end without depending on production services.   |
+| [`atlas-crf-sandbox`](/atlas/packages/sandbox/crf-sandbox)         | `sandbox/` | CRF (REDCap) testing sandbox - Docker environment and contract tests for validating OpenAPI specs                                                                                                           |
+| [`atlas-sillage-sandbox`](/atlas/packages/sandbox/sillage-sandbox) | `sandbox/` | Local Docker sandbox for the sillage app: bundles a CRF (REDCap) instance, a self-hosted BaaS (Appwrite), and the wiring scripts needed to run sillage end-to-end without depending on production services. |
 
 ## Graphes de dépendances par livrable
 
