@@ -1,0 +1,21 @@
+{
+  "name": "@univ-lehavre/atlas-docs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs:dev": "astro dev",
+    "docs:build": "astro build",
+    "docs:preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4.0.0",
+    "@astrojs/starlight": "^0.39.0",
+    "@astrojs/vue": "^6.0.0",
+    "astro": "^6.4.0",
+    "astro-mermaid": "^2.0.0",
+    "mermaid": "^11.15.0",
+    "vue": "^3.5.0"
+  }
+}
