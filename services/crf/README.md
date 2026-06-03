@@ -79,15 +79,15 @@ Atlas is developed as part of two projects led by Le Havre Normandie University:
 
 <p align="center">
   <a href="https://www.univ-lehavre.fr/">
-    <img src="../../packages/logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
+    <img src="../../assets/logos/ulhn.svg" alt="Le Havre Normandie University" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://www.cptmp.fr/">
-    <img src="../../packages/logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="20">
+    <img src="../../assets/logos/cptmp.png" alt="Campus Polytechnique des Territoires Maritimes et Portuaires" height="20">
   </a>
   &nbsp;&nbsp;&nbsp;
   <a href="https://eunicoast.eu/">
-    <img src="../../packages/logos/eunicoast.png" alt="EUNICoast" height="20">
+    <img src="../../assets/logos/eunicoast.png" alt="EUNICoast" height="20">
   </a>
 </p>
 
