@@ -59,6 +59,22 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Turbo cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: .turbo
+          key: turbo-v2-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v2-${{ runner.os }}-
+
+      # TypeDoc (lancé par `docs:build` via `docs:api`) résout les types
+      # importés depuis les paquets frères à partir de leurs `.d.ts` buildés.
+      # Sans ce build préalable, TypeDoc échoue (`TS2307: Cannot find module
+      # '@univ-lehavre/atlas-...'`) et le déploiement entier plante — c'est
+      # exactement l'étape que le job Documentation de `ci.yml` exécute déjà.
+      - name: Build workspace packages
+        run: pnpm build --filter="!./apps/**"
+
       - name: Build VitePress site
         run: pnpm docs:build
 

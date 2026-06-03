@@ -2,6 +2,10 @@
 
 Atlas accueille les contributions — code, documentation, signalements de bug, suggestions UX. Tu n'as pas besoin d'être développeur pour contribuer utilement : ouvre simplement une [issue](https://github.com/univ-lehavre/atlas/issues) si tu repères quelque chose à améliorer.
 
+## Un dépôt généraliste et ouvert
+
+Atlas est un dépôt **généraliste** : tout ce qui y est produit — code, documentation, exemples, identifiants, et décisions d'architecture — reste **neutre vis-à-vis d'un domaine métier, d'une marque ou d'un établissement particuliers**, pour qu'un contributeur de n'importe quel horizon puisse le reprendre. Concrètement : pas de marque ni d'organisme dans un identifiant (la fonction générique, pas le produit), pas d'ancrage dans un secteur d'activité, anglais standard pour le code. Le _pourquoi_ et les règles détaillées sont dans l'[ADR 0035](docs/decisions/0035-depot-generaliste-ouvert.md).
+
 ## Pour les contributions code
 
 Avant d'ouvrir une Pull Request, lis les pages dédiées du site de documentation :

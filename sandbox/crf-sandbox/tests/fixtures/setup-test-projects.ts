@@ -157,7 +157,7 @@ const TEST_PROJECTS: ProjectSetup[] = [
         record_id: '1',
         redcap_repeat_instrument: '',
         redcap_repeat_instance: '',
-        first_name: 'Patient',
+        first_name: 'Subject',
         last_name: 'One',
         demographics_complete: '2',
       },

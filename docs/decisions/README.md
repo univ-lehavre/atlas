@@ -55,6 +55,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0032 | [KPI documentés : généré déterministe (diff-checké) vs snapshot (append-only)](0032-kpi-determinisme-vs-snapshot.md)               | Accepted |
 | 0033 | [Contrat d'interface entre l'application (`atlas`) et le cluster](0033-contrat-interface-cluster.md)                               | Accepted |
 | 0034 | [CI adaptative par chemin : court-circuit des jobs lourds](0034-ci-adaptative-par-chemin.md)                                       | Accepted |
+| 0035 | [Dépôt généraliste ouvert : neutralité de domaine](0035-depot-generaliste-ouvert.md)                                               | Accepted |
 
 ## Quand ouvrir un ADR
 
