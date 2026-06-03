@@ -66,10 +66,10 @@ et le modèle multi-tenant déjà actés ailleurs.
   contributeurs et déployeurs tiers. C'est ce qui rend le dépôt public crédible.
 - **Contribution ouverte, sans condition d'appartenance.** Un développeur de tout
   établissement peut contribuer. La gouvernance de contribution est formalisée à
-  la racine : [`CONTRIBUTING.md`](../../CONTRIBUTING.md) (flux, conventions, CLA
-  léger MIT) et [`CODE_OF_CONDUCT.md`](../../CODE_OF_CONDUCT.md) (Contributor
+  la racine : [`CONTRIBUTING.md`](https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md) (flux, conventions, CLA
+  léger MIT) et [`CODE_OF_CONDUCT.md`](https://github.com/univ-lehavre/atlas/blob/main/CODE_OF_CONDUCT.md) (Contributor
   Covenant v2.1), avec un canal de signalement confidentiel via
-  [`SECURITY.md`](../../SECURITY.md).
+  [`SECURITY.md`](https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md).
 
 ## Statut
 
@@ -108,8 +108,8 @@ de sa conformité.
 - La **licence reste permissive** (MIT) ; tout changement de licence rouvre cet
   ADR.
 - La gouvernance de contribution est en place
-  ([`CONTRIBUTING.md`](../../CONTRIBUTING.md),
-  [`CODE_OF_CONDUCT.md`](../../CODE_OF_CONDUCT.md)) ; la **tenir à jour** (scopes,
+  ([`CONTRIBUTING.md`](https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md),
+  [`CODE_OF_CONDUCT.md`](https://github.com/univ-lehavre/atlas/blob/main/CODE_OF_CONDUCT.md)) ; la **tenir à jour** (scopes,
   flux, canaux) au fil de l'évolution du projet est un garde-fou continu.
 - La neutralité de framing ([ADR 0012](0012-neutralisation-framing-institutionnel))
   et le nommage générique ([ADR 0022](0022-naming-convention)) restent les

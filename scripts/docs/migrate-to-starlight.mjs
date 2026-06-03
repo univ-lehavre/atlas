@@ -19,6 +19,7 @@
  */
 
 import {
+  existsSync,
   mkdirSync,
   readdirSync,
   readFileSync,
@@ -54,15 +55,27 @@ const listPages = (dir) => {
  * tels quels : ils relèvent d'étapes ultérieures (README inclus en place) ou
  * pointent vers GitHub.
  */
+const PKG_CATEGORIES = "packages|cli|services|apps|config|ui|assets";
+
 const rewriteLinks = (body) =>
-  body.replace(/\]\(([^)]*?)\.md(#[^)]*)?\)/g, (match, path, anchor = "") => {
+  body.replace(/\]\(([^)]*?)\.md(#[^)]*)?\)/g, (match, link, anchor = "") => {
     // Liens externes (http, mailto) : intacts.
-    if (/^[a-z]+:/i.test(path)) return match;
-    // Hors docs/ (remonte au-delà de la racine docs) : on ne touche pas — ces
-    // cibles (README de paquets, CONTRIBUTING…) relèvent d'étapes ultérieures.
-    if (path.includes("../../")) return match;
-    // README.md → répertoire (index Starlight) ; sinon on retire juste `.md`.
-    const cleaned = path.replace(/(^|\/)README$/, "$1");
+    if (/^[a-z]+:/i.test(link)) return match;
+    // README d'un paquet (hors docs/) → page Starlight générée en place
+    // (route /packages/<cat>/<pkg>, cf. étape 3). Ex.
+    // `../../packages/crf-core/README.md` → `/atlas/packages/packages/crf-core`.
+    const pkg = link.match(
+      new RegExp(`(?:\\.\\./)+(${PKG_CATEGORIES})/([^/]+)/README$`),
+    );
+    if (pkg) return `](/atlas/packages/${pkg[1]}/${pkg[2]}${anchor})`;
+    // Autres cibles hors docs/ (CONTRIBUTING, SECURITY…) → on pointe vers le
+    // fichier sur GitHub (elles ne sont pas des pages de doc).
+    if (link.includes("../../")) {
+      const repoFile = link.replace(/^(\.\.\/)+/, "");
+      return `](https://github.com/univ-lehavre/atlas/blob/main/${repoFile}.md${anchor})`;
+    }
+    // Lien interne doc→doc : README.md → répertoire, sinon retrait du `.md`.
+    const cleaned = link.replace(/(^|\/)README$/, "$1");
     return `](${cleaned}${anchor})`;
   });
 
@@ -143,15 +156,23 @@ const destPath = (srcPath) => {
 const main = () => {
   const pages = listPages(SRC);
   let count = 0;
+  let skipped = 0;
   for (const src of pages) {
+    const dest = destPath(src);
+    // Ne pas écraser une page déjà convertie en `.mdx` (pages portant des
+    // composants Vue, traitées manuellement à l'étape 4).
+    const mdxDest = dest.replace(/\.md$/, ".mdx");
+    if (existsSync(mdxDest)) {
+      skipped += 1;
+      continue;
+    }
     const content = readFileSync(src, "utf8");
     const out = transform(content, relative(SRC, src));
-    const dest = destPath(src);
     mkdirSync(dirname(dest), { recursive: true });
     writeFileSync(dest, out.endsWith("\n") ? out : out + "\n");
     count += 1;
   }
-  console.log(`Migré ${count} pages vers ${DEST}`);
+  console.log(`Migré ${count} pages vers ${DEST} (${skipped} .mdx préservées)`);
 };
 
 const invokedDirectly =

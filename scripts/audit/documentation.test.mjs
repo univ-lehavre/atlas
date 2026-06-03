@@ -203,48 +203,50 @@ describe("adrReferences", () => {
 });
 
 describe("navLinks", () => {
-  it("normalise les liens de section en index", () => {
-    const cfg = `link: "/decisions/"`;
-    const links = navLinks(cfg);
-    assert.ok(links.has("decisions/index"));
+  it("collecte les dossiers autogénérés de la sidebar Starlight", () => {
+    const cfg = `items: [{ autogenerate: { directory: "decisions" } }]`;
+    const { directories } = navLinks(cfg);
+    assert.ok(directories.has("decisions"));
   });
 
-  it("conserve les liens de page tels quels", () => {
-    const cfg = `link: "/quality/security"`;
-    const links = navLinks(cfg);
-    assert.ok(links.has("quality/security"));
+  it("collecte les liens explicites (sans slash final)", () => {
+    const cfg = `{ label: "Glossaire", link: "/glossary/" }`;
+    const { links } = navLinks(cfg);
+    assert.ok(links.has("glossary"));
   });
 
-  it("collecte plusieurs liens", () => {
+  it("collecte plusieurs dossiers et liens", () => {
     const cfg = `
-      { text: "A", link: "/a/x" },
-      { text: "B", link: "/b/" },
+      { label: "A", items: [{ autogenerate: { directory: "architecture" } }] },
+      { label: "B", link: "/api/" },
     `;
-    const links = navLinks(cfg);
-    assert.deepEqual([...links].sort(), ["a/x", "b/index"]);
+    const { directories, links } = navLinks(cfg);
+    assert.deepEqual([...directories].sort(), ["architecture"]);
+    assert.deepEqual([...links].sort(), ["api"]);
   });
 });
 
 describe("findOrphanPages", () => {
-  it("repère une page absente de la nav", () => {
-    const pages = ["quality/security", "quality/orpheline"];
-    const links = new Set(["quality/security"]);
-    assert.deepEqual(findOrphanPages(pages, links), ["quality/orpheline"]);
+  it("repère une page dont le dossier n'est pas dans la sidebar", () => {
+    const pages = ["quality/security", "perdu/orpheline"];
+    const nav = { directories: new Set(["quality"]), links: new Set() };
+    assert.deepEqual(findOrphanPages(pages, nav), ["perdu/orpheline"]);
   });
 
   it("ne signale jamais la page d'accueil", () => {
-    assert.deepEqual(findOrphanPages(["index"], new Set()), []);
+    const nav = { directories: new Set(), links: new Set() };
+    assert.deepEqual(findOrphanPages(["index"], nav), []);
   });
 
-  it("remappe une page de section README sur index", () => {
-    const pages = ["decisions/README"];
-    const links = new Set(["decisions/index"]);
-    assert.deepEqual(findOrphanPages(pages, links), []);
+  it("couvre toute page d'un dossier autogénéré", () => {
+    const pages = ["decisions/0001-x", "decisions/parcours"];
+    const nav = { directories: new Set(["decisions"]), links: new Set() };
+    assert.deepEqual(findOrphanPages(pages, nav), []);
   });
 
-  it("ne signale rien quand tout est lié", () => {
-    const pages = ["a/x", "b/y"];
-    const links = new Set(["a/x", "b/y"]);
-    assert.deepEqual(findOrphanPages(pages, links), []);
+  it("couvre une page liée explicitement", () => {
+    const pages = ["glossary"];
+    const nav = { directories: new Set(), links: new Set(["glossary"]) };
+    assert.deepEqual(findOrphanPages(pages, nav), []);
   });
 });

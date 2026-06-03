@@ -59,11 +59,11 @@ flowchart LR
     service -->|JSON| app
 ```
 
-- **[`crf-client`](../../packages/crf-client/README.md)** parle à REDCap en HTTP et
+- **[`crf-client`](/atlas/packages/packages/crf-client)** parle à REDCap en HTTP et
   retourne des `Effect<A, E>` — l'erreur est une valeur typée, jamais une exception.
-- **[`crf-core`](../../packages/crf-core/README.md)** porte le **domaine** : la
+- **[`crf-core`](/atlas/packages/packages/crf-core)** porte le **domaine** : la
   validation et les _brands_ (voir ci-dessous).
-- **[`services/crf`](../../services/crf/README.md)** expose le tout en API HTTP
+- **[`services/crf`](/atlas/packages/services/crf)** expose le tout en API HTTP
   (Hono) ; c'est l'un des points où l'`Effect` est **exécuté** (`runPromise` dans le
   handler — cf. [ADR 0005](../decisions/0005-effect-pour-la-pf)).
 - L'**application SvelteKit** consomme cette API et orchestre l'affichage.
@@ -71,7 +71,7 @@ flowchart LR
 ## Les contrats : où vit la garantie
 
 Une donnée n'est de confiance que si son type l'est. Atlas s'appuie sur deux
-mécanismes, tous deux dans [`crf-core`](../../packages/crf-core/README.md) :
+mécanismes, tous deux dans [`crf-core`](/atlas/packages/packages/crf-core) :
 
 - **Les _brands_** (`crf-core/src/brands/`) : des identifiants **typés
   nominativement** plutôt que de simples chaînes — `CrfToken`, `RecordId`,
@@ -80,10 +80,10 @@ mécanismes, tous deux dans [`crf-core`](../../packages/crf-core/README.md) :
   `RecordId` là où un `InstrumentName` est attendu, même si les deux sont des
   chaînes à l'exécution. C'est là que vivent les invariants du domaine.
 - **Effect Schema** : la trame déclarative d'un projet CRF
-  ([`crf-project-template`](../../packages/crf-project-template/README.md)) décrit
+  ([`crf-project-template`](/atlas/packages/packages/crf-project-template)) décrit
   instruments, champs et métadonnées sous forme de schémas validables. Un
   dictionnaire CSV se valide contre ce schéma ; le générateur de fixtures
-  ([`crf-fixtures`](../../packages/crf-fixtures/README.md)) produit des données
+  ([`crf-fixtures`](/atlas/packages/packages/crf-fixtures)) produit des données
   cohérentes avec lui.
 
 En pratique : une valeur brute (texte d'un champ REDCap) entre par `crf-client`,

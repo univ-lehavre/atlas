@@ -17,12 +17,12 @@ attendu.
 
 ## Configuration versionnée (`.github/`)
 
-| Fichier                                                              | Rôle                                                                                                |
-| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| [`CODEOWNERS`](../../.github/CODEOWNERS)                             | Propriétaires de code requis en revue sur les chemins sensibles                                     |
-| [`dependabot.yml`](../../.github/dependabot.yml)                     | Mises à jour automatiques des dépendances npm et GitHub Actions                                     |
-| [`pull_request_template.md`](../../.github/pull_request_template.md) | Gabarit de PR (pourquoi / quoi / comment vérifier)                                                  |
-| [`workflows/*.yml`](../../.github/workflows/)                        | Workflows GitHub Actions (CI, sécurité, release, docs) — voir [Pipeline CI](../quality/ci-pipeline) |
+| Fichier                                                                                                        | Rôle                                                                                                |
+| -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [`CODEOWNERS`](../../.github/CODEOWNERS)                                                                       | Propriétaires de code requis en revue sur les chemins sensibles                                     |
+| [`dependabot.yml`](../../.github/dependabot.yml)                                                               | Mises à jour automatiques des dépendances npm et GitHub Actions                                     |
+| [`pull_request_template.md`](https://github.com/univ-lehavre/atlas/blob/main/.github/pull_request_template.md) | Gabarit de PR (pourquoi / quoi / comment vérifier)                                                  |
+| [`workflows/*.yml`](../../.github/workflows/)                                                                  | Workflows GitHub Actions (CI, sécurité, release, docs) — voir [Pipeline CI](../quality/ci-pipeline) |
 
 ### Propriété du code (CODEOWNERS)
 
@@ -125,4 +125,4 @@ Activé dans _Settings → Code security_ :
 - **Secret scanning** + **push protection** — doublés localement par
   gitleaks ([`gitleaks.yml`](../../.github/workflows/gitleaks.yml)) ;
 - **Private vulnerability reporting** — canal de signalement confidentiel,
-  décrit dans [SECURITY.md](../../SECURITY.md).
+  décrit dans [SECURITY.md](https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md).

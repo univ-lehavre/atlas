@@ -26,7 +26,7 @@ import {
   internalDepsOf,
 } from "../audit/lib/workspace-index.mjs";
 
-const OUTPUT = "docs/architecture/packages.md";
+const OUTPUT = "docs-astro/src/content/docs/architecture/packages.md";
 const START = "<!-- AUTO-GENERATED:packages-map START -->";
 const END = "<!-- AUTO-GENERATED:packages-map END -->";
 
@@ -55,11 +55,21 @@ const CATEGORY_ORDER = [
 ];
 
 /**
+ * URL de la page de doc d'un paquet dans Starlight. Les README sont inclus en
+ * place (route /packages/<dir>, cf. ADR 0036) ; `dir` est le chemin du paquet
+ * dans le monorepo (ex. `packages/crf-core` → `/atlas/packages/packages/crf-core`).
+ */
+const readmeUrl = (dir) => `/atlas/packages/${dir}`;
+
+/**
  * Rôle d'un paquet : `description` du package.json, sinon premier paragraphe
  * du README, sinon une mention explicite (que l'audit signalera).
  */
 const roleOf = (dir, packageJson) => {
-  if (typeof packageJson.description === "string" && packageJson.description.trim())
+  if (
+    typeof packageJson.description === "string" &&
+    packageJson.description.trim()
+  )
     return packageJson.description.trim();
   const readme = path.join(dir, "README.md");
   if (existsSync(readme)) {
@@ -116,7 +126,7 @@ const linkList = (names, workspaces) => {
     .map((n) => {
       const ws = workspaces.get(n);
       const readme = ws ? path.join(ws.dir, "README.md") : null;
-      const rel = readme && existsSync(readme) ? `../../${readme}` : null;
+      const rel = readme && existsSync(readme) ? readmeUrl(ws.dir) : null;
       const short = n.replace("@univ-lehavre/", "");
       return rel ? `[\`${short}\`](${rel})` : `\`${short}\``;
     })
@@ -158,10 +168,13 @@ export const generateBody = (cwd = ".") => {
       const short = name.replace("@univ-lehavre/", "");
       const readme = path.join(dir, "README.md");
       const nameCell = existsSync(readme)
-        ? `[\`${short}\`](../../${readme})`
+        ? `[\`${short}\`](${readmeUrl(dir)})`
         : `\`${short}\``;
       const role = cell(roleOf(dir, packageJson));
-      const dependsOn = linkList(internalDepsOf(packageJson, workspaces), workspaces);
+      const dependsOn = linkList(
+        internalDepsOf(packageJson, workspaces),
+        workspaces,
+      );
       const consumedBy = linkList(reverse.get(name) ?? [], workspaces);
       lines.push(`| ${nameCell} | ${role} | ${dependsOn} | ${consumedBy} |`);
     }
@@ -213,9 +226,10 @@ export const generateBody = (cwd = ".") => {
     if (subEdges.length === 0) continue;
 
     const short = root.replace("@univ-lehavre/", "");
-    const readme = path.join(workspaces.get(root).dir, "README.md");
+    const dir = workspaces.get(root).dir;
+    const readme = path.join(dir, "README.md");
     const heading = existsSync(readme)
-      ? `[\`${short}\`](../../${readme})`
+      ? `[\`${short}\`](${readmeUrl(dir)})`
       : `\`${short}\``;
     lines.push(`### ${heading}`, "");
     lines.push("```mermaid", "flowchart TD");
@@ -223,7 +237,9 @@ export const generateBody = (cwd = ".") => {
       const label = name.replace("@univ-lehavre/", "");
       lines.push(`  ${mermaidId(name)}["${label}"]`);
     }
-    subEdges.sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
+    subEdges.sort(
+      (a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]),
+    );
     for (const [from, to] of subEdges) {
       lines.push(`  ${mermaidId(from)} --> ${mermaidId(to)}`);
     }
@@ -233,9 +249,11 @@ export const generateBody = (cwd = ".") => {
   return lines.join("\n").trimEnd() + "\n";
 };
 
-/** Assemble la page complète (intro manuelle FR + corps généré). */
+/** Assemble la page complète (frontmatter Starlight + intro FR + corps généré). */
 const renderPage = (body) =>
-  `# Carte des paquets
+  `---
+title: Carte des paquets
+---
 
 Cette page liste **tous les paquets du monorepo** : leur rôle, leur catégorie,
 et leurs dépendances internes — qui consomme quoi. Elle répond à la question
@@ -247,7 +265,7 @@ et leurs dépendances internes — qui consomme quoi. Elle répond à la questio
 > vérifiée en CI (plan « Documentation vérifiable »).
 
 Pour la vue d'ensemble par catégorie et les règles transverses, voir
-[la structure du monorepo](./monorepo.md).
+[la structure du monorepo](./monorepo).
 
 ${START}
 

@@ -50,58 +50,58 @@ Chaque parcours liste les paquets à lire **dans l'ordre**, du socle à l'usage.
 Comment un utilisateur se connecte (magic link) et comment les apps vérifient sa
 session.
 
-1. **[`baas`](../../packages/baas/README.md)** — le client Appwrite partagé
+1. **[`baas`](/atlas/packages/packages/baas)** — le client Appwrite partagé
    (utilitaires _backend-as-a-service_).
-2. **[`auth`](../../packages/auth/README.md)** — le service d'authentification
+2. **[`auth`](/atlas/packages/packages/auth)** — le service d'authentification
    bâti dessus (login, logout, signup, lecture de session).
-3. **[`sveltekit-handler`](../../packages/sveltekit-handler/README.md)** — le
+3. **[`sveltekit-handler`](/atlas/packages/packages/sveltekit-handler)** — le
    wrapper de handler `+server.ts` (try/catch + mapping d'erreurs uniforme) qui
    enveloppe les routes d'API des apps.
-4. **[`sveltekit-csp`](../../packages/sveltekit-csp/README.md)** — les en-têtes de
+4. **[`sveltekit-csp`](/atlas/packages/packages/sveltekit-csp)** — les en-têtes de
    sécurité et la CSP appliqués à chaque réponse.
 5. Côté app : les `hooks.server.ts` et les routes `src/routes/api/v1/auth/*` d'une
-   app comme [`ecrin`](../../apps/ecrin/README.md) montrent l'assemblage.
+   app comme [`ecrin`](/atlas/packages/apps/ecrin) montrent l'assemblage.
 
 ### Données structurées de formulaires (CRF / REDCap)
 
 Comment Atlas lit et valide les données structurées des formulaires (aucune
 donnée de santé ni sensible — voir [ADR 0007](../decisions/0007-redcap-appwrite-plateformes)).
 
-1. **[`crf-core`](../../packages/crf-core/README.md)** — le cœur fonctionnel
+1. **[`crf-core`](/atlas/packages/packages/crf-core)** — le cœur fonctionnel
    (Effect) : types du domaine, validation, et les **brands** (identifiants typés :
    `CrfToken`, `RecordId`, `InstrumentName`, `FieldName`, `UserId`…). C'est ici que
    vivent les contrats.
-2. **[`crf-client`](../../packages/crf-client/README.md)** — le client d'API typé
+2. **[`crf-client`](/atlas/packages/packages/crf-client)** — le client d'API typé
    (Effect) qui parle à une instance REDCap, avec des adaptateurs par version.
-3. **[`crf-fixtures`](../../packages/crf-fixtures/README.md)** — le parseur de
+3. **[`crf-fixtures`](/atlas/packages/packages/crf-fixtures)** — le parseur de
    dictionnaire CSV et le générateur déterministe de faux enregistrements (tests,
    bancs d'essai).
-4. **[`crf-project-template`](../../packages/crf-project-template/README.md)** — la
+4. **[`crf-project-template`](/atlas/packages/packages/crf-project-template)** — la
    trame déclarative d'un projet CRF (instruments, champs, métadonnées) en Effect
    Schema.
-5. **[`services/crf`](../../services/crf/README.md)** — le microservice HTTP (Hono)
+5. **[`services/crf`](/atlas/packages/services/crf)** — le microservice HTTP (Hono)
    qui expose ces capacités en API.
 
 ### Bibliographie et profils de chercheurs
 
 Comment Atlas enrichit ses données avec des sources publiques.
 
-1. **[`citation-types`](../../packages/citation-types/README.md)** puis
-   **[`citation`](../../packages/citation/README.md)** — les types et la logique de
+1. **[`citation-types`](/atlas/packages/packages/citation-types)** puis
+   **[`citation`](/atlas/packages/packages/citation)** — les types et la logique de
    récupération/regroupement de citations (OpenAlex).
-2. **[`citation-fetch`](../../packages/citation-fetch/README.md)** et
-   **[`fetch-one-api-page`](../../packages/fetch-one-api-page/README.md)** — la
+2. **[`citation-fetch`](/atlas/packages/packages/citation-fetch)** et
+   **[`fetch-one-api-page`](/atlas/packages/packages/fetch-one-api-page)** — la
    pagination et la récupération HTTP bas niveau.
-3. **[`researcher-profiles`](../../packages/researcher-profiles/README.md)** — la
+3. **[`researcher-profiles`](/atlas/packages/packages/researcher-profiles)** — la
    génération de profils de chercheurs à partir de ces données.
 
 ### Outils transverses
 
-- **[`errors`](../../packages/errors/README.md)** — les types d'erreurs partagés et
+- **[`errors`](/atlas/packages/packages/errors)** — les types d'erreurs partagés et
   leur mapping HTTP, consommés par presque tous les autres paquets.
-- **[`validators`](../../packages/validators/README.md)** — les validateurs
+- **[`validators`](/atlas/packages/packages/validators)** — les validateurs
   partagés (email, contenu JSON…).
-- **[`net`](../../packages/net/README.md)** — les diagnostics réseau (DNS, TLS,
+- **[`net`](/atlas/packages/packages/net)** — les diagnostics réseau (DNS, TLS,
   connectivité).
 
 ## Et ensuite ?

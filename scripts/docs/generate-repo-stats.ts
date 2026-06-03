@@ -137,7 +137,7 @@ async function readPackageInfo(
 /**
  * Output path for generated statistics.
  */
-const OUTPUT_PATH = "docs/.vitepress/data/repo-stats.json";
+const OUTPUT_PATH = "docs-astro/src/data/repo-stats.json";
 
 /**
  * Main function to generate repository statistics.

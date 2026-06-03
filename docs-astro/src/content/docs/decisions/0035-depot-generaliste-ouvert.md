@@ -113,5 +113,5 @@ vocabulaire spécialisé.
 - Un **ADR qui tranche une décision d'organisme** (base légale, DPO,
   déploiement) sort de son périmètre : on le recadre sur le **mécanisme
   générique**, en laissant la **valeur** à l'exploitant.
-- Le pointeur dans [`CONTRIBUTING.md`](../../CONTRIBUTING.md) rend la règle
+- Le pointeur dans [`CONTRIBUTING.md`](https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md) rend la règle
   visible dès l'entrée d'un nouveau contributeur.
