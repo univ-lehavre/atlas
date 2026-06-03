@@ -16,6 +16,6 @@ représente l'état du dépôt à un instant T, pas une vue vivante.
 
 ## Index
 
-| Date       | Rapport                       | Méthode                                                                                           | Findings                                                                                        |
-| ---------- | ----------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| 2026-05-29 | [Audit complet](./2026-05-29) | Workflow multi-agents, 22 dimensions, vérification adversariale 3-vote des findings Critical/High | 51 retenus (8 High / 27 Medium / 14 Low / 2 Info) sur 263 collectés, 13 rejetés en vérification |
+| Date       | Rapport                                   | Méthode                                                                                           | Findings                                                                                        |
+| ---------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 2026-05-29 | [Audit complet](/atlas/audit/2026-05-29/) | Workflow multi-agents, 22 dimensions, vérification adversariale 3-vote des findings Critical/High | 51 retenus (8 High / 27 Medium / 14 Low / 2 Info) sur 263 collectés, 13 rejetés en vérification |

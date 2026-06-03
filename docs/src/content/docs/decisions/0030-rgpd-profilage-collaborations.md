@@ -4,7 +4,7 @@ title: "0030 — Profilage de collaborations : gate RGPD, base légale et droit 
 
 ## Contexte
 
-L'[ADR 0029](0029-architecture-pipeline-collaborations) pose l'architecture
+L'[ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/) pose l'architecture
 d'un pipeline mensuel qui dérive, depuis les données bibliographiques publiques
 d'OpenAlex, un **mart de paires de chercheurs** (table de fait associant deux
 personnes nommées, assortie de features de proximité et d'un score de
@@ -45,7 +45,7 @@ données sont publiques et non sensibles.
 `domain / field / subfield / topic / keyword`, un chercheur devient un historique
 d'articles ; aucune donnée sensible n'est manipulée (art. 5.1.c, minimisation).
 
-L'[ADR 0026](0026-rgpd-perimetre) a acté que le périmètre RGPD vit **hors du
+L'[ADR 0026](/atlas/decisions/0026-rgpd-perimetre/) a acté que le périmètre RGPD vit **hors du
 dépôt** (politique institutionnelle, pas du code), avec des **questions
 ouvertes** (responsable de traitement Q6, données des apps Q2), et un garde-fou :
 « la collecte d'un nouveau type de donnée personnelle par une app déployée
@@ -69,7 +69,7 @@ Deux faits techniques cadrent la suite :
 > d'opposition (art. 21) retire effectivement une personne du mart et de
 > l'index.**
 
-Cet ADR **rouvre** l'[ADR 0026](0026-rgpd-perimetre) pour le cas du profilage
+Cet ADR **rouvre** l'[ADR 0026](/atlas/decisions/0026-rgpd-perimetre/) pour le cas du profilage
 de collaborations. Il ne la contredit pas : l'institutionnel (validation des
 bases légales, responsable de traitement) **reste hors dépôt** ; cet ADR tranche
 les **bornes techniques côté code**.
@@ -115,7 +115,7 @@ périmètre paramétrable).
   invariant de **traçabilité**, pas un droit de conservation indéfinie. Le
   mécanisme complet (registre d'opposition, régénération, masquage, purge de
   l'index, SLA) est spécifié dans
-  [Ré-dérivabilité du mart et de l'index](../architecture/re-derivabilite-mart-index).
+  [Ré-dérivabilité du mart et de l'index](/atlas/architecture/re-derivabilite-mart-index/).
 - **Pas d'endpoint anonyme listant des chercheurs.** `atlas-api` exige une
   **authentification** sur toute route exposant des personnes ou des
   recommandations nominatives.
@@ -144,10 +144,10 @@ réelles (jeux de test/synthétiques uniquement).
 ### Demande d'arbitrage tracée (2026-06-02)
 
 Conformément à l'étape 0.3 du plan
-[pipeline-collaborations](../plans/2026-06-02-pipeline-collaborations), la
+[pipeline-collaborations](/atlas/plans/2026-06-02-pipeline-collaborations/), la
 demande d'arbitrage institutionnel est **tracée ici** (gate phase 0). Points à
 trancher par le référent données / DPO de l'établissement exploitant, dans la
-continuité des questions ouvertes Q2/Q6 de l'[ADR 0026](0026-rgpd-perimetre) :
+continuité des questions ouvertes Q2/Q6 de l'[ADR 0026](/atlas/decisions/0026-rgpd-perimetre/) :
 
 1. **Base légale** à valider : mission d'intérêt public (art. 6.1.e) pour les
    chercheurs de l'établissement ; intérêt légitime (art. 6.1.f, avec test de
@@ -157,7 +157,7 @@ continuité des questions ouvertes Q2/Q6 de l'[ADR 0026](0026-rgpd-perimetre) :
 3. **Information des personnes** profilées et modalités d'exercice du **droit
    d'opposition** (art. 21) et du **droit à l'effacement**.
 4. **Valeur du SLA** de propagation d'une opposition (cf.
-   [Ré-dérivabilité du mart et de l'index](../architecture/re-derivabilite-mart-index), §5).
+   [Ré-dérivabilité du mart et de l'index](/atlas/architecture/re-derivabilite-mart-index/), §5).
 5. Nécessité éventuelle d'une **analyse d'impact (AIPD/DPIA)**.
 
 **Effet du gate :** ouvert pour le développement sur **données synthétiques /
@@ -200,10 +200,10 @@ ré-dérivation est payé à chaque opposition.
   source de données personnelles, finalité au-delà de la suggestion de
   collaboration, ou passage du filtre d'affichage à un profilage encore plus
   large — autant de nouvelles décisions (continuité du garde-fou de
-  l'[ADR 0026](0026-rgpd-perimetre)).
+  l'[ADR 0026](/atlas/decisions/0026-rgpd-perimetre/)).
 - **Minimisation maintenue** : le modèle ne traite que la réduction
   `domain/field/subfield/topic/keyword` + historique d'articles ; aucune donnée
   sensible, aucun élargissement silencieux du périmètre de données.
 - L'item de suivi institutionnel reste rattaché au tableau sine die de
-  l'[ADR 0001](0001-devsecops-perimetre-repo-sine-die) (bases légales,
+  l'[ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/) (bases légales,
   responsable de traitement), dont cet ADR borne le volet technique.

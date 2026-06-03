@@ -5,10 +5,10 @@ title: "0028 — Documentation vérifiable : un miroir contrôlable du code"
 ## Contexte
 
 La politique de documentation du monorepo est posée par trois ADR :
-[0013](0013-documentation-public-non-expert-fr) (français, public
-non-expert, termes définis), [0012](0012-neutralisation-framing-institutionnel)
+[0013](/atlas/decisions/0013-documentation-public-non-expert-fr/) (français, public
+non-expert, termes définis), [0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/)
 (ton factuel, pas de registre promotionnel) et
-[0025](0025-documentation-multi-niveaux) (trois niveaux : surface,
+[0025](/atlas/decisions/0025-documentation-multi-niveaux/) (trois niveaux : surface,
 profondeur, inline). Ces ADR disent **comment écrire** la documentation. Aucune
 ne dit comment **empêcher qu'elle dérive** du code.
 
@@ -21,7 +21,7 @@ Deux manques en découlaient :
   renommé, une page pouvait devenir injoignable — sans que la CI bronche.
 - **La structure _spécifique_ du code n'était lisible nulle part.** La
   structure _générale_ (les huit catégories) était décrite dans
-  [`architecture/monorepo`](../architecture/monorepo), mais aucune page ne
+  [`architecture/monorepo`](/atlas/architecture/monorepo/), mais aucune page ne
   disait _quel paquet fait quoi_, _qui dépend de qui_, ni _par où entrer dans
   le code_. Un expert devait fouiller le code pour se faire une idée.
 
@@ -37,14 +37,14 @@ dans le code par le bon endroit en lisant seulement la documentation**, et que
 > cohérence avec `package.json`). On ne génère jamais de prose ; on n'audite
 > jamais la qualité rédactionnelle.
 
-Ce principe **étend** [0013](0013-documentation-public-non-expert-fr) /
-[0012](0012-neutralisation-framing-institutionnel) /
-[0025](0025-documentation-multi-niveaux) (il ne les remplace pas) avec la
+Ce principe **étend** [0013](/atlas/decisions/0013-documentation-public-non-expert-fr/) /
+[0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/) /
+[0025](/atlas/decisions/0025-documentation-multi-niveaux/) (il ne les remplace pas) avec la
 dimension _vérifiable / anti-dérive_.
 
 ### Ce qui est généré (factuel)
 
-- **La carte des paquets** — [`architecture/packages`](../architecture/packages)
+- **La carte des paquets** — [`architecture/packages`](/atlas/architecture/packages/)
   est produite par `scripts/docs/generate-packages-map.mjs` à partir des
   `package.json`. Par paquet : rôle, catégorie, dépendances internes,
   consommateurs, lien README, plus un graphe par catégorie. Le fichier est
@@ -83,25 +83,32 @@ au README.
 
 La référence générée par TypeDoc est **en anglais** — le code et ses
 commentaires le sont. C'est une entorse délibérée à
-[ADR 0013](0013-documentation-public-non-expert-fr) (qui veut du français),
+[ADR 0013](/atlas/decisions/0013-documentation-public-non-expert-fr/) (qui veut du français),
 justifiée par le fait que cette zone est **dérivée du code, non rédigée** : la
 traduire reviendrait à maintenir à la main ce qui doit rester généré. Elle est
 **cantonnée** à la section « Référence API » de la navigation, balisée comme
 générée et anglaise, et destinée au niveau Inline/expert de
-[ADR 0025](0025-documentation-multi-niveaux). Le reste de la documentation
+[ADR 0025](/atlas/decisions/0025-documentation-multi-niveaux/). Le reste de la documentation
 reste français.
 
 ## Statut
 
-Accepted (2026-06-01). Complète [0013](0013-documentation-public-non-expert-fr),
-[0012](0012-neutralisation-framing-institutionnel) et
-[0025](0025-documentation-multi-niveaux) sans les remplacer.
+Accepted (2026-06-01). Complète [0013](/atlas/decisions/0013-documentation-public-non-expert-fr/),
+[0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/) et
+[0025](/atlas/decisions/0025-documentation-multi-niveaux/) sans les remplacer.
+
+> **Amendé par [0037](/atlas/decisions/0037-retrait-reference-api-typedoc/).** Le
+> volet « référence API générée par TypeDoc » décrit ci-dessous a été **retiré** :
+> les signatures publiques restent documentées par les README et la JSDoc, et
+> l'anti-dérive des liens est désormais assurée par `starlight-links-validator`.
+> Le reste de cet ADR (carte des paquets générée, audit de la doc rédigée)
+> demeure en vigueur.
 
 ## Conséquences
 
 **Bénéfices.** La structure spécifique du code (qui fait quoi, qui dépend de
 qui) est lisible depuis la doc, et un expert sait par où entrer
-([`architecture/comprendre-le-code`](../architecture/comprendre-le-code)).
+([`architecture/comprendre-le-code`](/atlas/architecture/comprendre-le-code/)).
 La doc ne peut plus dériver en silence : carte périmée, lien mort, ADR fantôme
 ou page orpheline cassent la CI. La frontière généré / rédigé est nette, donc
 on ne génère pas de prose et on n'audite pas le style.
@@ -115,7 +122,7 @@ zone anglaise dans une doc française — exception bornée, pas tendance.
 **Dettes connues, non résolues par ce chantier.**
 
 - La plupart des README de paquets sont **rédigés en anglais**, alors que
-  [ADR 0013](0013-documentation-public-non-expert-fr) demande le français.
+  [ADR 0013](/atlas/decisions/0013-documentation-public-non-expert-fr/) demande le français.
   L'audit vérifie leur _structure_ (présence, titre, liens), **pas leur
   langue** : les traduire est un travail rédactionnel séparé.
 - Les avertissements de `audit:docs` (exports / bin non mentionnés) ne sont pas
@@ -128,4 +135,4 @@ zone anglaise dans une doc française — exception bornée, pas tendance.
   branchés dans le job Audit de la CI et en hook pre-push.
 - Toute PR qui modifie un `package.json`, un README ou une page docs régénère
   la carte et passe l'audit dans la **même PR** (cf.
-  [ADR 0025](0025-documentation-multi-niveaux), déclencheur de mise à jour).
+  [ADR 0025](/atlas/decisions/0025-documentation-multi-niveaux/), déclencheur de mise à jour).

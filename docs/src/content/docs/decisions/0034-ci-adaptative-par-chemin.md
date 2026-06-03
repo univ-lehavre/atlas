@@ -4,7 +4,7 @@ title: "0034 — CI adaptative par chemin : court-circuit des jobs lourds, sans 
 
 ## Contexte
 
-La CI ([ADR 0001](0001-devsecops-perimetre-repo-sine-die)) lance le **même
+La CI ([ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/)) lance le **même
 pipeline complet** sur **toute** _pull request_, quel que soit son contenu :
 `Lint`, `Typecheck`, `Test`, `Build`, `Documentation`, `Audit`, plus les
 contextes de sécurité (`Analyze`/CodeQL, `Scan for secrets`,
@@ -23,7 +23,7 @@ documentation, qui sont pourtant celles qu'on veut encourager.
 
 La solution naïve — mettre une condition `if:` au **niveau du job** pour qu'un
 job lourd ne tourne pas sur une PR de documentation — **casse la branch
-protection** ([ADR 0016](0016-branch-protection-main)). GitHub traite un job
+protection** ([ADR 0016](/atlas/decisions/0016-branch-protection-main/)). GitHub traite un job
 requis dont la condition est fausse comme **`skipped`**, et un check requis
 `skipped` **reste indéfiniment `Pending`** : la PR ne peut **jamais** être
 mergée. Le filtrage natif par `paths:`/`paths-ignore:` au niveau du workflow a
@@ -74,7 +74,7 @@ documentation :
 - `Documentation` (build VitePress — c'est précisément ce qu'une PR doc doit
   valider) ;
 - `Audit` (il vérifie la fraîcheur de la carte des paquets, les liens, les
-  pages orphelines — [ADR 0028](0028-documentation-verifiable)) ;
+  pages orphelines — [ADR 0028](/atlas/decisions/0028-documentation-verifiable/)) ;
 - `Scan for secrets` (un secret peut fuiter dans un exemple de documentation) ;
 - `Analyze` (CodeQL) — **laissé intact**. En `build-mode: none` il est rapide,
   reste un filet de sécurité, et l'alléger demanderait de dupliquer la
@@ -84,9 +84,9 @@ documentation :
 
 ## Statut
 
-Accepted (2026-06-02). Étend [ADR 0001](0001-devsecops-perimetre-repo-sine-die)
+Accepted (2026-06-02). Étend [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/)
 (périmètre DevSecOps complet) en le rendant **proportionné au contenu**, et
-compose avec [ADR 0016](0016-branch-protection-main) (branch protection) en
+compose avec [ADR 0016](/atlas/decisions/0016-branch-protection-main/) (branch protection) en
 respectant sa contrainte : tous les contextes requis restent rapportés.
 
 ## Conséquences

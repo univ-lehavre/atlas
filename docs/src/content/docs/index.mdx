@@ -20,9 +20,10 @@ hero:
 
 import { Card, CardGrid } from "@astrojs/starlight/components";
 
-## Deux entrées, selon ce que tu cherches
+## Par où entrer
 
-Cette documentation sert deux publics. Choisis ta porte d'entrée.
+Deux **portes d'entrée** selon ton profil, et la **carte des paquets**, dérivée
+du code. Choisis ce qui correspond à ce que tu cherches.
 
 <CardGrid>
   <Card title="Je découvre" icon="open-book">
@@ -47,19 +48,15 @@ Cette documentation sert deux publics. Choisis ta porte d'entrée.
     [Carte des paquets →](/atlas/architecture/packages/)
 
   </Card>
-  <Card title="La référence API" icon="document">
-    Les signatures publiques (fonctions, types) de chaque paquet, générées
-    par TypeDoc à partir du code. En anglais, niveau expert.
-
-    [Référence API →](/atlas/api/)
-
-  </Card>
 </CardGrid>
 
-### Je découvre — pour comprendre, sans coder
+## Trouver la bonne page
 
-Rédigée pour un public **non-expert** : quand un terme technique apparaît, il est
-défini sur place ou renvoie au [glossaire](/atlas/glossary/).
+Les deux tableaux ci-dessous aiguillent vers la page exacte selon la question
+qu'on se pose — au-delà des quatre portes d'entrée.
+
+**Sans coder** — pour un public non-expert ; quand un terme technique apparaît, il
+est défini sur place ou renvoie au [glossaire](/atlas/glossary/).
 
 | Pour savoir…                  | Va voir                                                                                |
 | ----------------------------- | -------------------------------------------------------------------------------------- |
@@ -69,15 +66,12 @@ défini sur place ou renvoie au [glossaire](/atlas/glossary/).
 | comment on collabore          | [Workflow](/atlas/collaboration/workflow/), [releases](/atlas/collaboration/releases/) |
 | comment on documente          | [Politique de documentation](/atlas/quality/documentation/)                            |
 
-### Je veux lire le code — pour l'expert info/data
-
-Pour un **développeur ou data scientist** qui veut se faire une idée du code sans
-tout lire.
+**Pour lire le code** — pour un développeur ou data scientist qui veut se faire une
+idée du code sans tout lire.
 
 | Pour…                                      | Va voir                                                       |
 | ------------------------------------------ | ------------------------------------------------------------- |
 | savoir **par où entrer** dans le code      | [Comprendre le code](/atlas/architecture/comprendre-le-code/) |
 | voir **qui fait quoi / qui dépend de qui** | [Carte des paquets](/atlas/architecture/packages/)            |
 | suivre **le parcours d'une donnée**        | [Flux de données](/atlas/architecture/data-flow/)             |
-| lire les **signatures publiques**          | [Référence API](/atlas/api/)                                  |
 | comprendre **le _pourquoi_ d'un choix**    | [Décisions (ADR)](/atlas/decisions/)                          |

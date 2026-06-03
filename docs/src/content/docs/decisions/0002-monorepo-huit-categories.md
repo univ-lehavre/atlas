@@ -38,7 +38,7 @@ une définition stricte :
 Les règles inter-catégories sont enforcées par
 [`scripts/audit/workspace-structure.mjs`](https://github.com/univ-lehavre/atlas/blob/main/scripts/audit/workspace-structure.mjs)
 exécuté en pre-push et en CI via `pnpm audit:structure`. Toute dérogation
-demande un ajout explicite dans le script (voir [ADR 0019](0019-derogations-workspace-audit))
+demande un ajout explicite dans le script (voir [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/))
 et passe en revue de code.
 
 ## Statut
@@ -64,6 +64,6 @@ maintenu en parallèle des règles, sous peine de devenir muet.
 - Toute nouvelle catégorie demande un ADR (révision de celui-ci ou
   superseding).
 - Toute dérogation est listée dans `workspace-structure.mjs` et tracée
-  dans [ADR 0019](0019-derogations-workspace-audit).
-- Voir [docs/architecture/monorepo.md](../architecture/monorepo)
+  dans [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/).
+- Voir [docs/architecture/monorepo.md](/atlas/architecture/monorepo/)
   pour la cartographie détaillée.

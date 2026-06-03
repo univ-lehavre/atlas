@@ -4,27 +4,27 @@ title: Sécurité — garde-fous et conventions
 
 Cette page regroupe les pratiques de sécurité applicatives et opérationnelles du monorepo Atlas : inventaire des secrets, classification des surfaces exposées, scan dynamique (DAST), et inventaire détaillé des dépendances (SBOM).
 
-Pour la procédure de gestion d'incident (compromission supposée, divulgation responsable), voir [Incident response](./incident-response).
+Pour la procédure de gestion d'incident (compromission supposée, divulgation responsable), voir [Incident response](/atlas/quality/incident-response/).
 
-> **Périmètre.** Le chantier DevSecOps côté dépôt est considéré complet ; les items dépendant d'acteurs externes (équipes ops, infra de preview, second mainteneur) sont reportés sine die. Voir [ADR 0001](../decisions/0001-devsecops-perimetre-repo-sine-die) pour la décision de cadrage **et le tableau de suivi des items sine die**.
+> **Périmètre.** Le chantier DevSecOps côté dépôt est considéré complet ; les items dépendant d'acteurs externes (équipes ops, infra de preview, second mainteneur) sont reportés sine die. Voir [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/) pour la décision de cadrage **et le tableau de suivi des items sine die**.
 
 [[toc]]
 
 ## DevSecOps — qu'est-ce que c'est ?
 
-Le [**DevSecOps**](../glossary) intègre la sécurité à **toutes** les étapes du développement (écriture du code, tests, intégration continue, déploiement) plutôt que comme un contrôle final isolé. L'idée : attraper un défaut de sécurité au plus tôt coûte beaucoup moins cher que de le corriger en production.
+Le [**DevSecOps**](/atlas/glossary/) intègre la sécurité à **toutes** les étapes du développement (écriture du code, tests, intégration continue, déploiement) plutôt que comme un contrôle final isolé. L'idée : attraper un défaut de sécurité au plus tôt coûte beaucoup moins cher que de le corriger en production.
 
 **Pourquoi c'est important.** Une faille trouvée après mise en ligne expose des données et demande une réaction en urgence ; la même faille détectée à l'écriture du code se corrige en quelques minutes, sans risque.
 
 **Comment Atlas l'applique.** À chaque pull request, plusieurs garde-fous tournent automatiquement :
 
-- **analyse statique** du code ([CodeQL](../glossary), Semgrep) — cherche les motifs vulnérables sans exécuter le code ;
-- **détection de secrets** ([gitleaks](../glossary)) — empêche de committer un token ou une clé ;
+- **analyse statique** du code ([CodeQL](/atlas/glossary/), Semgrep) — cherche les motifs vulnérables sans exécuter le code ;
+- **détection de secrets** ([gitleaks](/atlas/glossary/)) — empêche de committer un token ou une clé ;
 - **audit des dépendances** (vulnérabilités connues, licences) ;
 - **tests de sécurité** sur les endpoints (401, anti-XSS) ;
-- **scan dynamique** ([OWASP ZAP](../glossary)) sur une application en cours d'exécution.
+- **scan dynamique** ([OWASP ZAP](/atlas/glossary/)) sur une application en cours d'exécution.
 
-Le périmètre exact (ce qui est couvert côté dépôt, ce qui dépend d'acteurs externes) est cadré par [ADR 0001](../decisions/0001-devsecops-perimetre-repo-sine-die).
+Le périmètre exact (ce qui est couvert côté dépôt, ce qui dépend d'acteurs externes) est cadré par [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/).
 
 ## Secrets — inventaire et rotation
 
@@ -120,7 +120,7 @@ Recensement croisé `apps/*/src/lib/server/**` vs `apps/*/src/lib/**` (non-serve
 | `OPENALEX_API_TOKEN`       | serveur seul | Token API OpenAlex                                  | Oui — privée               |
 | `ALLOWED_DOMAINS_REGEXP`   | serveur seul | Regex d'allowlist signup                            | Oui — privée               |
 
-**Audit récurrent** (à conduire au minimum lors de chaque revue trimestrielle — item 7.3 du tableau sine die de [ADR 0001](../decisions/0001-devsecops-perimetre-repo-sine-die)) :
+**Audit récurrent** (à conduire au minimum lors de chaque revue trimestrielle — item 7.3 du tableau sine die de [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/)) :
 
 ```bash
 # 1. Tout PUBLIC_* est-il bien public ? (rien de sensible glissé là)
@@ -150,7 +150,7 @@ Un import de `$env/static/private` depuis un fichier consommé par le bundle nav
 
 ### Procédure d'urgence (suspicion de fuite)
 
-Cette procédure est résumée ici ; pour une réponse complète à un incident de sécurité, voir [Incident response](./incident-response).
+Cette procédure est résumée ici ; pour une réponse complète à un incident de sécurité, voir [Incident response](/atlas/quality/incident-response/).
 
 1. **Révoquer immédiatement** l'ancien secret (étape 4 avant tout le reste).
 2. **Audit** : `gh api repos/univ-lehavre/atlas/code-scanning/alerts` + onglet Security → Secret scanning pour vérifier si la fuite a été détectée.
@@ -160,7 +160,7 @@ Cette procédure est résumée ici ; pour une réponse complète à un incident 
 
 ## Triage des findings — SLA de remédiation
 
-Un [**SLA**](../glossary) (_Service Level Agreement_) est un engagement de délai. Ici, le délai maximum acceptable entre la **détection** d'un problème de sécurité et le **correctif déployé en production**, différencié par sévérité. Distinct du tempo de réponse à un incident actif (cf. [incident-response.md § Classification](./incident-response#1-classification-de-severite) pour les engagements P0–P3).
+Un [**SLA**](/atlas/glossary/) (_Service Level Agreement_) est un engagement de délai. Ici, le délai maximum acceptable entre la **détection** d'un problème de sécurité et le **correctif déployé en production**, différencié par sévérité. Distinct du tempo de réponse à un incident actif (cf. [incident-response.md § Classification](/atlas/quality/incident-response/#1-classification-de-sévérité) pour les engagements P0–P3).
 
 | Sévérité       | Sources typiques                                                                                                                | Délai max (détection → fix déployé)   |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
@@ -290,10 +290,10 @@ Trois endpoints sont publics par décision implicite ou explicite — chacun mé
 
 ### Mitigations recommandées
 
-- **Rate limiting** sur tous les endpoints publics (en place ; store `in-memory` mono-instance, migration vers un store partagé reportée sine die — cf. [ADR 0001](../decisions/0001-devsecops-perimetre-repo-sine-die))
+- **Rate limiting** sur tous les endpoints publics (en place ; store `in-memory` mono-instance, migration vers un store partagé reportée sine die — cf. [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/))
 - **Validation stricte** des inputs (`record`, `q`, `id`) avant requête en aval
 - **Logs d'accès** : tracer les accès à `/graphs` et `/institutions/search` pour détecter les patterns d'abus
-- **Headers HTTP de sécurité** sur les réponses (CSP, etc.) — factorisés dans `@univ-lehavre/atlas-sveltekit-csp` (cf. [ADR 0019](../decisions/0019-derogations-workspace-audit))
+- **Headers HTTP de sécurité** sur les réponses (CSP, etc.) — factorisés dans `@univ-lehavre/atlas-sveltekit-csp` (cf. [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/))
 
 ## DAST — Dynamic Application Security Testing
 
@@ -313,7 +313,7 @@ Outil : [OWASP ZAP](https://www.zaproxy.org/) en mode **baseline** (passif uniqu
 
 **Étape suivante (différée)** — automatisation nightly contre prod ou stack locale. Trois pistes en attente :
 
-1. **Nightly contre prod** : nécessite que les URLs prod soient figées dans la section [Surfaces exposées](#surfaces-exposees-apps-et-endpoints), et que les **admins infra soient prévenus** du trafic ZAP pour éviter alertes IDS ou rate-limit. Décision en attente.
+1. **Nightly contre prod** : nécessite que les URLs prod soient figées dans la section [Surfaces exposées](#surfaces-exposées--apps-et-endpoints), et que les **admins infra soient prévenus** du trafic ZAP pour éviter alertes IDS ou rate-limit. Décision en attente.
 2. **Nightly contre `sandbox/amarre-sandbox/`** : monter la stack docker-compose (Appwrite + REDCap + amarre) en CI et scanner `localhost:5173`. Lourd (~10 min CI supplémentaires) mais aucune coordination externe nécessaire. Couvre uniquement amarre.
 3. **Sur PR avec preview URL** : Appwrite Sites n'offre pas de previews automatiques par PR. Hors périmètre tant qu'on reste sur ce déploiement.
 

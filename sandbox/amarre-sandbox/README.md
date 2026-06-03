@@ -1,6 +1,6 @@
 # amarre-sandbox
 
-Environnement Docker local pour faire tourner l'app [`apps/amarre/`](../../apps/amarre/) bout-en-bout sans dépendre des instances de prod. Bundle une instance CRF (REDCap), un BaaS self-hosted (Appwrite), un mail-trap (Mailpit) et les scripts qui provisionnent automatiquement le tout, importent la trame amarre, peuplent REDCap en données synthétiques et écrivent un `.env.local` directement consommable par amarre.
+Environnement Docker local pour faire tourner l'app [`apps/amarre/`](https://github.com/univ-lehavre/atlas/tree/main/apps/amarre) bout-en-bout sans dépendre des instances de prod. Bundle une instance CRF (REDCap), un BaaS self-hosted (Appwrite), un mail-trap (Mailpit) et les scripts qui provisionnent automatiquement le tout, importent la trame amarre, peuplent REDCap en données synthétiques et écrivent un `.env.local` directement consommable par amarre.
 
 ## Stack
 
@@ -13,7 +13,7 @@ Environnement Docker local pour faire tourner l'app [`apps/amarre/`](../../apps/
 | **Mailpit (UI)**        | http://localhost:8025 | Capture tous les emails (magic-link inclus)  |
 | **Mailpit (SMTP)**      | localhost:1025        | Endpoint SMTP utilisé par Appwrite (interne) |
 
-La stack CRF + Mailpit vient de [`sandbox/crf-sandbox/`](../crf-sandbox/) via `include:` Docker Compose v2.20+. La stack BaaS est déclarée inline dans [docker-compose.yaml](docker-compose.yaml), services préfixés `baas-`. Le service `baas` est branché aux deux réseaux (`baas-net` et `redcap-net`) pour parler à Mailpit.
+La stack CRF + Mailpit vient de [`sandbox/crf-sandbox/`](https://github.com/univ-lehavre/atlas/tree/main/sandbox/crf-sandbox) via `include:` Docker Compose v2.20+. La stack BaaS est déclarée inline dans [docker-compose.yaml](https://github.com/univ-lehavre/atlas/blob/main/sandbox/amarre-sandbox/docker-compose.yaml), services préfixés `baas-`. Le service `baas` est branché aux deux réseaux (`baas-net` et `redcap-net`) pour parler à Mailpit.
 
 ## Prérequis
 
@@ -77,7 +77,7 @@ Tous les scripts sont idempotents — re-lance-les sans crainte.
 
 ### Bootstrap Appwrite
 
-[`bootstrap-baas.ts`](scripts/bootstrap-baas.ts) attaque l'API Appwrite directement :
+[`bootstrap-baas.ts`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/amarre-sandbox/scripts/bootstrap-baas.ts) attaque l'API Appwrite directement :
 
 1. `POST /v1/account` crée le compte root (sur une install fraîche, le premier compte est promu root automatiquement). Si le compte existe déjà, on continue.
 2. `POST /v1/account/sessions/email` récupère un cookie console.
@@ -90,24 +90,24 @@ Les endpoints `/v1/teams`, `/v1/projects`, `/v1/projects/.../keys` sont ceux que
 
 ### Bootstrap REDCap
 
-[`bootstrap-crf.ts`](scripts/bootstrap-crf.ts) :
+[`bootstrap-crf.ts`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/amarre-sandbox/scripts/bootstrap-crf.ts) :
 
 1. Délègue l'install REDCap à `pnpm -F atlas-crf-sandbox docker:install` (création du schéma + projet par défaut id=1 + son token API — le projet 1 reste intact, c'est celui utilisé par les tests de contrat du crf-sandbox).
 2. INSERT SQL minimal dans `redcap_projects` pour créer un projet `amarre` dédié (auto-incremented id). Idempotent : si le projet existe déjà, on le réutilise.
 3. INSERT dans `redcap_user_rights` pour donner à `site_admin` un token API généré (16 bytes hex). `ON DUPLICATE KEY UPDATE` rend le step ré-entrant.
 4. Drop de la FK `redcap_data_dictionaries.doc_id` → `redcap_edocs_metadata.doc_id` : l'API metadata d'import insère avec `doc_id=0` (sentinelle) et violerait sinon la contrainte.
 5. Import du data dictionary via `POST /api/?content=metadata&action=import` dans le projet amarre. Deux sources possibles :
-   - **Dictionnaire complet** [`data-dictionaries/127-amarre-v1.json`](../../data-dictionaries/127-amarre-v1.json) **s'il est présent** à la racine du repo (gitignored — labels + branching logic potentiellement sensibles, généré via `pnpm crf:dictionaries:export --apply` ou fourni anonymisé par un·e collègue).
-   - **Fallback automatique** : si ce fichier est absent, le bootstrap importe le dictionnaire **minimal** committé [`fixtures/crf-dictionary.csv`](fixtures/crf-dictionary.csv) via [`scripts/import-dictionary.sh`](scripts/import-dictionary.sh). C'est ce qui rend un premier `pnpm start` **entièrement automatisé, sans étape manuelle**.
+   - **Dictionnaire complet** [`data-dictionaries/127-amarre-v1.json`](https://github.com/univ-lehavre/atlas/blob/main/data-dictionaries/127-amarre-v1.json) **s'il est présent** à la racine du repo (gitignored — labels + branching logic potentiellement sensibles, généré via `pnpm crf:dictionaries:export --apply` ou fourni anonymisé par un·e collègue).
+   - **Fallback automatique** : si ce fichier est absent, le bootstrap importe le dictionnaire **minimal** committé [`fixtures/crf-dictionary.csv`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/amarre-sandbox/fixtures/crf-dictionary.csv) via [`scripts/import-dictionary.sh`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/amarre-sandbox/scripts/import-dictionary.sh). C'est ce qui rend un premier `pnpm start` **entièrement automatisé, sans étape manuelle**.
 6. Persistance de `CRF_API_TOKEN` (le token du projet amarre) dans `.env`.
 
 Le projet par défaut id=1 (créé par `install-crf.sh`) reste isolé et continue de servir les tests de contrat du `crf-sandbox`.
 
 #### Dictionnaire CRF minimal (fixture)
 
-[`fixtures/crf-dictionary.csv`](fixtures/crf-dictionary.csv) est un dictionnaire CRF **synthétique et minimal** (aucune donnée réelle/personnelle), au format CSV standard d'export d'un dictionnaire CRF — colonnes `Variable / Field Name`, `Form Name`, `Field Type`, `Field Label`, `Choices…`, `Branching Logic…`, etc., dans l'ordre canonique (l'API mappe les colonnes **par position**, pas par nom d'en-tête). Il couvre 2 instruments (`contact`, `form`) et des types de champs variés (`text` avec validations `email`/`integer`/`number`/`date`, `radio`, `dropdown`, `yesno`, `notes`) plus un exemple de branching logic (`[demandeur_statut]<>''`).
+[`fixtures/crf-dictionary.csv`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/amarre-sandbox/fixtures/crf-dictionary.csv) est un dictionnaire CRF **synthétique et minimal** (aucune donnée réelle/personnelle), au format CSV standard d'export d'un dictionnaire CRF — colonnes `Variable / Field Name`, `Form Name`, `Field Type`, `Field Label`, `Choices…`, `Branching Logic…`, etc., dans l'ordre canonique (l'API mappe les colonnes **par position**, pas par nom d'en-tête). Il couvre 2 instruments (`contact`, `form`) et des types de champs variés (`text` avec validations `email`/`integer`/`number`/`date`, `radio`, `dropdown`, `yesno`, `notes`) plus un exemple de branching logic (`[demandeur_statut]<>''`).
 
-[`scripts/import-dictionary.sh`](scripts/import-dictionary.sh) importe ce CSV dans l'instance CRF locale :
+[`scripts/import-dictionary.sh`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/amarre-sandbox/scripts/import-dictionary.sh) importe ce CSV dans l'instance CRF locale :
 
 - Lit `PUBLIC_CRF_URL` et `CRF_API_TOKEN` depuis l'environnement ou le `.env` provisionné par le bootstrap (l'env pré-défini gagne, pour permettre un override en ligne de commande). **Aucun secret n'est hardcodé.**
 - POST `content=metadata&action=import&format=csv` (le corps CSV est envoyé via `curl --data-urlencode "data@…"`).
@@ -131,13 +131,13 @@ Mais Appwrite n'envoie pas les emails depuis son process principal : il les pous
 
 ### Seed fake data
 
-[`seed-fake-data.ts`](scripts/seed-fake-data.ts) parcourt le data dictionary et génère N records (défaut 120, paramétrable via `SEED_RECORD_COUNT` ou `--count=N`) répartis entre quatre scénarios : incomplet (20%), en cours d'avis (30%), validé (40%), refusé (10%). Le branching logic REDCap (`[field]=val OR ...`) est interprété pour ne remplir que les champs réellement visibles selon les autres réponses. Les valeurs sont générées par `@faker-js/faker` (locale `fr`).
+[`seed-fake-data.ts`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/amarre-sandbox/scripts/seed-fake-data.ts) parcourt le data dictionary et génère N records (défaut 120, paramétrable via `SEED_RECORD_COUNT` ou `--count=N`) répartis entre quatre scénarios : incomplet (20%), en cours d'avis (30%), validé (40%), refusé (10%). Le branching logic REDCap (`[field]=val OR ...`) est interprété pour ne remplir que les champs réellement visibles selon les autres réponses. Les valeurs sont générées par `@faker-js/faker` (locale `fr`).
 
 Re-lancer le seed est idempotent (les record_id sont stables, REDCap upsert) — utiliser `FAKER_SEED=42 pnpm seed` pour un seed déterministe.
 
 ### Pull depuis la prod (opt-in)
 
-[`pull-from-prod.ts`](scripts/pull-from-prod.ts) tire les vrais records depuis le REDCap officiel et les ré-injecte en local. Nécessite `PROD_CRF_URL` et `PROD_CRF_TOKEN`.
+[`pull-from-prod.ts`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/amarre-sandbox/scripts/pull-from-prod.ts) tire les vrais records depuis le REDCap officiel et les ré-injecte en local. Nécessite `PROD_CRF_URL` et `PROD_CRF_TOKEN`.
 
 **Pattern recommandé** : mettre ces deux valeurs dans `.env.prod` (gitignored, persistant) plutôt que dans `.env` (régénéré à chaque reset). Le fichier est sourcé en plus du `.env` standard par tous les scripts qui en ont besoin :
 
@@ -154,7 +154,7 @@ Le script demande une confirmation interactive avant de pull (skip avec `--yes`)
 
 ### Test E2E
 
-Le smoke end-to-end est piloté par Playwright — voir [`tests/e2e/smoke.spec.ts`](tests/e2e/smoke.spec.ts). Il couvre le scénario complet : signup via la modale → poll Mailpit → visite du magic-link → création de demande via `/api/v1/surveys/new` → reload → assert section _Compléter_ → logout. La suite se skip toute seule si Mailpit ou Appwrite ne sont pas joignables.
+Le smoke end-to-end est piloté par Playwright — voir [`tests/e2e/smoke.spec.ts`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/amarre-sandbox/tests/e2e/smoke.spec.ts). Il couvre le scénario complet : signup via la modale → poll Mailpit → visite du magic-link → création de demande via `/api/v1/surveys/new` → reload → assert section _Compléter_ → logout. La suite se skip toute seule si Mailpit ou Appwrite ne sont pas joignables.
 
 Lancer :
 
@@ -163,7 +163,7 @@ pnpm test:smoke          # headless
 pnpm test:smoke:headed   # avec UI
 ```
 
-Le `webServer` de [`playwright.config.ts`](playwright.config.ts) spawn `pnpm -F amarre dev` automatiquement (`reuseExistingServer: true`). Pre-requis stack : `pnpm bootstrap` joué (Appwrite + REDCap + .env amarre provisionnés).
+Le `webServer` de [`playwright.config.ts`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/amarre-sandbox/playwright.config.ts) spawn `pnpm -F amarre dev` automatiquement (`reuseExistingServer: true`). Pre-requis stack : `pnpm bootstrap` joué (Appwrite + REDCap + .env amarre provisionnés).
 
 ## Limites connues
 

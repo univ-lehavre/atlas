@@ -55,5 +55,5 @@ un lecteur qui attendrait une présentation institutionnelle.
 
 - Les contributions documentaires sont revues sur ce critère : éviter
   les références institutionnelles superflues, garder un ton factuel.
-- Voir aussi [ADR 0013](0013-documentation-public-non-expert-fr) sur
+- Voir aussi [ADR 0013](/atlas/decisions/0013-documentation-public-non-expert-fr/) sur
   la cible non-expert et la langue de la documentation.

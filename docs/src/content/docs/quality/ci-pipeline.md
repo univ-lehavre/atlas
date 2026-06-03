@@ -45,7 +45,7 @@ push ─────▶   │ typecheck│ ─┐
 
 ### `lint`
 
-Le [_lint_](../glossary) analyse le code **sans l'exécuter** pour repérer les erreurs de style et les motifs dangereux (variables non utilisées, expressions régulières coûteuses, oublis de formatage). C'est la première barrière : elle attrape les défauts les moins chers à corriger.
+Le [_lint_](/atlas/glossary/) analyse le code **sans l'exécuter** pour repérer les erreurs de style et les motifs dangereux (variables non utilisées, expressions régulières coûteuses, oublis de formatage). C'est la première barrière : elle attrape les défauts les moins chers à corriger.
 
 ```bash
 pnpm format:check     # Prettier vérifie le formatage
@@ -54,7 +54,7 @@ pnpm lint             # ESLint applique les règles de style/sécurité
 
 ### `typecheck`
 
-Le [_typecheck_](../glossary) vérifie que tous les types TypeScript sont cohérents (une valeur déclarée comme texte n'est jamais utilisée comme nombre). Il attrape une classe entière de bugs avant même l'exécution.
+Le [_typecheck_](/atlas/glossary/) vérifie que tous les types TypeScript sont cohérents (une valeur déclarée comme texte n'est jamais utilisée comme nombre). Il attrape une classe entière de bugs avant même l'exécution.
 
 ```bash
 pnpm typecheck        # TypeScript vérifie les types
@@ -63,7 +63,7 @@ pnpm svelte:check     # Vérification supplémentaire pour les fichiers .svelte
 
 ### `test`
 
-Les **tests** exécutent le code avec des données connues pour vérifier qu'il produit le résultat attendu (voir [Tests](./tests)). On mesure en plus la [_couverture_](../glossary) : la proportion du code réellement exercée par au moins un test.
+Les **tests** exécutent le code avec des données connues pour vérifier qu'il produit le résultat attendu (voir [Tests](/atlas/quality/tests/)). On mesure en plus la [_couverture_](/atlas/glossary/) : la proportion du code réellement exercée par au moins un test.
 
 ```bash
 pnpm test:coverage    # Tous les tests avec mesure de couverture
@@ -115,7 +115,7 @@ Lance dans l'ordre, _fail-fast_ :
 5. `test:coverage` — tests
 6. `build` — compilation (le plus long, en dernier)
 
-Les _hooks Git_ locaux ([lefthook](../quality/hooks)) exécutent automatiquement les étapes 1–4 sur les fichiers modifiés avant chaque commit, et un sous-ensemble plus large avant chaque push. Voir [Hooks Git](./hooks).
+Les _hooks Git_ locaux ([lefthook](/atlas/quality/hooks/)) exécutent automatiquement les étapes 1–4 sur les fichiers modifiés avant chaque commit, et un sous-ensemble plus large avant chaque push. Voir [Hooks Git](/atlas/quality/hooks/).
 
 ## Si la CI échoue
 

@@ -32,7 +32,7 @@ const available = computed(() => packages.value.length > 0);
     </div>
     <div class="kpi-foot">
       Pour la carte détaillée (rôle, dépendances internes), voir
-      <a href="./packages">la carte des paquets</a>.
+      <a href="/atlas/architecture/packages/">la carte des paquets</a>.
     </div>
   </div>
   <div class="kpi-card kpi-empty" v-else>

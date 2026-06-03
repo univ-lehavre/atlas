@@ -14,7 +14,7 @@ Atlas s'appuie sur une **pyramide de tests** : on écrit beaucoup de petits test
 | **4. Authentification** | vitest, _self-skipping_                                | Flux complet de _magic link_ contre une instance Appwrite locale | ~secondes             |
 | **5. Smoke end-to-end** | [Playwright](https://playwright.dev/), _self-skipping_ | Parcours utilisateur complet dans un navigateur réel             | ~dizaines de secondes |
 
-> **Trois outils externes apparaissent ici.** [**REDCap**](../glossary) est la plateforme généraliste de saisie de formulaires structurés qu'Atlas pilote ; [**Appwrite**](../glossary) est le _backend-as-a-service_ qui gère l'authentification et le stockage ; [**Docker**](../glossary) est la plateforme de conteneurs qui fait tourner ces deux services en local, à l'identique sur chaque machine. Les définitions complètes sont au [glossaire](../glossary).
+> **Trois outils externes apparaissent ici.** [**REDCap**](/atlas/glossary/) est la plateforme généraliste de saisie de formulaires structurés qu'Atlas pilote ; [**Appwrite**](/atlas/glossary/) est le _backend-as-a-service_ qui gère l'authentification et le stockage ; [**Docker**](/atlas/glossary/) est la plateforme de conteneurs qui fait tourner ces deux services en local, à l'identique sur chaque machine. Les définitions complètes sont au [glossaire](/atlas/glossary/).
 
 Les niveaux 3, 4 et 5 sont dits _self-skipping_ : ils se désactivent automatiquement quand l'environnement requis (REDCap local, Appwrite local, navigateur Playwright) n'est pas démarré. Cela permet à un contributeur sans Docker installé de lancer `pnpm test` sans erreur — les tests adaptés s'exécutent, les autres sont skippés avec un message clair.
 
@@ -51,7 +51,7 @@ Le rapport agrégé s'écrit dans `coverage/` à la racine de chaque sous-projet
 | Composant Svelte dans `ui/atlas-ui/`     | `ui/atlas-ui/src/<component>.test.ts`                  |
 | Parcours utilisateur dans `apps/<app>/`  | `apps/<app>/tests/e2e/<scenario>.spec.ts` (Playwright) |
 
-Les fichiers `*.test.ts` et `*.spec.ts` bénéficient de règles ESLint relâchées (mocks, assertions, `any` autorisé en local) — voir [Style de code → Fichiers de test](./code-style#fichiers-de-test).
+Les fichiers `*.test.ts` et `*.spec.ts` bénéficient de règles ESLint relâchées (mocks, assertions, `any` autorisé en local) — voir [Style de code → Fichiers de test](/atlas/quality/code-style/#fichiers-de-test).
 
 ## Convention pour les _self-skipping_
 

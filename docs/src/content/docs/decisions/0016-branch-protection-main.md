@@ -62,4 +62,4 @@ merge) et par l'audit de l'historique.
 - Si le bus-factor passe à plus d'un contributeur, l'option « bypass
   admin interdit » doit être réévaluée.
 - L'audit semestriel des règles de protection est documenté dans
-  [docs/quality/security.md](../quality/security).
+  [docs/quality/security.md](/atlas/quality/security/).

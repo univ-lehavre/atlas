@@ -4,7 +4,7 @@ title: "0032 — KPI documentés : généré déterministe (diff-checké) vs sna
 
 ## Contexte
 
-L'[ADR 0028](0028-documentation-verifiable) a posé un modèle anti-dérive
+L'[ADR 0028](/atlas/decisions/0028-documentation-verifiable/) a posé un modèle anti-dérive
 éprouvé : ce qui est **factuel et dérivable du code** est **généré, commité, et
 comparé octet par octet en CI** (`docs:generate:check`, sur le modèle de
 `check-lockfile`). Ce modèle marche pour une donnée **déterministe** — la carte
@@ -38,7 +38,7 @@ correspondant. Les deux familles ne se mélangent **jamais dans le même fichier
 
 Une donnée qui est une **fonction déterministe de l'arbre ou de l'historique
 Git** (lignes ajoutées/supprimées par mois, pull requests mergées par mois,
-nombre de `TODO(owner, date)`, dérogations [ADR 0019](0019-derogations-workspace-audit),
+nombre de `TODO(owner, date)`, dérogations [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/),
 exemptions de couverture) est **régénérée, commitée, et comparée par octets** —
 exactement comme la carte des paquets (ADR 0028).
 
@@ -46,7 +46,7 @@ exactement comme la carte des paquets (ADR 0028).
   `generatedAt` rendrait la comparaison impossible. (C'est pourquoi le markdown
   de la carte des paquets n'en contient aucun.)
 - Une PR qui modifie l'historique régénère naturellement les périodes concernées
-  **dans la même PR** (déclencheur de mise à jour, [ADR 0025](0025-documentation-multi-niveaux)).
+  **dans la même PR** (déclencheur de mise à jour, [ADR 0025](/atlas/decisions/0025-documentation-multi-niveaux/)).
 - Le générateur doit produire **exactement le style Prettier**, sinon le
   contrôle de fraîcheur boucle (leçon de l'ADR 0028).
 
@@ -89,7 +89,7 @@ l'affichage, sans entrer dans le diff-check. Ce qu'on diff-checke, c'est la
 
 ## Statut
 
-Accepted (2026-06-02). Étend [ADR 0028](0028-documentation-verifiable)
+Accepted (2026-06-02). Étend [ADR 0028](/atlas/decisions/0028-documentation-verifiable/)
 (documentation vérifiable) sans la remplacer ; en applique le principe à des
 données partiellement non déterministes.
 

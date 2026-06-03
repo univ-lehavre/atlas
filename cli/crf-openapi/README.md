@@ -82,8 +82,6 @@ pnpm -F @univ-lehavre/atlas-crf-openapi lint     # ESLint
 
 ## Documentation
 
-- [API Documentation](/atlas/api/univ-lehavre/atlas-crf-openapi/)
-
 ## Organization
 
 This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.

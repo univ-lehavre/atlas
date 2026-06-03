@@ -1,6 +1,6 @@
 # sillage-sandbox
 
-Environnement Docker local pour faire tourner l'app [`apps/sillage/`](../../apps/sillage/) bout-en-bout sans dépendre des instances de prod. Bundle une instance CRF (REDCap), un BaaS self-hosted (Appwrite), un mail-trap (Mailpit) et les scripts qui provisionnent automatiquement le tout, importent la trame sillage, peuplent REDCap en données synthétiques et écrivent un `.env.local` directement consommable par sillage.
+Environnement Docker local pour faire tourner l'app [`apps/sillage/`](https://github.com/univ-lehavre/atlas/tree/main/apps/sillage) bout-en-bout sans dépendre des instances de prod. Bundle une instance CRF (REDCap), un BaaS self-hosted (Appwrite), un mail-trap (Mailpit) et les scripts qui provisionnent automatiquement le tout, importent la trame sillage, peuplent REDCap en données synthétiques et écrivent un `.env.local` directement consommable par sillage.
 
 ## Stack
 
@@ -14,7 +14,7 @@ Environnement Docker local pour faire tourner l'app [`apps/sillage/`](../../apps
 | **Mailpit (UI)**        | http://localhost:8025 | Capture tous les emails (magic-link inclus)  |
 | **Mailpit (SMTP)**      | localhost:1025        | Endpoint SMTP utilisé par Appwrite (interne) |
 
-La stack CRF + Mailpit vient de [`sandbox/crf-sandbox/`](../crf-sandbox/) via `include:` Docker Compose v2.20+. La stack BaaS est déclarée inline dans [docker-compose.yaml](docker-compose.yaml), services préfixés `baas-`. Le service `baas` est branché aux deux réseaux (`baas-net` et `redcap-net`) pour parler à Mailpit.
+La stack CRF + Mailpit vient de [`sandbox/crf-sandbox/`](https://github.com/univ-lehavre/atlas/tree/main/sandbox/crf-sandbox) via `include:` Docker Compose v2.20+. La stack BaaS est déclarée inline dans [docker-compose.yaml](https://github.com/univ-lehavre/atlas/blob/main/sandbox/sillage-sandbox/docker-compose.yaml), services préfixés `baas-`. Le service `baas` est branché aux deux réseaux (`baas-net` et `redcap-net`) pour parler à Mailpit.
 
 ## Prérequis
 
@@ -54,7 +54,7 @@ Ouvrir http://localhost:5173 et signer avec un email matchant `ALLOWED_DOMAINS_R
 
 ## sillage dockerisée (opt-in)
 
-Par défaut, l'app tourne sur l'hôte via `pnpm -F sillage dev` (hot-reload, idéal pour développer). Pour la faire tourner **dans Docker** au lieu de l'hôte — utile pour reproduire un environnement build-once proche de la prod, ou pour démarrer la stack complète d'un seul `docker compose` — un service `app` est défini dans [docker-compose.yaml](docker-compose.yaml). Il build l'image depuis [`apps/sillage/Dockerfile`](../../apps/sillage/Dockerfile) et l'expose sur http://localhost:5173.
+Par défaut, l'app tourne sur l'hôte via `pnpm -F sillage dev` (hot-reload, idéal pour développer). Pour la faire tourner **dans Docker** au lieu de l'hôte — utile pour reproduire un environnement build-once proche de la prod, ou pour démarrer la stack complète d'un seul `docker compose` — un service `app` est défini dans [docker-compose.yaml](https://github.com/univ-lehavre/atlas/blob/main/sandbox/sillage-sandbox/docker-compose.yaml). Il build l'image depuis [`apps/sillage/Dockerfile`](https://github.com/univ-lehavre/atlas/blob/main/apps/sillage/Dockerfile) et l'expose sur http://localhost:5173.
 
 ```bash
 # 1. provisionne d'abord la stack (Appwrite + REDCap + .env rempli)
@@ -93,7 +93,7 @@ Notes importantes :
 
 > Les commandes `up`/`down` sont préfixées `docker:` parce que `pnpm up` est une commande native pnpm (= `update`) qui shadow-erait nos scripts.
 
-> **Volumes anonymes.** Les volumes Appwrite (`/storage/*`) et MongoDB (`/data/db`) sont déclarés anonymes dans [`docker-compose.yaml`](docker-compose.yaml). Un `pnpm stop` (ou `docker compose down --volumes`) les efface — donc chaque `pnpm start` repart d'un état fraîchement bootstrappé. Le cold-bootstrap ajoute ~30-60s à chaque relance, en échange de la disparition des bugs de drift d'état entre sessions et entre sandboxes (cf. la sandbox amarre qui partage le projet REDCap id=1).
+> **Volumes anonymes.** Les volumes Appwrite (`/storage/*`) et MongoDB (`/data/db`) sont déclarés anonymes dans [`docker-compose.yaml`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/sillage-sandbox/docker-compose.yaml). Un `pnpm stop` (ou `docker compose down --volumes`) les efface — donc chaque `pnpm start` repart d'un état fraîchement bootstrappé. Le cold-bootstrap ajoute ~30-60s à chaque relance, en échange de la disparition des bugs de drift d'état entre sessions et entre sandboxes (cf. la sandbox amarre qui partage le projet REDCap id=1).
 
 Tous les scripts sont idempotents — re-lance-les sans crainte.
 
@@ -101,7 +101,7 @@ Tous les scripts sont idempotents — re-lance-les sans crainte.
 
 ### Bootstrap Appwrite
 
-[`bootstrap-baas.ts`](scripts/bootstrap-baas.ts) attaque l'API Appwrite directement :
+[`bootstrap-baas.ts`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/sillage-sandbox/scripts/bootstrap-baas.ts) attaque l'API Appwrite directement :
 
 1. `POST /v1/account` crée le compte root (sur une install fraîche, le premier compte est promu root automatiquement). Si le compte existe déjà, on continue.
 2. `POST /v1/account/sessions/email` récupère un cookie console.
@@ -114,13 +114,13 @@ Les endpoints `/v1/teams`, `/v1/projects`, `/v1/projects/.../keys` sont ceux que
 
 ### Bootstrap REDCap
 
-[`bootstrap-crf.ts`](scripts/bootstrap-crf.ts) :
+[`bootstrap-crf.ts`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/sillage-sandbox/scripts/bootstrap-crf.ts) :
 
 1. Délègue l'install REDCap à `pnpm -F atlas-crf-sandbox docker:install` (création du schéma + projet par défaut id=1 + son token API — le projet 1 reste intact, c'est celui utilisé par les tests de contrat du crf-sandbox).
 2. INSERT SQL minimal dans `redcap_projects` pour créer un projet `sillage` dédié (auto-incremented id). Idempotent : si le projet existe déjà, on le réutilise.
 3. INSERT dans `redcap_user_rights` pour donner à `site_admin` un token API généré (16 bytes hex). `ON DUPLICATE KEY UPDATE` rend le step ré-entrant.
 4. Drop de la FK `redcap_data_dictionaries.doc_id` → `redcap_edocs_metadata.doc_id` : l'API metadata d'import insère avec `doc_id=0` (sentinelle) et violerait sinon la contrainte.
-5. Import du data dictionary [`data-dictionaries/136-ecrin-v2-alpha.json`](../../data-dictionaries/136-ecrin-v2-alpha.json) via `POST /api/?content=metadata&action=import` dans le projet sillage.
+5. Import du data dictionary [`data-dictionaries/136-ecrin-v2-alpha.json`](https://github.com/univ-lehavre/atlas/blob/main/data-dictionaries/136-ecrin-v2-alpha.json) via `POST /api/?content=metadata&action=import` dans le projet sillage.
 6. Persistance de `CRF_API_TOKEN` (le token du projet sillage) dans `.env`.
 
 Le projet par défaut id=1 (créé par `install-crf.sh`) reste isolé et continue de servir les tests de contrat du `crf-sandbox`.
@@ -133,13 +133,13 @@ Mais Appwrite n'envoie pas les emails depuis son process principal : il les pous
 
 ### Seed fake data
 
-[`seed-fake-data.ts`](scripts/seed-fake-data.ts) parcourt le data dictionary et génère N records (défaut 120, paramétrable via `SEED_RECORD_COUNT` ou `--count=N`) répartis entre quatre scénarios : incomplet (20%), en cours d'avis (30%), validé (40%), refusé (10%). Le branching logic REDCap (`[field]=val OR ...`) est interprété pour ne remplir que les champs réellement visibles selon les autres réponses. Les valeurs sont générées par `@faker-js/faker` (locale `fr`).
+[`seed-fake-data.ts`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/sillage-sandbox/scripts/seed-fake-data.ts) parcourt le data dictionary et génère N records (défaut 120, paramétrable via `SEED_RECORD_COUNT` ou `--count=N`) répartis entre quatre scénarios : incomplet (20%), en cours d'avis (30%), validé (40%), refusé (10%). Le branching logic REDCap (`[field]=val OR ...`) est interprété pour ne remplir que les champs réellement visibles selon les autres réponses. Les valeurs sont générées par `@faker-js/faker` (locale `fr`).
 
 Re-lancer le seed est idempotent (les record_id sont stables, REDCap upsert) — utiliser `FAKER_SEED=42 pnpm seed` pour un seed déterministe.
 
 ### Pull depuis la prod (opt-in)
 
-[`pull-from-prod.ts`](scripts/pull-from-prod.ts) tire les vrais records depuis le REDCap officiel et les ré-injecte en local. Nécessite `PROD_CRF_URL` et `PROD_CRF_TOKEN`.
+[`pull-from-prod.ts`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/sillage-sandbox/scripts/pull-from-prod.ts) tire les vrais records depuis le REDCap officiel et les ré-injecte en local. Nécessite `PROD_CRF_URL` et `PROD_CRF_TOKEN`.
 
 **Pattern recommandé** : mettre ces deux valeurs dans `.env.prod` (gitignored, persistant) plutôt que dans `.env` (régénéré à chaque reset). Le fichier est sourcé en plus du `.env` standard par tous les scripts qui en ont besoin :
 
@@ -156,7 +156,7 @@ Le script demande une confirmation interactive avant de pull (skip avec `--yes`)
 
 ### Test E2E
 
-Le smoke end-to-end est piloté par Playwright — voir [`tests/e2e/smoke.spec.ts`](tests/e2e/smoke.spec.ts). Il couvre le scénario complet : signup via la modale → poll Mailpit → visite du magic-link → création de demande via `/api/v1/surveys/new` → reload → assert section _Compléter_ → logout. La suite se skip toute seule si Mailpit ou Appwrite ne sont pas joignables.
+Le smoke end-to-end est piloté par Playwright — voir [`tests/e2e/smoke.spec.ts`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/sillage-sandbox/tests/e2e/smoke.spec.ts). Il couvre le scénario complet : signup via la modale → poll Mailpit → visite du magic-link → création de demande via `/api/v1/surveys/new` → reload → assert section _Compléter_ → logout. La suite se skip toute seule si Mailpit ou Appwrite ne sont pas joignables.
 
 Lancer :
 
@@ -165,7 +165,7 @@ pnpm test:smoke          # headless
 pnpm test:smoke:headed   # avec UI
 ```
 
-Le `webServer` de [`playwright.config.ts`](playwright.config.ts) spawn `pnpm -F sillage dev` automatiquement (`reuseExistingServer: true`). Pre-requis stack : `pnpm bootstrap` joué (Appwrite + REDCap + .env sillage provisionnés).
+Le `webServer` de [`playwright.config.ts`](https://github.com/univ-lehavre/atlas/blob/main/sandbox/sillage-sandbox/playwright.config.ts) spawn `pnpm -F sillage dev` automatiquement (`reuseExistingServer: true`). Pre-requis stack : `pnpm bootstrap` joué (Appwrite + REDCap + .env sillage provisionnés).
 
 ## Limites connues
 

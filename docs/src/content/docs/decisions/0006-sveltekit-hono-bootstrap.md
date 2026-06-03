@@ -41,7 +41,7 @@ connu : un contributeur extérieur retrouve ses repères sans onboarding.
 
 **Prix à payer.** Svelte 5 (runes) est récent et les bibliothèques tierces
 ne sont pas toutes à jour. Bootstrap impose `style-src 'unsafe-inline'`
-dans la CSP (voir [ADR 0019](0019-derogations-workspace-audit)) parce
+dans la CSP (voir [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/)) parce
 que ses composants injectent des styles inline. Hono a un écosystème
 plus petit que Express ou Fastify.
 
@@ -52,5 +52,5 @@ plus petit que Express ou Fastify.
 - Les services Hono utilisent les middlewares Effect pour la
   validation et le logging, pas des middlewares Hono ad hoc.
 - Tout passage à un autre framework demande un ADR explicite.
-- Voir [docs/architecture/tech-choices.md](../architecture/tech-choices)
+- Voir [docs/architecture/tech-choices.md](/atlas/architecture/tech-choices/)
   pour les versions cibles et les patterns.

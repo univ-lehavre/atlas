@@ -31,7 +31,7 @@ Les findings sécurité sont classés et remédiés selon le SLA suivant :
 | Low/Info | Opportuniste | Remédié à l'occasion, pas de délai engagé.              |
 
 Le SLA et son application sont documentés dans
-[docs/quality/security.md](../quality/security).
+[docs/quality/security.md](/atlas/quality/security/).
 
 ## Statut
 

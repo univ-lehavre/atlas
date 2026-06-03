@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import starlightLinksValidator from "starlight-links-validator";
 import vue from "@astrojs/vue";
 import mermaid from "astro-mermaid";
 import mdx from "@astrojs/mdx";
@@ -16,6 +17,27 @@ export default defineConfig({
     vue(),
     starlight({
       title: "Atlas",
+      // Validation des liens internes au build (anti-régression). Casse le
+      // build si un lien interne pointe vers une route inexistante — c'est ce
+      // qui a manqué à la migration et a laissé passer des centaines de liens
+      // morts (résolution relative + slash final). Vérifié en CI via docs:build.
+      //
+      // `exclude: /atlas/packages/**` : les pages de README de paquets sont
+      // servies par une route Astro sur-mesure (`src/pages/packages/[...slug]`,
+      // collection packageReadmes), que le validateur — limité aux pages gérées
+      // par Starlight — ne sait pas introspecter ; il les prendrait à tort pour
+      // des liens morts. Ces routes sont vérifiées exister par ailleurs (build +
+      // audit). On garde la validation STRICTE sur tout le reste.
+      //
+      // `errorOnLocalLinks: false` : les README des bancs d'essai documentent
+      // des URL `http://localhost:<port>` (services Docker : REDCap, Mailpit…) —
+      // ce sont des exemples légitimes, pas des liens de dev oubliés.
+      plugins: [
+        starlightLinksValidator({
+          exclude: ["/atlas/packages/**"],
+          errorOnLocalLinks: false,
+        }),
+      ],
       // Favicon servi depuis public/ (motif générique « carte/atlas », neutre
       // de domaine — ADR 0035). Sans ce fichier, Starlight pointe par défaut
       // vers /favicon.svg qui n'existait pas → 404 sur chaque page.
@@ -66,7 +88,6 @@ export default defineConfig({
           items: [{ autogenerate: { directory: "plans" } }],
         },
         { label: "Glossaire", link: "/glossary/" },
-        { label: "Référence API", link: "/api/" },
       ],
     }),
     mdx(),

@@ -109,7 +109,7 @@ remédiation et un compteur d'occurrences.
 - Si une dérogation devient stable (le refactor n'arrivera pas), elle
   peut soit remonter dans le préset (`svelte`) si elle s'applique à
   tous les paquets Svelte, soit basculer en TODO sine die dans
-  l'[ADR 0019](0019-derogations-workspace-audit).
+  l'[ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/).
 - Le préset `svelteRelaxed` reste exporté pour les paquets externes
   ou expérimentaux, mais aucun paquet du monorepo ne doit l'utiliser
   par défaut.

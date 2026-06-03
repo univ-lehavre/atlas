@@ -4,7 +4,7 @@ title: "0033 — Contrat d'interface entre l'application (`atlas`) et le cluster
 
 ## Contexte
 
-Le pipeline de collaborations ([ADR 0029](0029-architecture-pipeline-collaborations))
+Le pipeline de collaborations ([ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/))
 est développé dans le dépôt `atlas` (code, manifestes applicatifs, plan) mais
 **s'exécute sur un cluster Kubernetes** dont l'infrastructure vit dans un dépôt
 **séparé** (`cluster` : Ansible, addons `platform/<addon>/`, banc Vagrant). Le
@@ -23,7 +23,7 @@ d'autre, une image taguée autrement que ce que le manifeste référence, une
 version de `pgvector` ou de Dagster incompatible — autant de pannes qui
 **compilent et déploient mais échouent à l'exécution**.
 
-L'outil étant **générique et multi-tenant** ([ADR 0031](0031-outil-generique-open-source)),
+L'outil étant **générique et multi-tenant** ([ADR 0031](/atlas/decisions/0031-outil-generique-open-source/)),
 ce contrat ne lie pas seulement « mes deux dépôts » : il lie le **code générique**
 à **n'importe quel cluster** qui l'exploite. Il doit donc être **explicite et
 unique**, pour que tout déployeur sache ce que l'application attend de son
@@ -45,31 +45,31 @@ des vérifications statiques ou un smoke-test au banc pourront être ajoutés
 
 Les valeurs concrètes (noms d'hôtes, plages d'IP, tailles) sont **propres à
 chaque instance** et relèvent de sa **configuration**, pas du code générique
-([ADR 0022](0022-naming-convention), [ADR 0031](0031-outil-generique-open-source)) ;
+([ADR 0022](/atlas/decisions/0022-naming-convention/), [ADR 0031](/atlas/decisions/0031-outil-generique-open-source/)) ;
 le contrat fixe les **conventions et formats**, pas les valeurs d'une instance
 donnée.
 
 ### Ce que le cluster fournit à l'application
 
-| Point de contact          | Contrat                                                                                                                                                                                                                                                                          | Fourni par (Phase 1)    |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| **Stockage objet S3**     | Un bucket dont le nom suit la convention `citation` (jamais la marque, [ADR 0022](0022-naming-convention)), accessible en **path-style**, avec un **Secret** d'identifiants S3 (`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / endpoint) généré par un **`ObjectBucketClaim`**. | Ceph RGW (déjà en prod) |
-| **PostgreSQL + pgvector** | Un cluster PostgreSQL géré (**CloudNativePG**) avec l'extension **`pgvector`** activée, accessible par DSN depuis les namespaces consommateurs, dimension de vecteur **384** (modèle `all-MiniLM-L6-v2`).                                                                        | Étape 1.6               |
-| **Orchestrateur**         | **Dagster** déployé (webserver + daemon + run workers), event log dans Postgres ; l'application fournit la **code-location** (assets), pas l'orchestrateur.                                                                                                                      | Étape 1.7               |
-| **Lineage**               | Un collecteur **OpenLineage** (**Marquez**) joignable via `OPENLINEAGE_URL`.                                                                                                                                                                                                     | Étape 1.8               |
-| **Registry d'images**     | Un registry interne où l'application pousse ses images et que les manifestes/run workers référencent.                                                                                                                                                                            | déjà en prod            |
-| **GitOps**                | **Argo CD** réconciliant les `Application` de l'application, cadrées par un `AppProject` couvrant les namespaces `citation-*`.                                                                                                                                                   | Étape 1.4               |
-| **Exposition**            | Un **ingress** + **TLS de bordure** (cert-manager) pour exposer l'API et la PWA en HTTPS.                                                                                                                                                                                        | Étapes 1.2–1.3          |
-| **Observabilité**         | **Prometheus** scrappant les `ServiceMonitor` des services applicatifs ; Grafana + Loki.                                                                                                                                                                                         | Étape 1.5               |
+| Point de contact          | Contrat                                                                                                                                                                                                                                                                                            | Fourni par (Phase 1)    |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| **Stockage objet S3**     | Un bucket dont le nom suit la convention `citation` (jamais la marque, [ADR 0022](/atlas/decisions/0022-naming-convention/)), accessible en **path-style**, avec un **Secret** d'identifiants S3 (`AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / endpoint) généré par un **`ObjectBucketClaim`**. | Ceph RGW (déjà en prod) |
+| **PostgreSQL + pgvector** | Un cluster PostgreSQL géré (**CloudNativePG**) avec l'extension **`pgvector`** activée, accessible par DSN depuis les namespaces consommateurs, dimension de vecteur **384** (modèle `all-MiniLM-L6-v2`).                                                                                          | Étape 1.6               |
+| **Orchestrateur**         | **Dagster** déployé (webserver + daemon + run workers), event log dans Postgres ; l'application fournit la **code-location** (assets), pas l'orchestrateur.                                                                                                                                        | Étape 1.7               |
+| **Lineage**               | Un collecteur **OpenLineage** (**Marquez**) joignable via `OPENLINEAGE_URL`.                                                                                                                                                                                                                       | Étape 1.8               |
+| **Registry d'images**     | Un registry interne où l'application pousse ses images et que les manifestes/run workers référencent.                                                                                                                                                                                              | déjà en prod            |
+| **GitOps**                | **Argo CD** réconciliant les `Application` de l'application, cadrées par un `AppProject` couvrant les namespaces `citation-*`.                                                                                                                                                                     | Étape 1.4               |
+| **Exposition**            | Un **ingress** + **TLS de bordure** (cert-manager) pour exposer l'API et la PWA en HTTPS.                                                                                                                                                                                                          | Étapes 1.2–1.3          |
+| **Observabilité**         | **Prometheus** scrappant les `ServiceMonitor` des services applicatifs ; Grafana + Loki.                                                                                                                                                                                                           | Étape 1.5               |
 
 ### Ce que l'application fournit au cluster
 
 | Point de contact       | Contrat                                                                                                                                                                                             |
 | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Namespaces**         | Les charges applicatives vivent dans `citation-ingest`, `citation-marts`, `citation-serving`, `citation-pwa` (convention [ADR 0022](0022-naming-convention) — jamais la marque).                    |
+| **Namespaces**         | Les charges applicatives vivent dans `citation-ingest`, `citation-marts`, `citation-serving`, `citation-pwa` (convention [ADR 0022](/atlas/decisions/0022-naming-convention/) — jamais la marque).  |
 | **Images**             | Poussées sur le registry interne, **taguées explicitement** (pas `latest` en production) ; les manifestes référencent le tag exact.                                                                 |
 | **Manifestes**         | Des `Application` Argo CD + Deployment/CronJob/Service/Ingress conformes (validés `kubeconform`), réconciliables sans intervention manuelle.                                                        |
-| **Métriques**          | Chaque service expose `/metrics` et déclare un `ServiceMonitor` ; aucune donnée personnelle dans les labels (cardinalité + RGPD, [ADR 0030](0030-rgpd-profilage-collaborations)).                   |
+| **Métriques**          | Chaque service expose `/metrics` et déclare un `ServiceMonitor` ; aucune donnée personnelle dans les labels (cardinalité + RGPD, [ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/)). |
 | **Contrat de données** | Le mart est un artefact **Parquet + `manifest.json`** sur le bucket S3 (immuable, checksummé, versionné) — l'infrastructure n'a pas à le connaître, mais elle garantit la **durabilité** du bucket. |
 
 ### Frontière de responsabilité
@@ -84,8 +84,8 @@ donnée.
 
 ## Statut
 
-Accepted (2026-06-02). Complète [ADR 0029](0029-architecture-pipeline-collaborations)
-(architecture) et [ADR 0031](0031-outil-generique-open-source) (outil
+Accepted (2026-06-02). Complète [ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/)
+(architecture) et [ADR 0031](/atlas/decisions/0031-outil-generique-open-source/) (outil
 générique) ; ne crée aucune contrainte technique nouvelle, il **rend explicite**
 un contrat jusqu'ici implicite.
 
@@ -111,12 +111,12 @@ déployeur via sa configuration.
 - **Tout changement d'un point de contact** (nom de bucket, namespaces, format de
   manifeste, version d'un composant fourni) **met à jour ce document dans la même
   PR** que le code ou l'infrastructure concernés.
-- Le **nommage** suit [ADR 0022](0022-naming-convention) des deux côtés :
+- Le **nommage** suit [ADR 0022](/atlas/decisions/0022-naming-convention/) des deux côtés :
   `citation`, jamais la marque, dans tout identifiant partagé (bucket,
   namespaces, secrets).
 - Les **valeurs propres à une instance** (hôtes, IP, tailles, base légale)
   vivent dans la **configuration de l'instance**, pas dans ce contrat ni dans le
-  code générique ([ADR 0031](0031-outil-generique-open-source)).
+  code générique ([ADR 0031](/atlas/decisions/0031-outil-generique-open-source/)).
 - Si une dérive silencieuse cause une panne malgré le contrat, on **promeut** la
   vérification au niveau supérieur (checks statiques inter-dépôts, puis
   smoke-test au banc) — pas avant qu'une douleur réelle ne le justifie.

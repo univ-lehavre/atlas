@@ -14,7 +14,7 @@ opposés sans qu'aucune ne paie le prix de l'autre :
   les détails d'implémentation, les compromis et les références pour
   aller plus loin.
 
-[ADR 0013](0013-documentation-public-non-expert-fr) a déjà tranché la
+[ADR 0013](/atlas/decisions/0013-documentation-public-non-expert-fr/) a déjà tranché la
 **langue** (français) et a posé que la documentation vise un **public
 non-expert**. Mais elle ne dit pas _comment cohabitent_ l'exigence
 d'accessibilité et le besoin de détail technique : à trop vouloir tout
@@ -39,13 +39,13 @@ une information donnée doit vivre.
 
 ### Niveau 1 — Surface (néophyte)
 
-- **Audience** : non-expert (cf. [ADR 0013](0013-documentation-public-non-expert-fr)).
+- **Audience** : non-expert (cf. [ADR 0013](/atlas/decisions/0013-documentation-public-non-expert-fr/)).
 - **Emplacement** : `README.md` racine, `README.md` de chaque app/service,
   pages d'accueil sous `docs/`.
 - **Contenu** : ce que fait le composant, à quoi il sert, comment il
   s'utilise, avec **exemples concrets**. Tout terme technique non trivial
   est défini sur place ou pointé vers
-  [`docs/glossary.md`](../glossary) (règle héritée de 0013). Les
+  [`docs/glossary.md`](/atlas/glossary/) (règle héritée de 0013). Les
   conséquences implicites d'un choix sont rendues explicites.
 - **Applications en bout de chaîne** : la doc de surface décrit comment
   les apps consommatrices interagissent avec les services/composants et
@@ -92,7 +92,7 @@ inline expliquant pourquoi. Cela **n'autorise pas** la paraphrase du code.
 ### Échelle monorepo
 
 La documentation suit la hiérarchie du dépôt : racine → catégorie
-(cf. [ADR 0002](0002-monorepo-huit-categories)) → paquet →
+(cf. [ADR 0002](/atlas/decisions/0002-monorepo-huit-categories/)) → paquet →
 sous-module. L'information vit au niveau le plus spécifique qui la
 contient entièrement ; elle n'est pas dupliquée vers le haut.
 
@@ -104,7 +104,7 @@ La doc n'est pas un chantier différé : elle fait partie du changement.
 
 ## Statut
 
-Accepted (2026-06-01). Complète [ADR 0013](0013-documentation-public-non-expert-fr)
+Accepted (2026-06-01). Complète [ADR 0013](/atlas/decisions/0013-documentation-public-non-expert-fr/)
 (langue et public) sans la remplacer.
 
 ## Conséquences
@@ -128,6 +128,6 @@ reste un jugement, pas une règle mécanique.
   met à jour la doc correspondante dans la même PR.
 - Le _pourquoi_ durable d'un choix de bibliothèque ou d'architecture va
   en ADR, pas en commentaire inline (cf. [README ADR]()).
-- Voir aussi [ADR 0012](0012-neutralisation-framing-institutionnel)
+- Voir aussi [ADR 0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/)
   (neutralisation du framing) : les garanties se documentent avec
   preuves, pas en registre promotionnel.

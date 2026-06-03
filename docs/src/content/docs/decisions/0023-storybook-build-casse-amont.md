@@ -7,7 +7,7 @@ title: "0023 — `storybook:build` cassé en amont (Storybook 10.4 / Svelte 5.55
 `ui/atlas-ui` documente ses composants via Storybook (`storybook dev`
 pour le travail interactif, `storybook:build` pour le bundle statique).
 Le système de theming opt-in de la Phase 10.1 du
-[plan de résorption 2026-05-30](../plans/2026-05-30-resorption) ajoute
+[plan de résorption 2026-05-30](/atlas/plans/2026-05-30-resorption/) ajoute
 deux stories (`Theming`) montrant un thème par défaut et un thème
 alternatif. Le critère de sortie de l'étape 10.1 mentionnait
 `storybook:build` comme validation.
@@ -53,7 +53,7 @@ La résorption (mise à niveau de la chaîne Storybook/Svelte/rolldown,
 ou contournement du bundling de l'asset fautif) est une **dette à part
 entière**, tracée ici, à reprendre quand une version de
 `@storybook/svelte` compatible Svelte 5.55 + rolldown 1.x sera
-disponible. Item sine die (cf. [ADR 0001](0001-devsecops-perimetre-repo-sine-die)).
+disponible. Item sine die (cf. [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/)).
 
 ## Statut
 

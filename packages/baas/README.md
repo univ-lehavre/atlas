@@ -103,8 +103,6 @@ pnpm -F @univ-lehavre/atlas-baas lint     # ESLint
 
 ## Documentation
 
-- [API Documentation](/atlas/api/univ-lehavre/atlas-baas/)
-
 ## Organization
 
 This package is part of **Atlas**, a set of tools developed by **Le Havre Normandie University** to facilitate research and collaboration between researchers.

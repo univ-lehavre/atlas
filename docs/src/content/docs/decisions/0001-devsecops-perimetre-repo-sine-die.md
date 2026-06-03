@@ -6,7 +6,7 @@ title: "0001 — DevSecOps : périmètre repo complet, périphérie reportée si
 
 Le chantier DevSecOps a été planifié sous forme de phases (1.x à 8.x) couvrant
 SAST, dépendances, secrets, signatures, scans dynamiques (DAST), durcissement
-des en-têtes et politiques de sortie. Voir [docs/quality/security.md](../quality/security).
+des en-têtes et politiques de sortie. Voir [docs/quality/security.md](/atlas/quality/security/).
 
 Les phases **côté dépôt** (linting strict Svelte, Semgrep, CodeQL, audit
 dépendances, audit licences, structure workspace, signatures OIDC sur les
@@ -34,27 +34,27 @@ actifs. Chacun est documenté ci-dessous avec son **bloquant** (l'acteur
 ou la décision attendue) et son **débloque par** (le signal concret qui
 justifierait d'ouvrir le chantier).
 
-| Phase | Item                                                                         | Bloquant                                                     | Débloque par                                                         |
-| ----- | ---------------------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------- |
-| 5.1   | Enrichir la mention RGPD / données REDCap dans `SECURITY.md`                 | Décision projet sur le périmètre RGPD à documenter           | Demande conformité, audit RGPD (cf. [ADR 0026](0026-rgpd-perimetre)) |
-| 5.2   | CODEOWNERS — nominer un second mainteneur (bus-factor = 1)                   | Décision projet sur l'équipe étendue                         | Arrivée d'un second contributeur durable                             |
-| 5.3   | Branch protection tightening (signatures commits, codeowners review, admins) | Configuration GPG/SSH côté contributeurs + second mainteneur | Levée de 5.2 + configuration GPG distribuée                          |
-| 6.1   | Environnements Appwrite Sites (preview par PR ou `staging`)                  | Opérateurs infra Appwrite                                    | Revue de la chaîne de déploiement Appwrite Sites                     |
-| 6.3   | Validation externe des headers (securityheaders.com, Mozilla Observatory)    | Déploiement stable avec URLs publiques figées (6.1)          | Levée de 6.1                                                         |
-| 7.1   | Nightly ZAP (cible prod vs sandbox vs PR previews à arbitrer)                | Décision sur la cible (6.1) + budget CI                      | Levée de 6.1                                                         |
-| 7.3   | Revue trimestrielle (CodeQL, déps, headers, logs, secrets)                   | Rappel calendrier + second mainteneur (5.2) pour la charge   | Levée de 5.2 ou décision de tenir la revue en solo                   |
-| 8.1   | Alerting Appwrite (5xx / latence / auth-fail)                                | Opérateurs infra Appwrite                                    | Prise de contact ops Appwrite                                        |
-| 8.3   | Sauvegarde Appwrite (politique fréquence / rétention / géo, RPO/RTO)         | Opérateurs infra Appwrite                                    | Prise de contact ops Appwrite                                        |
+| Phase | Item                                                                         | Bloquant                                                     | Débloque par                                                                           |
+| ----- | ---------------------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| 5.1   | Enrichir la mention RGPD / données REDCap dans `SECURITY.md`                 | Décision projet sur le périmètre RGPD à documenter           | Demande conformité, audit RGPD (cf. [ADR 0026](/atlas/decisions/0026-rgpd-perimetre/)) |
+| 5.2   | CODEOWNERS — nominer un second mainteneur (bus-factor = 1)                   | Décision projet sur l'équipe étendue                         | Arrivée d'un second contributeur durable                                               |
+| 5.3   | Branch protection tightening (signatures commits, codeowners review, admins) | Configuration GPG/SSH côté contributeurs + second mainteneur | Levée de 5.2 + configuration GPG distribuée                                            |
+| 6.1   | Environnements Appwrite Sites (preview par PR ou `staging`)                  | Opérateurs infra Appwrite                                    | Revue de la chaîne de déploiement Appwrite Sites                                       |
+| 6.3   | Validation externe des headers (securityheaders.com, Mozilla Observatory)    | Déploiement stable avec URLs publiques figées (6.1)          | Levée de 6.1                                                                           |
+| 7.1   | Nightly ZAP (cible prod vs sandbox vs PR previews à arbitrer)                | Décision sur la cible (6.1) + budget CI                      | Levée de 6.1                                                                           |
+| 7.3   | Revue trimestrielle (CodeQL, déps, headers, logs, secrets)                   | Rappel calendrier + second mainteneur (5.2) pour la charge   | Levée de 5.2 ou décision de tenir la revue en solo                                     |
+| 8.1   | Alerting Appwrite (5xx / latence / auth-fail)                                | Opérateurs infra Appwrite                                    | Prise de contact ops Appwrite                                                          |
+| 8.3   | Sauvegarde Appwrite (politique fréquence / rétention / géo, RPO/RTO)         | Opérateurs infra Appwrite                                    | Prise de contact ops Appwrite                                                          |
 
 Deux items « à arbitrer » liés ont leur propre ADR : le périmètre RGPD
-([ADR 0026](0026-rgpd-perimetre)) et le rôle de security champion pour
-le triage CodeQL ([ADR 0027](0027-security-champion)).
+([ADR 0026](/atlas/decisions/0026-rgpd-perimetre/)) et le rôle de security champion pour
+le triage CodeQL ([ADR 0027](/atlas/decisions/0027-security-champion/)).
 
 ## Statut
 
 Accepted (2026-05-29). Révisé 2026-06-01 : le tableau de suivi des items
 sine die est désormais porté par cet ADR (et non plus par `TODO.md`,
-supprimé en fin de plan de résorption — cf. [ADR 0025](0025-documentation-multi-niveaux)).
+supprimé en fin de plan de résorption — cf. [ADR 0025](/atlas/decisions/0025-documentation-multi-niveaux/)).
 
 ## Conséquences
 

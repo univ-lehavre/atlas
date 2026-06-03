@@ -26,15 +26,15 @@ de l'art DataOps.
 Plusieurs briques existent déjà et sont réutilisables **telles quelles** :
 
 - `packages/citation-fetch` + `packages/fetch-one-api-page` : ingestion de
-  citations en [Effect](0005-effect-pour-la-pf), avec rate-limit (1 req/s) et
+  citations en [Effect](/atlas/decisions/0005-effect-pour-la-pf/), avec rate-limit (1 req/s) et
   pagination ;
 - `services/crf/src/server/app.ts` : patron de service Hono + OpenAPI 3.1 +
   Scalar, à cloner ;
 - `apps/find-an-expert` : PWA SvelteKit avec authentification et un **dispositif
-  d'événements** via Appwrite (`node-appwrite`, cf. [ADR 0010](0010-node-appwrite-sdk-25)),
+  d'événements** via Appwrite (`node-appwrite`, cf. [ADR 0010](/atlas/decisions/0010-node-appwrite-sdk-25/)),
   incluant les modules `consent-events` / `current-consents` / `ConsentType` —
   réinterprété ici comme **registre d'opposition** RGPD (il **retire** les
-  personnes opposées, cf. [ADR 0030](0030-rgpd-profilage-collaborations)) ;
+  personnes opposées, cf. [ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/)) ;
 - `packages/researcher-profiles/src/services/embedding-profile.ts` : embeddings
   ONNX `all-MiniLM-L6-v2`, CPU, sans Python — réutilisés tels quels comme source
   des vecteurs de l'index sémantique ;
@@ -174,7 +174,7 @@ Invariants :
   `dt=YYYY-MM/run=<id>/`, **jamais** de réécriture en place ;
 - le mart est conçu **ré-dérivable by-design** (régénération / masquage), pour
   ne pas opposer l'immutabilité au droit à l'effacement (cf.
-  [ADR 0030](0030-rgpd-profilage-collaborations)).
+  [ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/)).
 
 **C'est dbt qui produit ce mart Parquet** (matérialisation des modèles `marts`),
 et le manifest est écrit en dernier par l'asset de matérialisation. **L'index
@@ -235,7 +235,7 @@ jamais source de vérité du contrat.
 
 Ce second rôle est en **lecture seule** par-dessus l'index Postgres ; il
 **n'invalide pas** le contrat Parquet+manifest comme interface DataOps ↔ scoring
-(qui reste batch). Conformément à [ADR 0030](0030-rgpd-profilage-collaborations),
+(qui reste batch). Conformément à [ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/),
 **toute** route exposant des personnes ou des recommandations nominatives — y
 compris les routes d'exploration — exige une **authentification**.
 
@@ -269,10 +269,10 @@ compris les routes d'exploration — exige une **authentification**.
 - **Stockage & registry** — Ceph RGW (bucket `citation`) et le registry interne
   **déjà en prod**, réutilisés.
 
-Conformément à [ADR 0008](0008-clis-thins-logique-dans-packages), la logique
+Conformément à [ADR 0008](/atlas/decisions/0008-clis-thins-logique-dans-packages/), la logique
 (accès lakehouse, feature, scoring, chargement d'index) vit dans `packages/*` et
 reste testable hors CLI/service ; les assets Dagster et les services restent des
-consommateurs thins. Conformément à [ADR 0005](0005-effect-pour-la-pf), les
+consommateurs thins. Conformément à [ADR 0005](/atlas/decisions/0005-effect-pour-la-pf/), les
 paquets retournent des `Effect<A, E>` et le `run` est déclenché aux points
 d'entrée (handler Hono, `bin` du batch, op Dagster).
 
@@ -331,7 +331,7 @@ Le « modèle » se décline en **deux temps**, sur le même point d'extension
   C'est un invariant, pas une commodité : (1) un mart de paires de chercheurs est
   une donnée personnelle ; l'envoyer à une IA SaaS (OpenAI, Anthropic, Mistral
   hébergé…) serait un transfert à un sous-traitant, contraire à
-  [ADR 0030](0030-rgpd-profilage-collaborations) — le caractère gratuit d'une
+  [ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/) — le caractère gratuit d'une
   offre n'y change rien (transfert hors UE, entraînement possible sur les
   données, quotas instables). (2) Le tout-interne est aussi un atout de
   **souveraineté** assumé. Les embeddings (`all-MiniLM-L6-v2`, ONNX) et, au
@@ -353,7 +353,7 @@ Le « modèle » se décline en **deux temps**, sur le même point d'extension
 ## Statut
 
 Accepted (2026-06-02). Conditionnée par
-[ADR 0030](0030-rgpd-profilage-collaborations) (gate RGPD) avant tout
+[ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/) (gate RGPD) avant tout
 traitement de données réelles.
 
 ## Conséquences
@@ -412,7 +412,7 @@ d'un mart ou d'un index nominatif).
 
 **Garde-fous.**
 
-- **RGPD préalable** : [ADR 0030](0030-rgpd-profilage-collaborations) est la
+- **RGPD préalable** : [ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/) est la
   **gate phase 0**, bloquante avant tout code sur données réelles. Le traitement
   repose sur une **base légale d'intérêt public / intérêt légitime — pas le
   consentement — en _opt-out_** : tout chercheur du périmètre d'ingestion est
@@ -425,7 +425,7 @@ d'un mart ou d'un index nominatif).
   dérivé** sont **ré-dérivables** pour intégrer le droit d'opposition et le droit
   à l'effacement ; l'authentification est exigée sur toute route nominative, **y
   compris les routes d'exploration** ; base légale et responsable de traitement
-  restent institutionnels/DPO. Cet ADR **rouvre** [ADR 0026](0026-rgpd-perimetre)
+  restent institutionnels/DPO. Cet ADR **rouvre** [ADR 0026](/atlas/decisions/0026-rgpd-perimetre/)
   pour le cas précis du profilage (la collecte d'un nouveau type de donnée
   personnelle par une app déployée — déclencheur explicite de 0026), sans le
   contredire.
@@ -435,7 +435,7 @@ d'un mart ou d'un index nominatif).
   `citation-serving` / `citation-pwa`, paquets `atlas-*`. La marque n'apparaît
   que dans la prose explicative. Cette convention est appliquée partout dans le
   dépôt (renommages OpenAlex → `citation`, REDCap → `crf`) mais n'est pas encore
-  portée par un ADR dédié ; [ADR 0022](0022-naming-convention) ne traite que
+  portée par un ADR dédié ; [ADR 0022](/atlas/decisions/0022-naming-convention/) ne traite que
   du préfixe `atlas-` des paquets publiés. Acter cette convention dans son propre
   ADR est une dette connue.
 - **Évolution non destructive vers le palier 2** : Parquet → Iceberg (migration
@@ -450,10 +450,10 @@ d'un mart ou d'un index nominatif).
   l'exploration, jamais source de vérité du transfert. Aucun couplage par base ou
   par API n'est introduit sur le chemin de calcul.
 - **Documentation** : la chaîne est documentée à plusieurs niveaux
-  ([ADR 0025](0025-documentation-multi-niveaux)) — surface (PWA, README
+  ([ADR 0025](/atlas/decisions/0025-documentation-multi-niveaux/)) — surface (PWA, README
   services), profondeur (`docs/architecture/` : contrat de données, lakehouse,
   modèles dbt, orchestration Dagster, lineage, index, scoring), inline pour les
   dérogations.
 - Le plan d'exécution phasé (une PR par phase, phase 0 = gate RGPD) vit dans
-  `docs/plans/` et prend cet ADR + [ADR 0030](0030-rgpd-profilage-collaborations)
+  `docs/plans/` et prend cet ADR + [ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/)
   comme socle décisionnel.

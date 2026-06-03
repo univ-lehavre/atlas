@@ -2,7 +2,7 @@
 title: Plans de résorption
 ---
 
-Plans d'action pour résorber les findings issus des [audits](../audit/) du dépôt. Chaque plan est :
+Plans d'action pour résorber les findings issus des [audits](/atlas/audit/) du dépôt. Chaque plan est :
 
 - **Phasé** — étapes ordonnées par dépendance ; rien n'est attaqué tant que son prérequis n'est pas vert.
 - **Agentique-ready** — exécutable par un agent Claude sans question à l'utilisateur. Chaque étape liste fichiers, invariants, commandes de validation et critères « done ».
@@ -18,8 +18,8 @@ Plans d'action pour résorber les findings issus des [audits](../audit/) du dép
 
 ## Index
 
-| Date plan  | Audit de référence                      | Plan                                                               | Validation                                                  | Statut              |
-| ---------- | --------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------- | ------------------- |
-| 2026-05-30 | [Audit 2026-05-29](../audit/2026-05-29) | [Plan de résorption](./2026-05-30-resorption)                      | [Rapport de validation](./2026-05-30-resorption-validation) | Terminé (16 phases) |
-| 2026-06-01 | Revue de la documentation               | [Documentation vérifiable](./documentation-verifiable)             | —                                                           | Terminé             |
-| 2026-06-02 | Benchmark DataOps + cluster             | [Pipeline de collaborations](./2026-06-02-pipeline-collaborations) | —                                                           | À exécuter          |
+| Date plan  | Audit de référence                           | Plan                                                                           | Validation                                                              | Statut              |
+| ---------- | -------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------- | ------------------- |
+| 2026-05-30 | [Audit 2026-05-29](/atlas/audit/2026-05-29/) | [Plan de résorption](/atlas/plans/2026-05-30-resorption/)                      | [Rapport de validation](/atlas/plans/2026-05-30-resorption-validation/) | Terminé (16 phases) |
+| 2026-06-01 | Revue de la documentation                    | [Documentation vérifiable](/atlas/plans/documentation-verifiable/)             | —                                                                       | Terminé             |
+| 2026-06-02 | Benchmark DataOps + cluster                  | [Pipeline de collaborations](/atlas/plans/2026-06-02-pipeline-collaborations/) | —                                                                       | À exécuter          |

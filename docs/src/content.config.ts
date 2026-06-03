@@ -21,19 +21,7 @@ const packageReadmes = defineCollection({
   schema: z.object({}).passthrough(),
 });
 
-// Référence API générée par TypeDoc (markdown, dans .generated/api, gitignoré
-// et régénéré au build par `pnpm docs:api`). On exclut `_media/` (copies
-// internes de README/ADR référencés depuis la JSDoc, pas des pages d'API).
-const api = defineCollection({
-  loader: glob({
-    pattern: ["**/*.md", "!_media/**"],
-    base: ".generated/api",
-  }),
-  schema: z.object({}).passthrough(),
-});
-
 export const collections = {
   docs,
   packageReadmes,
-  api,
 };

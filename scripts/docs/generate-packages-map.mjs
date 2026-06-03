@@ -56,10 +56,12 @@ const CATEGORY_ORDER = [
 
 /**
  * URL de la page de doc d'un paquet dans Starlight. Les README sont inclus en
- * place (route /packages/<dir>, cf. ADR 0036) ; `dir` est le chemin du paquet
- * dans le monorepo (ex. `packages/crf-core` → `/atlas/packages/packages/crf-core`).
+ * place (route /packages/<dir>/, cf. ADR 0036) ; `dir` est le chemin du paquet
+ * dans le monorepo (ex. `packages/crf-core` → `/atlas/packages/packages/crf-core/`).
+ * Le slash FINAL est requis : Astro sert les pages avec, et le validateur de
+ * liens rejette la forme sans slash.
  */
-const readmeUrl = (dir) => `/atlas/packages/${dir}`;
+const readmeUrl = (dir) => `/atlas/packages/${dir}/`;
 
 /**
  * Rôle d'un paquet : `description` du package.json, sinon premier paragraphe
@@ -382,7 +384,7 @@ n'appelle — et explique, pour chacun, pourquoi.
 > vérifiée en CI (plan « Documentation vérifiable »).
 
 Pour la vue d'ensemble par catégorie et les règles transverses, voir
-[la structure du monorepo](./monorepo).
+[la structure du monorepo](/atlas/architecture/monorepo/).
 
 ${START}
 

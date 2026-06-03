@@ -28,7 +28,7 @@ fr-FR` dans la config VitePress, README et docs en français).
 - **Public cible** : la documentation est rédigée pour un **public
   non-expert**. Tout terme technique non trivial est :
   - soit défini sur place lors de sa première occurrence dans la page ;
-  - soit pointé vers [`docs/glossary.md`](../glossary) qui regroupe
+  - soit pointé vers [`docs/glossary.md`](/atlas/glossary/) qui regroupe
     les définitions transverses.
 
 Les API et le code restent en anglais (conventions Web, identifiants,
@@ -58,5 +58,5 @@ abréviation doit y être ajoutée).
   nouveau contributeur sans contexte comprendrait cette page ? ».
 - Toute introduction d'un nouveau terme technique demande soit une
   définition inline, soit une entrée glossaire.
-- Voir aussi [ADR 0012](0012-neutralisation-framing-institutionnel)
+- Voir aussi [ADR 0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/)
   sur la neutralisation du framing.

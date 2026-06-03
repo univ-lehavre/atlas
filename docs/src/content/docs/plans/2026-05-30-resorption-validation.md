@@ -2,7 +2,7 @@
 title: Rapport de validation — plan 2026-05-30
 ---
 
-Vérification automatisée du [plan de résorption 2026-05-30](./2026-05-30-resorption) par un agent relecteur indépendant. Le document ci-dessous est consigné pour traçabilité : il liste les écarts détectés et l'état de leur traitement.
+Vérification automatisée du [plan de résorption 2026-05-30](/atlas/plans/2026-05-30-resorption/) par un agent relecteur indépendant. Le document ci-dessous est consigné pour traçabilité : il liste les écarts détectés et l'état de leur traitement.
 
 ## Résultat
 

@@ -4,9 +4,9 @@ title: Plan — Documentation vérifiable
 
 > Date du plan : 2026-06-01. Issu d'une revue de la documentation publiée
 > (les défauts ponctuels recensés sont détaillés en Phase 4). Socle
-> décisionnel : [ADR 0013](../decisions/0013-documentation-public-non-expert-fr),
-> [ADR 0012](../decisions/0012-neutralisation-framing-institutionnel),
-> [ADR 0025](../decisions/0025-documentation-multi-niveaux). Ce plan introduit
+> décisionnel : [ADR 0013](/atlas/decisions/0013-documentation-public-non-expert-fr/),
+> [ADR 0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/),
+> [ADR 0025](/atlas/decisions/0025-documentation-multi-niveaux/). Ce plan introduit
 > un nouvel ADR 0028 « Documentation vérifiable » (créé en Phase 5).
 
 ## Introduction
@@ -28,11 +28,11 @@ CI le signale.
 ### Constat de départ
 
 L'objectif est **déjà atteint pour la structure générale** : la page
-[architecture/monorepo.md](../architecture/monorepo) décrit les 8 catégories,
+[architecture/monorepo.md](/atlas/architecture/monorepo/) décrit les 8 catégories,
 leurs règles et le graphe macro des dépendances. La politique de documentation est
 **solide et ne doit pas être dupliquée ni contredite** (trois niveaux Surface /
 Profondeur / Inline, français pour public non-expert, ton factuel — voir
-[documentation.md](../quality/documentation)).
+[documentation.md](/atlas/quality/documentation/)).
 
 Mais trois manques empêchent d'atteindre l'objectif complet :
 
@@ -139,7 +139,7 @@ peuvent pas dériver.
   (liste blanche pour `docs/api/**` généré) ; ADR référencé existant ; carte des
   paquets à jour ; **aucune page `docs/` orpheline** (toute page doit figurer dans
   la navigation). Cette dernière règle corrige le cas signalé :
-  [documentation.md](../quality/documentation) est actuellement orpheline.
+  [documentation.md](/atlas/quality/documentation/) est actuellement orpheline.
 - **Règles en avertissement** (mesurent l'écart, promues plus tard) : `description`
   dans `package.json` ; tous les symboles exportés mentionnés au README ; lien
   cliquable vers `TODO.md` (supprimé) ; ancre de glossaire résoluble ; bloc
@@ -169,7 +169,7 @@ peuvent pas dériver.
 
 ### Étape 3.2 — Enrichir le flux de données
 
-- **But.** [data-flow.md](../architecture/data-flow) : décrire le parcours d'une
+- **But.** [data-flow.md](/atlas/architecture/data-flow/) : décrire le parcours d'une
   donnée de bout en bout (source → `crf-client` → `crf-core` → `services/crf` →
   app), les **contrats** (Effect Schema, brands de `crf-core`,
   `crf-project-template`, `crf-fixtures`), et où vivent les invariants. Vise
@@ -182,27 +182,27 @@ peuvent pas dériver.
 **Objectif.** Traiter les défauts des notes d'audit. Chacun est cartographié
 (fichier, emplacement).
 
-- **[ci-pipeline.md](../quality/ci-pipeline)** : définir _lint_, _typecheck_,
+- **[ci-pipeline.md](/atlas/quality/ci-pipeline/)** : définir _lint_, _typecheck_,
   _test_, _audit_ (et le détail par sous-commande).
-- **[tests.md](../quality/tests)** : introduire Docker, Appwrite, REDCap avant le
+- **[tests.md](/atlas/quality/tests/)** : introduire Docker, Appwrite, REDCap avant le
   tableau, avec renvoi au glossaire.
-- **[code-style.md](../quality/code-style)** : définir _Git_.
-- **[hooks.md](../quality/hooks)** : définir _commit_, _push_, _pull request_,
+- **[code-style.md](/atlas/quality/code-style/)** : définir _Git_.
+- **[hooks.md](/atlas/quality/hooks/)** : définir _commit_, _push_, _pull request_,
   _hook_.
-- **[security.md](../quality/security)** : retirer le bloc « Pages d'origine » ;
+- **[security.md](/atlas/quality/security/)** : retirer le bloc « Pages d'origine » ;
   ajouter une section **DevSecOps** ; clarifier le cheminement « Audit récurrent →
   Procédure d'urgence » ; définir **SLA**.
-- **[workflow.md](../collaboration/workflow)** : ajouter une section **fork** pour
+- **[workflow.md](/atlas/collaboration/workflow/)** : ajouter une section **fork** pour
   les contributeurs externes sans accès en écriture.
-- **[ADR 0005](../decisions/0005-effect-pour-la-pf)** : documenter le fait de
+- **[ADR 0005](/atlas/decisions/0005-effect-pour-la-pf/)** : documenter le fait de
   **retarder `Effect.runSync` / `runPromise` aux consommateurs finaux** (apps, CLI,
   services) — pourquoi et comment. Recoupe le contrat d'exécution du parcours data.
-- **[ADR 0019](../decisions/0019-derogations-workspace-audit)** : note explicative
+- **[ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/)** : note explicative
   renvoyant les mentions « Phase X.Y » au plan de résorption (références historiques
   conservées).
-- **[glossary.md](../glossary)** : ajouter Git, fork, Docker, cache, lint,
+- **[glossary.md](/atlas/glossary/)** : ajouter Git, fork, Docker, cache, lint,
   typecheck, DevSecOps, SLA.
-- **[config.ts](../.vitepress/config.ts)** : ajouter **Sécurité** à la navigation
+- **[astro.config.mjs](https://github.com/univ-lehavre/atlas/blob/main/docs/astro.config.mjs)** : ajouter **Sécurité** à la navigation
   horizontale ; ajouter à la barre latérale **Documentation**, la carte des paquets,
   « Comprendre le code », la Référence API, et les ADR 0026 / 0027 / 0028.
 
@@ -223,7 +223,7 @@ peuvent pas dériver.
 
 ### Étape 5.2 — Page d'accueil en table de contrôle
 
-- **But.** [index.md](../index) repensée avec deux entrées claires : « Je
+- **But.** [index.md](/atlas/) repensée avec deux entrées claires : « Je
   découvre » (néophyte → niveau Surface) et « Je veux lire le code » (expert → carte
   des paquets + « Comprendre le code » + Référence API).
 

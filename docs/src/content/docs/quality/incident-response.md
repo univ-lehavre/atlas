@@ -59,7 +59,7 @@ Couper l'exposition sans détruire les preuves.
 **Si compromission d'un secret (token, clé, mot de passe)** :
 
 1. **Rotation immédiate** côté émetteur (REDCap, Appwrite Console,
-   OpenAlex, GitHub PAT, npm token…) — cf. [section Secrets de Sécurité](./security#secrets-inventaire-et-rotation)
+   OpenAlex, GitHub PAT, npm token…) — cf. [section Secrets de Sécurité](/atlas/quality/security/#secrets--inventaire-et-rotation)
    pour la procédure par secret.
 2. **Révocation** de l'ancien secret (et pas seulement remplacement) si
    l'émetteur le permet.
@@ -204,13 +204,13 @@ avec la Admins infra — la politique dépend de l'hébergement Appwrite
 
 ### 6.1 Périmètre à sauvegarder
 
-| Donnée                                                        | Localisation                                                               | Owner sauvegarde                                                                               |
-| ------------------------------------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| **Code source atlas**                                         | GitHub (mirror local des mainteneurs)                                      | GitHub + clones locaux                                                                         |
-| **Données utilisateurs Appwrite** (comptes, sessions, tables) | Appwrite (`baas-mongodb-data` en self-hosted)                              | _Admins infra_                                                                                 |
-| **Données REDCap**                                            | Instance REDCap                                                            | _Admins infra_                                                                                 |
-| **Secrets**                                                   | GitHub Secrets + Appwrite vars d'env + `~/.config/atlas/` côté workstation | À documenter par le mainteneur                                                                 |
-| **SBOMs historiques**                                         | Artefacts GitHub Actions (90j)                                             | Snapshots manuels — cf. [section SBOM de Sécurité](./security#sbom-software-bill-of-materials) |
+| Donnée                                                        | Localisation                                                               | Owner sauvegarde                                                                                             |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **Code source atlas**                                         | GitHub (mirror local des mainteneurs)                                      | GitHub + clones locaux                                                                                       |
+| **Données utilisateurs Appwrite** (comptes, sessions, tables) | Appwrite (`baas-mongodb-data` en self-hosted)                              | _Admins infra_                                                                                               |
+| **Données REDCap**                                            | Instance REDCap                                                            | _Admins infra_                                                                                               |
+| **Secrets**                                                   | GitHub Secrets + Appwrite vars d'env + `~/.config/atlas/` côté workstation | À documenter par le mainteneur                                                                               |
+| **SBOMs historiques**                                         | Artefacts GitHub Actions (90j)                                             | Snapshots manuels — cf. [section SBOM de Sécurité](/atlas/quality/security/#sbom-software-bill-of-materials) |
 
 ### 6.2 RPO / RTO cibles
 

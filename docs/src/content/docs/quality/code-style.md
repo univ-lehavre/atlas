@@ -2,7 +2,7 @@
 title: Style de code
 ---
 
-Atlas applique un ensemble unique de règles de style et de typage sur tout le dépôt. Ces règles sont vérifiées automatiquement par les [_hooks Git_](./hooks) (avant chaque commit) et par la CI (à chaque pull request). [**Git**](../glossary) est le système de contrôle de version qui enregistre l'historique du code ; voir le [glossaire](../glossary) pour les termes Git de base.
+Atlas applique un ensemble unique de règles de style et de typage sur tout le dépôt. Ces règles sont vérifiées automatiquement par les [_hooks Git_](/atlas/quality/hooks/) (avant chaque commit) et par la CI (à chaque pull request). [**Git**](/atlas/glossary/) est le système de contrôle de version qui enregistre l'historique du code ; voir le [glossaire](/atlas/glossary/) pour les termes Git de base.
 
 ## TypeScript strict
 

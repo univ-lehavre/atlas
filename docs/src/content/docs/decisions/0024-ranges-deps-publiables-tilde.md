@@ -5,7 +5,7 @@ title: "0024 — Ranges `~` sur les `dependencies` des paquets publiables"
 ## Contexte
 
 Le monorepo publie une partie de ses paquets sur npm (tous ceux **sans**
-`private: true`, cf. [ADR 0011](0011-paquets-internes-private) :
+`private: true`, cf. [ADR 0011](/atlas/decisions/0011-paquets-internes-private/) :
 `packages/*`, `cli/*`, `services/*`, `config/*`, `assets/*`). Les paquets
 internes (`apps/*`, `sandbox/*`, `ui/atlas-ui`,
 `packages/test-utils-sveltekit`) restent `private` et ne sont jamais
@@ -80,7 +80,7 @@ plus s'infiltrer silencieusement dans un build aval.
 
 **Prix à payer.** Les mises à jour minor ne sont plus tirées
 automatiquement : elles passent désormais par
-**Dependabot** (cf. [`.github/dependabot.yml`](../../.github/dependabot.yml),
+**Dependabot** (cf. [`.github/dependabot.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/dependabot.yml),
 run hebdomadaire le lundi, minor + patch groupés en une PR par
 écosystème). Le coût est un cran de latence sur les minors — assumé : un
 minor mérite une PR revue et la CI verte avant d'être embarqué dans une
