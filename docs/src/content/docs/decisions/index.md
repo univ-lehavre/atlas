@@ -62,6 +62,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0033 | [Contrat d'interface entre l'application (`atlas`) et le cluster](0033-contrat-interface-cluster)                               | Accepted |
 | 0034 | [CI adaptative par chemin : court-circuit des jobs lourds](0034-ci-adaptative-par-chemin)                                       | Accepted |
 | 0035 | [Dépôt généraliste ouvert : neutralité de domaine](0035-depot-generaliste-ouvert)                                               | Accepted |
+| 0036 | [Migration de la documentation : VitePress → Astro Starlight](0036-migration-vitepress-astro-starlight)                         | Accepted |
 
 ## Quand ouvrir un ADR
 

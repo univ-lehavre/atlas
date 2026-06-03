@@ -97,6 +97,8 @@ comment on empêche la doc de mentir.
   est un miroir contrôlable ; toute dérive casse la CI.
 - [0032 — KPI : généré déterministe vs snapshot](0032-kpi-determinisme-vs-snapshot) :
   comment historiser des indicateurs sans rendre la CI instable.
+- [0036 — Migration VitePress → Astro Starlight](0036-migration-vitepress-astro-starlight.md) :
+  l'outil qui construit la documentation, et pourquoi on en change.
 
 ## 6. Le pipeline de collaborations (le grand projet)
 
