@@ -16,6 +16,10 @@ export default defineConfig({
     vue(),
     starlight({
       title: "Atlas",
+      // Favicon servi depuis public/ (motif générique « carte/atlas », neutre
+      // de domaine — ADR 0035). Sans ce fichier, Starlight pointe par défaut
+      // vers /favicon.svg qui n'existait pas → 404 sur chaque page.
+      favicon: "/favicon.svg",
       // Site MONOLINGUE en français : le locale `root` n'ajoute aucun préfixe
       // d'URL et lit les pages à plat dans src/content/docs/. NE PAS utiliser
       // `defaultLocale` + `locales: { fr: … }` : Starlight traiterait alors `fr`

@@ -11,7 +11,11 @@ const docs = defineCollection({ loader: docsLoader(), schema: docsSchema() });
 // du premier H1 du fichier (ces README n'ont pas de frontmatter).
 const packageReadmes = defineCollection({
   loader: glob({
-    pattern: "{packages,cli,services,apps,config,ui,assets}/*/README.md",
+    // Les huit catégories de workspaces (ADR 0002). `sandbox` inclus : la carte
+    // des paquets lie ses README (section « Bancs d'essai »), donc leur route
+    // doit exister sous /packages/sandbox/* sous peine de liens morts.
+    pattern:
+      "{apps,assets,cli,config,packages,sandbox,services,ui}/*/README.md",
     base: "..",
   }),
   schema: z.object({}).passthrough(),
