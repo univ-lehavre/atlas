@@ -95,13 +95,17 @@ Détails : [docs/quality/hooks.md](docs/quality/hooks.md).
 
 ## Documentation
 
-Tout est dans [`docs/`](docs/) :
+La documentation est publiée sur **[univ-lehavre.github.io/atlas](https://univ-lehavre.github.io/atlas/)** (sources dans [`docs/`](docs/), construites avec Astro Starlight) :
 
-- [Architecture](docs/architecture/monorepo.md) — comment le dépôt est organisé
-- [Qualité & sécurité](docs/quality/ci-pipeline.md) — les garde-fous en détail
-- [Collaboration](docs/collaboration/workflow.md) — workflow pull request, releases, conventions
-- [Installer les CLIs](docs/collaboration/installer-les-clis.md) — utiliser les outils en ligne de commande publiés
-- [Glossaire](docs/glossary.md) — définitions des termes techniques
+- [Architecture](https://univ-lehavre.github.io/atlas/architecture/monorepo/) — comment le dépôt est organisé
+- [Qualité & sécurité](https://univ-lehavre.github.io/atlas/quality/ci-pipeline/) — les garde-fous en détail
+- [Collaboration](https://univ-lehavre.github.io/atlas/collaboration/workflow/) — workflow pull request, releases, conventions
+- [Installer les CLIs](https://univ-lehavre.github.io/atlas/collaboration/installer-les-clis/) — utiliser les outils en ligne de commande publiés
+- [Glossaire](https://univ-lehavre.github.io/atlas/glossary/) — définitions des termes techniques
+
+## Suivi du projet
+
+L'avancement est suivi par [**milestones**](https://github.com/univ-lehavre/atlas/milestones), nommés `Phase N — …` (phases du [plan pipeline](https://univ-lehavre.github.io/atlas/plans/2026-06-02-pipeline-collaborations/)) ou `Transverse — …` (chantiers qualité hors séquence). Le socle d'infrastructure est suivi dans le dépôt [`cluster`](https://github.com/univ-lehavre/cluster/milestones).
 
 Pour contribuer, lire [CONTRIBUTING.md](CONTRIBUTING.md). Pour signaler une vulnérabilité, voir [SECURITY.md](SECURITY.md).
 
