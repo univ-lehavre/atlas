@@ -6,11 +6,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 const readFile = vi.fn();
 const writeFile = vi.fn();
+const rename = vi.fn();
 const existsSync = vi.fn();
 
 vi.mock("node:fs/promises", () => ({
   readFile: (...args: unknown[]) => readFile(...args),
   writeFile: (...args: unknown[]) => writeFile(...args),
+  rename: (...args: unknown[]) => rename(...args),
 }));
 
 vi.mock("node:fs", () => ({
@@ -89,6 +91,7 @@ describe("cache", () => {
     it("writes JSON-serialised cache to disk", async () => {
       existsSync.mockReturnValue(true);
       writeFile.mockResolvedValue();
+      rename.mockResolvedValue();
       const { writeCache } = await importCache();
       await writeCache({
         savedAt: 42,
@@ -109,6 +112,27 @@ describe("cache", () => {
         downloads: {},
       });
       expect(encoding).toBe("utf8");
+    });
+
+    it("writes atomically: a temp file then renames it onto the target", async () => {
+      existsSync.mockReturnValue(true);
+      writeFile.mockResolvedValue();
+      rename.mockResolvedValue();
+      const { writeCache } = await importCache();
+      await writeCache({
+        savedAt: 7,
+        releases: [],
+        packages: [],
+        downloads: {},
+      });
+      const [tmpPath] = writeFile.mock.calls[0] as [string];
+      const [renameFrom, renameTo] = rename.mock.calls[0] as [string, string];
+      // The bytes land in a process-scoped temp file, never the target directly.
+      expect(tmpPath).toMatch(/\.tmp$/);
+      expect(tmpPath).not.toMatch(/\.atlas-stats\.json$/);
+      // The temp file is then renamed onto the real cache path (atomic swap).
+      expect(renameFrom).toBe(tmpPath);
+      expect(renameTo).toMatch(/\.atlas-stats\.json$/);
     });
   });
 
@@ -143,6 +167,7 @@ describe("cache", () => {
       process.env["ATLAS_STATS_CACHE_PATH"] = "/tmp/foo.json";
       existsSync.mockReturnValue(true);
       writeFile.mockResolvedValue();
+      rename.mockResolvedValue();
       const { writeCache } = await importCache();
       await writeCache({
         savedAt: 1,
@@ -150,13 +175,14 @@ describe("cache", () => {
         packages: [],
         downloads: {},
       });
-      const [filePath] = writeFile.mock.calls[0] as [string];
-      expect(filePath).toMatch(/foo\.json$/);
+      const [, renameTo] = rename.mock.calls[0] as [string, string];
+      expect(renameTo).toMatch(/foo\.json$/);
     });
 
     it("falls back to cwd when no workspace marker is found", async () => {
       existsSync.mockReturnValue(false);
       writeFile.mockResolvedValue();
+      rename.mockResolvedValue();
       const { writeCache } = await importCache();
       await writeCache({
         savedAt: 1,
@@ -164,8 +190,8 @@ describe("cache", () => {
         packages: [],
         downloads: {},
       });
-      const [filePath] = writeFile.mock.calls[0] as [string];
-      expect(filePath).toMatch(/\.atlas-stats\.json$/);
+      const [, renameTo] = rename.mock.calls[0] as [string, string];
+      expect(renameTo).toMatch(/\.atlas-stats\.json$/);
     });
 
     it("walks up to the workspace root when the marker is present", async () => {
@@ -175,6 +201,7 @@ describe("cache", () => {
         return s === "/workspace/pnpm-workspace.yaml";
       });
       writeFile.mockResolvedValue();
+      rename.mockResolvedValue();
       const { writeCache } = await importCache();
       await writeCache({
         savedAt: 1,
@@ -182,14 +209,15 @@ describe("cache", () => {
         packages: [],
         downloads: {},
       });
-      const [filePath] = writeFile.mock.calls[0] as [string];
-      expect(filePath).toBe("/workspace/.atlas-stats.json");
+      const [, renameTo] = rename.mock.calls[0] as [string, string];
+      expect(renameTo).toBe("/workspace/.atlas-stats.json");
     });
 
     it("treats an empty ATLAS_STATS_CACHE_PATH like unset", async () => {
       process.env["ATLAS_STATS_CACHE_PATH"] = "   ";
       existsSync.mockReturnValue(false);
       writeFile.mockResolvedValue();
+      rename.mockResolvedValue();
       const { writeCache } = await importCache();
       await writeCache({
         savedAt: 1,
@@ -197,8 +225,8 @@ describe("cache", () => {
         packages: [],
         downloads: {},
       });
-      const [filePath] = writeFile.mock.calls[0] as [string];
-      expect(filePath).toMatch(/\.atlas-stats\.json$/);
+      const [, renameTo] = rename.mock.calls[0] as [string, string];
+      expect(renameTo).toMatch(/\.atlas-stats\.json$/);
     });
   });
 });
