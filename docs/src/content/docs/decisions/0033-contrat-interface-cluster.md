@@ -200,4 +200,12 @@ une couche poussée au registry.
   fabriquer l'image de cette instance ; une valeur **secrète** ne transite **jamais**
   par un `ARG`/`ENV` du `builder` (elle resterait dans l'historique des couches).
 - Le **bump de version Node** se fait à `.nvmrc` **et** `ARG NODE_VERSION` dans la
-  même PR ; les deux ne doivent pas diverger.
+  même PR ; les deux ne doivent pas diverger. `.nvmrc` est figé **au patch**
+  (p. ex. `24.15.0`) pour une parité dev/prod exacte (facteur X), tandis que
+  `engines.node` reste un **plancher de compatibilité** (`^24`) pour ne pas
+  bloquer l'install — `engine-strict=true` — sur un patch 24.x différent.
+- Toutes les unités déployables (5 apps + service) ont désormais une image sur ce
+  patron (la dette « seul `sillage` » de la Phase 4 / [#308](https://github.com/univ-lehavre/atlas/issues/308)
+  est résorbée), **construite et fumée en CI** puis **publiée sur GHCR**
+  (tag SHA immuable + version, jamais `latest` en déploiement) — voir
+  [ADR 0043](/atlas/decisions/0043-publication-images-ghcr/).

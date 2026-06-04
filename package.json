@@ -55,7 +55,7 @@
     "crf:fixtures:generate": "tsx scripts/crf-trame/generate-test-fixtures.ts",
     "others": "git -C . ls-files --others | grep -v -e 'node_modules' -e '.svelte-kit' ",
     "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/api' 'docs/.astro' 'docs/src/data/repo-stats.json' '**/upstream/versions' '**/.DS_Store'",
-    "prepare": "lefthook install"
+    "prepare": "command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1 && lefthook install || true"
   },
   "size-limit": [
     {
