@@ -9,6 +9,9 @@ const AppConfig = Config.all({
     })
   ),
   crfApiToken: Config.nonEmptyString('REDCAP_API_TOKEN'),
+  // Static Bearer secret guarding /api/* (ADR 0041). Required: the service
+  // exposes nominative data and must not start unauthenticated (fail-closed).
+  authToken: Config.nonEmptyString('CRF_AUTH_TOKEN'),
   disableRateLimit: Config.boolean('DISABLE_RATE_LIMIT').pipe(Config.withDefault(false)),
 });
 

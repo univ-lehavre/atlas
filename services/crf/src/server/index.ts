@@ -21,6 +21,7 @@ startTelemetry();
 const app = createApp({
   port: env.port,
   disableRateLimit: env.disableRateLimit,
+  authToken: env.authToken,
 });
 
 console.warn(`Starting CRF service on port ${String(env.port)}...`);
