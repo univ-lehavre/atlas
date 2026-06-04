@@ -1,0 +1,81 @@
+name: Audit reminder
+
+# Rappel trimestriel pour conduire un audit transverse du dépôt (qualité,
+# sécurité, cloud-native…). Un audit complet repose sur un workflow multi-agents
+# (Claude Code) qui NE PEUT PAS tourner sur un runner GitHub : ce workflow ne
+# fait donc PAS l'audit — il ouvre une **issue de rappel** que l'équipe (ou un
+# agent) traite, conformément à la cadence actée par l'ADR 0039.
+#
+# Cadence : 1er janvier / avril / juillet / octobre (trimestriel), 06:00 UTC.
+# Déclenchement manuel possible via workflow_dispatch (audit hors calendrier).
+#
+# Le rapport produit est archivé dans `docs/src/content/docs/audit/` au format
+# `YYYY-MM-DD-*.md`, et ses findings actionnables ouvrent des issues / ADR.
+
+on:
+  schedule:
+    - cron: "0 6 1 1,4,7,10 *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # Requis pour ouvrir l'issue de rappel.
+  issues: write
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  open-reminder:
+    name: Ouvrir l'issue de rappel d'audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        with:
+          script: |
+            const now = new Date();
+            const quarter = Math.floor(now.getUTCMonth() / 3) + 1;
+            const title = `Audit transverse trimestriel — ${now.getUTCFullYear()} T${quarter}`;
+
+            // Idempotence : ne pas rouvrir si une issue ouverte du même titre existe.
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "audit",
+              per_page: 100,
+            });
+            if (existing.data.some((i) => i.title === title)) {
+              core.info(`Issue déjà ouverte : ${title} — rien à faire.`);
+              return;
+            }
+
+            const body = [
+              "Rappel automatique (ADR 0039) : conduire un **audit transverse** du dépôt ce trimestre.",
+              "",
+              "## Quoi",
+              "Auditer l'état du dépôt sur les dimensions transverses (qualité, sécurité,",
+              "cloud-native / 12-factor, accessibilité, documentation…), avec constats",
+              "**prouvés par le code** et vérifiés de manière adversariale.",
+              "",
+              "## Démarche",
+              "1. Conduire l'audit (workflow multi-agents Claude Code — ne tourne pas en CI).",
+              "2. Archiver le rapport daté dans `docs/src/content/docs/audit/YYYY-MM-DD-*.md`,",
+              "   l'ajouter à l'index `audit/index.md`.",
+              "3. Comparer au rapport précédent : quels écarts résorbés, quels nouveaux ?",
+              "4. Ouvrir une issue par finding actionnable (label `enhancement`/`tech-debt`),",
+              "   ou un ADR si la résolution est structurante.",
+              "",
+              "Voir la convention : [Audits](https://univ-lehavre.github.io/atlas/audit/),",
+              "[Plans](https://univ-lehavre.github.io/atlas/plans/), et l'ADR 0039.",
+            ].join("\n");
+
+            const created = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ["audit", "enhancement"],
+            });
+            core.info(`Issue créée : ${created.data.html_url}`);
