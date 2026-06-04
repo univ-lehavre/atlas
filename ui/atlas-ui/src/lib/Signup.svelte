@@ -1,6 +1,7 @@
 <script lang="ts">
   import { isEmail } from "@univ-lehavre/atlas-validators";
   import { enhance } from "$app/forms";
+  import { modalInert } from "./modal-inert.js";
 
   let { form } = $props();
 
@@ -48,7 +49,8 @@
   id="SignUp"
   tabindex="-1"
   aria-labelledby="SignUpLabel"
-  aria-hidden="true"
+  inert
+  use:modalInert
 >
   <div class="modal-dialog">
     <div class="modal-content">

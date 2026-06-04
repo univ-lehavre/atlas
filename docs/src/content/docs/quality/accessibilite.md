@@ -50,6 +50,11 @@ attributs d'accessibilité directement dans le balisage.
   interactifs (barre de navigation, carrousel, modales, formulaires) pour
   exposer leur état et leur fonction aux technologies d'assistance.
 - **Textes alternatifs** (`alt=`) sur les images porteuses de sens.
+- **Modales inertes à l'état fermé** : les modales Bootstrap (`Signup`,
+  `CreateRequest`) portent l'attribut `inert` tant qu'elles sont fermées
+  (action `modalInert`, qui le retire à l'ouverture via les événements
+  Bootstrap). `inert` retire les éléments focusables de la navigation **et** de
+  l'arbre d'accessibilité, sans l'incohérence d'`aria-hidden` sur du focusable.
 - Les composants partagés sont testés une fois pour toutes ; leurs
   consommateurs (apps, Storybook) en héritent.
 
@@ -57,13 +62,6 @@ attributs d'accessibilité directement dans le balisage.
 
 Par souci d'honnêteté, ces points sont **connus et tracés**, pas résolus :
 
-- **Marquage des modales Bootstrap.** L'état _fermé_ des modales Bootstrap 5
-  porte `aria-hidden="true"` tout en contenant des éléments focusables, ce
-  qu'axe signale (`aria-hidden-focus`). À l'ouverture, le JavaScript de Bootstrap
-  corrige le marquage (`role="dialog"`, `aria-modal="true"`), si bien que la
-  violation n'atteint pas l'utilisateur réel. La règle est donc désactivée
-  **uniquement pour l'état fermé**, toutes les autres restant actives ; la
-  refonte du marquage est tracée dans le code (`TODO(... ) a11y:`).
 - **Niveau WCAG non épinglé dans les tests.** Les tests utilisent le jeu de règles
   **par défaut** d'axe-core (WCAG 2.x AA), sans restreindre explicitement aux balises
   `wcag2aa` / `wcag22aa`. Figer le niveau cible rendrait l'intention contractuelle et
