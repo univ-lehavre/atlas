@@ -75,3 +75,7 @@ Par souci d'honnêteté, ces points sont **connus et tracés**, pas résolus :
   couverture repose aujourd'hui sur axe-core au niveau composant.
 
 Ces éléments rejoindront cette page au fur et à mesure de leur mise en œuvre.
+Leur avancement est suivi dans le milestone
+[**Transverse — Accessibilité**](https://github.com/univ-lehavre/atlas/milestone/1) :
+chaque chantier comblé y est clos et bascule de cette section vers
+« Vérifié automatiquement ».
