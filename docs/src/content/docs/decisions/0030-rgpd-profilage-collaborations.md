@@ -207,3 +207,5 @@ ré-dérivation est payé à chaque opposition.
 - L'item de suivi institutionnel reste rattaché au tableau sine die de
   l'[ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/) (bases légales,
   responsable de traitement), dont cet ADR borne le volet technique.
+- Une checklist de pré-mise-en-service rend ce gate découvrable côté exploitant :
+  voir [Avant de mettre une instance en service](/atlas/collaboration/checklist-deploiement/).
