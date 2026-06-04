@@ -36,5 +36,8 @@
     "@observablehq/plot": "^0.6.17",
     "@univ-lehavre/atlas-crf-logs": "workspace:*",
     "@univ-lehavre/atlas-sveltekit-csp": "workspace:*"
+  },
+  "engines": {
+    "node": "^24.0.0"
   }
 }

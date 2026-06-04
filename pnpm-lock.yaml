@@ -1852,6 +1852,9 @@ importers:
       '@opentelemetry/semantic-conventions':
         specifier: ~1.41.1
         version: 1.41.1
+      '@scalar/hono-api-reference':
+        specifier: ~0.10.19
+        version: 0.10.19(hono@4.12.23)
       '@univ-lehavre/atlas-crf-client':
         specifier: workspace:*
         version: link:../../packages/crf-client
@@ -1868,9 +1871,6 @@ importers:
         specifier: ~0.5.3
         version: 0.5.3(hono@4.12.23)(unstorage@1.17.5(idb-keyval@6.2.2))
     devDependencies:
-      '@scalar/hono-api-reference':
-        specifier: ^0.10.19
-        version: 0.10.19(hono@4.12.23)
       '@types/node':
         specifier: ^25.9.1
         version: 25.9.1

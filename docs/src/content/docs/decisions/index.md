@@ -69,6 +69,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0040 | [Caches applicatifs : flux + backing-service injectable vs fichier local](/atlas/decisions/0040-caches-flux-backing-service-vs-fichier/)          | Accepted |
 | 0041 | [Stratégie d'authentification du service CRF (Hono)](/atlas/decisions/0041-strategie-auth-service-crf-hono/)                                      | Accepted |
 | 0042 | [Périmètre des sandbox : dev/test local dans atlas, pas dans cluster](/atlas/decisions/0042-perimetre-sandbox-atlas-vs-cluster/)                  | Accepted |
+| 0043 | [Publication des images de déploiement sur GHCR](/atlas/decisions/0043-publication-images-ghcr/)                                                  | Accepted |
 
 ## Quand ouvrir un ADR
 

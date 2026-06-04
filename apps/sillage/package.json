@@ -48,5 +48,8 @@
     "bootstrap": "5.3.8",
     "node-appwrite": "~25.2.0"
   },
-  "private": true
+  "private": true,
+  "engines": {
+    "node": "^24.0.0"
+  }
 }

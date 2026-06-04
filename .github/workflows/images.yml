@@ -1,0 +1,189 @@
+name: Images
+
+# Construit les images de déploiement (5 apps SvelteKit + service Hono) et,
+# depuis `main`, les publie sur GHCR (ADR 0043). Sur PR : build + smoke
+# healthcheck, sans push — ferme la dérive silencieuse des Dockerfile (#314).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/*/Dockerfile"
+      - "services/crf/Dockerfile"
+      - "apps/**"
+      - "services/crf/**"
+      - "packages/**"
+      - "ui/**"
+      - "config/**"
+      - "pnpm-lock.yaml"
+      - ".nvmrc"
+      - ".dockerignore"
+      - ".github/workflows/images.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/*/Dockerfile"
+      - "services/crf/Dockerfile"
+      - "apps/**"
+      - "services/crf/**"
+      - "packages/**"
+      - "ui/**"
+      - "config/**"
+      - "pnpm-lock.yaml"
+      - ".nvmrc"
+      - ".dockerignore"
+      - ".github/workflows/images.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  images:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # Nécessaire pour pousser sur GHCR depuis `main` (no-op sur PR).
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: amarre
+            dockerfile: apps/amarre/Dockerfile
+            image: atlas-amarre
+            health_path: /
+          - name: atlas-dashboard
+            dockerfile: apps/atlas-dashboard/Dockerfile
+            image: atlas-dashboard
+            health_path: /
+          - name: crf-dashboard
+            dockerfile: apps/crf-dashboard/Dockerfile
+            image: atlas-crf-dashboard
+            health_path: /
+          - name: ecrin
+            dockerfile: apps/ecrin/Dockerfile
+            image: atlas-ecrin
+            health_path: /
+          - name: find-an-expert
+            dockerfile: apps/find-an-expert/Dockerfile
+            image: atlas-find-an-expert
+            health_path: /
+          - name: sillage
+            dockerfile: apps/sillage/Dockerfile
+            image: atlas-sillage
+            port: 5173
+            health_path: /
+          - name: crf
+            dockerfile: services/crf/Dockerfile
+            image: atlas-crf
+            health_path: /health
+            # Le service refuse de démarrer sans ces variables (fail-closed,
+            # ADR 0041). Valeurs factices au format attendu, pour le smoke seul.
+            run_env: >-
+              -e REDCAP_API_URL=https://redcap.example.com/api
+              -e REDCAP_API_TOKEN=ABCDEF0123456789ABCDEF0123456789
+              -e CRF_AUTH_TOKEN=smoke-bearer
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      # Métadonnées (tags/labels). Sur PR, le push est désactivé plus bas ;
+      # les tags ne servent alors qu'au build local pour le smoke.
+      - name: Compute image metadata
+        id: meta
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          # Pas de `latest` comme référence de déploiement (ADR 0033/0043).
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=pr-${{ github.event.pull_request.number }},enable=${{ github.event_name == 'pull_request' }}
+
+      # Login GHCR uniquement sur `main` (les PR ne publient pas).
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tag sémver lisible (la version du package.json de l'unité). Ajouté en
+      # plus du tag SHA immuable, sur `main` seulement.
+      - name: Read package version
+        if: github.event_name == 'push'
+        id: ver
+        run: |
+          set -euo pipefail
+          dir="$(dirname "${{ matrix.dockerfile }}")"
+          version="$(node -p "require('./${dir}/package.json').version")"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      # Build. Sur PR : `load` l'image localement (pour le smoke), pas de push.
+      # Sur `main` : push avec tags SHA + version.
+      - name: Build image (load for smoke)
+        if: github.event_name == 'pull_request'
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          load: true
+          push: false
+          tags: ${{ matrix.image }}:smoke
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      - name: Build and push image
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          load: true
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${{ steps.ver.outputs.version }}
+            ${{ matrix.image }}:smoke
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      # Smoke : démarrer le conteneur et vérifier que le HEALTHCHECK passe
+      # (l'app/le service répond sur son endpoint de santé). Build cassé,
+      # dépendance runtime manquante, mauvais port → échec ici.
+      - name: Smoke test (start + healthcheck)
+        shell: bash
+        env:
+          PORT: ${{ matrix.port || '3000' }}
+          HEALTH_PATH: ${{ matrix.health_path }}
+          RUN_ENV: ${{ matrix.run_env || '' }}
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC2086 -- RUN_ENV est une liste de -e volontaire
+          cid="$(docker run -d -p ${PORT}:${PORT} ${RUN_ENV} ${{ matrix.image }}:smoke)"
+          echo "Conteneur démarré: ${cid}"
+          ok=false
+          for i in $(seq 1 30); do
+            code="$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}${HEALTH_PATH}" || true)"
+            if [ "${code}" = "200" ]; then
+              echo "Healthcheck OK (HTTP 200) après ${i}s."
+              ok=true
+              break
+            fi
+            sleep 1
+          done
+          if [ "${ok}" != "true" ]; then
+            echo "::error::Healthcheck KO pour ${{ matrix.name }} (dernier code: ${code:-aucun})"
+            docker logs "${cid}" || true
+            docker rm -f "${cid}" >/dev/null 2>&1 || true
+            exit 1
+          fi
+          docker rm -f "${cid}" >/dev/null 2>&1 || true
