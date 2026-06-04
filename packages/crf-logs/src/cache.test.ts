@@ -44,6 +44,43 @@ describe("readCache", () => {
 
     expect(result).toBeNull();
   });
+
+  it("returns null on invalid JSON instead of throwing", async () => {
+    mockReadFile.mockResolvedValue("{ not json");
+
+    const result = await readCache();
+
+    expect(result).toBeNull();
+  });
+
+  it("returns null when the cache shape is invalid", async () => {
+    mockReadFile.mockResolvedValue(JSON.stringify({ savedAt: "nope" }));
+
+    const result = await readCache();
+
+    expect(result).toBeNull();
+  });
+
+  it("resolves the cache path from CRF_LOGS_CACHE_PATH when set", async () => {
+    const previous = process.env["CRF_LOGS_CACHE_PATH"];
+    process.env["CRF_LOGS_CACHE_PATH"] = "/tmp/custom-crf-cache.json";
+    try {
+      mockReadFile.mockResolvedValue(
+        JSON.stringify({ savedAt: 1, logs: [sampleLog] }),
+      );
+      await readCache();
+      expect(mockReadFile).toHaveBeenCalledWith(
+        expect.stringContaining("custom-crf-cache.json"),
+        "utf8",
+      );
+    } finally {
+      if (previous === undefined) {
+        delete process.env["CRF_LOGS_CACHE_PATH"];
+      } else {
+        process.env["CRF_LOGS_CACHE_PATH"] = previous;
+      }
+    }
+  });
 });
 
 describe("writeCache", () => {

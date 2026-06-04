@@ -1,6 +1,10 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["ATLAS_STATS_CACHE_PATH", "GITHUB_TOKEN"],
+  "globalEnv": [
+    "ATLAS_STATS_CACHE_PATH",
+    "CRF_LOGS_CACHE_PATH",
+    "GITHUB_TOKEN"
+  ],
   "globalDependencies": [".nvmrc", "pnpm-workspace.yaml"],
   "tasks": {
     "build": {
