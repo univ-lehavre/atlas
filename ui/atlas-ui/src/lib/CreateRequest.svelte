@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { modalInert } from "./modal-inert.js";
+
   interface Props {
     /** RGPD notice URL the consumer app reads from its own env (e.g. PUBLIC_RGPD_NOTICE_URL). */
     rgpdUrl: string;
@@ -15,7 +17,8 @@
   id="CreateRequest"
   tabindex="-1"
   aria-labelledby="CreateRequestLabel"
-  aria-hidden="true"
+  inert
+  use:modalInert
 >
   <div class="modal-dialog">
     <div class="modal-content">
