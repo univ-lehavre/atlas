@@ -122,3 +122,82 @@ déployeur via sa configuration.
   smoke-test au banc) — pas avant qu'une douleur réelle ne le justifie.
 - Le **déploiement réel** reste une action **humaine** validée sur le banc
   Vagrant ; aucun agent ne le déclenche automatiquement.
+
+## Évolution (2026-06-04) — Stratégie d'images de déploiement
+
+Le contrat ci-dessus dit ce que l'application **fournit** au cluster (des images
+taguées, poussées sur le registry, référencées par les manifestes). Il ne disait
+rien, jusqu'ici, de **comment ces images sont fabriquées**. Le cadre [#308](https://github.com/univ-lehavre/atlas/issues/308)
+a produit le **premier et unique `Dockerfile` du dépôt** —
+[`apps/sillage/Dockerfile`](https://github.com/univ-lehavre/atlas/blob/main/apps/sillage/Dockerfile) —
+qui sert désormais de **patron recopiable** sur les six unités déployables du
+monorepo. Cet ajout ne modifie aucun point de contact existant : il **fixe la
+forme** des images livrées, là où le contrat fixait déjà leur tag et leur
+destination.
+
+### Patron d'image
+
+- **Version Node alignée sur `.nvmrc`.** L'image part de `node:${NODE_VERSION}-alpine`
+  avec `ARG NODE_VERSION=24`, valeur identique au `.nvmrc` de la racine. La version
+  d'exécution ne peut donc pas diverger de la version de développement : un seul
+  endroit à bumper, vérifiable d'un `grep`. `corepack enable` active **pnpm à la
+  version pinnée** par le champ `packageManager` du `package.json` racine.
+- **Multi-stage `builder` / `runner`.** Un stage `deps` installe **toutes** les
+  dépendances du workspace (`pnpm install --frozen-lockfile`, store monté en
+  cache) — devDeps comprises, car le build SvelteKit a besoin de la toolchain
+  (vite/svelte-kit). Le stage `builder` compile l'unité ciblée ; le stage `runner`
+  final ne garde que le runtime Node, les artefacts de build et un `node_modules`
+  de prod élagué. **Pas de pnpm, pas de sources, pas de devDeps** dans l'image
+  livrée.
+- **`pnpm deploy` → `node_modules` autonome.** `pnpm --filter=<unité> --prod --legacy deploy /prod`
+  matérialise un `node_modules` de **production résolu hors du symlink-store** (deps
+  workspace internes incluses, devDeps écartées), copiable seul dans le `runner`.
+  C'est ce qui permet une image finale minimale sans embarquer le store pnpm ni le
+  graphe workspace complet. Le flag `--legacy` est requis par pnpm 10 pour cibler
+  un filtre depuis la racine du monorepo.
+- **`USER node` non-root.** Le `runner` `chown`e `/app` puis bascule sur l'user
+  `node` (uid 1000) fourni par l'image officielle : **aucune charge applicative ne
+  tourne en root**, conformément à la posture de durcissement attendue côté
+  cluster.
+- **`PORT` / `HOST` au runtime.** L'adapter Node lit `PORT`/`HOST` à l'exécution ;
+  l'image fixe `ENV PORT=5173` et `ENV HOST=0.0.0.0` par défaut, surchargables par
+  le `Deployment`. Le `Service`/`containerPort` du manifeste s'aligne sur cette
+  valeur.
+- **`HEALTHCHECK` ↔ probe Kubernetes.** L'image déclare un `HEALTHCHECK` (HTTP `GET /`
+  sur le port d'écoute) ; côté cluster, il se traduit en **`readinessProbe` /
+  `livenessProbe`** dans le `Deployment`. Le contrat est : _toute unité déployable
+  répond sur son endpoint de santé_, pour qu'Argo CD et le scheduler ne routent du
+  trafic que vers des pods prêts.
+
+### Injection des variables : `PUBLIC_*` au build, `PRIVATE_*` au runtime
+
+La frontière la plus piégeuse est l'injection de configuration, et elle découle
+directement de SvelteKit :
+
+| Type            | Source SvelteKit      | Moment            | Mécanisme image                                                                        |
+| --------------- | --------------------- | ----------------- | -------------------------------------------------------------------------------------- |
+| **`PUBLIC_*`**  | `$env/static/public`  | **figé au build** | **build-args** (`ARG` + `ENV` du `builder`), inlinés par vite/SvelteKit dans le bundle |
+| **`PRIVATE_*`** | `$env/static/private` | **runtime**       | `environment:` / `Secret` du pod, jamais en dur dans l'image                           |
+
+Les `PUBLIC_*` (endpoints publics, URLs de login, etc.) sont **inlinés au moment du
+build** : ils doivent être fournis comme **build-args** à `docker build`, pas comme
+variables d'environnement du conteneur — une `PUBLIC_*` posée au runtime serait
+**ignorée**, le bundle étant déjà figé. À l'inverse, les valeurs **privées** (clés
+d'API, tokens, secrets) sont lues à l'**exécution** par l'adapter Node et arrivent
+via les `Secret`/`environment:` du pod — **jamais** dans l'image, donc jamais dans
+une couche poussée au registry.
+
+### Garde-fous (en plus de ceux ci-dessus)
+
+- [`apps/sillage/Dockerfile`](https://github.com/univ-lehavre/atlas/blob/main/apps/sillage/Dockerfile)
+  est la **référence recopiable** : toute nouvelle unité déployable repart de ce
+  patron (multi-stage, `pnpm deploy`, `USER node`, healthcheck) plutôt que d'un
+  `Dockerfile` ad hoc. Une divergence de forme entre images est traitée comme une
+  dette à résorber vers le patron, pas comme une variation légitime.
+- Le **contexte de build est la racine du monorepo** (le lockfile et les
+  `package.json` workspace y vivent) ; le `Dockerfile` se passe via `-f`.
+- Une `PUBLIC_*` qui doit varier par instance se passe en **build-arg** au moment de
+  fabriquer l'image de cette instance ; une valeur **secrète** ne transite **jamais**
+  par un `ARG`/`ENV` du `builder` (elle resterait dans l'historique des couches).
+- Le **bump de version Node** se fait à `.nvmrc` **et** `ARG NODE_VERSION` dans la
+  même PR ; les deux ne doivent pas diverger.

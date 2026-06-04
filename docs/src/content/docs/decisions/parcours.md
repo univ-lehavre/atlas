@@ -83,6 +83,11 @@ sûre. C'est le cœur de la crédibilité du dépôt public.
   réponse sécurité.
 - [0019 — Dérogations au workspace audit](/atlas/decisions/0019-derogations-workspace-audit/) :
   comment une exception aux règles se trace.
+- [0039 — Cadence d'audit transverse](/atlas/decisions/0039-cadence-audit-transverse/),
+  [0040 — Caches : flux + backing-service](/atlas/decisions/0040-caches-flux-backing-service-vs-fichier/),
+  [0041 — Authentification du service CRF](/atlas/decisions/0041-strategie-auth-service-crf-hono/) :
+  le durcissement **cloud-native** (12-factor) — auditer régulièrement, rendre
+  les caches partageables et les services authentifiés.
 
 ## 5. La documentation comme miroir du code
 

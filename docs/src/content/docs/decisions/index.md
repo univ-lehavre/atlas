@@ -66,6 +66,8 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0037 | [Retrait de la référence API générée (TypeDoc)](/atlas/decisions/0037-retrait-reference-api-typedoc/)                                             | Accepted |
 | 0038 | [Épingler le niveau WCAG cible des tests d'accessibilité](/atlas/decisions/0038-epingler-niveau-wcag-tests-a11y/)                                 | Accepted |
 | 0039 | [Cadence d'audit transverse : trimestriel, rappel automatisé](/atlas/decisions/0039-cadence-audit-transverse/)                                    | Accepted |
+| 0040 | [Caches applicatifs : flux + backing-service injectable vs fichier local](/atlas/decisions/0040-caches-flux-backing-service-vs-fichier/)          | Accepted |
+| 0041 | [Stratégie d'authentification du service CRF (Hono)](/atlas/decisions/0041-strategie-auth-service-crf-hono/)                                      | Accepted |
 
 ## Quand ouvrir un ADR
 
