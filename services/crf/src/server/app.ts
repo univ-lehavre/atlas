@@ -13,6 +13,7 @@ import { cors } from 'hono/cors';
 import { openAPIRouteHandler } from 'hono-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { apiRateLimiter } from './middleware/rate-limit.js';
+import { bearerAuth } from './middleware/auth.js';
 import { health } from './routes/health.js';
 import { project } from './routes/project.js';
 import { records } from './routes/records.js';
@@ -26,6 +27,13 @@ export interface CreateAppOptions {
   readonly port: number;
   /** Whether to disable rate limiting */
   readonly disableRateLimit?: boolean;
+  /**
+   * Static Bearer secret required on `/api/*` (ADR 0041). When omitted, the
+   * authentication middleware is not mounted — for tests and local tooling
+   * only. The running service always passes `env.authToken` (required), so
+   * production is never unauthenticated.
+   */
+  readonly authToken?: string;
 }
 
 const apiRoutes = [
@@ -89,7 +97,7 @@ const errorHandler: Parameters<Hono['onError']>[0] = (err, c) => {
  * @returns Configured Hono application
  */
 export const createApp = (options: CreateAppOptions): Hono => {
-  const { port, disableRateLimit = false } = options;
+  const { port, disableRateLimit = false, authToken } = options;
 
   const app = new Hono();
 
@@ -100,6 +108,11 @@ export const createApp = (options: CreateAppOptions): Hono => {
   app.use('*', logger());
   app.use('*', cors());
   if (!disableRateLimit) app.use('/api/*', apiRateLimiter);
+  // Application-level Bearer auth on /api/* (ADR 0041), after the IP rate
+  // limiter so unauthenticated floods are throttled first. /health,
+  // /openapi.json and /docs stay open. Mounted only when a secret is provided;
+  // the running service always provides one (env.authToken is required).
+  if (authToken !== undefined) app.use('/api/*', bearerAuth(authToken));
   app.use('*', traceBlocker);
 
   app.route('/health', health);

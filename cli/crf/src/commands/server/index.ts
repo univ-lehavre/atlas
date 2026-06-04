@@ -94,6 +94,7 @@ const command = Command.make(
       // Check required environment variables
       const crfUrl = process.env['REDCAP_API_URL'];
       const crfToken = process.env['REDCAP_API_TOKEN'];
+      const authToken = process.env['CRF_AUTH_TOKEN'];
 
       if (!crfUrl) {
         log.error(ctx, 'REDCAP_API_URL environment variable is required');
@@ -102,6 +103,13 @@ const command = Command.make(
 
       if (!crfToken) {
         log.error(ctx, 'REDCAP_API_TOKEN environment variable is required');
+        return yield* Effect.fail(ExitCode.InvalidConfig);
+      }
+
+      // Bearer secret guarding /api/* (ADR 0041). Required: the service exposes
+      // nominative data and must not start unauthenticated (fail-closed).
+      if (!authToken) {
+        log.error(ctx, 'CRF_AUTH_TOKEN environment variable is required');
         return yield* Effect.fail(ExitCode.InvalidConfig);
       }
 
@@ -115,6 +123,7 @@ const command = Command.make(
       const app = createApp({
         port: args.port,
         disableRateLimit: args.noRateLimit,
+        authToken,
       });
 
       // Start the server
