@@ -5,8 +5,16 @@ title: "0043 — Publication des images de déploiement sur GHCR"
 ## Contexte
 
 La [Phase 4 du plan cloud-native (#308)](https://github.com/univ-lehavre/atlas/issues/308)
-a doté chaque unité déployable d'une **image de déploiement** (5 apps SvelteKit +
-le service Hono, sur le patron de `apps/sillage/Dockerfile`). Le
+dote les unités déployables d'une **image de déploiement** sur le patron de
+`apps/sillage/Dockerfile`. Cette première étape couvre **les unités dont la
+config est entièrement runtime ou publique** — `atlas-dashboard`,
+`crf-dashboard` et le **service Hono** — qui buildent et se déploient sans
+secret figé. Les apps qui lisent des secrets via **`$env/static/private`**
+(`amarre`, `ecrin`, `find-an-expert`, `sillage`) sont **différées** : ce
+mécanisme **fige les valeurs au build**, donc leur image n'est pas déployable
+telle quelle ; elles rejoindront la publication une fois migrées vers
+`$env/dynamic/private` (lecture runtime) —
+[#324](https://github.com/univ-lehavre/atlas/issues/324). Le
 [contrat d'interface avec le cluster (ADR 0033)](/atlas/decisions/0033-contrat-interface-cluster/)
 fixe déjà que `atlas` **livre des images taguées** au cluster, poussées sur un
 **registry** que les manifestes référencent par tag exact (« pas de `latest` en
@@ -78,8 +86,8 @@ publier d'images non revues.
 Le job suit la logique de l'[ADR 0034](/atlas/decisions/0034-ci-adaptative-par-chemin/) :
 une image n'est (re)construite que si **son `Dockerfile`, son code, ou une de ses
 dépendances workspace** a changé — ou si un fichier transverse (lockfile,
-`.nvmrc`, le workflow lui-même) bouge. On évite de reconstruire six images à
-chaque PR documentaire.
+`.nvmrc`, le workflow lui-même) bouge. On évite de reconstruire toutes les
+images à chaque PR documentaire.
 
 ## Statut
 

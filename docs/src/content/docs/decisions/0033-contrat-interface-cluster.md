@@ -204,8 +204,12 @@ une couche poussée au registry.
   (p. ex. `24.15.0`) pour une parité dev/prod exacte (facteur X), tandis que
   `engines.node` reste un **plancher de compatibilité** (`^24`) pour ne pas
   bloquer l'install — `engine-strict=true` — sur un patch 24.x différent.
-- Toutes les unités déployables (5 apps + service) ont désormais une image sur ce
-  patron (la dette « seul `sillage` » de la Phase 4 / [#308](https://github.com/univ-lehavre/atlas/issues/308)
-  est résorbée), **construite et fumée en CI** puis **publiée sur GHCR**
-  (tag SHA immuable + version, jamais `latest` en déploiement) — voir
-  [ADR 0043](/atlas/decisions/0043-publication-images-ghcr/).
+- Les unités dont la config est runtime/publique (`atlas-dashboard`,
+  `crf-dashboard`, service) ont une image sur ce patron, **construite et fumée en
+  CI** puis **publiée sur GHCR** (tag SHA immuable + version, jamais `latest` en
+  déploiement) — voir [ADR 0043](/atlas/decisions/0043-publication-images-ghcr/).
+  Les apps qui lisent des secrets via `$env/static/private` (`amarre`, `ecrin`,
+  `find-an-expert`, `sillage`) restent à migrer vers `$env/dynamic/private` avant
+  d'être imageables ([#324](https://github.com/univ-lehavre/atlas/issues/324)) —
+  `static/private` fige les valeurs au build, ce qui violerait la règle « aucun
+  secret dans une image ».
