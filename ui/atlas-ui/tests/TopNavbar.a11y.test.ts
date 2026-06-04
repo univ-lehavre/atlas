@@ -1,6 +1,9 @@
 // Level-1 a11y test : TopNavbar has no axe-core violations.
 //
 // The matchers (`toHaveNoViolations`) are registered in tests/setup.ts.
+// `wcagAxeOptions` pins the WCAG 2.x AA target (ADR 0038), shared across the
+// repo via @univ-lehavre/atlas-shared-config.
+import { wcagAxeOptions } from "@univ-lehavre/atlas-shared-config/a11y";
 import { render } from "@testing-library/svelte";
 import { describe, it, expect } from "vitest";
 import { axe } from "vitest-axe";
@@ -13,7 +16,7 @@ describe("TopNavbar.svelte a11y", () => {
       hasIncompleteRequests: false,
       hasRequestsInProgress: false,
     });
-    expect(await axe(container)).toHaveNoViolations();
+    expect(await axe(container, wcagAxeOptions)).toHaveNoViolations();
   });
 
   it("has no violations with both conditional tabs shown", async () => {
@@ -21,6 +24,6 @@ describe("TopNavbar.svelte a11y", () => {
       hasIncompleteRequests: true,
       hasRequestsInProgress: true,
     });
-    expect(await axe(container)).toHaveNoViolations();
+    expect(await axe(container, wcagAxeOptions)).toHaveNoViolations();
   });
 });

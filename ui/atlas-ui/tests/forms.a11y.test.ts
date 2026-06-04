@@ -8,6 +8,10 @@
 // `inert` removes the focusable descendants from the tab order AND the
 // accessibility tree, so axe's `aria-hidden-focus` rule no longer fires on the
 // closed render — and ALL axe rules stay enforced (no per-rule derogation).
+//
+// `wcagAxeOptions` pins the WCAG 2.x AA target (ADR 0038), shared across the
+// repo via @univ-lehavre/atlas-shared-config.
+import { wcagAxeOptions } from "@univ-lehavre/atlas-shared-config/a11y";
 import { render } from "@testing-library/svelte";
 import { describe, it, expect } from "vitest";
 import { axe } from "vitest-axe";
@@ -18,7 +22,7 @@ import CreateRequest from "../src/lib/CreateRequest.svelte";
 describe("Signup.svelte a11y", () => {
   it("has no axe violations", async () => {
     const { container } = render(Signup, { form: null });
-    expect(await axe(container)).toHaveNoViolations();
+    expect(await axe(container, wcagAxeOptions)).toHaveNoViolations();
   });
 });
 
@@ -28,6 +32,6 @@ describe("CreateRequest.svelte a11y", () => {
       rgpdUrl: "https://example.test/rgpd",
       platformName: "Atlas",
     });
-    expect(await axe(container)).toHaveNoViolations();
+    expect(await axe(container, wcagAxeOptions)).toHaveNoViolations();
   });
 });

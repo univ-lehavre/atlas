@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { axe } from '$lib/test-utils/axe';
+import { axe, wcagAxeOptions } from '$lib/test-utils/axe';
 
 describe('Hero component accessibility', () => {
   it('should have no accessibility violations with title only', async () => {
@@ -17,7 +17,7 @@ describe('Hero component accessibility', () => {
 			</header>
 		`;
 
-    const results = await axe(html);
+    const results = await axe(html, wcagAxeOptions);
     expect(results).toHaveNoViolations();
   });
 
@@ -35,7 +35,7 @@ describe('Hero component accessibility', () => {
 			</header>
 		`;
 
-    const results = await axe(html);
+    const results = await axe(html, wcagAxeOptions);
     expect(results).toHaveNoViolations();
   });
 
@@ -57,7 +57,7 @@ describe('Hero component accessibility', () => {
 			</header>
 		`;
 
-    const results = await axe(html);
+    const results = await axe(html, wcagAxeOptions);
     expect(results).toHaveNoViolations();
   });
 });
