@@ -107,11 +107,15 @@ secret est configuré comme les autres via `Config` Effect dans `env.ts`.
 
 ## Statut
 
-Accepted (2026-06-04).
+Accepted (2026-06-04). **Implémenté** (2026-06-04, [#307](https://github.com/univ-lehavre/atlas/issues/307)).
 
-L'absence d'authentification sur `/api/v1/*` est un **écart de sécurité ouvert**
-tant que le middleware n'est pas en place : la décision est actée, son
-implémentation est suivie via #307 et l'extension sécurité de l'audit. Reste
+Le middleware `bearerAuth` (`services/crf/src/server/middleware/auth.ts`) est en
+place : posé sur `/api/*` dans `createApp()` après le rate limiter, il exige un
+`Authorization: Bearer …` comparé en **temps constant** (digests SHA-256 +
+`timingSafeEqual`) au secret `CRF_AUTH_TOKEN` (requis, lu via `Config` Effect
+dans `env.ts` — le service **refuse de démarrer sans**, _fail-closed_).
+`/health`, `/openapi.json` et `/docs` restent ouverts. La ligne « Sécurité /
+auth » de [Normes](/atlas/quality/normes/) passe d'écart à **appliqué**. Reste
 dans le **périmètre du code** ; mTLS, certificats et `NetworkPolicies` relèvent
 du dépôt `cluster`.
 

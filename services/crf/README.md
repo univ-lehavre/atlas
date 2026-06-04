@@ -23,11 +23,17 @@ Depuis le monorepo:
 # Required environment variables
 export REDCAP_API_URL=https://redcap.example.com/api/
 export REDCAP_API_TOKEN=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+export CRF_AUTH_TOKEN=change-me-shared-bearer-secret
 export PORT=3000
 
 # Start the server
 pnpm -F @univ-lehavre/atlas-crf start
 ```
+
+Les routes `/api/*` exigent un en-tête `Authorization: Bearer $CRF_AUTH_TOKEN`
+(secret partagé statique, requis — le serveur refuse de démarrer sans). Les
+sondes `/health`, `/openapi.json` et `/docs` restent ouvertes. Voir
+l'ADR 0041 pour la stratégie d'authentification.
 
 Le package exporte aussi `createApp()` pour construire l'application Hono dans des tests ou dans un runtime serveur personnalisé.
 

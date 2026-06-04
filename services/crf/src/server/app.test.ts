@@ -29,7 +29,9 @@ const DEFAULT_OPTIONS = { port: 3001, disableRateLimit: true } as const;
 
 type AppModule = typeof AppModuleType;
 
-const loadApp = async (options: { port: number; disableRateLimit?: boolean } = DEFAULT_OPTIONS) => {
+const loadApp = async (
+  options: { port: number; disableRateLimit?: boolean; authToken?: string } = DEFAULT_OPTIONS
+) => {
   const { createApp } = (await import('./app.js')) as AppModule;
   return createApp(options);
 };
@@ -134,5 +136,38 @@ describe('createApp', () => {
     });
     expect(res.status).toBe(200);
     expect(res.headers.get('ratelimit-policy')).not.toBeNull();
+  });
+
+  describe('Bearer authentication on /api/* (ADR 0041)', () => {
+    const AUTH_OPTS = { port: 3001, disableRateLimit: true, authToken: 'svc-secret' } as const;
+
+    it('rejects an /api/v1/* request without a token (401)', async () => {
+      const app = await loadApp(AUTH_OPTS);
+      const res = await app.request('/api/v1/project/version');
+      expect(res.status).toBe(401);
+      const body = (await res.json()) as { error: { code: string } };
+      expect(body.error.code).toBe('unauthorized');
+    });
+
+    it('allows an /api/v1/* request carrying the correct token', async () => {
+      clientMock.getVersion.mockReturnValue(Effect.succeed('14.0.0'));
+      const app = await loadApp(AUTH_OPTS);
+      const res = await app.request('/api/v1/project/version', {
+        headers: { Authorization: 'Bearer svc-secret' },
+      });
+      expect(res.status).toBe(200);
+    });
+
+    it('leaves /health open even when auth is enabled', async () => {
+      const app = await loadApp(AUTH_OPTS);
+      const res = await app.request('/health');
+      expect(res.status).toBe(200);
+    });
+
+    it('leaves /openapi.json open even when auth is enabled', async () => {
+      const app = await loadApp(AUTH_OPTS);
+      const res = await app.request('/openapi.json');
+      expect(res.status).toBe(200);
+    });
   });
 });
