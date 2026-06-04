@@ -18,8 +18,9 @@ Plans d'action pour résorber les findings issus des [audits](/atlas/audit/) du 
 
 ## Index
 
-| Date plan  | Audit de référence                           | Plan                                                                           | Validation                                                              | Statut              |
-| ---------- | -------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------- | ------------------- |
-| 2026-05-30 | [Audit 2026-05-29](/atlas/audit/2026-05-29/) | [Plan de résorption](/atlas/plans/2026-05-30-resorption/)                      | [Rapport de validation](/atlas/plans/2026-05-30-resorption-validation/) | Terminé (16 phases) |
-| 2026-06-01 | Revue de la documentation                    | [Documentation vérifiable](/atlas/plans/documentation-verifiable/)             | —                                                                       | Terminé             |
-| 2026-06-02 | Benchmark DataOps + cluster                  | [Pipeline de collaborations](/atlas/plans/2026-06-02-pipeline-collaborations/) | —                                                                       | À exécuter          |
+| Date plan  | Audit de référence                                                     | Plan                                                                           | Validation                                                              | Statut              |
+| ---------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------- | ------------------- |
+| 2026-05-30 | [Audit 2026-05-29](/atlas/audit/2026-05-29/)                           | [Plan de résorption](/atlas/plans/2026-05-30-resorption/)                      | [Rapport de validation](/atlas/plans/2026-05-30-resorption-validation/) | Terminé (16 phases) |
+| 2026-06-01 | Revue de la documentation                                              | [Documentation vérifiable](/atlas/plans/documentation-verifiable/)             | —                                                                       | Terminé             |
+| 2026-06-02 | Benchmark DataOps + cluster                                            | [Pipeline de collaborations](/atlas/plans/2026-06-02-pipeline-collaborations/) | —                                                                       | À exécuter          |
+| 2026-06-04 | [Audit cloud-native 2026-06-04](/atlas/audit/2026-06-04-cloud-native/) | [Résorption cloud-native](/atlas/plans/2026-06-04-resorption-cloud-native/)    | —                                                                       | À exécuter          |
