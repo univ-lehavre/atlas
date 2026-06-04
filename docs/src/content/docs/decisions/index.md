@@ -64,6 +64,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0035 | [Dépôt généraliste ouvert : neutralité de domaine](/atlas/decisions/0035-depot-generaliste-ouvert/)                                               | Accepted |
 | 0036 | [Migration de la documentation : VitePress → Astro Starlight](/atlas/decisions/0036-migration-vitepress-astro-starlight/)                         | Accepted |
 | 0037 | [Retrait de la référence API générée (TypeDoc)](/atlas/decisions/0037-retrait-reference-api-typedoc/)                                             | Accepted |
+| 0038 | [Épingler le niveau WCAG cible des tests d'accessibilité](/atlas/decisions/0038-epingler-niveau-wcag-tests-a11y/)                                 | Accepted |
 
 ## Quand ouvrir un ADR
 

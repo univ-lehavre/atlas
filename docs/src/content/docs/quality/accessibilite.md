@@ -20,8 +20,9 @@ réglementaires : la norme européenne **EN 301 549** et, en France, le **RGAA**
 WCAG**.
 
 Le moteur de test du dépôt, **axe-core**, implémente des règles directement
-**mappées sur ces référentiels** (WCAG, EN 301 549, RGAA) et cible par défaut le
-**niveau AA du WCAG 2.x** — le niveau attendu par le RGAA et l'EN 301 549.
+**mappées sur ces référentiels** (WCAG, EN 301 549, RGAA). Le dépôt **épingle**
+explicitement le **niveau AA du WCAG 2.x** — le niveau attendu par le RGAA et
+l'EN 301 549 ([ADR 0038](/atlas/decisions/0038-epingler-niveau-wcag-tests-a11y/)).
 
 > **Ce que cela ne dit pas.** Passer les tests axe **n'équivaut pas** à une
 > conformité RGAA ou EN 301 549 formelle : un audit complet couvre aussi des
@@ -34,12 +35,13 @@ Le moteur de test du dépôt, **axe-core**, implémente des règles directement
 L'accessibilité n'est pas laissée à l'appréciation : elle est **contrôlée par la
 chaîne de qualité**, comme le reste.
 
-| Pratique                        | Comment c'est appliqué                                                                                                                                                                                                             |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Règles a11y au lint**         | Le preset Svelte strict active les règles d'accessibilité de Svelte (`a11y-*`) via `eslint-plugin-svelte` (`flat/recommended`) — `config/shared-config/eslint/svelte.js`, [ADR 0020](/atlas/decisions/0020-svelte-eslint-strict/). |
-| **Type explicite des boutons**  | `svelte/button-has-type` en `error` : tout `<button>` déclare son `type`, ce qui évite les soumissions de formulaire implicites et clarifie le rôle de l'élément.                                                                  |
-| **Tests d'accessibilité (axe)** | Des tests dédiés `*.a11y.test.ts` exécutent **axe-core** (via `vitest-axe`) sur les composants rendus et échouent en cas de violation — `ui/atlas-ui/tests/`, `apps/find-an-expert/`.                                              |
-| **Projet de test isolé**        | Les tests a11y tournent dans un projet vitest séparé (`a11y`), pour les lancer et les suivre indépendamment des tests unitaires — `ui/atlas-ui/vitest.config.ts`.                                                                  |
+| Pratique                        | Comment c'est appliqué                                                                                                                                                                                                                |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Règles a11y au lint**         | Le preset Svelte strict active les règles d'accessibilité de Svelte (`a11y-*`) via `eslint-plugin-svelte` (`flat/recommended`) — `config/shared-config/eslint/svelte.js`, [ADR 0020](/atlas/decisions/0020-svelte-eslint-strict/).    |
+| **Type explicite des boutons**  | `svelte/button-has-type` en `error` : tout `<button>` déclare son `type`, ce qui évite les soumissions de formulaire implicites et clarifie le rôle de l'élément.                                                                     |
+| **Tests d'accessibilité (axe)** | Des tests dédiés `*.a11y.test.ts` exécutent **axe-core** (via `vitest-axe`) sur les composants rendus et échouent en cas de violation — `ui/atlas-ui/tests/`, `apps/find-an-expert/`.                                                 |
+| **Niveau WCAG épinglé**         | Les tests ciblent explicitement le **WCAG 2.x niveau AA** (config `runOnly` partagée `@univ-lehavre/atlas-shared-config/a11y`, importée par les deux codebases) — [ADR 0038](/atlas/decisions/0038-epingler-niveau-wcag-tests-a11y/). |
+| **Projet de test isolé**        | Les tests a11y tournent dans un projet vitest séparé (`a11y`), pour les lancer et les suivre indépendamment des tests unitaires — `ui/atlas-ui/vitest.config.ts`.                                                                     |
 
 ## Appliqué dans les composants
 
@@ -62,10 +64,6 @@ attributs d'accessibilité directement dans le balisage.
 
 Par souci d'honnêteté, ces points sont **connus et tracés**, pas résolus :
 
-- **Niveau WCAG non épinglé dans les tests.** Les tests utilisent le jeu de règles
-  **par défaut** d'axe-core (WCAG 2.x AA), sans restreindre explicitement aux balises
-  `wcag2aa` / `wcag22aa`. Figer le niveau cible rendrait l'intention contractuelle et
-  stable face aux évolutions d'axe-core.
 - **Audit des pages assemblées.** Les tests axe couvrent les **composants** ;
   un audit au niveau **page rendue** (parcours clavier complet, contraste global)
   n'est pas encore systématisé.

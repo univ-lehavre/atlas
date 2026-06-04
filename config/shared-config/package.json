@@ -26,6 +26,7 @@
   },
   "files": [
     "*.json",
+    "a11y/**/*.js",
     "eslint/**/*.js",
     "prettier/**/*.js",
     "vitest/**/*.js"
@@ -33,6 +34,7 @@
   "exports": {
     "./base.json": "./base.json",
     "./node.json": "./node.json",
+    "./a11y": "./a11y/index.js",
     "./eslint": "./eslint/index.js",
     "./eslint/typescript": "./eslint/typescript.js",
     "./eslint/svelte": "./eslint/svelte.js",
