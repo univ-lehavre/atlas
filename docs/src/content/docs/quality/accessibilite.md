@@ -11,6 +11,24 @@ contrastes adaptés. Conformément à la
 **en place et vérifiables** figurent ici ; les chantiers connus sont listés en
 fin de page, sans être présentés comme acquis.
 
+## Norme de référence
+
+La référence est le **WCAG** (_Web Content Accessibility Guidelines_), le standard
+international du W3C pour l'accessibilité du web. C'est lui qu'invoquent les cadres
+réglementaires : la norme européenne **EN 301 549** et, en France, le **RGAA**
+(Référentiel général d'amélioration de l'accessibilité) — tous deux **adossés au
+WCAG**.
+
+Le moteur de test du dépôt, **axe-core**, implémente des règles directement
+**mappées sur ces référentiels** (WCAG, EN 301 549, RGAA) et cible par défaut le
+**niveau AA du WCAG 2.x** — le niveau attendu par le RGAA et l'EN 301 549.
+
+> **Ce que cela ne dit pas.** Passer les tests axe **n'équivaut pas** à une
+> conformité RGAA ou EN 301 549 formelle : un audit complet couvre aussi des
+> critères non automatisables (parcours clavier réel, pertinence des alternatives,
+> compréhension). Le dépôt **outille** la conformité, il ne la **prononce** pas — la
+> déclaration d'accessibilité d'une instance déployée relève de son exploitant.
+
 ## Vérifié automatiquement
 
 L'accessibilité n'est pas laissée à l'appréciation : elle est **contrôlée par la
@@ -46,6 +64,10 @@ Par souci d'honnêteté, ces points sont **connus et tracés**, pas résolus :
   violation n'atteint pas l'utilisateur réel. La règle est donc désactivée
   **uniquement pour l'état fermé**, toutes les autres restant actives ; la
   refonte du marquage est tracée dans le code (`TODO(... ) a11y:`).
+- **Niveau WCAG non épinglé dans les tests.** Les tests utilisent le jeu de règles
+  **par défaut** d'axe-core (WCAG 2.x AA), sans restreindre explicitement aux balises
+  `wcag2aa` / `wcag22aa`. Figer le niveau cible rendrait l'intention contractuelle et
+  stable face aux évolutions d'axe-core.
 - **Audit des pages assemblées.** Les tests axe couvrent les **composants** ;
   un audit au niveau **page rendue** (parcours clavier complet, contraste global)
   n'est pas encore systématisé.
