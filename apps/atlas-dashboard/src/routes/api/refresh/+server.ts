@@ -2,12 +2,15 @@ import { env } from '$env/dynamic/private';
 import { readCache, writeCache, isCacheStale } from '$lib/cache.js';
 import { fetchReleases } from '$lib/github.js';
 import { fetchNpmPackages, fetchAllDownloads } from '$lib/npm.js';
+import { defaultRefreshCoordinator } from '$lib/refresh-coordinator.js';
 import type { SseEvent } from '$lib/types.js';
 
 const encoder = new TextEncoder();
-const MIN_REFRESH_INTERVAL_MS = 60_000;
-let refreshInFlight: Promise<number> | null = null;
-let lastRefreshAt = 0;
+
+// Déduplication et bridage des actualisations concurrentes sont délégués au
+// coordinateur (mono-instance par défaut ; injectable pour un backing-service
+// partagé en multi-instance — voir $lib/refresh-coordinator.ts et l'ADR 0040).
+const coordinator = defaultRefreshCoordinator;
 
 type Sender = (event: SseEvent) => void;
 
@@ -60,15 +63,16 @@ export const GET = ({ url }: { url: URL }): Response => {
           return;
         }
 
-        if (refreshInFlight !== null) {
-          const cachedAt = await refreshInFlight;
+        const inFlight = coordinator.getInFlight();
+        if (inFlight !== null) {
+          const cachedAt = await inFlight;
           send({ type: 'cached', cachedAt });
           controller.close();
           return;
         }
 
         const now = Date.now();
-        if (!forceRefresh && now - lastRefreshAt < MIN_REFRESH_INTERVAL_MS) {
+        if (!forceRefresh && now - coordinator.getLastRefreshAt() < coordinator.minIntervalMs) {
           send({
             type: 'error',
             message: 'Actualisation récente détectée, réessaie dans moins d’une minute.',
@@ -77,9 +81,10 @@ export const GET = ({ url }: { url: URL }): Response => {
           return;
         }
 
-        refreshInFlight = fetchAndCache(send);
-        const savedAt = await refreshInFlight;
-        lastRefreshAt = savedAt;
+        const refresh = fetchAndCache(send);
+        coordinator.setInFlight(refresh);
+        const savedAt = await refresh;
+        coordinator.setLastRefreshAt(savedAt);
         send({ type: 'done', cachedAt: savedAt });
         controller.close();
       };
@@ -90,7 +95,7 @@ export const GET = ({ url }: { url: URL }): Response => {
           controller.close();
         })
         .finally(() => {
-          refreshInFlight = null;
+          coordinator.setInFlight(null);
         });
     },
   });

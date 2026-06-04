@@ -96,6 +96,39 @@ TTL porté par le back-end quand il le permet, et **aucune hypothèse
 mono-instance** dans le code. Un cache qui ne tolère pas deux écrivains
 simultanés n'est pas prod-ready.
 
+## Évolution (2026-06-04) — Préparer l'indirection sans déployer l'infra
+
+Ce dépôt étant un **dépôt de code**, la part exécutable de [#306](https://github.com/univ-lehavre/atlas/issues/306)
+(sûreté en concurrence) se limite à **préparer les points d'injection** que le
+futur déployeur câblera sur un backing service partagé — sans embarquer ici de
+Redis ni de base. Trois acquis concrets :
+
+- **Écriture atomique du cache `atlas-stats`.** `writeCache` n'écrit plus
+  directement sur le fichier cible : il écrit dans un temporaire propre au
+  processus (`<cible>.<pid>.tmp`) puis fait un `rename` — atomique au niveau du
+  système de fichiers. Un lecteur ne voit jamais un fichier à moitié écrit, et
+  deux écrivains concourants ne se corrompent plus mutuellement (dernier
+  `rename` gagne, sans état intermédiaire visible). C'est la sûreté en
+  concurrence atteignable **sans backing service**, en attendant l'atomicité
+  native d'un cache réseau.
+- **Coordination d'actualisation injectable** (dashboard). La déduplication des
+  actualisations en vol et le bridage de cadence vivaient en variables de
+  module dans l'endpoint SSE `/api/refresh` — un état correct en **mono-instance
+  seulement**. Ils sont désormais derrière l'interface `RefreshCoordinator`
+  (`apps/atlas-dashboard/src/lib/refresh-coordinator.ts`), avec une
+  implémentation **in-memory par défaut** reproduisant le comportement
+  historique, et un **point d'injection** : un déploiement multi-instance
+  fournira une implémentation adossée à un verrou distribué + une clé
+  d'horodatage partagée, **sans toucher à l'endpoint**.
+- **`crf-logs` rendu injectable.** Le `CACHE_PATH` en dur a cédé la place à
+  `resolveCachePath()` lisant `CRF_LOGS_CACHE_PATH` avec fallback racine de
+  workspace, alignant le paquet sur `atlas-stats`
+  ([#305](https://github.com/univ-lehavre/atlas/issues/305) pour la mise en flux
+  reste à faire).
+
+Le **branchement effectif** d'un backing service partagé (et son test en
+conditions réelles) relève du dépôt cluster, pas de celui-ci.
+
 ## Statut
 
 Accepted (2026-06-04).
