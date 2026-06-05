@@ -44,12 +44,17 @@ jobs:
           node-version-file: .nvmrc
 
       # Le sélecteur n'utilise que des modules natifs Node — aucune install.
+      # L'input `date` passe par l'environnement (jamais interpolé dans le
+      # script) — sinon une valeur malveillante serait exécutée par le shell
+      # (injection). Le sélecteur valide en plus le format YYYY-MM-DD.
       - name: Sélectionner la cible du jour
         id: select
+        env:
+          REVIEW_DATE: ${{ github.event.inputs.date }}
         run: |
           DATE_ARG=""
-          if [ -n "${{ github.event.inputs.date }}" ]; then
-            DATE_ARG="--date=${{ github.event.inputs.date }}"
+          if [ -n "$REVIEW_DATE" ]; then
+            DATE_ARG="--date=$REVIEW_DATE"
           fi
           node scripts/audit/daily-target.mjs $DATE_ARG --json > target.json
           cat target.json
