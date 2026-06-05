@@ -1,0 +1,44 @@
+{
+  "$schema": "./debt-pool.schema.json",
+  "comment": "Pool curé de dettes / dimensions globales du monorepo, tiré au sort par la revue quotidienne (dimension `debt`). Maintenu à la main : on ajoute un item quand un audit, un finding ou une intuition révèle une dette transverse digne d'une revue dédiée ; on retire l'item quand il est résolu (ou converti en issue/ADR/plan). Voir ADR 0044.",
+  "items": [
+    {
+      "id": "knip-broken-on-main",
+      "title": "knip échoue sur main (audit:unused)",
+      "why": "Le pre-push knip est cassé sur main : dette à résorber à la racine, jamais à contourner. Cibler les exports/déps non résolus signalés par `pnpm audit:unused`.",
+      "hints": ["pnpm audit:unused", "knip.json"]
+    },
+    {
+      "id": "structure-derogations",
+      "title": "Dérogations à audit:structure (ADR 0019)",
+      "why": "Des dérogations à la structure 8-catégories existent (ADR 0019). Réexaminer une dérogation : est-elle toujours justifiée, ou résorbable ?",
+      "hints": [
+        "pnpm audit:structure",
+        "scripts/audit/workspace-structure.mjs",
+        "docs/.../decisions/0019-derogations-workspace-audit.md"
+      ]
+    },
+    {
+      "id": "coverage-zero-files",
+      "title": "Fichiers à couverture nulle (coverage-report)",
+      "why": "Certains fichiers source n'ont aucune couverture de test. En choisir un signalé par `pnpm coverage:report` et décider : tester, ou justifier l'exclusion ?",
+      "hints": ["pnpm coverage:report", "scripts/audit/coverage-report.mjs"]
+    },
+    {
+      "id": "open-audit-findings",
+      "title": "Findings d'audit transverse non résorbés",
+      "why": "Les audits trimestriels (ADR 0039) laissent des findings ouverts (issues `enhancement`/`tech-debt`). En reprendre un et faire avancer sa résorption.",
+      "hints": [
+        "docs/src/content/docs/audit/",
+        "label:tech-debt",
+        "label:audit"
+      ]
+    },
+    {
+      "id": "doc-verifiability",
+      "title": "Vérifiabilité de la documentation (ADR 0028)",
+      "why": "La doc doit être prouvable par le code (ADR 0028). Choisir une affirmation documentée et vérifier qu'elle correspond encore au code réel.",
+      "hints": ["docs/src/content/docs/", "scripts/audit/documentation.mjs"]
+    }
+  ]
+}
