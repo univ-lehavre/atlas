@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from '@effect/vitest';
 import { Effect } from 'effect';
 import {
   parseVersion,
@@ -16,57 +16,73 @@ import {
 
 describe('Version Module', () => {
   describe('parseVersion', () => {
-    it('should parse valid version string', async () => {
-      const result = await Effect.runPromise(parseVersion('14.5.10'));
+    it.effect('should parse valid version string', () =>
+      Effect.gen(function* () {
+        const result = yield* parseVersion('14.5.10');
 
-      expect(result).toEqual({ major: 14, minor: 5, patch: 10 });
-    });
+        expect(result).toEqual({ major: 14, minor: 5, patch: 10 });
+      })
+    );
 
-    it('should parse version with zeros', async () => {
-      const result = await Effect.runPromise(parseVersion('15.0.0'));
+    it.effect('should parse version with zeros', () =>
+      Effect.gen(function* () {
+        const result = yield* parseVersion('15.0.0');
 
-      expect(result).toEqual({ major: 15, minor: 0, patch: 0 });
-    });
+        expect(result).toEqual({ major: 15, minor: 0, patch: 0 });
+      })
+    );
 
-    it('should handle whitespace', async () => {
-      const result = await Effect.runPromise(parseVersion('  16.0.8  '));
+    it.effect('should handle whitespace', () =>
+      Effect.gen(function* () {
+        const result = yield* parseVersion('  16.0.8  ');
 
-      expect(result).toEqual({ major: 16, minor: 0, patch: 8 });
-    });
+        expect(result).toEqual({ major: 16, minor: 0, patch: 8 });
+      })
+    );
 
-    it('should fail on invalid format (too few parts)', async () => {
-      const result = await Effect.runPromiseExit(parseVersion('14.5'));
+    it.effect('should fail on invalid format (too few parts)', () =>
+      Effect.gen(function* () {
+        const result = yield* Effect.exit(parseVersion('14.5'));
 
-      expect(result._tag).toBe('Failure');
-      if (result._tag === 'Failure') {
-        const error = result.cause;
-        expect(error._tag).toBe('Fail');
-      }
-    });
+        expect(result._tag).toBe('Failure');
+        if (result._tag === 'Failure') {
+          const error = result.cause;
+          expect(error._tag).toBe('Fail');
+        }
+      })
+    );
 
-    it('should fail on invalid format (too many parts)', async () => {
-      const result = await Effect.runPromiseExit(parseVersion('14.5.10.1'));
+    it.effect('should fail on invalid format (too many parts)', () =>
+      Effect.gen(function* () {
+        const result = yield* Effect.exit(parseVersion('14.5.10.1'));
 
-      expect(result._tag).toBe('Failure');
-    });
+        expect(result._tag).toBe('Failure');
+      })
+    );
 
-    it('should fail on non-numeric parts', async () => {
-      const result = await Effect.runPromiseExit(parseVersion('14.x.10'));
+    it.effect('should fail on non-numeric parts', () =>
+      Effect.gen(function* () {
+        const result = yield* Effect.exit(parseVersion('14.x.10'));
 
-      expect(result._tag).toBe('Failure');
-    });
+        expect(result._tag).toBe('Failure');
+      })
+    );
 
-    it('should fail on negative numbers', async () => {
-      const result = await Effect.runPromiseExit(parseVersion('-14.5.10'));
+    it.effect('should fail on negative numbers', () =>
+      Effect.gen(function* () {
+        const result = yield* Effect.exit(parseVersion('-14.5.10'));
 
-      expect(result._tag).toBe('Failure');
-    });
+        expect(result._tag).toBe('Failure');
+      })
+    );
 
-    it('should fail on empty string', async () => {
-      const result = await Effect.runPromiseExit(parseVersion(''));
+    it.effect('should fail on empty string', () =>
+      Effect.gen(function* () {
+        const result = yield* Effect.exit(parseVersion(''));
 
-      expect(result._tag).toBe('Failure');
-    });
+        expect(result._tag).toBe('Failure');
+      })
+    );
   });
 
   describe('formatVersion', () => {
@@ -82,13 +98,15 @@ describe('Version Module', () => {
       expect(formatVersion(version)).toBe('15.0.0');
     });
 
-    it('should be inverse of parseVersion', async () => {
-      const original = '16.0.8';
-      const parsed = await Effect.runPromise(parseVersion(original));
-      const formatted = formatVersion(parsed);
+    it.effect('should be inverse of parseVersion', () =>
+      Effect.gen(function* () {
+        const original = '16.0.8';
+        const parsed = yield* parseVersion(original);
+        const formatted = formatVersion(parsed);
 
-      expect(formatted).toBe(original);
-    });
+        expect(formatted).toBe(original);
+      })
+    );
   });
 
   describe('compareVersions', () => {

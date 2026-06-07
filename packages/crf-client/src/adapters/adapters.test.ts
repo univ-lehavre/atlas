@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from '@effect/vitest';
 import { Effect, Option } from 'effect';
 import {
   getAdapterEffect,
@@ -18,51 +18,63 @@ import type { CrfFeatures, TransformedParams } from './types.js';
 
 describe('Adapters Module', () => {
   describe('getAdapterEffect', () => {
-    it('should return v14 adapter for version 14.5.10', async () => {
-      const version: Version = { major: 14, minor: 5, patch: 10 };
-      const adapter = await Effect.runPromise(getAdapterEffect(version));
+    it.effect('should return v14 adapter for version 14.5.10', () =>
+      Effect.gen(function* () {
+        const version: Version = { major: 14, minor: 5, patch: 10 };
+        const adapter = yield* getAdapterEffect(version);
 
-      expect(adapter.name).toBe('REDCap 14.x');
-      expect(adapter.minVersion).toEqual({ major: 14, minor: 0, patch: 0 });
-    });
+        expect(adapter.name).toBe('REDCap 14.x');
+        expect(adapter.minVersion).toEqual({ major: 14, minor: 0, patch: 0 });
+      })
+    );
 
-    it('should return v15 adapter for version 15.5.32', async () => {
-      const version: Version = { major: 15, minor: 5, patch: 32 };
-      const adapter = await Effect.runPromise(getAdapterEffect(version));
+    it.effect('should return v15 adapter for version 15.5.32', () =>
+      Effect.gen(function* () {
+        const version: Version = { major: 15, minor: 5, patch: 32 };
+        const adapter = yield* getAdapterEffect(version);
 
-      expect(adapter.name).toBe('REDCap 15.x');
-      expect(adapter.minVersion).toEqual({ major: 15, minor: 0, patch: 0 });
-    });
+        expect(adapter.name).toBe('REDCap 15.x');
+        expect(adapter.minVersion).toEqual({ major: 15, minor: 0, patch: 0 });
+      })
+    );
 
-    it('should return v16 adapter for version 16.0.8', async () => {
-      const version: Version = { major: 16, minor: 0, patch: 8 };
-      const adapter = await Effect.runPromise(getAdapterEffect(version));
+    it.effect('should return v16 adapter for version 16.0.8', () =>
+      Effect.gen(function* () {
+        const version: Version = { major: 16, minor: 0, patch: 8 };
+        const adapter = yield* getAdapterEffect(version);
 
-      expect(adapter.name).toBe('REDCap 16.x');
-      expect(adapter.minVersion).toEqual({ major: 16, minor: 0, patch: 0 });
-    });
+        expect(adapter.name).toBe('REDCap 16.x');
+        expect(adapter.minVersion).toEqual({ major: 16, minor: 0, patch: 0 });
+      })
+    );
 
-    it('should return v16 adapter for future versions (16+)', async () => {
-      const version: Version = { major: 17, minor: 0, patch: 0 };
-      const adapter = await Effect.runPromise(getAdapterEffect(version));
+    it.effect('should return v16 adapter for future versions (16+)', () =>
+      Effect.gen(function* () {
+        const version: Version = { major: 17, minor: 0, patch: 0 };
+        const adapter = yield* getAdapterEffect(version);
 
-      // v16 adapter has no maxVersion, so it catches future versions
-      expect(adapter.name).toBe('REDCap 16.x');
-    });
+        // v16 adapter has no maxVersion, so it catches future versions
+        expect(adapter.name).toBe('REDCap 16.x');
+      })
+    );
 
-    it('should fail for unsupported version (13.x)', async () => {
-      const version: Version = { major: 13, minor: 0, patch: 0 };
-      const result = await Effect.runPromiseExit(getAdapterEffect(version));
+    it.effect('should fail for unsupported version (13.x)', () =>
+      Effect.gen(function* () {
+        const version: Version = { major: 13, minor: 0, patch: 0 };
+        const result = yield* Effect.exit(getAdapterEffect(version));
 
-      expect(result._tag).toBe('Failure');
-    });
+        expect(result._tag).toBe('Failure');
+      })
+    );
 
-    it('should fail for version 0.x', async () => {
-      const version: Version = { major: 0, minor: 0, patch: 0 };
-      const result = await Effect.runPromiseExit(getAdapterEffect(version));
+    it.effect('should fail for version 0.x', () =>
+      Effect.gen(function* () {
+        const version: Version = { major: 0, minor: 0, patch: 0 };
+        const result = yield* Effect.exit(getAdapterEffect(version));
 
-      expect(result._tag).toBe('Failure');
-    });
+        expect(result._tag).toBe('Failure');
+      })
+    );
   });
 
   describe('getAdapter', () => {

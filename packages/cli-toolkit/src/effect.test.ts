@@ -1,22 +1,29 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect } from '@effect/vitest';
+import { afterEach } from 'vitest';
 import { Effect, FiberRef, LogLevel } from 'effect';
 import { quiet, runEffectCli } from './effect.js';
 
 describe('quiet', () => {
-  it('preserves the success value of the wrapped program', async () => {
-    const result = await Effect.runPromise(quiet(Effect.succeed(42)));
-    expect(result).toBe(42);
-  });
+  it.effect('preserves the success value of the wrapped program', () =>
+    Effect.gen(function* () {
+      const result = yield* quiet(Effect.succeed(42));
+      expect(result).toBe(42);
+    })
+  );
 
-  it('preserves the error channel of the wrapped program', async () => {
-    const exit = await Effect.runPromiseExit(quiet(Effect.fail('boom')));
-    expect(exit._tag).toBe('Failure');
-  });
+  it.effect('preserves the error channel of the wrapped program', () =>
+    Effect.gen(function* () {
+      const exit = yield* Effect.exit(quiet(Effect.fail('boom')));
+      expect(exit._tag).toBe('Failure');
+    })
+  );
 
-  it('raises the minimum log level to None inside the program', async () => {
-    const level = await Effect.runPromise(quiet(FiberRef.get(FiberRef.currentMinimumLogLevel)));
-    expect(level).toBe(LogLevel.None);
-  });
+  it.effect('raises the minimum log level to None inside the program', () =>
+    Effect.gen(function* () {
+      const level = yield* quiet(FiberRef.get(FiberRef.currentMinimumLogLevel));
+      expect(level).toBe(LogLevel.None);
+    })
+  );
 });
 
 describe('runEffectCli', () => {

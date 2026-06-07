@@ -3,7 +3,7 @@
  * @description Tests for version parsing utilities
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect } from '@effect/vitest';
 import { Effect, Either } from 'effect';
 import { VERSION_PATTERN, parseVersion, tryParseVersion } from './parse.js';
 import { VersionParseError } from '../errors/version.js';
@@ -43,56 +43,74 @@ describe('VERSION_PATTERN', () => {
 });
 
 describe('parseVersion', () => {
-  it('should parse valid version strings', async () => {
-    const result = await Effect.runPromise(parseVersion('14.5.10'));
-    expect(result).toEqual({ major: 14, minor: 5, patch: 10 });
-  });
+  it.effect('should parse valid version strings', () =>
+    Effect.gen(function* () {
+      const result = yield* parseVersion('14.5.10');
+      expect(result).toEqual({ major: 14, minor: 5, patch: 10 });
+    })
+  );
 
-  it('should parse version 0.0.0', async () => {
-    const result = await Effect.runPromise(parseVersion('0.0.0'));
-    expect(result).toEqual({ major: 0, minor: 0, patch: 0 });
-  });
+  it.effect('should parse version 0.0.0', () =>
+    Effect.gen(function* () {
+      const result = yield* parseVersion('0.0.0');
+      expect(result).toEqual({ major: 0, minor: 0, patch: 0 });
+    })
+  );
 
-  it('should parse version 1.0.0', async () => {
-    const result = await Effect.runPromise(parseVersion('1.0.0'));
-    expect(result).toEqual({ major: 1, minor: 0, patch: 0 });
-  });
+  it.effect('should parse version 1.0.0', () =>
+    Effect.gen(function* () {
+      const result = yield* parseVersion('1.0.0');
+      expect(result).toEqual({ major: 1, minor: 0, patch: 0 });
+    })
+  );
 
-  it('should parse large version numbers', async () => {
-    const result = await Effect.runPromise(parseVersion('100.200.300'));
-    expect(result).toEqual({ major: 100, minor: 200, patch: 300 });
-  });
+  it.effect('should parse large version numbers', () =>
+    Effect.gen(function* () {
+      const result = yield* parseVersion('100.200.300');
+      expect(result).toEqual({ major: 100, minor: 200, patch: 300 });
+    })
+  );
 
-  it('should trim whitespace', async () => {
-    const result = await Effect.runPromise(parseVersion('  14.5.10  '));
-    expect(result).toEqual({ major: 14, minor: 5, patch: 10 });
-  });
+  it.effect('should trim whitespace', () =>
+    Effect.gen(function* () {
+      const result = yield* parseVersion('  14.5.10  ');
+      expect(result).toEqual({ major: 14, minor: 5, patch: 10 });
+    })
+  );
 
-  it('should fail for invalid version strings', async () => {
-    const result = await Effect.runPromiseExit(parseVersion('invalid'));
-    expect(result._tag).toBe('Failure');
-  });
+  it.effect('should fail for invalid version strings', () =>
+    Effect.gen(function* () {
+      const result = yield* Effect.exit(parseVersion('invalid'));
+      expect(result._tag).toBe('Failure');
+    })
+  );
 
-  it('should fail for incomplete versions', async () => {
-    const result = await Effect.runPromiseExit(parseVersion('14.5'));
-    expect(result._tag).toBe('Failure');
-  });
+  it.effect('should fail for incomplete versions', () =>
+    Effect.gen(function* () {
+      const result = yield* Effect.exit(parseVersion('14.5'));
+      expect(result._tag).toBe('Failure');
+    })
+  );
 
-  it('should fail for empty string', async () => {
-    const result = await Effect.runPromiseExit(parseVersion(''));
-    expect(result._tag).toBe('Failure');
-  });
+  it.effect('should fail for empty string', () =>
+    Effect.gen(function* () {
+      const result = yield* Effect.exit(parseVersion(''));
+      expect(result._tag).toBe('Failure');
+    })
+  );
 
-  it('should return VersionParseError on failure', async () => {
-    const effect = parseVersion('invalid');
-    const either = await Effect.runPromise(Effect.either(effect));
+  it.effect('should return VersionParseError on failure', () =>
+    Effect.gen(function* () {
+      const effect = parseVersion('invalid');
+      const either = yield* Effect.either(effect);
 
-    expect(Either.isLeft(either)).toBe(true);
-    if (Either.isLeft(either)) {
-      expect(either.left).toBeInstanceOf(VersionParseError);
-      expect(either.left.input).toBe('invalid');
-    }
-  });
+      expect(Either.isLeft(either)).toBe(true);
+      if (Either.isLeft(either)) {
+        expect(either.left).toBeInstanceOf(VersionParseError);
+        expect(either.left.input).toBe('invalid');
+      }
+    })
+  );
 });
 
 describe('tryParseVersion', () => {
@@ -120,24 +138,26 @@ describe('tryParseVersion', () => {
 });
 
 describe('REDCap version examples', () => {
-  it('should parse known REDCap versions', async () => {
-    // Known supported versions
-    expect(await Effect.runPromise(parseVersion('14.5.10'))).toEqual({
-      major: 14,
-      minor: 5,
-      patch: 10,
-    });
-    expect(await Effect.runPromise(parseVersion('15.5.32'))).toEqual({
-      major: 15,
-      minor: 5,
-      patch: 32,
-    });
-    expect(await Effect.runPromise(parseVersion('16.0.8'))).toEqual({
-      major: 16,
-      minor: 0,
-      patch: 8,
-    });
-  });
+  it.effect('should parse known REDCap versions', () =>
+    Effect.gen(function* () {
+      // Known supported versions
+      expect(yield* parseVersion('14.5.10')).toEqual({
+        major: 14,
+        minor: 5,
+        patch: 10,
+      });
+      expect(yield* parseVersion('15.5.32')).toEqual({
+        major: 15,
+        minor: 5,
+        patch: 32,
+      });
+      expect(yield* parseVersion('16.0.8')).toEqual({
+        major: 16,
+        minor: 0,
+        patch: 8,
+      });
+    })
+  );
 
   it('should parse older REDCap versions', () => {
     expect(tryParseVersion('8.0.0')).toEqual({ major: 8, minor: 0, patch: 0 });
