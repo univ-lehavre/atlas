@@ -445,6 +445,9 @@ importers:
       '@univ-lehavre/atlas-citation-fetch':
         specifier: workspace:*
         version: link:../../packages/citation-fetch
+      '@univ-lehavre/atlas-effect-socle':
+        specifier: workspace:*
+        version: link:../../packages/effect-socle
       '@univ-lehavre/atlas-errors':
         specifier: workspace:*
         version: link:../../packages/errors

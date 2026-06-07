@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Data, Effect, Match } from 'effect';
 import { ApplicationError } from '@univ-lehavre/atlas-errors';
-import { runEffectHandler, type EffectErrorMapper } from './effect.js';
+import { runEffectHandler, type EffectErrorMapper, type EffectRunner } from './effect.js';
 
 // A domain TaggedError with no `status` field — like citation-fetch's
 // FetchError/ResponseParseError. The consumer owns the tag→status table.
@@ -148,6 +148,35 @@ describe('runEffectHandler', () => {
         data: null,
         error: { code: 'internal_error', message: 'Internal error' },
       });
+    });
+  });
+
+  describe('runtime option', () => {
+    it('runs the composed effect on the provided runtime', async () => {
+      let calls = 0;
+      const runtime: EffectRunner = {
+        runPromise: <A>(effect: Effect.Effect<A>) => {
+          calls += 1;
+          return Effect.runPromise(effect);
+        },
+      };
+
+      const res = await runEffectHandler(Effect.succeed({ ok: true }), { runtime });
+
+      expect(calls).toBe(1);
+      expect(res.status).toBe(200);
+      expect(await res.json()).toEqual({ ok: true });
+    });
+
+    it('still maps a typed error to its status when run on a runtime', async () => {
+      const runtime: EffectRunner = { runPromise: (effect) => Effect.runPromise(effect) };
+
+      const res = await runEffectHandler(Effect.fail(new UpstreamError({ message: 'down' })), {
+        runtime,
+        mapError: domainMapper,
+      });
+
+      expect(res.status).toBe(502);
     });
   });
 });

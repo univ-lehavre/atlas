@@ -40,9 +40,25 @@ export type EffectErrorMapper<E> = (error: E) => {
 };
 
 /**
+ * Minimal structural shape of a runtime able to run the composed Effect — the
+ * `runPromise` of a `ManagedRuntime` (cf. `@univ-lehavre/atlas-effect-socle`).
+ * Declared structurally so this package keeps zero runtime dependency.
+ */
+export interface EffectRunner {
+  readonly runPromise: <A>(effect: Effect.Effect<A>) => Promise<A>;
+}
+
+/**
  * Options for {@link runEffectHandler}.
  */
 export interface RunEffectOptions<E> {
+  /**
+   * Central process runtime to execute on (its `runPromise`). When provided,
+   * the handler runs on it so the app's `AppLayer` (logger, future tracer) is
+   * in scope ([ADR 0045](https://github.com/univ-lehavre/atlas/blob/main/docs/src/content/docs/decisions/0045-runtime-central-effect.md)).
+   * When omitted, the global `Effect.runPromise` is used (backward compatible).
+   */
+  readonly runtime?: EffectRunner;
   /**
    * Maps a typed failure `E` to `{ body, status }`. Required unless `E`
    * is `never` (an Effect that cannot fail in a typed way).
@@ -155,7 +171,7 @@ export const runEffectHandler = <A, E = never>(
   const mapError: EffectErrorMapper<E> = options?.mapError ?? defaultMapError;
   const successStatus = options?.successStatus ?? 200;
 
-  return pipe(
+  const composed = pipe(
     effect,
     Effect.map((value) => successResponse(value, successStatus, options?.headers)),
     Effect.catchAll((error: E) => {
@@ -166,7 +182,10 @@ export const runEffectHandler = <A, E = never>(
           ...(options?.headers === undefined ? {} : { headers: options.headers }),
         })
       );
-    }),
-    Effect.runPromise
+    })
   );
+
+  return options?.runtime === undefined
+    ? Effect.runPromise(composed)
+    : options.runtime.runPromise(composed);
 };

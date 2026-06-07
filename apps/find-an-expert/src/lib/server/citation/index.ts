@@ -1,4 +1,4 @@
-import { Effect } from 'effect';
+import type { Effect } from 'effect';
 import { OPENALEX_API_TOKEN } from '$env/static/private';
 import { env as dynamicEnv } from '$env/dynamic/private';
 import {
@@ -17,19 +17,35 @@ import {
 // public repository.
 const DEFAULT_USER_AGENT = 'find-an-expert/1.0 (https://github.com/univ-lehavre/atlas)';
 
+// Read per call (not captured) so OPENALEX_USER_AGENT can be re-bound at
+// runtime — 12-factor late-binding, the explicit guard of ADR 0045.
 const getConfig = (): CitationConfig => ({
   userAgent: dynamicEnv.OPENALEX_USER_AGENT || DEFAULT_USER_AGENT,
   apiKey: OPENALEX_API_TOKEN || undefined,
 });
 
-export const searchInstitutions = (query: string): Promise<InstitutionSearchResult> =>
-  Effect.runPromise(searchInstitutionsEffect(query, getConfig()));
+// Effect errors surfaced by the citation functions (FetchError |
+// ResponseParseError). Inferred from the upstream signatures.
+type CitationEffect<A> =
+  ReturnType<typeof searchInstitutionsEffect> extends Effect.Effect<unknown, infer E>
+    ? Effect.Effect<A, E>
+    : never;
 
-export const getWorksCount = (institutionIds: string[]): Promise<WorksCountResult> =>
-  Effect.runPromise(getWorksCountEffect(institutionIds, getConfig()));
+/**
+ * The `lib/server/*` functions return the **raw Effect** (ADR 0046): the
+ * handler executes it on the server runtime via `runEffectHandler`, so a typed
+ * upstream failure keeps its error channel instead of being flattened. Config
+ * is read at call time (above) for 12-factor late-binding.
+ */
+export const searchInstitutions = (query: string): CitationEffect<InstitutionSearchResult> =>
+  searchInstitutionsEffect(query, getConfig());
 
-export const getInstitutionStats = (institutionIds: string[]): Promise<InstitutionStatsResult> =>
-  Effect.runPromise(getInstitutionStatsEffect(institutionIds, getConfig()));
+export const getWorksCount = (institutionIds: string[]): CitationEffect<WorksCountResult> =>
+  getWorksCountEffect(institutionIds, getConfig());
+
+export const getInstitutionStats = (
+  institutionIds: string[]
+): CitationEffect<InstitutionStatsResult> => getInstitutionStatsEffect(institutionIds, getConfig());
 
 // Type aliases for backward compatibility with SvelteKit components
 export type TInstitution = InstitutionSearchResult['institutions'][number];

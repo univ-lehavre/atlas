@@ -1,8 +1,8 @@
+import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { withHandler } from '@univ-lehavre/atlas-sveltekit-handler';
-import { ApplicationError } from '@univ-lehavre/atlas-errors';
+import { runEffectHandler } from '@univ-lehavre/atlas-sveltekit-handler/effect';
 import { getWorksCount } from '$lib/server/citation';
-import { flatErrorMapper } from '$lib/server/http';
+import { mapCitationError, serverRuntime } from '$lib/server/runtime';
 
 /** Maximum number of institutions allowed in a single request */
 const MAX_INSTITUTIONS = 10;
@@ -11,33 +11,38 @@ const MAX_INSTITUTIONS = 10;
  * GET /api/v1/works/counts
  * Returns the count of articles published by the specified institutions in the last 5 years.
  */
-export const GET: RequestHandler = withHandler(
-  async ({ url, locals }) => {
-    if (!locals.userId)
-      throw new ApplicationError('unauthenticated', 401, 'User not authenticated');
+export const GET: RequestHandler = ({ url, locals }) => {
+  if (!locals.userId) {
+    return json({ code: 'unauthenticated', message: 'User not authenticated' }, { status: 401 });
+  }
 
-    const institutionsParam = url.searchParams.get('institutions');
+  const institutionsParam = url.searchParams.get('institutions');
+  if (!institutionsParam) {
+    return json(
+      { code: 'missing_parameter', message: 'institutions parameter is required' },
+      { status: 400 }
+    );
+  }
 
-    if (!institutionsParam)
-      throw new ApplicationError('missing_parameter', 400, 'institutions parameter is required');
+  const institutionIds = institutionsParam.split(',').filter(Boolean);
+  if (institutionIds.length === 0) {
+    return json(
+      { code: 'invalid_parameter', message: 'At least one institution ID is required' },
+      { status: 400 }
+    );
+  }
+  if (institutionIds.length > MAX_INSTITUTIONS) {
+    return json(
+      {
+        code: 'too_many_institutions',
+        message: `Maximum ${MAX_INSTITUTIONS} institutions allowed`,
+      },
+      { status: 400 }
+    );
+  }
 
-    const institutionIds = institutionsParam.split(',').filter(Boolean);
-
-    if (institutionIds.length === 0)
-      throw new ApplicationError(
-        'invalid_parameter',
-        400,
-        'At least one institution ID is required'
-      );
-
-    if (institutionIds.length > MAX_INSTITUTIONS)
-      throw new ApplicationError(
-        'too_many_institutions',
-        400,
-        `Maximum ${MAX_INSTITUTIONS} institutions allowed`
-      );
-
-    return getWorksCount(institutionIds);
-  },
-  { mapError: flatErrorMapper }
-);
+  return runEffectHandler(getWorksCount(institutionIds), {
+    runtime: serverRuntime,
+    mapError: mapCitationError,
+  });
+};

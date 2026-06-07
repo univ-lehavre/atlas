@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { Effect } from 'effect';
 import {
   createRouteEvent,
   assertNoXss,
@@ -9,28 +10,6 @@ vi.mock('$lib/server/citation', () => ({
   getInstitutionStats: vi.fn(),
 }));
 
-// Mock duck-type le contrat ApplicationError → flat shape utilisé par
-// `withHandler`, sans réimporter le vrai module (sinon Vitest construit
-// une 2e instance de la classe et `instanceof` casse côté handler).
-vi.mock('$lib/server/http', () => ({
-  mapErrorToResponse: vi.fn((error: Error) => new Response(error.message, { status: 500 })),
-  flatErrorMapper: vi.fn(
-    (error: unknown): { body: { code: string; message: string }; status: number } => {
-      const e = error as { code?: unknown; message?: unknown; httpStatus?: unknown };
-      if (typeof e.code === 'string' && typeof e.httpStatus === 'number') {
-        return {
-          body: { code: e.code, message: String(e.message ?? '') },
-          status: e.httpStatus,
-        };
-      }
-      return {
-        body: { code: 'unexpected_error', message: 'Unknown error' },
-        status: 500,
-      };
-    }
-  ),
-}));
-
 describe('GET /api/v1/institutions/stats', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -38,9 +17,11 @@ describe('GET /api/v1/institutions/stats', () => {
 
   it('returns 200 with stats when authorised', async () => {
     const citation = await import('$lib/server/citation');
-    (citation.getInstitutionStats as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      institutions: [{ id: 'I1', works: 100, articles: 80, authors: 50 }],
-    });
+    (citation.getInstitutionStats as ReturnType<typeof vi.fn>).mockReturnValueOnce(
+      Effect.succeed({
+        institutions: [{ id: 'I1', works: 100, articles: 80, authors: 50 }],
+      })
+    );
 
     const mod = await import('./+server');
     const res = await mod.GET(
@@ -53,6 +34,25 @@ describe('GET /api/v1/institutions/stats', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.institutions).toHaveLength(1);
+  });
+
+  it('maps an upstream ResponseParseError to 502 (ADR 0046, no opaque 500)', async () => {
+    const citation = await import('$lib/server/citation');
+    (citation.getInstitutionStats as ReturnType<typeof vi.fn>).mockReturnValueOnce(
+      Effect.fail({ _tag: 'ResponseParseError', message: 'malformed OpenAlex payload' })
+    );
+
+    const mod = await import('./+server');
+    const res = await mod.GET(
+      createRouteEvent({
+        url: 'https://example.com/api/v1/institutions/stats?ids=I1',
+        locals: { userId: 'user-1' },
+      })
+    );
+
+    expect(res.status).toBe(502);
+    const body = await res.json();
+    expect(body.code).toBe('upstream_parse_error');
   });
 
   it('returns 401 when not authenticated', async () => {
@@ -112,9 +112,11 @@ describe('GET /api/v1/institutions/stats', () => {
 
   it.each(xssPayloads())('does not reflect xss payload %s in body', async (payload) => {
     const citation = await import('$lib/server/citation');
-    (citation.getInstitutionStats as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-      institutions: [],
-    });
+    (citation.getInstitutionStats as ReturnType<typeof vi.fn>).mockReturnValueOnce(
+      Effect.succeed({
+        institutions: [],
+      })
+    );
 
     const mod = await import('./+server');
     const res = await mod.GET(

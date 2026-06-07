@@ -1,9 +1,10 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { createRateLimiter, rateLimitHeaders } from '@univ-lehavre/atlas-auth';
+import { runEffectHandler } from '@univ-lehavre/atlas-sveltekit-handler/effect';
 
 import { searchInstitutions } from '$lib/server/citation';
-import { mapErrorToResponse } from '$lib/server/http';
+import { mapCitationError, serverRuntime } from '$lib/server/runtime';
 
 /**
  * GET /api/v1/institutions/search
@@ -25,11 +26,12 @@ export const GET: RequestHandler = async ({ url, getClientAddress }) => {
     );
   }
 
-  try {
-    const query = url.searchParams.get('q') ?? '';
-    const results = await searchInstitutions(query);
-    return json(results, { headers: rateLimitHeaders(rate, limiter.limit) });
-  } catch (error: unknown) {
-    return mapErrorToResponse(error);
-  }
+  const query = url.searchParams.get('q') ?? '';
+  // The Effect runs on the server runtime; a typed upstream failure maps to its
+  // HTTP status (502) instead of an opaque 500 (ADR 0046).
+  return runEffectHandler(searchInstitutions(query), {
+    runtime: serverRuntime,
+    mapError: mapCitationError,
+    headers: rateLimitHeaders(rate, limiter.limit),
+  });
 };

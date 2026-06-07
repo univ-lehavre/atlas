@@ -1,29 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { Effect } from 'effect';
 
 vi.mock('$lib/server/citation', () => ({
   searchInstitutions: vi.fn(),
-}));
-
-// Mock duck-type le contrat ApplicationError → flat shape utilisé par
-// `withHandler`, sans réimporter le vrai module (sinon Vitest construit
-// une 2e instance de la classe et `instanceof` casse côté handler).
-vi.mock('$lib/server/http', () => ({
-  mapErrorToResponse: vi.fn((error: Error) => new Response(error.message, { status: 500 })),
-  flatErrorMapper: vi.fn(
-    (error: unknown): { body: { code: string; message: string }; status: number } => {
-      const e = error as { code?: unknown; message?: unknown; httpStatus?: unknown };
-      if (typeof e.code === 'string' && typeof e.httpStatus === 'number') {
-        return {
-          body: { code: e.code, message: String(e.message ?? '') },
-          status: e.httpStatus,
-        };
-      }
-      return {
-        body: { code: 'unexpected_error', message: 'Unknown error' },
-        status: 500,
-      };
-    }
-  ),
 }));
 
 describe('GET /api/v1/institutions/search (rate-limited public endpoint)', () => {
@@ -33,9 +12,9 @@ describe('GET /api/v1/institutions/search (rate-limited public endpoint)', () =>
 
   it('returns 200 with results and exposes rate-limit headers', async () => {
     const citation = await import('$lib/server/citation');
-    (citation.searchInstitutions as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
-      { id: 'I1', name: 'University A' },
-    ]);
+    (citation.searchInstitutions as ReturnType<typeof vi.fn>).mockReturnValueOnce(
+      Effect.succeed([{ id: 'I1', name: 'University A' }])
+    );
 
     const mod = await import('./+server');
     const res = await mod.GET({
@@ -46,11 +25,12 @@ describe('GET /api/v1/institutions/search (rate-limited public endpoint)', () =>
     expect(res.status).toBe(200);
     expect(res.headers.get('X-RateLimit-Limit')).toBe('30');
     expect(res.headers.get('X-RateLimit-Remaining')).toBe('29');
+    expect(await res.json()).toEqual([{ id: 'I1', name: 'University A' }]);
   });
 
   it('returns 429 after the 30 req/min window is saturated', async () => {
     const citation = await import('$lib/server/citation');
-    (citation.searchInstitutions as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    (citation.searchInstitutions as ReturnType<typeof vi.fn>).mockReturnValue(Effect.succeed([]));
 
     const mod = await import('./+server');
     const ip = '203.0.113.20';
@@ -80,7 +60,9 @@ describe('GET /api/v1/institutions/search (rate-limited public endpoint)', () =>
     // handler ne renvoie que le résultat upstream (mock = []) ; aucune
     // partie de la query ne doit transiter par le body.
     const citation = await import('$lib/server/citation');
-    (citation.searchInstitutions as ReturnType<typeof vi.fn>).mockResolvedValueOnce([]);
+    (citation.searchInstitutions as ReturnType<typeof vi.fn>).mockReturnValueOnce(
+      Effect.succeed([])
+    );
 
     const xssPayload = '<script>alert(1)</script>';
     const mod = await import('./+server');
@@ -97,11 +79,12 @@ describe('GET /api/v1/institutions/search (rate-limited public endpoint)', () =>
   });
 
   it('does not reflect query content in error messages (anti-XSS on failure)', async () => {
-    // Même garantie quand l'upstream échoue : l'erreur remontée doit
-    // décrire le problème sans embarquer la query.
+    // Même garantie quand l'upstream échoue : l'erreur remontée (mappée
+    // par `mapCitationError` en `{ code, message }`) doit décrire le
+    // problème sans embarquer la query.
     const citation = await import('$lib/server/citation');
-    (citation.searchInstitutions as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
-      new Error('upstream timeout')
+    (citation.searchInstitutions as ReturnType<typeof vi.fn>).mockReturnValueOnce(
+      Effect.fail({ _tag: 'FetchError', message: 'upstream timeout' })
     );
 
     const xssPayload = '<img src=x onerror=alert(1)>';
@@ -113,6 +96,7 @@ describe('GET /api/v1/institutions/search (rate-limited public endpoint)', () =>
       getClientAddress: () => '203.0.113.40',
     } as never);
 
+    expect(res.status).toBe(502);
     const raw = await res.text();
     expect(raw).not.toContain('<img');
     expect(raw).not.toContain('onerror');
