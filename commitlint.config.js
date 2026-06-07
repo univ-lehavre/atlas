@@ -55,6 +55,7 @@ export default {
         "crf-project-template",
         "crf-sandbox",
         "crf-stats",
+        "effect-socle",
         "researcher-profiles",
         "sillage",
         "sillage-sandbox",
