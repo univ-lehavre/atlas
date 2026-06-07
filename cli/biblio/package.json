@@ -33,11 +33,8 @@
   },
   "dependencies": {
     "@clack/prompts": "~1.5.0",
-    "@effect/cluster": "~0.58.2",
     "@effect/experimental": "~0.60.0",
     "@effect/platform-node": "~0.106.0",
-    "@effect/rpc": "~0.75.1",
-    "@effect/sql": "~0.51.1",
     "@univ-lehavre/atlas-citation-types": "workspace:*",
     "@univ-lehavre/atlas-citation-validate": "workspace:*",
     "@univ-lehavre/atlas-cli-toolkit": "workspace:*",
