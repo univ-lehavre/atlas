@@ -44,7 +44,7 @@ describe("toRow", () => {
 });
 
 describe("parseCsv", () => {
-  it("parses valid CSV", () =>
+  it.effect("parses valid CSV", () =>
     Effect.gen(function* () {
       const content = `userid,last_name,middle_name,first_name,orcid
 u001,Dupont,,Jean,0000-0001-2345-6789
@@ -66,9 +66,10 @@ u002,Martin,Louis,Pierre,`;
         oa_locked_at: "",
         openalex_complete: "",
       });
-    }));
+    }),
+  );
 
-  it("keeps optional REDCap workflow fields when present", () =>
+  it.effect("keeps optional REDCap workflow fields when present", () =>
     Effect.gen(function* () {
       const content = `userid,last_name,middle_name,first_name,orcid,oa_imported_at,oa_locked_at,openalex_complete
 u001,Dupont,,Jean,0000-0001-2345-6789,2026-03-18 10:18:00,,2`;
@@ -78,14 +79,16 @@ u001,Dupont,,Jean,0000-0001-2345-6789,2026-03-18 10:18:00,,2`;
         oa_locked_at: "",
         openalex_complete: "2",
       });
-    }));
+    }),
+  );
 
-  it("returns an empty array when the CSV has only a header", () =>
+  it.effect("returns an empty array when the CSV has only a header", () =>
     Effect.gen(function* () {
       const content = `userid,last_name,middle_name,first_name,orcid`;
       const rows = yield* parseCsv(content);
       expect(rows).toEqual([]);
-    }));
+    }),
+  );
 
   it("fails when required columns are missing", async () => {
     const result = await Effect.runPromise(
