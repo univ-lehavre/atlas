@@ -42,6 +42,27 @@ const CATEGORY_LABELS = {
   sandbox: "Bancs d'essai (`sandbox/`)",
 };
 
+/**
+ * Une phrase par catégorie : ce qu'elle contient et pourquoi elle existe
+ * (charte rédactionnelle ADR 0052, règle R1 — chaque section a une intro avant
+ * le tableau). Le découpage en catégories est cadré par l'ADR 0002.
+ */
+const CATEGORY_INTROS = {
+  apps: "Les applications destinées aux utilisateurs finaux (interfaces web). Elles consomment les services et les bibliothèques sans être consommées par personne — ce sont les feuilles de l'arbre de dépendances.",
+  services:
+    "Les services HTTP déployés (back-ends). Ils exposent une API consommée par les applications et orchestrent l'accès aux plateformes externes.",
+  packages:
+    "Les bibliothèques réutilisables : toute la logique métier vit ici, jamais dans les applications ni les CLIs (ADR 0008). C'est le socle partagé du monorepo.",
+  cli: "Les outils en ligne de commande. Ils restent **fins** : ils orchestrent et appellent les bibliothèques de `packages/`, sans porter de logique métier propre (ADR 0008).",
+  ui: "Les composants d'interface partagés entre applications, pour garantir une cohérence visuelle sans dépendre d'un designer dédié.",
+  config:
+    "Les configurations transverses partagées (TypeScript, ESLint, Prettier, Vitest…) factorisées une fois et réutilisées par tous les paquets.",
+  assets:
+    "Les ressources statiques (logos, images) consommées par les applications.",
+  sandbox:
+    "Les bancs d'essai et prototypes isolés : terrain d'expérimentation qui n'est jamais consommé par un paquet publiable (ADR 0021).",
+};
+
 /** Ordre d'affichage des catégories (du plus « consommateur » au plus « socle »). */
 const CATEGORY_ORDER = [
   "apps",
@@ -271,6 +292,9 @@ export const generateBody = (cwd = ".") => {
     const names = byCategory.get(category) ?? [];
     if (names.length === 0) continue;
     lines.push(`### ${CATEGORY_LABELS[category]}`, "");
+    if (CATEGORY_INTROS[category]) {
+      lines.push(CATEGORY_INTROS[category], "");
+    }
     lines.push(
       "| Paquet | Rôle | Dépend de | Consommé par |",
       "| --- | --- | --- | --- |",

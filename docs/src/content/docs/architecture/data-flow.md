@@ -4,7 +4,7 @@ title: Flux de données
 
 Cette page décrit, à haut niveau, comment les données circulent entre les principaux composants d'Atlas. Pour le détail des outils retenus, voir [Choix techniques](/atlas/architecture/tech-choices/).
 
-## Vue d'ensemble
+Le schéma ci-dessous situe les acteurs principaux et les flux qui les relient : qui parle à qui, et pour transporter quelle donnée. On le regarde pour avoir, en un coup d'œil, la carte d'ensemble avant d'entrer dans le détail des plateformes, du cycle d'une requête et du chemin d'une donnée à travers le code.
 
 ```mermaid
 flowchart LR
@@ -90,6 +90,34 @@ En pratique : une valeur brute (texte d'un champ REDCap) entre par `crf-client`,
 est validée et brandée dans `crf-core`, puis circule **typée** jusqu'à
 l'application. Le point de validation est unique et explicite — pas de
 re-vérification dispersée.
+
+Aux frontières HTTP, le contrat prend une autre forme : une **spécification
+OpenAPI** — un document standard qui décrit, de façon lisible par la machine, les
+routes d'une API, leurs paramètres et la forme des réponses. Le dépôt en produit
+à deux endroits :
+
+- **Le client vers REDCap.** L'outil
+  [`crf-openapi`](/atlas/packages/cli/crf-openapi/) (publié sous le nom
+  `@univ-lehavre/atlas-ln`) analyse le code source de REDCap pour en **extraire**
+  la spécification OpenAPI, **comparer** les versions et **servir** la
+  documentation. Les specs versionnées vivent dans
+  [`cli/crf-openapi/specs/versions/`](https://github.com/univ-lehavre/atlas/tree/main/cli/crf-openapi/specs/versions).
+  C'est de ces specs que
+  [`crf-client`](/atlas/packages/packages/crf-client/) dérive ses types générés
+  (`src/generated/types.ts`) : le contrat de la source devient des types
+  vérifiés à la compilation.
+- **Les services et applications vers leurs consommateurs.** Le microservice
+  [`services/crf`](/atlas/packages/services/crf/) expose sa propre spécification
+  sur la route `GET /openapi.json`, avec une documentation interactive sur
+  `/docs`. Côté applications SvelteKit, `ecrin` et `find-an-expert` servent
+  chacune la spécification OpenAPI de leur API `v1` (consultable sous
+  `/api/docs`) ; `amarre` annote ses routes avec des métadonnées OpenAPI dérivées
+  de ses schémas de validation Zod — un dictionnaire de types et de règles — sans
+  pour autant exposer (à ce jour) de document assemblé dans le dépôt.
+
+Ces contrats OpenAPI sont aujourd'hui **générés depuis le code** plutôt
+qu'écrits avant lui (« contrat d'abord ») ; c'est un écart documenté dans
+l'[audit](/atlas/quality/normes/).
 
 ## Pourquoi cette répartition
 

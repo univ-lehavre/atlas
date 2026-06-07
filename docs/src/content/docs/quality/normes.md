@@ -11,9 +11,48 @@ ne figurent pas ici tant qu'elles ne sont pas implémentées.
 
 ## DevSecOps
 
-La sécurité et la qualité sont intégrées à la chaîne de livraison, pas ajoutées
-après coup. Le périmètre couvre le dépôt entier
-([ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die)).
+Le **DevSecOps** est une approche qui intègre la sécurité à _toutes_ les étapes
+du développement (code, tests, intégration, livraison) plutôt que de la traiter
+comme un contrôle final séparé : ici, la sécurité et la qualité sont intégrées à
+la chaîne de livraison, pas ajoutées après coup. Le périmètre couvre le dépôt
+entier ([ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die)).
+
+Chaque ligne du tableau ci-dessous est une **pratique de sécurité** automatisée.
+Voici ce que chacune vérifie et pourquoi elle compte :
+
+- **Analyse statique (SAST, _Static Application Security Testing_)** — analyse le
+  code source **sans l'exécuter**, à la recherche de motifs de vulnérabilités
+  (injections, données utilisateur mal validées, expressions régulières
+  coûteuses…). C'est important parce que ces défauts sont attrapés _avant_ même
+  que le code tourne, donc au coût de correction le plus bas. Atlas en utilise
+  **deux** outils complémentaires : **CodeQL** (moteur de GitHub qui représente
+  le code en base de données interrogeable) et **Semgrep** (règles par motifs,
+  dont l'OWASP Top 10) — voir la page [CI](/atlas/quality/ci-pipeline/) pour la
+  différence entre les deux.
+- **Détection de secrets** — recherche les mots de passe, jetons d'API et clés
+  privées **accidentellement écrits dans le code** (outil **gitleaks**). À quoi
+  ça sert : un secret commité reste dans l'historique Git même après suppression
+  et peut être exploité par quiconque lit le dépôt ; le détecter au plus tôt
+  évite une fuite durable.
+- **Analyse des dépendances** — inspecte les bibliothèques tierces que le projet
+  installe, pour repérer celles qui ont une **vulnérabilité connue** ou une
+  **licence incompatible**. Important parce que l'essentiel du code qui s'exécute
+  en production vient de ces dépendances, pas du code maison.
+- **Test dynamique (DAST, _Dynamic Application Security Testing_)** — sonde une
+  application **en cours d'exécution** (outil OWASP ZAP, en mode _baseline_,
+  c'est-à-dire passif et non agressif) à la recherche de configurations
+  défaillantes (en-têtes de sécurité manquants, cookies non protégés…). Complète
+  le SAST, qui ne voit que le code au repos.
+- **SBOM (_Software Bill of Materials_)** — une **nomenclature logicielle** :
+  l'inventaire exhaustif et horodaté de toutes les dépendances embarquées. Sert,
+  en cas d'alerte sur une bibliothèque, à savoir immédiatement si le projet est
+  concerné et où.
+- **Provenance des artefacts** — une **attestation cryptographique** liant chaque
+  paquet publié à son code source et au _workflow_ qui l'a construit, signée via
+  OIDC. Permet à qui installe le paquet de vérifier qu'il n'a pas été falsifié.
+- **SLA de remédiation** — les délais maximaux de correction d'un problème de
+  sécurité (_finding_) selon sa gravité. Garantit qu'un défaut détecté n'est pas
+  laissé sans suite.
 
 | Pratique                     | Comment c'est appliqué                                                                                                                                           |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,9 +67,21 @@ après coup. Le périmètre couvre le dépôt entier
 
 ## Qualité logicielle et intégrité du dépôt
 
-La chaîne de garde-fous s'exécute en local (hooks Git) **et** en intégration
-continue, et n'est jamais contournée
+La chaîne de garde-fous s'exécute en local (via les **hooks Git** — des scripts
+que Git lance automatiquement à des moments précis, par exemple avant un _commit_
+ou un _push_, pour bloquer du code non conforme) **et** en intégration continue
+(_CI_ : les mêmes vérifications rejouées sur les serveurs de GitHub à chaque
+proposition de modification), et n'est jamais contournée
 ([ADR 0015](/atlas/decisions/0015-hooks-git-lefthook-jamais-bypass)).
+
+Quelques termes employés dans le tableau : un **commit** est un enregistrement
+daté d'un lot de modifications ; une **branche** est une ligne de travail isolée ;
+`main` est la branche de référence du projet. Les outils nommés —
+[**knip**](/atlas/glossary/) (détecte le _code mort_ : exports, imports et
+fichiers jamais utilisés), [**jscpd**](/atlas/glossary/) (détecte le
+_copier-coller_, c'est-à-dire les blocs dupliqués) et **size-limit** (vérifie
+que la taille des fichiers livrés au navigateur ne dépasse pas un budget) —
+servent tous à empêcher la dette technique de s'accumuler silencieusement.
 
 | Pratique                     | Comment c'est appliqué                                                                                                            |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |

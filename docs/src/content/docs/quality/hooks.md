@@ -2,7 +2,7 @@
 title: Hooks Git
 ---
 
-Quelques mots de vocabulaire d'abord ([glossaire complet](/atlas/glossary/)) : [**Git**](/atlas/glossary/) est le système de contrôle de version qui enregistre l'historique du code ; un [**commit**](/atlas/glossary/) est un enregistrement daté de modifications accompagné d'un message ; un [**push**](/atlas/glossary/) envoie ses commits vers GitHub ; une [**pull request**](/atlas/glossary/) propose de fusionner une branche dans `main`, avec revue.
+Quelques mots de vocabulaire d'abord ([glossaire complet](/atlas/glossary/)) : [**Git**](/atlas/glossary/) est le système de contrôle de version qui enregistre l'historique du code ; un [**commit**](/atlas/glossary/) est un enregistrement daté de modifications accompagné d'un message ; une **branche** est une ligne de travail parallèle dans l'historique, sur laquelle on accumule des commits sans toucher à la branche principale `main` ; un [**push**](/atlas/glossary/) envoie ses commits vers GitHub ; une [**pull request**](/atlas/glossary/) propose le **merge** (la fusion) d'une branche dans `main`, c'est-à-dire l'intégration de ses commits dans la branche principale, après revue.
 
 Un **hook Git** est un petit script que Git lance automatiquement à certains moments du cycle de vie d'un commit (avant un commit, au moment de rédiger le message, avant un push…). Atlas s'en sert pour vérifier en local — sur la machine du contributeur — ce qui sera vérifié de toute façon en CI. Avantage : on découvre les erreurs immédiatement, sans attendre 3 min de pipeline pour une virgule oubliée.
 
@@ -56,7 +56,7 @@ Un script `strip-email-line` (intégré à lefthook) supprime aussi les lignes c
 
 ## Pre-push (plus lent)
 
-Déclenché à chaque `git push`, avant l'envoi au remote. S'exécute sur **l'ensemble du dépôt**, donc plus lent (~30 s à 2 min selon la machine).
+Déclenché à chaque `git push`, avant l'envoi au _remote_ (le dépôt distant hébergé sur GitHub). S'exécute sur **l'ensemble du dépôt**, donc plus lent (~30 s à 2 min selon la machine).
 
 | Hook             | Commande                         | Rôle                                                                            |
 | ---------------- | -------------------------------- | ------------------------------------------------------------------------------- |
