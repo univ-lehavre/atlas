@@ -1,4 +1,4 @@
-import type { Effect } from "effect";
+import { Schema, type Effect } from "effect";
 import type {
   FetchError,
   ResponseParseError,
@@ -6,6 +6,7 @@ import type {
 import type {
   AuthorsResult,
   WorksResult,
+  CitationID,
   FetchCitationAPIOptions,
 } from "@univ-lehavre/atlas-citation-types";
 import type { ORCID } from "@univ-lehavre/atlas-citation-types";
@@ -18,13 +19,121 @@ const OPENALEX_BASE_URL = "https://api.openalex.org";
 const DEFAULT_RATE_LIMIT = { limit: 1, interval: "1 seconds" } as const;
 const DEFAULT_PER_PAGE = 100;
 
-const buildConfig = (
+/**
+ * Branded `CitationID` schema: decoded as a plain `string`, retyped to the
+ * branded type so item schemas match the `@univ-lehavre/atlas-citation-types`
+ * interfaces (écart E13, ADR 0047).
+ */
+const CitationIDSchema = Schema.String as unknown as Schema.Schema<CitationID>;
+
+/**
+ * Effect `Schema` for a single OpenAlex `/authors` result item, matching the
+ * `AuthorsResult` interface (écart E13, ADR 0047). Only the fields declared by
+ * the interface are validated; OpenAlex's extra keys are dropped at decode.
+ */
+const AuthorsResultSchema: Schema.Schema<AuthorsResult> = Schema.Struct({
+  id: Schema.String,
+  orcid: Schema.String,
+  display_name: Schema.String,
+  display_name_alternatives: Schema.Array(Schema.String),
+  affiliations: Schema.Array(
+    Schema.Struct({
+      institution: Schema.Struct({
+        id: Schema.String,
+        ror: Schema.String,
+        display_name: Schema.String,
+        country_code: Schema.String,
+        type: Schema.String,
+        lineage: Schema.Array(Schema.String),
+      }),
+      years: Schema.Array(Schema.Number),
+    }),
+  ),
+  works_api_url: Schema.String,
+  updated_date: Schema.String,
+  created_date: Schema.String,
+}) as unknown as Schema.Schema<AuthorsResult>;
+
+/**
+ * Effect `Schema` for a single OpenAlex `/works` result item, matching the
+ * `WorksResult` interface (écart E13, ADR 0047). Only the fields declared by
+ * the interface are validated; OpenAlex's extra keys are dropped at decode.
+ */
+const WorksResultSchema: Schema.Schema<WorksResult> = Schema.Struct({
+  id: CitationIDSchema,
+  doi: Schema.NullOr(Schema.String),
+  title: Schema.String,
+  display_name: Schema.String,
+  publication_year: Schema.Number,
+  type: Schema.String,
+  authorships: Schema.Array(
+    Schema.Struct({
+      author_position: Schema.String,
+      author: Schema.Struct({
+        id: Schema.String,
+        display_name: Schema.NullOr(Schema.String),
+        orcid: Schema.String,
+      }),
+      institutions: Schema.Array(
+        Schema.Struct({
+          id: CitationIDSchema,
+          display_name: Schema.String,
+          ror: Schema.String,
+          country_code: Schema.String,
+          type: Schema.String,
+          lineage: Schema.Array(Schema.String),
+        }),
+      ),
+      raw_author_name: Schema.String,
+      raw_affiliation_strings: Schema.Array(Schema.String),
+      affiliations: Schema.Array(
+        Schema.Struct({
+          raw_affiliation_string: Schema.String,
+          institution_ids: Schema.Array(CitationIDSchema),
+        }),
+      ),
+    }),
+  ),
+  topics: Schema.optional(
+    Schema.Array(
+      Schema.Struct({
+        id: Schema.String,
+        display_name: Schema.String,
+        score: Schema.Number,
+        subfield: Schema.Struct({
+          id: Schema.String,
+          display_name: Schema.String,
+        }),
+        field: Schema.Struct({
+          id: Schema.String,
+          display_name: Schema.String,
+        }),
+        domain: Schema.Struct({
+          id: Schema.String,
+          display_name: Schema.String,
+        }),
+      }),
+    ),
+  ),
+  keywords: Schema.optional(
+    Schema.Array(
+      Schema.Struct({
+        id: Schema.String,
+        display_name: Schema.String,
+        score: Schema.Number,
+      }),
+    ),
+  ),
+}) as unknown as Schema.Schema<WorksResult>;
+
+const buildConfig = <T>(
   endpoint: string,
   fetchAPIOptions: FetchCitationAPIOptions,
   config: CitationConfig,
-  onRateLimit?: FetchAPIMinimalConfig["onRateLimit"],
-  onPage?: FetchAPIMinimalConfig["onPage"],
-): FetchAPIMinimalConfig => ({
+  itemSchema: Schema.Schema<T>,
+  onRateLimit?: FetchAPIMinimalConfig<T>["onRateLimit"],
+  onPage?: FetchAPIMinimalConfig<T>["onPage"],
+): FetchAPIMinimalConfig<T> => ({
   userAgent: config.userAgent,
   rateLimit: DEFAULT_RATE_LIMIT,
   apiURL: config.apiURL ?? OPENALEX_BASE_URL,
@@ -34,6 +143,7 @@ const buildConfig = (
     ...(config.apiKey === undefined ? {} : { api_key: config.apiKey }),
   },
   perPage: DEFAULT_PER_PAGE,
+  itemSchema,
   onRateLimit,
   onPage,
 });
@@ -48,7 +158,12 @@ const searchAuthorsByName = (
   config: CitationConfig,
 ): Effect.Effect<readonly AuthorsResult[], FetchError | ResponseParseError> =>
   fetchAPIResults<AuthorsResult>(
-    buildConfig("authors", { search: names.join("|") }, config),
+    buildConfig(
+      "authors",
+      { search: names.join("|") },
+      config,
+      AuthorsResultSchema,
+    ),
   );
 
 /**
@@ -61,7 +176,12 @@ const searchAuthorsByORCID = (
   config: CitationConfig,
 ): Effect.Effect<readonly AuthorsResult[], FetchError | ResponseParseError> =>
   fetchAPIResults<AuthorsResult>(
-    buildConfig("authors", { filter: `orcid:${orcids.join("|")}` }, config),
+    buildConfig(
+      "authors",
+      { filter: `orcid:${orcids.join("|")}` },
+      config,
+      AuthorsResultSchema,
+    ),
   );
 
 /**
@@ -74,7 +194,12 @@ const searchWorksByAuthorIDs = (
   config: CitationConfig,
 ): Effect.Effect<readonly WorksResult[], FetchError | ResponseParseError> =>
   fetchAPIResults<WorksResult>(
-    buildConfig("works", { filter: `author.id:${ids.join("|")}` }, config),
+    buildConfig(
+      "works",
+      { filter: `author.id:${ids.join("|")}` },
+      config,
+      WorksResultSchema,
+    ),
   );
 
 /**
@@ -87,14 +212,15 @@ const searchWorksByAuthorIDs = (
 const searchWorksByAuthorID = (
   id: string,
   config: CitationConfig,
-  onRateLimit?: FetchAPIMinimalConfig["onRateLimit"],
-  onPage?: FetchAPIMinimalConfig["onPage"],
+  onRateLimit?: FetchAPIMinimalConfig<WorksResult>["onRateLimit"],
+  onPage?: FetchAPIMinimalConfig<WorksResult>["onPage"],
 ): Effect.Effect<readonly WorksResult[], FetchError | ResponseParseError> =>
   fetchAPIResults<WorksResult>(
     buildConfig(
       "works",
       { filter: `author.id:${id}` },
       config,
+      WorksResultSchema,
       onRateLimit,
       onPage,
     ),
@@ -110,7 +236,12 @@ const searchWorksByORCID = (
   config: CitationConfig,
 ): Effect.Effect<readonly WorksResult[], FetchError | ResponseParseError> =>
   fetchAPIResults<WorksResult>(
-    buildConfig("works", { filter: `author.orcid:${orcid}` }, config),
+    buildConfig(
+      "works",
+      { filter: `author.orcid:${orcid}` },
+      config,
+      WorksResultSchema,
+    ),
   );
 
 /**
@@ -123,7 +254,12 @@ const searchWorksByDOI = (
   config: CitationConfig,
 ): Effect.Effect<readonly WorksResult[], FetchError | ResponseParseError> =>
   fetchAPIResults<WorksResult>(
-    buildConfig("works", { filter: `doi:${dois.join("|")}` }, config),
+    buildConfig(
+      "works",
+      { filter: `doi:${dois.join("|")}` },
+      config,
+      WorksResultSchema,
+    ),
   );
 
 export {

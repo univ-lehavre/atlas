@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Effect, Queue } from "effect";
+import { Effect, Queue, Schema } from "effect";
 import { fetchAPIResults, fetchAPIQueue } from "./api.js";
+
+// Item schema for the {id} result shape used across these tests.
+const ItemSchema = Schema.Struct({ id: Schema.String });
 
 vi.mock("@univ-lehavre/atlas-fetch-one-api-page", () => ({
   fetchOnePage: vi.fn(),
@@ -51,6 +54,7 @@ describe("fetchAPIResults", () => {
         rateLimit: { limit: 1, interval: "1 seconds" },
         fetchAPIOptions: { search: "ocean" },
         perPage: 2,
+        itemSchema: ItemSchema,
         onPage: (page, total) => pages.push([page, total]),
         onRateLimit: (info) => rateLimits.push(info),
       }),
@@ -105,6 +109,7 @@ describe("fetchAPIQueue", () => {
         rateLimit: { limit: 1, interval: "1 seconds" },
         fetchAPIOptions: { search: "ocean" },
         perPage: 2,
+        itemSchema: ItemSchema,
       });
       yield* worker;
       const drained = yield* Queue.takeAll(queue);

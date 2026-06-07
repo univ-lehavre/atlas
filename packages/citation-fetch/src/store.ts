@@ -1,4 +1,4 @@
-import { Effect, Ref } from "effect";
+import { Effect, Ref, Schema } from "effect";
 
 interface APIResponse<T> {
   meta: {
@@ -8,6 +8,28 @@ interface APIResponse<T> {
   };
   results: T[];
 }
+
+/**
+ * Builds the Effect `Schema` for a paginated `APIResponse<T>` from the schema
+ * of a single result item (écart E13, ADR 0047). `meta` is decoded leniently
+ * (extra OpenAlex fields like `db_response_time_ms` are kept) so only the
+ * `results[]` element shape is strictly validated by the caller's item schema.
+ */
+const apiResponseSchema = <A>(
+  item: Schema.Schema<A>,
+): Schema.Schema<APIResponse<A>> =>
+  Schema.Struct({
+    meta: Schema.Struct(
+      {
+        count: Schema.Number,
+        page: Schema.Number,
+        per_page: Schema.Number,
+      },
+      // OpenAlex adds extra meta fields (db_response_time_ms, …) — tolerate them.
+      Schema.Record({ key: Schema.String, value: Schema.Unknown }),
+    ),
+    results: Schema.Array(item),
+  }) as unknown as Schema.Schema<APIResponse<A>>;
 
 interface IState {
   page: number;
@@ -73,4 +95,10 @@ class Store<T> {
   }
 }
 
-export { Store, initialState, type IState, type APIResponse };
+export {
+  Store,
+  initialState,
+  apiResponseSchema,
+  type IState,
+  type APIResponse,
+};

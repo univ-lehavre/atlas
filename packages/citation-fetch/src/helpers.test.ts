@@ -1,7 +1,8 @@
 import { describe, it, expect } from "@effect/vitest";
 import { assertEquals } from "@effect/vitest/utils";
 import { vi } from "vitest";
-import { Effect, Queue, Ref, RateLimiter } from "effect";
+import { Effect, Queue, Ref, RateLimiter, Schema } from "effect";
+import { ResponseParseError } from "@univ-lehavre/atlas-fetch-one-api-page";
 import type { Query } from "@univ-lehavre/atlas-fetch-one-api-page";
 import {
   buildEndpointURL,
@@ -169,37 +170,44 @@ describe("helpers", () => {
   );
 
   it.effect(
-    "fetchAllPages stops paginating when a malformed response arrives",
+    "fetchAllPages fails loudly when a page fetch reports a parse error",
     () =>
       Effect.gen(function* () {
+        // E13: malformed pages no longer break pagination silently. The page
+        // body is decoded against its Schema in fetchPage, so an unexpected
+        // shape surfaces as a ResponseParseError that fetchAllPages propagates
+        // (instead of the former shallow guard + silent break).
         const store = yield* Effect.andThen(
           Ref.make(initialState),
           (s) => new Store<number>(s),
         );
 
         let call = 0;
-        const fetchPage = (q: Query) =>
-          Effect.sync((): APIResponse<number> => {
-            call += 1;
-            if (call === 1) {
-              return {
+        const fetchPage = (q: Query) => {
+          call += 1;
+          return call === 1
+            ? Effect.succeed<APIResponse<number>>({
                 meta: { count: 30, page: 1, per_page: 10 },
                 results: [1, 2, 3],
-              };
-            }
-            return { not: "valid" } as unknown as APIResponse<number>;
-          });
+              })
+            : Effect.fail(
+                new ResponseParseError(
+                  "Response did not match the expected schema",
+                ),
+              );
+        };
 
         const params: Query = { per_page: 10 };
         const onPage = vi.fn();
-        const results = yield* fetchAllPages<number>(
-          store,
-          fetchPage,
-          params,
-          onPage,
+        const either = yield* Effect.either(
+          fetchAllPages<number>(store, fetchPage, params, onPage),
         );
 
-        expect(results).toEqual([1, 2, 3]);
+        expect(either._tag).toBe("Left");
+        if (either._tag === "Left") {
+          expect(either.left.name).toBe("ResponseParseError");
+        }
+        // The first (valid) page was processed before the malformed one failed.
         expect(call).toBe(2);
         expect(onPage).toHaveBeenCalledTimes(1);
       }),
@@ -222,10 +230,14 @@ describe("helpers", () => {
           const fetchOnePage = vi.fn(() => Effect.succeed(fakeResponse));
 
           const url = buildEndpointURL("https://api.openalex.org", "works");
+          const dummySchema = Schema.Struct({
+            value: Schema.Number,
+          }) as unknown as Schema.Schema<Dummy>;
           const fetcher = yield* makeRateLimitedFetcher<Dummy>(
             url,
             "tester/1.0",
             {} as unknown as RateLimiter.RateLimiter.Options,
+            dummySchema,
             undefined,
             { makeRateLimiter, fetchOnePage },
           );

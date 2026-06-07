@@ -1,4 +1,4 @@
-import { Effect, RateLimiter } from "effect";
+import { Effect, RateLimiter, Schema } from "effect";
 
 import {
   fetchOnePage,
@@ -9,6 +9,28 @@ import { getEnv } from "../config.js";
 import type { ConfigError } from "effect/ConfigError";
 import { FetchError, StatusError } from "../errors.js";
 import type { CitationResponse, Query } from "../types/index.js";
+
+/**
+ * Effect `Schema` for the paginated `CitationResponse<T>` envelope returned by
+ * OpenAlex (écart E13, ADR 0047). `fetchAPI` is generic over the result-item
+ * type `T` but its public signature does not carry a per-item schema, so the
+ * envelope is decoded with `results` left as `Schema.Unknown`: the `meta`
+ * pagination fields are validated (they drive the loop) while each item is
+ * passed through untouched for the caller to validate downstream. `meta`
+ * tolerates extra OpenAlex fields (e.g. `db_response_time_ms`).
+ */
+const citationResponseSchema: Schema.Schema<CitationResponse<unknown>> =
+  Schema.Struct({
+    meta: Schema.Struct(
+      {
+        count: Schema.Number,
+        page: Schema.Number,
+        per_page: Schema.Number,
+      },
+      Schema.Record({ key: Schema.String, value: Schema.Unknown }),
+    ),
+    results: Schema.Array(Schema.Unknown),
+  }) as unknown as Schema.Schema<CitationResponse<unknown>>;
 
 const fetchAPI = <T>(
   base_url: URL,
@@ -74,7 +96,14 @@ const exhaust = <T>(
         params["page"] = state;
         yield* Effect.logInfo(params["page"]);
         const pageResult = yield* ratelimiter(
-          fetchOnePage<CitationResponse<T>>(base_url, params, user_agent),
+          fetchOnePage<CitationResponse<T>>(
+            base_url,
+            params,
+            user_agent,
+            // `T` items are decoded as `Schema.Unknown` and validated by the
+            // caller downstream; only `meta` pagination is checked here.
+            citationResponseSchema as Schema.Schema<CitationResponse<T>>,
+          ),
         ).pipe(
           Effect.mapError(
             (e: FetchOnePageError | ResponseParseError) =>

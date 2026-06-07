@@ -17,7 +17,7 @@ import {
   type FetchAPIMinimalConfig,
 } from "./helpers.js";
 
-interface FetchAPIConfig<T> extends FetchAPIMinimalConfig {
+interface FetchAPIConfig<T> extends FetchAPIMinimalConfig<T> {
   now?: boolean;
   store?: Store<T>;
   queue?: Queue.Queue<T>;
@@ -42,6 +42,7 @@ const fetchAPIQueue = <T>(
         url,
         opts.userAgent,
         opts.rateLimit,
+        opts.itemSchema,
         opts.onRateLimit,
       );
 
@@ -58,7 +59,7 @@ const fetchAPIQueue = <T>(
   );
 
 const fetchAPIResults = <T>(
-  opts: FetchAPIMinimalConfig,
+  opts: FetchAPIMinimalConfig<T>,
 ): Effect.Effect<readonly T[], FetchError | ResponseParseError> =>
   Effect.scoped(
     Effect.gen(function* () {
@@ -69,6 +70,7 @@ const fetchAPIResults = <T>(
         url,
         opts.userAgent,
         opts.rateLimit,
+        opts.itemSchema,
         opts.onRateLimit,
       );
 

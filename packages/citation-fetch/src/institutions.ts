@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
 import type {
   FetchError,
   ResponseParseError,
@@ -33,6 +33,39 @@ interface AutocompleteResponse {
   };
   results: AutocompleteInstitution[];
 }
+
+/**
+ * Effect `Schema` for a single OpenAlex autocomplete institution item
+ * (écart E13, ADR 0047). Unknown payload keys are dropped at decode time, so
+ * keeping the Struct to the interface's fields is correct and safe.
+ */
+const AutocompleteInstitutionSchema: Schema.Schema<AutocompleteInstitution> =
+  Schema.Struct({
+    id: Schema.String,
+    display_name: Schema.String,
+    hint: Schema.NullOr(Schema.String),
+    cited_by_count: Schema.Number,
+    works_count: Schema.NullOr(Schema.Number),
+    entity_type: Schema.Literal("institution"),
+    external_id: Schema.NullOr(Schema.String),
+  });
+
+/**
+ * Effect `Schema` for the autocomplete page body. `meta.db_response_time_ms` is
+ * an autocomplete-specific field (kept typed), so the response shape is built
+ * directly rather than via the generic `apiResponseSchema`.
+ */
+const AutocompleteResponseSchema = Schema.Struct({
+  meta: Schema.Struct({
+    count: Schema.Number,
+    db_response_time_ms: Schema.Number,
+    page: Schema.Number,
+    per_page: Schema.Number,
+  }),
+  results: Schema.Array(AutocompleteInstitutionSchema),
+  // Schema.Array yields a `readonly` element type; the interface uses a mutable
+  // array, so the decoded shape is structurally equivalent (same as store.ts).
+}) as unknown as Schema.Schema<AutocompleteResponse>;
 
 interface Institution {
   id: string;
@@ -76,10 +109,11 @@ const searchInstitutions = (
           ...(config.apiKey === undefined ? {} : { api_key: config.apiKey }),
         };
 
-        const { data, rateLimit } = yield* fetchOnePage<AutocompleteResponse>(
+        const { data, rateLimit } = yield* fetchOnePage(
           endpointURL,
           params,
           config.userAgent,
+          AutocompleteResponseSchema,
         );
 
         return {

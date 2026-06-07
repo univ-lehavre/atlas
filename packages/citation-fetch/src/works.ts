@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
 import type {
   FetchError,
   ResponseParseError,
@@ -10,26 +10,40 @@ import type { CitationConfig } from "./institutions.js";
 const OPENALEX_BASE_URL = "https://api.openalex.org";
 const YEARS_LOOKBACK = 5;
 
-interface WorksMetaResponse {
-  meta: {
-    count: number;
-    db_response_time_ms: number;
-  };
-}
+/**
+ * Effect `Schema` for the meta-only OpenAlex `/works` and `/authors` payloads
+ * we consume (écart E13, ADR 0047). Not an `APIResponse` shape — these requests
+ * use `select=id&per_page=1`, so only `meta.count` / `meta.db_response_time_ms`
+ * are read. Extra OpenAlex fields are dropped at decode time by Struct.
+ */
+const WorksMetaResponseSchema = Schema.Struct({
+  meta: Schema.Struct({
+    count: Schema.Number,
+    db_response_time_ms: Schema.Number,
+  }),
+});
 
-interface WorksGroupByItem {
-  key: string;
-  key_display_name: string;
-  count: number;
-}
+/**
+ * Effect `Schema` for the OpenAlex `group_by` `/works` payload (écart E13).
+ * Carries `meta` plus the `group_by` buckets used to build the per-year counts.
+ */
+const WorksGroupByResponseSchema = Schema.Struct({
+  meta: Schema.Struct({
+    count: Schema.Number,
+    db_response_time_ms: Schema.Number,
+  }),
+  group_by: Schema.Array(
+    Schema.Struct({
+      key: Schema.String,
+      key_display_name: Schema.String,
+      count: Schema.Number,
+    }),
+  ),
+});
 
-interface WorksGroupByResponse {
-  meta: {
-    count: number;
-    db_response_time_ms: number;
-  };
-  group_by: WorksGroupByItem[];
-}
+/** Item shape of the `group_by` buckets, derived from the schema. */
+type WorksGroupByItem =
+  (typeof WorksGroupByResponseSchema.Type)["group_by"][number];
 
 interface YearlyArticleCount {
   year: number | "before";
@@ -109,10 +123,11 @@ const getWorksCount = (
           config.apiKey,
         );
 
-        const { data, rateLimit } = yield* fetchOnePage<WorksMetaResponse>(
+        const { data, rateLimit } = yield* fetchOnePage(
           endpointURL,
           params,
           config.userAgent,
+          WorksMetaResponseSchema,
         );
 
         return {
@@ -211,20 +226,23 @@ const getInstitutionStats = (
 
         const [worksResult, articlesResult, authorsResult] = yield* Effect.all(
           [
-            fetchOnePage<WorksMetaResponse>(
+            fetchOnePage(
               new URL(`${baseURL}/works`),
               worksParams,
               config.userAgent,
+              WorksMetaResponseSchema,
             ),
-            fetchOnePage<WorksGroupByResponse>(
+            fetchOnePage(
               new URL(`${baseURL}/works`),
               articlesGroupByParams,
               config.userAgent,
+              WorksGroupByResponseSchema,
             ),
-            fetchOnePage<WorksMetaResponse>(
+            fetchOnePage(
               new URL(`${baseURL}/authors`),
               authorsParams,
               config.userAgent,
+              WorksMetaResponseSchema,
             ),
           ],
           { concurrency: "unbounded" },

@@ -1,4 +1,5 @@
 import { Effect, RateLimiter, Queue, Ref } from "effect";
+import type { Schema } from "effect";
 import type { FetchCitationAPIOptions } from "@univ-lehavre/atlas-citation-types";
 import type {
   FetchError,
@@ -9,11 +10,17 @@ import {
   fetchOnePage,
   type Query,
 } from "@univ-lehavre/atlas-fetch-one-api-page";
-import { Store, type APIResponse, initialState, type IState } from "./store.js";
+import {
+  Store,
+  type APIResponse,
+  apiResponseSchema,
+  initialState,
+  type IState,
+} from "./store.js";
 
 export type { RateLimitInfo } from "@univ-lehavre/atlas-fetch-one-api-page";
 
-interface FetchAPIMinimalConfigBase {
+interface FetchAPIMinimalConfigBase<T> {
   readonly userAgent: string;
   readonly rateLimit: RateLimiter.RateLimiter.Options;
   readonly apiURL: string;
@@ -21,6 +28,11 @@ interface FetchAPIMinimalConfigBase {
   readonly fetchAPIOptions: FetchCitationAPIOptions;
   readonly perPage: number;
   readonly maxPages?: number;
+  /**
+   * Schema for a single result item; the page body is decoded against the
+   * derived `APIResponse<T>` schema instead of an unchecked cast (écart E13).
+   */
+  readonly itemSchema: Schema.Schema<T>;
 }
 
 /** Called after each page with the latest rate limit info, if available. */
@@ -29,7 +41,7 @@ type OnRateLimit = (info: RateLimitInfo) => void;
 /** Called after each page with the current page index and total pages (once known). */
 type OnPage = (page: number, total: number | null) => void;
 
-export type FetchAPIMinimalConfig = FetchAPIMinimalConfigBase & {
+export type FetchAPIMinimalConfig<T> = FetchAPIMinimalConfigBase<T> & {
   readonly onRateLimit?: OnRateLimit;
   readonly onPage?: OnPage;
 };
@@ -37,7 +49,9 @@ export type FetchAPIMinimalConfig = FetchAPIMinimalConfigBase & {
 export const buildEndpointURL = (apiURL: string, endpoint: string): URL =>
   new URL(`${apiURL}/${endpoint}`);
 
-export const buildInitialParams = (opts: FetchAPIMinimalConfig): Query => ({
+export const buildInitialParams = <T>(
+  opts: FetchAPIMinimalConfig<T>,
+): Query => ({
   ...opts.fetchAPIOptions,
   per_page: opts.perPage,
 });
@@ -53,6 +67,7 @@ export const makeRateLimitedFetcher = <T>(
   url: URL,
   userAgent: string,
   rateLimit: RateLimiter.RateLimiter.Options,
+  itemSchema: Schema.Schema<T>,
   onRateLimit?: (info: RateLimitInfo) => void,
   deps?: {
     makeRateLimiter?: MakeRateLimiterFn;
@@ -61,6 +76,9 @@ export const makeRateLimitedFetcher = <T>(
 ) =>
   Effect.gen(function* () {
     const makeLimiter = deps?.makeRateLimiter ?? RateLimiter.make;
+    // The response schema is derived from the caller's item schema; the page
+    // body is decoded against it (écart E13) instead of an unchecked cast.
+    const responseSchema = apiResponseSchema(itemSchema);
     const foa: FetchOnePageFn<T> =
       deps?.fetchOnePage ??
       ((
@@ -68,7 +86,7 @@ export const makeRateLimitedFetcher = <T>(
         p,
         ua,
       ): Effect.Effect<APIResponse<T>, FetchError | ResponseParseError> =>
-        fetchOnePage<APIResponse<T>>(u, p, ua).pipe(
+        fetchOnePage(u, p, ua, responseSchema).pipe(
           Effect.map((result) =>
             result.rateLimit !== undefined && onRateLimit !== undefined
               ? (onRateLimit(result.rateLimit), result.data)
@@ -123,15 +141,12 @@ export const makeWorker = <T>(
 
 /**
  * Fetches all pages and collects results into a plain array (no Queue scope issues).
+ *
+ * Malformed pages no longer break pagination silently: `fetchPage` decodes each
+ * page against its Schema, so an unexpected shape fails loudly with a
+ * `ResponseParseError` carrying the `ParseError` (écart E13) rather than the
+ * former shallow `isValidAPIResponse` guard + silent `break`.
  */
-const isValidAPIResponse = <T>(r: unknown): r is APIResponse<T> =>
-  typeof r === "object" &&
-  r !== null &&
-  "meta" in r &&
-  typeof (r as Record<string, unknown>)["meta"] === "object" &&
-  "results" in r &&
-  Array.isArray((r as Record<string, unknown>)["results"]);
-
 export const fetchAllPages = <T>(
   store: Store<T>,
   fetchPage: (
@@ -146,8 +161,6 @@ export const fetchAllPages = <T>(
     while (yield* store.hasMorePages()) {
       params["page"] = yield* store.page;
       const raw: APIResponse<T> = yield* fetchPage(params);
-      // eslint-disable-next-line functional/no-conditional-statements -- guard: stop pagination on malformed response
-      if (!isValidAPIResponse<T>(raw)) break;
       yield* Ref.update(acc, (xs) => [...xs, ...raw.results]);
       yield* store.addNewItems(raw);
       yield* store.incPage();

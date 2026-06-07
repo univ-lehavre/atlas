@@ -64,6 +64,25 @@ describe("searchInstitutions", () => {
     expect(result.meta.responseTimeMs).toBe(42);
   });
 
+  it("falls back to the default base URL when apiURL is not provided", async () => {
+    mockFetch.mockReturnValue(
+      Effect.succeed({
+        data: {
+          meta: { count: 0, db_response_time_ms: 0, page: 1, per_page: 10 },
+          results: [],
+        },
+        rateLimit: undefined,
+      }),
+    );
+
+    await Effect.runPromise(
+      searchInstitutions("havre", { userAgent: "test/1.0" }),
+    );
+
+    const [url] = mockFetch.mock.calls[0] as [URL];
+    expect(url.toString()).toContain("https://api.openalex.org");
+  });
+
   it("passes apiKey when provided", async () => {
     mockFetch.mockReturnValue(
       Effect.succeed({
