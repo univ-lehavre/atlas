@@ -1198,6 +1198,9 @@ importers:
       '@univ-lehavre/atlas-shared-config':
         specifier: workspace:*
         version: link:../../config/shared-config
+      '@univ-lehavre/atlas-test-utils-effect':
+        specifier: workspace:*
+        version: link:../test-utils-effect
       eslint:
         specifier: ^10.4.1
         version: 10.4.1(jiti@2.7.0)

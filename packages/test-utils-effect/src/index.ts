@@ -74,10 +74,16 @@ const makeRecorderInternals = (): RecorderInternals => {
 };
 
 /**
- * Builds a standalone {@link Recorder} not tied to any service. Useful when a
- * test wants to record calls into a hand-written double it builds itself.
+ * Builds a standalone {@link Recorder} plus the `record(method, args)` function
+ * that appends to it. Use when a test builds its own double by hand and wants
+ * to record calls into it: call `record("name", [arg])` from the stub, assert
+ * on `recorder.calls`. (For the common case — wrapping a service impl — prefer
+ * {@link recordingLayer}, which does the wrapping for you.)
  */
-export const makeRecorder = (): Recorder => makeRecorderInternals().recorder;
+export const makeRecorder = (): {
+  readonly recorder: Recorder;
+  readonly record: (method: string, args: readonly unknown[]) => void;
+} => makeRecorderInternals();
 
 /**
  * Wraps every function-valued property of a service implementation so each
@@ -110,5 +116,30 @@ export const recordingLayer = <I, S extends object>(
         : [key, value],
     ),
   ) as S;
+  return { layer: Layer.succeed(tag, wrapped), recorder };
+};
+
+/**
+ * Like {@link recordingLayer} but for a service whose value is a **bare
+ * function** rather than an object of methods (e.g. a `FetchOnePage`-style tag
+ * holding a single callable). Each call is recorded under `recordedAs` (default
+ * `"call"`) before delegating to `impl`. Returns the layer plus the
+ * {@link Recorder}.
+ *
+ * This is the function-shaped counterpart to `recordingLayer`: the layer-native
+ * replacement for `vi.mock` + `vi.mocked(fn).mock.calls` when the mocked thing
+ * is a lone function exposed as a service.
+ */
+export const recordingFnLayer = <I, F extends (...args: never[]) => unknown>(
+  tag: Context.Tag<I, F>,
+  impl: F,
+  recordedAs = "call",
+): { readonly layer: Layer.Layer<I>; readonly recorder: Recorder } => {
+  const { recorder, record } = makeRecorderInternals();
+  const delegate = impl as unknown as (...a: unknown[]) => unknown;
+  const wrapped = ((...args: unknown[]) => {
+    record(recordedAs, args);
+    return delegate(...args);
+  }) as unknown as F;
   return { layer: Layer.succeed(tag, wrapped), recorder };
 };

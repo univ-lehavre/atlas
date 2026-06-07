@@ -42,7 +42,7 @@ Pour la vue d'ensemble par catégorie et les règles transverses, voir
 | [`atlas-auth`](/atlas/packages/packages/auth/)                                 | Shared authentication service for Atlas SvelteKit applications                                                                                                 | [`atlas-baas`](/atlas/packages/packages/baas/), [`atlas-errors`](/atlas/packages/packages/errors/), [`atlas-shared-config`](/atlas/packages/config/shared-config/), [`atlas-validators`](/atlas/packages/packages/validators/)                                                     | [`atlas-amarre`](/atlas/packages/apps/amarre/), [`atlas-ecrin`](/atlas/packages/apps/ecrin/), [`atlas-find-an-expert`](/atlas/packages/apps/find-an-expert/), [`atlas-sillage`](/atlas/packages/apps/sillage/)                                                                                                                                                                                                                                       |
 | [`atlas-baas`](/atlas/packages/packages/baas/)                                 | Shared Backend-as-a-Service (Appwrite) client utilities for Atlas applications                                                                                 | [`atlas-errors`](/atlas/packages/packages/errors/), [`atlas-shared-config`](/atlas/packages/config/shared-config/)                                                                                                                                                                 | [`atlas-amarre`](/atlas/packages/apps/amarre/), [`atlas-auth`](/atlas/packages/packages/auth/), [`atlas-ecrin`](/atlas/packages/apps/ecrin/), [`atlas-find-an-expert`](/atlas/packages/apps/find-an-expert/), [`atlas-sillage`](/atlas/packages/apps/sillage/)                                                                                                                                                                                       |
 | [`atlas-citation`](/atlas/packages/packages/citation/)                         | OpenAlex citation graph data mining library with DuckDB, ML embeddings, and string grouping                                                                    | [`atlas-fetch-one-api-page`](/atlas/packages/packages/fetch-one-api-page/), [`atlas-shared-config`](/atlas/packages/config/shared-config/)                                                                                                                                         | [`atlas-citation-cli`](/atlas/packages/cli/citation/)                                                                                                                                                                                                                                                                                                                                                                                                |
-| [`atlas-citation-fetch`](/atlas/packages/packages/citation-fetch/)             | Paginated fetch client for the OpenAlex citation graph API with rate limiting and queue-based state                                                            | [`atlas-citation-types`](/atlas/packages/packages/citation-types/), [`atlas-fetch-one-api-page`](/atlas/packages/packages/fetch-one-api-page/), [`atlas-shared-config`](/atlas/packages/config/shared-config/)                                                                     | [`atlas-citation-cli`](/atlas/packages/cli/citation/), [`atlas-citation-validate`](/atlas/packages/packages/citation-validate/), [`atlas-find-an-expert`](/atlas/packages/apps/find-an-expert/), [`atlas-researcher-profiles`](/atlas/packages/packages/researcher-profiles/), [`atlas-researcher-profiles-cli`](/atlas/packages/cli/researcher-profiles/)                                                                                           |
+| [`atlas-citation-fetch`](/atlas/packages/packages/citation-fetch/)             | Paginated fetch client for the OpenAlex citation graph API with rate limiting and queue-based state                                                            | [`atlas-citation-types`](/atlas/packages/packages/citation-types/), [`atlas-fetch-one-api-page`](/atlas/packages/packages/fetch-one-api-page/), [`atlas-shared-config`](/atlas/packages/config/shared-config/), `atlas-test-utils-effect`                                          | [`atlas-citation-cli`](/atlas/packages/cli/citation/), [`atlas-citation-validate`](/atlas/packages/packages/citation-validate/), [`atlas-find-an-expert`](/atlas/packages/apps/find-an-expert/), [`atlas-researcher-profiles`](/atlas/packages/packages/researcher-profiles/), [`atlas-researcher-profiles-cli`](/atlas/packages/cli/researcher-profiles/)                                                                                           |
 | [`atlas-citation-types`](/atlas/packages/packages/citation-types/)             | TypeScript types and branded types for the OpenAlex citation graph API                                                                                         | [`atlas-shared-config`](/atlas/packages/config/shared-config/)                                                                                                                                                                                                                     | [`atlas-biblio-cli`](/atlas/packages/cli/biblio/), [`atlas-citation-fetch`](/atlas/packages/packages/citation-fetch/), [`atlas-citation-validate`](/atlas/packages/packages/citation-validate/), [`atlas-researcher-profiles`](/atlas/packages/packages/researcher-profiles/), [`atlas-researcher-profiles-cli`](/atlas/packages/cli/researcher-profiles/)                                                                                           |
 | [`atlas-citation-validate`](/atlas/packages/packages/citation-validate/)       | CLI tools for OpenAlex bibliographic data validation and reliability                                                                                           | [`atlas-citation-fetch`](/atlas/packages/packages/citation-fetch/), [`atlas-citation-types`](/atlas/packages/packages/citation-types/), [`atlas-fetch-one-api-page`](/atlas/packages/packages/fetch-one-api-page/), [`atlas-shared-config`](/atlas/packages/config/shared-config/) | [`atlas-biblio-cli`](/atlas/packages/cli/biblio/)                                                                                                                                                                                                                                                                                                                                                                                                    |
 | [`atlas-cli-toolkit`](/atlas/packages/packages/cli-toolkit/)                   | Framework-agnostic CLI boilerplate for the atlas monorepo: env reading, argv flag parsing and fatal-error/exit-code handling.                                  | [`atlas-effect-socle`](/atlas/packages/packages/effect-socle/), [`atlas-shared-config`](/atlas/packages/config/shared-config/)                                                                                                                                                     | [`atlas-biblio-cli`](/atlas/packages/cli/biblio/), [`atlas-citation-cli`](/atlas/packages/cli/citation/), [`atlas-crf-cli`](/atlas/packages/cli/crf/), [`atlas-net-cli`](/atlas/packages/cli/net/), [`atlas-researcher-profiles-cli`](/atlas/packages/cli/researcher-profiles/)                                                                                                                                                                      |
@@ -59,7 +59,7 @@ Pour la vue d'ensemble par catégorie et les règles transverses, voir
 | [`atlas-stats`](/atlas/packages/packages/atlas-stats/)                         | GitHub releases and npm package stats fetching, caching and computation for the Atlas monorepo                                                                 | [`atlas-shared-config`](/atlas/packages/config/shared-config/)                                                                                                                                                                                                                     | [`atlas-dashboard`](/atlas/packages/apps/atlas-dashboard/), [`atlas-stats-cli`](/atlas/packages/cli/atlas-stats/)                                                                                                                                                                                                                                                                                                                                    |
 | [`atlas-sveltekit-csp`](/atlas/packages/packages/sveltekit-csp/)               | Shared Content-Security-Policy directives and security headers helpers for SvelteKit apps in the atlas monorepo.                                               | [`atlas-shared-config`](/atlas/packages/config/shared-config/)                                                                                                                                                                                                                     | [`atlas-amarre`](/atlas/packages/apps/amarre/), [`atlas-crf-dashboard`](/atlas/packages/apps/crf-dashboard/), [`atlas-dashboard`](/atlas/packages/apps/atlas-dashboard/), [`atlas-ecrin`](/atlas/packages/apps/ecrin/), [`atlas-find-an-expert`](/atlas/packages/apps/find-an-expert/), [`atlas-sillage`](/atlas/packages/apps/sillage/)                                                                                                             |
 | [`atlas-sveltekit-handler`](/atlas/packages/packages/sveltekit-handler/)       | Shared SvelteKit `+server.ts` handler wrapper (try/catch + uniform error mapping) for the atlas monorepo.                                                      | [`atlas-errors`](/atlas/packages/packages/errors/), [`atlas-shared-config`](/atlas/packages/config/shared-config/), `atlas-test-utils-sveltekit`                                                                                                                                   | [`atlas-amarre`](/atlas/packages/apps/amarre/), [`atlas-ecrin`](/atlas/packages/apps/ecrin/), [`atlas-find-an-expert`](/atlas/packages/apps/find-an-expert/)                                                                                                                                                                                                                                                                                         |
-| `atlas-test-utils-effect`                                                      | Shared Effect test helpers (test layer providers, in-memory doubles) for the atlas monorepo. Consumed only by other packages' tests; never built or published. | [`atlas-effect-socle`](/atlas/packages/packages/effect-socle/), [`atlas-shared-config`](/atlas/packages/config/shared-config/)                                                                                                                                                     | —                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `atlas-test-utils-effect`                                                      | Shared Effect test helpers (test layer providers, in-memory doubles) for the atlas monorepo. Consumed only by other packages' tests; never built or published. | [`atlas-effect-socle`](/atlas/packages/packages/effect-socle/), [`atlas-shared-config`](/atlas/packages/config/shared-config/)                                                                                                                                                     | [`atlas-citation-fetch`](/atlas/packages/packages/citation-fetch/)                                                                                                                                                                                                                                                                                                                                                                                   |
 | `atlas-test-utils-sveltekit`                                                   | Shared SvelteKit endpoint test helpers (route-event builder, anti-XSS assertion) for the atlas monorepo.                                                       | [`atlas-shared-config`](/atlas/packages/config/shared-config/)                                                                                                                                                                                                                     | [`atlas-amarre`](/atlas/packages/apps/amarre/), [`atlas-ecrin`](/atlas/packages/apps/ecrin/), [`atlas-find-an-expert`](/atlas/packages/apps/find-an-expert/), [`atlas-sveltekit-handler`](/atlas/packages/packages/sveltekit-handler/)                                                                                                                                                                                                               |
 | [`atlas-validators`](/atlas/packages/packages/validators/)                     | Shared validation utilities for Atlas applications                                                                                                             | [`atlas-errors`](/atlas/packages/packages/errors/), [`atlas-shared-config`](/atlas/packages/config/shared-config/)                                                                                                                                                                 | [`atlas-amarre`](/atlas/packages/apps/amarre/), [`atlas-auth`](/atlas/packages/packages/auth/), [`atlas-ecrin`](/atlas/packages/apps/ecrin/), [`atlas-find-an-expert`](/atlas/packages/apps/find-an-expert/), [`atlas-sillage`](/atlas/packages/apps/sillage/), [`atlas-ui`](/atlas/packages/ui/atlas-ui/)                                                                                                                                           |
 
@@ -158,14 +158,6 @@ Démonstrateurs isolés : ils consomment le reste du dépôt pour l'illustrer ma
 | [`atlas-amarre-sandbox`](/atlas/packages/sandbox/amarre-sandbox/)   | `sandbox/` | Local Docker sandbox for the amarre app: bundles a CRF (REDCap) instance, a self-hosted BaaS (Appwrite), and the wiring scripts needed to run amarre end-to-end without depending on production services.   |
 | [`atlas-crf-sandbox`](/atlas/packages/sandbox/crf-sandbox/)         | `sandbox/` | CRF (REDCap) testing sandbox - Docker environment and contract tests for validating OpenAPI specs                                                                                                           |
 | [`atlas-sillage-sandbox`](/atlas/packages/sandbox/sillage-sandbox/) | `sandbox/` | Local Docker sandbox for the sillage app: bundles a CRF (REDCap) instance, a self-hosted BaaS (Appwrite), and the wiring scripts needed to run sillage end-to-end without depending on production services. |
-
-### Paquets internes sans consommateur
-
-Paquets **privés** (`private: true`) que personne n'importe et qui ne sont pas publiés : ni consommateur interne, ni public aval. À surveiller — code potentiellement mort, ou point d'entrée pas encore raccordé.
-
-| Paquet                    | Catégorie   | Rôle                                                                                                                                                           |
-| ------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `atlas-test-utils-effect` | `packages/` | Shared Effect test helpers (test layer providers, in-memory doubles) for the atlas monorepo. Consumed only by other packages' tests; never built or published. |
 
 ## Graphes de dépendances par livrable
 
@@ -309,6 +301,7 @@ flowchart TD
   _univ_lehavre_atlas_shared_config["atlas-shared-config"]
   _univ_lehavre_atlas_sveltekit_csp["atlas-sveltekit-csp"]
   _univ_lehavre_atlas_sveltekit_handler["atlas-sveltekit-handler"]
+  _univ_lehavre_atlas_test_utils_effect["atlas-test-utils-effect"]
   _univ_lehavre_atlas_test_utils_sveltekit["atlas-test-utils-sveltekit"]
   _univ_lehavre_atlas_validators["atlas-validators"]
   _univ_lehavre_atlas_auth --> _univ_lehavre_atlas_baas
@@ -320,6 +313,7 @@ flowchart TD
   _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_citation_types
   _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_fetch_one_api_page
   _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_test_utils_effect
   _univ_lehavre_atlas_citation_types --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_effect_socle --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_errors --> _univ_lehavre_atlas_shared_config
@@ -340,6 +334,8 @@ flowchart TD
   _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_errors
   _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_sveltekit_handler --> _univ_lehavre_atlas_test_utils_sveltekit
+  _univ_lehavre_atlas_test_utils_effect --> _univ_lehavre_atlas_effect_socle
+  _univ_lehavre_atlas_test_utils_effect --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_test_utils_sveltekit --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_validators --> _univ_lehavre_atlas_errors
   _univ_lehavre_atlas_validators --> _univ_lehavre_atlas_shared_config
@@ -390,6 +386,7 @@ flowchart TD
   _univ_lehavre_atlas_effect_socle["atlas-effect-socle"]
   _univ_lehavre_atlas_fetch_one_api_page["atlas-fetch-one-api-page"]
   _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_test_utils_effect["atlas-test-utils-effect"]
   _univ_lehavre_atlas_biblio_cli --> _univ_lehavre_atlas_citation_types
   _univ_lehavre_atlas_biblio_cli --> _univ_lehavre_atlas_citation_validate
   _univ_lehavre_atlas_biblio_cli --> _univ_lehavre_atlas_cli_toolkit
@@ -397,6 +394,7 @@ flowchart TD
   _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_citation_types
   _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_fetch_one_api_page
   _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_test_utils_effect
   _univ_lehavre_atlas_citation_types --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_citation_validate --> _univ_lehavre_atlas_citation_fetch
   _univ_lehavre_atlas_citation_validate --> _univ_lehavre_atlas_citation_types
@@ -406,6 +404,8 @@ flowchart TD
   _univ_lehavre_atlas_cli_toolkit --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_effect_socle --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_fetch_one_api_page --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_test_utils_effect --> _univ_lehavre_atlas_effect_socle
+  _univ_lehavre_atlas_test_utils_effect --> _univ_lehavre_atlas_shared_config
 ```
 
 ### [`atlas-citation-cli`](/atlas/packages/cli/citation/)
@@ -420,6 +420,7 @@ flowchart TD
   _univ_lehavre_atlas_effect_socle["atlas-effect-socle"]
   _univ_lehavre_atlas_fetch_one_api_page["atlas-fetch-one-api-page"]
   _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_test_utils_effect["atlas-test-utils-effect"]
   _univ_lehavre_atlas_citation --> _univ_lehavre_atlas_fetch_one_api_page
   _univ_lehavre_atlas_citation --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_citation_cli --> _univ_lehavre_atlas_citation
@@ -429,11 +430,14 @@ flowchart TD
   _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_citation_types
   _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_fetch_one_api_page
   _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_test_utils_effect
   _univ_lehavre_atlas_citation_types --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_cli_toolkit --> _univ_lehavre_atlas_effect_socle
   _univ_lehavre_atlas_cli_toolkit --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_effect_socle --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_fetch_one_api_page --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_test_utils_effect --> _univ_lehavre_atlas_effect_socle
+  _univ_lehavre_atlas_test_utils_effect --> _univ_lehavre_atlas_shared_config
 ```
 
 ### [`atlas-crf-cli`](/atlas/packages/cli/crf/)
@@ -523,9 +527,11 @@ flowchart TD
   _univ_lehavre_atlas_researcher_profiles["atlas-researcher-profiles"]
   _univ_lehavre_atlas_researcher_profiles_cli["atlas-researcher-profiles-cli"]
   _univ_lehavre_atlas_shared_config["atlas-shared-config"]
+  _univ_lehavre_atlas_test_utils_effect["atlas-test-utils-effect"]
   _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_citation_types
   _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_fetch_one_api_page
   _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_citation_fetch --> _univ_lehavre_atlas_test_utils_effect
   _univ_lehavre_atlas_citation_types --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_cli_toolkit --> _univ_lehavre_atlas_effect_socle
   _univ_lehavre_atlas_cli_toolkit --> _univ_lehavre_atlas_shared_config
@@ -545,6 +551,8 @@ flowchart TD
   _univ_lehavre_atlas_researcher_profiles_cli --> _univ_lehavre_atlas_cli_toolkit
   _univ_lehavre_atlas_researcher_profiles_cli --> _univ_lehavre_atlas_researcher_profiles
   _univ_lehavre_atlas_researcher_profiles_cli --> _univ_lehavre_atlas_shared_config
+  _univ_lehavre_atlas_test_utils_effect --> _univ_lehavre_atlas_effect_socle
+  _univ_lehavre_atlas_test_utils_effect --> _univ_lehavre_atlas_shared_config
 ```
 
 ### [`atlas-stats-cli`](/atlas/packages/cli/atlas-stats/)
@@ -581,18 +589,6 @@ flowchart TD
   _univ_lehavre_atlas_crf_core --> _univ_lehavre_atlas_shared_config
   _univ_lehavre_atlas_crf_project_template --> _univ_lehavre_atlas_crf_core
   _univ_lehavre_atlas_crf_project_template --> _univ_lehavre_atlas_shared_config
-```
-
-### `atlas-test-utils-effect`
-
-```mermaid
-flowchart TD
-  _univ_lehavre_atlas_effect_socle["atlas-effect-socle"]
-  _univ_lehavre_atlas_shared_config["atlas-shared-config"]
-  _univ_lehavre_atlas_test_utils_effect["atlas-test-utils-effect"]
-  _univ_lehavre_atlas_effect_socle --> _univ_lehavre_atlas_shared_config
-  _univ_lehavre_atlas_test_utils_effect --> _univ_lehavre_atlas_effect_socle
-  _univ_lehavre_atlas_test_utils_effect --> _univ_lehavre_atlas_shared_config
 ```
 
 ### [`atlas-amarre-sandbox`](/atlas/packages/sandbox/amarre-sandbox/)

@@ -1,6 +1,11 @@
 import { describe, it, expect } from "@effect/vitest";
 import { Context, Effect } from "effect";
-import { makeRecorder, recordingLayer, TestLoggerLayer } from "./index.js";
+import {
+  makeRecorder,
+  recordingLayer,
+  recordingFnLayer,
+  TestLoggerLayer,
+} from "./index.js";
 
 // A sample service used to exercise recordingLayer.
 interface Greeter {
@@ -12,16 +17,34 @@ class GreeterService extends Context.Tag("test/Greeter")<
   Greeter
 >() {}
 
+// A function-shaped service (bare callable) for recordingFnLayer.
+type Adder = (a: number, b: number) => Effect.Effect<number>;
+class AdderService extends Context.Tag("test/Adder")<AdderService, Adder>() {}
+
 describe("test-utils-effect", () => {
   describe("makeRecorder", () => {
-    it("records calls and exposes per-method accessors", () => {
-      const rec = makeRecorder();
-      expect(rec.calls).toEqual([]);
-      expect(rec.called("greet")).toBe(false);
-      // A standalone recorder is appended to by the double the test builds.
-      // Here we just verify reset() and the empty-state accessors.
-      rec.reset();
-      expect(rec.countTo("greet")).toBe(0);
+    it("records calls via the append handle and exposes per-method accessors", () => {
+      const { recorder, record } = makeRecorder();
+      expect(recorder.calls).toEqual([]);
+      expect(recorder.called("greet")).toBe(false);
+
+      // A standalone recorder is appended to by the hand-built double.
+      record("greet", ["ada"]);
+      record("greet", ["alan"]);
+      record("bye", []);
+
+      expect(recorder.countTo("greet")).toBe(2);
+      expect(recorder.called("greet")).toBe(true);
+      expect(recorder.callsTo("greet")).toEqual([["ada"], ["alan"]]);
+      expect(recorder.calls).toEqual([
+        ["greet", "ada"],
+        ["greet", "alan"],
+        ["bye"],
+      ]);
+
+      recorder.reset();
+      expect(recorder.calls).toEqual([]);
+      expect(recorder.countTo("greet")).toBe(0);
     });
   });
 
@@ -72,6 +95,47 @@ describe("test-utils-effect", () => {
         expect(recorder.countTo("greet")).toBe(1);
         recorder.reset();
         expect(recorder.calls).toEqual([]);
+      }),
+    );
+  });
+
+  describe("recordingFnLayer", () => {
+    it.effect("records calls to a bare-function service while delegating", () =>
+      Effect.gen(function* () {
+        const { layer, recorder } = recordingFnLayer(
+          AdderService,
+          (a: number, b: number) => Effect.succeed(a + b),
+        );
+
+        const out = yield* Effect.gen(function* () {
+          const add = yield* AdderService;
+          const x = yield* add(2, 3);
+          const y = yield* add(10, 1);
+          return [x, y] as const;
+        }).pipe(Effect.provide(layer));
+
+        expect(out).toEqual([5, 11]);
+        expect(recorder.countTo("call")).toBe(2);
+        expect(recorder.callsTo("call")).toEqual([
+          [2, 3],
+          [10, 1],
+        ]);
+      }),
+    );
+
+    it.effect("honours a custom recordedAs label", () =>
+      Effect.gen(function* () {
+        const { layer, recorder } = recordingFnLayer(
+          AdderService,
+          (a: number, b: number) => Effect.succeed(a + b),
+          "add",
+        );
+        yield* Effect.gen(function* () {
+          const add = yield* AdderService;
+          yield* add(1, 1);
+        }).pipe(Effect.provide(layer));
+        expect(recorder.called("add")).toBe(true);
+        expect(recorder.called("call")).toBe(false);
       }),
     );
   });
