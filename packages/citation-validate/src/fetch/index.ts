@@ -11,6 +11,7 @@ import {
   searchWorksByAuthorIDs,
   searchWorksByORCID,
   searchWorksByDOI,
+  FetchOnePageLive,
   type CitationConfig,
 } from "@univ-lehavre/atlas-citation-fetch";
 import type {
@@ -35,7 +36,7 @@ const searchAuthorByName = (
   Effect.gen(function* () {
     const env: EnvConfig = yield* getEnv();
     return yield* searchAuthorsByName(names, buildConfig(env));
-  });
+  }).pipe(Effect.provide(FetchOnePageLive));
 
 const searchAuthorByORCID = (
   orcid: string[],
@@ -47,7 +48,7 @@ const searchAuthorByORCID = (
   Effect.gen(function* () {
     const env: EnvConfig = yield* getEnv();
     return yield* searchAuthorsByORCID(orcid, buildConfig(env));
-  });
+  }).pipe(Effect.provide(FetchOnePageLive));
 
 const searchWorksByAuthorIDsFn = (
   ids: string[],
@@ -59,7 +60,7 @@ const searchWorksByAuthorIDsFn = (
   Effect.gen(function* () {
     const env: EnvConfig = yield* getEnv();
     return yield* searchWorksByAuthorIDs(ids, buildConfig(env));
-  });
+  }).pipe(Effect.provide(FetchOnePageLive));
 
 const searchWorksByORCIDFn = (
   orcid: ORCID,
@@ -71,7 +72,7 @@ const searchWorksByORCIDFn = (
   Effect.gen(function* () {
     const env: EnvConfig = yield* getEnv();
     return yield* searchWorksByORCID(orcid, buildConfig(env));
-  });
+  }).pipe(Effect.provide(FetchOnePageLive));
 
 const searchWorksByDOIFn = (
   dois: string[],
@@ -83,7 +84,7 @@ const searchWorksByDOIFn = (
   Effect.gen(function* () {
     const env: EnvConfig = yield* getEnv();
     return yield* searchWorksByDOI(dois, buildConfig(env));
-  });
+  }).pipe(Effect.provide(FetchOnePageLive));
 
 export {
   searchAuthorByName,

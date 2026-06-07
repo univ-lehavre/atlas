@@ -1,5 +1,5 @@
 import qs from "qs";
-import { Effect, Data, Either, Schema } from "effect";
+import { Effect, Data, Either, Schema, Context, Layer } from "effect";
 import type { ParseResult } from "effect";
 
 type QueryValue =
@@ -197,6 +197,35 @@ const fetchOnePage = <A>(
     return { data, rateLimit };
   });
 
+/**
+ * Generic signature of {@link fetchOnePage}, kept as a named type so it can be
+ * carried by the {@link FetchOnePage} service tag and overridden by test
+ * layers (écart E14, ADR 0049).
+ */
+type FetchOnePageFn = <A>(
+  endpointURL: URL,
+  params: Query,
+  userAgent: string,
+  schema: Schema.Schema<A>,
+) => Effect.Effect<PageResult<A>, FetchError | ResponseParseError>;
+
+/**
+ * Effect service exposing one-page fetching as an injected dependency
+ * (écart E14, ADR 0049). Consumers `yield* FetchOnePage` instead of importing
+ * the function directly, so production provides {@link FetchOnePageLive} at the
+ * composition root and tests provide an in-memory layer — no `vi.mock`.
+ */
+class FetchOnePage extends Context.Tag("FetchOnePage")<
+  FetchOnePage,
+  FetchOnePageFn
+>() {}
+
+/** Layer providing the real network-backed {@link fetchOnePage}. */
+const FetchOnePageLive: Layer.Layer<FetchOnePage> = Layer.succeed(
+  FetchOnePage,
+  fetchOnePage,
+);
+
 export {
   buildHeaders,
   buildURL,
@@ -204,9 +233,12 @@ export {
   responseToJSON,
   fetchJSON,
   fetchOnePage,
+  FetchOnePage,
+  FetchOnePageLive,
   parseRateLimitHeaders,
   FetchError,
   ResponseParseError,
+  type FetchOnePageFn,
   type Query,
   type RateLimitInfo,
   type PageResult,

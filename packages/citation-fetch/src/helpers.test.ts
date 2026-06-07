@@ -1,9 +1,12 @@
 import { describe, it, expect } from "@effect/vitest";
 import { assertEquals } from "@effect/vitest/utils";
 import { vi } from "vitest";
-import { Effect, Queue, Ref, RateLimiter, Schema } from "effect";
-import { ResponseParseError } from "@univ-lehavre/atlas-fetch-one-api-page";
-import type { Query } from "@univ-lehavre/atlas-fetch-one-api-page";
+import { Effect, Layer, Queue, Ref, RateLimiter, Schema } from "effect";
+import {
+  FetchOnePage,
+  ResponseParseError,
+} from "@univ-lehavre/atlas-fetch-one-api-page";
+import type { PageResult, Query } from "@univ-lehavre/atlas-fetch-one-api-page";
 import {
   buildEndpointURL,
   buildInitialParams,
@@ -214,7 +217,7 @@ describe("helpers", () => {
   );
 
   it.effect(
-    "makeRateLimitedFetcher returns a curried fetch that delegates to fetchOnePage",
+    "makeRateLimitedFetcher returns a curried fetch that delegates to the FetchOnePage service",
     () =>
       Effect.scoped(
         Effect.gen(function* () {
@@ -227,7 +230,23 @@ describe("helpers", () => {
             meta: { count: 1, page: 1, per_page: 1 },
             results: [{ value: 42 }],
           };
-          const fetchOnePage = vi.fn(() => Effect.succeed(fakeResponse));
+
+          // FetchOnePage as an injected service (écart E14, ADR 0049): the
+          // test provides a layer returning a canned PageResult and records
+          // the call, instead of injecting a fetchOnePage dep or vi.mock.
+          const fetchCalls: Array<[URL, Query, string]> = [];
+          const fetchLayer = Layer.succeed(FetchOnePage, (<A>(
+            u: URL,
+            p: Query,
+            ua: string,
+            _schema: Schema.Schema<A>,
+          ) => {
+            fetchCalls.push([u, p, ua]);
+            return Effect.succeed({
+              data: fakeResponse,
+              rateLimit: undefined,
+            } as PageResult<A>);
+          }) as typeof FetchOnePage.Service);
 
           const url = buildEndpointURL("https://api.openalex.org", "works");
           const dummySchema = Schema.Struct({
@@ -239,15 +258,14 @@ describe("helpers", () => {
             {} as unknown as RateLimiter.RateLimiter.Options,
             dummySchema,
             undefined,
-            { makeRateLimiter, fetchOnePage },
-          );
+            { makeRateLimiter },
+          ).pipe(Effect.provide(fetchLayer));
           const q: Query = { search: "x" } as Query;
-          const out = yield* fetcher(q);
+          const out = yield* fetcher(q).pipe(Effect.provide(fetchLayer));
 
           expect(makeRateLimiter).toHaveBeenCalledOnce();
-          expect(fetchOnePage).toHaveBeenCalledOnce();
-          const [[calledUrl, calledQuery, calledUA]] = fetchOnePage.mock
-            .calls as unknown as [[URL, Query, string]];
+          expect(fetchCalls).toHaveLength(1);
+          const [calledUrl, calledQuery, calledUA] = fetchCalls[0]!;
           expect(calledUrl.toString()).toBe(url.toString());
           assertEquals(calledQuery, q);
           assertEquals(calledUA, "tester/1.0");

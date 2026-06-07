@@ -3,7 +3,7 @@ import type {
   FetchError,
   ResponseParseError,
 } from "@univ-lehavre/atlas-fetch-one-api-page";
-import { fetchOnePage } from "@univ-lehavre/atlas-fetch-one-api-page";
+import { FetchOnePage } from "@univ-lehavre/atlas-fetch-one-api-page";
 import type { RateLimitInfo } from "@univ-lehavre/atlas-citation-types";
 import type { CitationConfig } from "./institutions.js";
 
@@ -103,7 +103,11 @@ const buildParams = (
 const getWorksCount = (
   institutionIds: string[],
   config: CitationConfig,
-): Effect.Effect<WorksCountResult, FetchError | ResponseParseError> => {
+): Effect.Effect<
+  WorksCountResult,
+  FetchError | ResponseParseError,
+  FetchOnePage
+> => {
   const fromDate = getYearsAgoDate(YEARS_LOOKBACK);
 
   return institutionIds.length === 0
@@ -114,6 +118,7 @@ const getWorksCount = (
         institutionCount: 0,
       })
     : Effect.gen(function* () {
+        const fetchOnePage = yield* FetchOnePage;
         const baseURL = config.apiURL ?? OPENALEX_BASE_URL;
         const endpointURL = new URL(`${baseURL}/works`);
         const filter = `authorships.institutions.id:${institutionIds.join("|")},from_publication_date:${fromDate},type:article`;
@@ -185,7 +190,11 @@ const buildYearCounts = (
 const getInstitutionStats = (
   institutionIds: string[],
   config: CitationConfig,
-): Effect.Effect<InstitutionStatsResult, FetchError | ResponseParseError> => {
+): Effect.Effect<
+  InstitutionStatsResult,
+  FetchError | ResponseParseError,
+  FetchOnePage
+> => {
   const years = getYearsToQuery();
 
   return institutionIds.length === 0
@@ -202,6 +211,7 @@ const getInstitutionStats = (
       })
     : // eslint-disable-next-line max-lines-per-function -- Effect.gen séquentiel HTTP→parse→agréger
       Effect.gen(function* () {
+        const fetchOnePage = yield* FetchOnePage;
         const baseURL = config.apiURL ?? OPENALEX_BASE_URL;
         const institutionsFilter = institutionIds.join("|");
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- years always has YEARS_LOOKBACK+1 elements

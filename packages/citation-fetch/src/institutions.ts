@@ -3,7 +3,7 @@ import type {
   FetchError,
   ResponseParseError,
 } from "@univ-lehavre/atlas-fetch-one-api-page";
-import { fetchOnePage } from "@univ-lehavre/atlas-fetch-one-api-page";
+import { FetchOnePage } from "@univ-lehavre/atlas-fetch-one-api-page";
 import type { RateLimitInfo } from "@univ-lehavre/atlas-citation-types";
 
 const OPENALEX_BASE_URL = "https://api.openalex.org";
@@ -98,10 +98,15 @@ const EMPTY_RESULT: InstitutionSearchResult = {
 const searchInstitutions = (
   query: string,
   config: CitationConfig,
-): Effect.Effect<InstitutionSearchResult, FetchError | ResponseParseError> =>
+): Effect.Effect<
+  InstitutionSearchResult,
+  FetchError | ResponseParseError,
+  FetchOnePage
+> =>
   query.trim().length === 0
     ? Effect.succeed(EMPTY_RESULT)
     : Effect.gen(function* () {
+        const fetchOnePage = yield* FetchOnePage;
         const baseURL = config.apiURL ?? OPENALEX_BASE_URL;
         const endpointURL = new URL(`${baseURL}/autocomplete/institutions`);
         const params = {

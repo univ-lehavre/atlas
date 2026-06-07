@@ -7,6 +7,7 @@ import {
   retrieve_articles,
   retrieve_articles_given_work_ids,
 } from "@univ-lehavre/atlas-citation";
+import { FetchOnePageLive } from "@univ-lehavre/atlas-citation-fetch";
 import type { CitationSearchAuthorAffiliationResult } from "@univ-lehavre/atlas-citation";
 import {
   multiple,
@@ -221,4 +222,9 @@ export const program = Effect.gen(function* () {
   );
 
   finish("Fin");
-});
+}).pipe(
+  // Composition root of the CLI: the real one-page fetch enters here via
+  // FetchOnePageLive (écart E14, ADR 0049), so `program` carries no service
+  // requirement for runEffectCli.
+  Effect.provide(FetchOnePageLive),
+);

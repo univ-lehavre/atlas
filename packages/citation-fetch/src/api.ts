@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import type { Queue } from "effect";
 import type {
   FetchError,
+  FetchOnePage,
   ResponseParseError,
 } from "@univ-lehavre/atlas-fetch-one-api-page";
 import { type Query } from "@univ-lehavre/atlas-fetch-one-api-page";
@@ -31,7 +32,8 @@ const fetchAPIQueue = <T>(
     queue: Queue.Queue<T>;
     worker: Effect.Effect<void, FetchError | ResponseParseError>;
   },
-  FetchError | ResponseParseError
+  FetchError | ResponseParseError,
+  FetchOnePage
 > =>
   Effect.scoped(
     Effect.gen(function* () {
@@ -60,7 +62,7 @@ const fetchAPIQueue = <T>(
 
 const fetchAPIResults = <T>(
   opts: FetchAPIMinimalConfig<T>,
-): Effect.Effect<readonly T[], FetchError | ResponseParseError> =>
+): Effect.Effect<readonly T[], FetchError | ResponseParseError, FetchOnePage> =>
   Effect.scoped(
     Effect.gen(function* () {
       const url: URL = buildEndpointURL(opts.apiURL, opts.endpoint);

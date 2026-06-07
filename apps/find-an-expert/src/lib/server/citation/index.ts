@@ -1,10 +1,11 @@
-import type { Effect } from 'effect';
+import { Effect } from 'effect';
 import { OPENALEX_API_TOKEN } from '$env/static/private';
 import { env as dynamicEnv } from '$env/dynamic/private';
 import {
   searchInstitutions as searchInstitutionsEffect,
   getWorksCount as getWorksCountEffect,
   getInstitutionStats as getInstitutionStatsEffect,
+  FetchOnePageLive,
   type CitationConfig,
   type InstitutionSearchResult,
   type WorksCountResult,
@@ -25,9 +26,11 @@ const getConfig = (): CitationConfig => ({
 });
 
 // Effect errors surfaced by the citation functions (FetchError |
-// ResponseParseError). Inferred from the upstream signatures.
+// ResponseParseError). Inferred from the upstream signatures. The upstream now
+// carries a FetchOnePage requirement (écart E14) which these wrappers discharge
+// via FetchOnePageLive, so the alias keeps `R = never` for the handler.
 type CitationEffect<A> =
-  ReturnType<typeof searchInstitutionsEffect> extends Effect.Effect<unknown, infer E>
+  ReturnType<typeof searchInstitutionsEffect> extends Effect.Effect<unknown, infer E, infer _R>
     ? Effect.Effect<A, E>
     : never;
 
@@ -37,15 +40,20 @@ type CitationEffect<A> =
  * upstream failure keeps its error channel instead of being flattened. Config
  * is read at call time (above) for 12-factor late-binding.
  */
+// FetchOnePage enters here, at the server citation frontier (écart E14,
+// ADR 0049) : the real network fetch is provided via FetchOnePageLive so the
+// raw Effect returned to the SvelteKit handler (ADR 0046) carries no service
+// requirement.
 export const searchInstitutions = (query: string): CitationEffect<InstitutionSearchResult> =>
-  searchInstitutionsEffect(query, getConfig());
+  searchInstitutionsEffect(query, getConfig()).pipe(Effect.provide(FetchOnePageLive));
 
 export const getWorksCount = (institutionIds: string[]): CitationEffect<WorksCountResult> =>
-  getWorksCountEffect(institutionIds, getConfig());
+  getWorksCountEffect(institutionIds, getConfig()).pipe(Effect.provide(FetchOnePageLive));
 
 export const getInstitutionStats = (
   institutionIds: string[]
-): CitationEffect<InstitutionStatsResult> => getInstitutionStatsEffect(institutionIds, getConfig());
+): CitationEffect<InstitutionStatsResult> =>
+  getInstitutionStatsEffect(institutionIds, getConfig()).pipe(Effect.provide(FetchOnePageLive));
 
 // Type aliases for backward compatibility with SvelteKit components
 export type TInstitution = InstitutionSearchResult['institutions'][number];

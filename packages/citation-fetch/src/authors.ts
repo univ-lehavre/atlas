@@ -1,6 +1,7 @@
 import { Schema, type Effect } from "effect";
 import type {
   FetchError,
+  FetchOnePage,
   ResponseParseError,
 } from "@univ-lehavre/atlas-fetch-one-api-page";
 import type {
@@ -156,7 +157,11 @@ const buildConfig = <T>(
 const searchAuthorsByName = (
   names: string[],
   config: CitationConfig,
-): Effect.Effect<readonly AuthorsResult[], FetchError | ResponseParseError> =>
+): Effect.Effect<
+  readonly AuthorsResult[],
+  FetchError | ResponseParseError,
+  FetchOnePage
+> =>
   fetchAPIResults<AuthorsResult>(
     buildConfig(
       "authors",
@@ -174,7 +179,11 @@ const searchAuthorsByName = (
 const searchAuthorsByORCID = (
   orcids: string[],
   config: CitationConfig,
-): Effect.Effect<readonly AuthorsResult[], FetchError | ResponseParseError> =>
+): Effect.Effect<
+  readonly AuthorsResult[],
+  FetchError | ResponseParseError,
+  FetchOnePage
+> =>
   fetchAPIResults<AuthorsResult>(
     buildConfig(
       "authors",
@@ -192,7 +201,11 @@ const searchAuthorsByORCID = (
 const searchWorksByAuthorIDs = (
   ids: string[],
   config: CitationConfig,
-): Effect.Effect<readonly WorksResult[], FetchError | ResponseParseError> =>
+): Effect.Effect<
+  readonly WorksResult[],
+  FetchError | ResponseParseError,
+  FetchOnePage
+> =>
   fetchAPIResults<WorksResult>(
     buildConfig(
       "works",
@@ -214,7 +227,11 @@ const searchWorksByAuthorID = (
   config: CitationConfig,
   onRateLimit?: FetchAPIMinimalConfig<WorksResult>["onRateLimit"],
   onPage?: FetchAPIMinimalConfig<WorksResult>["onPage"],
-): Effect.Effect<readonly WorksResult[], FetchError | ResponseParseError> =>
+): Effect.Effect<
+  readonly WorksResult[],
+  FetchError | ResponseParseError,
+  FetchOnePage
+> =>
   fetchAPIResults<WorksResult>(
     buildConfig(
       "works",
@@ -234,7 +251,11 @@ const searchWorksByAuthorID = (
 const searchWorksByORCID = (
   orcid: ORCID,
   config: CitationConfig,
-): Effect.Effect<readonly WorksResult[], FetchError | ResponseParseError> =>
+): Effect.Effect<
+  readonly WorksResult[],
+  FetchError | ResponseParseError,
+  FetchOnePage
+> =>
   fetchAPIResults<WorksResult>(
     buildConfig(
       "works",
@@ -252,7 +273,11 @@ const searchWorksByORCID = (
 const searchWorksByDOI = (
   dois: string[],
   config: CitationConfig,
-): Effect.Effect<readonly WorksResult[], FetchError | ResponseParseError> =>
+): Effect.Effect<
+  readonly WorksResult[],
+  FetchError | ResponseParseError,
+  FetchOnePage
+> =>
   fetchAPIResults<WorksResult>(
     buildConfig(
       "works",

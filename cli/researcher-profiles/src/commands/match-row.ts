@@ -19,6 +19,7 @@ import { matchReferences } from "@univ-lehavre/atlas-researcher-profiles";
 import type { WorksResult } from "@univ-lehavre/atlas-citation-types";
 import {
   searchWorksByDOI,
+  FetchOnePageLive,
   type CitationConfig,
 } from "@univ-lehavre/atlas-citation-fetch";
 import type {
@@ -221,7 +222,14 @@ export const matchRow = async (
       `[${label}] Fetching ${String(missingDois.length)} DOI(s) not in oa_references…`,
     );
     const doiResult = await Effect.runPromise(
-      Effect.either(silenced(searchWorksByDOI(missingDois, config.openAlex))),
+      Effect.either(
+        // Provide the real one-page fetch at this CLI frontier (E14, ADR 0049).
+        silenced(
+          searchWorksByDOI(missingDois, config.openAlex).pipe(
+            Effect.provide(FetchOnePageLive),
+          ),
+        ),
+      ),
     );
     if (Either.isLeft(doiResult)) {
       doiSpinner.stop(

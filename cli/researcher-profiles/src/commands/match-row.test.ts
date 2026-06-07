@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import type {
   ResearcherRow,
   ResearcherData,
@@ -30,6 +30,9 @@ vi.mock("@univ-lehavre/atlas-researcher-profiles", () => ({
 
 vi.mock("@univ-lehavre/atlas-citation-fetch", () => ({
   searchWorksByDOI: vi.fn(),
+  // searchWorksByDOI is mocked → no real fetch; no-op layer for the
+  // FetchOnePageLive match-row provides at the CLI frontier (écart E14).
+  FetchOnePageLive: Layer.empty,
 }));
 
 import {

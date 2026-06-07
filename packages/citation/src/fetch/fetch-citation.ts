@@ -1,7 +1,8 @@
 import { Effect, RateLimiter, Schema } from "effect";
 
 import {
-  fetchOnePage,
+  FetchOnePage,
+  type FetchOnePageFn,
   FetchError as FetchOnePageError,
   ResponseParseError,
 } from "@univ-lehavre/atlas-fetch-one-api-page";
@@ -40,13 +41,15 @@ const fetchAPI = <T>(
 ): Effect.Effect<
   CitationResponse<T>,
   ConfigError | StatusError | FetchError,
-  never
+  FetchOnePage
 > =>
   Effect.scoped(
     Effect.gen(function* () {
       const { user_agent, rate_limit, citation_api_key } = yield* getEnv();
       const ratelimiter: RateLimiter.RateLimiter =
         yield* RateLimiter.make(rate_limit);
+      // One-page fetching as an injected service (écart E14, ADR 0049).
+      const fetchOnePage = yield* FetchOnePage;
 
       // Inject api_key if available
       if (citation_api_key) {
@@ -54,6 +57,7 @@ const fetchAPI = <T>(
       }
 
       const raw = yield* exhaust<T>(
+        fetchOnePage,
         ratelimiter,
         start_page,
         Infinity,
@@ -79,6 +83,7 @@ const fetchAPI = <T>(
   );
 
 const exhaust = <T>(
+  fetchOnePage: FetchOnePageFn,
   ratelimiter: RateLimiter.RateLimiter,
   start_page: number,
   total_pages: number,

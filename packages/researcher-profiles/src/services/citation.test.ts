@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { Effect, Exit } from "effect";
+import { Effect, Exit, Layer } from "effect";
 import type { CitationConfig } from "@univ-lehavre/atlas-citation-fetch";
 import type {
   AuthorsResult,
@@ -18,6 +18,9 @@ vi.mock("@univ-lehavre/atlas-citation-fetch", () => ({
   searchAuthorsByName: mocks.searchAuthorsByName,
   searchAuthorsByORCID: mocks.searchAuthorsByORCID,
   searchWorksByAuthorID: mocks.searchWorksByAuthorID,
+  // The search wrappers are mocked, so the real fetch never runs; a no-op
+  // layer satisfies the FetchOnePageLive the service provides (écart E14).
+  FetchOnePageLive: Layer.empty,
 }));
 
 import {

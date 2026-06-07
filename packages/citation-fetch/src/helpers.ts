@@ -7,7 +7,7 @@ import type {
   RateLimitInfo,
 } from "@univ-lehavre/atlas-fetch-one-api-page";
 import {
-  fetchOnePage,
+  FetchOnePage,
   type Query,
 } from "@univ-lehavre/atlas-fetch-one-api-page";
 import {
@@ -71,28 +71,29 @@ export const makeRateLimitedFetcher = <T>(
   onRateLimit?: (info: RateLimitInfo) => void,
   deps?: {
     makeRateLimiter?: MakeRateLimiterFn;
-    fetchOnePage?: FetchOnePageFn<T>;
   },
 ) =>
   Effect.gen(function* () {
     const makeLimiter = deps?.makeRateLimiter ?? RateLimiter.make;
+    // One-page fetching is an injected service (écart E14, ADR 0049): the real
+    // network implementation is provided by FetchOnePageLive at the composition
+    // root, a test layer in tests — no module-level import to vi.mock.
+    const fetchOnePage = yield* FetchOnePage;
     // The response schema is derived from the caller's item schema; the page
     // body is decoded against it (écart E13) instead of an unchecked cast.
     const responseSchema = apiResponseSchema(itemSchema);
-    const foa: FetchOnePageFn<T> =
-      deps?.fetchOnePage ??
-      ((
-        u,
-        p,
-        ua,
-      ): Effect.Effect<APIResponse<T>, FetchError | ResponseParseError> =>
-        fetchOnePage(u, p, ua, responseSchema).pipe(
-          Effect.map((result) =>
-            result.rateLimit !== undefined && onRateLimit !== undefined
-              ? (onRateLimit(result.rateLimit), result.data)
-              : result.data,
-          ),
-        ));
+    const foa: FetchOnePageFn<T> = (
+      u,
+      p,
+      ua,
+    ): Effect.Effect<APIResponse<T>, FetchError | ResponseParseError> =>
+      fetchOnePage(u, p, ua, responseSchema).pipe(
+        Effect.map((result) =>
+          result.rateLimit !== undefined && onRateLimit !== undefined
+            ? (onRateLimit(result.rateLimit), result.data)
+            : result.data,
+        ),
+      );
 
     const ratelimiter: RateLimiter.RateLimiter = yield* makeLimiter(rateLimit);
     return (

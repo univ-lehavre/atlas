@@ -700,6 +700,9 @@ importers:
       '@univ-lehavre/atlas-citation':
         specifier: workspace:*
         version: link:../../packages/citation
+      '@univ-lehavre/atlas-citation-fetch':
+        specifier: workspace:*
+        version: link:../../packages/citation-fetch
       '@univ-lehavre/atlas-cli-toolkit':
         specifier: workspace:*
         version: link:../../packages/cli-toolkit
@@ -1152,6 +1155,9 @@ importers:
         specifier: ~14.0.0
         version: 14.0.0
     devDependencies:
+      '@effect/vitest':
+        specifier: ^0.29.0
+        version: 0.29.0(effect@3.21.2)(vitest@4.1.8)
       '@types/node':
         specifier: ^25.9.1
         version: 25.9.1
