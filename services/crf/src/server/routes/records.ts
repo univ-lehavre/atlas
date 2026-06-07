@@ -9,7 +9,7 @@ import { validationErrorHook } from '../middleware/validation.js';
 import {
   ErrorResponseSchema,
   SuccessResponseOpenAPI,
-  CRF_NAME_PATTERN,
+  CRF_NAME_LIST_PATTERN,
   INSTRUMENT_NAME_PATTERN,
 } from '../schemas.js';
 
@@ -30,8 +30,8 @@ const parseInstrumentName = (value: string): Effect.Effect<InstrumentName, CrfAp
 const records = new Hono();
 
 const ExportQuerySchema = S.Struct({
-  fields: S.optional(S.String.pipe(S.pattern(CRF_NAME_PATTERN))),
-  forms: S.optional(S.String.pipe(S.pattern(CRF_NAME_PATTERN))),
+  fields: S.optional(S.String.pipe(S.pattern(CRF_NAME_LIST_PATTERN))),
+  forms: S.optional(S.String.pipe(S.pattern(CRF_NAME_LIST_PATTERN))),
   filterLogic: S.optional(S.String),
   rawOrLabel: S.optional(S.Literal('raw', 'label')),
 }).annotations({

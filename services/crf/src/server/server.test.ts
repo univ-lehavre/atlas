@@ -2,9 +2,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { validationErrorHook } from './middleware/validation.js';
 import {
   ErrorResponseSchema,
-  CRF_NAME_PATTERN,
+  CRF_NAME_LIST_PATTERN,
   INSTRUMENT_NAME_PATTERN,
-  RECORD_ID_PATTERN,
   EMAIL_PATTERN,
 } from './schemas.js';
 
@@ -104,20 +103,20 @@ describe('Server Module', () => {
   });
 
   describe('Schema Patterns', () => {
-    describe('CRF_NAME_PATTERN', () => {
-      it('should match valid REDCap field names', () => {
-        expect(CRF_NAME_PATTERN.test('field_name')).toBe(true);
-        expect(CRF_NAME_PATTERN.test('record_id')).toBe(true);
-        expect(CRF_NAME_PATTERN.test('field1,field2')).toBe(true);
-        expect(CRF_NAME_PATTERN.test('abc123')).toBe(true);
-        expect(CRF_NAME_PATTERN.test('')).toBe(true); // Empty is valid (optional)
+    describe('CRF_NAME_LIST_PATTERN', () => {
+      it('should match valid comma-separated REDCap field name lists', () => {
+        expect(CRF_NAME_LIST_PATTERN.test('field_name')).toBe(true);
+        expect(CRF_NAME_LIST_PATTERN.test('record_id')).toBe(true);
+        expect(CRF_NAME_LIST_PATTERN.test('field1,field2')).toBe(true);
+        expect(CRF_NAME_LIST_PATTERN.test('abc123')).toBe(true);
+        expect(CRF_NAME_LIST_PATTERN.test('')).toBe(true); // Empty is valid (optional)
       });
 
       it('should reject invalid characters', () => {
-        expect(CRF_NAME_PATTERN.test('field-name')).toBe(false);
-        expect(CRF_NAME_PATTERN.test('field.name')).toBe(false);
-        expect(CRF_NAME_PATTERN.test('field name')).toBe(false);
-        expect(CRF_NAME_PATTERN.test('field@name')).toBe(false);
+        expect(CRF_NAME_LIST_PATTERN.test('field-name')).toBe(false);
+        expect(CRF_NAME_LIST_PATTERN.test('field.name')).toBe(false);
+        expect(CRF_NAME_LIST_PATTERN.test('field name')).toBe(false);
+        expect(CRF_NAME_LIST_PATTERN.test('field@name')).toBe(false);
       });
     });
 
@@ -136,21 +135,6 @@ describe('Server Module', () => {
         expect(INSTRUMENT_NAME_PATTERN.test('_survey')).toBe(false); // Starts with underscore
         expect(INSTRUMENT_NAME_PATTERN.test('sur-vey')).toBe(false); // Contains hyphen
         expect(INSTRUMENT_NAME_PATTERN.test('')).toBe(false); // Empty
-      });
-    });
-
-    describe('RECORD_ID_PATTERN', () => {
-      it('should match valid record IDs (20+ alphanumeric)', () => {
-        expect(RECORD_ID_PATTERN.test('abcdefghij0123456789')).toBe(true);
-        expect(RECORD_ID_PATTERN.test('record12345678901234567890')).toBe(true);
-        expect(RECORD_ID_PATTERN.test('ABCDEFGHIJ0123456789')).toBe(true); // Case insensitive
-      });
-
-      it('should reject invalid record IDs', () => {
-        expect(RECORD_ID_PATTERN.test('short')).toBe(false); // Too short
-        expect(RECORD_ID_PATTERN.test('abcdefghij012345678')).toBe(false); // 19 chars
-        expect(RECORD_ID_PATTERN.test('abcdefghij_123456789')).toBe(false); // Contains underscore
-        expect(RECORD_ID_PATTERN.test('')).toBe(false); // Empty
       });
     });
 

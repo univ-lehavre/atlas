@@ -20,13 +20,11 @@ export const SuccessResponseOpenAPI = {
 };
 
 // Validation patterns
-export const CRF_NAME_PATTERN = /^[\w,]*$/;
+// Comma-separated list of field/form names (e.g. `fields=a,b,c`), later split on
+// `,`. Distinct from crf-core's CRF_NAME_PATTERN, which validates a single name.
+export const CRF_NAME_LIST_PATTERN = /^[\w,]*$/;
 export const INSTRUMENT_NAME_PATTERN = /^[a-z][a-z0-9_]*$/;
-export const RECORD_ID_PATTERN = /^[a-z0-9]{20,}$/i;
 export const EMAIL_PATTERN = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/;
-
-// RecordId schema
-export const RecordIdSchema = S.String.pipe(S.minLength(20), S.pattern(RECORD_ID_PATTERN));
 
 // InstrumentName schema
 export const InstrumentNameSchema = S.String.pipe(S.pattern(INSTRUMENT_NAME_PATTERN));
