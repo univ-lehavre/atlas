@@ -23,6 +23,9 @@ const CLI_IO_MIGRATION_PENDING = new Set([
 const PRIVATE_INTERNAL_ALLOWED = new Set([
   "@univ-lehavre/atlas-ui",
   "@univ-lehavre/atlas-test-utils-sveltekit",
+  // Helpers de test Effect (layers/doubles) consommés uniquement par les
+  // tests des autres paquets ; jamais buildé ni publié (écart E14, ADR 0049).
+  "@univ-lehavre/atlas-test-utils-effect",
 ]);
 
 // Deps that belong in cli/, never in packages/ dependencies
@@ -138,7 +141,9 @@ function findRelativeCrossWorkspaceImports(srcDir, currentDir) {
     const content = readFileSync(file, "utf8");
     const fileDir = path.dirname(file);
     for (const match of [
-      ...content.matchAll(new RegExp(ANY_IMPORT_RE.source, ANY_IMPORT_RE.flags)),
+      ...content.matchAll(
+        new RegExp(ANY_IMPORT_RE.source, ANY_IMPORT_RE.flags),
+      ),
       ...content.matchAll(
         new RegExp(DYNAMIC_IMPORT_RE.source, DYNAMIC_IMPORT_RE.flags),
       ),

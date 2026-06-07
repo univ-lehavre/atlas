@@ -271,6 +271,22 @@ export function typescript(options = {}) {
       plugins: { vitest },
       rules: {
         ...vitest.configs.recommended.rules,
+        // Garde-fou anti-faux-vert (écart E14, ADR 0049) : un `it`/`test`
+        // dont le callback est `() => Effect.xxx(...)` construit un Effect et
+        // le RETOURNE sans jamais l'exécuter — vitest ignore la valeur de
+        // retour (hors `it.effect`/Promise), donc le corps du test ne tourne
+        // pas et le test passe toujours, à tort. Utiliser `it.effect(() =>
+        // Effect.gen(...))` (exécuté par @effect/vitest) ou exécuter
+        // explicitement l'Effect dans un callback `async`.
+        "no-restricted-syntax": [
+          "error",
+          {
+            selector:
+              "CallExpression[callee.type='Identifier'][callee.name=/^(it|test|fit|xit)$/] > ArrowFunctionExpression[async=false][body.type='CallExpression'][body.callee.object.name='Effect']",
+            message:
+              "Faux-vert : ce test retourne un Effect sans l'exécuter. Utilise it.effect(() => Effect.gen(...)) ou exécute l'Effect dans un callback async (await Effect.runPromise(...)). Voir ADR 0049 (E14).",
+          },
+        ],
       },
     },
 
