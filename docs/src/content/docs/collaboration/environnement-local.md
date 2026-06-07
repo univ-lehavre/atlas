@@ -121,6 +121,28 @@ d'API externes, par exemple) documentent leurs variables dans leur
 propre `README.md` — l'information vit au niveau le plus spécifique qui
 la contient (voir [politique de documentation](/atlas/quality/documentation/)).
 
+### Serveurs MCP (assistant de développement IA)
+
+Le dépôt configure plusieurs serveurs [MCP](/atlas/architecture/tech-choices/#serveurs-mcp)
+dans [`.mcp.json`](https://github.com/univ-lehavre/atlas/blob/main/.mcp.json).
+La plupart ne demandent que **Node.js/npm** (déjà installés ci-dessus) ;
+deux ont des prérequis supplémentaires, à mettre en place une seule fois :
+
+- `appwrite-api` nécessite **uv** (gestionnaire de paquets Python) :
+  `curl -LsSf https://astral.sh/uv/install.sh | sh`
+- `appwrite-api` lit aussi trois variables d'environnement (un jeton
+  d'API Appwrite et l'_endpoint_ du projet) :
+
+  ```bash
+  export APPWRITE_PROJECT_ID="<project_id>"
+  export APPWRITE_API_KEY="<api_key>"
+  export APPWRITE_ENDPOINT="https://appwrite.<host>/v1"
+  ```
+
+  Ces variables ne servent qu'au serveur MCP local (confort de
+  développement) ; elles ne sont **pas** requises pour build, tester ou
+  lint le dépôt.
+
 ## Si quelque chose ne va pas
 
 | Symptôme                                              | Cause probable                                    | Action                                                                                                      |

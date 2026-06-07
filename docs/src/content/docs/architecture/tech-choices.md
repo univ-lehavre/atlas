@@ -2,11 +2,15 @@
 title: Choix techniques
 ---
 
-Cette page récapitule les outils et plateformes retenus par Atlas, et **pourquoi**.
+Cette page récapitule les outils et plateformes retenus par Atlas, et surtout **pourquoi** : pour chaque choix, le contexte, l'alternative écartée et le compromis. Le _pourquoi_ durable et structurant est tracé dans les [ADR](/atlas/decisions/) ; cette page en donne le résumé. Les choix sont regroupés par usage — langage, front-end, serveurs, données, tests, outillage du dépôt.
 
 ## Langage
 
-**[TypeScript](https://www.typescriptlang.org/)** sur tout le dépôt — un langage qui ajoute des types statiques à JavaScript. Le mode `strictTypeChecked` est activé : les erreurs de typage bloquent la compilation. Voir [Style de code](/atlas/quality/code-style/).
+À la base, **JavaScript** : le langage du Web, le seul qui s'exécute nativement dans tous les navigateurs. Sa spécification, **ECMAScript**, est gouvernée par le comité **TC39** (membres : éditeurs de navigateurs, entreprises, experts) et publie une révision **chaque année** ; les moteurs des navigateurs et de Node.js l'implémentent au fil de l'eau. JavaScript est rapide à écrire mais **non typé** : une faute (passer un nombre là où une chaîne est attendue) ne se voit qu'à l'exécution.
+
+C'est précisément ce manque qui a fait naître **[TypeScript](https://www.typescriptlang.org/)** (Microsoft, 2012) : un sur-ensemble de JavaScript qui **ajoute des types statiques vérifiés à la compilation**, puis s'efface (il se compile en JavaScript ordinaire). On écrit du JavaScript moderne, mais le compilateur attrape les erreurs de type **avant** l'exécution.
+
+Atlas l'utilise sur **tout le dépôt**, en mode `strictTypeChecked` : les erreurs de typage **bloquent la compilation**. Le prix à payer — une étape de compilation et une rigueur de typage parfois verbeuse — est assumé : il achète une classe entière de bugs détectés au plus tôt. Voir [Style de code](/atlas/quality/code-style/).
 
 ## Front-end
 
@@ -22,7 +26,7 @@ Atlas l'a retenu pour :
 
 ## Serveurs HTTP
 
-**[Hono](https://hono.dev/)** pour les services HTTP (catégorie [`services/`](https://github.com/univ-lehavre/atlas/tree/main/services)). Hono est un _framework_ HTTP minimaliste, typé, qui tourne sur Node.js, Bun, Deno et les _workers_ Cloudflare sans changement de code.
+**[Hono](https://hono.dev/)** pour les services HTTP (catégorie [`services/`](https://github.com/univ-lehavre/atlas/tree/main/services)). Hono est un _framework_ HTTP minimaliste, typé, qui tourne sur **Node.js** — l'environnement qui exécute du JavaScript côté serveur, hors du navigateur — ainsi que sur Bun, Deno et les _workers_ Cloudflare sans changement de code. Atlas standardise sur Node.js (version épinglée dans [`.nvmrc`](https://github.com/univ-lehavre/atlas/blob/main/.nvmrc)).
 
 ## Backend-as-a-Service
 
@@ -61,13 +65,15 @@ Voir [Tests](/atlas/quality/tests/) pour la pyramide à cinq niveaux.
 
 ## Gestion du dépôt
 
-**[pnpm](https://pnpm.io/)** comme gestionnaire de paquets — _workspaces_ natifs, cache partagé, installations plus rapides que npm/yarn pour les gros dépôts.
+Le dépôt est un **monorepo** : de nombreux paquets versionnés ensemble dans un seul dépôt git (voir [Monorepo](/atlas/architecture/monorepo/)). Cette section liste l'outillage qui le rend gérable à cette échelle.
 
-**[turbo](https://turbo.build/)** comme orchestrateur de tâches — parallélisation et cache de `build`, `test`, `lint` à travers les sous-projets.
+**[pnpm](https://pnpm.io/)** comme **gestionnaire de paquets** — l'outil qui installe les dépendances JavaScript et orchestre les paquets du monorepo. Retenu pour ses _workspaces_ natifs (les paquets se référencent entre eux sans publication), son cache partagé sur disque et des installations plus rapides que npm ou yarn sur un gros dépôt.
+
+**[turbo](https://turbo.build/)** comme orchestrateur de tâches — parallélisation et cache de `build`, `test`, `lint` à travers les sous-projets (ne réexécute que ce qui a changé).
 
 **[Changesets](https://github.com/changesets/changesets)** pour la gestion des versions et des changelogs.
 
-**[VitePress](https://vitepress.dev/)** pour la documentation publique — génère un site statique à partir des fichiers Markdown de `docs/`.
+**[Astro Starlight](https://starlight.astro.build/)** pour la documentation publique — génère un site statique à partir des fichiers Markdown de `docs/`. (Le dépôt utilisait auparavant VitePress ; la migration est tracée dans l'[ADR 0036](/atlas/decisions/0036-migration-vitepress-astro-starlight/).)
 
 ## Serveurs MCP
 
@@ -81,17 +87,7 @@ Voir [Tests](/atlas/quality/tests/) pour la pyramide à cinq niveaux.
 | `appwrite-api`  | API Appwrite (nécessite des variables d'environnement)       |
 | `openalex`      | API OpenAlex — base bibliographique ouverte (240M+ articles) |
 
-### Prérequis
-
-- **Node.js/npm** pour `effect-mcp`, `svelte-mcp`, `appwrite-docs`, `openalex`
-- **uv** (gestionnaire Python) pour `appwrite-api` : `curl -LsSf https://astral.sh/uv/install.sh | sh`
-
-### Variables d'environnement Appwrite
-
-Pour utiliser le serveur `appwrite-api` :
-
-```bash
-export APPWRITE_PROJECT_ID="<project_id>"
-export APPWRITE_API_KEY="<api_key>"
-export APPWRITE_ENDPOINT="https://appwrite.<host>/v1"
-```
+La mise en place de ces serveurs (prérequis `uv`, variables
+d'environnement d'`appwrite-api`) est un détail d'**installation**, pas un
+choix technique : elle est documentée dans
+[Environnement local → Serveurs MCP](/atlas/collaboration/environnement-local/#serveurs-mcp-assistant-de-développement-ia).
