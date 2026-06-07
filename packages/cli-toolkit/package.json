@@ -52,6 +52,10 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },
+  "dependencies": {
+    "@effect/platform-node": "~0.106.0",
+    "@univ-lehavre/atlas-effect-socle": "workspace:*"
+  },
   "peerDependencies": {
     "effect": "~3.21.2"
   },

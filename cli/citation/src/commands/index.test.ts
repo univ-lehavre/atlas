@@ -1,29 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { Effect } from "effect";
 
-// Hoisted captures: we replace Effect.runPromiseExit with a wrapper that
-// also stashes the running promise so tests can await it.
-const runState: { lastPromise: Promise<unknown> | null } = vi.hoisted(() => ({
-  lastPromise: null,
-}));
-
-vi.mock("effect", async () => {
-  const actual = await vi.importActual<typeof import("effect")>("effect");
-  return {
-    ...actual,
-    Effect: {
-      ...actual.Effect,
-      runPromiseExit: (
-        effect: Parameters<typeof actual.Effect.runPromiseExit>[0],
-      ) => {
-        const p = actual.Effect.runPromiseExit(effect);
-        runState.lastPromise = p;
-        return p;
-      },
-    },
-  };
-});
-
 // ── Mock surface ────────────────────────────────────────────────────────────
 
 const argsState = { name: undefined as string | undefined };
@@ -195,15 +172,12 @@ const resetState = (): void => {
   citationState.retrieveByIdsResult = { results: [] };
   Object.values(promptCalls).forEach((m) => m.mockClear());
   Object.values(citationCalls).forEach((m) => m.mockClear());
-  runState.lastPromise = null;
 };
 
 const importFresh = async (): Promise<void> => {
   vi.resetModules();
-  await import("./index.js");
-  if (runState.lastPromise) {
-    await runState.lastPromise.catch(() => undefined);
-  }
+  const { program } = await import("./index.js");
+  await Effect.runPromiseExit(program);
 };
 
 // ── Tests ──────────────────────────────────────────────────────────────────

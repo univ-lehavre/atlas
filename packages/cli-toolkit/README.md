@@ -53,6 +53,27 @@ import { main } from '../commands/index.js';
 runMain(main); // main() rejette → "Fatal error:" + process.exit(1)
 ```
 
+### Amorçage Effect (`./effect`)
+
+Pour les CLIs écrites en [Effect](https://effect.website/), le sous-chemin
+`@univ-lehavre/atlas-cli-toolkit/effect` expose `runEffectCli` : l'amorçage
+**unique** (écart E11, [ADR 0045](https://github.com/univ-lehavre/atlas/blob/main/docs/src/content/docs/decisions/0045-runtime-central-effect.md)).
+Il exécute le programme CLI sur un runtime central qui silencie le logger (les
+CLIs dessinent leur propre UI) et fournit `NodeContext`, et mappe un `ExitCode`
+en échec vers `process.exitCode`. Remplace les `NodeRuntime.runMain` /
+`Effect.runPromiseExit` / runners ad hoc par CLI.
+
+Ce sous-chemin tire `effect` ; l'import par défaut (env/flags/`runMain`) reste,
+lui, **sans** `effect` (peer optionnel).
+
+```ts
+// bin/atlas-foo.ts
+import { runEffectCli } from '@univ-lehavre/atlas-cli-toolkit/effect';
+import { program } from '../commands/index.js';
+
+await runEffectCli(program); // ExitCode numérique → process.exitCode ; sinon fallback (1)
+```
+
 ## API
 
 - `getEnv(name, fallback?)` — lit une variable d'environnement (vide ⇒ fallback).
@@ -60,5 +81,9 @@ runMain(main); // main() rejette → "Fatal error:" + process.exit(1)
 - `hasFlag(args, ...names)` — présence d'un flag booléen (ou de l'un de ses alias).
 - `getFlagValue(args, name)` — valeur suivant un flag (`--threshold 0.3` → `"0.3"`).
 - `findUnknownFlags(args, { booleanFlags, valueFlags })` — flags non reconnus.
-- `runMain(main, { exitCode?, onError? })` — exécute un `main` async, reporte et sort.
+- `runMain(main, { exitCode?, onError? })` — exécute un `main` async non-Effect, reporte et sort.
 - `clearScreen()` — réinitialise l'écran du terminal (séquence ANSI `ESC c`).
+- `runEffectCli(program, { fallbackExitCode? })` (sous-chemin `./effect`) —
+  amorçage Effect sur le runtime central.
+- `quiet(program)` (sous-chemin `./effect`, **déprécié**) — silence le logger
+  Effect ; `runEffectCli` le fait déjà.

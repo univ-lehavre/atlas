@@ -1,5 +1,4 @@
 import { Effect } from "effect";
-import { quiet } from "@univ-lehavre/atlas-cli-toolkit/effect";
 import { chain } from "lodash";
 
 import { cmd } from "../config/args.js";
@@ -18,7 +17,7 @@ import {
   selection,
 } from "../prompts/index.js";
 
-const program = Effect.gen(function* () {
+export const program = Effect.gen(function* () {
   // Saisie du nom du chercheur
   const argv = yield* cmd();
   let name: string;
@@ -223,5 +222,3 @@ const program = Effect.gen(function* () {
 
   finish("Fin");
 });
-
-Effect.runPromiseExit(quiet(program));

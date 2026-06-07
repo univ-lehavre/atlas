@@ -22,7 +22,7 @@
  */
 
 import { Command, HelpDoc, Options, Span } from '@effect/cli';
-import { NodeContext, NodeRuntime } from '@effect/platform-node';
+import { runEffectCli } from '@univ-lehavre/atlas-cli-toolkit/effect';
 import { Effect } from 'effect';
 import { serve } from '@hono/node-server';
 import { createCliContext, detectCi, ExitCode, intro, log, pc } from '../../shared/index.js';
@@ -206,12 +206,4 @@ const cli = Command.run(command, {
 // Entry Point
 // ─────────────────────────────────────────────────────────────────────────────
 
-cli(process.argv).pipe(
-  Effect.catchAll((exitCode) =>
-    Effect.sync(() => {
-      process.exitCode = typeof exitCode === 'number' ? exitCode : ExitCode.Error;
-    })
-  ),
-  Effect.provide(NodeContext.layer),
-  NodeRuntime.runMain
-);
+await runEffectCli(cli(process.argv), { fallbackExitCode: ExitCode.Error });

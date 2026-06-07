@@ -21,7 +21,7 @@
  */
 
 import { Args, Command, HelpDoc, Options, Span } from '@effect/cli';
-import { NodeContext } from '@effect/platform-node';
+import { runEffectCli } from '@univ-lehavre/atlas-cli-toolkit/effect';
 import { Effect, Option } from 'effect';
 import * as p from '@clack/prompts';
 import pc from 'picocolors';
@@ -277,14 +277,5 @@ const cli = Command.run(command, {
  * Called from bin/atlas-net.ts
  */
 export const main = async (): Promise<void> => {
-  await Effect.runPromise(
-    cli(process.argv).pipe(
-      Effect.catchAll((exitCode) =>
-        Effect.sync(() => {
-          process.exitCode = typeof exitCode === 'number' ? exitCode : ExitCode.Error;
-        })
-      ),
-      Effect.provide(NodeContext.layer)
-    )
-  );
+  await runEffectCli(cli(process.argv), { fallbackExitCode: ExitCode.Error });
 };
