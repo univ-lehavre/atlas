@@ -44,12 +44,12 @@ pourquoi un phantom peut échapper à `audit:unused`.
 ## Décision
 
 > **On acte que `audit:unused` (knip) ne détecte pas les dépendances fantômes
-> masquées par une `peerDependency` d'un paquet importé. Tant qu'un contrôle
-> dédié n'existe pas (E5), le retrait de phantoms `@effect/*` (et apparentés) se
-> fait par **audit du code**, pas par confiance dans knip ; les dérogations
-> nécessaires restent listées dans
-> [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/). E5 ajoutera un
-> contrôle ciblant ce faux-négatif.**
+> masquées par une `peerDependency` d'un paquet importé. E5 ajoute un contrôle
+> dédié (`audit:phantom-peers`, branché dans `ci:audit`) ciblant précisément la
+> classe qui a piégé E4 : les paquets `@effect/*` « peers pratiquement
+> optionnels » déclarés sans être importés. Les dérogations légitimes (usage
+> dynamique) restent listées en `knip.ignoreDependencies`
+> ([ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/)).**
 
 ### Pourquoi knip ne peut pas le voir seul
 
@@ -61,21 +61,29 @@ d'imports — ce que `audit:unused` ne fait pas. Ce n'est pas un bug de
 configuration, c'est une **limite du modèle** : aucun réglage knip n'y change
 rien tant qu'on n'analyse pas les chaînes de peers.
 
-### En attendant E5 : audit du code, dérogations tracées
+### Le contrôle d'E5 : portée étroite, zéro faux positif
 
-Jusqu'à ce qu'E5 outille un contrôle « phantom-peer », deux règles tiennent :
-le retrait d'une dep `@effect/*` (ou de toute dep à large surface de peers) se
-**vérifie par grep d'imports réels**, comme en Phase 0 ; et toute dérogation knip
-résiduelle reste enregistrée dans
-[ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/), comme l'exige déjà
-sa discipline.
+Distinguer en général un vrai phantom d'un peer légitimement requis demande
+l'analyse d'usage de l'intermédiaire — un pur parcours du graphe de dépendances
+sur-détecte (les outils du toolchain — `vite`, `typescript`, `eslint`… — ne
+s'importent pas mais sont bien utilisés ; `@effect/printer`, peer de `@effect/cli`,
+est requis au runtime sans être importé). Plutôt qu'une heuristique générale
+bruyante, `audit:phantom-peers`
+([`scripts/audit/phantom-peers.mjs`](https://github.com/univ-lehavre/atlas/blob/main/scripts/audit/phantom-peers.mjs))
+vise une **liste explicite** de paquets `@effect/*` « peers pratiquement
+optionnels » (`@effect/cluster`, `@effect/rpc`, `@effect/sql`,
+`@effect/experimental`) : déclarés sans être importés, ils sont signalés et font
+échouer `ci:audit`. C'est exactement la classe d'E4, attrapée avec **zéro faux
+positif** ; toute nouvelle entrée s'ajoute à la liste avec sa raison.
 
-### Ce que E5 ajoutera
+### Audit du code en complément, dérogations tracées
 
-E5 introduira un contrôle dédié (plugin knip ou script d'audit) qui **analyse les
-chaînes de peerDependencies** pour signaler une dep déclarée qui ne sert qu'à
-satisfaire un peer sans être importée. L'objectif : qu'un futur phantom soit
-**détectable automatiquement**, pas seulement par revue manuelle.
+Le contrôle outillé ne remplace pas la vigilance pour les classes hors liste :
+le retrait d'une dep à large surface de peers se **vérifie par grep d'imports
+réels**, comme en Phase 0 ; et toute dérogation knip légitime reste enregistrée en
+`knip.ignoreDependencies`
+([ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/)), respectée aussi
+par `audit:phantom-peers`.
 
 ### Alternative écartée : se reposer sur `ignoreDependencies` à perpétuité
 
@@ -86,30 +94,35 @@ détecter ce qui est mort. Écartée au profit du contrôle outillé d'E5.
 
 ## Statut
 
-Accepted (2026-06-07). **Prépare l'écart E5** (durcir knip) du
+Accepted (2026-06-07). **Cadre l'écart E5** (durcir knip) du
 [plan de résorption socle Effect](/atlas/plans/2026-06-04-socle-effect/)
 (Phase 2) et **explicite le mécanisme** derrière les dérogations knip de
-[ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/). Aucun code livré
-ici ; le contrôle est livré par E5.
+[ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/). Le contrôle
+`audit:phantom-peers` est livré avec E5 et branché dans `ci:audit`.
 
 ## Conséquences
 
-**Bénéfices.** Le faux-négatif est nommé et expliqué : un mainteneur sait
-désormais _pourquoi_ `audit:unused` peut rater un phantom et _comment_ le vérifier
-en attendant E5. La revue des dérogations knip de l'ADR 0019 gagne en sens.
+**Bénéfices.** Le faux-négatif est nommé, expliqué et **outillé** :
+`audit:phantom-peers` fait échouer la CI si un `@effect/*` « peer pratiquement
+optionnel » est déclaré sans être importé — la régression d'E4 ne peut plus se
+réintroduire silencieusement. La revue des dérogations knip de l'ADR 0019 gagne en
+sens.
 
-**Prix à payer.** Tant qu'E5 n'est pas livré, la détection reste **manuelle** : un
-nouveau phantom à large surface de peers peut être introduit sans alerte. La
-vigilance repose sur la revue de code.
+**Prix à payer.** Le contrôle est **volontairement étroit** (liste explicite de
+`@effect/*`) : un phantom hors de cette liste — autre namespace, ou peer d'un autre
+écosystème — reste invisible et demande la vigilance de la revue. La liste est à
+étendre au cas par cas.
 
 **Garde-fous.**
 
-- **Retrait de dep `@effect/*` prouvé par grep d'imports**, pas par knip seul,
-  jusqu'à E5.
+- **`audit:phantom-peers` dans `ci:audit`** : tout `@effect/*` optionnel déclaré
+  sans import fait échouer la CI ; couvert par
+  [`phantom-peers.test.mjs`](https://github.com/univ-lehavre/atlas/blob/main/scripts/audit/phantom-peers.test.mjs).
+- **Étendre la liste `OPTIONAL_EFFECT_PEERS`** quand un nouveau peer « pratiquement
+  optionnel » apparaît, avec sa raison en commentaire.
+- **Phantoms hors liste** : vigilance de revue + grep d'imports, comme en Phase 0.
 - **Dérogations knip tracées dans
-  [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/)** — règle
-  inchangée.
-- **E5 doit livrer un contrôle automatique** du phantom-peer ; sans lui, cet angle
-  mort persiste.
+  [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/)** — respectées par
+  le contrôle.
 - Réévaluation à la **cadence d'audit transverse**
   ([ADR 0039](/atlas/decisions/0039-cadence-audit-transverse/)).
