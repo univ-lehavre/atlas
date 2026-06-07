@@ -10,6 +10,7 @@ import {
   binNames,
   relativeMarkdownLinks,
   adrReferences,
+  staleAdrCounts,
   navLinks,
   findOrphanPages,
 } from "./documentation.mjs";
@@ -199,6 +200,29 @@ describe("adrReferences", () => {
     const md =
       "voir [local](../decisions/0029-x.md) et [distant](https://h/decisions/0099-y.md)";
     assert.deepEqual(adrReferences(md), ["0029-x"]);
+  });
+});
+
+describe("staleAdrCounts", () => {
+  it("signale un compteur obsolète", () => {
+    assert.deepEqual(staleAdrCounts("lire les 35 ADR du dépôt", 52), [
+      "35 ADR",
+    ]);
+  });
+
+  it("ne signale rien quand le compteur est exact", () => {
+    assert.deepEqual(staleAdrCounts("lire les 52 ADR du dépôt", 52), []);
+  });
+
+  it("capture plusieurs compteurs obsolètes", () => {
+    assert.deepEqual(staleAdrCounts("43 ADR hier, 35 ADR avant", 52), [
+      "43 ADR",
+      "35 ADR",
+    ]);
+  });
+
+  it("ignore la prose sans le motif « N ADR »", () => {
+    assert.deepEqual(staleAdrCounts("les ADR du dépôt, ADR 0052", 52), []);
   });
 });
 

@@ -78,6 +78,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0049 | [Convention de test Effect (it.effect, layers partagés, garde-fou)](/atlas/decisions/0049-convention-test-effect/)                                | Accepted |
 | 0050 | [Limite de l'audit knip face aux peerDependencies](/atlas/decisions/0050-limite-knip-peer-deps/)                                                  | Accepted |
 | 0051 | [Rétrospective du chantier socle Effect (E1–E14)](/atlas/decisions/0051-retrospective-socle-effect/)                                              | Accepted |
+| 0052 | [Charte rédactionnelle de la documentation (règles de relecture)](/atlas/decisions/0052-charte-redactionnelle-documentation/)                     | Accepted |
 
 ## Quand ouvrir un ADR
 

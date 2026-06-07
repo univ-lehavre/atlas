@@ -147,6 +147,18 @@ export const adrReferences = (markdown) =>
     ),
   ].map((m) => m[1]);
 
+/**
+ * Compteurs « N ADR » présents dans `markdown` qui ne correspondent pas au
+ * nombre réel d'ADR (`adrCount`). Charte rédactionnelle (ADR 0052, règle R8).
+ * Ne s'applique qu'aux pages catalogue, où « N ADR » désigne le total —
+ * ailleurs « 6 ADR de cadrage » est un sous-ensemble légitime.
+ * @returns {string[]} les libellés obsolètes (ex. `["35 ADR"]`), `[]` si OK.
+ */
+export const staleAdrCounts = (markdown, adrCount) =>
+  [...markdown.matchAll(/\b(\d{1,3})\s+ADR\b/g)]
+    .filter((m) => Number.parseInt(m[1], 10) !== adrCount)
+    .map((m) => m[0]);
+
 /** Racine du contenu de documentation (Starlight). */
 const DOCS_ROOT = path.join("docs", "src", "content", "docs");
 
@@ -333,6 +345,31 @@ export const auditDocumentation = (cwd = ".") => {
       blocking.push(
         `[B9] ${orphan} : page orpheline (dossier absent de la sidebar Starlight).`,
       );
+    }
+  }
+
+  // W7 — compteur d'ADR exact dans les pages catalogue (charte rédactionnelle,
+  // ADR 0052, règle R8). On ne contrôle QUE l'index et le parcours, seules
+  // pages où « N ADR » désigne le total : ailleurs « 6 ADR de cadrage » ou un
+  // instantané d'audit historique sont des sous-ensembles légitimes, pas des
+  // compteurs à tenir à jour.
+  const adrCount = existsSync(decisionsDir)
+    ? readdirSync(decisionsDir).filter((f) => /^\d{4}-.+\.mdx?$/.test(f)).length
+    : 0;
+  if (adrCount > 0) {
+    const catalogPages = ["decisions/index", "decisions/parcours"];
+    for (const page of catalogPages) {
+      const mdx = path.join(cwd, DOCS_ROOT, `${page}.mdx`);
+      const pagePath = existsSync(mdx)
+        ? mdx
+        : path.join(cwd, DOCS_ROOT, `${page}.md`);
+      const content = readText(pagePath);
+      if (content === null) continue;
+      for (const stale of staleAdrCounts(content, adrCount)) {
+        warnings.push(
+          `[W7] ${page} : compteur d'ADR « ${stale} » obsolète — ${adrCount} ADR réels (ADR 0052, R8).`,
+        );
+      }
     }
   }
 
