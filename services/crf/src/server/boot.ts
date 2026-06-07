@@ -22,6 +22,7 @@ import { Config, Effect, Layer } from 'effect';
 import { makeLoggerLayer, makeRuntime, type AppRuntime } from '@univ-lehavre/atlas-effect-socle';
 import { CrfUrl, CrfToken, makeCrfClientLayer } from '@univ-lehavre/atlas-crf-client';
 import type { CrfClientService } from '@univ-lehavre/atlas-crf-client';
+import { makeTracerLayer } from './telemetry.js';
 
 /** Environment configuration of the CRF service, read once at boot. */
 export const AppConfig = Config.all({
@@ -45,12 +46,15 @@ export type AppConfigType = Config.Config.Success<typeof AppConfig>;
 export const loadConfig = (): AppConfigType => Effect.runSync(AppConfig);
 
 /**
- * Builds the service `AppLayer`: the logger (level from `LOG_LEVEL`) plus the
- * REDCap client mounted as `CrfClientService`. Composed once per process.
+ * Builds the service `AppLayer`: the logger (level from `LOG_LEVEL`), the
+ * Effect↔OTel tracer bridge (so `Effect.withSpan` business spans correlate with
+ * the HTTP spans — écart E9), and the REDCap client mounted as
+ * `CrfClientService`. Composed once per process.
  */
 export const makeAppLayer = (config: AppConfigType): Layer.Layer<CrfClientService> =>
   Layer.mergeAll(
     makeLoggerLayer(),
+    makeTracerLayer(),
     makeCrfClientLayer({
       url: CrfUrl(config.crfApiUrl),
       token: CrfToken(config.crfApiToken),

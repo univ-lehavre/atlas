@@ -79,7 +79,16 @@ const makeRequest = (
         }),
       catch: (cause) => new CrfNetworkError({ cause }),
     }),
-    Effect.retry(retrySchedule)
+    Effect.retry(retrySchedule),
+    // Business span over the whole retried request — retries are visible
+    // inside it (écart E9). No-op when no tracer is installed. Attributes are
+    // metadata only: never the token or filter-logic values.
+    Effect.withSpan('redcap.request', {
+      attributes: {
+        'http.request.method': 'POST',
+        'redcap.content': params['content'] ?? 'unknown',
+      },
+    })
   );
 
 const checkResponseStatus = (
@@ -264,7 +273,10 @@ const makeCrfClient = (rawConfig: CrfConfig, fetchFn: typeof fetch = fetch): Crf
                 )
               )
             )
-          )
+          ),
+          // Span only the actual (lazy, first-call) version detection — not the
+          // cache hit below (écart E9).
+          Effect.withSpan('redcap.detect_version')
         )
       : Effect.succeed(state.adapter);
 
@@ -302,6 +314,10 @@ const makeCrfClient = (rawConfig: CrfConfig, fetchFn: typeof fetch = fetch): Crf
       }))
     );
 
+  // Each public op carries a `redcap.<op>` business span (écart E9). No-op when
+  // no tracer is installed; correlates with the HTTP span via the shared global
+  // tracer when telemetry is enabled. The inner `redcap.request` span (in
+  // makeRequest) nests under these.
   return {
     getVersion: () =>
       pipe(
@@ -313,7 +329,8 @@ const makeCrfClient = (rawConfig: CrfConfig, fetchFn: typeof fetch = fetch): Crf
                 state = { ...state, versionString };
               })
             : Effect.void
-        )
+        ),
+        Effect.withSpan('redcap.get_version')
       ),
 
     getProjectInfo: () =>
@@ -324,26 +341,41 @@ const makeCrfClient = (rawConfig: CrfConfig, fetchFn: typeof fetch = fetch): Crf
             fetchJSON<unknown>(config, { content: 'project', format: 'json' }, fetchFn),
             Effect.map((response) => adapter.parseProjectInfo(response))
           )
-        )
+        ),
+        Effect.withSpan('redcap.get_project_info')
       ),
 
     getInstruments: () =>
-      fetchJSON<readonly Instrument[]>(config, { content: 'instrument', format: 'json' }, fetchFn),
+      pipe(
+        fetchJSON<readonly Instrument[]>(
+          config,
+          { content: 'instrument', format: 'json' },
+          fetchFn
+        ),
+        Effect.withSpan('redcap.get_instruments')
+      ),
 
     getFields: () =>
-      fetchJSON<readonly Field[]>(config, { content: 'metadata', format: 'json' }, fetchFn),
+      pipe(
+        fetchJSON<readonly Field[]>(config, { content: 'metadata', format: 'json' }, fetchFn),
+        Effect.withSpan('redcap.get_fields')
+      ),
 
     getExportFieldNames: () =>
-      fetchJSON<readonly ExportFieldName[]>(
-        config,
-        { content: 'exportFieldNames', format: 'json' },
-        fetchFn
+      pipe(
+        fetchJSON<readonly ExportFieldName[]>(
+          config,
+          { content: 'exportFieldNames', format: 'json' },
+          fetchFn
+        ),
+        Effect.withSpan('redcap.get_export_field_names')
       ),
 
     exportRecords: <T>(options: ExportRecordsOptions = {}) =>
       pipe(
         applyExportTransform(buildExportParams(options)),
-        Effect.flatMap((params) => fetchJSON<readonly T[]>(config, params, fetchFn))
+        Effect.flatMap((params) => fetchJSON<readonly T[]>(config, params, fetchFn)),
+        Effect.withSpan('redcap.export_records')
       ),
 
     importRecords: (
@@ -352,24 +384,36 @@ const makeCrfClient = (rawConfig: CrfConfig, fetchFn: typeof fetch = fetch): Crf
     ) =>
       pipe(
         applyImportTransform(buildImportParams(records, options)),
-        Effect.flatMap((params) => fetchJSON<ImportResult>(config, params, fetchFn))
+        Effect.flatMap((params) => fetchJSON<ImportResult>(config, params, fetchFn)),
+        Effect.withSpan('redcap.import_records', {
+          attributes: { 'redcap.record_count': records.length },
+        })
       ),
 
     getSurveyLink: (record: RecordId, instrument: InstrumentName) =>
-      fetchText(config, { content: 'surveyLink', instrument, record }, fetchFn),
+      pipe(
+        fetchText(config, { content: 'surveyLink', instrument, record }, fetchFn),
+        Effect.withSpan('redcap.get_survey_link')
+      ),
 
     downloadPdf: (recordId: RecordId, instrument: InstrumentName) =>
-      fetchBuffer(
-        config,
-        { content: 'pdf', record: recordId, instrument, returnFormat: 'json' },
-        fetchFn
+      pipe(
+        fetchBuffer(
+          config,
+          { content: 'pdf', record: recordId, instrument, returnFormat: 'json' },
+          fetchFn
+        ),
+        Effect.withSpan('redcap.download_pdf')
       ),
 
     exportFile: (field: string, recordId: string) =>
-      fetchBuffer(
-        config,
-        { content: 'file', action: 'export', field, record: recordId, returnFormat: 'json' },
-        fetchFn
+      pipe(
+        fetchBuffer(
+          config,
+          { content: 'file', action: 'export', field, record: recordId, returnFormat: 'json' },
+          fetchFn
+        ),
+        Effect.withSpan('redcap.export_file')
       ),
 
     importFile: (field: string, recordId: string, fileName: string, content: Uint8Array) =>
@@ -389,7 +433,12 @@ const makeCrfClient = (rawConfig: CrfConfig, fetchFn: typeof fetch = fetch): Crf
           catch: (cause) => new CrfNetworkError({ cause }),
         }),
         Effect.flatMap(checkResponseStatus),
-        Effect.asVoid
+        Effect.asVoid,
+        // importFile bypasses makeRequest (multipart upload), so this is its
+        // only span.
+        Effect.withSpan('redcap.import_file', {
+          attributes: { 'http.request.method': 'POST', 'redcap.content': 'file' },
+        })
       ),
 
     findUserIdByEmail: (email: string) =>
@@ -404,7 +453,8 @@ const makeCrfClient = (rawConfig: CrfConfig, fetchFn: typeof fetch = fetch): Crf
         Effect.flatMap((params) =>
           fetchJSON<readonly { readonly userid?: string }[]>(config, params, fetchFn)
         ),
-        Effect.map(extractUserId)
+        Effect.map(extractUserId),
+        Effect.withSpan('redcap.find_user_id_by_email')
       ),
   };
 };

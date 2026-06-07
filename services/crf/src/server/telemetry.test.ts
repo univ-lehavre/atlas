@@ -41,7 +41,8 @@ vi.mock('@opentelemetry/resources', () => ({
   resourceFromAttributes: vi.fn((attrs: Record<string, unknown>) => ({ attrs })),
 }));
 
-import { isTelemetryEnabled, startTelemetry } from './telemetry.js';
+import { Layer } from 'effect';
+import { isTelemetryEnabled, makeTracerLayer, startTelemetry } from './telemetry.js';
 
 describe('isTelemetryEnabled', () => {
   it('is disabled when nothing is configured', () => {
@@ -123,5 +124,19 @@ describe('startTelemetry', () => {
     startTelemetry({ OTEL_TRACES_ENABLED: '1' });
     expect(process.listenerCount('SIGTERM')).toBe(before + 1);
     expect(process.listenerCount('SIGINT')).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe('makeTracerLayer', () => {
+  it('returns the empty layer when telemetry is disabled', () => {
+    // Disabled → Layer.empty (Effect's default no-op tracer satisfies withSpan).
+    expect(makeTracerLayer({})).toBe(Layer.empty);
+  });
+
+  it('returns a non-empty tracer layer when telemetry is enabled', () => {
+    // Enabled → the global-tracer bridge layer (not Layer.empty).
+    const layer = makeTracerLayer({ OTEL_TRACES_ENABLED: '1' });
+    expect(layer).not.toBe(Layer.empty);
+    expect(Layer.isLayer(layer)).toBe(true);
   });
 });

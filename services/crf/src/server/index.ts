@@ -14,7 +14,10 @@ import { loadConfig, makeCrfRuntime } from './boot.js';
 import { registerGracefulShutdown } from './shutdown.js';
 
 // Start OpenTelemetry before anything else so the request middleware records
-// spans. No-op safe: returns undefined when tracing is not configured.
+// spans, and so the GLOBAL tracer provider is registered before the runtime's
+// tracer bridge (makeTracerLayer → Tracer.layerGlobal) reads it — HTTP spans
+// (@hono/otel) and business spans (Effect.withSpan in the REDCap client) then
+// share one provider and correlate (écart E9). No-op safe when tracing is off.
 startTelemetry();
 
 // Read config and build the central Effect runtime once, at boot (écart

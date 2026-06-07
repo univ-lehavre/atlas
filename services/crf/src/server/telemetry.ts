@@ -34,6 +34,8 @@
  * @module
  */
 
+import { Layer } from 'effect';
+import { Resource, Tracer } from '@effect/opentelemetry';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
 import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
@@ -127,3 +129,23 @@ export const startTelemetry = (e: NodeJS.ProcessEnv = process.env): NodeSDK | un
 
   return sdk;
 };
+
+/**
+ * Effect-side tracer layer bridging `Effect.withSpan` to the **global**
+ * OpenTelemetry tracer provider — the same one {@link startTelemetry} registers
+ * and that `@hono/otel` reads. Mounted in the service `AppLayer`
+ * ([boot.ts](./boot.ts)) so business spans (REDCap client) correlate with the
+ * HTTP spans of the request middleware (écart E9,
+ * [ADR 0045](https://github.com/univ-lehavre/atlas/blob/main/docs/src/content/docs/decisions/0045-runtime-central-effect.md)).
+ *
+ * **Single provider, no double SDK**: the raw `NodeSDK` owns export and global
+ * registration; this layer only makes Effect *use* that global provider via
+ * `Tracer.layerGlobal`. When telemetry is off no provider is registered, so
+ * `Tracer.layerGlobal` reads the API's no-op `ProxyTracerProvider` and spans are
+ * harmlessly discarded — but to keep the disabled path truly zero-cost we mount
+ * `Layer.empty`, letting Effect's own default no-op tracer satisfy `withSpan`.
+ *
+ * @param e - Environment to inspect (defaults to `process.env`).
+ */
+export const makeTracerLayer = (e: NodeJS.ProcessEnv = process.env): Layer.Layer<never> =>
+  isTelemetryEnabled(e) ? Layer.provide(Tracer.layerGlobal, Resource.layerEmpty) : Layer.empty;
