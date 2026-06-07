@@ -77,6 +77,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0048 | [Modèle d'erreur HTTP (atlas-errors conservé + couture Effect)](/atlas/decisions/0048-modele-erreur-http/)                                        | Accepted |
 | 0049 | [Convention de test Effect (it.effect, layers partagés, garde-fou)](/atlas/decisions/0049-convention-test-effect/)                                | Accepted |
 | 0050 | [Limite de l'audit knip face aux peerDependencies](/atlas/decisions/0050-limite-knip-peer-deps/)                                                  | Accepted |
+| 0051 | [Rétrospective du chantier socle Effect (E1–E14)](/atlas/decisions/0051-retrospective-socle-effect/)                                              | Accepted |
 
 ## Quand ouvrir un ADR
 
