@@ -71,6 +71,12 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0042 | [Périmètre des sandbox : dev/test local dans atlas, pas dans cluster](/atlas/decisions/0042-perimetre-sandbox-atlas-vs-cluster/)                  | Accepted |
 | 0043 | [Publication des images de déploiement sur GHCR](/atlas/decisions/0043-publication-images-ghcr/)                                                  | Accepted |
 | 0044 | [Revue quotidienne d'une dimension du dépôt](/atlas/decisions/0044-revue-quotidienne-dimension/)                                                  | Accepted |
+| 0045 | [Runtime Effect central par type de processus](/atlas/decisions/0045-runtime-central-effect/)                                                     | Accepted |
+| 0046 | [Frontière Effect ↔ SvelteKit](/atlas/decisions/0046-frontiere-effect-sveltekit/)                                                                 | Accepted |
+| 0047 | [Stratégie de validation (Effect Schema, zod en cohabitation)](/atlas/decisions/0047-strategie-validation-schema-zod/)                            | Accepted |
+| 0048 | [Modèle d'erreur HTTP (atlas-errors conservé + couture Effect)](/atlas/decisions/0048-modele-erreur-http/)                                        | Accepted |
+| 0049 | [Convention de test Effect (it.effect, layers partagés, garde-fou)](/atlas/decisions/0049-convention-test-effect/)                                | Accepted |
+| 0050 | [Limite de l'audit knip face aux peerDependencies](/atlas/decisions/0050-limite-knip-peer-deps/)                                                  | Accepted |
 
 ## Quand ouvrir un ADR
 

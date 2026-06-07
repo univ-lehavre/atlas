@@ -53,10 +53,14 @@ règle. Toute dérogation **doit** être enregistrée :
 
 ### Dépendances knip
 
-- **`packages/citation`** — 4 dépendances `ignoreDependencies`
-  (`@effect/experimental`, `@effect/platform-node`,
-  `@xenova/transformers`, `uuid`) utilisées **dynamiquement** (lazy
-  imports, code généré). Knip ne les voit pas.
+- **`packages/citation`** — 2 dépendances `ignoreDependencies`
+  (`@xenova/transformers`, `uuid`) utilisées **dynamiquement** (lazy
+  imports, code généré). Knip ne les voit pas. _(Les anciennes entrées
+  `@effect/experimental` et `@effect/platform-node` étaient des phantoms —
+  déclarées sans être importées — retirées par l'écart E4 du
+  [socle Effect](/atlas/plans/2026-06-04-socle-effect/) ; voir
+  [ADR 0050](/atlas/decisions/0050-limite-knip-peer-deps/) pour le mécanisme
+  de l'angle mort knip qui les avait masquées.)_
 - **`cli/crf`** — fichier `commands/api/commands.ts` en `ignore` knip.
   Knip ne trace pas la chaîne d'imports Effect/CLI complète ; le
   fichier reste **testé** via mock direct depuis
