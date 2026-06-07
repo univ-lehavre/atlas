@@ -1,45 +1,59 @@
 /**
- * REDCap user-related branded types
+ * REDCap user-related branded types (UserId, Email).
+ *
+ * Schema-as-brand: a single Schema is the source of the type, pattern,
+ * predicate, parser and constructor (écart E12, ADR 0047).
  */
 
-import type { Either } from 'effect';
-import { Brand } from 'effect';
+import type { Either, ParseResult } from 'effect';
+import { makeStringBrand } from './make-string-brand.js';
 
-/** REDCap user ID (username) */
-export type UserId = string & Brand.Brand<'UserId'>;
-
-/** User ID validation pattern (alphanumeric and underscores) */
-export const USER_ID_PATTERN = /^\w+$/;
-
-/** Validate and brand a string as UserId */
-export const UserId = Brand.refined<UserId>(
-  (value) => value.length > 0 && USER_ID_PATTERN.test(value),
-  (value) => Brand.error(`Invalid user ID format: ${value}`)
+const user = makeStringBrand(
+  'UserId',
+  /^\w+$/,
+  'alphanumeric and underscores, at least 1 character'
 );
 
-/** Check if a string is a valid user ID */
-export const isValidUserId = (value: string): value is UserId =>
-  value.length > 0 && USER_ID_PATTERN.test(value);
+/** REDCap user ID (username). */
+export type UserId = typeof user.schema.Type;
 
-/** Parse a string as UserId, returning Either */
-export const parseUserId = (value: string): Either.Either<UserId, Brand.Brand.BrandErrors> =>
-  UserId.either(value);
+/** User ID validation pattern (alphanumeric and underscores). */
+export const USER_ID_PATTERN = user.pattern;
 
-/** Email address */
-export type Email = string & Brand.Brand<'Email'>;
+/** The `Schema` source of truth for {@link UserId}. */
+export const UserIdSchema = user.schema;
 
-/** Email validation pattern */
-export const EMAIL_PATTERN = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/;
+/** Validate and brand a string as {@link UserId} (throws on invalid). */
+export const UserId = (value: string): UserId => user.make(value);
 
-/** Validate and brand a string as Email */
-export const Email = Brand.refined<Email>(
-  (value) => EMAIL_PATTERN.test(value),
-  (value) => Brand.error(`Invalid email format: ${value}`)
+/** Check if a string is a valid user ID. */
+export const isValidUserId = (value: string): value is UserId => user.is(value);
+
+/** Parse a string as {@link UserId}, returning `Either`. */
+export const parseUserId = (value: string): Either.Either<UserId, ParseResult.ParseError> =>
+  user.parse(value);
+
+const email = makeStringBrand(
+  'Email',
+  /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/,
+  'a valid email address'
 );
 
-/** Check if a string is a valid email */
-export const isValidEmail = (value: string): value is Email => EMAIL_PATTERN.test(value);
+/** Email address. */
+export type Email = typeof email.schema.Type;
 
-/** Parse a string as Email, returning Either */
-export const parseEmail = (value: string): Either.Either<Email, Brand.Brand.BrandErrors> =>
-  Email.either(value);
+/** Email validation pattern. */
+export const EMAIL_PATTERN = email.pattern;
+
+/** The `Schema` source of truth for {@link Email}. */
+export const EmailSchema = email.schema;
+
+/** Validate and brand a string as {@link Email} (throws on invalid). */
+export const Email = (value: string): Email => email.make(value);
+
+/** Check if a string is a valid email. */
+export const isValidEmail = (value: string): value is Email => email.is(value);
+
+/** Parse a string as {@link Email}, returning `Either`. */
+export const parseEmail = (value: string): Either.Either<Email, ParseResult.ParseError> =>
+  email.parse(value);

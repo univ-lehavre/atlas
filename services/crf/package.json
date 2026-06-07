@@ -63,6 +63,7 @@
     "@opentelemetry/semantic-conventions": "~1.41.1",
     "@scalar/hono-api-reference": "~0.10.19",
     "@univ-lehavre/atlas-crf-client": "workspace:*",
+    "@univ-lehavre/atlas-crf-core": "workspace:*",
     "@univ-lehavre/atlas-effect-socle": "workspace:*",
     "effect": "~3.21.2",
     "hono": "~4.12.23",

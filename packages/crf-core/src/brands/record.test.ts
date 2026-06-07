@@ -64,8 +64,8 @@ describe('RecordId', () => {
       expect(() => RecordId('record 1')).toThrow();
     });
 
-    it('should throw BrandErrors for invalid record ID', () => {
-      // Brand.refined throws BrandErrors which is an array-like structure
+    it('should throw on an invalid record ID', () => {
+      // Schema-as-brand: the constructor throws a ParseError on invalid input.
       expect(() => RecordId('invalid@id')).toThrow();
     });
   });

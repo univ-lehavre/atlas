@@ -1,20 +1,18 @@
 /**
- * Validation regex patterns
+ * Validation regex patterns.
  *
- * Common patterns for validating REDCap values.
+ * Common patterns for validating REDCap values. The patterns that back a
+ * branded type (token, CRF name, record id, email) are **re-exported from the
+ * Schema-as-brand source** (`../brands`) rather than re-declared — single
+ * source of truth (écart E12, ADR 0047). The remaining patterns describe
+ * value formats with no branded type and live here.
  */
 
-/** REDCap API token pattern (32 uppercase hex chars) */
-export const TOKEN_PATTERN = /^[A-F0-9]{32}$/;
-
-/** REDCap field/form name pattern */
-export const CRF_NAME_PATTERN = /^[a-z][a-z0-9_]*$/;
-
-/** Record ID pattern (alphanumeric) */
-export const RECORD_ID_PATTERN = /^[\w-]+$/;
-
-/** Email pattern */
-export const EMAIL_PATTERN = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/;
+// Re-exported from the brand Schemas (single source). CRF_NAME_PATTERN is the
+// instrument/field-name rule.
+export { CRF_TOKEN_PATTERN as TOKEN_PATTERN, RECORD_ID_PATTERN } from '../brands/index.js';
+export { INSTRUMENT_NAME_PATTERN as CRF_NAME_PATTERN } from '../brands/index.js';
+export { EMAIL_PATTERN } from '../brands/index.js';
 
 /** Version pattern (X.Y.Z) */
 export const VERSION_PATTERN = /^(\d+)\.(\d+)\.(\d+)$/;

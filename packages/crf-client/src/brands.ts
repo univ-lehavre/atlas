@@ -30,10 +30,12 @@ export {
 // Instrument
 export {
   InstrumentName,
+  InstrumentNameSchema,
   INSTRUMENT_NAME_PATTERN,
   isValidInstrumentName,
   parseInstrumentName,
   FieldName,
+  FieldNameSchema,
   FIELD_NAME_PATTERN,
   isValidFieldName,
   parseFieldName,
@@ -46,6 +48,7 @@ export {
   isValidUserId,
   parseUserId,
   Email,
+  EmailSchema,
   EMAIL_PATTERN,
   isValidEmail,
   parseEmail,
