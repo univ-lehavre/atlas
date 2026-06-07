@@ -2,13 +2,13 @@
 title: Sécurité — garde-fous et conventions
 ---
 
-Cette page regroupe les pratiques de sécurité applicatives et opérationnelles du monorepo Atlas : inventaire des secrets, classification des surfaces exposées, scan dynamique (DAST), et inventaire détaillé des dépendances (SBOM).
+Cette page regroupe les pratiques de sécurité applicatives et opérationnelles du monorepo Atlas : inventaire des secrets, classification des surfaces exposées, analyse statique (SAST) et dynamique (DAST) du code, audit des dépendances, et inventaire détaillé des dépendances (SBOM). Elle décrit ce que **le dépôt** automatise ; elle n'organise pas l'équipe qui exploitera ces garde-fous.
 
 Pour la procédure de gestion d'incident (compromission supposée, divulgation responsable), voir [Incident response](/atlas/quality/incident-response/).
 
-> **Périmètre.** Le chantier DevSecOps côté dépôt est considéré complet ; les items dépendant d'acteurs externes (équipes ops, infra de preview, second mainteneur) sont reportés sine die. Voir [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/) pour la décision de cadrage **et le tableau de suivi des items sine die**.
+> **Périmètre.** Cette page documente les contrôles de sécurité **outillés par le dépôt** (workflows CI, scripts d'audit, conventions de code). Ce qui dépend d'une organisation humaine ou d'une infrastructure d'exploitation — désigner nommément un second mainteneur ou un security champion, monter une infra de preview, contacter l'équipe ops — relève du **déployeur**, pas de ce dépôt : Atlas fournit les rôles et les procédures, mais leur **attribution à des personnes physiques** et le provisionnement de l'infra sont hors de son contrôle. Le chantier DevSecOps côté dépôt est considéré complet à ce titre ; les items qui supposent un acteur ou une infra externes sont reportés sine die. Voir [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/) pour la décision de cadrage **et le tableau de suivi des items sine die**.
 
-[[toc]]
+> **Sommaire.** Cette page n'embarque pas de sommaire en corps de texte : Starlight génère automatiquement une table des matières (« On this page ») dans la colonne de droite à partir des titres. Naviguer par cette colonne.
 
 ## DevSecOps — qu'est-ce que c'est ?
 
@@ -16,13 +16,18 @@ Le [**DevSecOps**](/atlas/glossary/) intègre la sécurité à **toutes** les é
 
 **Pourquoi c'est important.** Une faille trouvée après mise en ligne expose des données et demande une réaction en urgence ; la même faille détectée à l'écriture du code se corrige en quelques minutes, sans risque.
 
-**Comment Atlas l'applique.** À chaque pull request, plusieurs garde-fous tournent automatiquement :
+**Comment Atlas l'applique.** À chaque pull request (proposition de modification soumise à relecture avant fusion dans la branche principale `main`), plusieurs garde-fous tournent automatiquement. On les présente dans l'ordre où ils interviennent : d'abord l'analyse du code **au repos** (statique), puis l'analyse de l'application **en marche** (dynamique).
 
-- **analyse statique** du code ([CodeQL](/atlas/glossary/), Semgrep) — cherche les motifs vulnérables sans exécuter le code ;
-- **détection de secrets** ([gitleaks](/atlas/glossary/)) — empêche de committer un token ou une clé ;
-- **audit des dépendances** (vulnérabilités connues, licences) ;
-- **tests de sécurité** sur les endpoints (401, anti-XSS) ;
-- **scan dynamique** ([OWASP ZAP](/atlas/glossary/)) sur une application en cours d'exécution.
+- **Analyse statique de sécurité — SAST** (_Static Application Security Testing_) : on lit le code source **sans l'exécuter** pour y repérer des motifs vulnérables (injection, XSS, désérialisation dangereuse…). Atlas combine deux moteurs SAST complémentaires :
+  - [**CodeQL**](/atlas/glossary/) — le moteur de GitHub. Il **compile le code en une base de données interrogeable** et la passe au crible de requêtes de sécurité (suites `security-extended` et `security-and-quality`). Sa force est l'analyse de **flux de données** (suivre une donnée d'une entrée utilisateur jusqu'à un usage dangereux) sur l'ensemble du projet. Workflow : [`codeql.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/codeql.yml).
+  - **Semgrep** — un moteur open-source à base de **règles par motif** (_pattern matching_), plus léger et plus rapide. Atlas l'utilise en **complément** de CodeQL pour ce que ce dernier couvre mal : des règles spécifiques TypeScript (`p/typescript`, là où CodeQL traite TypeScript via JavaScript) et les patterns [OWASP Top 10](https://owasp.org/www-project-top-ten/) packagés (`p/owasp-top-ten`). Workflow : [`semgrep.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/semgrep.yml).
+
+    **CodeQL vs Semgrep, en une phrase :** CodeQL est plus profond (analyse de flux, vue projet entière) mais plus lourd ; Semgrep est plus superficiel (motifs syntaxiques) mais rapide et facile à étendre. Les deux ont le même angle mort : ni l'un ni l'autre ne lit le `<script>` des fichiers `.svelte` (limitation upstream), couvert en amont par des règles ESLint Svelte strictes.
+
+- **Détection de secrets** ([gitleaks](/atlas/glossary/)) — empêche de committer (enregistrer dans l'historique git) un token ou une clé. Workflow : [`gitleaks.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/gitleaks.yml).
+- **Audit des dépendances** — recherche, dans les bibliothèques tierces qu'Atlas installe (directes et transitives), les **vulnérabilités connues** publiées sous forme de **CVE** (_Common Vulnerabilities and Exposures_, identifiant public d'une faille de sécurité référencée). Concrètement : injection via une dépendance, déni de service (ReDoS sur une regex vulnérable), prototype pollution, exécution de code à l'installation (script `postinstall` malveillant), ou une version compromise (_supply-chain_). Deux niveaux : [`dependency-review.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/dependency-review.yml) bloque toute PR introduisant une vulnérabilité `high`/`critical` ou une licence hors allowlist ; le script `audit:security` (`pnpm audit --audit-level=moderate`, en _pre-push_ et en CI) descend jusqu'au niveau `moderate`. Les mises à jour correctives sont proposées automatiquement par Dependabot ([`dependabot.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/dependabot.yml)).
+- **Tests de sécurité** sur les endpoints (cf. [§ Tests de sécurité applicative](#tests-de-sécurité-applicative)) : contrôle d'accès (un endpoint protégé répond bien `401` sans session), résistance à l'injection (anti-XSS), et **rate-limiting** (limitation du débit de requêtes par IP) sur les endpoints publics.
+- **Scan dynamique de sécurité — DAST** ([OWASP ZAP](/atlas/glossary/)) : on sonde une application **en cours d'exécution** pour détecter ce que l'analyse statique ne voit pas. Présenté en détail au [§ DAST](#dast--dynamic-application-security-testing).
 
 Le périmètre exact (ce qui est couvert côté dépôt, ce qui dépend d'acteurs externes) est cadré par [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/).
 
@@ -295,9 +300,40 @@ Trois endpoints sont publics par décision implicite ou explicite — chacun mé
 - **Logs d'accès** : tracer les accès à `/graphs` et `/institutions/search` pour détecter les patterns d'abus
 - **Headers HTTP de sécurité** sur les réponses (CSP, etc.) — factorisés dans `@univ-lehavre/atlas-sveltekit-csp` (cf. [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/))
 
+## Tests de sécurité applicative
+
+Au-delà des scanners génériques (SAST, audit de dépendances), Atlas embarque des **tests automatisés** qui vérifient le comportement de sécurité **propre à ses endpoints HTTP**. Ils tournent dans la suite de tests unitaires (`vitest`), à chaque PR, et sont écrits comme des tests de régression : si quelqu'un retire par mégarde un contrôle d'accès ou un rate-limit, le test casse. Trois familles, alignées sur les risques de la section [Surfaces exposées](#surfaces-exposées--apps-et-endpoints).
+
+### Contrôle d'accès (gate auth)
+
+Chaque endpoint marqué `🔒 AUTH` dispose d'un test qui vérifie qu'une requête **sans session valide** reçoit bien `401 Unauthorized` (et non un `200` qui fuiterait des données). C'est le garde-fou contre une régression où un `locals.userId` cesserait d'être contrôlé. Ces tests couvrent les endpoints authentifiés des trois apps (`apps/*/src/routes/api/v1/**/server.test.ts`).
+
+### Anti-injection / anti-XSS
+
+Les endpoints qui renvoient ou répercutent une entrée utilisateur sont passés à une batterie de **payloads XSS** ([**XSS**](/atlas/glossary/), _Cross-Site Scripting_ : injection de script via une donnée non échappée). Les helpers `xssPayloads()` / `assertNoXss()` du paquet `@univ-lehavre/atlas-test-utils-sveltekit` envoient des charges du type `<script>…` et vérifient qu'elles **ne sont pas réfléchies** telles quelles dans la réponse. Exemples : `apps/find-an-expert/src/routes/api/v1/works/counts/server.test.ts`, `repositories/[id]/stats/server.test.ts`.
+
+### Rate-limiting (limitation de débit)
+
+Le **rate-limiting** (limitation de débit) plafonne le nombre de requêtes acceptées par client (ici **par IP**, fenêtre fixe) et renvoie `429 Too Many Requests` au-delà. Il protège les endpoints publics contre l'abus : énumération (deviner des identifiants en masse), spam de signup, épuisement du quota d'une API tierce. L'implémentation est factorisée dans le paquet [`@univ-lehavre/atlas-auth`](https://github.com/univ-lehavre/atlas/blob/main/packages/auth/src/rate-limit.ts) (`createRateLimiter`), et appliquée notamment sur :
+
+| Endpoint                              | Limite       | Fichier                                                                |
+| ------------------------------------- | ------------ | ---------------------------------------------------------------------- |
+| `find-an-expert /institutions/search` | 30 req / min | `apps/find-an-expert/src/routes/api/v1/institutions/search/+server.ts` |
+| `find-an-expert /repositories/[id]`   | 60 req / min | `apps/find-an-expert/src/routes/api/v1/repositories/[id]/+server.ts`   |
+| `ecrin /graphs`                       | 30 req / min | `apps/ecrin/src/routes/api/v1/graphs/+server.ts`                       |
+| `*/auth/signup` (anti-spam)           | 5 req / min  | `apps/*/src/routes/api/v1/auth/signup/+server.ts`                      |
+
+Le franchissement du seuil (`429` + en-têtes `RateLimit-*`) est couvert par des tests dédiés (ex. `…/auth/signup/server.test.ts`).
+
+> **Limitations connues** (cf. l'en-tête de `rate-limit.ts`) : le store est **`in-memory`**, donc local au processus. En déploiement mono-instance (`adapter-node`) c'est suffisant ; en multi-instance derrière un load-balancer, chaque instance compte séparément — la migration vers un store partagé (Redis/Upstash) est **reportée sine die** (cf. [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/), section « phases restantes »). La fenêtre est **fixe** (pas glissante), acceptable pour l'objectif anti-abus visé.
+
+### Validation des paramètres
+
+En amont des appels en aval (Appwrite, OpenAlex, REDCap), les endpoints **valident leurs paramètres** : un paramètre requis manquant ou mal formé est rejeté avec `400 Bad Request` plutôt que propagé. Exemple : `ecrin /graphs` exige un `?record=<id>` et renvoie `400` s'il est absent (`apps/ecrin/src/routes/api/v1/graphs/+server.ts`). C'est la première ligne contre l'injection et les requêtes malformées en aval.
+
 ## DAST — Dynamic Application Security Testing
 
-Complément du SAST (CodeQL, cf. [SECURITY.md](https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md)) : sonder le comportement réel d'une app déployée pour détecter ce que l'analyse statique ne voit pas (headers HTTP manquants, redirections vers HTTP, mixed content, info disclosure, cookies sans flags, etc.).
+Le **DAST** vient **après** le SAST décrit plus haut : là où le SAST lit le code au repos, le DAST sonde le comportement réel d'une app **déployée et en cours d'exécution** pour détecter ce que l'analyse statique ne voit pas (headers HTTP manquants, redirections vers HTTP, _mixed content_, divulgation d'information, cookies sans flags de sécurité, etc.).
 
 Outil : [OWASP ZAP](https://www.zaproxy.org/) en mode **baseline** (passif uniquement, pas d'attaque active), via l'action GitHub [`zaproxy/action-baseline`](https://github.com/zaproxy/action-baseline).
 
@@ -311,7 +347,7 @@ Outil : [OWASP ZAP](https://www.zaproxy.org/) en mode **baseline** (passif uniqu
 - Rapport : artefact `zap_scan` (HTML + Markdown + JSON, 90 jours)
 - Issue auto-créée si findings non-IGNORE (cf. config dans [`zap-baseline.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/zap-baseline.yml))
 
-**Étape suivante (différée)** — automatisation nightly contre prod ou stack locale. Trois pistes en attente :
+**Étape suivante (différée, non implémentée)** — passer d'un déclenchement manuel à une **planification automatique** (un _cron_ nightly, c.-à-d. un déclencheur récurrent à heure fixe, via `schedule:` dans le workflow). C'est une **piste d'amélioration connue**, pas un acquis : le workflow actuel n'a **que** `workflow_dispatch`. Trois variantes possibles, chacune bloquée par une dépendance externe :
 
 1. **Nightly contre prod** : nécessite que les URLs prod soient figées dans la section [Surfaces exposées](#surfaces-exposées--apps-et-endpoints), et que les **admins infra soient prévenus** du trafic ZAP pour éviter alertes IDS ou rate-limit. Décision en attente.
 2. **Nightly contre `sandbox/amarre-sandbox/`** : monter la stack docker-compose (Appwrite + REDCap + amarre) en CI et scanner `localhost:5173`. Lourd (~10 min CI supplémentaires) mais aucune coordination externe nécessaire. Couvre uniquement amarre.

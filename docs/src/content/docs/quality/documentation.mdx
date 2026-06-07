@@ -10,6 +10,19 @@ organiser** les différents niveaux de détail, et **quel ton** adopter.
 Chaque réponse est tracée par une _décision d'architecture_ (ADR) ; cette
 page consolide la politique et renvoie aux ADR pour le _pourquoi_.
 
+L'encart ci-dessous résume l'effort de documentation **dans le code lui-même**
+(commentaires structurés). Sa **densité de documentation** est le rapport entre
+le nombre de blocs de commentaires _TSDoc_ — la convention qui documente une
+fonction ou une constante juste au-dessus de sa déclaration — et la **surface
+exportée** du code, c'est-à-dire le nombre de fonctions et de constantes
+publiques. Exprimée en pourcentage, elle indique « combien d'éléments publics
+portent un bloc de documentation » : 100 % signifierait un bloc par élément. Elle
+peut **dépasser 100 %** parce qu'un même fichier peut porter des blocs qui ne se
+rattachent pas à une fonction ou une constante exportée (commentaire de module,
+documentation d'un type), comptés au numérateur sans entrer dans la surface du
+dénominateur. C'est donc un indicateur de **couverture documentaire**, pas un
+taux borné à 100 %.
+
 <DocBadge client:load />
 
 > Une ADR (_Architecture Decision Record_) note **pourquoi** un choix a

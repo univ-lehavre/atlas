@@ -20,6 +20,18 @@ Pour la liste exhaustive par numéro (et le statut de chacun), voir
 Les décisions de **vocation** : à qui s'adresse le dépôt, et quelle posture il
 adopte. À lire en premier — elles éclairent toutes les autres.
 
+**En résumé.** Cette section pose ce que le dépôt _veut être_. La décision-chapeau
+est [0035](/atlas/decisions/0035-depot-generaliste-ouvert/) : Atlas est un dépôt
+**généraliste et ouvert**, et tout ce qui y est produit (code, documentation,
+identifiants, ADR) reste neutre vis-à-vis d'un domaine, d'une marque et d'un
+établissement, pour qu'un contributeur de n'importe quel horizon puisse le
+reprendre. [0031](/atlas/decisions/0031-outil-generique-open-source/) en décline le
+versant outil — un logiciel **générique et multi-tenant**, pensé pour la
+contribution inter-établissements — et [0012](/atlas/decisions/0012-neutralisation-framing-institutionnel/)
+le versant éditorial — un **ton factuel**, sans positionnement promotionnel ni
+framing institutionnel. Les trois disent la même posture sous trois angles ;
+0035 est le principe directeur, 0031 et 0012 ses applications.
+
 - [0035 — Dépôt généraliste ouvert](/atlas/decisions/0035-depot-generaliste-ouvert/) : la
   règle-chapeau. Atlas est généraliste et ouvert ; tout y reste neutre de
   domaine, de marque et d'établissement.
@@ -31,7 +43,23 @@ adopte. À lire en premier — elles éclairent toutes les autres.
 ## 2. Comment le code est organisé
 
 La **structure** du monorepo : son découpage, ses frontières, ses conventions de
-nommage.
+nommage. (Un _monorepo_ est un dépôt unique qui héberge plusieurs sous-projets
+au lieu d'un dépôt par projet.)
+
+**En résumé.** La colonne vertébrale est [0002](/atlas/decisions/0002-monorepo-huit-categories/) :
+le dépôt est découpé en **huit catégories**, chacune avec ses propres règles, ce
+qui fixe où va chaque sous-projet. Sur ce squelette se greffent des règles de
+placement et de nommage : la logique métier vit dans `packages/`, les CLI (outils
+en ligne de commande) restent minces et s'y adossent
+([0008](/atlas/decisions/0008-clis-thins-logique-dans-packages/)) ; `atlas` est la
+**source canonique** dont l'app standalone `amarre` est dérivée
+([0009](/atlas/decisions/0009-atlas-source-canonique-amarre/)). Côté publication,
+les paquets purement internes sont marqués `private`
+([0011](/atlas/decisions/0011-paquets-internes-private/)) et ceux qui sont publiés
+suivent la convention de nommage `atlas-`
+([0022](/atlas/decisions/0022-naming-convention/)). [0003](/atlas/decisions/0003-logos-split-assets-cli/)
+sert d'exemple concret : un paquet scindé entre catégorie `assets` et catégorie
+`cli` pour respecter ces frontières.
 
 - [0002 — Monorepo en 8 catégories](/atlas/decisions/0002-monorepo-huit-categories/) : la
   colonne vertébrale — chaque sous-projet a une catégorie et des règles propres.
@@ -49,6 +77,27 @@ nommage.
 
 Les **choix de technologies** et leurs raisons — dont quelques contraintes
 subies plutôt que choisies.
+
+**En résumé.** Le paradigme du code métier est **Effect**, une bibliothèque de
+programmation fonctionnelle pour TypeScript ([0005](/atlas/decisions/0005-effect-pour-la-pf/)) ;
+un cadrage de 2026-06 l'étend de simple « langage de description » à véritable
+**couche d'exécution**, détaillé dans six ADR de socle — runtime central
+([0045](/atlas/decisions/0045-runtime-central-effect/)), frontière avec SvelteKit
+([0046](/atlas/decisions/0046-frontiere-effect-sveltekit/)), stratégie de validation
+([0047](/atlas/decisions/0047-strategie-validation-schema-zod/)), modèle d'erreur HTTP
+([0048](/atlas/decisions/0048-modele-erreur-http/)), convention de test
+([0049](/atlas/decisions/0049-convention-test-effect/)) et limite de l'audit knip
+([0050](/atlas/decisions/0050-limite-knip-peer-deps/)). Le socle applicatif retient
+**SvelteKit** (front), **Hono** (API) et **Bootstrap** (UI)
+([0006](/atlas/decisions/0006-sveltekit-hono-bootstrap/)), et deux plateformes
+externes sont intégrées ([0007](/atlas/decisions/0007-redcap-appwrite-plateformes/)).
+Plusieurs décisions ici ne sont pas des choix mais des **contraintes assumées** :
+un SDK figé en 25.x ([0010](/atlas/decisions/0010-node-appwrite-sdk-25/)), un lint
+Svelte volontairement strict ([0020](/atlas/decisions/0020-svelte-eslint-strict/)),
+des ranges de versions `~` sur les paquets publiables
+([0024](/atlas/decisions/0024-ranges-deps-publiables-tilde/)) et une dette amont sur
+`storybook:build`, documentée pour éviter de la rechercher en vain
+([0023](/atlas/decisions/0023-storybook-build-casse-amont/)).
 
 - [0005 — Effect pour la programmation fonctionnelle](/atlas/decisions/0005-effect-pour-la-pf/) :
   le paradigme du code métier.
@@ -75,7 +124,29 @@ subies plutôt que choisies.
 ## 4. La chaîne de qualité et de sécurité
 
 Le **DevSecOps** : ce qui garantit qu'une modification ne casse rien et reste
-sûre. C'est le cœur de la crédibilité du dépôt public.
+sûre. (Le _DevSecOps_ intègre la sécurité directement dans la chaîne de
+développement et de livraison.) C'est le cœur de la crédibilité du dépôt public.
+
+**En résumé.** Le périmètre est cadré par [0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/) :
+le chantier est **complet côté dépôt**, et les neuf items dépendant d'une
+coordination externe sont reportés _sine die_, chacun avec son bloquant. La
+discipline de contribution est posée et **jamais contournée** : Conventional
+Commits à scopes restreints ([0014](/atlas/decisions/0014-conventional-commits-scopes-restreints/)),
+hooks Git via lefthook ([0015](/atlas/decisions/0015-hooks-git-lefthook-jamais-bypass/)),
+et branch protection sur `main` ([0016](/atlas/decisions/0016-branch-protection-main/)) ;
+la CI s'allège selon les chemins modifiés sans affaiblir cette protection
+([0034](/atlas/decisions/0034-ci-adaptative-par-chemin/)). La publication des paquets
+est signée par OIDC sur deux registres ([0017](/atlas/decisions/0017-releases-npm-oidc-deux-registres/)).
+La posture de réponse sécurité fixe un SLA de remédiation des _findings_ (alertes
+des outils d'analyse) ([0018](/atlas/decisions/0018-sla-remediation-findings/)) et
+acte que le rôle de security champion reste **vacant**
+([0027](/atlas/decisions/0027-security-champion/)) ; toute exception aux règles se
+trace explicitement ([0019](/atlas/decisions/0019-derogations-workspace-audit/)).
+Enfin, un volet **cloud-native (12-factor)** : auditer régulièrement
+([0039](/atlas/decisions/0039-cadence-audit-transverse/)), rendre les caches
+partageables via un backing-service plutôt qu'un fichier local
+([0040](/atlas/decisions/0040-caches-flux-backing-service-vs-fichier/)) et
+authentifier le service CRF ([0041](/atlas/decisions/0041-strategie-auth-service-crf-hono/)).
 
 - [0001 — DevSecOps périmètre repo complet](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/) :
   l'ambition de couverture, et ce qui est reporté.
@@ -103,6 +174,21 @@ sûre. C'est le cœur de la crédibilité du dépôt public.
 La **politique de documentation** : pour qui on écrit, à quels niveaux, et
 comment on empêche la doc de mentir.
 
+**En résumé.** Le lecteur visé et la langue sont fixés par
+[0013](/atlas/decisions/0013-documentation-public-non-expert-fr/) : on écrit en
+**français pour un public non-expert**. [0025](/atlas/decisions/0025-documentation-multi-niveaux/)
+organise l'écriture en **trois niveaux** (surface, profondeur, inline) pour servir
+à la fois le néophyte et l'expert. Le principe anti-mensonge est
+[0028](/atlas/decisions/0028-documentation-verifiable/) : la doc est un **miroir
+contrôlable du code** — ce qui est dérivable du code est généré et vérifié en CI,
+le reste est audité (présence, liens, cohérence), de sorte qu'une dérive **casse
+la CI**. [0032](/atlas/decisions/0032-kpi-determinisme-vs-snapshot/) en précise la
+mécanique pour les indicateurs : distinguer le contenu généré déterministe
+(vérifié par diff) du snapshot (append-only) pour historiser sans rendre la CI
+instable. Enfin [0036](/atlas/decisions/0036-migration-vitepress-astro-starlight/)
+documente l'outil qui **construit** cette documentation (migration VitePress →
+Astro Starlight) et pourquoi on en a changé.
+
 - [0013 — Documentation FR pour public non-expert](/atlas/decisions/0013-documentation-public-non-expert-fr/) :
   la langue et le public.
 - [0025 — Documentation à plusieurs niveaux](/atlas/decisions/0025-documentation-multi-niveaux/) :
@@ -117,7 +203,24 @@ comment on empêche la doc de mentir.
 ## 6. Le pipeline de collaborations (le grand projet)
 
 Le **chantier applicatif** central : transformer des données de citations en
-recommandations de collaboration, à travers une plateforme DataOps.
+recommandations de collaboration, à travers une plateforme DataOps. (Le _DataOps_
+applique au traitement de données les pratiques d'automatisation et de qualité du
+DevOps.)
+
+**En résumé.** [0029](/atlas/decisions/0029-architecture-pipeline-collaborations/)
+pose l'**architecture V1** : une plateforme DataOps alignée sur les standards du
+marché (lakehouse Parquet + DuckDB, transformations dbt, orchestration Dagster,
+qualité de données, index PostgreSQL/pgvector pour l'exploration), un flux
+mensuel qui va des citations brutes aux paires de chercheurs et leurs features.
+Le contrat producteur ↔ consommateur reste **Parquet + manifest**, et les
+fonctionnalités les plus avancées (LLM génératif notamment) sont renvoyées à un
+palier 2. [0033](/atlas/decisions/0033-contrat-interface-cluster/) tient le
+**contrat d'interface** entre l'application `atlas` et le cluster qui l'exploite :
+il est la source de vérité unique des points de contact (stockage objet S3, base
+PostgreSQL/pgvector, orchestrateur, lineage, exposition…), fixe les **conventions
+et formats** mais pas les valeurs propres à une instance, et impose que tout
+changement d'un point de contact se reflète **dans la même pull request** que le
+code ou l'infrastructure concernés.
 
 - [0029 — Architecture V1 du pipeline](/atlas/decisions/0029-architecture-pipeline-collaborations/) :
   la plateforme DataOps et le contrat Parquet.
@@ -128,6 +231,18 @@ recommandations de collaboration, à travers une plateforme DataOps.
 
 Le **RGPD** : ce qui relève du dépôt et ce qui relève de chaque déployeur.
 
+**En résumé.** [0026](/atlas/decisions/0026-rgpd-perimetre/) trace la ligne de
+partage : l'institutionnel (validation des bases légales, désignation du
+responsable de traitement) **reste hors dépôt** et relève de chaque établissement
+exploitant ; le dépôt ne décide pas à leur place. [0030](/atlas/decisions/0030-rgpd-profilage-collaborations/)
+**rouvre** ce cadre pour le cas précis du profilage de collaborations et tranche
+les bornes techniques côté code : un traitement en **opt-out** fondé sur une base
+légale d'intérêt public (à confirmer par le DPO de l'établissement), où la
+déclaration d'alliances par l'utilisateur filtre l'_affichage_ et non
+l'_ingestion_, et où le **droit d'opposition** (art. 21) retire effectivement une
+personne du mart et de l'index. Les deux ne se contredisent pas : 0030 outille,
+côté code, ce que 0026 laisse à l'exploitant.
+
 - [0026 — Périmètre RGPD hors dépôt](/atlas/decisions/0026-rgpd-perimetre/) : ce que le dépôt ne
   décide pas.
 - [0030 — Profilage de collaborations : gate RGPD](/atlas/decisions/0030-rgpd-profilage-collaborations/) :
@@ -137,6 +252,13 @@ Le **RGPD** : ce qui relève du dépôt et ce qui relève de chaque déployeur.
 
 Des décisions **ponctuelles** : un cas particulier, une politique locale, une
 dette qu'on choisit de porter en connaissance de cause.
+
+**En résumé.** Ces décisions n'ont pas de portée transverse ; elles tranchent un
+cas local en l'assumant. [0004](/atlas/decisions/0004-volumes-anonymes-sillage-sandbox/)
+retient des **volumes anonymes** pour la sandbox `sillage-sandbox`, un choix
+d'isolation propre à cet environnement. [0021](/atlas/decisions/0021-sandbox-deps-policy/)
+**assouplit la politique de dépendances** dans les sandboxes, là où le risque est
+contenu et où la rigueur appliquée au reste du dépôt serait disproportionnée.
 
 - [0004 — Volumes anonymes pour `sillage-sandbox`](/atlas/decisions/0004-volumes-anonymes-sillage-sandbox/) :
   un choix d'isolation spécifique.

@@ -8,70 +8,65 @@ hero:
     bibliothèques, serveurs, outils en ligne de commande. Mêmes règles,
     même chaîne de qualité. Cette organisation est appelée monorepo.
   actions:
-    - text: Je découvre
+    - text: Commencer
       link: /atlas/architecture/monorepo/
       icon: right-arrow
       variant: primary
-    - text: Je veux lire le code
-      link: /atlas/architecture/comprendre-le-code/
-      icon: open-book
-      variant: minimal
 ---
 
 import { Card, CardGrid } from "@astrojs/starlight/components";
 
-## Par où entrer
+## Ce qui distingue ce dépôt
 
-Deux **portes d'entrée** selon ton profil, et la **carte des paquets**, dérivée
-du code. Choisis ce qui correspond à ce que tu cherches.
+Atlas n'est pas qu'un assemblage de projets : c'est une **chaîne de qualité
+partagée**, outillée et vérifiable. Voici ce qu'un contributeur y trouve — chaque
+point renvoie à la page qui l'atteste.
 
 <CardGrid>
-  <Card title="Je découvre" icon="open-book">
-    Comprendre ce que fait le dépôt et comment il est organisé, **sans
-    prérequis technique** : les huit catégories, les garde-fous qualité, la
-    manière de collaborer.
+  <Card title="Typé strict, de bout en bout" icon="seti:typescript">
+    Tout le code est en TypeScript en mode **strict** : les erreurs de type
+    sont attrapées avant l'exécution, pas en production.
 
-    [Structure du monorepo →](/atlas/architecture/monorepo/)
-
-  </Card>
-  <Card title="Je veux lire le code" icon="seti:typescript">
-    Entrer dans le code **par le bon endroit** : par où commencer selon ce
-    qu'on cherche, quels paquets lire ensemble, comment une donnée circule.
-
-    [Comprendre le code →](/atlas/architecture/comprendre-le-code/)
+    [Style de code →](/atlas/quality/code-style/)
 
   </Card>
-  <Card title="La carte des paquets" icon="list-format">
+  <Card title="Qualité et sécurité outillées" icon="approve-check">
+    Chaque pull request passe une **intégration continue** (lint, types, build,
+    audits) et des contrôles de sécurité automatisés (analyse statique,
+    détection de secrets, revue de dépendances).
+
+    [Pipeline CI →](/atlas/quality/ci-pipeline/) ·
+    [Sécurité →](/atlas/quality/security/)
+
+  </Card>
+  <Card title="Une doc qui ne ment pas" icon="open-book">
+    La documentation est **vérifiable** : les chiffres et exemples sont
+    rattachés au dépôt et contrôlés, pas affirmés à la main.
+
+    [Politique de documentation →](/atlas/quality/documentation/)
+
+  </Card>
+  <Card title="Des tests à plusieurs niveaux" icon="puzzle">
+    Une **pyramide de tests à cinq niveaux** couvre tout le code exécutable,
+    du test unitaire au test de bout en bout, avec des seuils de couverture
+    chiffrés.
+
+    [Tests →](/atlas/quality/tests/)
+
+  </Card>
+  <Card title="Un socle fonctionnel commun" icon="setting">
+    Les briques partagées reposent sur **Effect**, un socle de programmation
+    fonctionnelle qui rend les erreurs et les effets explicites et typés.
+
+    [Programmation fonctionnelle →](/atlas/quality/code-style/) ·
+    [Décision (ADR 0005) →](/atlas/decisions/0005-effect-pour-la-pf/)
+
+  </Card>
+  <Card title="Une carte du code toujours à jour" icon="list-format">
     Pour chaque paquet — son rôle, ce dont il dépend, qui le consomme.
-    **Générée depuis le code**, donc toujours à jour.
+    **Générée depuis le code**, donc fidèle à la réalité.
 
     [Carte des paquets →](/atlas/architecture/packages/)
 
   </Card>
 </CardGrid>
-
-## Trouver la bonne page
-
-Les deux tableaux ci-dessous aiguillent vers la page exacte selon la question
-qu'on se pose — au-delà des quatre portes d'entrée.
-
-**Sans coder** — pour un public non-expert ; quand un terme technique apparaît, il
-est défini sur place ou renvoie au [glossaire](/atlas/glossary/).
-
-| Pour savoir…                  | Va voir                                                                                |
-| ----------------------------- | -------------------------------------------------------------------------------------- |
-| comment le dépôt est organisé | [Structure du monorepo](/atlas/architecture/monorepo/)                                 |
-| ce qui garantit la qualité    | [Pipeline CI](/atlas/quality/ci-pipeline/), [tests](/atlas/quality/tests/)             |
-| ce qui garantit la sécurité   | [Sécurité](/atlas/quality/security/)                                                   |
-| comment on collabore          | [Workflow](/atlas/collaboration/workflow/), [releases](/atlas/collaboration/releases/) |
-| comment on documente          | [Politique de documentation](/atlas/quality/documentation/)                            |
-
-**Pour lire le code** — pour un développeur ou data scientist qui veut se faire une
-idée du code sans tout lire.
-
-| Pour…                                      | Va voir                                                       |
-| ------------------------------------------ | ------------------------------------------------------------- |
-| savoir **par où entrer** dans le code      | [Comprendre le code](/atlas/architecture/comprendre-le-code/) |
-| voir **qui fait quoi / qui dépend de qui** | [Carte des paquets](/atlas/architecture/packages/)            |
-| suivre **le parcours d'une donnée**        | [Flux de données](/atlas/architecture/data-flow/)             |
-| comprendre **le _pourquoi_ d'un choix**    | [Décisions (ADR)](/atlas/decisions/)                          |

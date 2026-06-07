@@ -4,18 +4,28 @@ title: Tableau de bord
 
 import RepoDynamics from "../../../components/RepoDynamics.vue";
 
-Cette page rassemble des **indicateurs de robustesse** du dépôt et leur
-évolution. Elle distingue deux familles de données :
+Cette page rassemble des **indicateurs de robustesse** du dépôt, paquet par
+paquet. Elle s'appuie sur deux sources de données :
 
-- les **données dérivées de l'historique Git** (lignes, commits, _pull
-  requests_ dans le temps) — reproductibles et vérifiées à jour ;
-- les **mesures de l'état présent** (couverture, vulnérabilités, densité) —
-  historisées au fil des exécutions sur `main`.
+- l'**historique Git** — l'enregistrement de toutes les modifications du code au
+  fil du temps —, dont on tire le nombre de _commits_ (un commit est une
+  modification enregistrée), de _pull requests_ (une demande d'intégration de
+  changements relue avant fusion) et la date du dernier commit de chaque paquet ;
+- l'**état présent du code**, mesuré sur la version courante : nombre de
+  fichiers, de fonctions, de types, de blocs de documentation _TSDoc_ et de
+  tests.
 
 Les chiffres ci-dessous sont **générés** à partir du dépôt
 (`pnpm stats:generate`), jamais saisis à la main.
 
 ## Dynamique du dépôt
+
+Le tableau ci-dessous est l'**équivalent chiffré de la [carte des
+paquets](/atlas/architecture/packages/)** : là où la carte décrit le _rôle_ et
+les dépendances de chaque paquet, ce tableau en donne la **taille** et
+l'**activité** (commits, _pull requests_, volume de code, tests, date du dernier
+commit). À lire ligne par ligne, en gardant la carte des paquets sous les yeux
+pour savoir à quoi correspond chaque paquet.
 
 <RepoDynamics client:load />
 

@@ -2,9 +2,14 @@
 title: Comprendre le code
 ---
 
-Cette page s'adresse à un **développeur ou data scientist** qui veut se faire
-une idée du code sans tout lire. Elle indique **par où entrer** selon ce qu'on
-cherche à comprendre, et **quels paquets lire ensemble**.
+« Comprendre le code », ici, ne veut pas dire « tout lire » : cette page est un
+**guide de lecture** qui dit **par où entrer** dans le dépôt selon ce qu'on
+cherche, et **quels paquets** (les unités de code réutilisables du monorepo)
+**lire ensemble** pour saisir une fonctionnalité. Elle s'adresse à un
+**développeur ou data scientist** qui découvre le code et veut un itinéraire
+plutôt qu'une visite exhaustive. On y trouve : le point d'entrée unique (la carte
+des paquets), trois conventions de code à connaître avant de plonger, et des
+**parcours thématiques** qui ordonnent les paquets à lire, du socle à l'usage.
 
 > Pour le néophyte qui veut surtout savoir _ce que font_ les applications, voir
 > plutôt la [structure du monorepo](/atlas/architecture/monorepo/) et les README de chaque app.
@@ -15,6 +20,13 @@ La question « pour comprendre tel paquet, lesquels dois-je lire ? » a une rép
 directe dans la [carte des paquets](/atlas/architecture/packages/), générée depuis le code. Pour
 chaque paquet, elle donne son **rôle**, ce dont il **dépend**, et **qui le
 consomme**. C'est le point de départ de toute exploration.
+
+Cette carte porte aussi les **graphes de dépendances** (des schémas où une flèche
+`A → B` se lit « A dépend de B ») : pour visualiser d'un coup d'œil ce qu'un
+livrable tire derrière lui, regardez le
+[graphe du livrable concerné](/atlas/architecture/packages/#graphes-de-dépendances-par-livrable).
+Ces graphes ne sont pas reproduits ici à dessein : le **détail par paquet vit
+dans la carte des paquets**, cette page-ci se limite à l'itinéraire de lecture.
 
 Trois lectures complémentaires :
 
@@ -43,7 +55,12 @@ Quelques repères qui se retrouvent partout dans le code :
 
 ## Parcours thématiques
 
-Chaque parcours liste les paquets à lire **dans l'ordre**, du socle à l'usage.
+C'est le cœur de la page. Un **parcours** prend une fonctionnalité (se connecter,
+lire un formulaire, enrichir des données…) et liste les paquets à lire **dans
+l'ordre**, du socle (les briques bas niveau) à l'usage (l'app qui les assemble).
+Suivre cet ordre évite de tomber dans un fichier au hasard sans en saisir le
+contexte. Choisissez le parcours qui correspond à ce que vous cherchez à
+comprendre.
 
 ### Authentification et sessions
 
@@ -96,6 +113,10 @@ Comment Atlas enrichit ses données avec des sources publiques.
    génération de profils de chercheurs à partir de ces données.
 
 ### Outils transverses
+
+Ces paquets ne forment pas un parcours : ce sont des **briques de base** que les
+autres réutilisent un peu partout. Les connaître évite de réexpliquer la même
+mécanique (erreurs, validation, réseau) dans chaque parcours ci-dessus.
 
 - **[`errors`](/atlas/packages/packages/errors/)** — les types d'erreurs partagés et
   leur mapping HTTP, consommés par presque tous les autres paquets.
