@@ -52,6 +52,15 @@ subies plutôt que choisies.
 
 - [0005 — Effect pour la programmation fonctionnelle](/atlas/decisions/0005-effect-pour-la-pf/) :
   le paradigme du code métier.
+  - **Socle d'exécution Effect** (cadrage 2026-06, étend 0005 de « langage de
+    description » à « couche d'exécution » — voir le
+    [plan de résorption](/atlas/plans/2026-06-04-socle-effect/)) :
+    [0045 — runtime central](/atlas/decisions/0045-runtime-central-effect/) (où le code s'exécute),
+    [0046 — frontière SvelteKit](/atlas/decisions/0046-frontiere-effect-sveltekit/) (où Effect s'arrête),
+    [0047 — validation Schema/zod](/atlas/decisions/0047-strategie-validation-schema-zod/),
+    [0048 — modèle d'erreur HTTP](/atlas/decisions/0048-modele-erreur-http/) (atlas-errors conservé),
+    [0049 — convention de test](/atlas/decisions/0049-convention-test-effect/) (it.effect),
+    [0050 — limite knip peer-deps](/atlas/decisions/0050-limite-knip-peer-deps/).
 - [0006 — SvelteKit, Hono, Bootstrap](/atlas/decisions/0006-sveltekit-hono-bootstrap/) : le
   socle applicatif.
 - [0007 — REDCap et Appwrite](/atlas/decisions/0007-redcap-appwrite-plateformes/) : les

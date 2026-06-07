@@ -1,7 +1,8 @@
 import { Effect, Match, pipe } from 'effect';
 import type { Context } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import { type CrfClientError } from '@univ-lehavre/atlas-crf-client';
+import { type CrfClientError, type CrfClientService } from '@univ-lehavre/atlas-crf-client';
+import type { CrfRuntime } from './boot.js';
 
 interface ErrorResponse {
   readonly data: null;
@@ -58,34 +59,45 @@ const mapErrorToResponse = (
   );
 
 /**
- * Runs an Effect and returns a Hono Response
+ * Runs an Effect on the central runtime and returns a Hono Response.
+ *
+ * The effect depends on `CrfClientService`; the runtime
+ * ([boot.ts](./boot.ts)) carries the `AppLayer` that provides it, so the
+ * service is injected without per-handler `Effect.provide` (écart E7/E10,
+ * ADR 0045). Typed errors are mapped to their status before the run, so the
+ * returned promise always resolves.
  */
 export const runEffect = <A>(
   c: Context,
-  effect: Effect.Effect<A, CrfClientError>
+  runtime: CrfRuntime,
+  effect: Effect.Effect<A, CrfClientError, CrfClientService>
 ): Promise<Response> =>
-  pipe(
-    effect,
-    Effect.map((data) => c.json({ data })),
-    Effect.catchAll((error) => {
-      const { body, status } = mapErrorToResponse(error);
-      return Effect.succeed(c.json(body, status));
-    }),
-    Effect.runPromise
+  runtime.runPromise(
+    pipe(
+      effect,
+      Effect.map((data) => c.json({ data })),
+      Effect.catchAll((error) => {
+        const { body, status } = mapErrorToResponse(error);
+        return Effect.succeed(c.json(body, status));
+      })
+    )
   );
 
 /**
- * Runs an Effect that returns a raw Response (e.g., for binary data)
+ * Runs an Effect that returns a raw Response (e.g., binary data) on the
+ * central runtime.
  */
 export const runEffectRaw = <A extends Response>(
   c: Context,
-  effect: Effect.Effect<A, CrfClientError>
+  runtime: CrfRuntime,
+  effect: Effect.Effect<A, CrfClientError, CrfClientService>
 ): Promise<Response> =>
-  pipe(
-    effect,
-    Effect.catchAll((error) => {
-      const { body, status } = mapErrorToResponse(error);
-      return Effect.succeed(c.json(body, status));
-    }),
-    Effect.runPromise
+  runtime.runPromise(
+    pipe(
+      effect,
+      Effect.catchAll((error) => {
+        const { body, status } = mapErrorToResponse(error);
+        return Effect.succeed(c.json(body, status));
+      })
+    )
   );

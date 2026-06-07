@@ -2,127 +2,58 @@
  * @module brands/token
  * @description REDCap API token branded type with validation.
  *
- * REDCap tokens are 32-character uppercase hexadecimal strings used
- * for API authentication. Each project has a unique token that grants
- * specific permissions.
+ * REDCap tokens are 32-character uppercase hexadecimal strings used for API
+ * authentication. Schema-as-brand: a single Schema is the source of the type,
+ * pattern, predicate, parser and constructor (écart E12, ADR 0047).
  *
  * @example
  * ```typescript
  * import { CrfToken, isValidToken, parseToken } from '@univ-lehavre/atlas-crf-core/brands';
  *
- * // Create a validated token
  * const token = CrfToken('A1B2C3D4E5F67890A1B2C3D4E5F67890');
- *
- * // Check if a string is valid
  * if (isValidToken(userInput)) {
  *   // userInput is now typed as CrfToken
  * }
- *
- * // Parse with Either result
- * const result = parseToken(userInput);
- * if (Either.isRight(result)) {
- *   const token = result.right;
- * }
+ * const result = parseToken(userInput); // Either<CrfToken, ParseError>
  * ```
  */
 
-import type { Either } from 'effect';
-import { Brand } from 'effect';
+import type { Either, ParseResult } from 'effect';
+import { makeStringBrand } from './make-string-brand.js';
+
+const token = makeStringBrand('CrfToken', /^[A-F0-9]{32}$/, '32 uppercase hexadecimal characters');
 
 /**
- * REDCap API token (32 uppercase hex characters).
- *
- * This branded type ensures that token values have been validated
- * at runtime before being used in API calls.
+ * REDCap API token (32 uppercase hex characters). Branded so token values are
+ * validated at runtime before being used in API calls.
  */
-export type CrfToken = string & Brand.Brand<'CrfToken'>;
+export type CrfToken = typeof token.schema.Type;
+
+/** Pattern for validating REDCap tokens (32 uppercase hex chars). */
+export const CRF_TOKEN_PATTERN = token.pattern;
+
+/** The `Schema` source of truth for {@link CrfToken}. */
+export const CrfTokenSchema = token.schema;
+
+/** Validate and brand a string as {@link CrfToken} (throws `ParseError` on invalid). */
+export const CrfToken = (value: string): CrfToken => token.make(value);
+
+/** Type guard: true when `value` is a valid REDCap token, narrowing to {@link CrfToken}. */
+export const isValidToken = (value: string): value is CrfToken => token.is(value);
+
+/** Parse a string as {@link CrfToken}, returning `Either<CrfToken, ParseError>`. */
+export const parseToken = (value: string): Either.Either<CrfToken, ParseResult.ParseError> =>
+  token.parse(value);
 
 /**
- * Regular expression pattern for validating REDCap tokens.
- *
- * Matches exactly 32 uppercase hexadecimal characters (0-9, A-F).
- */
-export const CRF_TOKEN_PATTERN = /^[A-F0-9]{32}$/;
-
-/**
- * Validate and brand a string as CrfToken.
- *
- * @param value - The string to validate
- * @returns The branded CrfToken
- * @throws {Brand.BrandErrors} If the value is not a valid token format
- *
- * @example
- * ```typescript
- * const token = CrfToken('A1B2C3D4E5F67890A1B2C3D4E5F67890');
- * ```
- */
-export const CrfToken = Brand.refined<CrfToken>(
-  (value) => CRF_TOKEN_PATTERN.test(value),
-  (value) => Brand.error(`Invalid REDCap token format: ${value.slice(0, 8)}...`)
-);
-
-/**
- * Check if a string is a valid REDCap token.
- *
- * This function acts as a type guard, narrowing the type to CrfToken
- * when it returns true.
- *
- * @param value - The string to check
- * @returns True if the value is a valid token format
- *
- * @example
- * ```typescript
- * const input: string = getUserInput();
- * if (isValidToken(input)) {
- *   // input is now typed as CrfToken
- *   makeApiCall(input);
- * }
- * ```
- */
-export const isValidToken = (value: string): value is CrfToken => CRF_TOKEN_PATTERN.test(value);
-
-/**
- * Parse a string as CrfToken, returning Either.
- *
- * Useful for functional error handling without exceptions.
- *
- * @param value - The string to parse
- * @returns Either.Right with the token if valid, Either.Left with errors if invalid
- *
- * @example
- * ```typescript
- * import { Either } from 'effect';
- *
- * const result = parseToken(userInput);
- * if (Either.isRight(result)) {
- *   console.log('Valid token:', result.right);
- * } else {
- *   console.error('Invalid token');
- * }
- * ```
- */
-export const parseToken = (value: string): Either.Either<CrfToken, Brand.Brand.BrandErrors> =>
-  CrfToken.either(value);
-
-/**
- * Generate a random REDCap-compatible token.
- *
- * Useful for testing and mock data generation. The generated token
- * follows the correct format but is not a real API token.
- *
- * @returns A valid CrfToken with random content
- *
- * @example
- * ```typescript
- * const mockToken = generateToken();
- * // mockToken is a valid 32-char uppercase hex string
- * ```
+ * Generate a random REDCap-compatible token (testing / mock data). Follows the
+ * correct format but is not a real API token.
  */
 export const generateToken = (): CrfToken => {
   const chars = '0123456789ABCDEF';
-  let token = '';
+  let result = '';
   for (let i = 0; i < 32; i++) {
-    token += chars[Math.floor(Math.random() * 16)];
+    result += chars[Math.floor(Math.random() * 16)];
   }
-  return token as CrfToken;
+  return result as CrfToken;
 };

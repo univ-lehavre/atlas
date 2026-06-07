@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Hono } from 'hono';
 import { Effect } from 'effect';
 import { CrfNetworkError } from '@univ-lehavre/atlas-crf-client';
+import { makeTestRuntime } from '../test-support.js';
+import { makeProjectRoutes } from './project.js';
 
 const clientMock = {
   getVersion: vi.fn(),
@@ -18,12 +20,8 @@ const clientMock = {
   findUserIdByEmail: vi.fn(),
 };
 
-vi.mock('../client.js', () => ({ client: clientMock }));
-
-const loadProject = async (): Promise<Hono> => {
-  const mod = (await import('./project.js')) as { project: Hono };
-  return mod.project;
-};
+// Routes injected with the mock client via a test runtime (ADR 0049).
+const loadProject = (): Hono => makeProjectRoutes(makeTestRuntime(clientMock));
 
 describe('Project routes', () => {
   beforeEach(() => {

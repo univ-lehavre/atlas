@@ -53,8 +53,8 @@ describe('CrfToken', () => {
       expect(() => CrfToken('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')).toThrow();
     });
 
-    it('should throw BrandErrors for invalid token', () => {
-      // Brand.refined throws BrandErrors which is an array-like structure
+    it('should throw on an invalid token', () => {
+      // Schema-as-brand: the constructor throws a ParseError on invalid input.
       expect(() => CrfToken('ABCD1234EFGH5678IJKL9012MNOP3456')).toThrow();
     });
   });

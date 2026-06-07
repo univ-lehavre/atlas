@@ -1,4 +1,4 @@
-import { Effect } from "effect";
+import { Effect, Either, ParseResult, Schema } from "effect";
 import { http, HttpResponse } from "msw";
 import {
   buildHeaders,
@@ -110,7 +110,7 @@ describe("responseToJSON", () => {
       const headers = new Headers();
 
       const response = yield* URLToResponse(url, "GET", headers);
-      const result = yield* responseToJSON<typeof mockData>(response);
+      const result = yield* responseToJSON(response, Schema.Unknown);
       expect(result).toEqual(mockData);
     }),
   );
@@ -135,7 +135,9 @@ describe("responseToJSON", () => {
         const headers = new Headers();
 
         const response = yield* URLToResponse(url, "GET", headers);
-        const either = yield* Effect.either(responseToJSON<unknown>(response));
+        const either = yield* Effect.either(
+          responseToJSON(response, Schema.Unknown),
+        );
         expect(either._tag).toBe("Left");
         if (either._tag === "Left") {
           expect(either.left.name).toBe("ResponseParseError");
@@ -170,7 +172,9 @@ describe("responseToJSON", () => {
         const headers = new Headers();
 
         const response = yield* URLToResponse(url, "GET", headers);
-        const either = yield* Effect.either(responseToJSON<unknown>(response));
+        const either = yield* Effect.either(
+          responseToJSON(response, Schema.Unknown),
+        );
         expect(either._tag).toBe("Left");
         if (either._tag === "Left") {
           expect(either.left.name).toBe("ResponseParseError");
@@ -193,7 +197,7 @@ describe("fetchJSON", () => {
       const url = new URL(TEST_URL);
       const headers = new Headers();
 
-      const result = yield* fetchJSON<typeof mockData>(url, "GET", headers);
+      const result = yield* fetchJSON(url, "GET", headers, Schema.Unknown);
       expect(result).toEqual(mockData);
     }),
   );
@@ -206,7 +210,7 @@ describe("fetchJSON", () => {
       const headers = new Headers();
 
       const either = yield* Effect.either(
-        fetchJSON<unknown>(url, "GET", headers),
+        fetchJSON(url, "GET", headers, Schema.Unknown),
       );
       expect(either._tag).toBe("Left");
       if (either._tag === "Left") {
@@ -240,7 +244,7 @@ describe("fetchJSON", () => {
         const headers = new Headers();
 
         const either = yield* Effect.either(
-          fetchJSON<unknown>(url, "GET", headers),
+          fetchJSON(url, "GET", headers, Schema.Unknown),
         );
         expect(either._tag).toBe("Left");
         if (either._tag === "Left") {
@@ -274,7 +278,7 @@ describe("fetchJSON", () => {
         const headers = new Headers();
 
         const either = yield* Effect.either(
-          fetchJSON<unknown>(url, "GET", headers),
+          fetchJSON(url, "GET", headers, Schema.Unknown),
         );
         expect(either._tag).toBe("Left");
         if (either._tag === "Left") {
@@ -336,7 +340,7 @@ describe("responseToJSON with null content-type", () => {
       const url = new URL(TEST_URL);
       const headers = new Headers();
       const response = yield* URLToResponse(url, "GET", headers);
-      const result = yield* responseToJSON<typeof mockData>(response);
+      const result = yield* responseToJSON(response, Schema.Unknown);
       expect(result).toEqual(mockData);
     }),
   );
@@ -356,10 +360,11 @@ describe("fetchOnePage", () => {
       const params = { userId: 1 };
       const userAgent = "MyApp/1.0";
 
-      const { data } = yield* fetchOnePage<unknown[]>(
+      const { data } = yield* fetchOnePage(
         baseURL,
         params,
         userAgent,
+        Schema.Unknown,
       );
       expect(Array.isArray(data)).toBe(true);
       expect(data.length).toBeGreaterThan(0);
@@ -388,10 +393,16 @@ describe("fetchOnePage", () => {
       const params = { page: 1, "per-page": 5 } as const;
       const userAgent = "MyApp/1.0 (integration-test)";
 
-      const { data } = yield* fetchOnePage<{
-        meta: { count: number };
-        results: { id: string }[];
-      }>(baseURL, params, userAgent);
+      const PageSchema = Schema.Struct({
+        meta: Schema.Struct({ count: Schema.Number }),
+        results: Schema.Array(Schema.Struct({ id: Schema.String })),
+      });
+      const { data } = yield* fetchOnePage(
+        baseURL,
+        params,
+        userAgent,
+        PageSchema,
+      );
 
       expect(data).toBeDefined();
       expect(data.meta).toBeDefined();
@@ -402,6 +413,48 @@ describe("fetchOnePage", () => {
       expect(data.results.length).toBeGreaterThan(0);
       expect(data.results.length).toStrictEqual(5);
     }),
+  );
+
+  it.effect(
+    "fails loudly with a ResponseParseError carrying a ParseError when the payload does not match the schema",
+    () =>
+      // E13 (ADR 0047): the body is decoded with the supplied Schema instead of
+      // an unchecked `as T`. A mismatching payload must surface a loud
+      // ResponseParseError whose `cause` is the underlying Effect ParseError,
+      // not silently pass through. This drives a REAL payload through
+      // decodeUnknownEither (the other tests use total Schema.Unknown schemas).
+      Effect.gen(function* () {
+        const malformed = { meta: { count: "oops" }, results: [{ id: 1 }] };
+        server.use(
+          http.get("https://api.openalex.org/works", () =>
+            HttpResponse.json(malformed),
+          ),
+        );
+
+        const baseURL = new URL("https://api.openalex.org/works");
+        const params = { page: 1, "per-page": 5 } as const;
+        const userAgent = "MyApp/1.0 (integration-test)";
+
+        // Strict schema: count must be a number, id must be a string.
+        const PageSchema = Schema.Struct({
+          meta: Schema.Struct({ count: Schema.Number }),
+          results: Schema.Array(Schema.Struct({ id: Schema.String })),
+        });
+
+        const either = yield* Effect.either(
+          fetchOnePage(baseURL, params, userAgent, PageSchema),
+        );
+
+        expect(Either.isLeft(either)).toBe(true);
+        if (Either.isLeft(either)) {
+          expect(either.left.name).toBe("ResponseParseError");
+          expect(either.left.message).toBe(
+            "Response did not match the expected schema",
+          );
+          // The cause is the real Effect ParseError produced by the decoder.
+          expect(ParseResult.isParseError(either.left.cause)).toBe(true);
+        }
+      }),
   );
 
   it.effect("should include rate limit info when headers are present", () =>
@@ -420,10 +473,11 @@ describe("fetchOnePage", () => {
         ),
       );
 
-      const { data, rateLimit } = yield* fetchOnePage<typeof mockData>(
+      const { data, rateLimit } = yield* fetchOnePage(
         new URL(TEST_URL),
         {},
         "MyApp/1.0",
+        Schema.Unknown,
       );
       expect(data).toEqual(mockData);
       expect(rateLimit).toEqual({
@@ -446,7 +500,7 @@ describe("fetchOnePage", () => {
       const userAgent = "MyApp/1.0";
 
       const result = yield* Effect.either(
-        fetchOnePage<unknown[]>(baseURL, params, userAgent),
+        fetchOnePage(baseURL, params, userAgent, Schema.Unknown),
       );
       expect(result._tag).toBe("Left");
       if (result._tag === "Left") {

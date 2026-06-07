@@ -22,7 +22,7 @@
  */
 
 import { Command, HelpDoc, Options, Span } from '@effect/cli';
-import { NodeContext, NodeRuntime } from '@effect/platform-node';
+import { runEffectCli } from '@univ-lehavre/atlas-cli-toolkit/effect';
 import { Effect } from 'effect';
 import { serve } from '@hono/node-server';
 import { createCliContext, detectCi, ExitCode, intro, log, pc } from '../../shared/index.js';
@@ -116,14 +116,26 @@ const command = Command.make(
       // Show intro in human mode
       intro(ctx, 'CRF Server');
 
-      // Dynamically import app factory to avoid loading env.js at module load time
-      const { createApp } = yield* Effect.promise(() => import('@univ-lehavre/atlas-crf'));
+      // Dynamically import the app factory + runtime builder.
+      const { createApp, makeCrfRuntime } = yield* Effect.promise(
+        () => import('@univ-lehavre/atlas-crf')
+      );
 
-      // Create the Hono app
+      // Build the central Effect runtime (logger + CrfClientService) from the
+      // validated env, then create the Hono app on it (écart E10, ADR 0045).
+      const runtime = makeCrfRuntime({
+        port: args.port,
+        crfApiUrl: crfUrl,
+        crfApiToken: crfToken,
+        authToken,
+        disableRateLimit: args.noRateLimit,
+      });
+
       const app = createApp({
         port: args.port,
         disableRateLimit: args.noRateLimit,
         authToken,
+        runtime,
       });
 
       // Start the server
@@ -194,12 +206,4 @@ const cli = Command.run(command, {
 // Entry Point
 // ─────────────────────────────────────────────────────────────────────────────
 
-cli(process.argv).pipe(
-  Effect.catchAll((exitCode) =>
-    Effect.sync(() => {
-      process.exitCode = typeof exitCode === 'number' ? exitCode : ExitCode.Error;
-    })
-  ),
-  Effect.provide(NodeContext.layer),
-  NodeRuntime.runMain
-);
+await runEffectCli(cli(process.argv), { fallbackExitCode: ExitCode.Error });

@@ -6,7 +6,7 @@ import { Effect, ConfigProvider, Layer } from "effect";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const capturedEffects: unknown[] = [];
-const runMain = vi.fn((effect: unknown) => {
+const runEffectCli = vi.fn(async (effect: unknown) => {
   capturedEffects.push(effect);
 });
 const devToolsLayer = vi.fn(() => Layer.empty);
@@ -39,8 +39,8 @@ const provideContextStore = vi.fn(passThroughProvider);
 const provideEventsStore = vi.fn(passThroughProvider);
 const provideMetricsStore = vi.fn(passThroughProvider);
 
-vi.mock("@effect/platform-node", () => ({
-  NodeRuntime: { runMain },
+vi.mock("@univ-lehavre/atlas-cli-toolkit/effect", () => ({
+  runEffectCli,
 }));
 
 vi.mock("@effect/experimental", () => ({
@@ -96,7 +96,7 @@ const runCaptured = (effect: Effect.Effect<void, unknown, never>) =>
 
 const resetAllMocks = () => {
   // Reset call history but keep default implementations
-  runMain.mockClear();
+  runEffectCli.mockClear();
   devToolsLayer.mockClear();
   note.mockClear();
   loadStores.mockReset().mockReturnValue(Effect.void);
@@ -138,10 +138,10 @@ describe("atlas-biblio CLI top-level", () => {
     logSpy.mockRestore();
   });
 
-  it("imports and wires the runtime via NodeRuntime.runMain exactly once", async () => {
+  it("imports and wires the runtime via runEffectCli exactly once", async () => {
     await importCommands();
 
-    expect(runMain).toHaveBeenCalledTimes(1);
+    expect(runEffectCli).toHaveBeenCalledTimes(1);
     expect(devToolsLayer).toHaveBeenCalledTimes(1);
     expect(provideContextStore).toHaveBeenCalledTimes(1);
     expect(provideEventsStore).toHaveBeenCalledTimes(1);

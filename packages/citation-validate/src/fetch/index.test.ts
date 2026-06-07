@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import type { ORCID } from "@univ-lehavre/atlas-citation-types";
 
 const mocks = vi.hoisted(() => ({
@@ -21,6 +21,9 @@ vi.mock("@univ-lehavre/atlas-citation-fetch", () => ({
   searchWorksByAuthorIDs: mocks.searchWorksByAuthorIDs,
   searchWorksByORCID: mocks.searchWorksByORCID,
   searchWorksByDOI: mocks.searchWorksByDOI,
+  // Search wrappers mocked → real fetch never runs; no-op layer satisfies the
+  // FetchOnePageLive these thin wrappers provide (écart E14).
+  FetchOnePageLive: Layer.empty,
 }));
 
 import {

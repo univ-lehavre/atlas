@@ -14,10 +14,11 @@ import { openAPIRouteHandler } from 'hono-openapi';
 import { Scalar } from '@scalar/hono-api-reference';
 import { apiRateLimiter } from './middleware/rate-limit.js';
 import { bearerAuth } from './middleware/auth.js';
-import { health } from './routes/health.js';
-import { project } from './routes/project.js';
-import { records } from './routes/records.js';
-import { users } from './routes/users.js';
+import { makeHealthRoutes } from './routes/health.js';
+import { makeProjectRoutes } from './routes/project.js';
+import { makeRecordsRoutes } from './routes/records.js';
+import { makeUsersRoutes } from './routes/users.js';
+import type { CrfRuntime } from './boot.js';
 
 /**
  * Configuration options for creating the CRF app.
@@ -30,10 +31,16 @@ export interface CreateAppOptions {
   /**
    * Static Bearer secret required on `/api/*` (ADR 0041). When omitted, the
    * authentication middleware is not mounted — for tests and local tooling
-   * only. The running service always passes `env.authToken` (required), so
-   * production is never unauthenticated.
+   * only. The running service always passes the boot-time `authToken`
+   * (required, read by `loadConfig`), so production is never unauthenticated.
    */
   readonly authToken?: string;
+  /**
+   * Central Effect runtime carrying the `AppLayer` (logger + `CrfClientService`).
+   * Built once at boot ([boot.ts](./boot.ts)) and threaded to the routes, whose
+   * handlers run their Effects through it (écart E10, ADR 0045).
+   */
+  readonly runtime: CrfRuntime;
 }
 
 const apiRoutes = [
@@ -97,7 +104,7 @@ const errorHandler: Parameters<Hono['onError']>[0] = (err, c) => {
  * @returns Configured Hono application
  */
 export const createApp = (options: CreateAppOptions): Hono => {
-  const { port, disableRateLimit = false, authToken } = options;
+  const { port, disableRateLimit = false, authToken, runtime } = options;
 
   const app = new Hono();
 
@@ -115,10 +122,10 @@ export const createApp = (options: CreateAppOptions): Hono => {
   if (authToken !== undefined) app.use('/api/*', bearerAuth(authToken));
   app.use('*', traceBlocker);
 
-  app.route('/health', health);
-  app.route('/api/v1/project', project);
-  app.route('/api/v1/records', records);
-  app.route('/api/v1/users', users);
+  app.route('/health', makeHealthRoutes(runtime));
+  app.route('/api/v1/project', makeProjectRoutes(runtime));
+  app.route('/api/v1/records', makeRecordsRoutes(runtime));
+  app.route('/api/v1/users', makeUsersRoutes(runtime));
 
   app.get(
     '/openapi.json',

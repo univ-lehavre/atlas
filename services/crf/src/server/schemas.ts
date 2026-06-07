@@ -19,17 +19,16 @@ export const SuccessResponseOpenAPI = {
   additionalProperties: false,
 };
 
-// Validation patterns
-export const CRF_NAME_PATTERN = /^[\w,]*$/;
-export const INSTRUMENT_NAME_PATTERN = /^[a-z][a-z0-9_]*$/;
-export const RECORD_ID_PATTERN = /^[a-z0-9]{20,}$/i;
-export const EMAIL_PATTERN = /^[^\s@]+@[^\s@][^\s.@]*\.[^\s@]+$/;
+// Validation patterns/schemas. The instrument-name and email rules are
+// re-exported from the Schema-as-brand source in crf-core (single source of
+// truth, écart E12, ADR 0047) rather than re-declared here.
+export {
+  INSTRUMENT_NAME_PATTERN,
+  EMAIL_PATTERN,
+  InstrumentNameSchema,
+  EmailSchema,
+} from '@univ-lehavre/atlas-crf-core/brands';
 
-// RecordId schema
-export const RecordIdSchema = S.String.pipe(S.minLength(20), S.pattern(RECORD_ID_PATTERN));
-
-// InstrumentName schema
-export const InstrumentNameSchema = S.String.pipe(S.pattern(INSTRUMENT_NAME_PATTERN));
-
-// Email schema
-export const EmailSchema = S.String.pipe(S.pattern(EMAIL_PATTERN));
+// Comma-separated list of field/form names (e.g. `fields=a,b,c`), later split on
+// `,`. Service-specific (validates a list, not a single name) — stays local.
+export const CRF_NAME_LIST_PATTERN = /^[\w,]*$/;

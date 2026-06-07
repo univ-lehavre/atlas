@@ -2,6 +2,7 @@ import { Effect } from "effect";
 import { getEnv } from "../config.js";
 
 import { fetchAPI } from "./fetch-citation.js";
+import type { FetchOnePage } from "@univ-lehavre/atlas-fetch-one-api-page";
 import type { ConfigError } from "effect/ConfigError";
 import { FetchError, StatusError } from "../errors.js";
 import type {
@@ -26,7 +27,7 @@ const searchAuthors = (
 ): Effect.Effect<
   CitationResponse<AuthorsSearchResult>,
   ConfigError | StatusError | FetchError,
-  never
+  FetchOnePage
 > =>
   Effect.gen(function* () {
     const { per_page, citation_api_url } = yield* getEnv();
@@ -61,7 +62,7 @@ const retrieve_articles = (
 ): Effect.Effect<
   CitationResponse<WorksResult>,
   ConfigError | StatusError | FetchError,
-  never
+  FetchOnePage
 > =>
   Effect.gen(function* () {
     const { per_page, citation_api_url } = yield* getEnv();
@@ -89,7 +90,7 @@ const retrieve_articles_given_work_ids = (
 ): Effect.Effect<
   CitationResponse<WorksResult>,
   ConfigError | StatusError | FetchError,
-  never
+  FetchOnePage
 > =>
   Effect.gen(function* () {
     const { per_page, citation_api_url } = yield* getEnv();

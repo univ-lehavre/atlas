@@ -34,13 +34,10 @@
   "dependencies": {
     "@clack/prompts": "~1.5.0",
     "@effect/cli": "~0.75.1",
-    "@effect/cluster": "~0.58.2",
     "@effect/platform": "~0.96.1",
-    "@effect/platform-node": "~0.106.0",
     "@effect/printer": "~0.49.0",
     "@effect/printer-ansi": "~0.49.0",
-    "@effect/rpc": "~0.75.1",
-    "@effect/sql": "~0.51.1",
+    "@univ-lehavre/atlas-cli-toolkit": "workspace:*",
     "@univ-lehavre/atlas-net": "workspace:*",
     "effect": "~3.21.2",
     "picocolors": "~1.1.1"

@@ -10,18 +10,28 @@
 import { serve } from '@hono/node-server';
 import { startTelemetry } from './telemetry.js';
 import { createApp } from './app.js';
-import { env } from './env.js';
+import { loadConfig, makeCrfRuntime } from './boot.js';
 import { registerGracefulShutdown } from './shutdown.js';
 
 // Start OpenTelemetry before anything else so the request middleware records
-// spans. No-op safe: returns undefined when tracing is not configured.
+// spans, and so the GLOBAL tracer provider is registered before the runtime's
+// tracer bridge (makeTracerLayer → Tracer.layerGlobal) reads it — HTTP spans
+// (@hono/otel) and business spans (Effect.withSpan in the REDCap client) then
+// share one provider and correlate (écart E9). No-op safe when tracing is off.
 startTelemetry();
+
+// Read config and build the central Effect runtime once, at boot (écart
+// E10/E8/E7, ADR 0045): the AppLayer wires the logger + CrfClientService that
+// the routes depend on by injection.
+const env = loadConfig();
+const runtime = makeCrfRuntime(env);
 
 // Create and start the server
 const app = createApp({
   port: env.port,
   disableRateLimit: env.disableRateLimit,
   authToken: env.authToken,
+  runtime,
 });
 
 console.warn(`Starting CRF service on port ${String(env.port)}...`);

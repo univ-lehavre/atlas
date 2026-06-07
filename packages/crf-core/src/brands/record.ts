@@ -1,29 +1,32 @@
 /**
- * REDCap record ID branded type
+ * REDCap record ID branded type.
  *
- * Record IDs in REDCap are typically alphanumeric strings.
- * The pattern depends on auto-numbering configuration.
+ * Record IDs in REDCap are typically alphanumeric strings (the exact pattern
+ * depends on auto-numbering configuration). Schema-as-brand: a single Schema
+ * is the source of the type, pattern, predicate, parser and constructor
+ * (écart E12, ADR 0047).
  */
 
-import type { Either } from 'effect';
-import { Brand } from 'effect';
+import type { Either, ParseResult } from 'effect';
+import { makeStringBrand } from './make-string-brand.js';
 
-/** REDCap record identifier */
-export type RecordId = string & Brand.Brand<'RecordId'>;
+const brand = makeStringBrand('RecordId', /^[\w-]+$/, 'alphanumeric, at least 1 character');
 
-/** Record ID validation pattern (alphanumeric, at least 1 character) */
-export const RECORD_ID_PATTERN = /^[\w-]+$/;
+/** REDCap record identifier. */
+export type RecordId = typeof brand.schema.Type;
 
-/** Validate and brand a string as RecordId */
-export const RecordId = Brand.refined<RecordId>(
-  (value) => value.length > 0 && RECORD_ID_PATTERN.test(value),
-  (value) => Brand.error(`Invalid record ID format: ${value}`)
-);
+/** Record ID validation pattern (alphanumeric, at least 1 character). */
+export const RECORD_ID_PATTERN = brand.pattern;
 
-/** Check if a string is a valid record ID */
-export const isValidRecordId = (value: string): value is RecordId =>
-  value.length > 0 && RECORD_ID_PATTERN.test(value);
+/** The `Schema` source of truth for {@link RecordId}. */
+export const RecordIdSchema = brand.schema;
 
-/** Parse a string as RecordId, returning Either */
-export const parseRecordId = (value: string): Either.Either<RecordId, Brand.Brand.BrandErrors> =>
-  RecordId.either(value);
+/** Validate and brand a string as {@link RecordId} (throws `ParseError` on invalid). */
+export const RecordId = (value: string): RecordId => brand.make(value);
+
+/** Check if a string is a valid record ID. */
+export const isValidRecordId = (value: string): value is RecordId => brand.is(value);
+
+/** Parse a string as {@link RecordId}, returning `Either`. */
+export const parseRecordId = (value: string): Either.Either<RecordId, ParseResult.ParseError> =>
+  brand.parse(value);

@@ -1,5 +1,5 @@
 import { Config, Effect, RateLimiter } from "effect";
-import { quiet } from "@univ-lehavre/atlas-cli-toolkit/effect";
+import { runEffectCli } from "@univ-lehavre/atlas-cli-toolkit/effect";
 import { note } from "@clack/prompts";
 import {
   action2option,
@@ -25,7 +25,6 @@ import {
   type MetricsStore,
 } from "@univ-lehavre/atlas-citation-validate";
 import type { ORCID } from "@univ-lehavre/atlas-citation-types";
-import { NodeRuntime } from "@effect/platform-node";
 import { DevTools } from "@effect/experimental";
 import type { ConfigError } from "effect/ConfigError";
 
@@ -137,4 +136,4 @@ const runnable = start().pipe(
 
 const DevToolsLive = DevTools.layer();
 
-quiet(runnable).pipe(Effect.provide(DevToolsLive), NodeRuntime.runMain);
+await runEffectCli(runnable.pipe(Effect.provide(DevToolsLive)));

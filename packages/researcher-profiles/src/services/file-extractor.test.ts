@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect } from "@effect/vitest";
+import { vi, beforeEach } from "vitest";
 import { Effect, Exit } from "effect";
 
 const mocks = vi.hoisted(() => ({
@@ -98,69 +99,85 @@ describe("module-level console.warn override", () => {
 });
 
 describe("extractText", () => {
-  it("decodes plain text buffers without invoking heavy parsers", async () => {
-    const text = await Effect.runPromise(extractText(txtBuffer("hello world")));
-    expect(text).toBe("hello world");
-    expect(mocks.getDocument).not.toHaveBeenCalled();
-    expect(mocks.extractRawText).not.toHaveBeenCalled();
-  });
+  it.effect("decodes plain text buffers without invoking heavy parsers", () =>
+    Effect.gen(function* () {
+      const text = yield* extractText(txtBuffer("hello world"));
+      expect(text).toBe("hello world");
+      expect(mocks.getDocument).not.toHaveBeenCalled();
+      expect(mocks.extractRawText).not.toHaveBeenCalled();
+    }),
+  );
 
-  it("extracts text from a PDF when content is non-empty and clean", async () => {
-    const page = fakePage(longText);
-    mocks.getDocument.mockReturnValue({
-      promise: Promise.resolve({
-        numPages: 1,
-        getPage: () => Promise.resolve(page),
+  it.effect(
+    "extracts text from a PDF when content is non-empty and clean",
+    () =>
+      Effect.gen(function* () {
+        const page = fakePage(longText);
+        mocks.getDocument.mockReturnValue({
+          promise: Promise.resolve({
+            numPages: 1,
+            getPage: () => Promise.resolve(page),
+          }),
+        });
+
+        const text = yield* extractText(pdfHeader());
+        expect(text).toContain("Lorem");
       }),
-    });
+  );
 
-    const text = await Effect.runPromise(extractText(pdfHeader()));
-    expect(text).toContain("Lorem");
-  });
+  it.effect("falls back to OCR when extracted text is too sparse", () =>
+    Effect.gen(function* () {
+      const sparsePage = fakePage("a");
+      mocks.getDocument.mockReturnValue({
+        promise: Promise.resolve({
+          numPages: 1,
+          getPage: () => Promise.resolve(sparsePage),
+        }),
+      });
+      mocks.createCanvas.mockReturnValue({
+        getContext: () => ({}),
+        toBuffer: () => Buffer.from([1, 2, 3]),
+      });
+      const recognize = vi
+        .fn()
+        .mockResolvedValue({ data: { text: "OCR text" } });
+      const terminate = vi.fn(() => Promise.resolve());
+      mocks.createWorker.mockResolvedValue({ recognize, terminate });
 
-  it("falls back to OCR when extracted text is too sparse", async () => {
-    const sparsePage = fakePage("a");
-    mocks.getDocument.mockReturnValue({
-      promise: Promise.resolve({
-        numPages: 1,
-        getPage: () => Promise.resolve(sparsePage),
-      }),
-    });
-    mocks.createCanvas.mockReturnValue({
-      getContext: () => ({}),
-      toBuffer: () => Buffer.from([1, 2, 3]),
-    });
-    const recognize = vi.fn().mockResolvedValue({ data: { text: "OCR text" } });
-    const terminate = vi.fn(() => Promise.resolve());
-    mocks.createWorker.mockResolvedValue({ recognize, terminate });
+      const text = yield* extractText(pdfHeader());
+      expect(text).toBe("OCR text");
+      expect(recognize).toHaveBeenCalled();
+      expect(terminate).toHaveBeenCalled();
+    }),
+  );
 
-    const text = await Effect.runPromise(extractText(pdfHeader()));
-    expect(text).toBe("OCR text");
-    expect(recognize).toHaveBeenCalled();
-    expect(terminate).toHaveBeenCalled();
-  });
+  it.effect("extracts text from a DOCX via mammoth", () =>
+    Effect.gen(function* () {
+      mocks.extractRawText.mockResolvedValue({ value: "docx body" });
 
-  it("extracts text from a DOCX via mammoth", async () => {
-    mocks.extractRawText.mockResolvedValue({ value: "docx body" });
+      const text = yield* extractText(docxHeader());
+      expect(text).toBe("docx body");
+      expect(mocks.extractRawText).toHaveBeenCalled();
+    }),
+  );
 
-    const text = await Effect.runPromise(extractText(docxHeader()));
-    expect(text).toBe("docx body");
-    expect(mocks.extractRawText).toHaveBeenCalled();
-  });
+  it.effect("wraps PDF parsing failures into FileExtractError", () =>
+    Effect.gen(function* () {
+      mocks.getDocument.mockReturnValue({
+        promise: Promise.reject(new Error("corrupt pdf")),
+      });
 
-  it("wraps PDF parsing failures into FileExtractError", async () => {
-    mocks.getDocument.mockReturnValue({
-      promise: Promise.reject(new Error("corrupt pdf")),
-    });
+      const exit = yield* Effect.exit(extractText(pdfHeader()));
+      expect(Exit.isFailure(exit)).toBe(true);
+    }),
+  );
 
-    const exit = await Effect.runPromiseExit(extractText(pdfHeader()));
-    expect(Exit.isFailure(exit)).toBe(true);
-  });
+  it.effect("wraps DOCX parsing failures into FileExtractError", () =>
+    Effect.gen(function* () {
+      mocks.extractRawText.mockRejectedValue(new Error("corrupt docx"));
 
-  it("wraps DOCX parsing failures into FileExtractError", async () => {
-    mocks.extractRawText.mockRejectedValue(new Error("corrupt docx"));
-
-    const exit = await Effect.runPromiseExit(extractText(docxHeader()));
-    expect(Exit.isFailure(exit)).toBe(true);
-  });
+      const exit = yield* Effect.exit(extractText(docxHeader()));
+      expect(Exit.isFailure(exit)).toBe(true);
+    }),
+  );
 });

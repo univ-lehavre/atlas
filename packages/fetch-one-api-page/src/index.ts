@@ -1,5 +1,6 @@
 import qs from "qs";
-import { Effect, Data } from "effect";
+import { Effect, Data, Either, Schema, Context, Layer } from "effect";
+import type { ParseResult } from "effect";
 
 type QueryValue =
   | string
@@ -73,25 +74,46 @@ const URLToResponse = (
       new FetchError("An unknown error occurred during fetch", { cause }),
   });
 
-const responseToJSON = <T>(
+/**
+ * Reads the response body as JSON and **decodes** it with the supplied Effect
+ * `Schema` (écart E13, ADR 0047) — no more unchecked `as T`. A decode failure
+ * yields a `ResponseParseError` carrying the underlying `ParseError` as its
+ * `cause`, so callers can inspect exactly which field was malformed.
+ */
+const responseToJSON = <A>(
   response: Response,
-): Effect.Effect<T, ResponseParseError> =>
+  schema: Schema.Schema<A>,
+): Effect.Effect<A, ResponseParseError> =>
   Effect.tryPromise({
-    try: async () => {
+    try: async (): Promise<unknown> => {
       const contentType = response.headers.get("content-type");
       // eslint-disable-next-line functional/no-conditional-statements -- early throw for non-JSON
       if (contentType !== null && !contentType.includes("application/json")) {
         const text = await response.text();
         throw new ResponseParseError(text);
       }
-      const json = (await response.json()) as T;
-      return json;
+      return await response.json();
     },
     catch: (cause: unknown) =>
       new ResponseParseError("An unknown error occurred during fetch", {
         cause,
       }),
-  });
+  }).pipe(
+    Effect.flatMap((json) => {
+      const decoded: Either.Either<A, ParseResult.ParseError> =
+        Schema.decodeUnknownEither(schema)(json);
+      return Either.isRight(decoded)
+        ? Effect.succeed(decoded.right)
+        : Effect.fail(
+            new ResponseParseError(
+              "Response did not match the expected schema",
+              {
+                cause: decoded.left,
+              },
+            ),
+          );
+    }),
+  );
 
 /**
  * Fetch JSON data from a URL.
@@ -100,14 +122,15 @@ const responseToJSON = <T>(
  * @param headers The headers to include in the request
  * @returns The JSON response from the server
  */
-const fetchJSON = <T>(
+const fetchJSON = <A>(
   url: URL,
   method: "GET" | "POST" | "PUT" | "DELETE",
   headers: Headers,
-): Effect.Effect<T, FetchError | ResponseParseError> =>
+  schema: Schema.Schema<A>,
+): Effect.Effect<A, FetchError | ResponseParseError> =>
   Effect.gen(function* () {
     const response: Response = yield* URLToResponse(url, method, headers);
-    const json: T = yield* responseToJSON<T>(response);
+    const json: A = yield* responseToJSON(response, schema);
     return json;
   });
 
@@ -149,11 +172,12 @@ const parseRateLimitHeaders = (headers: Headers): RateLimitInfo | undefined => {
  * @throws {FetchError} If the fetch function fails
  * @returns An Effect that resolves to the JSON response with rate limit info or an error
  */
-const fetchOnePage = <T>(
+const fetchOnePage = <A>(
   endpointURL: URL,
   params: Query,
   userAgent: string,
-): Effect.Effect<PageResult<T>, FetchError | ResponseParseError> =>
+  schema: Schema.Schema<A>,
+): Effect.Effect<PageResult<A>, FetchError | ResponseParseError> =>
   Effect.gen(function* () {
     yield* Effect.logDebug(
       `Starting fetchOnePage with parameters: ${JSON.stringify({ endpointURL, params, userAgent }, null, 2)}`,
@@ -166,12 +190,41 @@ const fetchOnePage = <T>(
     );
     const response: Response = yield* URLToResponse(url, "GET", headers);
     const rateLimit = parseRateLimitHeaders(response.headers);
-    const data = yield* responseToJSON<T>(response);
+    const data = yield* responseToJSON(response, schema);
     yield* Effect.logDebug(
       `Received response: ${JSON.stringify(data, null, 2)}`,
     );
     return { data, rateLimit };
   });
+
+/**
+ * Generic signature of {@link fetchOnePage}, kept as a named type so it can be
+ * carried by the {@link FetchOnePage} service tag and overridden by test
+ * layers (écart E14, ADR 0049).
+ */
+type FetchOnePageFn = <A>(
+  endpointURL: URL,
+  params: Query,
+  userAgent: string,
+  schema: Schema.Schema<A>,
+) => Effect.Effect<PageResult<A>, FetchError | ResponseParseError>;
+
+/**
+ * Effect service exposing one-page fetching as an injected dependency
+ * (écart E14, ADR 0049). Consumers `yield* FetchOnePage` instead of importing
+ * the function directly, so production provides {@link FetchOnePageLive} at the
+ * composition root and tests provide an in-memory layer — no `vi.mock`.
+ */
+class FetchOnePage extends Context.Tag("FetchOnePage")<
+  FetchOnePage,
+  FetchOnePageFn
+>() {}
+
+/** Layer providing the real network-backed {@link fetchOnePage}. */
+const FetchOnePageLive: Layer.Layer<FetchOnePage> = Layer.succeed(
+  FetchOnePage,
+  fetchOnePage,
+);
 
 export {
   buildHeaders,
@@ -180,9 +233,12 @@ export {
   responseToJSON,
   fetchJSON,
   fetchOnePage,
+  FetchOnePage,
+  FetchOnePageLive,
   parseRateLimitHeaders,
   FetchError,
   ResponseParseError,
+  type FetchOnePageFn,
   type Query,
   type RateLimitInfo,
   type PageResult,

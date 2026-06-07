@@ -1,35 +1,49 @@
-import { Effect } from "effect";
+import { Effect, Schema } from "effect";
 import type {
   FetchError,
   ResponseParseError,
 } from "@univ-lehavre/atlas-fetch-one-api-page";
-import { fetchOnePage } from "@univ-lehavre/atlas-fetch-one-api-page";
+import { FetchOnePage } from "@univ-lehavre/atlas-fetch-one-api-page";
 import type { RateLimitInfo } from "@univ-lehavre/atlas-citation-types";
 import type { CitationConfig } from "./institutions.js";
 
 const OPENALEX_BASE_URL = "https://api.openalex.org";
 const YEARS_LOOKBACK = 5;
 
-interface WorksMetaResponse {
-  meta: {
-    count: number;
-    db_response_time_ms: number;
-  };
-}
+/**
+ * Effect `Schema` for the meta-only OpenAlex `/works` and `/authors` payloads
+ * we consume (écart E13, ADR 0047). Not an `APIResponse` shape — these requests
+ * use `select=id&per_page=1`, so only `meta.count` / `meta.db_response_time_ms`
+ * are read. Extra OpenAlex fields are dropped at decode time by Struct.
+ */
+const WorksMetaResponseSchema = Schema.Struct({
+  meta: Schema.Struct({
+    count: Schema.Number,
+    db_response_time_ms: Schema.Number,
+  }),
+});
 
-interface WorksGroupByItem {
-  key: string;
-  key_display_name: string;
-  count: number;
-}
+/**
+ * Effect `Schema` for the OpenAlex `group_by` `/works` payload (écart E13).
+ * Carries `meta` plus the `group_by` buckets used to build the per-year counts.
+ */
+const WorksGroupByResponseSchema = Schema.Struct({
+  meta: Schema.Struct({
+    count: Schema.Number,
+    db_response_time_ms: Schema.Number,
+  }),
+  group_by: Schema.Array(
+    Schema.Struct({
+      key: Schema.String,
+      key_display_name: Schema.String,
+      count: Schema.Number,
+    }),
+  ),
+});
 
-interface WorksGroupByResponse {
-  meta: {
-    count: number;
-    db_response_time_ms: number;
-  };
-  group_by: WorksGroupByItem[];
-}
+/** Item shape of the `group_by` buckets, derived from the schema. */
+type WorksGroupByItem =
+  (typeof WorksGroupByResponseSchema.Type)["group_by"][number];
 
 interface YearlyArticleCount {
   year: number | "before";
@@ -89,7 +103,11 @@ const buildParams = (
 const getWorksCount = (
   institutionIds: string[],
   config: CitationConfig,
-): Effect.Effect<WorksCountResult, FetchError | ResponseParseError> => {
+): Effect.Effect<
+  WorksCountResult,
+  FetchError | ResponseParseError,
+  FetchOnePage
+> => {
   const fromDate = getYearsAgoDate(YEARS_LOOKBACK);
 
   return institutionIds.length === 0
@@ -100,6 +118,7 @@ const getWorksCount = (
         institutionCount: 0,
       })
     : Effect.gen(function* () {
+        const fetchOnePage = yield* FetchOnePage;
         const baseURL = config.apiURL ?? OPENALEX_BASE_URL;
         const endpointURL = new URL(`${baseURL}/works`);
         const filter = `authorships.institutions.id:${institutionIds.join("|")},from_publication_date:${fromDate},type:article`;
@@ -109,10 +128,11 @@ const getWorksCount = (
           config.apiKey,
         );
 
-        const { data, rateLimit } = yield* fetchOnePage<WorksMetaResponse>(
+        const { data, rateLimit } = yield* fetchOnePage(
           endpointURL,
           params,
           config.userAgent,
+          WorksMetaResponseSchema,
         );
 
         return {
@@ -170,7 +190,11 @@ const buildYearCounts = (
 const getInstitutionStats = (
   institutionIds: string[],
   config: CitationConfig,
-): Effect.Effect<InstitutionStatsResult, FetchError | ResponseParseError> => {
+): Effect.Effect<
+  InstitutionStatsResult,
+  FetchError | ResponseParseError,
+  FetchOnePage
+> => {
   const years = getYearsToQuery();
 
   return institutionIds.length === 0
@@ -187,6 +211,7 @@ const getInstitutionStats = (
       })
     : // eslint-disable-next-line max-lines-per-function -- Effect.gen séquentiel HTTP→parse→agréger
       Effect.gen(function* () {
+        const fetchOnePage = yield* FetchOnePage;
         const baseURL = config.apiURL ?? OPENALEX_BASE_URL;
         const institutionsFilter = institutionIds.join("|");
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- years always has YEARS_LOOKBACK+1 elements
@@ -211,20 +236,23 @@ const getInstitutionStats = (
 
         const [worksResult, articlesResult, authorsResult] = yield* Effect.all(
           [
-            fetchOnePage<WorksMetaResponse>(
+            fetchOnePage(
               new URL(`${baseURL}/works`),
               worksParams,
               config.userAgent,
+              WorksMetaResponseSchema,
             ),
-            fetchOnePage<WorksGroupByResponse>(
+            fetchOnePage(
               new URL(`${baseURL}/works`),
               articlesGroupByParams,
               config.userAgent,
+              WorksGroupByResponseSchema,
             ),
-            fetchOnePage<WorksMetaResponse>(
+            fetchOnePage(
               new URL(`${baseURL}/authors`),
               authorsParams,
               config.userAgent,
+              WorksMetaResponseSchema,
             ),
           ],
           { concurrency: "unbounded" },

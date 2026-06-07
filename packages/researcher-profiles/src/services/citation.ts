@@ -12,6 +12,7 @@ import type {
   CitationConfig,
   RateLimitInfo,
 } from "@univ-lehavre/atlas-citation-fetch";
+import { FetchOnePageLive } from "@univ-lehavre/atlas-citation-fetch";
 import type {
   AuthorsResult,
   WorksResult,
@@ -57,28 +58,31 @@ export const resolveAuthors = (
           `${row.first_name} ${row.middle_name} ${row.last_name}`,
         ];
 
-  const byName: Effect.Effect<readonly AuthorsResult[], CitationSearchError> =
-    searchAuthorsByName(names, config).pipe(
-      Effect.mapError(
-        (cause) => new CitationSearchError({ researcher, cause }),
-      ),
-    );
+  // R inferred as FetchOnePage; the layer is provided on the returned Effect
+  // below (E14), keeping resolveAuthors' public signature `R = never`.
+  const byName = searchAuthorsByName(names, config).pipe(
+    Effect.mapError((cause) => new CitationSearchError({ researcher, cause })),
+  );
 
-  const byOrcid: Effect.Effect<readonly AuthorsResult[], CitationSearchError> =
+  const byOrcid =
     row.orcid === ""
-      ? Effect.succeed([])
+      ? Effect.succeed<readonly AuthorsResult[]>([])
       : searchAuthorsByORCID([row.orcid], config).pipe(
           Effect.mapError(
             (cause) => new CitationSearchError({ researcher, cause }),
           ),
         );
 
+  // FetchOnePage is provided here, at this library frontier (écart E14,
+  // ADR 0049) : the real network implementation enters via FetchOnePageLive
+  // so the public signature stays `R = never` for callers/CLIs.
   return Effect.all([byName, byOrcid], { concurrency: 1 }).pipe(
     Effect.map(([byNameResults, byOrcidResults]) => ({
       byName: byNameResults,
       byOrcid: byOrcidResults,
       unique: deduplicateById([...byNameResults, ...byOrcidResults]),
     })),
+    Effect.provide(FetchOnePageLive),
   );
 };
 
@@ -118,7 +122,11 @@ export const fetchWorksForAuthors = (
             (works) => deduplicateById([...acc, ...works]) as WorksResult[],
           ),
         ),
-      ).pipe(Effect.map((works) => works as readonly WorksResult[]));
+      ).pipe(
+        Effect.map((works) => works as readonly WorksResult[]),
+        // FetchOnePage enters at this frontier — see resolveAuthors (E14).
+        Effect.provide(FetchOnePageLive),
+      );
 
 /**
  * Resolves authors and their deduplicated works for a researcher row.

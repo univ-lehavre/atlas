@@ -1,5 +1,4 @@
 import { Effect } from "effect";
-import { quiet } from "@univ-lehavre/atlas-cli-toolkit/effect";
 import { chain } from "lodash";
 
 import { cmd } from "../config/args.js";
@@ -8,6 +7,7 @@ import {
   retrieve_articles,
   retrieve_articles_given_work_ids,
 } from "@univ-lehavre/atlas-citation";
+import { FetchOnePageLive } from "@univ-lehavre/atlas-citation-fetch";
 import type { CitationSearchAuthorAffiliationResult } from "@univ-lehavre/atlas-citation";
 import {
   multiple,
@@ -18,7 +18,7 @@ import {
   selection,
 } from "../prompts/index.js";
 
-const program = Effect.gen(function* () {
+export const program = Effect.gen(function* () {
   // Saisie du nom du chercheur
   const argv = yield* cmd();
   let name: string;
@@ -222,6 +222,9 @@ const program = Effect.gen(function* () {
   );
 
   finish("Fin");
-});
-
-Effect.runPromiseExit(quiet(program));
+}).pipe(
+  // Composition root of the CLI: the real one-page fetch enters here via
+  // FetchOnePageLive (écart E14, ADR 0049), so `program` carries no service
+  // requirement for runEffectCli.
+  Effect.provide(FetchOnePageLive),
+);

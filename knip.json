@@ -42,12 +42,7 @@
     },
     "packages/citation": {
       "project": ["src/**/*.ts"],
-      "ignoreDependencies": [
-        "@effect/experimental",
-        "@effect/platform-node",
-        "@xenova/transformers",
-        "uuid"
-      ]
+      "ignoreDependencies": ["@xenova/transformers", "uuid"]
     },
     "cli/citation": {
       "project": ["src/**/*.ts"]
