@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Hono } from 'hono';
 import { Effect } from 'effect';
 import { CrfNetworkError, CrfHttpError } from '@univ-lehavre/atlas-crf-client';
+import { makeTestRuntime } from '../test-support.js';
+import { makeHealthRoutes } from './health.js';
 
 const clientMock = {
   getVersion: vi.fn(),
@@ -18,12 +20,8 @@ const clientMock = {
   findUserIdByEmail: vi.fn(),
 };
 
-vi.mock('../client.js', () => ({ client: clientMock }));
-
-const loadHealth = async (): Promise<Hono> => {
-  const mod = (await import('./health.js')) as { health: Hono };
-  return mod.health;
-};
+// Routes injected with the mock client via a test runtime (ADR 0049).
+const loadHealth = (): Hono => makeHealthRoutes(makeTestRuntime(clientMock));
 
 describe('Health routes', () => {
   beforeEach(() => {
@@ -32,7 +30,7 @@ describe('Health routes', () => {
 
   describe('GET /', () => {
     it('returns 200 with status ok', async () => {
-      const health = await loadHealth();
+      const health = loadHealth();
       const res = await health.request('/');
       expect(res.status).toBe(200);
       const body = (await res.json()) as { status: string };
@@ -47,7 +45,7 @@ describe('Health routes', () => {
         Effect.succeed({ project_title: 'Test Project', project_id: 42 })
       );
 
-      const health = await loadHealth();
+      const health = loadHealth();
       const res = await health.request('/detailed');
       expect(res.status).toBe(200);
 
@@ -67,7 +65,7 @@ describe('Health routes', () => {
         Effect.fail(new CrfNetworkError({ cause: 'ECONNREFUSED' }))
       );
 
-      const health = await loadHealth();
+      const health = loadHealth();
       const res = await health.request('/detailed');
       expect(res.status).toBe(503);
 
@@ -87,7 +85,7 @@ describe('Health routes', () => {
         Effect.fail(new CrfHttpError({ status: 403, statusText: 'Forbidden' }))
       );
 
-      const health = await loadHealth();
+      const health = loadHealth();
       const res = await health.request('/detailed');
       expect(res.status).toBe(503);
 

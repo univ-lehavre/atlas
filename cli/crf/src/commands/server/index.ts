@@ -116,14 +116,26 @@ const command = Command.make(
       // Show intro in human mode
       intro(ctx, 'CRF Server');
 
-      // Dynamically import app factory to avoid loading env.js at module load time
-      const { createApp } = yield* Effect.promise(() => import('@univ-lehavre/atlas-crf'));
+      // Dynamically import the app factory + runtime builder.
+      const { createApp, makeCrfRuntime } = yield* Effect.promise(
+        () => import('@univ-lehavre/atlas-crf')
+      );
 
-      // Create the Hono app
+      // Build the central Effect runtime (logger + CrfClientService) from the
+      // validated env, then create the Hono app on it (écart E10, ADR 0045).
+      const runtime = makeCrfRuntime({
+        port: args.port,
+        crfApiUrl: crfUrl,
+        crfApiToken: crfToken,
+        authToken,
+        disableRateLimit: args.noRateLimit,
+      });
+
       const app = createApp({
         port: args.port,
         disableRateLimit: args.noRateLimit,
         authToken,
+        runtime,
       });
 
       // Start the server

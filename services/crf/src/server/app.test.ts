@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Effect } from 'effect';
+import { makeTestRuntime } from './test-support.js';
+import { createApp } from './app.js';
 
 const clientMock = {
   getVersion: vi.fn(),
@@ -16,25 +18,17 @@ const clientMock = {
   findUserIdByEmail: vi.fn(),
 };
 
-vi.mock('./client.js', () => ({ client: clientMock }));
-
 // Silence the error handler's console.error in onError tests.
 vi.spyOn(console, 'error').mockImplementation(() => {
   /* noop */
 });
 
-import type * as AppModuleType from './app.js';
-
 const DEFAULT_OPTIONS = { port: 3001, disableRateLimit: true } as const;
 
-type AppModule = typeof AppModuleType;
-
-const loadApp = async (
+// App built with the mock client injected via a test runtime (ADR 0049).
+const loadApp = (
   options: { port: number; disableRateLimit?: boolean; authToken?: string } = DEFAULT_OPTIONS
-) => {
-  const { createApp } = (await import('./app.js')) as AppModule;
-  return createApp(options);
-};
+) => createApp({ ...options, runtime: makeTestRuntime(clientMock) });
 
 describe('createApp', () => {
   beforeEach(() => {
@@ -42,7 +36,7 @@ describe('createApp', () => {
   });
 
   it('wires /health route', async () => {
-    const app = await loadApp();
+    const app = loadApp();
     const res = await app.request('/health');
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ status: 'ok' });
@@ -50,7 +44,7 @@ describe('createApp', () => {
 
   it('wires /api/v1/project/version through the project router', async () => {
     clientMock.getVersion.mockReturnValue(Effect.succeed('14.0.0'));
-    const app = await loadApp();
+    const app = loadApp();
     const res = await app.request('/api/v1/project/version');
     expect(res.status).toBe(200);
     const body = (await res.json()) as { data: { version: string } };
@@ -58,7 +52,7 @@ describe('createApp', () => {
   });
 
   it('returns 405 with Allow header for an unsupported method on a known route', async () => {
-    const app = await loadApp();
+    const app = loadApp();
     const res = await app.request('/api/v1/users/by-email', { method: 'POST' });
     expect(res.status).toBe(405);
     expect(res.headers.get('Allow')).toBe('GET');
@@ -67,7 +61,7 @@ describe('createApp', () => {
   });
 
   it('returns 405 for TRACE on any path with full Allow list', async () => {
-    const app = await loadApp();
+    const app = loadApp();
     // The Fetch Request API rejects TRACE, so build a real GET Request and
     // override the `method` getter so the traceBlocker middleware sees TRACE.
     const req = new Request('http://localhost/health');
@@ -81,7 +75,7 @@ describe('createApp', () => {
   });
 
   it('returns 404 with code not_found for an unknown path', async () => {
-    const app = await loadApp();
+    const app = loadApp();
     const res = await app.request('/nowhere');
     expect(res.status).toBe(404);
     const body = (await res.json()) as { error: { code: string } };
@@ -89,8 +83,11 @@ describe('createApp', () => {
   });
 
   it('returns 500 via onError when a handler throws', async () => {
-    const { createApp } = (await import('./app.js')) as AppModule;
-    const app = createApp({ port: 3001, disableRateLimit: true });
+    const app = createApp({
+      port: 3001,
+      disableRateLimit: true,
+      runtime: makeTestRuntime(clientMock),
+    });
     app.get('/boom', () => {
       throw new Error('kaboom');
     });
@@ -102,8 +99,11 @@ describe('createApp', () => {
   });
 
   it('falls back to a generic message when the thrown error has no message', async () => {
-    const { createApp } = (await import('./app.js')) as AppModule;
-    const app = createApp({ port: 3001, disableRateLimit: true });
+    const app = createApp({
+      port: 3001,
+      disableRateLimit: true,
+      runtime: makeTestRuntime(clientMock),
+    });
     app.get('/empty', () => {
       // eslint-disable-next-line unicorn/error-message -- message vide volontaire pour exercer le fallback onError
       throw new Error('');
@@ -115,7 +115,7 @@ describe('createApp', () => {
   });
 
   it('serves the OpenAPI spec at /openapi.json', async () => {
-    const app = await loadApp({ port: 3001, disableRateLimit: true });
+    const app = loadApp({ port: 3001, disableRateLimit: true });
     const res = await app.request('/openapi.json');
     expect(res.status).toBe(200);
     const body = (await res.json()) as { info?: { title?: string }; openapi?: string };
@@ -123,13 +123,13 @@ describe('createApp', () => {
   });
 
   it('serves the docs page at /docs', async () => {
-    const app = await loadApp();
+    const app = loadApp();
     const res = await app.request('/docs');
     expect(res.status).toBe(200);
   });
 
   it('enables rate limiting by default (RateLimit-* headers present)', async () => {
-    const app = await loadApp({ port: 3001 });
+    const app = loadApp({ port: 3001 });
     clientMock.getVersion.mockReturnValue(Effect.succeed('14.0.0'));
     const res = await app.request('/api/v1/project/version', {
       headers: { 'x-forwarded-for': '203.0.113.55' },
@@ -142,7 +142,7 @@ describe('createApp', () => {
     const AUTH_OPTS = { port: 3001, disableRateLimit: true, authToken: 'svc-secret' } as const;
 
     it('rejects an /api/v1/* request without a token (401)', async () => {
-      const app = await loadApp(AUTH_OPTS);
+      const app = loadApp(AUTH_OPTS);
       const res = await app.request('/api/v1/project/version');
       expect(res.status).toBe(401);
       const body = (await res.json()) as { error: { code: string } };
@@ -151,7 +151,7 @@ describe('createApp', () => {
 
     it('allows an /api/v1/* request carrying the correct token', async () => {
       clientMock.getVersion.mockReturnValue(Effect.succeed('14.0.0'));
-      const app = await loadApp(AUTH_OPTS);
+      const app = loadApp(AUTH_OPTS);
       const res = await app.request('/api/v1/project/version', {
         headers: { Authorization: 'Bearer svc-secret' },
       });
@@ -159,13 +159,13 @@ describe('createApp', () => {
     });
 
     it('leaves /health open even when auth is enabled', async () => {
-      const app = await loadApp(AUTH_OPTS);
+      const app = loadApp(AUTH_OPTS);
       const res = await app.request('/health');
       expect(res.status).toBe(200);
     });
 
     it('leaves /openapi.json open even when auth is enabled', async () => {
-      const app = await loadApp(AUTH_OPTS);
+      const app = loadApp(AUTH_OPTS);
       const res = await app.request('/openapi.json');
       expect(res.status).toBe(200);
     });

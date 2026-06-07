@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { Hono } from 'hono';
 import { Effect } from 'effect';
 import { CrfHttpError, CrfNetworkError } from '@univ-lehavre/atlas-crf-client';
+import { makeTestRuntime } from '../test-support.js';
+import { makeUsersRoutes } from './users.js';
 
 const clientMock = {
   getVersion: vi.fn(),
@@ -18,12 +20,8 @@ const clientMock = {
   findUserIdByEmail: vi.fn(),
 };
 
-vi.mock('../client.js', () => ({ client: clientMock }));
-
-const loadUsers = async (): Promise<Hono> => {
-  const mod = (await import('./users.js')) as { users: Hono };
-  return mod.users;
-};
+// Routes injected with the mock client via a test runtime (ADR 0049).
+const loadUsers = (): Hono => makeUsersRoutes(makeTestRuntime(clientMock));
 
 describe('Users routes', () => {
   beforeEach(() => {
@@ -34,7 +32,7 @@ describe('Users routes', () => {
     it('returns user id wrapped in data on success', async () => {
       clientMock.findUserIdByEmail.mockReturnValue(Effect.succeed('user_42'));
 
-      const users = await loadUsers();
+      const users = loadUsers();
       const res = await users.request('/by-email?email=user@example.com');
 
       expect(res.status).toBe(200);
@@ -44,7 +42,7 @@ describe('Users routes', () => {
     });
 
     it('returns 400 when email is invalid', async () => {
-      const users = await loadUsers();
+      const users = loadUsers();
       const res = await users.request('/by-email?email=not-an-email');
 
       expect(res.status).toBe(400);
@@ -55,7 +53,7 @@ describe('Users routes', () => {
     });
 
     it('returns 400 when email query param missing', async () => {
-      const users = await loadUsers();
+      const users = loadUsers();
       const res = await users.request('/by-email');
 
       expect(res.status).toBe(400);
@@ -64,7 +62,7 @@ describe('Users routes', () => {
     it('returns 400 user_not_found when client resolves null', async () => {
       clientMock.findUserIdByEmail.mockReturnValue(Effect.succeed(null));
 
-      const users = await loadUsers();
+      const users = loadUsers();
       const res = await users.request('/by-email?email=missing@example.com');
 
       expect(res.status).toBe(400);
@@ -75,7 +73,7 @@ describe('Users routes', () => {
     it('returns 400 user_not_found when client resolves empty string', async () => {
       clientMock.findUserIdByEmail.mockReturnValue(Effect.succeed(''));
 
-      const users = await loadUsers();
+      const users = loadUsers();
       const res = await users.request('/by-email?email=missing@example.com');
 
       expect(res.status).toBe(400);
@@ -88,7 +86,7 @@ describe('Users routes', () => {
         Effect.fail(new CrfNetworkError({ cause: 'ECONNREFUSED' }))
       );
 
-      const users = await loadUsers();
+      const users = loadUsers();
       const res = await users.request('/by-email?email=user@example.com');
 
       expect(res.status).toBe(503);
@@ -101,7 +99,7 @@ describe('Users routes', () => {
         Effect.fail(new CrfHttpError({ status: 502, statusText: 'Bad Gateway' }))
       );
 
-      const users = await loadUsers();
+      const users = loadUsers();
       const res = await users.request('/by-email?email=user@example.com');
 
       expect(res.status).toBe(502);

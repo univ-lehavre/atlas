@@ -2,19 +2,25 @@ import { describe, it, expect } from 'vitest';
 import { Effect } from 'effect';
 import { Hono } from 'hono';
 import { runEffect, runEffectRaw } from './effect-handler.js';
+import { makeTestRuntime } from './test-support.js';
 import { CrfHttpError, CrfApiError, CrfNetworkError } from '@univ-lehavre/atlas-crf-client';
 import { VersionParseError, UnsupportedVersionError } from '@univ-lehavre/atlas-crf-client';
 
 /**
- * Tests for Effect-to-Hono response handler
+ * Tests for Effect-to-Hono response handler.
+ *
+ * These effects don't depend on CrfClientService; a bare test runtime
+ * (logger silenced) is enough to exercise the success/error mapping.
  */
+
+const runtime = makeTestRuntime({});
 
 describe('Effect Handler', () => {
   describe('runEffect', () => {
     it('should return success response with data wrapper', async () => {
       const app = new Hono();
 
-      app.get('/test', (c) => runEffect(c, Effect.succeed({ message: 'Hello' })));
+      app.get('/test', (c) => runEffect(c, runtime, Effect.succeed({ message: 'Hello' })));
 
       const res = await app.request('/test');
       const body = await res.json();
@@ -26,7 +32,7 @@ describe('Effect Handler', () => {
     it('should return array data correctly', async () => {
       const app = new Hono();
 
-      app.get('/test', (c) => runEffect(c, Effect.succeed([1, 2, 3])));
+      app.get('/test', (c) => runEffect(c, runtime, Effect.succeed([1, 2, 3])));
 
       const res = await app.request('/test');
       const body = await res.json();
@@ -39,7 +45,11 @@ describe('Effect Handler', () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new CrfHttpError({ status: 401, statusText: 'Unauthorized' })))
+        runEffect(
+          c,
+          runtime,
+          Effect.fail(new CrfHttpError({ status: 401, statusText: 'Unauthorized' }))
+        )
       );
 
       const res = await app.request('/test');
@@ -55,7 +65,11 @@ describe('Effect Handler', () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new CrfHttpError({ status: 404, statusText: 'Not Found' })))
+        runEffect(
+          c,
+          runtime,
+          Effect.fail(new CrfHttpError({ status: 404, statusText: 'Not Found' }))
+        )
       );
 
       const res = await app.request('/test');
@@ -67,7 +81,11 @@ describe('Effect Handler', () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new CrfHttpError({ status: 500, statusText: 'Server Error' })))
+        runEffect(
+          c,
+          runtime,
+          Effect.fail(new CrfHttpError({ status: 500, statusText: 'Server Error' }))
+        )
       );
 
       const res = await app.request('/test');
@@ -79,7 +97,7 @@ describe('Effect Handler', () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new CrfApiError({ error: 'Invalid token' })))
+        runEffect(c, runtime, Effect.fail(new CrfApiError({ error: 'Invalid token' })))
       );
 
       const res = await app.request('/test');
@@ -97,6 +115,7 @@ describe('Effect Handler', () => {
       app.get('/test', (c) =>
         runEffect(
           c,
+          runtime,
           Effect.fail(new CrfApiError({ error: 'User not found', code: 'user_not_found' }))
         )
       );
@@ -112,7 +131,7 @@ describe('Effect Handler', () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new CrfNetworkError({ cause: 'ECONNREFUSED' })))
+        runEffect(c, runtime, Effect.fail(new CrfNetworkError({ cause: 'ECONNREFUSED' })))
       );
 
       const res = await app.request('/test');
@@ -128,7 +147,7 @@ describe('Effect Handler', () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new VersionParseError({ input: 'invalid' })))
+        runEffect(c, runtime, Effect.fail(new VersionParseError({ input: 'invalid' })))
       );
 
       const res = await app.request('/test');
@@ -143,7 +162,7 @@ describe('Effect Handler', () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new UnsupportedVersionError({ version: '13.0.0' })))
+        runEffect(c, runtime, Effect.fail(new UnsupportedVersionError({ version: '13.0.0' })))
       );
 
       const res = await app.request('/test');
@@ -162,6 +181,7 @@ describe('Effect Handler', () => {
       app.get('/test', (c) =>
         runEffectRaw(
           c,
+          runtime,
           Effect.succeed(
             new Response('Hello World', {
               headers: { 'Content-Type': 'text/plain' },
@@ -184,6 +204,7 @@ describe('Effect Handler', () => {
       app.get('/test', (c) =>
         runEffectRaw(
           c,
+          runtime,
           Effect.succeed(
             new Response(pdfContent, {
               headers: {
@@ -205,7 +226,7 @@ describe('Effect Handler', () => {
       const app = new Hono();
 
       app.get('/test', (c) =>
-        runEffectRaw(c, Effect.fail(new CrfNetworkError({ cause: 'timeout' })))
+        runEffectRaw(c, runtime, Effect.fail(new CrfNetworkError({ cause: 'timeout' })))
       );
 
       const res = await app.request('/test');
@@ -222,12 +243,20 @@ describe('Effect Handler', () => {
 
       // Test 400 range
       app.get('/400', (c) =>
-        runEffect(c, Effect.fail(new CrfHttpError({ status: 400, statusText: 'Bad Request' })))
+        runEffect(
+          c,
+          runtime,
+          Effect.fail(new CrfHttpError({ status: 400, statusText: 'Bad Request' }))
+        )
       );
 
       // Test 500 range
       app.get('/500', (c) =>
-        runEffect(c, Effect.fail(new CrfHttpError({ status: 502, statusText: 'Bad Gateway' })))
+        runEffect(
+          c,
+          runtime,
+          Effect.fail(new CrfHttpError({ status: 502, statusText: 'Bad Gateway' }))
+        )
       );
 
       const res400 = await app.request('/400');
@@ -242,7 +271,11 @@ describe('Effect Handler', () => {
 
       // Status outside 400-599 range should map to 502
       app.get('/test', (c) =>
-        runEffect(c, Effect.fail(new CrfHttpError({ status: 200, statusText: 'Unexpected' })))
+        runEffect(
+          c,
+          runtime,
+          Effect.fail(new CrfHttpError({ status: 200, statusText: 'Unexpected' }))
+        )
       );
 
       const res = await app.request('/test');

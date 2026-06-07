@@ -2,9 +2,14 @@ import { Hono } from 'hono';
 import { Schema as S } from 'effect';
 import { resolver, validator, describeRoute } from 'hono-openapi';
 import { Effect, pipe } from 'effect';
-import { RecordId, InstrumentName, CrfApiError } from '@univ-lehavre/atlas-crf-client';
-import { client } from '../client.js';
+import {
+  RecordId,
+  InstrumentName,
+  CrfApiError,
+  CrfClientService,
+} from '@univ-lehavre/atlas-crf-client';
 import { runEffect, runEffectRaw } from '../effect-handler.js';
+import type { CrfRuntime } from '../boot.js';
 import { validationErrorHook } from '../middleware/validation.js';
 import {
   ErrorResponseSchema,
@@ -26,8 +31,6 @@ const parseInstrumentName = (value: string): Effect.Effect<InstrumentName, CrfAp
     try: () => InstrumentName(value),
     catch: () => new CrfApiError({ error: `Invalid instrument name: "${value}"` }),
   });
-
-const records = new Hono();
 
 const ExportQuerySchema = S.Struct({
   fields: S.optional(S.String.pipe(S.pattern(CRF_NAME_LIST_PATTERN))),
@@ -59,181 +62,214 @@ const SurveyLinkQuerySchema = S.Struct({
   description: 'Query parameters for survey link',
 });
 
-records.get(
-  '/',
-  describeRoute({
-    tags: ['Records'],
-    summary: 'Export records',
-    description: 'Export records from REDCap with optional filtering',
-    responses: {
-      200: {
-        description: 'Records exported successfully',
-        content: {
-          'application/json': { schema: SuccessResponseOpenAPI },
-        },
-      },
-      400: {
-        description: 'Invalid request parameters',
-        content: {
-          'application/json': { schema: resolver(S.standardSchemaV1(ErrorResponseSchema)) },
-        },
-      },
-    },
-  }),
-  validator('query', S.standardSchemaV1(ExportQuerySchema), validationErrorHook),
-  (c) => {
-    const query = c.req.valid('query');
+/**
+ * Records routes. Handlers depend on `CrfClientService`, injected by the
+ * runtime's `AppLayer` (écart E7/E10, ADR 0045).
+ */
+// eslint-disable-next-line max-lines-per-function -- registre cohérent des routes records (export/import/pdf/survey-link) ; les découper masquerait la structure du sous-routeur
+export const makeRecordsRoutes = (runtime: CrfRuntime): Hono => {
+  const records = new Hono();
 
-    return runEffect(
-      c,
-      client.exportRecords({
-        ...(query.fields === undefined ? {} : { fields: query.fields.split(',') }),
-        ...(query.forms === undefined ? {} : { forms: query.forms.split(',') }),
-        ...(query.filterLogic === undefined ? {} : { filterLogic: query.filterLogic }),
-        ...(query.rawOrLabel === undefined ? {} : { rawOrLabel: query.rawOrLabel }),
-        type: 'flat',
-      })
-    );
-  }
-);
-
-records.put(
-  '/',
-  describeRoute({
-    tags: ['Records'],
-    summary: 'Import records',
-    description: 'Import (upsert) records into REDCap',
-    responses: {
-      200: {
-        description: 'Records imported successfully',
-        content: {
-          'application/json': { schema: SuccessResponseOpenAPI },
+  records.get(
+    '/',
+    describeRoute({
+      tags: ['Records'],
+      summary: 'Export records',
+      description: 'Export records from REDCap with optional filtering',
+      responses: {
+        200: {
+          description: 'Records exported successfully',
+          content: {
+            'application/json': { schema: SuccessResponseOpenAPI },
+          },
+        },
+        400: {
+          description: 'Invalid request parameters',
+          content: {
+            'application/json': { schema: resolver(S.standardSchemaV1(ErrorResponseSchema)) },
+          },
         },
       },
-      400: {
-        description: 'Invalid request body',
-        content: {
-          'application/json': { schema: resolver(S.standardSchemaV1(ErrorResponseSchema)) },
+    }),
+    validator('query', S.standardSchemaV1(ExportQuerySchema), validationErrorHook),
+    (c) => {
+      const query = c.req.valid('query');
+
+      return runEffect(
+        c,
+        runtime,
+        CrfClientService.pipe(
+          Effect.flatMap((client) =>
+            client.exportRecords({
+              ...(query.fields === undefined ? {} : { fields: query.fields.split(',') }),
+              ...(query.forms === undefined ? {} : { forms: query.forms.split(',') }),
+              ...(query.filterLogic === undefined ? {} : { filterLogic: query.filterLogic }),
+              ...(query.rawOrLabel === undefined ? {} : { rawOrLabel: query.rawOrLabel }),
+              type: 'flat',
+            })
+          )
+        )
+      );
+    }
+  );
+
+  records.put(
+    '/',
+    describeRoute({
+      tags: ['Records'],
+      summary: 'Import records',
+      description: 'Import (upsert) records into REDCap',
+      responses: {
+        200: {
+          description: 'Records imported successfully',
+          content: {
+            'application/json': { schema: SuccessResponseOpenAPI },
+          },
+        },
+        400: {
+          description: 'Invalid request body',
+          content: {
+            'application/json': { schema: resolver(S.standardSchemaV1(ErrorResponseSchema)) },
+          },
         },
       },
-    },
-  }),
-  validator('json', S.standardSchemaV1(ImportBodySchema), validationErrorHook),
-  (c) => {
-    const body = c.req.valid('json');
+    }),
+    validator('json', S.standardSchemaV1(ImportBodySchema), validationErrorHook),
+    (c) => {
+      const body = c.req.valid('json');
 
-    return runEffect(
-      c,
-      client.importRecords(
-        body.records,
-        body.overwriteBehavior === undefined ? {} : { overwriteBehavior: body.overwriteBehavior }
-      )
-    );
-  }
-);
-
-records.get(
-  '/:recordId/pdf',
-  describeRoute({
-    tags: ['Records'],
-    summary: 'Download PDF',
-    description: 'Download PDF of a form for a specific record',
-    parameters: [
-      {
-        name: 'recordId',
-        in: 'path',
-        required: true,
-        description: 'The unique identifier of the record',
-        schema: { type: 'string', pattern: '^[a-z0-9]{20,}$', minLength: 20 },
-      },
-    ],
-    responses: {
-      200: {
-        description: 'PDF file',
-        content: {
-          'application/pdf': { schema: { type: 'string', format: 'binary' } },
-        },
-      },
-      400: {
-        description: 'Invalid record ID or instrument',
-        content: {
-          'application/json': { schema: resolver(S.standardSchemaV1(ErrorResponseSchema)) },
-        },
-      },
-    },
-  }),
-  validator('query', S.standardSchemaV1(PdfQuerySchema), validationErrorHook),
-  (c) => {
-    const rawRecordId = c.req.param('recordId');
-    const rawInstrument = c.req.valid('query').instrument;
-
-    return runEffectRaw(
-      c,
-      pipe(
-        Effect.all([parseRecordId(rawRecordId), parseInstrumentName(rawInstrument)]),
-        Effect.flatMap(([recordId, instrument]) =>
-          pipe(
-            client.downloadPdf(recordId, instrument),
-            Effect.map(
-              (pdfBuffer) =>
-                new Response(pdfBuffer, {
-                  headers: {
-                    'Content-Type': 'application/pdf',
-                    'Content-Disposition': `attachment; filename="record_${recordId}.pdf"`,
-                  },
-                })
+      return runEffect(
+        c,
+        runtime,
+        CrfClientService.pipe(
+          Effect.flatMap((client) =>
+            client.importRecords(
+              body.records,
+              body.overwriteBehavior === undefined
+                ? {}
+                : { overwriteBehavior: body.overwriteBehavior }
             )
           )
         )
-      )
-    );
-  }
-);
+      );
+    }
+  );
 
-records.get(
-  '/:recordId/survey-link',
-  describeRoute({
-    tags: ['Records'],
-    summary: 'Get survey link',
-    description: 'Get survey link for a specific record and instrument',
-    parameters: [
-      {
-        name: 'recordId',
-        in: 'path',
-        required: true,
-        description: 'The unique identifier of the record',
-        schema: { type: 'string', pattern: '^[a-z0-9]{20,}$', minLength: 20 },
-      },
-    ],
-    responses: {
-      200: {
-        description: 'Survey link',
-        content: {
-          'application/json': { schema: SuccessResponseOpenAPI },
+  records.get(
+    '/:recordId/pdf',
+    describeRoute({
+      tags: ['Records'],
+      summary: 'Download PDF',
+      description: 'Download PDF of a form for a specific record',
+      parameters: [
+        {
+          name: 'recordId',
+          in: 'path',
+          required: true,
+          description: 'The unique identifier of the record',
+          schema: { type: 'string', pattern: '^[a-z0-9]{20,}$', minLength: 20 },
+        },
+      ],
+      responses: {
+        200: {
+          description: 'PDF file',
+          content: {
+            'application/pdf': { schema: { type: 'string', format: 'binary' } },
+          },
+        },
+        400: {
+          description: 'Invalid record ID or instrument',
+          content: {
+            'application/json': { schema: resolver(S.standardSchemaV1(ErrorResponseSchema)) },
+          },
         },
       },
-      400: {
-        description: 'Invalid record ID or instrument',
-        content: {
-          'application/json': { schema: resolver(S.standardSchemaV1(ErrorResponseSchema)) },
+    }),
+    validator('query', S.standardSchemaV1(PdfQuerySchema), validationErrorHook),
+    (c) => {
+      const rawRecordId = c.req.param('recordId');
+      const rawInstrument = c.req.valid('query').instrument;
+
+      return runEffectRaw(
+        c,
+        runtime,
+        pipe(
+          Effect.all([
+            CrfClientService,
+            parseRecordId(rawRecordId),
+            parseInstrumentName(rawInstrument),
+          ]),
+          Effect.flatMap(([client, recordId, instrument]) =>
+            pipe(
+              client.downloadPdf(recordId, instrument),
+              Effect.map(
+                (pdfBuffer) =>
+                  new Response(pdfBuffer, {
+                    headers: {
+                      'Content-Type': 'application/pdf',
+                      'Content-Disposition': `attachment; filename="record_${recordId}.pdf"`,
+                    },
+                  })
+              )
+            )
+          )
+        )
+      );
+    }
+  );
+
+  records.get(
+    '/:recordId/survey-link',
+    describeRoute({
+      tags: ['Records'],
+      summary: 'Get survey link',
+      description: 'Get survey link for a specific record and instrument',
+      parameters: [
+        {
+          name: 'recordId',
+          in: 'path',
+          required: true,
+          description: 'The unique identifier of the record',
+          schema: { type: 'string', pattern: '^[a-z0-9]{20,}$', minLength: 20 },
+        },
+      ],
+      responses: {
+        200: {
+          description: 'Survey link',
+          content: {
+            'application/json': { schema: SuccessResponseOpenAPI },
+          },
+        },
+        400: {
+          description: 'Invalid record ID or instrument',
+          content: {
+            'application/json': { schema: resolver(S.standardSchemaV1(ErrorResponseSchema)) },
+          },
         },
       },
-    },
-  }),
-  validator('query', S.standardSchemaV1(SurveyLinkQuerySchema), validationErrorHook),
-  (c) => {
-    const rawRecordId = c.req.param('recordId');
-    const rawInstrument = c.req.valid('query').instrument;
+    }),
+    validator('query', S.standardSchemaV1(SurveyLinkQuerySchema), validationErrorHook),
+    (c) => {
+      const rawRecordId = c.req.param('recordId');
+      const rawInstrument = c.req.valid('query').instrument;
 
-    return runEffect(
-      c,
-      pipe(
-        Effect.all([parseRecordId(rawRecordId), parseInstrumentName(rawInstrument)]),
-        Effect.flatMap(([recordId, instrument]) => client.getSurveyLink(recordId, instrument)),
-        Effect.map((url) => ({ url }))
-      )
-    );
-  }
-);
+      return runEffect(
+        c,
+        runtime,
+        pipe(
+          Effect.all([
+            CrfClientService,
+            parseRecordId(rawRecordId),
+            parseInstrumentName(rawInstrument),
+          ]),
+          Effect.flatMap(([client, recordId, instrument]) =>
+            client.getSurveyLink(recordId, instrument)
+          ),
+          Effect.map((url) => ({ url }))
+        )
+      );
+    }
+  );
 
-export { records };
+  return records;
+};
