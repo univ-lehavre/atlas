@@ -53,11 +53,11 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@effect/platform-node": "~0.106.0",
+    "@effect/platform-node": "~0.107.0",
     "@univ-lehavre/atlas-effect-socle": "workspace:*"
   },
   "peerDependencies": {
-    "effect": "~3.21.2"
+    "effect": "~3.21.3"
   },
   "peerDependenciesMeta": {
     "effect": {
@@ -66,9 +66,9 @@
   },
   "devDependencies": {
     "@effect/vitest": "^0.29.0",
-    "@types/node": "^25.9.1",
+    "@types/node": "^25.9.2",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "effect": "~3.21.2",
+    "effect": "~3.21.3",
     "eslint": "^10.4.1",
     "prettier": "^3.8.3",
     "tsup": "^8.5.1",
