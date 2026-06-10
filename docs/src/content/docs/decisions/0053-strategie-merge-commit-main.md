@@ -53,6 +53,19 @@ soupape imposée — **sans effet sur `main`**, où la ruleset prime et n'autori
 que le merge commit. Cette case ne s'appliquerait qu'à une branche non
 couverte par une ruleset (il n'y en a pas aujourd'hui).
 
+**Deuxième piège : deux systèmes de protection superposés.** `main` est
+protégée à la fois par une **ruleset** (système récent) et par une **branch
+protection classique** (système hérité, configuré par
+l'[ADR 0016](/atlas/decisions/0016-branch-protection-main/)). La branch
+protection classique portait `required_linear_history = true` — exigence d'un
+**historique linéaire**, vestige du choix « squash » de 0016. Or un merge
+commit crée par nature un historique **non linéaire** : cette règle
+**interdisait** donc le merge commit (« This branch must not contain merge
+commits »), en contradiction directe avec la ruleset. Il a fallu **désactiver
+`required_linear_history`** dans la branch protection classique pour débloquer
+le merge. Les autres protections de 0016 (status checks, force-push bloqué,
+bypass admin) y sont **conservées intactes**.
+
 Appliquée le 2026-06-10.
 
 ## Statut
@@ -88,6 +101,12 @@ et des [hooks lefthook](/atlas/decisions/0015-hooks-git-lefthook-jamais-bypass/)
   contrainte GitHub, pas une autorisation : il n'a d'effet que hors couverture
   d'une ruleset. Si une branche protégée s'ajoute, lui appliquer la même
   ruleset (merge seul).
+- **Vérifier les deux systèmes de protection.** `main` cumule une ruleset et une
+  branch protection classique. Un réglage de l'un peut **contredire
+  silencieusement** l'autre — ici `required_linear_history` (classique)
+  interdisait le merge commit imposé par la ruleset. Toute revue de
+  configuration inspecte **les deux** ; `required_linear_history` doit rester
+  **désactivé** tant que le merge commit est la stratégie.
 - Avant d'ouvrir une PR, **rebaser/nettoyer** la branche localement : sur `main`,
   ses commits seront conservés tels quels.
 - Revue à la **cadence d'audit transverse**
