@@ -35,14 +35,24 @@ Il faut donc accueillir du Python dans le dépôt — un écart de paradigme qui
 > nouvelle catégorie de premier niveau `dataops/`, écrite en Python natif. Le
 > monorepo passe de 8 à 9 catégories.**
 
-### Une 9e catégorie `dataops/`, hors du graphe pnpm
+### Une 9e catégorie `dataops/`, hors du graphe pnpm mais pilotée par pnpm
 
 `dataops/` accueille des sous-projets Python (à commencer par
 `dataops/citation-dagster/`, la code-location du pipeline de citations). Cette
 catégorie n'est **pas** un _workspace pnpm_ (espace de travail géré par le
-gestionnaire de paquets Node) : elle n'est pas déclarée dans `pnpm-workspace.yaml`.
-En conséquence, les outils Node qui découvrent les paquets via ce fichier — pnpm,
-turbo, knip — l'**ignorent** sans configuration. La frontière de langage est assumée.
+gestionnaire de paquets Node) : elle n'est pas déclarée dans `pnpm-workspace.yaml`,
+et **aucun `package.json`** n'est posé dans un dossier Python (ce serait un manifeste
+npm trompeur pour du code sans JavaScript). En conséquence, les outils qui découvrent
+les paquets via le workspace — pnpm, turbo, knip, `audit:structure` — l'**ignorent**
+sans configuration.
+
+**Mais pnpm reste le chef d'orchestre**, selon le modèle déjà éprouvé dans le dépôt
+`cluster` : « pnpm orchestre, l'outil natif exécute ». Des scripts du `package.json`
+racine — `lint:python` et `test:python` — **délèguent à `uv`** (`uv run ruff`,
+`uv run pytest`). Le point d'entrée reste unique (`pnpm …`), sans faire du Python un
+faux paquet Node. C'est le meilleur des deux mondes : une seule porte d'entrée (pnpm),
+zéro dérogation Node à écrire (pas de règle `audit:structure` Python, pas d'exception
+knip pour un faux paquet).
 
 ### Outillage Python : uv + ruff + pytest
 
@@ -94,10 +104,12 @@ La correspondance est explicite :
 | Couverture à seuil | seuils vitest   | `pytest --cov --cov-fail-under` |
 
 **Enforcement.** Comme `dataops/` est hors du graphe pnpm, turbo ne le découvre pas :
-on branche donc sa vérification par un script dédié (`dataops:check` = ruff + pytest
-avec couverture) **ajouté à `ci:checks` et aux hooks pre-push**, au même titre que les
-vérifications Node. Une régression de qualité dans `dataops/` **bloque** donc la CI et
-le push, exactement comme ailleurs.
+on branche sa vérification par les **scripts pnpm** `lint:python` (ruff) et
+`test:python` (pytest + couverture à seuil), agrégés dans `dataops:check`. Ce dernier
+est **ajouté à `ci:checks`, au hook pre-push et à un job CI dédié** (qui installe `uv`),
+au même titre que les vérifications Node. Une régression de qualité dans `dataops/`
+**bloque** donc la CI et le push, exactement comme ailleurs. `uv` devient un prérequis
+de développement, au même rang que Node/pnpm.
 
 Seul l'**audit de structure** (`audit:structure`) ne s'applique pas à `dataops/` : ses
 règles (interdiction de `bin`, dépendances Node, conventions de nommage npm) sont
@@ -123,19 +135,20 @@ les pratiques. Le périmètre des ADR Effect est clarifié au passage.
 
 **Prix à payer.** Le dépôt porte désormais **deux chaînes d'outillage** (pnpm pour le
 Node, uv pour le Python) et **deux jeux de vérifications qualité** à maintenir en
-parallèle (le script `dataops:check` en plus des tâches turbo). `dataops/` échappe au
-seul `audit:structure` (audit propre au monde Node), mais **pas** aux exigences de
-lint/format/tests/couverture, qui restent enforcées. Une **image Dagster maison arm64**
-doit être maintenue pour le banc local (les images officielles Dagster sont amd64
-seulement).
+parallèle (les scripts `lint:python`/`test:python` en plus des tâches turbo). `uv`
+devient un prérequis de développement. `dataops/` échappe au seul `audit:structure`
+(audit propre au monde Node), mais **pas** aux exigences de lint/format/tests/couverture,
+qui restent enforcées. Une **image Dagster maison arm64** doit être maintenue pour le
+banc local (les images officielles Dagster sont amd64 seulement).
 
 **Garde-fous.**
 
 - La frontière de langage est le **contrat Parquet + manifest** : aucun import croisé
   TS ↔ Python, aucune dépendance directe.
-- **Qualité enforcée, pas optionnelle** : le script `dataops:check` (ruff + pytest avec
-  couverture à seuil) est branché à `ci:checks` et au hook pre-push ; une régression
-  bloque la CI et le push, comme pour le code Node.
+- **Qualité enforcée, pas optionnelle** : les scripts pnpm `lint:python` (ruff) et
+  `test:python` (pytest + couverture à seuil) — agrégés dans `dataops:check` — sont
+  branchés à `ci:checks`, au hook pre-push et à un job CI ; une régression bloque la CI
+  et le push, comme pour le code Node.
 - `.prettierignore` exclut `dataops/` pour découpler le formatage Node ; le formatage
   Python est tenu par ruff (pas un relâchement, un transfert d'outil).
 - **Aucun langage hors TS/Node et Python** sans un ADR dédié qui en définit l'outillage
