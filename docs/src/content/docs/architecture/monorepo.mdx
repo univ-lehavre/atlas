@@ -7,7 +7,7 @@ import PackagesBadge from "../../../components/kpi/PackagesBadge.vue";
 
 Un **monorepo** est un seul dépôt Git qui héberge plusieurs projets logiciels, avec des règles partagées. Atlas en est un. **Git** est le système de gestion de versions distribué qui enregistre l'historique du code (qui a modifié quoi, quand) et permet à plusieurs personnes de travailler en parallèle ; un **dépôt** est l'ensemble du projet versionné par Git.
 
-Atlas organise ses projets en **huit catégories**. Chaque catégorie a une responsabilité précise et des **règles propres** : framework imposé (un **framework** est un socle logiciel qui fournit une structure et des composants prêts à l'emploi, sur lesquels on bâtit son application au lieu de tout réécrire), dépendances autorisées ou interdites, présence ou absence d'un point d'entrée exécutable, etc. Le placement d'un sous-projet dans une catégorie indique d'emblée son rôle, et les règles sont vérifiées automatiquement par `pnpm audit:structure`.
+Atlas organise ses projets en **neuf catégories**. Huit relèvent du périmètre Node/TypeScript ; la neuvième, `dataops/`, héberge le code DataOps en Python (Dagster, dbt). Chaque catégorie a une responsabilité précise et des **règles propres** : framework imposé (un **framework** est un socle logiciel qui fournit une structure et des composants prêts à l'emploi, sur lesquels on bâtit son application au lieu de tout réécrire), dépendances autorisées ou interdites, présence ou absence d'un point d'entrée exécutable, etc. Le placement d'un sous-projet dans une catégorie indique d'emblée son rôle, et les règles des huit catégories Node sont vérifiées automatiquement par `pnpm audit:structure` (`dataops/`, en Python, en est exempté — voir [ADR 0055](/atlas/decisions/0055-categorie-dataops-python/)).
 
 <PackagesBadge client:load />
 
@@ -15,7 +15,7 @@ Atlas organise ses projets en **huit catégories**. Chaque catégorie a une resp
 
 ## Vue d'ensemble
 
-Les huit catégories répartissent le code selon ce qu'il **fait** et **qui le consomme** : des applications livrées aux utilisateurs (`apps/`), des bibliothèques de logique métier réutilisables (`packages/`), des serveurs HTTP de backend (`services/`), des outils en ligne de commande (`cli/`), des composants d'interface partagés (`ui/`), des fichiers statiques versionnés (`assets/`), des configurations communes (`config/`) et des environnements de test isolés (`sandbox/`). Cette répartition est utile parce qu'elle rend le rôle d'un sous-projet lisible d'un coup d'œil et permet d'imposer à chaque catégorie ses propres contraintes (framework, dépendances, publication). Le tableau ci-dessous résume, pour chaque catégorie, son contenu, sa convention de nommage et si elle est publiée sur npm — le registre public de paquets JavaScript/TypeScript.
+Les catégories répartissent le code selon ce qu'il **fait** et **qui le consomme** : des applications livrées aux utilisateurs (`apps/`), des bibliothèques de logique métier réutilisables (`packages/`), des serveurs HTTP de backend (`services/`), des outils en ligne de commande (`cli/`), des composants d'interface partagés (`ui/`), des fichiers statiques versionnés (`assets/`), des configurations communes (`config/`), des environnements de test isolés (`sandbox/`) et le code DataOps en Python (`dataops/`). Cette répartition est utile parce qu'elle rend le rôle d'un sous-projet lisible d'un coup d'œil et permet d'imposer à chaque catégorie ses propres contraintes (framework, dépendances, publication). Le tableau ci-dessous résume, pour chaque catégorie, son contenu, sa convention de nommage et si elle est publiée sur npm — le registre public de paquets JavaScript/TypeScript.
 
 | Catégorie                                                               | Contenu                                                      | Convention de nommage                                 | Publié sur npm ?      |
 | ----------------------------------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------- | --------------------- |
@@ -27,6 +27,7 @@ Les huit catégories répartissent le code selon ce qu'il **fait** et **qui le c
 | [`ui/`](https://github.com/univ-lehavre/atlas/tree/main/ui)             | Composants d'interface Svelte partagés                       | `@univ-lehavre/atlas-ui`                              | Variable              |
 | [`config/`](https://github.com/univ-lehavre/atlas/tree/main/config)     | Configurations communes (style, types, formatage)            | `@univ-lehavre/atlas-<nom>-config`                    | Oui                   |
 | [`sandbox/`](https://github.com/univ-lehavre/atlas/tree/main/sandbox)   | Environnements Docker pour tests d'intégration               | Pas de convention spécifique                          | Non                   |
+| [`dataops/`](https://github.com/univ-lehavre/atlas/tree/main/dataops)   | Code DataOps en **Python** (assets Dagster, modèles dbt)     | Dossier Python (uv) ; hors graphe pnpm                | Non                   |
 
 ## Diagramme des dépendances
 
@@ -60,6 +61,8 @@ graph TB
 Trait plein : dépendance d'exécution. Trait pointillé : dépendance de développement (configurations TypeScript, ESLint, Prettier).
 
 `sandbox/` est isolé : **aucune autre catégorie ne peut dépendre d'un projet de `sandbox/`**.
+
+`dataops/` (Python) **ne figure pas dans ce graphe** : il ne dépend d'aucun paquet TypeScript et n'est dépendu par aucun. Sa seule interface avec le reste du dépôt est le contrat Parquet + `manifest.json` sur le stockage objet ([ADR 0055](/atlas/decisions/0055-categorie-dataops-python/)), pas une dépendance de code.
 
 ## Principes par catégorie
 
@@ -150,6 +153,17 @@ Chaque catégorie a une responsabilité unique. Les règles ci-dessous sont enfo
 **Règles.**
 
 - **Isolation totale** : aucune autre catégorie (`apps/`, `packages/`, etc.) ne peut dépendre d'un paquet de `sandbox/`. Les dépendances vont uniquement dans l'autre sens : `sandbox/` peut importer du code du dépôt pour ses besoins propres.
+- Pas publié sur npm.
+
+### `dataops/` — code DataOps en Python
+
+**Rôle.** Le code de la plateforme **DataOps** (application au traitement de données des pratiques d'automatisation et de qualité du DevOps) : assets **Dagster** (orchestrateur de pipelines de données), modèles **dbt** (transformation SQL versionnée), code de synchronisation de données. Ces outils sont écrits en Python et n'ont pas d'équivalent TypeScript ; cette catégorie accueille donc du **Python natif**, à rebours du reste du dépôt ([ADR 0055](/atlas/decisions/0055-categorie-dataops-python/)).
+
+**Règles.**
+
+- **Python natif**, outillé par **uv** (environnement et dépendances), **ruff** (lint et format) et **pytest** (tests). Le `uv.lock` est versionné.
+- **Hors du graphe pnpm** : `dataops/` n'est pas déclaré dans `pnpm-workspace.yaml`, donc pnpm, turbo et knip l'ignorent. `audit:structure` ne le contrôle pas non plus — sa discipline relève de ruff/pytest.
+- **Frontière par le contrat** : `dataops/` ne dépend d'aucun paquet TypeScript et n'est dépendu par aucun. Sa seule interface avec le reste du dépôt est le **contrat Parquet + `manifest.json`** sur le stockage objet ([ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/) / [0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/)).
 - Pas publié sur npm.
 
 ## Conventions transverses

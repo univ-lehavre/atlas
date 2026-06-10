@@ -20,6 +20,7 @@ export default [
       "services/**",
       "ui/**",
       "tools/**",
+      "dataops/**",
     ],
   },
   {

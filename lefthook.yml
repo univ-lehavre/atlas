@@ -135,6 +135,15 @@ pre-push:
       run: pnpm test:scripts
       priority: 4
 
+    dataops:
+      # Catégorie dataops/ (Python, ADR 0055) : mêmes exigences de qualité que
+      # le code Node (ruff + pytest + couverture à seuil), hors graphe pnpm donc
+      # hors turbo. Self-skipping si uv n'est pas installé. On ne paie le coût
+      # que si un fichier de dataops/ a changé.
+      glob: "dataops/**"
+      run: pnpm dataops:check
+      priority: 4
+
     docs-generate:
       # La carte des paquets (docs/src/content/docs/architecture/packages.md)
       # est dérivée des package.json ; un changement de manifeste ou de README

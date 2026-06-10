@@ -3,7 +3,8 @@
   "workspaces": {
     ".": {
       "project": ["*.{js,ts}"],
-      "ignoreDependencies": ["eslint", "prettier-plugin-svelte"]
+      "ignoreDependencies": ["eslint", "prettier-plugin-svelte"],
+      "ignoreBinaries": ["uv"]
     },
     "docs": {
       "ignore": ["src/components/kpi/kpi-card.css"],

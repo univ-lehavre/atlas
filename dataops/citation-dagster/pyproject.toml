@@ -1,0 +1,40 @@
+[project]
+name = "citation-dagster"
+version = "0.0.0"
+description = "Code-location Dagster du pipeline de citations (assets DataOps, ADR 0055)"
+requires-python = ">=3.10,<3.11"
+# Parité avec l'image Dagster du cluster (python:3.10-slim, dagster==1.13.7,
+# ADR cluster 0006 : verrou chart Helm <-> paquet Python 1:1).
+# NB : rclone n'est PAS une dépendance pip — c'est un binaire installé dans
+# l'image (voir Dockerfile), invoqué en sous-processus par l'asset de sync.
+dependencies = [
+  "dagster==1.13.7",
+  "openlineage-python",
+]
+# NB : ni dagster-postgres (event log) ni dagster-k8s (K8sRunLauncher) ne sont
+# requis par la code-location — ce sont des dépendances de l'orchestrateur,
+# géré côté cluster. Les exclure allège l'image et évite des dépendances
+# transitives sous licence non permissive (psycopg2-binary en LGPL).
+
+[dependency-groups]
+dev = ["ruff==0.15.16", "pytest", "pytest-cov"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/citation_dagster"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "--cov=citation_dagster --cov-report=term-missing --cov-fail-under=90"
