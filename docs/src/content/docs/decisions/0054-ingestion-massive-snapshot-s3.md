@@ -39,9 +39,10 @@ OpenAlex) :
 - **`manifest`** : un fichier par entité, **sentinelle de complétude** — sa
   présence garantit que tous les fichiers de données sont écrits (absent =
   export en cours).
-- **`merged_ids`** : le dossier `s3://openalex/data/merged_ids/` liste les
-  **entités fusionnées** (deux identifiants OpenAlex désignant la même entité
-  réelle, dédupliqués) ; il faut les supprimer ou les rediriger localement.
+- **`merged_ids`** : le dossier `s3://openalex/legacy-data/merged_ids/<entity>/`
+  (fichiers `YYYY-MM-DD.csv.gz`, colonnes `merge_date,id,merge_into_id` — confirmé à
+  l'implémentation, étape 2.2) liste les **entités fusionnées** (deux identifiants
+  OpenAlex désignant la même entité réelle, dédupliqués).
 - **`fwci`** (_Field-Weighted Citation Impact_, impact de citation normalisé par
   domaine) et `cited_by_count` sont des champs portés par chaque `work` dans le
   snapshot — captés au passage, sans seconde ingestion.
@@ -98,10 +99,13 @@ est ajouté à l'image du code-location.
 
 ### Entités fusionnées : `merged_ids`
 
-À chaque incrément, le dossier `data/merged_ids/` est appliqué pour supprimer ou
-rediriger localement les entités dédupliquées en amont. Le format exact des
-colonnes (de l'ordre de `id` / `merge_into_id` / `merged_date`) est **à confirmer
-à l'implémentation** — la documentation OpenAlex ne le fige pas formellement.
+À chaque incrément, les fichiers `merged_ids` postérieurs au watermark sont
+**rapatriés bruts** dans `raw/merged_ids/<entity>/` — comme `works`/`authors`, et
+sans réécriture en place (immutabilité préservée). La **fusion effective** (supprimer
+ou rediriger les entités dédupliquées) n'est **pas** faite à l'ingestion : elle est
+appliquée **en aval, dans les modèles dbt** (étape 3), qui lisent ces fichiers. Format
+confirmé (étape 2.2) : `legacy-data/merged_ids/<entity>/YYYY-MM-DD.csv.gz`, colonnes
+`merge_date,id,merge_into_id`.
 
 ### Cadence réelle : trimestrielle
 
@@ -143,8 +147,8 @@ delta sans logique de curseur applicative. Plus de plafond des 10 000 résultats
 rapatrier au bootstrap, avec l'impact correspondant sur le stockage objet Ceph
 (datalake en _erasure coding_ 2+1) et sur la durée du premier run. Cadence
 **trimestrielle** (pas mensuelle) tant qu'on reste sur la source gratuite. Coût
-des jointures dbt/DuckDB sur ce volume (`works` × `referenced_works`). Gestion des
-`merged_ids` (format à confirmer). Surtout : la synchronisation exige un **accès
+des jointures dbt/DuckDB sur ce volume (`works` × `referenced_works`). Application des
+`merged_ids` reportée en aval (dbt). Surtout : la synchronisation exige un **accès
 Internet sortant** depuis le cluster vers les endpoints S3 d'AWS, ce qui entre en
 tension avec le réseau **default-deny** du cluster (ADR cluster
 [0019](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0019-durcissement-reseau-cilium.md)) :

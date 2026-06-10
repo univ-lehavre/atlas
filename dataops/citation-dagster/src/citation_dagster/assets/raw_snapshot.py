@@ -18,6 +18,7 @@ annotations à l'exécution (PEP 563 les transformerait en chaînes non résolue
 """
 
 import os
+import re
 import subprocess
 import tempfile
 from datetime import datetime, timezone
@@ -34,6 +35,7 @@ from citation_dagster.resources import (
     ceph_target_from_env,
     render_rclone_config,
 )
+from citation_dagster.watermark import read_watermark, write_watermark
 
 # Bucket source externe (en prose uniquement ; jamais dans un identifiant interne).
 _SOURCE_BUCKET = "openalex"
@@ -41,19 +43,29 @@ _PRODUCER = "https://github.com/univ-lehavre/atlas/dataops/citation-dagster"
 
 
 class RawSnapshotConfig(Config):
-    """Paramètres du sync borné."""
+    """Paramètres du sync incrémental borné."""
 
     sample_size: int = 4
-    """Nombre maximal de fichiers ``.gz`` à copier **par entité** (borne le volume)."""
+    """Nombre maximal de fichiers ``.gz`` à copier **par partition** (borne le volume)."""
 
     entities: list[str] = Field(default_factory=lambda: ["works", "authors"])
     """Entités OpenAlex à ingérer."""
 
-    partition: str | None = None
-    """Partition ``updated_date=…`` ciblée. ``None`` = la plus récente.
+    max_partitions: int = 1
+    """Nombre maximal de partitions ``updated_date`` à traiter **par entité et par run**.
 
-    Les partitions récentes d'OpenAlex pèsent plusieurs Go/fichier ; sur un petit
-    banc, cibler une partition ancienne (légère) explicite garde le test E2E borné.
+    Borne le volume sur le petit banc (défaut petit). La prod relève cette limite.
+    """
+
+    max_merged_files: int = 1
+    """Nombre maximal de fichiers ``merged_ids`` (CSV.gz) à rapatrier par entité et run."""
+
+    partition: str | None = None
+    """Partition ``updated_date=…`` ciblée explicitement. Si fournie, **ignore le
+    watermark** et ne traite que cette partition — utile au test E2E ciblé/léger.
+
+    ``None`` (cas normal) : l'incrémental traite les partitions postérieures au
+    watermark (bornées par ``max_partitions``).
     """
 
 
@@ -67,12 +79,13 @@ def _run_rclone(args: list[str], config_path: Path) -> subprocess.CompletedProce
     )
 
 
-def _latest_partition(entity: str, config_path: Path) -> str:
-    """Renvoie la partition ``updated_date=…`` la plus récente de l'entité.
+def _list_partitions(entity: str, config_path: Path) -> list[str]:
+    """Liste, triées, les partitions ``updated_date=…`` d'une entité.
 
     Liste **uniquement les dossiers de premier niveau** (sans ``--recursive``) :
-    à l'échelle réelle, lister récursivement tout ``data/<entity>`` (des centaines
-    de milliers de fichiers) serait prohibitif. On borne le listing à la partition.
+    lister récursivement tout ``data/<entity>`` (des centaines de milliers de
+    fichiers) serait prohibitif. Le tri lexicographique des `updated_date=YYYY-MM-DD`
+    coïncide avec le tri chronologique.
     """
     listing = _run_rclone(
         ["lsf", "--dirs-only", f"openalex:{_SOURCE_BUCKET}/data/{entity}"],
@@ -83,38 +96,62 @@ def _latest_partition(entity: str, config_path: Path) -> str:
             description=f"rclone lsf (partitions) a échoué pour « {entity} »",
             metadata={"stderr": MetadataValue.text(listing.stderr[-2000:])},
         )
-    partitions = sorted(line.strip("/ ") for line in listing.stdout.splitlines() if line.strip())
+    return sorted(line.strip("/ ") for line in listing.stdout.splitlines() if line.strip())
+
+
+def _partitions_to_sync(
+    entity: str,
+    config_path: Path,
+    after: str | None,
+    max_partitions: int,
+    explicit: str | None = None,
+) -> list[str]:
+    """Partitions à synchroniser ce run, bornées à ``max_partitions``.
+
+    - ``explicit`` fourni : on ne traite que cette partition (test ciblé), watermark ignoré.
+    - sinon : les partitions dont la **date** (``YYYY-MM-DD``) est postérieure au
+      watermark ``after``. ``after is None`` (premier run / bootstrap) : toutes candidates.
+    """
+    if explicit is not None:
+        return [explicit]
+    partitions = _list_partitions(entity, config_path)
     if not partitions:
         raise Failure(description=f"Aucune partition trouvée pour l'entité « {entity} »")
-    return partitions[-1]
+    candidates = [p for p in partitions if after is None or _partition_date(p) > after]
+    return candidates[:max_partitions]
 
 
-def _sync_entity(
-    entity: str,
-    sample_size: int,
-    target: CephTarget,
-    config_path: Path,
-    partition: str | None = None,
-) -> dict[str, int]:
-    """Copie un sous-ensemble borné (N fichiers ``.gz`` d'une partition) vers ``raw/``."""
-    partition = partition or _latest_partition(entity, config_path)
-    src = f"openalex:{_SOURCE_BUCKET}/data/{entity}/{partition}"
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_PARTITION_RE = re.compile(r"^updated_date=(\d{4}-\d{2}-\d{2})$")
+_MERGED_NAME_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})\.csv\.gz$")
 
-    # Liste les .gz de CETTE partition uniquement (rapide), borne à sample_size.
-    listing = _run_rclone(["lsf", "--include", "*.gz", src], config_path)
-    if listing.returncode != 0:
-        raise Failure(
-            description=f"rclone lsf a échoué pour « {entity}/{partition} »",
-            metadata={"stderr": MetadataValue.text(listing.stderr[-2000:])},
-        )
-    keys = [line for line in listing.stdout.splitlines() if line.strip()][:sample_size]
-    if not keys:
-        raise Failure(description=f"Aucun .gz dans « {entity}/{partition} »")
 
+def _partition_date(partition: str) -> str:
+    """Extrait et **valide** la date ``YYYY-MM-DD`` d'une partition ``updated_date=…``.
+
+    Validation défensive : si la source publiait un dossier auxiliaire (``manifest``,
+    ``.processing``…) dans le listing, une extraction aveugle polluerait le watermark
+    et casserait toutes les comparaisons de date. On échoue explicitement.
+    """
+    match = _PARTITION_RE.match(partition)
+    if not match:
+        raise Failure(description=f"Partition au format inattendu : « {partition} »")
+    return match.group(1)
+
+
+def _merged_date(name: str) -> str:
+    """Extrait la date ``YYYY-MM-DD`` d'un fichier merged_ids ``YYYY-MM-DD.csv.gz``."""
+    match = _MERGED_NAME_RE.match(name)
+    if not match:
+        raise Failure(description=f"Nom de merged_ids inattendu : « {name} »")
+    return match.group(1)
+
+
+def _copy_files(src: str, keys: list[str], dest: str, config_path: Path, what: str) -> None:
+    """Copie une liste de fichiers ``keys`` de ``src`` vers ``dest`` (rclone copy)."""
     with tempfile.NamedTemporaryFile("w", suffix=".txt", delete=False) as files_from:
         files_from.write("\n".join(keys))
         files_from_path = files_from.name
-
     try:
         result = _run_rclone(
             [
@@ -126,19 +163,104 @@ def _sync_entity(
                 "--checkers",
                 "8",
                 src,
-                f"ceph:{target.bucket}/raw/{entity}/{partition}",
+                dest,
             ],
             config_path,
         )
     finally:
         os.unlink(files_from_path)
-
     if result.returncode != 0:
         raise Failure(
-            description=f"rclone copy a échoué pour « {entity}/{partition} »",
+            description=f"rclone copy a échoué pour « {what} »",
             metadata={"stderr": MetadataValue.text(result.stderr[-2000:])},
         )
-    return {"files": len(keys), "partition": partition}
+
+
+def _copy_partition(
+    entity: str, partition: str, sample_size: int, target: CephTarget, config_path: Path
+) -> int:
+    """Copie ≤ ``sample_size`` ``.gz`` d'une partition vers ``raw/`` ; renvoie le nb copié."""
+    src = f"openalex:{_SOURCE_BUCKET}/data/{entity}/{partition}"
+    listing = _run_rclone(["lsf", "--include", "*.gz", src], config_path)
+    if listing.returncode != 0:
+        raise Failure(
+            description=f"rclone lsf a échoué pour « {entity}/{partition} »",
+            metadata={"stderr": MetadataValue.text(listing.stderr[-2000:])},
+        )
+    keys = [line for line in listing.stdout.splitlines() if line.strip()][:sample_size]
+    if not keys:
+        raise Failure(description=f"Aucun .gz dans « {entity}/{partition} »")
+    _copy_files(
+        src,
+        keys,
+        f"ceph:{target.bucket}/raw/{entity}/{partition}",
+        config_path,
+        f"{entity}/{partition}",
+    )
+    return len(keys)
+
+
+def _sync_entity(
+    entity: str,
+    sample_size: int,
+    target: CephTarget,
+    config_path: Path,
+    partitions: list[str],
+) -> dict[str, object]:
+    """Copie les partitions données vers ``raw/``. Renvoie le bilan (fichiers, partitions)."""
+    files = sum(_copy_partition(entity, p, sample_size, target, config_path) for p in partitions)
+    return {"files": files, "partitions": partitions}
+
+
+def _sync_merged_ids(
+    entity: str,
+    target: CephTarget,
+    config_path: Path,
+    after: str | None,
+    max_files: int,
+) -> dict[str, object]:
+    """Rapatrie les ``merged_ids`` postérieurs à ``after`` vers ``raw/merged_ids/<entity>/``.
+
+    Copie **brute et immuable** (CSV.gz ``YYYY-MM-DD.csv.gz`` sous
+    ``legacy-data/merged_ids/<entity>/``) ; la fusion effective des entités est faite
+    en aval par dbt (étape 3).
+
+    ``after`` est le watermark **propre aux merged_ids** (clé distincte de celui des
+    partitions), filtré par la date du nom de fichier. Renvoie aussi ``next_after`` :
+    la date du dernier merged_id **réellement copié** (``None`` si rien), pour que
+    l'appelant fasse avancer ce watermark de façon exacte — jamais au-delà de ce qui a
+    été rapatrié. C'est ce découplage qui évite la perte silencieuse de fichiers quand
+    ``max_files`` tronque un lot.
+    """
+    src = f"openalex:{_SOURCE_BUCKET}/legacy-data/merged_ids/{entity}"
+    listing = _run_rclone(["lsf", "--include", "*.csv.gz", src], config_path)
+    if listing.returncode != 0:
+        raise Failure(
+            description=f"rclone lsf (merged_ids) a échoué pour « {entity} »",
+            metadata={"stderr": MetadataValue.text(listing.stderr[-2000:])},
+        )
+    # Nom = YYYY-MM-DD.csv.gz : filtre sur la date du nom (tri lexico = chrono).
+    names = sorted(
+        line.strip() for line in listing.stdout.splitlines() if _MERGED_NAME_RE.match(line.strip())
+    )
+    candidates = [n for n in names if after is None or _merged_date(n) > after]
+    fresh = candidates[:max_files]
+    if fresh:
+        _copy_files(
+            src,
+            fresh,
+            f"ceph:{target.bucket}/raw/merged_ids/{entity}",
+            config_path,
+            f"merged_ids/{entity}",
+        )
+    # Le watermark merged_ids n'avance qu'à la date du dernier fichier COPIÉ : si
+    # ``max_files`` a tronqué le lot, le run suivant reprendra les fichiers restants.
+    next_after = _merged_date(fresh[-1]) if fresh else None
+    return {
+        "merged_files": len(fresh),
+        "truncated": len(candidates) > len(fresh),
+        "next_after": next_after,
+    }
 
 
 def _emit_lineage(state: RunState, run_id: str, entities: list[str], bucket: str) -> None:
@@ -148,7 +270,11 @@ def _emit_lineage(state: RunState, run_id: str, entities: list[str], bucket: str
     namespace = os.environ.get("OPENLINEAGE_NAMESPACE", "dagster")
     client = OpenLineageClient.from_environment()
     inputs = [Dataset(namespace=_SOURCE_BUCKET, name=f"data/{entity}") for entity in entities]
+    inputs += [
+        Dataset(namespace=_SOURCE_BUCKET, name=f"legacy-data/merged_ids/{e}") for e in entities
+    ]
     outputs = [Dataset(namespace="citation", name=f"raw/{entity}") for entity in entities]
+    outputs += [Dataset(namespace="citation", name=f"raw/merged_ids/{e}") for e in entities]
     client.emit(
         RunEvent(
             eventType=state,
@@ -162,9 +288,67 @@ def _emit_lineage(state: RunState, run_id: str, entities: list[str], bucket: str
     )
 
 
+def _sync_one_entity(
+    entity: str, config: RawSnapshotConfig, target: CephTarget, config_path: Path
+) -> dict:
+    """Sync incrémental d'une entité : partitions postérieures au watermark + merged_ids.
+
+    Le watermark n'avance qu'**après** le sync réussi de la partition la plus récente
+    (un ``Failure`` en amont le laisse inchangé → reprise idempotente).
+    """
+    # Mode partition explicite : watermarks ignorés (test ciblé, pas d'avancement).
+    targeted = config.partition is not None
+
+    after = None if targeted else read_watermark(entity, target.bucket, config_path)
+    partitions = _partitions_to_sync(
+        entity, config_path, after, config.max_partitions, config.partition
+    )
+
+    # Watermark merged_ids DISTINCT de celui des partitions (clé séparée) : il avance à
+    # la date du dernier merged_id réellement copié, pas à celle des partitions — sinon
+    # une troncature ``max_merged_files`` ferait dépasser le watermark et perdre des
+    # fichiers (finding revue 2.2).
+    merged_key = f"merged_ids:{entity}"
+    merged_after = None if targeted else read_watermark(merged_key, target.bucket, config_path)
+    merged = _sync_merged_ids(entity, target, config_path, merged_after, config.max_merged_files)
+
+    if not partitions and merged["merged_files"] == 0:
+        # Rien de neuf (ni partition ni merged_id) : run idempotent, aucune écriture.
+        return {
+            "entity": entity,
+            "files": 0,
+            "partitions": [],
+            "merged_files": 0,
+            "watermark": after,
+        }
+
+    sync = (
+        _sync_entity(entity, config.sample_size, target, config_path, partitions)
+        if partitions
+        else {"files": 0}
+    )
+
+    if not targeted:
+        if partitions:
+            # Watermark partition = date de la partition la plus récente synchronisée.
+            write_watermark(entity, _partition_date(max(partitions)), target.bucket, config_path)
+        if merged["next_after"]:
+            write_watermark(merged_key, merged["next_after"], target.bucket, config_path)
+
+    new_watermark = _partition_date(max(partitions)) if partitions else after
+
+    return {
+        "entity": entity,
+        "files": sync["files"],
+        "partitions": partitions,
+        "merged_files": merged["merged_files"],
+        "watermark": new_watermark,
+    }
+
+
 @asset(name="raw_snapshot", group_name="ingestion")
 def raw_snapshot(config: RawSnapshotConfig) -> MaterializeResult:
-    """Sync borné du snapshot OpenAlex (works + authors) vers ``raw/`` du lakehouse."""
+    """Sync incrémental borné du snapshot OpenAlex (works + authors + merged_ids) vers ``raw/``."""
     target = ceph_target_from_env()
     run_id = str(generate_new_uuid())
 
@@ -173,17 +357,17 @@ def raw_snapshot(config: RawSnapshotConfig) -> MaterializeResult:
         config_path.write_text(render_rclone_config(target))
 
         _emit_lineage(RunState.START, run_id, config.entities, target.bucket)
-        per_entity = {
-            entity: _sync_entity(entity, config.sample_size, target, config_path, config.partition)
-            for entity in config.entities
-        }
+        results = [_sync_one_entity(e, config, target, config_path) for e in config.entities]
         _emit_lineage(RunState.COMPLETE, run_id, config.entities, target.bucket)
 
-    total_files = sum(stats["files"] for stats in per_entity.values())
+    total_files = sum(r["files"] for r in results)
+    total_merged = sum(r["merged_files"] for r in results)
+    watermarks = ", ".join(f"{r['entity']}={r['watermark']}" for r in results)
     return MaterializeResult(
         metadata={
             "total_files": MetadataValue.int(total_files),
-            "sample_size": MetadataValue.int(config.sample_size),
+            "merged_files": MetadataValue.int(total_merged),
+            "watermarks": MetadataValue.text(watermarks),
             "entities": MetadataValue.text(", ".join(config.entities)),
             "bucket": MetadataValue.text(f"{target.bucket}/raw"),
         }

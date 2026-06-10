@@ -1,4 +1,4 @@
-"""Tests de l'asset de sync ``raw_snapshot`` (rclone mocké)."""
+"""Tests de l'asset de sync incrémental ``raw_snapshot`` (rclone mocké)."""
 
 import subprocess
 
@@ -12,8 +12,15 @@ _ENV = {
     "AWS_SECRET_ACCESS_KEY": "SK",
     "BUCKET_HOST": "rgw.local",
     "BUCKET_NAME": "atlas-datalake-x",
-    # Pas d'OPENLINEAGE_URL : le lineage est un no-op en test unitaire.
 }
+
+# Partitions retournées par `lsf --dirs-only` (triées = chronologiques).
+_PARTITIONS = [
+    "updated_date=2019-07-01/",
+    "updated_date=2020-01-01/",
+    "updated_date=2021-06-15/",
+    "updated_date=2026-03-30/",
+]
 
 
 def _completed(args, returncode=0, stdout="", stderr=""):
@@ -22,116 +29,129 @@ def _completed(args, returncode=0, stdout="", stderr=""):
     )
 
 
-@pytest.fixture
-def rclone_calls(monkeypatch):
-    """Capture les appels rclone.
+class FakeRclone:
+    """Mock paramétrable de ``subprocess.run`` pour rclone.
 
-    Deux ``lsf`` : ``--dirs-only`` renvoie 2 partitions ; le ``lsf`` de la partition
-    renvoie 6 ``.gz``. ``copy`` réussit.
+    Distingue les sous-commandes : ``cat`` (watermark), ``rcat`` (écriture),
+    ``lsf --dirs-only`` (partitions), ``lsf *.csv.gz`` (merged_ids),
+    ``lsf *.gz`` (fichiers d'une partition), ``copy``.
     """
-    calls: list[list[str]] = []
 
-    def fake_run(cmd, **_kwargs):
-        calls.append(cmd)
+    def __init__(self, watermark_json="", copy_returncode=0):
+        self.calls: list[list[str]] = []
+        self.watermark_json = watermark_json  # contenu renvoyé par `cat`
+        self.rcat_payloads: list[str] = []  # contenus écrits par `rcat`
+        self.copy_returncode = copy_returncode
+
+    def __call__(self, cmd, **kwargs):
+        self.calls.append(cmd)
+        if "cat" in cmd and "rcat" not in cmd:
+            return _completed(cmd, stdout=self.watermark_json)
+        if "rcat" in cmd:
+            self.rcat_payloads.append(kwargs.get("input", ""))
+            return _completed(cmd)
         if "lsf" in cmd and "--dirs-only" in cmd:
-            return _completed(cmd, stdout="updated_date=2019-07-12/\nupdated_date=2024-01-05/")
-        if "lsf" in cmd:
-            keys = "\n".join(f"part_{i:03d}.gz" for i in range(6))
-            return _completed(cmd, stdout=keys)
-        return _completed(cmd)  # copy
+            return _completed(cmd, stdout="\n".join(_PARTITIONS))
+        if "lsf" in cmd and any("csv.gz" in a for a in cmd):
+            return _completed(cmd, stdout="2024-01-05.csv.gz\n2026-03-29.csv.gz")
+        if "lsf" in cmd:  # fichiers .gz d'une partition
+            return _completed(cmd, stdout="part_000.gz\npart_001.gz")
+        # copy
+        return _completed(cmd, returncode=self.copy_returncode, stderr="boom")
 
-    monkeypatch.setenv("AWS_ACCESS_KEY_ID", _ENV["AWS_ACCESS_KEY_ID"])
-    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", _ENV["AWS_SECRET_ACCESS_KEY"])
-    monkeypatch.setenv("BUCKET_HOST", _ENV["BUCKET_HOST"])
-    monkeypatch.setenv("BUCKET_NAME", _ENV["BUCKET_NAME"])
+
+@pytest.fixture
+def env(monkeypatch):
+    for k, v in _ENV.items():
+        monkeypatch.setenv(k, v)
     monkeypatch.delenv("OPENLINEAGE_URL", raising=False)
-    monkeypatch.setattr(subprocess, "run", fake_run)
-    return calls
+    return monkeypatch
 
 
-def test_sync_bounded_to_sample_size(rclone_calls):
-    result = raw_snapshot(
-        build_asset_context(), RawSnapshotConfig(sample_size=2, entities=["works"])
-    )
-    # 2 fichiers demandés sur les 6 listés → metadata total_files == 2.
-    assert result.metadata["total_files"].value == 2
-    copy_calls = [c for c in rclone_calls if "copy" in c]
-    assert len(copy_calls) == 1
+def _run(monkeypatch, fake, **config):
+    monkeypatch.setattr(subprocess, "run", fake)
+    return raw_snapshot(build_asset_context(), RawSnapshotConfig(entities=["works"], **config))
 
 
-def test_target_path_uses_raw_entity_partition_never_openalex(rclone_calls):
-    raw_snapshot(build_asset_context(), RawSnapshotConfig(sample_size=1, entities=["authors"]))
-    copy_cmd = next(c for c in rclone_calls if "copy" in c)
-    # Cible = ceph:<bucket>/raw/authors/<partition la plus récente> — jamais « openalex ».
-    target = copy_cmd[-1]
-    assert target == "ceph:atlas-datalake-x/raw/authors/updated_date=2024-01-05"
-    assert "openalex" not in target
+def test_bootstrap_syncs_oldest_partitions_bounded(env):
+    """Sans watermark (bootstrap), traite les premières partitions, bornées par max_partitions."""
+    fake = FakeRclone(watermark_json="")  # cat vide → pas de watermark
+    result = _run(env, fake, max_partitions=2)
+    # 2 partitions × 2 fichiers = 4
+    assert result.metadata["total_files"].value == 4
+    copies = [c for c in fake.calls if "copy" in c and "merged_ids" not in c[-1]]
+    assert len(copies) == 2  # 2 partitions
 
 
-def test_lists_partitions_then_gz(rclone_calls):
-    raw_snapshot(build_asset_context(), RawSnapshotConfig(sample_size=1, entities=["works"]))
-    # 1er lsf borné aux dossiers (partitions), pas de listing récursif global.
-    dir_lsf = next(c for c in rclone_calls if "lsf" in c and "--dirs-only" in c)
-    assert "--recursive" not in dir_lsf
-    # 2e lsf filtre les .gz de la partition.
-    gz_lsf = next(c for c in rclone_calls if "lsf" in c and "--dirs-only" not in c)
-    assert "*.gz" in gz_lsf
+def test_incremental_filters_after_watermark(env):
+    """Avec watermark à 2020-01-01, ne traite que les partitions postérieures."""
+    fake = FakeRclone(watermark_json='{"works": "2020-01-01"}')
+    result = _run(env, fake, max_partitions=10)
+    # postérieures à 2020-01-01 : 2021-06-15 et 2026-03-30 → 2 partitions × 2 = 4
+    assert result.metadata["total_files"].value == 4
 
 
-def test_lineage_emitted_when_url_set(monkeypatch):
-    """Quand OPENLINEAGE_URL est défini, START + COMPLETE sont émis vers Marquez."""
-    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "AK")
-    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "SK")
-    monkeypatch.setenv("BUCKET_HOST", "rgw.local")
-    monkeypatch.setenv("BUCKET_NAME", "b")
-    monkeypatch.setenv("OPENLINEAGE_URL", "http://marquez.local:5000")
-
-    def fake_run(cmd, **_kwargs):
-        if "lsf" in cmd and "--dirs-only" in cmd:
-            return _completed(cmd, stdout="updated_date=2024-01-05/")
-        if "lsf" in cmd:
-            return _completed(cmd, stdout="part_000.gz")
-        return _completed(cmd)
-
-    monkeypatch.setattr(subprocess, "run", fake_run)
-
-    events = []
-    # Le sous-module est masqué par l'asset réexporté dans assets/__init__ :
-    # on le récupère explicitement via importlib pour patcher OpenLineageClient.
-    import importlib
-
-    mod = importlib.import_module("citation_dagster.assets.raw_snapshot")
-
-    class FakeClient:
-        @classmethod
-        def from_environment(cls):
-            return cls()
-
-        def emit(self, event):
-            events.append(event)
-
-    monkeypatch.setattr(mod, "OpenLineageClient", FakeClient)
-
-    raw_snapshot(build_asset_context(), RawSnapshotConfig(sample_size=1, entities=["works"]))
-    states = [e.eventType for e in events]
-    assert mod.RunState.START in states
-    assert mod.RunState.COMPLETE in states
+def test_watermark_advances_after_success(env):
+    """Le watermark partition est réécrit à la date de la partition la plus récente."""
+    fake = FakeRclone(watermark_json='{"works": "2020-01-01"}')
+    _run(env, fake, max_partitions=10)
+    assert fake.rcat_payloads, "le watermark doit être réécrit"
+    # Le watermark partition (works) avance à la plus récente synchronisée.
+    assert any('"works": "2026-03-30"' in p for p in fake.rcat_payloads)
 
 
-def test_copy_failure_raises(monkeypatch):
-    monkeypatch.setenv("AWS_ACCESS_KEY_ID", "AK")
-    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", "SK")
-    monkeypatch.setenv("BUCKET_HOST", "rgw.local")
-    monkeypatch.setenv("BUCKET_NAME", "b")
-    monkeypatch.delenv("OPENLINEAGE_URL", raising=False)
-
-    def fake_run(cmd, **_kwargs):
-        if "lsf" in cmd and "--dirs-only" in cmd:
-            return _completed(cmd, stdout="updated_date=2019-07-01/")
-        if "lsf" in cmd:
-            return _completed(cmd, stdout="part_000.gz")
-        return _completed(cmd, returncode=1, stderr="boom")  # copy échoue
-
-    monkeypatch.setattr(subprocess, "run", fake_run)
+def test_watermark_not_advanced_on_copy_failure(env):
+    """Si un rclone copy échoue, le watermark n'est PAS réécrit (idempotence/reprise)."""
+    fake = FakeRclone(watermark_json='{"works": "2020-01-01"}', copy_returncode=1)
     with pytest.raises(Failure, match="rclone copy a échoué"):
-        raw_snapshot(build_asset_context(), RawSnapshotConfig(sample_size=1, entities=["works"]))
+        _run(env, fake, max_partitions=1)
+    assert fake.rcat_payloads == [], "le watermark ne doit pas avancer sur échec"
+
+
+def test_idempotent_when_nothing_new(env):
+    """Watermarks aux dernières dates (partition ET merged_ids) → aucune copie, aucune écriture."""
+    # merged_ids du mock vont jusqu'à 2026-03-29 ; partitions jusqu'à 2026-03-30.
+    fake = FakeRclone(watermark_json='{"works": "2026-03-30", "merged_ids:works": "2026-03-29"}')
+    result = _run(env, fake, max_partitions=10)
+    assert result.metadata["total_files"].value == 0
+    assert [c for c in fake.calls if "copy" in c] == []
+    assert fake.rcat_payloads == [], "rien de neuf → aucun watermark réécrit"
+
+
+def test_merged_ids_synced_to_raw_never_applied(env):
+    """merged_ids rapatriés vers raw/merged_ids/<entity>, jamais appliqués (pas de mutation)."""
+    fake = FakeRclone(watermark_json="")
+    _run(env, fake, max_partitions=1, max_merged_files=5)
+    merged_copies = [c for c in fake.calls if "copy" in c and "merged_ids" in c[-1]]
+    assert len(merged_copies) == 1
+    assert merged_copies[0][-1] == "ceph:atlas-datalake-x/raw/merged_ids/works"
+
+
+def test_explicit_partition_ignores_watermark(env):
+    """Une partition explicite cible cette partition et n'écrit pas le watermark."""
+    fake = FakeRclone(watermark_json='{"works": "2026-03-30"}')
+    result = _run(env, fake, partition="updated_date=2016-06-24")
+    assert result.metadata["total_files"].value == 2  # 1 partition × 2 fichiers
+    assert fake.rcat_payloads == [], "mode ciblé → watermark non touché"
+    # la cible utilise la partition explicite
+    copy = next(c for c in fake.calls if "copy" in c and "merged_ids" not in c[-1])
+    assert copy[-1] == "ceph:atlas-datalake-x/raw/works/updated_date=2016-06-24"
+
+
+def test_merged_watermark_independent_no_silent_loss(env):
+    """FIX (revue 2.2) : le watermark merged_ids n'avance qu'aux fichiers réellement copiés.
+
+    Scénario de perte : une nouvelle partition (watermark partition → 2026-03-30) ET des
+    merged_ids frais à date intermédiaire (2024-01-05, 2026-03-29), tronqués par
+    ``max_merged_files=1``. Le watermark merged_ids doit avancer à **2024-01-05** (le seul
+    copié), surtout PAS à 2026-03-29 ni à la date de partition — sinon 2026-03-29 serait
+    « antérieur » au prochain run et perdu à jamais.
+    """
+    fake = FakeRclone(watermark_json="")  # bootstrap : rien de connu
+    _run(env, fake, max_partitions=1, max_merged_files=1)
+    # Le mock merged_ids renvoie 2024-01-05 et 2026-03-29 ; un seul copié (max_merged_files=1).
+    merged_payloads = [p for p in fake.rcat_payloads if "merged_ids:works" in p]
+    assert merged_payloads, "le watermark merged_ids doit être écrit"
+    last = merged_payloads[-1]
+    assert '"merged_ids:works": "2024-01-05"' in last, "n'avance qu'au fichier copié"
+    assert "2026-03-29" not in last, "ne dépasse JAMAIS le dernier fichier copié (anti-perte)"
