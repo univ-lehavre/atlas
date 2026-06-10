@@ -57,6 +57,9 @@ Définitions concises des termes techniques utilisés dans la documentation. Qua
 | **couverture de code**   | Proportion du code source exécutée par les tests, exprimée en lignes, branches, fonctions. Mesurée par `@vitest/coverage-v8`.                                                                                                                                              |
 | **pyramide de tests**    | Répartition recommandée : beaucoup de tests unitaires (rapides, nombreux), peu de tests end-to-end (lents, ciblés). Atlas a cinq niveaux.                                                                                                                                  |
 | **self-skipping**        | Test qui se désactive automatiquement si son environnement (REDCap, Appwrite, navigateur Playwright) n'est pas disponible. Évite de bloquer le contributeur.                                                                                                               |
+| **run e2e**              | _End-to-end_ — exécution complète du système dans des conditions réalistes (sur le banc), par opposition aux tests unitaires qui isolent un module.                                                                                                                        |
+| **drift**                | Écart entre comportement attendu et observé, **révélé à l'exécution** (run e2e) et invisible au lint comme aux tests unitaires. Catalogué dans le [registre de drifts](/atlas/audit/registre-drifts/) ([ADR 0056](/atlas/decisions/0056-registre-drifts/)).                |
+| **piège de revue**       | Bug subtil identifié par **revue de code** (souvent adversariale), et non au run. Consigné au même registre de drifts que les drifts e2e.                                                                                                                                  |
 
 ## CI/CD et collaboration
 

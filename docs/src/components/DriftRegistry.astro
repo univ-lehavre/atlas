@@ -1,0 +1,126 @@
+---
+// Rend le registre des drifts (ADR 0056) en tableau, groupé par portée.
+// Données = content collection `drifts` (YAML), lues au build. Pas d'hydratation
+// client : le tableau est statique. Les compteurs sont DÉRIVÉS des données.
+import { getCollection } from "astro:content";
+
+const entries = (await getCollection("drifts")).map((e) => e.data);
+
+// Tri par id numérique (D1, D2, …) puis groupement par portée.
+const num = (id: string) => Number.parseInt(id.slice(1), 10);
+entries.sort((a, b) => num(a.id) - num(b.id));
+
+const PORTEES = ["code", "env", "harnais"] as const;
+const PORTEE_LABEL: Record<string, string> = {
+  code: "Code (vaut pour la production)",
+  env: "Environnement (artefact d'un banc)",
+  harnais: "Harnais (outillage de test)",
+};
+const NATURE_LABEL: Record<string, string> = {
+  "drift-e2e": "drift e2e",
+  "piege-revue": "piège de revue",
+};
+const STATUT_LABEL: Record<string, string> = {
+  corrige: "corrigé",
+  ouvert: "ouvert",
+  caduc: "caduc",
+};
+
+const groups = PORTEES.map((portee) => ({
+  portee,
+  rows: entries.filter((e) => e.portee === portee),
+})).filter((g) => g.rows.length > 0);
+
+const total = entries.length;
+const nbOuverts = entries.filter((e) => e.statut === "ouvert").length;
+---
+
+<p class="drift-summary">
+  <strong>{total}</strong> entrées ({nbOuverts} ouverte{nbOuverts > 1 ? "s" : ""}).
+</p>
+
+{
+  groups.map((g) => (
+    <section class="drift-group">
+      <h3>
+        {PORTEE_LABEL[g.portee]} — <strong>{g.rows.length}</strong>
+      </h3>
+      <table class="drift-table">
+        <thead>
+          <tr>
+            <th>id</th>
+            <th>nature</th>
+            <th>symptôme</th>
+            <th>cause</th>
+            <th>correctif</th>
+            <th>statut</th>
+          </tr>
+        </thead>
+        <tbody>
+          {g.rows.map((d) => (
+            <tr>
+              <td>
+                <code>{d.id}</code>
+              </td>
+              <td>
+                <span class={`badge nature-${d.nature}`}>{NATURE_LABEL[d.nature]}</span>
+              </td>
+              <td>{d.symptome}</td>
+              <td>{d.cause}</td>
+              <td>{d.correctif}</td>
+              <td>
+                <span class={`badge statut-${d.statut}`}>{STATUT_LABEL[d.statut]}</span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
+  ))
+}
+
+<style>
+  .drift-summary {
+    color: var(--sl-color-gray-3);
+  }
+  .drift-group {
+    margin-top: 2rem;
+  }
+  .drift-table {
+    width: 100%;
+    font-size: 0.85rem;
+  }
+  .drift-table th {
+    text-align: left;
+  }
+  .drift-table td {
+    vertical-align: top;
+  }
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    border-radius: 10px;
+  }
+  .nature-drift-e2e {
+    background-color: var(--sl-color-accent-low);
+    color: var(--sl-color-text-accent);
+  }
+  .nature-piege-revue {
+    background-color: var(--sl-color-purple-low, var(--sl-color-gray-6));
+    color: var(--sl-color-purple-high, var(--sl-color-white));
+  }
+  .statut-corrige {
+    background-color: var(--sl-color-green-low, var(--sl-color-gray-6));
+    color: var(--sl-color-green-high, var(--sl-color-white));
+  }
+  .statut-ouvert {
+    background-color: var(--sl-color-orange-low, var(--sl-color-gray-6));
+    color: var(--sl-color-orange-high, var(--sl-color-white));
+  }
+  .statut-caduc {
+    background-color: var(--sl-color-gray-6);
+    color: var(--sl-color-gray-2);
+  }
+</style>

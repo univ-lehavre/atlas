@@ -105,7 +105,8 @@ sans réécriture en place (immutabilité préservée). La **fusion effective** 
 ou rediriger les entités dédupliquées) n'est **pas** faite à l'ingestion : elle est
 appliquée **en aval, dans les modèles dbt** (étape 3), qui lisent ces fichiers. Format
 confirmé (étape 2.2) : `legacy-data/merged_ids/<entity>/YYYY-MM-DD.csv.gz`, colonnes
-`merge_date,id,merge_into_id`.
+`merge_date,id,merge_into_id` — le chemin réel (`legacy-data/`, non `data/`) est un
+écart consigné comme [drift D5](/atlas/audit/registre-drifts/).
 
 ### Cadence réelle : trimestrielle
 

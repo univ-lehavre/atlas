@@ -82,6 +82,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0053 | [Merge commit imposé sur `main` (abandon du squash)](/atlas/decisions/0053-strategie-merge-commit-main/)                                          | Accepted |
 | 0054 | [Ingestion massive OpenAlex par snapshot S3 (works + authors)](/atlas/decisions/0054-ingestion-massive-snapshot-s3/)                              | Accepted |
 | 0055 | [Catégorie dataops/ : code DataOps en Python natif](/atlas/decisions/0055-categorie-dataops-python/)                                              | Accepted |
+| 0056 | [Registre de drifts : catalogue indexé des écarts révélés à l'exécution](/atlas/decisions/0056-registre-drifts/)                                  | Accepted |
 
 ## Quand ouvrir un ADR
 
