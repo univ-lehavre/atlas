@@ -2,6 +2,14 @@
 title: "0029 — Pipeline de collaborations : architecture V1 (plateforme DataOps, contrat Parquet)"
 ---
 
+> **Amendé par [0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/).** La stratégie
+> d'ingestion décrite ci-dessous (API REST OpenAlex paginée à 1 req/s,
+> `from_updated_date=watermark`, sous-périmètre) est **remplacée pour la base complète** par
+> l'ingestion via le **snapshot S3 OpenAlex** (`works` + `authors`, incrémental par partition
+> `updated_date`). L'API REST reste pour les compléments ciblés (< 10 000 résultats). Le reste
+> de cet ADR (contrat Parquet + manifest, dbt, Dagster, OpenLineage/Marquez, index pgvector,
+> scoring déterministe) demeure en vigueur.
+
 ## Contexte
 
 Le monorepo `atlas` cherche à produire un premier service de bout en bout qui
