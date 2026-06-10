@@ -45,7 +45,7 @@ jobs:
           allow-licenses: >-
             MIT, MIT-0, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD,
             Unlicense, CC0-1.0, CC-BY-3.0, CC-BY-4.0, Python-2.0,
-            MPL-2.0, BlueOak-1.0.0, Zlib, WTFPL
+            MPL-2.0, BlueOak-1.0.0, Zlib, WTFPL, PSF-2.0, ZPL-2.1
           # Exceptions par paquet (alignées sur la liste
           # `PACKAGE_LICENSE_EXCEPTION_PREFIXES` de scripts/audit/licenses.mjs).
           # @sentry/cli* : outil build-only de @sentry/sveltekit (upload de
@@ -55,6 +55,11 @@ jobs:
           # khroma : utilitaire de couleurs de mermaid (diagrammes de la doc,
           # ADR 0036) sans champ `license` dans son package.json, mais MIT
           # d'après son fichier LICENSE distribué ; build-only.
+          # Dépendances Python de dataops/ (catégorie Python, ADR 0055) :
+          # typing-extensions est en Python-2.0 mais scancode y détecte un
+          # « GPL-1.0-or-later » fantôme (faux positif d'expression composée) ;
+          # protobuf est en BSD-3-Clause + un LicenseRef-scancode non reconnu.
+          # Les deux sont permissives ; exception ciblée par paquet.
           allow-dependencies-licenses: >-
             pkg:npm/%40sentry/cli,
             pkg:npm/%40sentry/cli-darwin,
@@ -65,5 +70,7 @@ jobs:
             pkg:npm/%40sentry/cli-win32-arm64,
             pkg:npm/%40sentry/cli-win32-i686,
             pkg:npm/%40sentry/cli-win32-x64,
-            pkg:npm/khroma
+            pkg:npm/khroma,
+            pkg:pypi/typing-extensions,
+            pkg:pypi/protobuf
           comment-summary-in-pr: on-failure

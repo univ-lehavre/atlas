@@ -9,10 +9,12 @@ requires-python = ">=3.10,<3.11"
 # l'image (voir Dockerfile), invoqué en sous-processus par l'asset de sync.
 dependencies = [
   "dagster==1.13.7",
-  "dagster-postgres",
-  "dagster-k8s",
   "openlineage-python",
 ]
+# NB : ni dagster-postgres (event log) ni dagster-k8s (K8sRunLauncher) ne sont
+# requis par la code-location — ce sont des dépendances de l'orchestrateur,
+# géré côté cluster. Les exclure allège l'image et évite des dépendances
+# transitives sous licence non permissive (psycopg2-binary en LGPL).
 
 [dependency-groups]
 dev = ["ruff==0.15.16", "pytest", "pytest-cov"]

@@ -27,6 +27,11 @@ COPY pyproject.toml uv.lock README.md ./
 COPY src ./src
 RUN python -m uv pip install --system .
 
+# Exécution en utilisateur non privilégié (jamais root, contrat ADR cluster 0033).
+RUN useradd --create-home --uid 1000 dagster \
+    && chown -R dagster:dagster /opt/dagster
+USER dagster
+
 EXPOSE 4000
 
 CMD ["dagster", "api", "grpc", "-h", "0.0.0.0", "-p", "4000", "-m", "citation_dagster.definitions"]
