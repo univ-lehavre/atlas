@@ -28,9 +28,9 @@ la base, exportée en fichiers, mise à disposition sur un stockage objet public
 C'est la voie retenue ici. Faits techniques (source : documentation officielle
 OpenAlex) :
 
-- **Bucket** : `s3://openalex` (programme **AWS Open Data**, accès **anonyme** via
-  `aws s3 sync … --no-sign-request`, sans clé d'authentification). Le terme **S3**
-  désigne le protocole de stockage objet d'Amazon, devenu un standard de fait.
+- **Bucket** : `s3://openalex` (programme **AWS Open Data**, accès **anonyme** sans
+  clé d'authentification). Le terme **S3** désigne le protocole de stockage objet
+  d'Amazon, devenu un standard de fait.
 - **Taille** : environ **330 Go compressés** (≈ 1,6 To décompressés).
 - **Arborescence** : `s3://openalex/data/works/updated_date=YYYY-MM-DD/0000_part_00.gz`,
   idem pour `data/authors/`. Une **partition `updated_date`** est un dossier
@@ -81,6 +81,20 @@ re-synchronise que les **partitions `updated_date` postérieures** à un **water
 de date** persistant (un enregistrement modifié migre dans la partition de sa
 nouvelle date). Le watermark n'avance qu'après une synchronisation **complète et
 réussie** (idempotence : un rejeu ne corrompt pas l'état).
+
+### Transfert inter-endpoints : `rclone`
+
+La source (`s3://openalex`, endpoint AWS public) et la cible (`s3://citation/raw`,
+endpoint RGW Ceph interne) sont **deux endpoints S3 distincts** ; aucun outil ne
+copie nativement de l'un à l'autre par une simple commande mono-endpoint. Le
+transfert est confié à **`rclone`** (outil libre de synchronisation de stockage,
+licence MIT), configuré avec **deux remotes** : `openalex` (accès anonyme,
+sans clé) et `ceph` (credentials de l'`ObjectBucketClaim`). `rclone sync` gère
+nativement le transfert entre endpoints distincts, le **parallélisme**, la
+**reprise** et le **filtrage par préfixe** (donc le sous-échantillon borné des
+tests). Alternative écartée : un `aws s3 cp` en deux temps (téléchargement
+éphémère puis ré-upload) — plus de code, pas de sync différentiel natif. `rclone`
+est ajouté à l'image du code-location.
 
 ### Entités fusionnées : `merged_ids`
 
