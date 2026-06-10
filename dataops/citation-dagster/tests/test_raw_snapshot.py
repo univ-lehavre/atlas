@@ -92,11 +92,12 @@ def test_incremental_filters_after_watermark(env):
 
 
 def test_watermark_advances_after_success(env):
-    """Le watermark est réécrit à la date de la partition la plus récente synchronisée."""
+    """Le watermark partition est réécrit à la date de la partition la plus récente."""
     fake = FakeRclone(watermark_json='{"works": "2020-01-01"}')
     _run(env, fake, max_partitions=10)
     assert fake.rcat_payloads, "le watermark doit être réécrit"
-    assert "2026-03-30" in fake.rcat_payloads[-1]
+    # Le watermark partition (works) avance à la plus récente synchronisée.
+    assert any('"works": "2026-03-30"' in p for p in fake.rcat_payloads)
 
 
 def test_watermark_not_advanced_on_copy_failure(env):
@@ -108,12 +109,13 @@ def test_watermark_not_advanced_on_copy_failure(env):
 
 
 def test_idempotent_when_nothing_new(env):
-    """Watermark à la dernière partition → aucune partition postérieure, aucune copie."""
-    fake = FakeRclone(watermark_json='{"works": "2026-03-30"}')
+    """Watermarks aux dernières dates (partition ET merged_ids) → aucune copie, aucune écriture."""
+    # merged_ids du mock vont jusqu'à 2026-03-29 ; partitions jusqu'à 2026-03-30.
+    fake = FakeRclone(watermark_json='{"works": "2026-03-30", "merged_ids:works": "2026-03-29"}')
     result = _run(env, fake, max_partitions=10)
     assert result.metadata["total_files"].value == 0
     assert [c for c in fake.calls if "copy" in c] == []
-    assert fake.rcat_payloads == [], "rien de neuf → watermark inchangé"
+    assert fake.rcat_payloads == [], "rien de neuf → aucun watermark réécrit"
 
 
 def test_merged_ids_synced_to_raw_never_applied(env):
@@ -134,3 +136,22 @@ def test_explicit_partition_ignores_watermark(env):
     # la cible utilise la partition explicite
     copy = next(c for c in fake.calls if "copy" in c and "merged_ids" not in c[-1])
     assert copy[-1] == "ceph:atlas-datalake-x/raw/works/updated_date=2016-06-24"
+
+
+def test_merged_watermark_independent_no_silent_loss(env):
+    """FIX (revue 2.2) : le watermark merged_ids n'avance qu'aux fichiers réellement copiés.
+
+    Scénario de perte : une nouvelle partition (watermark partition → 2026-03-30) ET des
+    merged_ids frais à date intermédiaire (2024-01-05, 2026-03-29), tronqués par
+    ``max_merged_files=1``. Le watermark merged_ids doit avancer à **2024-01-05** (le seul
+    copié), surtout PAS à 2026-03-29 ni à la date de partition — sinon 2026-03-29 serait
+    « antérieur » au prochain run et perdu à jamais.
+    """
+    fake = FakeRclone(watermark_json="")  # bootstrap : rien de connu
+    _run(env, fake, max_partitions=1, max_merged_files=1)
+    # Le mock merged_ids renvoie 2024-01-05 et 2026-03-29 ; un seul copié (max_merged_files=1).
+    merged_payloads = [p for p in fake.rcat_payloads if "merged_ids:works" in p]
+    assert merged_payloads, "le watermark merged_ids doit être écrit"
+    last = merged_payloads[-1]
+    assert '"merged_ids:works": "2024-01-05"' in last, "n'avance qu'au fichier copié"
+    assert "2026-03-29" not in last, "ne dépasse JAMAIS le dernier fichier copié (anti-perte)"

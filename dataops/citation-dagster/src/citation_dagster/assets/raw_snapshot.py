@@ -18,6 +18,7 @@ annotations à l'exécution (PEP 563 les transformerait en chaînes non résolue
 """
 
 import os
+import re
 import subprocess
 import tempfile
 from datetime import datetime, timezone
@@ -120,9 +121,30 @@ def _partitions_to_sync(
     return candidates[:max_partitions]
 
 
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_PARTITION_RE = re.compile(r"^updated_date=(\d{4}-\d{2}-\d{2})$")
+_MERGED_NAME_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})\.csv\.gz$")
+
+
 def _partition_date(partition: str) -> str:
-    """Extrait la date ``YYYY-MM-DD`` d'une partition ``updated_date=YYYY-MM-DD``."""
-    return partition[len("updated_date=") :]
+    """Extrait et **valide** la date ``YYYY-MM-DD`` d'une partition ``updated_date=…``.
+
+    Validation défensive : si la source publiait un dossier auxiliaire (``manifest``,
+    ``.processing``…) dans le listing, une extraction aveugle polluerait le watermark
+    et casserait toutes les comparaisons de date. On échoue explicitement.
+    """
+    match = _PARTITION_RE.match(partition)
+    if not match:
+        raise Failure(description=f"Partition au format inattendu : « {partition} »")
+    return match.group(1)
+
+
+def _merged_date(name: str) -> str:
+    """Extrait la date ``YYYY-MM-DD`` d'un fichier merged_ids ``YYYY-MM-DD.csv.gz``."""
+    match = _MERGED_NAME_RE.match(name)
+    if not match:
+        raise Failure(description=f"Nom de merged_ids inattendu : « {name} »")
+    return match.group(1)
 
 
 def _copy_files(src: str, keys: list[str], dest: str, config_path: Path, what: str) -> None:
@@ -197,11 +219,18 @@ def _sync_merged_ids(
     after: str | None,
     max_files: int,
 ) -> dict[str, object]:
-    """Rapatrie les ``merged_ids`` postérieurs au watermark vers ``raw/merged_ids/<entity>/``.
+    """Rapatrie les ``merged_ids`` postérieurs à ``after`` vers ``raw/merged_ids/<entity>/``.
 
     Copie **brute et immuable** (CSV.gz ``YYYY-MM-DD.csv.gz`` sous
     ``legacy-data/merged_ids/<entity>/``) ; la fusion effective des entités est faite
-    en aval par dbt (étape 3). ``after`` filtre par date du nom de fichier.
+    en aval par dbt (étape 3).
+
+    ``after`` est le watermark **propre aux merged_ids** (clé distincte de celui des
+    partitions), filtré par la date du nom de fichier. Renvoie aussi ``next_after`` :
+    la date du dernier merged_id **réellement copié** (``None`` si rien), pour que
+    l'appelant fasse avancer ce watermark de façon exacte — jamais au-delà de ce qui a
+    été rapatrié. C'est ce découplage qui évite la perte silencieuse de fichiers quand
+    ``max_files`` tronque un lot.
     """
     src = f"openalex:{_SOURCE_BUCKET}/legacy-data/merged_ids/{entity}"
     listing = _run_rclone(["lsf", "--include", "*.csv.gz", src], config_path)
@@ -210,9 +239,12 @@ def _sync_merged_ids(
             description=f"rclone lsf (merged_ids) a échoué pour « {entity} »",
             metadata={"stderr": MetadataValue.text(listing.stderr[-2000:])},
         )
-    # Nom = YYYY-MM-DD.csv.gz : on filtre sur le préfixe date (tri lexico = chrono).
-    names = sorted(line.strip() for line in listing.stdout.splitlines() if line.strip())
-    fresh = [n for n in names if after is None or n[:10] > after][:max_files]
+    # Nom = YYYY-MM-DD.csv.gz : filtre sur la date du nom (tri lexico = chrono).
+    names = sorted(
+        line.strip() for line in listing.stdout.splitlines() if _MERGED_NAME_RE.match(line.strip())
+    )
+    candidates = [n for n in names if after is None or _merged_date(n) > after]
+    fresh = candidates[:max_files]
     if fresh:
         _copy_files(
             src,
@@ -221,7 +253,14 @@ def _sync_merged_ids(
             config_path,
             f"merged_ids/{entity}",
         )
-    return {"merged_files": len(fresh)}
+    # Le watermark merged_ids n'avance qu'à la date du dernier fichier COPIÉ : si
+    # ``max_files`` a tronqué le lot, le run suivant reprendra les fichiers restants.
+    next_after = _merged_date(fresh[-1]) if fresh else None
+    return {
+        "merged_files": len(fresh),
+        "truncated": len(candidates) > len(fresh),
+        "next_after": next_after,
+    }
 
 
 def _emit_lineage(state: RunState, run_id: str, entities: list[str], bucket: str) -> None:
@@ -257,15 +296,24 @@ def _sync_one_entity(
     Le watermark n'avance qu'**après** le sync réussi de la partition la plus récente
     (un ``Failure`` en amont le laisse inchangé → reprise idempotente).
     """
-    after = (
-        None if config.partition is not None else read_watermark(entity, target.bucket, config_path)
-    )
+    # Mode partition explicite : watermarks ignorés (test ciblé, pas d'avancement).
+    targeted = config.partition is not None
+
+    after = None if targeted else read_watermark(entity, target.bucket, config_path)
     partitions = _partitions_to_sync(
         entity, config_path, after, config.max_partitions, config.partition
     )
 
-    if not partitions:
-        # Rien de neuf depuis le watermark : run idempotent, aucune écriture.
+    # Watermark merged_ids DISTINCT de celui des partitions (clé séparée) : il avance à
+    # la date du dernier merged_id réellement copié, pas à celle des partitions — sinon
+    # une troncature ``max_merged_files`` ferait dépasser le watermark et perdre des
+    # fichiers (finding revue 2.2).
+    merged_key = f"merged_ids:{entity}"
+    merged_after = None if targeted else read_watermark(merged_key, target.bucket, config_path)
+    merged = _sync_merged_ids(entity, target, config_path, merged_after, config.max_merged_files)
+
+    if not partitions and merged["merged_files"] == 0:
+        # Rien de neuf (ni partition ni merged_id) : run idempotent, aucune écriture.
         return {
             "entity": entity,
             "files": 0,
@@ -274,13 +322,20 @@ def _sync_one_entity(
             "watermark": after,
         }
 
-    sync = _sync_entity(entity, config.sample_size, target, config_path, partitions)
-    merged = _sync_merged_ids(entity, target, config_path, after, config.max_merged_files)
+    sync = (
+        _sync_entity(entity, config.sample_size, target, config_path, partitions)
+        if partitions
+        else {"files": 0}
+    )
 
-    # Watermark = date de la partition la plus récente réellement synchronisée.
-    new_watermark = _partition_date(max(partitions))
-    if config.partition is None:
-        write_watermark(entity, new_watermark, target.bucket, config_path)
+    if not targeted:
+        if partitions:
+            # Watermark partition = date de la partition la plus récente synchronisée.
+            write_watermark(entity, _partition_date(max(partitions)), target.bucket, config_path)
+        if merged["next_after"]:
+            write_watermark(merged_key, merged["next_after"], target.bucket, config_path)
+
+    new_watermark = _partition_date(max(partitions)) if partitions else after
 
     return {
         "entity": entity,

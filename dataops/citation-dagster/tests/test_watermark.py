@@ -50,14 +50,15 @@ def test_write_merges_existing_keys(monkeypatch):
 
 
 def test_write_failure_raises(monkeypatch):
+    """Une écriture rclone échouée lève une ``Failure`` Dagster (cohérence avec le reste)."""
+    import pytest
+    from dagster import Failure
+
     def fake_run(cmd, **kwargs):
         if "cat" in cmd and "rcat" not in cmd:
             return _completed(cmd, stdout="")
         return _completed(cmd, returncode=1, stderr="disk full")  # rcat échoue
 
     monkeypatch.setattr(subprocess, "run", fake_run)
-    try:
+    with pytest.raises(Failure, match="watermark"):
         watermark.write_watermark("works", "2024-01-05", "bucket", Path("/tmp/x"))
-        raise AssertionError("devrait lever RuntimeError")
-    except RuntimeError as exc:
-        assert "watermark" in str(exc).lower()
