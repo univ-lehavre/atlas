@@ -1,0 +1,153 @@
+# Registre des drifts atlas — source de vérité unique (ADR 0056).
+#
+# Un « drift » = un écart révélé à l'EXÉCUTION (run e2e) que le lint et les tests
+# ne voyaient pas. Un « piège de revue » = un bug subtil trouvé en revue de code
+# (souvent adversariale), pas au run. Les deux sont consignés ici, distingués par
+# le champ `nature`. Ce fichier est LE catalogue indexé ; les pages de synthèse y
+# RÉFÈRENT par id, sans dupliquer le détail.
+#
+# Champs par entrée :
+#   id        : Dnn (stable, citable)
+#   campagne  : chantier/issue qui l'a révélé
+#   nature    : drift-e2e (révélé au run) | piege-revue (trouvé en revue de code)
+#   portee    : code (défaut du livrable, vaut pour la prod) | env (artefact d'un
+#               banc précis) | harnais (outillage de test, pas le livrable)
+#   symptome  : ce qu'on a vu
+#   cause     : la cause racine
+#   correctif : ce qui a été fait
+#   statut    : corrige | caduc (contexte abandonné) | ouvert
+#
+# Couverture : D1–D9 (première salve — pipeline OpenAlex/Dagster, juin 2026).
+
+- id: D1
+  campagne: "pipeline OpenAlex/Dagster — premier run sur le banc"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    Au premier run Dagster sur le banc, le K8sRunLauncher échoue :
+    « Value in Mapping mismatches expected type for key dagster/image … Got None ».
+  cause: >-
+    La code-location ne déclarait pas la variable d'environnement
+    DAGSTER_CURRENT_IMAGE ; le run-launcher ne sait alors pas quelle image lancer
+    pour les pods de run. Invisible aux tests unitaires (qui ne lancent pas de run K8s).
+  correctif: >-
+    DAGSTER_CURRENT_IMAGE = image de la code-location, déclarée dans le Deployment
+    de la code-location.
+  statut: corrige
+
+- id: D2
+  campagne: "pipeline OpenAlex/Dagster — sync rclone, watermark"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    Le bootstrap du watermark ne se déclenchait jamais : « rclone cat » d'un objet
+    inexistant renvoie un code de retour 0 (pas d'erreur) avec une sortie standard vide.
+  cause: >-
+    Comportement non-évident de l'outil : l'absence d'objet n'est pas un code d'erreur.
+    Le code se fiait au code de retour. Révélé en testant contre un MinIO local.
+  correctif: >-
+    read_watermark traite une sortie vide ou un JSON invalide comme None (premier run),
+    au lieu de se fier au code de retour.
+  statut: corrige
+
+- id: D3
+  campagne: "pipeline OpenAlex/Dagster — listing des partitions"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    « rclone lsf --recursive » sur data/works (≈ 250 M fichiers) bloque le run des
+    minutes/heures ; le test passait, le run était inexploitable.
+  cause: >-
+    Listing récursif prohibitif sur une arborescence massive. L'écart n'apparaît qu'à
+    l'échelle réelle de la source, jamais sur les fixtures de test.
+  correctif: >-
+    _list_partitions liste par partition au premier niveau (--dirs-only, sans
+    --recursive) ; le volume est borné par partition.
+  statut: corrige
+
+- id: D4
+  campagne: "pipeline OpenAlex/Dagster — pods de run (cluster#264)"
+  nature: drift-e2e
+  portee: env
+  symptome: >-
+    Un « rclone copy » d'un fichier de 915 Ko qui prend 1,2 s en local prend plusieurs
+    minutes dans un pod de run sur le banc.
+  cause: >-
+    Le K8sRunLauncher ne pose aucune `resources` sur les pods de run → classe BestEffort
+    → premiers throttlés sur un banc hyperconvergé. Révélé en comparant local et banc.
+  correctif: >-
+    Correctif côté cluster (poser des resources par défaut aux pods de run), tracé en
+    cluster#264. Consigné ici comme drift atlas-observé.
+  statut: ouvert
+
+- id: D5
+  campagne: "pipeline OpenAlex/Dagster — source merged_ids (ADR 0054)"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    Le mécanisme merged_ids attendu sous s3://openalex/data/merged_ids/ est introuvable.
+  cause: >-
+    merged_ids vit en réalité sous legacy-data/ :
+    s3://openalex/legacy-data/merged_ids/<entité>/YYYY-MM-DD.csv.gz (colonnes
+    merge_date,id,merge_into_id). L'ADR 0054 supposait data/merged_ids/. Hypothèse fausse
+    sur une source externe, révélée en sondant la vraie source.
+  correctif: >-
+    Chemin corrigé vers legacy-data/merged_ids/ ; ADR 0054 mis à jour.
+  statut: corrige
+
+- id: D6
+  campagne: "déploiement Argo CD — Application atlas-workflows"
+  nature: drift-e2e
+  portee: env
+  symptome: >-
+    L'Application affiche « Synced/Healthy » mais les ressources attendues sont absentes
+    du cluster.
+  cause: >-
+    L'Application réconcilie path:"." en mode NON récursif : les manifestes rangés dans un
+    sous-dossier sont ignorés. Révélé au déploiement (sync vert, ressources manquantes).
+  correctif: >-
+    Manifestes placés à la racine du dépôt Gitea réconcilié.
+  statut: corrige
+
+- id: D7
+  campagne: "revue adversariale 2.2 — watermark/merged_ids (finding HIGH)"
+  nature: piege-revue
+  portee: code
+  symptome: >-
+    Perte silencieuse de fichiers merged_ids : quand max_merged_files tronque un lot, le
+    watermark dépasse les fichiers non copiés, qui ne sont alors jamais rapatriés.
+  cause: >-
+    Un watermark unique partagé entre les partitions et les merged_ids. Avancé sur la date
+    des partitions, il « saute » des merged_ids non encore copiés. Trouvé par revue
+    adversariale (42 findings, 16 confirmés), pas par les tests.
+  correctif: >-
+    Watermark merged_ids indépendant (clé merged_ids:<entité>), qui n'avance qu'aux
+    fichiers réellement copiés.
+  statut: corrige
+
+- id: D8
+  campagne: "pipeline OpenAlex/Dagster — comparaison de watermark"
+  nature: piege-revue
+  portee: code
+  symptome: >-
+    Le filtre incrémental par updated_date est cassé : toutes les partitions passent le filtre.
+  cause: >-
+    Comparaison de « updated_date=2019-07-01 » à une date nue « 2020-01-01 » : toujours vraie,
+    car 'u' > '2' en ASCII. Trouvé en débogage.
+  correctif: >-
+    _partition_date extrait et valide la date (YYYY-MM-DD) avant toute comparaison.
+  statut: corrige
+
+- id: D9
+  campagne: "pipeline OpenAlex/Dagster — chargement de la code-location"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    Dagster ne résout pas le type de Config d'un asset (« Unable to resolve config type »).
+  cause: >-
+    « from __future__ import annotations » (PEP 563) transforme les annotations en chaînes ;
+    Dagster ne peut plus introspecter le type de config à l'exécution. Révélé au chargement
+    de la code-location, pas au lint.
+  correctif: >-
+    Retrait de « from __future__ import annotations » des modules d'assets Dagster.
+  statut: corrige

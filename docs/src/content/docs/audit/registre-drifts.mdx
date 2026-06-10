@@ -1,0 +1,35 @@
+---
+title: Registre des drifts
+---
+
+import DriftRegistry from "../../../components/DriftRegistry.astro";
+
+Cette page catalogue les **drifts** du dépôt. Un _drift_ est un écart entre le
+comportement attendu et le comportement observé, **révélé à l'exécution** — lors
+d'un _run end-to-end_ (un test complet du système dans des conditions réalistes,
+sur le banc) — et que le _lint_ et les tests unitaires ne voyaient pas. On y
+consigne aussi les **pièges de revue** : des bugs subtils identifiés par revue de
+code (souvent adversariale), et non au run.
+
+Pourquoi un registre ? Ces écarts sont résolus au fil de l'eau ; sans trace, leur
+leçon se perd. Le registre capitalise cette **mémoire institutionnelle** : chaque
+entrée est citable par son identifiant (`Dnn`) et garde le symptôme, la cause et
+le correctif. La première salve provient du pipeline DataOps (ingestion OpenAlex
+par [Dagster](https://dagster.io/)).
+
+## Fonctionnement
+
+Le registre est une **source de vérité YAML** machine-lisible
+([`docs/src/content/drifts/registre-drifts.yaml`](https://github.com/univ-lehavre/atlas/blob/main/docs/src/content/drifts/registre-drifts.yaml)),
+validée au build par un schéma de types et rendue ci-dessous en tableau. Une
+entrée est ajoutée **dans la même pull request** que le correctif du drift. Le
+cadre et le format sont actés par l'[ADR 0056](/atlas/decisions/0056-registre-drifts/).
+
+Chaque entrée porte une **portée** (`code` : défaut du livrable, vaut pour la
+production ; `env` : artefact d'un banc précis ; `harnais` : outillage de test),
+une **nature** (drift e2e ou piège de revue) et un **statut** (corrigé, ouvert ou
+caduc).
+
+## Catalogue
+
+<DriftRegistry />

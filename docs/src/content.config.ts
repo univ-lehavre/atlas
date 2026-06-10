@@ -1,7 +1,7 @@
 import { defineCollection, z } from "astro:content";
 import { docsLoader } from "@astrojs/starlight/loaders";
 import { docsSchema } from "@astrojs/starlight/schema";
-import { glob } from "astro/loaders";
+import { file, glob } from "astro/loaders";
 
 // Collection de documentation Starlight (pages migrées dans src/content/docs).
 const docs = defineCollection({ loader: docsLoader(), schema: docsSchema() });
@@ -21,7 +21,25 @@ const packageReadmes = defineCollection({
   schema: z.object({}).passthrough(),
 });
 
+// Registre des drifts (ADR 0056) : YAML source de vérité, parsé nativement par le
+// loader `file()` d'Astro (aucune dépendance ajoutée). Le schéma Zod est le
+// garde-fou : `docs:build` échoue si une entrée est malformée.
+const drifts = defineCollection({
+  loader: file("src/content/drifts/registre-drifts.yaml"),
+  schema: z.object({
+    id: z.string().regex(/^D\d+$/),
+    campagne: z.string(),
+    nature: z.enum(["drift-e2e", "piege-revue"]),
+    portee: z.enum(["code", "env", "harnais"]),
+    symptome: z.string(),
+    cause: z.string(),
+    correctif: z.string(),
+    statut: z.enum(["corrige", "caduc", "ouvert"]),
+  }),
+});
+
 export const collections = {
   docs,
   packageReadmes,
+  drifts,
 };
