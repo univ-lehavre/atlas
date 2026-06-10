@@ -2,7 +2,9 @@
 title: Plan — Pipeline de collaborations entre chercheurs (V1, plateforme DataOps)
 ---
 
-> Date du plan : 2026-06-02. Socle décisionnel : [ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/) (architecture de la plateforme DataOps) + [ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/) (gate RGPD, profilage) + ADR cluster [0016](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0016-observabilite.md) (observabilité, palier 2 déclenché), [0011](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0011-registry-http-sans-auth.md) (registry HTTP), [0004](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0004-erasure-coding-2plus1-datalake.md) (EC 2+1), [0002](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0002-control-plane-unique-avec-endpoint.md) (control-plane unique), [0003](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0003-pas-de-chiffrement-ceph-tailscale.md) (pas de TLS interne), [0019](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0019-durcissement-reseau-cilium.md) (réseau Cilium default-deny).
+> Date du plan : 2026-06-02. Socle décisionnel : [ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/) (architecture de la plateforme DataOps) + [ADR 0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/) (ingestion massive par snapshot S3, amende 0029) + [ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/) (RGPD, profilage) + ADR cluster [0011](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0011-registry-http-sans-auth.md) (registry HTTP), [0019](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0019-durcissement-reseau-cilium.md) (réseau Cilium default-deny), [0020](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0020-exposition-reseau-tout-cilium.md) (exposition tout-Cilium), [0021](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0021-cert-manager-ca-interne.md) (cert-manager CA interne), [0024](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0024-postgres-manage-cloudnative-pg.md) (PostgreSQL CloudNativePG), [0026](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0026-orchestration-dagster.md) (Dagster), [0028](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0028-orchestration-openlineage-marquez.md) (Marquez), [0036](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0036-backing-s3-unique-rgw.md) (S3 RGW), [0038](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0038-lima-seul-banc-local.md) (Lima seul banc local), [0043](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0043-contrat-interface-cluster-atlas.md) (contrat d'interface), [0044](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0044-topologie-deploiement-banc-atlas.md) (Gitea intra-banc).
+
+> **Révisé le 2026-06-10.** Trois évolutions depuis la rédaction (2026-06-02) : **(1)** le socle cluster décrit en Phase 1 est désormais **livré et accessible** (Cilium tout-Cilium, cert-manager CA interne, Argo CD sur Gitea intra-banc, CloudNativePG, Dagster, Marquez) — la Phase 1 devient un **état de référence**, pas un chantier ; **(2)** la stratégie d'ingestion passe de l'**API REST paginée delta** au **snapshot S3 OpenAlex** (`works` + `authors`, toute la base), actée par [ADR 0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/) qui **amende** [ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/) ; **(3)** le RGPD (Phase 0) cesse d'être un **gate bloquant** : le dépôt livre un **canevas techniquement capable** de conformité (ré-dérivabilité, droit d'opposition, authentification), **testé et déployable**, l'arbitrage (base légale, responsable de traitement, DPO) relevant du **déployeur** — cf. README « Responsabilité & conformité » et [ADR 0031](/atlas/decisions/0031-outil-generique-open-source/).
 
 ## Introduction
 
@@ -12,21 +14,22 @@ Livrer la **V1 du pipeline de recommandation de collaborations** sous la forme d
 
 > « Pipeline lakehouse de démonstration : ingestion → DuckDB/Iceberg sur le S3 Ceph du cluster, transformations **dbt**, orchestration **Dagster**, lineage **OpenLineage**. »
 
-Concrètement, un flux **batch mensuel orchestré par Dagster** ingère les métadonnées de publications (source bibliographique OpenAlex) **plus** leurs références (`referenced_works`), les transforme via **dbt (`dbt-duckdb`)** en couches `staging → curated → marts`, dérive un signal de **citations croisées article↔article** entre chercheurs (modèle dbt + SQL), produit un **mart Parquet + `manifest.json`** sur le S3 Ceph, **alimente un index PostgreSQL/pgvector** (FTS lexical + recherche sémantique), score les paires de façon **déterministe** (poids fixes `EnsembleWeights`), et expose le résultat via `atlas-api` (Hono + OpenAPI 3.1 + Scalar — **rôle métier ET rôle exploration/vérification**) et une **PWA** `find-an-expert`. Qualité par **Great Expectations** (en complément des tests dbt), lineage par **OpenLineage → Marquez**. Le tout posé sur un socle cluster relevé (ingress + TLS + GitOps + Prometheus complet + CloudNativePG + Dagster).
+Concrètement, un flux **batch orchestré par Dagster** (planifié mensuel ; cadence source **trimestrielle**, cf. [ADR 0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/)) **synchronise le snapshot S3 d'OpenAlex** — la base **complète**, entités **`works` et `authors`**, plus les références (`referenced_works`) et le FWCI portés par chaque œuvre —, transforme via **dbt (`dbt-duckdb`)** en couches `staging → curated → marts`, dérive un signal de **citations croisées article↔article** entre chercheurs (modèle dbt + SQL), produit un **mart Parquet + `manifest.json`** sur le S3 Ceph, **alimente un index PostgreSQL/pgvector** (FTS lexical + recherche sémantique), score les paires de façon **déterministe** (poids fixes `EnsembleWeights`), et expose le résultat via `atlas-api` (Hono + OpenAPI 3.1 + Scalar — **rôle métier ET rôle exploration/vérification**) et une **PWA** `find-an-expert`. Qualité par **Great Expectations** (en complément des tests dbt), lineage par **OpenLineage → Marquez**. Le tout posé sur un socle cluster **fourni** (Cilium + cert-manager + Argo CD/Gitea + Prometheus + CloudNativePG + Dagster + Marquez).
 
 Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un LLM génératif synchrone, un feature store (Feast), un format de table transactionnel (Iceberg), un serving versionné (KServe). Ces briques sont nommées au [Palier 2](#palier-2--hors-v1-en-ligne-de-mire) et explicitement hors périmètre.
 
 ### Périmètre — `atlas` vs `cluster`
 
-- **Dépôt `atlas`** (ce dépôt) : les ADR 0029/0030 ; l'asset Dagster d'ingestion (réutilise `citation-fetch` _tel quel_) ; l'ingestion **neuve** des `referenced_works` ; l'accès lakehouse DuckDB↔S3↔Parquet (httpfs/secret RGW/COPY, **neuf**) ; les **modèles dbt** (`staging`/`curated`/`marts`) dont la **feature citations croisées** ; le contrat `manifest.json` + partitions immuables + `schema_version` (validateur dans `packages/citation`) ; les suites **Great Expectations** ; le **chargement de l'index Postgres/pgvector** ; le 3ᵉ signal sur `EnsembleWeights` ; `atlas-api` (métier + exploration) ; les résumés extractifs ; la PWA `find-an-expert` ; la signature d'images. **Seuls les manifestes _applicatifs_** (Deployment/Service/Ingress/`Application` Argo CD de ses propres composants, définitions d'assets Dagster) vivent ici.
-- **Dépôt `cluster`** (séparé, `../cluster`) : **tout l'addon d'infrastructure** — ingress-nginx, cert-manager, MetalLB, Argo CD, kube-prometheus-stack, Loki, **CloudNativePG**, **Dagster (`dagster-k8s`)**, **Marquez** — déployé via `platform/<addon>/` + Ansible (`bootstrap/`), **validé d'abord sur les bancs Vagrant** (`test/single-node` puis `test/multi-node`). **Aucun manifeste d'infra ne vit dans `atlas`.**
-- **Données** : périmètre profilé en **opt-out**, base légale d'intérêt public / intérêt légitime (pas le consentement) — tout chercheur du périmètre d'ingestion est profilé par défaut, sauf opposition. Le dispositif `consent-events` Appwrite (`ConsentType openalex_email` de `find-an-expert`) sert de **registre d'opposition** (il **retire** les personnes s'étant opposées). L'outil est **générique/multi-tenant** : la déclaration des alliances par l'utilisateur **filtre l'affichage**, pas l'ingestion. Aucune ingestion de donnée réelle avant la levée du gate RGPD (Phase 0).
+- **Dépôt `atlas`** (ce dépôt) : les ADR 0029/0030/0054 ; l'asset Dagster d'ingestion **par snapshot S3** (`works` + `authors`, bootstrap puis incrémental) ; `citation-fetch` **relégué aux compléments ciblés (< 10 k)** ; le parsing des `referenced_works`/`fwci` portés par chaque œuvre du snapshot ; l'accès lakehouse DuckDB↔S3↔(JSONL.gz, Parquet) (httpfs/secret RGW/COPY, **neuf**) ; les **modèles dbt** (`staging`/`curated`/`marts`) dont la **feature citations croisées** ; le contrat `manifest.json` + partitions immuables + `schema_version` (validateur dans `packages/citation`) ; les suites **Great Expectations** ; le **chargement de l'index Postgres/pgvector** ; le 3ᵉ signal sur `EnsembleWeights` ; `atlas-api` (métier + exploration) ; les résumés extractifs ; la PWA `find-an-expert` ; la signature d'images. **Seuls les manifestes _applicatifs_** (Deployment/Service/Ingress/`Application` Argo CD de ses propres composants, code-location et définitions d'assets Dagster) vivent ici.
+- **Dépôt `cluster`** (séparé, `../cluster`) : **tout l'addon d'infrastructure** — **Cilium** (exposition tout-Cilium : LB-IPAM + Gateway API), cert-manager (CA interne), Argo CD (sur **Gitea intra-banc**), kube-prometheus-stack, Loki, **CloudNativePG**, **Dagster (`dagster-k8s`)**, **Marquez**, RGW Ceph + SeaweedFS — déployé via `platform/<addon>/` + Ansible (`bootstrap/`), validé sur le **banc Lima** ([ADR cluster 0038](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0038-lima-seul-banc-local.md)). Ce socle est **déjà livré** (cf. Phase 1). **Aucun manifeste d'infra ne vit dans `atlas`.**
+- **Données** : périmètre profilé en **opt-out**, base légale d'intérêt public / intérêt légitime (pas le consentement) — tout chercheur du périmètre d'ingestion est profilé par défaut, sauf opposition. Le dispositif `consent-events` Appwrite (`ConsentType openalex_email` de `find-an-expert`) sert de **registre d'opposition** (il **retire** les personnes s'étant opposées). L'outil est **générique/multi-tenant** : la déclaration des alliances par l'utilisateur **filtre l'affichage**, pas l'ingestion. Le dépôt livre un **canevas techniquement capable** de conformité (ré-dérivabilité, droit d'opposition, authentification), **testé et déployable** ; **actionner la conformité** (base légale, responsable de traitement, DPO) **relève du déployeur** (Phase 0, README « Responsabilité & conformité », [ADR 0031](/atlas/decisions/0031-outil-generique-open-source/)).
 
 ### Principes directeurs
 
-- **RGPD-gate-first.** Phase 0 est **bloquante** : aucune ligne de code touchant une donnée personnelle réelle n'est exécutée tant que l'ADR 0030 n'est pas `Accepted` et que l'arbitrage base légale/DPO n'est pas au moins **tracé** (demande envoyée, ticket ouvert). Les phases suivantes se développent sur **données synthétiques/fixtures** en attendant l'arbitrage ; le **déploiement prod avec données nominatives** reste subordonné à la levée du gate.
-- **Non-régression.** À chaque étape côté `atlas`, `pnpm ci:checks && pnpm ci:audit && pnpm docs:build` reste vert. Côté `cluster`, `pnpm lint && pnpm test:shell` reste vert et le banc Vagrant cible converge.
-- **Libre & souverain.** Aucune dépendance SaaS. Tout composant (ingress, certs, monitoring, Postgres, Dagster, Marquez, modèle d'embedding ONNX, futur LLM) est auto-hébergé sur le cluster, artefacts mirrorés sur le registry interne. Licences permissives uniquement (Apache-2.0 / MIT / BSD). Dagster, dbt, DuckDB, Great Expectations, OpenLineage/Marquez, pgvector, Hono, Scalar : tous OSS.
+- **RGPD : capacité technique, pas un gate bloquant.** Le dépôt livre les **mécanismes** de conformité (ré-dérivabilité du mart et de l'index, droit d'opposition via `consent-events`, authentification obligatoire sur les routes nominatives) **testés et déployables**. Ce n'est **pas** au dépôt de trancher la base légale ni de désigner le responsable de traitement : cet **arbitrage relève du déployeur** (README « Responsabilité & conformité », [ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/), [ADR 0031](/atlas/decisions/0031-outil-generique-open-source/)). Le développement et les tests se font sur la **base complète** ; le déployeur actionne sa conformité avant exploitation nominative.
+- **Non-régression.** À chaque étape côté `atlas`, `pnpm ci:checks && pnpm ci:audit && pnpm docs:build` reste vert. Le socle `cluster` est **déjà livré** : aucune action `cluster` n'est requise par ce plan (hormis les prérequis tracés en [issue cluster](https://github.com/univ-lehavre/cluster/issues/256), p. ex. l'egress Internet).
+- **Validation E2E sur le banc local, à chaque incrément.** Au-delà des tests unitaires, chaque incrément déployable est **validé de bout en bout sur le banc Lima** (cf. « Stratégie de validation E2E » ci-dessous) : packagé en image, poussé sur Gitea, **réconcilié par Argo CD**, exécuté comme **run Dagster réel**, puis vérifié dans son aval (objets RGW, lineage Marquez, lignes Postgres). On ne déclare un incrément « fait » qu'après cette preuve sur le cluster, pas seulement en vert local.
+- **Libre & souverain.** Aucune dépendance SaaS. La source d'ingestion elle-même est **publique et libre d'accès** : le snapshot OpenAlex sur AWS Open Data (accès anonyme, sans clé ni quota d'API). Tout composant (exposition, certs, monitoring, Postgres, Dagster, Marquez, modèle d'embedding ONNX, futur LLM) est auto-hébergé sur le cluster, artefacts mirrorés sur le registry interne. Licences permissives uniquement (Apache-2.0 / MIT / BSD). Dagster, dbt, DuckDB, Great Expectations, OpenLineage/Marquez, pgvector, Hono, Scalar : tous OSS.
 - **IA 100 % interne, CPU, sans appel externe — _free tier_ inclus.** Aucune donnée (a fortiori un mart nominatif) n'est envoyée à une IA SaaS, même gratuite : ce serait un transfert de données personnelles contraire à [ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/), et le _free tier_ n'y change rien (transfert hors UE, entraînement possible sur les données, quotas instables). Embeddings ONNX `all-MiniLM-L6-v2` en V1 ; LLM self-host (Ollama, **Mistral-7B-Instruct Apache-2.0**, batch) au palier 2. Tout tourne sur le cluster, sans GPU.
 - **Aligné-benchmark, assumé.** On vise la **plateforme DataOps représentative** (Dagster + dbt + OpenLineage + Great Expectations + pgvector), pas l'ossature minimale « CronJob + SQL brut ». C'est un **choix de positionnement** : la stack est **plus riche** (composants stateful nouveaux : Dagster, CloudNativePG, Marquez), donc l'**effort et la charge opérationnelle sont accrus** — c'est explicitement assumé (cf. ADR 0029, _Prix à payer_, et la section [Risques](#risques--questions-ouvertes)).
 - **Interface DataOps↔scoring inchangée.** Le contrat producteur↔consommateur reste **un fichier Parquet + un `manifest.json`** atomique sur S3 Ceph (partitions immuables, `sha256`, `schema_version`). dbt **produit** ce mart ; l'index Postgres/pgvector en est **dérivé** (exploration/recherche), **jamais** le contrat de transfert. Pas de queue, pas de base partagée, pas d'API sur le **chemin de calcul**.
@@ -34,7 +37,7 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 
 ### Conventions agent (à respecter à chaque étape)
 
-- **Nommage local strict.** Jamais « OpenAlex » dans un identifiant (bucket, namespace, paquet, variable, label, modèle dbt) : utiliser `citation`. La marque n'apparaît que dans la prose. Bucket = `s3://citation`. Namespaces = `citation-ingest`, `citation-marts`, `citation-serving`, `citation-pwa`. **Cette règle est une convention de _dépôt_, pas portée par [ADR 0022](/atlas/decisions/0022-naming-convention/)** (qui ne traite que du préfixe `atlas-`) : dette connue, pas encore d'ADR dédié.
+- **Nommage local strict.** Jamais « OpenAlex » dans un identifiant (bucket, namespace, paquet, variable, label, modèle dbt) : utiliser `citation`. La marque n'apparaît que dans la prose. **Seule exception en prose** : `s3://openalex` désigne le **bucket source externe** (snapshot AWS Open Data) — la synchronisation écrit vers le bucket interne `s3://citation/raw`. Namespaces = `citation-ingest`, `citation-marts`, `citation-serving`, `citation-pwa`. **Cette règle est une convention de _dépôt_, pas portée par [ADR 0022](/atlas/decisions/0022-naming-convention/)** (qui ne traite que du préfixe `atlas-`) : dette connue, pas encore d'ADR dédié.
 - **Commits.** Conventional Commits, scope ∈ `scope-enum` de `commitlint.config.js` (vérifier avant chaque commit : `citation`, `citation-cli`, `citation-fetch`, `citation-types`, `citation-validate`, `find-an-expert`, `researcher-profiles`, `infra`, `ci`, `docs`…). Les assets dbt/Dagster commitent sous le scope **`citation`** (déjà présent) — **aucun scope `dagster`/`dbt` n'est requis**. Le **seul** scope nouveau à ajouter au `scope-enum` est **`atlas-api`** (Phase 5.2, dans la PR qui crée le service). **Pas de `Co-Authored-By`.**
 - **Hooks lefthook JAMAIS bypassés** : pas de `--no-verify`, `LEFTHOOK=0`, etc. Si un hook bloque, fixer en racine. `knip` casse pré-push sur `main` : résorber la dette à la racine, ne pas contourner.
 - **Décisions structurantes via ADR** (Nygard léger), jamais en bullets dans un TODO.
@@ -44,31 +47,40 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 
 ### Vue d'ensemble des phases
 
-| Phase | Titre                                                   | Dépôt     | Bloque        | Effort |
-| ----- | ------------------------------------------------------- | --------- | ------------- | ------ |
-| 0     | Gate RGPD (BLOQUANT)                                    | `atlas`   | tout le reste | M      |
-| 1     | Socle cluster (ingress/TLS/GitOps/obs/Postgres/Dagster) | `cluster` | 2, 3, 4, 5    | XL     |
-| 2     | Ingestion mensuelle + références                        | `atlas`   | 3             | L      |
-| 3     | Transformations dbt + mart + contrat + qualité          | `atlas`   | 4             | XL     |
-| 4     | Indexation PostgreSQL/pgvector                          | `atlas`   | 5             | L      |
-| 5     | Scoring déterministe + `atlas-api` (métier + explo)     | `atlas`   | 6             | XL     |
-| 6     | PWA `find-an-expert` + exposition                       | `atlas`   | —             | M      |
-| 7     | DevSecOps images (cosign/SLSA/SBOM/Trivy)               | `atlas`   | (transverse)  | M      |
+| Phase | Titre                                               | Dépôt             | Bloque       | Effort |
+| ----- | --------------------------------------------------- | ----------------- | ------------ | ------ |
+| 0     | RGPD (capacité technique, non bloquant)             | `atlas`           | —            | M      |
+| 1     | Socle cluster (**FOURNI**)                          | `cluster` (livré) | —            | —      |
+| 2     | Ingestion massive snapshot S3 (works + authors)     | `atlas`           | 3            | L      |
+| 3     | Transformations dbt + mart + contrat + qualité      | `atlas`           | 4            | XL     |
+| 4     | Indexation PostgreSQL/pgvector                      | `atlas`           | 5            | L      |
+| 5     | Scoring déterministe + `atlas-api` (métier + explo) | `atlas`           | 6            | XL     |
+| 6     | PWA `find-an-expert` + exposition                   | `atlas`           | —            | M      |
+| 7     | DevSecOps images (cosign/SLSA/SBOM/Trivy)           | `atlas`           | (transverse) | M      |
 
-**Chemin critique.** 0 → 1 → 2 → 3 → 4 → 5 → 6. La Phase 1 (cluster) est parallélisable avec les Phases 2–5 **en développement** (fixtures synthétiques), mais conditionne le **déploiement** de 2 (OBC/Argo CD), 3–4 (Dagster, Postgres) et 5–6 (ingress/TLS). La Phase 7 est transverse : applicable dès qu'une image existe (Phase 2), traitée en dernier sans bloquer la chaîne fonctionnelle.
+**Chemin critique.** La Phase 1 (socle cluster) est **livrée** ; le chemin critique applicatif devient **2 → 3 → 4 → 5 → 6**. La Phase 0 (RGPD) n'est plus bloquante : ses mécanismes sont livrés et testés, l'arbitrage relève du déployeur. Le **seul prérequis d'infra restant** est l'**egress Internet** pour le sync du snapshot, tracé en [issue cluster #256](https://github.com/univ-lehavre/cluster/issues/256) (à livrer en parallèle). La Phase 7 est transverse : applicable dès qu'une image existe (Phase 2), traitée en dernier sans bloquer la chaîne fonctionnelle.
 
-> **Honnêteté sur l'effort.** Ce plan représente nettement **plus que la charge** d'une ossature « CronJob + SQL brut » : c'est le **prix assumé** du positionnement plateforme. Outre les chantiers de **code neuf à 100 %** — (1) l'accès lakehouse DuckDB↔S3↔Parquet (`packages/citation/src/db/index.ts` est aujourd'hui un wrapper DuckDB **local** trivial, zéro `httpfs`/`s3://`/`CREATE SECRET`/`COPY … FORMAT PARQUET`) **et** les modèles dbt ; (2) la feature **citations croisées** + l'ingestion des `referenced_works` (volumétrie lourde) — `scorer.ts`/`ensemble.ts` ne pondèrent que `{tfidf, embedding}` ; (3) l'**index PostgreSQL/pgvector** + l'API d'exploration ; (4) l'**intégration Dagster** (assets, schedule, asset checks) + **OpenLineage** — la V1 introduit **trois composants stateful nouveaux** à exploiter (Dagster, CloudNativePG, Marquez), avec la charge opérationnelle correspondante. Ce qui est réutilisable l'est _tel quel_ et est nommé étape par étape, sans survente.
+### Stratégie de validation E2E (banc Lima)
+
+Chaque incrément déployable est prouvé **de bout en bout sur le banc local** avant d'être déclaré fait — pas seulement par des tests unitaires. Le banc est un **petit cluster** (3 VMs Lima, 2 CPU / 8 Gio chacune) : la stratégie tient compte de cette contrainte.
+
+- **Boucle GitOps complète.** L'incrément est packagé en **image** (poussée sur le registry interne), ses manifestes sont poussés sur **Gitea**, **Argo CD** les réconcilie, et l'exécution est un **run Dagster réel** (`K8sRunLauncher`). On ne valide pas par `kubectl apply` manuel ([ADR cluster 0046](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0046-corriger-le-code-pas-l-etat.md)).
+- **Échantillon ultra-borné.** L'ingestion de test ne tire **que quelques fichiers `.gz`** par entité (filtre `rclone`), soit des dizaines de Mo — jamais le snapshot complet (1,6 To, irréaliste sur ce banc). L'échelle est un **paramètre de configuration** (défaut très petit pour le banc/CI, augmentable à la demande).
+- **Vérification de l'aval.** Selon la phase, la preuve est cherchée là où l'effet se matérialise : **objets dans le RGW** (sync, mart Parquet), **lineage dans Marquez** (assets, OpenLineage), **lignes dans Postgres** (index FTS/pgvector), réponse de l'**API** (Phase 5). Accès via la code-location déployée et, au besoin, `kubectl`/port-forward pour l'inspection.
+- **Prérequis.** L'E2E de la Phase 2 dépend de l'**egress Internet** ([issue cluster #256](https://github.com/univ-lehavre/cluster/issues/256)) : tant qu'il n'est pas livré, la validation s'arrête au sync (test de l'op contre un RGW joignable), le bout-en-bout complet suit dès l'egress disponible.
+
+> **Honnêteté sur l'effort.** Ce plan représente nettement **plus que la charge** d'une ossature « CronJob + SQL brut » : c'est le **prix assumé** du positionnement plateforme. Outre les chantiers de **code neuf à 100 %** — (1) l'accès lakehouse DuckDB↔S3↔(JSONL.gz, Parquet) (`packages/citation/src/db/index.ts` est aujourd'hui un wrapper DuckDB **local** trivial, zéro `httpfs`/`s3://`/`CREATE SECRET`/`COPY … FORMAT PARQUET`) **et** les modèles dbt ; (2) le **sync massif du snapshot S3** (≈ 330 Go gzippé / 1,6 To, entités `works` **et** `authors`) et son **incrémental par `updated_date`** (+ `merged_ids`) — `citation-fetch` (API REST, plafond 10 k) ne sert plus qu'aux compléments ; la feature **citations croisées** reste neuve (`scorer.ts`/`ensemble.ts` ne pondèrent que `{tfidf, embedding}`) ; (3) l'**index PostgreSQL/pgvector** + l'API d'exploration ; (4) l'**intégration Dagster** (assets, schedule, asset checks) + **OpenLineage** — la V1 introduit **trois composants stateful nouveaux** à exploiter (Dagster, CloudNativePG, Marquez), avec la charge opérationnelle correspondante. Ce qui est réutilisable l'est _tel quel_ et est nommé étape par étape, sans survente.
 
 ---
 
-## Phase 0 — Gate RGPD (BLOQUANT)
+## Phase 0 — RGPD : capacité technique (non bloquant)
 
-**Objectif.** Acter le cadre RGPD du profilage de collaborations _avant_ toute ingestion de donnée réelle. L'[ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/) **rouvre** [ADR 0026](/atlas/decisions/0026-rgpd-perimetre/) pour le cas précis du profilage (sans le contredire), pose une **base légale d'intérêt public / intérêt légitime en opt-out** (le dispositif `consent-events` devient un **registre d'opposition**), acte le caractère **générique/multi-tenant** (déclaration des alliances = filtre d'affichage), pose la ré-dérivabilité du mart **et de l'index dérivé**, et trace la demande d'arbitrage institutionnel (base légale, responsable de traitement).
-**Dépendances.** Aucune. **Bloque tout le reste** pour ce qui touche aux données nominatives réelles.
-**Parallélisable ?** Non en interne (0.1 → 0.2 → 0.3 séquentiels par dépendance documentaire).
-**Critère de sortie de phase.** ADR 0030 `Accepted` ; la ré-dérivabilité du mart **et de l'index pgvector** est spécifiée (régénération/masquage by-design) ; le périmètre servi est défini comme « ensemble des chercheurs du périmètre d'ingestion **hors opposition** (registre d'opposition `consent-events`) » ; la demande d'arbitrage base légale/DPO est **tracée** (issue `blocker:rgpd` ou courriel horodaté référencé dans l'ADR). `pnpm docs:build` vert.
+**Objectif.** Doter le pipeline des **mécanismes** de conformité RGPD, **testés et déployables**, sans en faire un gate qui suspend le développement. Le dépôt livre un **canevas techniquement capable** ; **actionner** la conformité (base légale, responsable de traitement, information des personnes, analyse d'impact) **relève du déployeur** — c'est la position du README (« Responsabilité & conformité ») et de l'[ADR 0031](/atlas/decisions/0031-outil-generique-open-source/) (outil générique open-source). L'[ADR 0030](/atlas/decisions/0030-rgpd-profilage-collaborations/) **rouvre** [ADR 0026](/atlas/decisions/0026-rgpd-perimetre/) pour le profilage (sans le contredire), pose la **base légale d'intérêt public / intérêt légitime en opt-out** (le dispositif `consent-events` devient un **registre d'opposition**), acte le caractère **générique/multi-tenant** (déclaration des alliances = filtre d'affichage), et pose la **ré-dérivabilité du mart et de l'index dérivé**.
+**Dépendances.** Aucune. **Ne bloque plus** les phases suivantes : le développement et les tests se font sur la base complète, le déployeur actionne sa conformité avant exploitation nominative.
+**Parallélisable ?** Oui — les mécanismes (0.1 ré-dérivabilité, 0.2 droit d'opposition, auth) se livrent au fil des phases applicatives.
+**Critère de sortie de phase.** ADR 0030 `Accepted` (acquis) ; la ré-dérivabilité du mart **et de l'index pgvector** est spécifiée (régénération/masquage by-design) ; le périmètre servi est défini comme « ensemble des chercheurs du périmètre d'ingestion **hors opposition** (registre d'opposition `consent-events`) » ; **le déployeur** dispose de la documentation nécessaire pour tracer son propre arbitrage (base légale, responsable de traitement). `pnpm docs:build` vert.
 
-### Étape 0.1 — Acter l'ADR 0030 (gate RGPD, profilage)
+### Étape 0.1 — Acter l'ADR 0030 (cadre RGPD du profilage)
 
 - **Goal :** Écrire l'ADR qui rouvre 0026 pour le profilage nominatif, pose les bornes techniques (base légale d'intérêt public / intérêt légitime en **opt-out**, registre d'opposition, ré-dérivabilité, auth obligatoire **y compris routes d'exploration**), acte le caractère **générique/multi-tenant** (déclaration des alliances = filtre d'affichage), et nomme le risque EU AI Act (scoring d'individus, recommandations nominatives).
 - **Files (read) :** `docs/decisions/0026-rgpd-perimetre.md`, `docs/decisions/0029-architecture-pipeline-collaborations.md`, `docs/decisions/README.md`, `apps/find-an-expert/` (modules `consent-events`, `current-consents`, `ConsentType`, `/api/v1/consents`, `ConsentStatusCard`).
@@ -78,8 +90,8 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 - **Done criteria :**
   1. ADR 0030 présent, `Accepted (2026-06-02)`, liant 0026 et 0029.
   2. Acte : base légale d'intérêt public / intérêt légitime, périmètre en **opt-out** (registre d'opposition `consent-events`) ; outil **générique/multi-tenant** (déclaration des alliances = filtre d'affichage) ; mart **et index dérivé ré-dérivables** ; auth obligatoire sur toute route nominative (y compris `/search` et filtres d'exploration) ; mention EU AI Act.
-  3. `## Garde-fous` renvoie au gate de ce plan (« aucune ingestion réelle avant arbitrage tracé »).
-- **PR title :** `docs(adr): gate RGPD profilage de collaborations (ADR 0030)`
+  3. `## Garde-fous` rappelle la répartition des responsabilités : le dépôt livre la **capacité technique**, le **déployeur** actionne la conformité (base légale, responsable de traitement).
+- **PR title :** `docs(adr): cadre RGPD du profilage de collaborations (ADR 0030)`
 
 ### Étape 0.2 — Concevoir la ré-dérivabilité du mart et de l'index
 
@@ -91,202 +103,103 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 - **Done criteria :** Document décrivant (a) registre d'opposition (`consent-events`, qui **retire** les personnes opposées), (b) régénération de la partition mart, (c) masquage à la lecture pour l'historique, (d) purge/recharge de l'index pgvector, (e) SLA de propagation d'une opposition.
 - **PR title :** `docs(architecture): ré-dérivabilité du mart et de l'index sous RGPD`
 
-### Étape 0.3 — Tracer la demande d'arbitrage base légale / DPO
+### Étape 0.3 — Documenter l'arbitrage que le déployeur doit conduire
 
-- **Goal :** Matérialiser la demande d'arbitrage institutionnel (base légale, responsable de traitement, rétention) que le code ne peut pas trancher.
-- **Files (read) :** ADR 0026 (questions ouvertes Q2/Q6), ADR 0030.
-- **Files (write) :** issue GitHub `blocker:rgpd` (via `gh issue create`) **ou** note horodatée référencée par l'ADR 0030 ; mise à jour du `## Statut`/`## Garde-fous` de 0030 avec le lien.
-- **Invariants à préserver :** aucune affirmation de conformité non validée n'est écrite (le code ne se prononce pas sur la base légale).
-- **Validation :** `gh issue list --label blocker:rgpd` retourne l'issue ; lien présent dans l'ADR ; `pnpm docs:build`.
-- **Done criteria :** Demande tracée et liée depuis l'ADR. Le gate est « ouvert pour le développement sur fixtures » ; « fermé pour le déploiement prod nominatif » tant que l'arbitrage n'est pas revenu.
-- **PR title :** `docs(adr): tracer la demande d'arbitrage DPO (ADR 0030)`
-
----
-
-## Phase 1 — Socle cluster (dépôt `../cluster`)
-
-> **Tous les artefacts de cette phase vivent dans le dépôt `cluster`, pas dans `atlas`.** Chaque addon suit le patron existant `platform/<addon>/` (cf. `platform/metrics-server/`, `platform/network-policies/`), déployé via Ansible (`bootstrap/`) et **validé d'abord sur le banc Vagrant** (`test/single-node` puis `test/multi-node`) avant tout passage sur le cluster réel. Déclenche le **palier 2** de [ADR cluster 0016](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0016-observabilite.md) et **ajoute les composants stateful** de la plateforme (CloudNativePG, Dagster, Marquez).
-
-### Pour l'agent qui reprend cette phase
-
-> Cette section rend la Phase 1 **auto-porteuse** : un agent lancé dans le dépôt
-> `cluster` doit pouvoir l'exécuter sans contexte externe. Le plan détaillé
-> (étapes 1.1→1.8) est dans le dépôt `atlas`
-> (`docs/plans/2026-06-02-pipeline-collaborations.md`) ; les **livrables**, eux,
-> sont dans `cluster`.
-
-- **Où travailler.** Dans le dépôt **`cluster`** (Ansible + manifestes K8s). Le
-  dépôt `atlas` n'est lu que pour ce plan ; aucun fichier n'y est modifié en
-  Phase 1.
-- **Patron d'un addon.** Copier la structure d'un addon existant —
-  [`platform/metrics-server/`](https://github.com/univ-lehavre/cluster/tree/main/platform/metrics-server)
-  est la référence (manifestes + `manage.sh` + README + tâche/role Ansible sous
-  `bootstrap/`). Chaque nouvel addon suit `platform/<addon>/`.
-- **Conventions du dépôt cluster** (différentes d'`atlas`) :
-  - **Commits** : Conventional Commits, vérifiés par `commitlint` via **lefthook**
-    (hook `commit-msg`) ; **pas d'email** dans le message ; **jamais** de
-    `--no-verify`. Sujet en minuscules.
-  - **Branche + PR** : jamais de commit direct sur `main` ; une PR par étape, le
-    `PR title` est donné à chaque étape.
-  - **Lint/validation** : `pnpm lint` (enchaîne `format:check`, `yamllint`,
-    `shellcheck`, `kubeconform`, `ansible-lint`, `jscpd`, puis `test:shell`) ;
-    `pnpm test:shell` = `bats test/unit/`. Le `Justfile` donne les raccourcis
-    (`just lint`, `just test-unit`, `just checks`).
-- **Banc Vagrant.** Les étapes valident sur le banc : `test/single-node/` puis
-  `test/multi-node/` (3 VMs Debian, `Vagrantfile` + `run-phases.sh`). **Le monter
-  prend plusieurs minutes** (`vagrant up`, VirtualBox requis). Si le banc n'est
-  **pas** disponible dans l'environnement de l'agent, voir le mode dégradé
-  ci-dessous.
-- **ADR cluster.** Le dépôt `cluster` a sa propre suite d'ADR sous
-  `docs/decisions/` (format Nygard léger, même esprit qu'`atlas`). Au démarrage,
-  le **prochain numéro libre est `0020`** (les ADR vont jusqu'à `0019`) ;
-  **vérifier `docs/decisions/` avant de numéroter** (d'autres ADR ont pu être
-  ajoutés depuis la rédaction de ce plan). Chaque étape qui demande un « ADR
-  cluster … » crée le fichier numéroté suivant et l'ajoute à l'index.
-- **Mode dégradé (pas de banc disponible).** Si l'agent ne peut pas lancer le
-  banc Vagrant : **écrire les manifestes/rôles et les faire passer `pnpm lint`**
-  (kubeconform + ansible-lint valident la forme sans cluster), puis **marquer
-  explicitement le critère « validé sur `test/multi-node` » comme _à exécuter par
-  un humain_** dans la description de la PR. Ne pas prétendre une validation
-  end-to-end qui n'a pas eu lieu (cf. principe « rapporter fidèlement »). Le
-  déploiement sur le cluster réel reste, dans tous les cas, une action humaine.
-- **Ordre conseillé.** Suivre le chemin critique : 1.1 → 1.2 → 1.3, puis 1.4 et
-  1.5 (après 1.1), puis 1.6 → 1.7 → 1.8. Une PR par étape, mergée avant la
-  suivante quand elle en dépend.
-
-**Objectif.** Relever le socle pour une plateforme DataOps **exposable, observable et stateful** : exposition HTTPS (MetalLB + ingress-nginx + cert-manager), GitOps (Argo CD), monitoring **complet** (kube-prometheus-stack + Loki, `ServiceMonitor` Ceph activé), **PostgreSQL managé via CloudNativePG** (event log Dagster **+** index pgvector), **Dagster** (`dagster-k8s` : daemon + webserver + run workers, event log Postgres), **Marquez** (store de lineage OpenLineage).
-**Dépendances.** Aucune technique vis-à-vis de la Phase 0 (infra pure). **Bloque le déploiement** des Phases 2 (OBC/Argo CD), 3–4 (Dagster, Postgres) et 5–6 (ingress/TLS).
-**Parallélisable ?** 1.1 (MetalLB) → 1.2 (ingress) → 1.3 (cert-manager). 1.4 (Argo CD) et 1.5 (monitoring) indépendants après 1.1. 1.6 (CloudNativePG) prérequis de 1.7 (Dagster, event log Postgres) et de 1.8 (Marquez, store Postgres). 1.7/1.8 après 1.4 (déployés en GitOps).
-**Critère de sortie de phase.** Sur le banc multi-node : un Ingress de test répond en HTTPS (cert émis par cert-manager) ; Argo CD réconcilie une app de test ; Grafana affiche les métriques Ceph (OSD, near-full) + logs Loki ; un cluster CloudNativePG **avec extension `pgvector`** est `Healthy` ; le **webserver Dagster** répond et le **daemon** est up (event log dans Postgres) ; **Marquez** ingère un événement OpenLineage de test. Nouveaux ADR cluster (ingress/GitOps/Postgres/Dagster) + ADR 0016 mis à jour (palier 2 livré). `pnpm lint && pnpm test:shell` verts.
-
-### Étape 1.1 — MetalLB (pool d'IP LoadBalancer)
-
-- **Goal :** Fournir des IP `LoadBalancer` sur cluster bare-metal (prérequis ingress).
-- **Files (read) :** `platform/metrics-server/` (patron addon), `bootstrap/RUNBOOK.md`, `bootstrap/hosts.yaml` (plage réseau).
-- **Files (write) :** `platform/metallb/` (`IPAddressPool` + `L2Advertisement`), tâche Ansible, entrée RUNBOOK.
-- **Invariants à préserver :** NetworkPolicies default-deny ([ADR cluster 0019](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0019-durcissement-reseau-cilium.md)) — ouvrir explicitement le L2 nécessaire ; Cilium ne fait pas le LB de service externe ici.
-- **Validation :** sur `test/multi-node` : un Service `type=LoadBalancer` de test obtient une IP du pool ; `pnpm lint`.
-- **Done criteria :** Pool MetalLB actif, IP attribuée, documenté.
-- **PR title :** `feat(platform): MetalLB pour IP LoadBalancer bare-metal`
-
-### Étape 1.2 — ingress-nginx
-
-- **Goal :** Contrôleur d'ingress exposé via une IP MetalLB.
-- **Files (read) :** `platform/metallb/`, NetworkPolicies.
-- **Files (write) :** `platform/ingress-nginx/`, NetworkPolicy autorisant l'ingress vers les namespaces applicatifs, ADR cluster ingress.
-- **Invariants à préserver :** default-deny respecté ; pas de TLS interne supposé ([ADR cluster 0003](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0003-pas-de-chiffrement-ceph-tailscale.md)) — terminaison TLS en bordure.
-- **Validation :** sur `test/multi-node` : un Ingress HTTP de test route vers un pod echo ; `pnpm lint`.
-- **Done criteria :** ingress-nginx déployé, IP stable, Ingress HTTP de test fonctionnel.
-- **PR title :** `feat(platform): ingress-nginx en bordure`
-
-### Étape 1.3 — cert-manager (TLS de bordure)
-
-- **Goal :** Émission automatique de certificats pour les Ingress (HTTPS en bordure).
-- **Files (read) :** `platform/ingress-nginx/`.
-- **Files (write) :** `platform/cert-manager/`, `ClusterIssuer` (ACME si domaine public, sinon CA interne), ADR cluster TLS-bordure (relation explicite avec 0003 : TLS _en bordure_ vs pas-de-TLS _interne_).
-- **Invariants à préserver :** ADR 0003 non contredit (on ajoute le TLS **externe** uniquement) ; documenter que l'exposition d'un mart/index **nominatif** exige ce TLS (lien ADR 0030).
-- **Validation :** sur `test/multi-node` : Ingress de test en HTTPS, cert valide ; `pnpm lint`.
-- **Done criteria :** HTTPS de bout en bout ; rotation auto vérifiée/documentée.
-- **PR title :** `feat(platform): cert-manager + TLS en bordure`
-
-### Étape 1.4 — Argo CD (GitOps)
-
-- **Goal :** Réconciliation GitOps des manifestes applicatifs (apps `atlas` + composants stateful de plateforme déclarés en `Application`).
-- **Files (read) :** patron addon, RUNBOOK.
-- **Files (write) :** `platform/argocd/`, `AppProject` cadrant les namespaces `citation-*` + `dagster`/`marquez`, ADR cluster GitOps.
-- **Invariants à préserver :** Argo CD lit les manifestes **applicatifs** ; les addons d'infra restent gérés par Ansible (pas de bootstrap circulaire). Registry interne HTTP sans auth ([ADR cluster 0011](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0011-registry-http-sans-auth.md)) référencé tel quel.
-- **Validation :** sur `test/multi-node` : une `Application` de test passe `Healthy/Synced` ; `pnpm lint`.
-- **Done criteria :** Argo CD opérationnel, `AppProject` pour `citation-*`/`dagster`/`marquez`, app de test réconciliée.
-- **PR title :** `feat(platform): Argo CD pour GitOps applicatif`
-
-### Étape 1.5 — kube-prometheus-stack + Loki + monitoring Ceph (palier 2)
-
-- **Goal :** Livrer le palier 2 de l'ADR cluster 0016 : Prometheus + Grafana + Alertmanager + Loki, et activer `monitoring.enabled: true` côté Ceph (CRDs `monitoring.coreos.com` désormais présents).
-- **Files (read) :** `docs/decisions/0016-observabilite.md`, `storage/ceph/cluster.yaml`.
-- **Files (write) :** `platform/kube-prometheus-stack/`, `platform/loki/`, `storage/ceph/cluster.yaml` (`monitoring.enabled: true`), `ServiceMonitor` Ceph, routes Alertmanager (réutiliser la couche mail `alert`/postfix), mise à jour ADR 0016 (palier 2 livré).
-- **Invariants à préserver :** empreinte maîtrisée sur cluster hyperconvergé (`requests`/`limits` bornés) ; pas de CRD orphelin (activer Ceph monitoring **après** déploiement des CRDs) ; `--kubelet-insecure-tls` toléré comme metrics-server (ADR 0003).
-- **Validation :** sur `test/multi-node` : Grafana affiche métriques nœuds + Ceph (OSD up, near-full) ; un OSD coupé déclenche une alerte ; Loki ingère les logs d'un pod ; `pnpm lint && pnpm test:shell`.
-- **Done criteria :** stack déployée et accessible (via Ingress+TLS) ; Ceph monitoring sans erreur CRD ; ≥1 alerte Ceph routée vers le mail d'exploitation ; ADR 0016 « palier 2 livré ».
-- **PR title :** `feat(platform): kube-prometheus-stack + Loki + monitoring Ceph (palier 2)`
-
-### Étape 1.6 — CloudNativePG (PostgreSQL managé + pgvector)
-
-- **Goal :** Déployer un cluster PostgreSQL managé par **CloudNativePG**, support de **deux usages** : l'**event log Dagster** et l'**index d'exploration pgvector**. Activer l'extension `pgvector`.
-- **Files (read) :** patron addon, `platform/network-policies/`, RUNBOOK (sauvegardes).
-- **Files (write) :** `platform/cloudnative-pg/` (opérateur + `Cluster` CNPG, image avec `pgvector`, stockage RBD, sauvegardes vers RGW), NetworkPolicy d'accès depuis les namespaces `dagster`/`citation-serving`, ADR cluster Postgres.
-- **Invariants à préserver :** données stateful sur RBD (RWO) ; sauvegardes vers le RGW S3 ; default-deny → accès Postgres restreint aux consommateurs déclarés ; pas de chiffrement interne supposé (ADR 0003) — Postgres reste interne au cluster. **SPOF/EC 2+1 assumés** : l'event log et l'index deviennent sensibles à la disponibilité du stockage (cf. Risques).
-- **Validation :** sur `test/multi-node` : cluster CNPG `Healthy`, `CREATE EXTENSION vector;` réussit, un `vector(384)` se crée et s'interroge ; sauvegarde/restauration de base testée ; `pnpm lint`.
-- **Done criteria :** Postgres managé `Healthy`, `pgvector` actif, sauvegarde testée, ADR cluster posé.
-- **PR title :** `feat(platform): CloudNativePG (PostgreSQL + pgvector)`
-
-### Étape 1.7 — Dagster (`dagster-k8s` : daemon + webserver + run workers)
-
-- **Goal :** Déployer l'orchestrateur **Dagster** sur K8s (daemon + webserver + run workers via `K8sRunLauncher`/run-as-job), **event log persisté dans le Postgres CNPG** (1.6). C'est le livrable représentatif du profil DataOps ; il **remplace les CronJobs K8s bruts**.
-- **Files (read) :** étape 1.6 (DSN Postgres), `platform/argocd/`, patron addon.
-- **Files (write) :** `platform/dagster/` (Helm/manifestes `dagster-k8s` : webserver, daemon, `dagster.yaml` pointant l'event/run/schedule storage vers CNPG), Ingress+TLS pour le webserver (auth en bordure), NetworkPolicy (Dagster→Postgres, Dagster→RGW, Dagster→registry), `Application` Argo CD, ADR cluster orchestration.
-- **Invariants à préserver :** event log/schedule storage dans Postgres (pas en SQLite éphémère) ; les **run workers tirent les images** du registry interne HTTP ([ADR 0011](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0011-registry-http-sans-auth.md)) ; default-deny → flux explicites ; le code-location/repo `atlas` (assets) est **packagé côté `atlas`** (Phase 2+), pas ici — ici on déploie l'orchestrateur « vide ».
-- **Validation :** sur `test/multi-node` : webserver Dagster accessible en HTTPS, daemon up, un **job de test** (asset trivial) se lance via `K8sRunLauncher` et son run apparaît dans l'event log Postgres ; un **schedule** de test se déclenche ; `pnpm lint && pnpm test:shell`.
-- **Done criteria :** Dagster opérationnel (webserver+daemon+run worker), event log dans CNPG, schedule de test déclenché, ADR cluster posé.
-- **PR title :** `feat(platform): Dagster (dagster-k8s, event log Postgres)`
-
-### Étape 1.8 — Marquez (store de lineage OpenLineage)
-
-- **Goal :** Déployer **Marquez** comme collecteur/visualiseur de lineage **OpenLineage** (émis nativement par dbt et Dagster en Phases 2–4), store dans Postgres CNPG.
-- **Files (read) :** étape 1.6 (Postgres), 1.7 (Dagster, émetteur OL), patron addon.
-- **Files (write) :** `platform/marquez/` (API + web, store Postgres CNPG ou base dédiée), Ingress+TLS (auth bordure), NetworkPolicy (émetteurs→Marquez, Marquez→Postgres), `Application` Argo CD, ADR cluster lineage.
-- **Invariants à préserver :** composant stateful supplémentaire **assumé** (cf. Risques) ; aucune donnée nominative dans les métadonnées de lineage (noms d'assets/colonnes techniques, pas de PII) ; default-deny → flux explicites.
-- **Validation :** sur `test/multi-node` : Marquez accessible, un **événement OpenLineage de test** (`OPENLINEAGE_URL`) est ingéré et visible dans l'UI ; `pnpm lint`.
-- **Done criteria :** Marquez opérationnel, événement OL de test visible, ADR cluster posé.
-- **PR title :** `feat(platform): Marquez (store de lineage OpenLineage)`
+- **Goal :** Fournir au **déployeur** la matière pour conduire son propre arbitrage (base légale, responsable de traitement, rétention, information des personnes) — ce que le code ne peut pas trancher. Le dépôt **documente**, il ne se substitue pas à l'établissement exploitant.
+- **Files (read) :** ADR 0026 (questions ouvertes Q2/Q6), ADR 0030, ADR 0031, README (« Responsabilité & conformité »).
+- **Files (write) :** section « À la charge du déployeur » dans l'ADR 0030 ou la doc RGPD (check-list : base légale à confirmer, responsable de traitement à désigner, AIPD si nécessaire), renvoyant au README.
+- **Invariants à préserver :** aucune affirmation de conformité non validée n'est écrite (le code ne se prononce pas sur la base légale) ; la responsabilité incombe au déployeur, pas au dépôt.
+- **Validation :** `pnpm docs:build` ; la check-list déployeur est présente et liée depuis l'ADR 0030.
+- **Done criteria :** Le déployeur dispose d'une check-list claire pour son arbitrage. Aucune condition de sortie du **dépôt** n'est subordonnée à un arbitrage institutionnel externe (capacité technique livrée, conformité actionnée par le déployeur).
+- **PR title :** `docs(adr): check-list RGPD à la charge du déployeur (ADR 0030)`
 
 ---
 
-## Phase 2 — Ingestion mensuelle + références (dépôt `atlas`)
+## Phase 1 — Socle cluster (FOURNI par le dépôt cluster)
 
-**Objectif.** **Asset Dagster d'ingestion** (schedule mensuel) qui ingère le delta de publications via `citation-fetch` **réutilisé _tel quel_** (Effect, rate-limit 1 req/s, `from_updated_date=watermark`) vers `s3://citation/raw`, **plus** l'ingestion **neuve** des `referenced_works` (références bibliographiques, **volumétrie lourde**) — matière première du signal citations croisées. Watermark persisté pour le delta. Greffé sur le `cli/citation` existant (`@univ-lehavre/atlas-citation-cli`).
-**Dépendances.** Phase 0 levée (données réelles ; dev possible sur fixtures avant). Phase 1 pour le déploiement (Dagster, Argo CD, OBC). Le **secret S3** et le **bucket** viennent de l'`ObjectBucketClaim` déjà déclaré côté cluster.
-**Parallélisable ?** 2.1 (asset delta + image) et 2.4 (watermark) avant 2.2 (références). 2.3 (packaging code-location Dagster + déploiement) après 2.1.
-**Critère de sortie de phase.** L'asset `raw_citations` matérialisé par Dagster sur un sous-périmètre d'ingestion (hors opposition) écrit des objets dans `s3://citation/raw/dt=YYYY-MM/run=<id>/` (publications + références), le watermark avance, le rate-limit 1 req/s est respecté, aucune réécriture en place ; le run apparaît dans l'event log Dagster. `pnpm ci:checks` vert.
+> **Le socle décrit ici est déjà livré et accessible** dans le dépôt `cluster` ; cette section en consigne l'**état de référence** (briques, endpoints, ADR cluster) que les Phases 2–6 consomment. **Aucune action `cluster` n'est requise par ce plan** — hormis les prérequis tracés en [issue cluster #256](https://github.com/univ-lehavre/cluster/issues/256). Cette phase **ne se ré-exécute pas** : la source de vérité opérationnelle est le **contrat d'interface** `cluster/contract/*.example.yaml` ([ADR cluster 0043](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0043-contrat-interface-cluster-atlas.md)) et le `guide-dev-data.md` du dépôt cluster.
 
-### Étape 2.1 — Asset Dagster `raw_citations` (réutilise `citation-fetch`)
+### État de référence (ce que le cluster fournit)
 
-- **Goal :** Définir un **asset Dagster** (op long-vivant déclenché par le schedule mensuel) qui appelle `citation-fetch` avec `from_updated_date=<watermark>` et écrit le brut sur `s3://citation/raw`. La logique d'écriture vit dans `packages/citation` (thin asset, [ADR 0008](/atlas/decisions/0008-clis-thins-logique-dans-packages/)).
-- **Files (read) :** `packages/citation-fetch/src/`, `packages/fetch-one-api-page/src/`, `packages/citation/src/fetch/`, `cli/citation/` (point d'entrée existant), `services/crf/` (patron conteneurisation).
-- **Files (write) :** définition de l'asset (`packages/citation` ou module assets dédié) + writer S3 brut (NDJSON tel que reçu, **pas encore Parquet**), `bin` réutilisable par le CLI **et** par l'op Dagster, Dockerfile de la code-location.
-- **Invariants à préserver :** `citation-fetch` **non modifié** (réutilisé tel quel) ; rate-limit 1 req/s conservé ; nommage `citation` (jamais « OpenAlex » dans un identifiant) ; chemin `dt=YYYY-MM/run=<id>/`.
-- **Validation :** `pnpm ci:checks` ; run local contre fixtures écrivant dans un MinIO/localstack ; matérialisation de l'asset vérifiée en mode dev (`dagster dev`).
-- **Done criteria :** asset `raw_citations` défini, run de test écrit le brut partitionné, rate-limit respecté.
-- **PR title :** `feat(citation): asset Dagster d'ingestion delta vers s3://citation/raw`
+Le socle ci-dessous est **opérationnel**. Les Phases 2–6 s'y branchent via les endpoints réels du contrat ; chaque ligne renvoie à l'ADR cluster qui en fait foi.
 
-### Étape 2.2 — Ingestion des `referenced_works` + métadonnées d'impact FWCI (NEUF, volumétrie lourde)
+| Besoin plateforme                  | Fourni par (réel)                                                                                                                               | Endpoint / accès                                                             | ADR cluster                                                                                                                                                                                                                  |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Exposition réseau + load-balancing | **Cilium tout-Cilium** (LB-IPAM + L2 + Gateway API)                                                                                             | Gateway Cilium                                                               | [0020](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0020-exposition-reseau-tout-cilium.md)                                                                                                               |
+| TLS de bordure                     | **cert-manager, CA interne**                                                                                                                    | `*.cluster.lan`                                                              | [0021](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0021-cert-manager-ca-interne.md)                                                                                                                     |
+| GitOps                             | **Argo CD** lisant **Gitea intra-banc** (webhook)                                                                                               | AppProject `atlas` (dest. `citation-*`, `dagster`, `marquez`)                | [0022](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0022-argocd-gitops-applicatif.md), [0044](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0044-topologie-deploiement-banc-atlas.md) |
+| Observabilité                      | kube-prometheus-stack + Loki                                                                                                                    | `grafana.cluster.lan`                                                        | [0016](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0016-observabilite.md)                                                                                                                               |
+| PostgreSQL + pgvector              | **CloudNativePG**, cluster `pg` HA ×3 (RBD ×3), bases `dagster`/`pgvector`/`marquez`, extension `vector` (dimension libre → atlas applique 384) | `pg-rw.postgres:5432` (RW) / `pg-ro.postgres:5432` (RO), secrets `pg-role-*` | [0024](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0024-postgres-manage-cloudnative-pg.md)                                                                                                              |
+| Orchestration                      | **Dagster** (chart 1.13.7, `K8sRunLauncher`, event log CNPG), **livré vide** (workspace `load_from: []`)                                        | `dagster-dagster-webserver.dagster:80`                                       | [0026](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0026-orchestration-dagster.md)                                                                                                                       |
+| Lineage                            | **Marquez** (chart 0.51.1, store CNPG)                                                                                                          | `OPENLINEAGE_URL=http://marquez.marquez:5000`                                | [0028](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0028-orchestration-openlineage-marquez.md)                                                                                                           |
+| Stockage objet                     | **RGW Ceph** (CephObjectStore `datalake`, EC 2+1) via **ObjectBucketClaim** (OBC) ; SeaweedFS au banc léger                                     | `rook-ceph-rgw-datalake.rook-ceph:80` (path-style) ; `seaweedfs.s3:8333`     | [0036](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0036-backing-s3-unique-rgw.md)                                                                                                                       |
+| Registry d'images                  | interne HTTP sans auth                                                                                                                          | `registry:80/<repo>:<tag>`                                                   | [0011](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0011-registry-http-sans-auth.md)                                                                                                                     |
+| Contrat machine-lisible            | `cluster/contract/*.example.yaml` ; `access.sh` génère `atlas/.env.cluster.local`                                                               | —                                                                            | [0043](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0043-contrat-interface-cluster-atlas.md), [0048](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0048-acces-local-developpeur.md)   |
 
-- **Goal :** En une seule extension de l'ingestion des œuvres, capter (a) les **références bibliographiques** (`referenced_works`) — matière première du signal citations croisées — et (b) le **FWCI** (_Field-Weighted Citation Impact_) et l'impact (`cited_by_count`), **métadonnées OpenAlex au niveau _work_** — signal d'excellence du modèle supervisé du palier 2. Les deux sont **absents** des types actuels (`WorksResult` n'a ni `referenced_works` exploité, ni `fwci`, ni `cited_by_count`). Capter le FWCI **dès maintenant** (même si le modèle supervisé est palier 2) évite une seconde passe d'ingestion coûteuse.
-- **Files (read) :** schéma source des œuvres, `packages/citation-types/src/api-results.ts`, étape 2.1.
-- **Files (write) :** extension de `packages/citation-types` (`referenced_works`, `fwci`, `cited_by_count` sur `WorksResult`), extension de l'ingestion, writer dédié `s3://citation/raw/references/dt=YYYY-MM/run=<id>/`.
-- **Invariants à préserver :** rate-limit 1 req/s **global** (les références **alourdissent** le volume → surveiller la durée du run, prévoir reprise) ; immutabilité (rejeu = nouveau `run=<id>`) ; FWCI capté tel quel (métadonnée fournie par OpenAlex, pas de calcul maison).
-- **Validation :** `pnpm ci:checks` ; sur fixtures : les arêtes article→référence et la colonne `fwci` sont dans le brut ; **estimer et documenter** le ratio volumétrique (références/œuvre) — entrée pour la section Risques.
-- **Done criteria :** brut des références + FWCI écrit et partitionné ; types étendus ; note de volumétrie (taille brute estimée/mois) dans `docs/architecture/`.
-- **PR title :** `feat(citation): ingestion des références et du FWCI`
+> **Historique (ce qui était « à monter », désormais livré autrement).** Le plan initial prévoyait MetalLB (1.1) + ingress-nginx (1.2) : **remplacés** par Cilium tout-Cilium (0020). cert-manager (1.3) : livré en **CA interne** (0021), pas ACME. Argo CD (1.4) : lit **Gitea intra-banc** (0044), pas GitHub public. Monitoring (1.5) : livré (0016, palier 2). CloudNativePG (1.6), Dagster (1.7), Marquez (1.8) : livrés (0024/0026/0028). Le banc local est désormais **Lima** ([0038](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0038-lima-seul-banc-local.md)), en remplacement de Vagrant.
 
-### Étape 2.3 — Code-location Dagster + Secret S3 (OBC) + déploiement GitOps
+### À fournir encore côté cluster (prérequis tracés)
 
-- **Goal :** Packager la **code-location Dagster** `atlas` (assets d'ingestion) comme image, la câbler au bucket `s3://citation` (RGW Ceph, **path-style**) via le Secret/ConfigMap de l'`ObjectBucketClaim` existant, et la déployer en GitOps.
-- **Files (read) :** déclaration de l'`ObjectBucketClaim` côté cluster (Secret généré : `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`/endpoint), `platform/dagster/` + `platform/argocd/` (côté cluster).
-- **Files (write) :** manifeste de la code-location (Deployment gRPC du repo Dagster) dans `citation-ingest` + montage du Secret OBC + NetworkPolicy vers RGW, `Application` Argo CD pour la code-location.
-- **Invariants à préserver :** default-deny → NetworkPolicy explicite vers le service RGW uniquement ; pas de credentials en clair dans le dépôt (référence au Secret OBC) ; endpoint RGW **path-style** ; l'orchestrateur Dagster lui-même reste côté `cluster` (Phase 1.7), seule la **code-location applicative** est ici.
-- **Validation :** `pnpm ci:checks` ; déploiement banc Vagrant via Argo CD : la code-location s'enregistre dans Dagster, un run lit le Secret OBC et atteint le RGW.
+L'[issue cluster #256](https://github.com/univ-lehavre/cluster/issues/256) a tranché la répartition. **Côté `cluster` (livré par cette passe) :**
+
+- 🔴 **Egress Internet** (bloquant) : le sync du snapshot (`s3://openalex`, AWS public) exige un accès Internet sortant ; le réseau est en default-deny ([0019](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0019-durcissement-reseau-cilium.md)). Une NetworkPolicy egress est posée sur le namespace **`dagster`** (où tourne le `rclone sync` du code-location), en `0.0.0.0/0` **restreint par ports 443/80** (pas de filtrage par plages IP S3 — piège connu sous Cilium).
+- 🟡 **Doc branchement code-location** : la procédure (patch du ConfigMap `dagster-workspace` via Argo CD + Deployment gRPC) est ajoutée à `docs/guide-dev-data.md` du dépôt cluster.
+
+**À la charge d'`atlas` (via Argo CD, dans le périmètre de l'AppProject) :**
+
+- **Namespaces `citation-*`** : chaque app porte son propre `namespace.yaml` **et** ses NetworkPolicies (default-deny + egress Postgres/RGW/registry/Internet selon le rôle), en recopiant les jeux de référence `dagster/` et `marquez/` de `platform/network-policies/` (côté cluster). `cluster` ne les crée pas.
+- **`OPENLINEAGE_URL`** : injectée par atlas dans l'env du code-location (valeur de contrat `http://marquez.marquez.svc.cluster.local:5000`, déjà exposée par le contrat).
+
+---
+
+## Phase 2 — Ingestion massive par snapshot S3 (works + authors) (dépôt `atlas`)
+
+**Objectif.** **Asset Dagster d'ingestion massive** qui **synchronise le snapshot S3 d'OpenAlex** (`s3://openalex/data/{works,authors}`) vers le lakehouse `s3://citation/raw`, en **bootstrap** complet puis en **incrémental par partition `updated_date`**, avec gestion des entités fusionnées (`merged_ids`). Source décisionnelle : [ADR 0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/). `citation-fetch` (API REST, plafond 10 k) est **relégué aux compléments ciblés**. Watermark de **date** persisté.
+**Dépendances.** Phase 1 (livrée) pour le déploiement (Dagster, Argo CD, OBC) ; **prérequis egress Internet** ([issue cluster #256](https://github.com/univ-lehavre/cluster/issues/256)) pour atteindre `s3://openalex`. Le secret S3 et le bucket interne viennent de l'`ObjectBucketClaim` `atlas-datalake` (déclaré par atlas).
+**Parallélisable ?** 2.1 (bootstrap) puis 2.2 (incrémental + `merged_ids`). 2.3 (code-location + déploiement) après 2.1. 2.4 (compléments API) indépendant.
+**Critère de sortie de phase.** L'asset de sync écrit `s3://citation/raw/{works,authors}/updated_date=YYYY-MM-DD/…`, le watermark de date avance, les `merged_ids` sont appliqués, aucune réécriture en place ; le run apparaît dans l'event log Dagster. En local, le sync est **borné** (un dossier `updated_date`, échelle pilotée par config) — jamais 1,6 To. `pnpm ci:checks` vert.
+
+### Étape 2.1 — Bootstrap du snapshot works + authors → `s3://citation/raw`
+
+- **Goal :** Asset Dagster `raw_snapshot` qui exécute la synchronisation initiale complète de `s3://openalex/data/{works,authors}` (JSONL gzippé, partitions `updated_date`) vers `s3://citation/raw/{works,authors}/updated_date=…/`. La logique vit dans `packages/citation` (thin asset, [ADR 0008](/atlas/decisions/0008-clis-thins-logique-dans-packages/)).
+- **Files (read) :** `packages/citation/src/db/` (accès S3 à étendre, Phase 3.1), `packages/citation-types` (types à étendre, works + authors), `services/crf/` (patron conteneurisation).
+- **Files (write) :** définition de l'asset + logique de sync via **`rclone sync`** (deux remotes : `openalex` anonyme → `ceph` RGW, [ADR 0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/)) dans un op conteneurisé — rclone gère le transfert **inter-endpoints** distincts, le parallélisme et la reprise ; **paramètre d'échelle** (limite de fichiers `.gz` via filtre rclone pour le test local) ; Dockerfile de la code-location (**`rclone` inclus**, licence MIT).
+- **Invariants à préserver :** nommage `citation` (jamais « openalex » dans un identifiant) ; chemin `{works,authors}/updated_date=…/` ; le brut est rapatrié **gzippé** tel quel (immuable, non transformé ici). **Prérequis** : egress Internet (issue cluster #256).
+- **Validation :** `pnpm ci:checks` ; **E2E sur le banc Lima** (cf. « Stratégie de validation E2E ») : sync **borné à quelques fichiers `.gz`** par entité, écrivant dans le RGW, vérifié via la code-location déployée par Argo CD et un run Dagster réel. Note de **volumétrie** (≈ 330 Go gzippé / 1,6 To pour la prod) dans `docs/architecture/`.
+- **Done criteria :** asset `raw_snapshot` défini, sync borné de works + authors vérifié **en E2E sur le banc**, échelle pilotable par config.
+- **PR title :** `feat(citation): bootstrap du snapshot S3 OpenAlex (works + authors)`
+
+### Étape 2.2 — Incrémental par `updated_date` + watermark de date + `merged_ids`
+
+- **Goal :** Ne re-synchroniser que les partitions `updated_date` **postérieures** au watermark de date persistant, et appliquer `s3://openalex/data/merged_ids/` pour supprimer/rediriger les entités fusionnées. Traite la **tension de cadence** (source gratuite trimestrielle, schedule mensuel idempotent — cf. ADR 0054).
+- **Files (read) :** logique de sync 2.1, `data/merged_ids/` (format CSV.gz, colonnes ~`id`/`merge_into_id`/`merged_date`, **à confirmer à l'implémentation**).
+- **Files (write) :** reader/writer du watermark (`s3://citation/raw/_watermark.json`, écrit **après** sync réussi), application des `merged_ids`, schedule mensuel.
+- **Invariants à préserver :** le watermark n'avance qu'après sync **complet et réussi** ; idempotence (rejeu = pas de double écriture) ; immutabilité (pas de réécriture en place) ; entre deux trimestres, un passage mensuel ne trouve aucune nouvelle partition et n'écrit rien.
+- **Validation :** `pnpm ci:checks` ; deux passages consécutifs (le second ne re-synchronise pas les partitions déjà vues) ; un `merged_id` injecté retire/redirige l'entité localement ; un sync échoué ne fait pas avancer le watermark.
+- **Done criteria :** incrémental par date + `merged_ids` + watermark testés.
+- **PR title :** `feat(citation): incrémental snapshot par updated_date + merged_ids`
+
+### Étape 2.3 — Code-location Dagster + Secret OBC + déploiement GitOps
+
+- **Goal :** Packager la **code-location Dagster** `atlas` (assets de sync) comme image (registry interne), la câbler au bucket `s3://citation` (RGW Ceph, **path-style**) via le Secret/ConfigMap de l'`ObjectBucketClaim`, l'enregistrer dans le workspace Dagster (vide), et la déployer en GitOps.
+- **Files (read) :** OBC `atlas-datalake` (Secret généré : `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` + ConfigMap `BUCKET_HOST`/`BUCKET_NAME`/`BUCKET_PORT`), contrat cluster (`endpoints.example.yaml`, `namespaces-secrets.example.yaml`).
+- **Files (write) :** OBC `atlas-datalake` ; manifeste de la code-location (Deployment gRPC) ; **patch du ConfigMap `dagster-workspace`** (ajout de la location, via Argo CD) ; injection `OPENLINEAGE_URL` ; NetworkPolicy (vers RGW + egress Internet pour le sync) ; `Application` Argo CD lue depuis **Gitea**.
+- **Invariants à préserver :** default-deny → NetworkPolicy explicite ; pas de credentials en clair (référence au Secret OBC) ; endpoint RGW **path-style** ; l'orchestrateur Dagster reste côté cluster (Phase 1), seule la **code-location applicative** est ici.
+- **Validation :** `pnpm ci:checks` ; déploiement banc Lima via Argo CD : la code-location s'enregistre dans Dagster (workspace), un run lit le Secret OBC et atteint le RGW.
 - **Done criteria :** code-location déployée par Argo CD, visible dans le webserver Dagster, accès au bucket via OBC, NetworkPolicy en place.
 - **PR title :** `feat(citation): code-location Dagster déployée en GitOps`
 
-### Étape 2.4 — Watermark delta persistant
+### Étape 2.4 — Compléments ciblés via API REST (`citation-fetch`, < 10 k)
 
-- **Goal :** Persister le `from_updated_date` du dernier run réussi pour ne réingérer que le delta mensuel.
-- **Files (read) :** logique de pagination `citation-fetch`.
-- **Files (write) :** writer/reader du watermark (objet `s3://citation/raw/_watermark.json`, écrit **après** succès du run), wiring dans l'asset.
-- **Invariants à préserver :** le watermark n'avance qu'après écriture **complète et réussie** du run ; idempotence (rejeu manuel = nouveau `run=<id>`, watermark inchangé). Option : exposer le watermark comme **état d'asset** Dagster pour la traçabilité.
-- **Validation :** `pnpm ci:checks` ; deux runs consécutifs (le second ne réingère pas le premier mois) ; un run échoué ne fait pas avancer le watermark.
-- **Done criteria :** watermark lu au démarrage, écrit en fin de run réussi, testé.
-- **PR title :** `feat(citation): watermark delta pour l'ingestion mensuelle`
+- **Goal :** Conserver un asset secondaire pour des **compléments ponctuels** (entité précise, fenêtre étroite) via l'API REST, sous le plafond des 10 000 résultats (`fetch-citation.ts`). **Ce n'est plus** le chemin d'ingestion massive.
+- **Files (read) :** `packages/citation-fetch/src/`, `packages/citation/src/fetch/`.
+- **Files (write) :** asset/op de complément réutilisant `citation-fetch` (rate-limit 1 req/s conservé), écrivant dans une zone dédiée du lakehouse.
+- **Invariants à préserver :** plafond 10 k respecté (au-delà = snapshot) ; rate-limit 1 req/s ; `citation-fetch` **non modifié**.
+- **Validation :** `pnpm ci:checks` ; un complément ciblé < 10 k s'écrit correctement.
+- **Done criteria :** asset de complément testé, distinct du chemin massif.
+- **PR title :** `feat(citation): compléments ciblés via API REST (< 10 k)`
+
+> **Note — types à étendre.** Le parsing du snapshot exige d'étendre `packages/citation-types/src/api-results.ts` : champs `referenced_works`, `fwci`, `cited_by_count` au niveau `works`, **et** les types de l'entité `authors`. Ce n'est plus une seconde passe d'ingestion (les champs sont dans le JSONL du snapshot), mais du typage — rattaché à 2.1/2.2.
 
 ---
 
@@ -297,21 +210,21 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 **Parallélisable ?** 3.1 (accès lakehouse) est le socle de tout le reste. 3.2 (projet dbt + staging/curated) puis 3.3 (feature citations croisées en `marts`) puis 3.4 (matérialisation Parquet + manifest) sont séquentiels. 3.5 (qualité GE + lineage) et 3.6 (validateur contrat) après 3.4. 3.7 (ré-dérivabilité) en dernier.
 **Critère de sortie de phase.** Les assets dbt orchestrés par Dagster produisent `s3://citation/curated/…` puis `s3://citation/marts/collab/dt=YYYY-MM/run=<id>/` + `manifest.json` ; la feature citations croisées est calculée et non nulle sur fixtures ; les **tests dbt** passent et les **asset checks Great Expectations** sont verts ; le **lineage** source→staging→curated→mart est visible dans Marquez ; un consommateur valide `row_count`+`sha256` et **refuse** une `schema_version` inconnue ; aucune partition réécrite en place. `pnpm ci:checks` vert.
 
-### Étape 3.1 — Accès lakehouse DuckDB↔S3↔Parquet (NEUF)
+### Étape 3.1 — Accès lakehouse DuckDB↔S3↔(JSONL.gz, Parquet) (NEUF)
 
-- **Goal :** Doter `packages/citation` d'un vrai accès lakehouse : `httpfs`, `CREATE SECRET` (RGW path-style), lecture/écriture `s3://`, `COPY … TO 's3://…' (FORMAT PARQUET)`, partitionnement Hive. C'est l'adaptateur sous-jacent que **dbt-duckdb** utilisera ; l'actuel `packages/citation/src/db/index.ts` est un wrapper **local** trivial sans aucun de ces éléments.
+- **Goal :** Doter `packages/citation` d'un vrai accès lakehouse : `httpfs`, `CREATE SECRET` (RGW path-style), **lecture du brut JSONL gzippé** (`read_json_auto`/`read_ndjson` sur `s3://citation/raw/**/*.gz`, source du snapshot), lecture/écriture Parquet (`COPY … TO 's3://…' (FORMAT PARQUET)`), partitionnement Hive. C'est l'adaptateur sous-jacent que **dbt-duckdb** utilisera ; l'actuel `packages/citation/src/db/index.ts` est un wrapper **local** trivial sans aucun de ces éléments.
 - **Files (read) :** `packages/citation/src/db/index.ts` (état actuel à étendre), `packages/citation/src/index.ts`.
-- **Files (write) :** `packages/citation/src/db/` (install/load `httpfs`, secret RGW path-style depuis l'env du Secret OBC, helpers `copyToParquet`/`readParquet`), tests d'intégration contre un endpoint S3 de test.
+- **Files (write) :** `packages/citation/src/db/` (install/load `httpfs`, secret RGW path-style depuis l'env du Secret OBC, helpers `readNdjsonGz`/`copyToParquet`/`readParquet`), tests d'intégration contre un endpoint S3 de test.
 - **Invariants à préserver :** le wrapper local existant reste fonctionnel (rétro-compat) ; configuration S3 **path-style** ; pas de credentials en dur ; couverture conforme aux seuils ([ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/)).
-- **Validation :** `pnpm test --filter citation` ; intégration : écrire puis relire un Parquet sur un S3 de test (MinIO/localstack), partition Hive ; `pnpm ci:checks`.
-- **Done criteria :** accès DuckDB↔S3↔Parquet testé (write+read+partition Hive), documenté ; profil dbt-duckdb pointant ce backend prêt à être branché en 3.2.
-- **PR title :** `feat(citation): accès lakehouse DuckDB↔S3↔Parquet (httpfs + COPY)`
+- **Validation :** `pnpm test --filter citation` ; intégration : lire un JSONL.gz puis écrire/relire un Parquet sur un S3 de test (MinIO/localstack/SeaweedFS), partition Hive ; `pnpm ci:checks`.
+- **Done criteria :** accès DuckDB↔S3↔(JSONL.gz lu, Parquet écrit/relu, partition Hive) testé, documenté ; profil dbt-duckdb pointant ce backend prêt à être branché en 3.2.
+- **PR title :** `feat(citation): accès lakehouse DuckDB↔S3 (JSONL.gz + Parquet)`
 
 ### Étape 3.2 — Projet dbt-duckdb : `staging` → `curated`
 
-- **Goal :** Initialiser le **projet dbt** (`dbt-duckdb`, `profiles.yml` pointant le backend S3 de 3.1) et écrire les couches `staging` (typage/nettoyage des `works`, `authorships`, `referenced_works`) et `curated` (`works` canoniques, `authorships`, `edges` = arêtes article→référence dédupliquées). Tests dbt (`not_null`, `unique`, `relationships`) sur chaque couche.
-- **Files (read) :** schéma du brut (Phase 2), `packages/citation-types`, accès lakehouse 3.1.
-- **Files (write) :** projet dbt (`models/staging/`, `models/curated/`, `dbt_project.yml`, `profiles.yml`, schemas/tests), matérialisation `curated` en Parquet `s3://citation/curated/dt=YYYY-MM/run=<id>/`, assets dbt exposés à Dagster (`dagster-dbt`).
+- **Goal :** Initialiser le **projet dbt** (`dbt-duckdb`, `profiles.yml` pointant le backend S3 de 3.1) et écrire les couches `staging` (typage/nettoyage des **`works` et `authors`** lus depuis le snapshot JSONL.gz, + `authorships`, `referenced_works`) et `curated` (`works` et `authors` canoniques, `authorships`, `edges` = arêtes article→référence dédupliquées). Tests dbt (`not_null`, `unique`, `relationships`) sur chaque couche.
+- **Files (read) :** schéma du brut snapshot (Phase 2, `s3://citation/raw/{works,authors}`), `packages/citation-types`, accès lakehouse 3.1 (lecture JSONL.gz).
+- **Files (write) :** projet dbt (`models/staging/` dont `stg_citation_works` + `stg_citation_authors`, `models/curated/` dont `curated_works` + `curated_authors`, `dbt_project.yml`, `profiles.yml`, schemas/tests), matérialisation `curated` en Parquet `s3://citation/curated/dt=YYYY-MM/run=<id>/`, assets dbt exposés à Dagster (`dagster-dbt`).
 - **Invariants à préserver :** déduplication déterministe (même brut → même curated) ; partitions immuables ; filtrage sur le **périmètre servi (hors opposition)** via le registre d'opposition (lien Phase 0) ; modèles nommés sans marque (`stg_citation_*`, `curated_*`).
 - **Validation :** `pnpm ci:checks` ; `dbt build` (ou via Dagster) sur fixtures : `staging`/`curated` produits, **tests dbt verts**, dédup vérifiée (pas de doublon d'arête).
 - **Done criteria :** projet dbt opérationnel, `curated` en Parquet partitionné, tests dbt verts, assets exposés à Dagster.
@@ -526,8 +439,8 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 
 ### Étape 6.4 — Exposition via ingress + TLS, auth obligatoire
 
-- **Goal :** Exposer la PWA en HTTPS via l'ingress (Phase 1), auth obligatoire pour tout accès au mart/index nominatif.
-- **Files (read) :** `platform/ingress-nginx` + `cert-manager` (côté cluster), manifestes applicatifs `find-an-expert`.
+- **Goal :** Exposer la PWA en HTTPS via la **Gateway Cilium + cert-manager** (Phase 1), auth obligatoire pour tout accès au mart/index nominatif.
+- **Files (read) :** contrat cluster (Gateway Cilium + `cert-manager`, ADR cluster 0020/0021), manifestes applicatifs `find-an-expert`.
 - **Files (write) :** Ingress `find-an-expert` (namespace `citation-pwa`) avec TLS cert-manager, `Application` Argo CD, NetworkPolicy.
 - **Invariants à préserver :** **aucun accès non authentifié** à un mart/index nominatif (lien ADR 0030) ; TLS obligatoire avant exposition d'un mart nominatif ([ADR cluster 0003](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0003-pas-de-chiffrement-ceph-tailscale.md) : TLS interne absent → bordure = point de chiffrement) ; default-deny respecté.
 - **Validation :** `pnpm ci:checks` ; sur banc : la PWA répond en HTTPS via l'ingress, accès non authentifié refusé.
@@ -558,7 +471,7 @@ Ce que la V1 **n'est pas** : un système de ML entraîné/calibré (MLflow), un 
 - **Goal :** N'admettre que des images signées. Le benchmark DevSecOps ne nomme que **cosign** et **Trivy** : la vérification peut passer par une **cosign policy** (admission via `policy-controller` Sigstore) ou la vérification Argo CD ; **Kyverno** est une **option locale** (hors benchmark) si une policy d'admission plus générale est souhaitée.
 - **Files (read) :** étape 7.1 ; **artefact côté `cluster`** (policy d'admission) — coordination inter-dépôt.
 - **Files (write) :** côté `atlas` : doc de la clé/issuer ; **côté `cluster`** : policy d'admission (PR séparée dans `../cluster`).
-- **Invariants à préserver :** ne pas bloquer les images d'infra existantes non encore signées (rollout progressif) ; tester sur banc Vagrant d'abord.
+- **Invariants à préserver :** ne pas bloquer les images d'infra existantes non encore signées (rollout progressif) ; tester sur le banc Lima d'abord.
 - **Validation :** sur banc : déploiement d'une image non signée refusé, image signée admise.
 - **Done criteria :** policy de vérification sur le banc ; rollout documenté.
 - **PR title (cluster) :** `feat(platform): admission des images signées (cosign)`
@@ -591,11 +504,13 @@ Explicitement **hors périmètre V1**, nommés pour ne pas être réinventés et
 ## Risques & questions ouvertes
 
 - **GPU absent.** Aucun GPU sur les 4 nœuds → tout LLM génératif est cantonné au batch (palier 2). La V1 ne dépend d'aucun GPU (embeddings ONNX `all-MiniLM-L6-v2` en CPU, scoring déterministe, résumés extractifs, recherche pgvector/FTS). **Risque levé pour la V1**, bloquant pour le génératif synchrone.
-- **Volumétrie des `referenced_works`.** L'ingestion des références (Phase 2.2) est la grande inconnue de charge : ratio références/œuvre potentiellement élevé → durée de run, taille du brut, **coût des jointures dbt/DuckDB** pour la feature citations croisées. **Action :** mesurer dès la Phase 2.2 sur un sous-périmètre, documenter, prévoir reprise/partitionnement plus fin si nécessaire. Peut imposer de revoir le rate-limit ou de paralléliser prudemment (sans dépasser 1 req/s côté source).
+- **Volumétrie du snapshot S3.** Le snapshot OpenAlex pèse **≈ 330 Go compressés / 1,6 To décompressés** (`works` + `authors`). Inconnues de charge : durée du sync initial (bootstrap), quota du datalake objet Ceph, **coût des jointures dbt/DuckDB** (`works` × `referenced_works`) pour la feature citations croisées. **Action :** mesurer le bootstrap sur un sous-échantillon, documenter dans `docs/architecture/`, prévoir reprise et partitionnement par `updated_date`. Le sync exige un **egress Internet** (tension avec le default-deny — tracé en [issue cluster #256](https://github.com/univ-lehavre/cluster/issues/256)).
+- **Tests sur petit cluster local.** Le banc Lima est un **petit cluster** : on ne peut pas y synchroniser 1,6 To. La mécanique d'ingestion (sync, parsing JSONL, dbt, manifest, index) se valide sur un **sous-échantillon borné** du vrai snapshot (un dossier `updated_date`, échelle pilotée par configuration). Ne jamais supposer le volume complet en local ; le run complet est une opération de **prod** uniquement.
+- **Cadence trimestrielle vs exigence mensuelle.** La source gratuite (AWS Open Data) est rafraîchie **trimestriellement** ; le mensuel et les change-files quotidiens sont **payants** ([ADR 0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/)). Le schedule mensuel reste **idempotent** (entre deux trimestres, il ne trouve aucune nouvelle partition). Si une fraîcheur mensuelle réelle devient nécessaire, l'offre payante est à arbitrer **par le déployeur**.
 - **Modèle d'excellence collaborative (palier 2) — questions de fond.** Le modèle supervisé visé (prédire la prochaine thématique d'excellence et les collaborations d'excellence, label = co-publication future) soulève des questions à trancher au palier 2 : (a) **fenêtre temporelle** du split (taille de `[..T]` et de `[T+1, T+n]`) et son effet sur le volume de labels positifs (les co-publications sont rares → **classes déséquilibrées**) ; (b) **définition opérationnelle de « l'excellence »** à partir du FWCI (seuil ? FWCI moyen du collectif ? percentile par champ ?) ; (c) **biais** du label « co-publication future » (ne capture que la collaboration **formalisée**, ignore les collaborations informelles ou empêchées ; effet Matthieu — les chercheurs déjà excellents co-publient davantage) ; (d) **métrique d'évaluation** (precision@k du filtrage de chercheurs plutôt qu'accuracy, vu le déséquilibre). À documenter dans un ADR dédié au palier 2 avant d'entraîner quoi que ce soit. La V1 (scoring déterministe) ne dépend d'aucune de ces réponses.
-- **Charge opérationnelle des nouveaux composants stateful.** La V1 introduit **trois sous-systèmes stateful neufs** à exploiter sur un cluster non-HA : **Dagster** (webserver + daemon + run workers + event log Postgres), **CloudNativePG** (Postgres : event log Dagster **+** index pgvector) et **Marquez** (store de lineage). Coûts induits : sauvegardes/restaurations Postgres, montées de version dbt/Dagster/Marquez, supervision et alerting de trois nouveaux sous-systèmes, gestion de schéma de l'index. **C'est le prix assumé du positionnement plateforme** (cf. ADR 0029, _Prix à payer_) ; à séquencer et documenter dans les RUNBOOK côté `cluster`. La perte d'1 nœud (EC 2+1) rend l'event log Dagster et l'index Postgres eux aussi sensibles à la disponibilité du stockage.
-- **SPOF cluster non-HA assumés.** Control-plane unique ([ADR cluster 0002](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0002-control-plane-unique-avec-endpoint.md)) = SPOF de l'API. EC 2+1 `min_size=3` ([ADR cluster 0004](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0004-erasure-coding-2plus1-datalake.md)) → **perte d'1 nœud sur 4 bloque les I/O du datalake**, donc le pipeline, la lecture du mart, **et** désormais l'event log Dagster / l'index Postgres adossés au stockage. **Mitigation V1 :** cache local RBD d'`atlas-api` (Phase 5.3) pour servir en lecture pendant une indisponibilité du RGW ; le pipeline batch attend le rétablissement (tolérable car mensuel). HA control-plane et redondance datalake = hors V1, risques assumés et tracés.
-- **Pas de TLS interne / pas de chiffrement at-rest** ([ADR cluster 0003](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0003-pas-de-chiffrement-ceph-tailscale.md)). Acceptable tant que tout est interne ; **à corriger avant exposition externe d'un mart ou d'un index nominatif** → terminaison TLS de bordure (Phase 1.3) + auth obligatoire (Phases 5–6). Le chiffrement at-rest reste un risque ouvert pour des données nominatives (Postgres et S3) — à arbitrer avec le DPO (Phase 0).
+- **Charge opérationnelle des nouveaux composants stateful.** La V1 introduit **trois sous-systèmes stateful neufs** à exploiter sur un cluster non-HA : **Dagster** (webserver + daemon + run workers + event log Postgres), **CloudNativePG** (Postgres : event log Dagster **+** index pgvector) et **Marquez** (store de lineage). Coûts induits : sauvegardes/restaurations Postgres, montées de version dbt/Dagster/Marquez, supervision et alerting de trois nouveaux sous-systèmes, gestion de schéma de l'index. **C'est le prix assumé du positionnement plateforme** (cf. ADR 0029, _Prix à payer_) ; à séquencer et documenter dans les RUNBOOK côté `cluster`. Note : l'event log Dagster et l'index pgvector sont sur **RBD réplication ×3** ([ADR cluster 0001](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0001-replication-x3-pour-workloads-bloc.md)), pas sur l'_erasure coding_ du datalake — leur disponibilité ne suit donc pas la même règle que le stockage objet (voir puce suivante).
+- **SPOF cluster non-HA assumés.** Control-plane unique ([ADR cluster 0002](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0002-control-plane-unique-avec-endpoint.md)) = SPOF de l'API. Le **datalake objet** (RGW) est en _erasure coding_ 2+1 `min_size=3` ([ADR cluster 0004](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0004-erasure-coding-2plus1-datalake.md)) → **perte d'1 nœud sur 4 bloque les I/O objet**, donc le sync du snapshot, le mart Parquet et sa lecture. En revanche, l'**event log Dagster et l'index pgvector sont sur RBD réplication ×3** ([ADR cluster 0001](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0001-replication-x3-pour-workloads-bloc.md)) : ils tolèrent la perte d'1 nœud (leur `min_size` diffère). **Mitigation V1 :** cache local RBD d'`atlas-api` (Phase 5.3) pour servir en lecture pendant une indisponibilité du RGW ; le pipeline batch attend le rétablissement (tolérable car batch). HA control-plane et redondance datalake = hors V1, risques assumés et tracés.
+- **Pas de TLS interne / pas de chiffrement at-rest** ([ADR cluster 0003](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0003-pas-de-chiffrement-ceph-tailscale.md)). Acceptable tant que tout est interne ; **à corriger avant exposition externe d'un mart ou d'un index nominatif** → terminaison TLS de bordure (Gateway Cilium + cert-manager, fournis) + auth obligatoire (Phases 5–6). Le chiffrement at-rest reste un risque ouvert pour des données nominatives (Postgres et S3) — relève de l'arbitrage du **déployeur**.
 - **Appwrite auto-hébergé vs SaaS.** `find-an-expert` dépend de `node-appwrite` (~25.2.0, [ADR 0010](/atlas/decisions/0010-node-appwrite-sdk-25/)) pour **l'auth ET le consentement** — ce n'est **pas** « zéro DB ». Deux options : (a) **auto-héberger** Appwrite (Appwrite + MariaDB + Redis) sur le cluster — non trivial mais souverain, cohérent avec le principe libre/souverain ; (b) **SaaS** Appwrite — casse la souveraineté, dépendance externe, transfert de données personnelles (impact RGPD). **Décision attendue :** option (a) par défaut, à acter dans un ADR dédié si retenue — chantier d'infra à part entière, à séquencer avant la mise en prod de la Phase 6.
-- **Arbitrage RGPD institutionnel non revenu.** Le code peut avancer sur fixtures, mais la **mise en prod avec données nominatives** reste suspendue à la base légale / au responsable de traitement (Phase 0.3). Risque de planning : si l'arbitrage tarde, les Phases 1–7 sont livrables en dev/banc mais non déployables sur données réelles. **Mitigation :** tout développer sur données synthétiques, garder le déploiement prod derrière le gate.
+- **Conformité RGPD à la charge du déployeur.** Le dépôt livre un **canevas techniquement capable** (ré-dérivabilité, droit d'opposition, authentification), **testé et déployable** — le développement n'est **pas** suspendu à un arbitrage externe (cf. README « Responsabilité & conformité », ADR 0030/0031). En revanche, **l'exploitation avec données nominatives réelles** relève du **déployeur** : c'est à lui de trancher la base légale, désigner le responsable de traitement et, le cas échéant, conduire l'analyse d'impact. Le risque résiduel (un déployeur qui exploite sans cet arbitrage) sort du périmètre du dépôt et lui est explicitement imputé.
 - **`knip` cassé sur `main`.** Dette pré-existante au pré-push : à résorber en racine au fil des PRs, **jamais** contourner. Peut impacter le rythme des premières PRs touchant les paquets `citation` et la création d'`atlas-api`.

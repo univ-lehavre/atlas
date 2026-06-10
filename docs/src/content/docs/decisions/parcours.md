@@ -221,11 +221,17 @@ PostgreSQL/pgvector, orchestrateur, lineage, exposition…), fixe les **conventi
 et formats** mais pas les valeurs propres à une instance, et impose que tout
 changement d'un point de contact se reflète **dans la même pull request** que le
 code ou l'infrastructure concernés.
+[0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/) **amende** 0029 sur
+l'ingestion : pour couvrir **toute** la base OpenAlex (`works` + `authors`), la
+source devient le **snapshot S3** (copie complète exportée, synchronisée de façon
+incrémentale par date), l'API REST étant reléguée aux compléments ciblés.
 
 - [0029 — Architecture V1 du pipeline](/atlas/decisions/0029-architecture-pipeline-collaborations/) :
   la plateforme DataOps et le contrat Parquet.
 - [0033 — Contrat d'interface application ↔ cluster](/atlas/decisions/0033-contrat-interface-cluster/) :
   la frontière entre le code applicatif et l'infrastructure.
+- [0054 — Ingestion massive par snapshot S3](/atlas/decisions/0054-ingestion-massive-snapshot-s3/) :
+  toute la base OpenAlex (works + authors), incrémentale, en remplacement de l'API REST.
 
 ## 7. Données personnelles et conformité
 

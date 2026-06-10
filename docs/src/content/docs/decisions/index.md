@@ -80,6 +80,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0051 | [Rétrospective du chantier socle Effect (E1–E14)](/atlas/decisions/0051-retrospective-socle-effect/)                                              | Accepted |
 | 0052 | [Charte rédactionnelle de la documentation (règles de relecture)](/atlas/decisions/0052-charte-redactionnelle-documentation/)                     | Accepted |
 | 0053 | [Merge commit imposé sur `main` (abandon du squash)](/atlas/decisions/0053-strategie-merge-commit-main/)                                          | Accepted |
+| 0054 | [Ingestion massive OpenAlex par snapshot S3 (works + authors)](/atlas/decisions/0054-ingestion-massive-snapshot-s3/)                              | Accepted |
 
 ## Quand ouvrir un ADR
 
