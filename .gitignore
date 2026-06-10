@@ -65,3 +65,14 @@ cli/researcher-profiles/ALGORITHMS.pdf
 
 # Logos copied from packages/logos at prepare time (see apps/*/package.json)
 apps/*/static/logos/
+
+# DataOps Python (catégorie dataops/, ADR 0055) — uv.lock reste versionné
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+coverage.xml
+htmlcov/

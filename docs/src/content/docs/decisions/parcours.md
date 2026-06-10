@@ -4,7 +4,7 @@ title: Parcours thématique des décisions
 
 Cette page propose un **tour cohérent des décisions** du dépôt, regroupées par
 thème plutôt que par numéro. Elle s'adresse à un **nouveau venu** : plutôt que de
-lire les 52 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
+lire les 55 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
 comprendre _pourquoi_ le dépôt est fait comme il est.
 
 Pour la liste exhaustive par numéro (et le statut de chacun), voir
@@ -59,10 +59,16 @@ les paquets purement internes sont marqués `private`
 suivent la convention de nommage `atlas-`
 ([0022](/atlas/decisions/0022-naming-convention/)). [0003](/atlas/decisions/0003-logos-split-assets-cli/)
 sert d'exemple concret : un paquet scindé entre catégorie `assets` et catégorie
-`cli` pour respecter ces frontières.
+`cli` pour respecter ces frontières. [0055](/atlas/decisions/0055-categorie-dataops-python/)
+**amende** 0002 en ajoutant une **9e catégorie** `dataops/` : le code DataOps
+(Dagster, dbt) y vit en **Python natif**, hors du paradigme Node/TypeScript — et
+précise du même coup que 0008 (logique dans `packages/`) et 0005 (Effect) ne portent
+que sur le périmètre TypeScript.
 
 - [0002 — Monorepo en 8 catégories](/atlas/decisions/0002-monorepo-huit-categories/) : la
   colonne vertébrale — chaque sous-projet a une catégorie et des règles propres.
+- [0055 — Catégorie `dataops/` (Python natif)](/atlas/decisions/0055-categorie-dataops-python/) :
+  la 9e catégorie, pour le code DataOps (Dagster/dbt), hors du graphe Node/TypeScript.
 - [0008 — CLIs thins, logique dans `packages/`](/atlas/decisions/0008-clis-thins-logique-dans-packages/) :
   où vit la logique métier.
 - [0009 — `atlas` source canonique vs `amarre`](/atlas/decisions/0009-atlas-source-canonique-amarre/) :

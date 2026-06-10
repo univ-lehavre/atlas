@@ -382,3 +382,18 @@ jobs:
 
       - name: Documentation audit
         run: pnpm audit:docs
+
+  dataops:
+    name: DataOps (Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      # Catégorie dataops/ (Python, ADR 0055) : mêmes exigences de qualité que
+      # le code Node (ruff + pytest + couverture à seuil). uv fournit le toolchain
+      # Python ; sans lui, dataops:check se skip — ici on l'installe pour enforcer.
+      - uses: astral-sh/setup-uv@e92bafb6253dcd438e0484186d7669ea7a8ca1cc # v6.4.3
+
+      - name: DataOps quality (ruff + pytest + coverage)
+        run: node scripts/dataops-check.mjs

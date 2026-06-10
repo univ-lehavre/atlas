@@ -31,6 +31,7 @@ export default {
         "config",
         "crf",
         "crf-cli",
+        "dataops",
         "deps",
         "docs",
         "ecrin",

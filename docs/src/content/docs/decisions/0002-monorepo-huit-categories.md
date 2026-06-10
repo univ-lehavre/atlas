@@ -2,6 +2,11 @@
 title: 0002 — Monorepo organisé en 8 catégories
 ---
 
+> **Amendé par [0055](/atlas/decisions/0055-categorie-dataops-python/).** Le monorepo passe de
+> **8 à 9 catégories** : une 9e catégorie de premier niveau `dataops/` héberge le code DataOps en
+> **Python natif** (Dagster, dbt), hors du graphe pnpm. Les 8 catégories Node/TypeScript décrites
+> ci-dessous demeurent inchangées.
+
 ## Contexte
 
 Le dépôt rassemble des applications web (SvelteKit), des services HTTP

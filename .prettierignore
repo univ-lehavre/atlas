@@ -35,3 +35,6 @@ tools/dev/redcap-openapi/specs/
 
 # Specs OpenAPI externes (REDCap) servies comme assets — non formatées
 docs/public/openapi/
+
+# DataOps (Python) : géré par ruff, pas par prettier (ADR 0055)
+dataops/
