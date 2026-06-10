@@ -157,7 +157,7 @@ L'[issue cluster #256](https://github.com/univ-lehavre/cluster/issues/256) a tra
 **Objectif.** **Asset Dagster d'ingestion massive** qui **synchronise le snapshot S3 d'OpenAlex** (`s3://openalex/data/{works,authors}`) vers le lakehouse `s3://citation/raw`, en **bootstrap** complet puis en **incrémental par partition `updated_date`**, avec gestion des entités fusionnées (`merged_ids`). Source décisionnelle : [ADR 0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/). `citation-fetch` (API REST, plafond 10 k) est **relégué aux compléments ciblés**. Watermark de **date** persisté.
 **Dépendances.** Phase 1 (livrée) pour le déploiement (Dagster, Argo CD, OBC) ; **prérequis egress Internet** ([issue cluster #256](https://github.com/univ-lehavre/cluster/issues/256)) pour atteindre `s3://openalex`. Le secret S3 et le bucket interne viennent de l'`ObjectBucketClaim` `atlas-datalake` (déclaré par atlas).
 **Parallélisable ?** 2.1 (bootstrap) puis 2.2 (incrémental + `merged_ids`). 2.3 (code-location + déploiement) après 2.1. 2.4 (compléments API) indépendant.
-**Critère de sortie de phase.** L'asset de sync écrit `s3://citation/raw/{works,authors}/updated_date=YYYY-MM-DD/…`, le watermark de date avance, les `merged_ids` sont appliqués, aucune réécriture en place ; le run apparaît dans l'event log Dagster. En local, le sync est **borné** (un dossier `updated_date`, échelle pilotée par config) — jamais 1,6 To. `pnpm ci:checks` vert.
+**Critère de sortie de phase.** L'asset de sync écrit `s3://citation/raw/{works,authors}/updated_date=YYYY-MM-DD/…`, le watermark de date avance, les `merged_ids` sont **rapatriés bruts** (`raw/merged_ids/<entity>/`, appliqués en aval par dbt), aucune réécriture en place ; le run apparaît dans l'event log Dagster. En local, le sync est **borné** (`max_partitions`/`sample_size`, échelle pilotée par config) — jamais 1,6 To. `pnpm ci:checks` vert.
 
 ### Étape 2.1 — Bootstrap du snapshot works + authors → `s3://citation/raw`
 
@@ -171,13 +171,13 @@ L'[issue cluster #256](https://github.com/univ-lehavre/cluster/issues/256) a tra
 
 ### Étape 2.2 — Incrémental par `updated_date` + watermark de date + `merged_ids`
 
-- **Goal :** Ne re-synchroniser que les partitions `updated_date` **postérieures** au watermark de date persistant, et appliquer `s3://openalex/data/merged_ids/` pour supprimer/rediriger les entités fusionnées. Traite la **tension de cadence** (source gratuite trimestrielle, schedule mensuel idempotent — cf. ADR 0054).
-- **Files (read) :** logique de sync 2.1, `data/merged_ids/` (format CSV.gz, colonnes ~`id`/`merge_into_id`/`merged_date`, **à confirmer à l'implémentation**).
-- **Files (write) :** reader/writer du watermark (`s3://citation/raw/_watermark.json`, écrit **après** sync réussi), application des `merged_ids`, schedule mensuel.
-- **Invariants à préserver :** le watermark n'avance qu'après sync **complet et réussi** ; idempotence (rejeu = pas de double écriture) ; immutabilité (pas de réécriture en place) ; entre deux trimestres, un passage mensuel ne trouve aucune nouvelle partition et n'écrit rien.
-- **Validation :** `pnpm ci:checks` ; deux passages consécutifs (le second ne re-synchronise pas les partitions déjà vues) ; un `merged_id` injecté retire/redirige l'entité localement ; un sync échoué ne fait pas avancer le watermark.
-- **Done criteria :** incrémental par date + `merged_ids` + watermark testés.
-- **PR title :** `feat(citation): incrémental snapshot par updated_date + merged_ids`
+- **Goal :** Ne re-synchroniser que les partitions `updated_date` **postérieures** au watermark de date persistant, et **rapatrier bruts** les `merged_ids` (`s3://openalex/legacy-data/merged_ids/<entity>/`) vers `raw/merged_ids/<entity>/` — **sans les appliquer** (la fusion effective est faite en aval par dbt, étape 3 ; immutabilité de `raw/` préservée). Traite la **tension de cadence** (source gratuite trimestrielle, schedule mensuel idempotent — cf. ADR 0054).
+- **Files (read) :** logique de sync 2.1, `legacy-data/merged_ids/<entity>/` (fichiers `YYYY-MM-DD.csv.gz`, colonnes `merge_date,id,merge_into_id` — **confirmé**).
+- **Files (write) :** module `watermark.py` (reader/writer de `raw/_watermark.json`, écrit **après** sync réussi par entité), `_sync_merged_ids` (rapatriement brut), config incrémentale (`max_partitions`/`max_merged_files`).
+- **Invariants à préserver :** le watermark n'avance qu'après sync **complet et réussi** ; idempotence (rejeu = partition suivante, pas de re-sync) ; immutabilité (pas de réécriture en place) ; entre deux trimestres, un passage ne trouve aucune nouvelle partition et n'écrit rien.
+- **Validation :** `pnpm dataops:check` (ruff + pytest + couverture) ; smoke test réel (openalex → MinIO local) : deux passages consécutifs avancent le watermark partition par partition ; un sync échoué ne fait pas avancer le watermark.
+- **Done criteria :** incrémental par date + `merged_ids` (rapatriés) + watermark testés. **Fait** (2026-06-10).
+- **PR title :** `feat(dataops): incrémental snapshot par updated_date + merged_ids`
 
 ### Étape 2.3 — Code-location Dagster + Secret OBC + déploiement GitOps
 
