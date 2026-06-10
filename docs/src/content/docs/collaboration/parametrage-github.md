@@ -83,8 +83,11 @@ GitHub (_Settings → Branches_) ; leur état attendu :
 - **Branche à jour avant fusion** — cohérent avec le hook _pre-push_
   `check-sync` qui exige que `origin/main` soit ancêtre de la branche.
 
-Le choix **squash vs merge commit** au moment de la fusion est décrit dans
-le [workflow de contribution](/atlas/collaboration/workflow/#9-merge).
+La **stratégie de merge** est imposée par la ruleset `main` : seul le **merge
+commit** est autorisé (squash et rebase désactivés). Le _pourquoi_ est détaillé
+dans l'[ADR 0053](/atlas/decisions/0053-strategie-merge-commit-main/), la
+pratique côté contributeur dans le
+[workflow de contribution](/atlas/collaboration/workflow/#9-merge).
 
 ## Secrets et autorisations
 

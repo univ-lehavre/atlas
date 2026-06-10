@@ -2,6 +2,11 @@
 title: "0016 — Branch protection sur `main`"
 ---
 
+> **Amendé par [0053](/atlas/decisions/0053-strategie-merge-commit-main/).** La
+> stratégie de merge décrite ici (squash-merge, « historique linéaire ») a été
+> remplacée par le **merge commit** le 2026-06-10. Les autres protections de cet
+> ADR (status checks, force-push bloqué, bypass admin) restent en vigueur.
+
 ## Contexte
 
 La branche `main` est la **source de vérité** du monorepo : c'est

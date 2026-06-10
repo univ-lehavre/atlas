@@ -79,6 +79,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0050 | [Limite de l'audit knip face aux peerDependencies](/atlas/decisions/0050-limite-knip-peer-deps/)                                                  | Accepted |
 | 0051 | [Rétrospective du chantier socle Effect (E1–E14)](/atlas/decisions/0051-retrospective-socle-effect/)                                              | Accepted |
 | 0052 | [Charte rédactionnelle de la documentation (règles de relecture)](/atlas/decisions/0052-charte-redactionnelle-documentation/)                     | Accepted |
+| 0053 | [Merge commit imposé sur `main` (abandon du squash)](/atlas/decisions/0053-strategie-merge-commit-main/)                                          | Accepted |
 
 ## Quand ouvrir un ADR
 

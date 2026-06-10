@@ -132,10 +132,9 @@ Le reviewer peut demander des modifications via les commentaires GitHub. Itérer
 
 ## 9. Merge
 
-**Fusionner** (_merge_), c'est intégrer les commits de la branche dans `main` une fois la PR relue et la CI verte. Le mainteneur fusionne la PR dans `main`. Le choix entre **squash** (un seul commit) et **merge commit** (préserve l'historique de la branche) dépend de la PR :
+**Fusionner** (_merge_), c'est intégrer les commits de la branche dans `main` une fois la PR relue et la CI verte. Le mainteneur fusionne la PR dans `main`.
 
-- **Squash** par défaut : une PR = un commit dans `main`. Plus propre, plus lisible dans `git log`.
-- **Merge commit** pour les PR multi-étapes où chaque commit individuel est utile à conserver (refactor incrémental, migration en plusieurs étapes).
+Sur `main`, la seule stratégie autorisée est le **merge commit** : les commits de la branche sont **préservés** tels quels et reliés à `main` par un commit de fusion. Le squash et le rebase sont désactivés ([ADR 0053](/atlas/decisions/0053-strategie-merge-commit-main/)). Conséquence pratique : **nettoie ta branche avant d'ouvrir la PR** (commits atomiques, messages clairs), car ils apparaîtront tels quels dans l'historique de `main`. La lecture « linéaire » reste possible via `git log --first-parent`.
 
 ## 10. Release (si publiable)
 
