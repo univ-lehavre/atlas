@@ -49,9 +49,9 @@ tenue à la même exigence de qualité que le reste du dépôt (lint, tests, cou
 
 Le code Python vit sous [`src/citation_dagster/`](src/citation_dagster/). Objectif :
 définir les **assets** du pipeline et leur câblage à Dagster. Où en est-on : l'**ingestion**
-(étape 2), l'**accès lakehouse + transformation dbt** (étapes 3.1/3.2) et la **feature
-citations croisées** (étape 3.3) sont en place ; les étapes suivantes (mart + manifest
-atomique, qualité/lineage) viendront s'ajouter.
+(étape 2), l'**accès lakehouse + transformation dbt** (étapes 3.1/3.2), la **feature
+citations croisées** (étape 3.3) et le **mart servi + manifest atomique** (étape 3.4) sont
+en place ; les étapes suivantes (qualité Great Expectations, lineage) viendront s'ajouter.
 
 | Module | Rôle | Étape |
 | --- | --- | --- |
@@ -60,7 +60,8 @@ atomique, qualité/lineage) viendront s'ajouter.
 | [`watermark.py`](src/citation_dagster/watermark.py) | Watermark de date persistant pour l'ingestion **incrémentale** (ne resynchronise que le nouveau). | 2 |
 | [`resources.py`](src/citation_dagster/resources.py) | Config des accès stockage objet (remotes `rclone`, config S3 DuckDB) depuis l'environnement — jamais de secret en dur. | 2/3 |
 | [`lakehouse.py`](src/citation_dagster/lakehouse.py) | Accès lakehouse **DuckDB↔S3** : lit le brut JSONL.gz, écrit du Parquet. Backend que dbt consomme. | 3.1 |
-| [`dbt.py`](src/citation_dagster/dbt.py) | **Intégration dbt↔Dagster** : expose les modèles dbt (`staging`→`curated`→`marts`) comme assets ; gère le manifest. | 3.2/3.3 |
+| [`dbt.py`](src/citation_dagster/dbt.py) | **Intégration dbt↔Dagster** : expose les modèles dbt (`staging`→`curated`→`marts`) comme assets ; gère le manifest dbt. | 3.2/3.3 |
+| [`assets/manifest.py`](src/citation_dagster/assets/manifest.py) | Asset `collab_manifest` : écrit **en dernier** le `manifest.json` atomique du mart servi (sha256/row_count par part) — le **contrat de transfert**. | 3.4 |
 
 Les **modèles de transformation SQL** ne sont pas ici mais dans le projet dbt frère
 [`../citation-dbt/`](../citation-dbt/) (voir son README).

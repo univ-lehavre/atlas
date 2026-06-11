@@ -11,7 +11,7 @@ Deux familles d'assets :
 
 from dagster import AssetSelection, Definitions, define_asset_job
 
-from citation_dagster.assets import raw_snapshot
+from citation_dagster.assets import collab_manifest, raw_snapshot
 from citation_dagster.dbt import dbt_components
 
 # Le pod de run (K8sRunLauncher) doit recevoir les accès S3 du lakehouse : on
@@ -36,16 +36,21 @@ ingestion_job = define_asset_job(
 # Assets dbt + ressource CLI (ou [], {} si dbt indisponible — lint/checkout neuf).
 _dbt_assets, _dbt_resources = dbt_components()
 
-_assets = [raw_snapshot, *_dbt_assets]
+# collab_manifest dépend de l'asset dbt marts_collab_pairs (via AssetKey) : il s'exécute
+# APRÈS le mart, dans le même run (donc même context.run_id → même préfixe dt=…/run=…).
+# Ajouté inconditionnellement : si dbt est indisponible ([],{}), sa dépendance pend sur
+# une clé externe non exécutable et la code-location reste chargeable (asset orphelin).
+_assets = [raw_snapshot, collab_manifest, *_dbt_assets]
 _jobs = [ingestion_job]
 
 # Le job de transformation n'est enregistré QUE si les assets dbt existent : un
 # job dont la sélection ne résout aucun asset ferait échouer la construction des
-# Definitions. En prod le manifest est packagé → les assets dbt sont présents.
+# Definitions. En prod le manifest est packagé → les assets dbt sont présents. Le job
+# enchaîne le mart dbt PUIS l'écriture du manifest (collab_manifest) dans un seul run.
 if _dbt_assets:
     transform_job = define_asset_job(
         "transform_job",
-        selection=AssetSelection.assets(*_dbt_assets),
+        selection=AssetSelection.assets(*_dbt_assets) | AssetSelection.assets("collab_manifest"),
         tags=_RUN_K8S_CONFIG,
     )
     _jobs.append(transform_job)

@@ -49,6 +49,12 @@ _DUMMY_PARSE_ENV = {
     "BUCKET_PORT": "0",
 }
 
+# Période (YYYY-MM) de la partition curated/mart. SOURCE UNIQUE partagée entre le
+# run dbt (ci-dessous) et l'asset de manifest (collab_manifest) : les deux doivent
+# viser EXACTEMENT le même préfixe dt=…/run=…/ ; deux littéraux indépendants
+# divergeraient. (Provisoire : dérivé d'un schedule/partition Dagster ultérieurement.)
+CURATED_DT = "0000-00"
+
 
 def build_dbt_vars(run_id: str, curated_dt: str) -> dict[str, str]:
     """Variables dbt injectées au run : période + id de run IMMUABLE.
@@ -91,7 +97,7 @@ def build_citation_dbt_assets():
 
     @dbt_assets(manifest=manifest)
     def citation_dbt_models(context: AssetExecutionContext, dbt: DbtCliResource):
-        dbt_vars = build_dbt_vars(context.run_id, curated_dt="0000-00")  # pragma: no cover
+        dbt_vars = build_dbt_vars(context.run_id, curated_dt=CURATED_DT)  # pragma: no cover
         yield from dbt.cli(  # pragma: no cover
             ["build", "--vars", json.dumps(dbt_vars)], context=context
         ).stream()

@@ -26,5 +26,10 @@ l'[ADR 0055](https://univ-lehavre.github.io/atlas/decisions/0055-categorie-datao
 
 ## Sous-projets
 
-- [`citation-dagster/`](citation-dagster/) — la code-location Dagster du pipeline de
-  citations (ingestion du snapshot OpenAlex, transformations, matérialisation).
+- [`citation-dagster/`](citation-dagster/) — la **code-location Dagster** du pipeline de
+  citations : les assets (ingestion du snapshot OpenAlex, orchestration des
+  transformations dbt, matérialisation du mart) et leur déploiement.
+- [`citation-dbt/`](citation-dbt/) — le **projet dbt** (sur DuckDB) des transformations
+  SQL : couches `staging` → `curated` → `marts`. Orchestré par `citation-dagster` via
+  `dagster-dbt`. La frontière entre les deux : dbt **décrit** les transformations,
+  Dagster les **exécute** et émet le lineage.

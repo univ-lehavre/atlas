@@ -31,9 +31,19 @@ Le pipeline va du brut vers le raffiné, par couches successives :
   - `curated_works` / `curated_authors` / `curated_authorships`.
   - `curated_edges` — les arêtes article→référence, dédupliquées. C'est ce graphe de
     citations qui sert ensuite à mesurer les citations croisées entre chercheurs.
-- **`marts`** (`models/marts/`) — le **signal métier** final, Parquet immuable sur S3.
+- **`marts`** (`models/marts/`) — le **signal métier** final (le mart « servi »), Parquet
+  immuable sous `s3://citation/marts/collab/dt=AAAA-MM/run=<id>/` — le **contrat de sortie**
+  du pipeline ([ADR 0029](https://univ-lehavre.github.io/atlas/decisions/0029-architecture-pipeline-collaborations/)).
   - `marts_collab_pairs` — **le cœur** : pour chaque **paire de chercheurs**, le nombre de
     **citations croisées** article↔article (cf. ci-dessous).
+
+  > **Contrat & manifest.** dbt **produit** le Parquet ; un asset Dagster
+  > (`collab_manifest`, côté [`../citation-dagster/`](../citation-dagster/)) écrit **en
+  > dernier** un `manifest.json` voisin `{partition, schema_version, row_count,
+  > parts:[{key,sha256,bytes}], produced_at}`. Le consommateur le valide (sha256 +
+  > row_count) **avant** de lire et refuse une `schema_version` inconnue. Écrit en dernier,
+  > le manifest est la **sentinelle de complétude** : un run coupé avant lui ne laisse
+  > aucun manifest → la partition n'est pas servie.
 
 ### `marts_collab_pairs` — sémantique des citations croisées
 
