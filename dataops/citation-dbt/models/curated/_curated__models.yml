@@ -1,0 +1,50 @@
+version: 2
+
+# Tests dbt sur la couche curated (Parquet external relu pour exécuter les tests).
+# Tous vrais à TOUTE échelle. Pour curated_edges, `relationships` est posé sur
+# `citing_work_id` UNIQUEMENT : `cited_work_id` référence couramment des œuvres
+# HORS snapshot (referenced_works pointe au-delà du périmètre ingéré), donc un
+# `relationships cited→curated_works` produirait de faux échecs à l'échelle réelle.
+models:
+  - name: curated_works
+    description: "Œuvres canoniques (dédupliquées), Parquet external immuable."
+    columns:
+      - name: work_id
+        data_tests: [not_null, unique]
+
+  - name: curated_authors
+    description: "Auteurs canoniques (dédupliqués), Parquet external immuable."
+    columns:
+      - name: author_id
+        data_tests: [not_null, unique]
+
+  - name: curated_authorships
+    description: "Liens œuvre↔auteur canoniques."
+    columns:
+      - name: work_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('curated_works')
+                field: work_id
+      - name: author_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('curated_authors')
+                field: author_id
+
+  - name: curated_edges
+    description: "Arêtes article→référence dédupliquées (couple citant→cité unique)."
+    columns:
+      - name: citing_work_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('curated_works')
+                field: work_id
+      - name: cited_work_id
+        data_tests: [not_null]

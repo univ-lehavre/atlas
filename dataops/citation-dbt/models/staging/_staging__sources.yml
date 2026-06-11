@@ -1,0 +1,32 @@
+version: 2
+
+# Sources du brut JSONL.gz / CSV.gz synchronisé par `raw_snapshot` (étapes 2/3.1)
+# vers `s3://citation/raw/`. dbt-duckdb résout `meta.external_location` en un reader
+# DuckDB (`read_json_auto`/`read_csv_auto`) ; le secret S3 du profil (path-style,
+# depuis l'environnement) s'y applique. Déclarer les sources ici (plutôt qu'un
+# `read_json_auto` en dur dans chaque modèle) centralise les chemins et rend le
+# lineage source→staging visible dans le manifest (Marquez, étape 3.5).
+#
+# `hive_partitioning=false` : le brut est rangé sous `updated_date=YYYY-MM-DD/`, mais
+# cette date vient du CHEMIN, pas du JSON. Sans ce drapeau, DuckDB injecterait une
+# colonne fantôme `updated_date` (drift connu) ; la période de la partition curated
+# vient des vars Dagster (`curated_dt`), pas du chemin brut.
+#
+# `raw_root` est une var (défaut `s3://citation/raw`, surchargée en test → bucket
+# MinIO épinglé). Le glob `**/*.gz` couvre toutes les partitions `updated_date`.
+sources:
+  - name: citation_raw
+    description: "Snapshot OpenAlex brut (JSONL.gz / CSV.gz), synchronisé dans le lakehouse."
+    tables:
+      - name: works
+        description: "Œuvres : id, année, références, authorships, FWCI, compteurs."
+        meta:
+          external_location: "read_json_auto('{{ var('raw_root') }}/works/**/*.gz', hive_partitioning=false)"
+      - name: authors
+        description: "Auteurs : id, orcid (nullable), display_name, compteurs."
+        meta:
+          external_location: "read_json_auto('{{ var('raw_root') }}/authors/**/*.gz', hive_partitioning=false)"
+      - name: merged_ids_works
+        description: "Œuvres fusionnées (merge_date,id,merge_into_id) — CSV gzippé."
+        meta:
+          external_location: "read_csv_auto('{{ var('raw_root') }}/merged_ids/works/*.gz', header=true)"

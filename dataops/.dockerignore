@@ -1,0 +1,14 @@
+# Contexte de build de l'image citation-dagster = `dataops/` (cf. Dockerfile).
+# Le .dockerignore RACINE ne s'applique plus à ce contexte : on exclut ici les
+# artefacts locaux pour ne pas gonfler le contexte envoyé au démon Docker.
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.ruff_cache/
+**/*.egg-info/
+# Artefacts dbt régénérés au build (`dbt parse`) — jamais copiés depuis l'hôte.
+**/target/
+**/logs/
+**/*.log
+**/.user.yml
