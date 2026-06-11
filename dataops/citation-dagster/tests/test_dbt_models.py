@@ -31,7 +31,7 @@ from citation_dagster.resources import (
     ceph_target_from_env,
     render_rclone_config,
 )
-from tests.conftest import load_raw_fixtures
+from tests.conftest import load_raw_fixtures, requires_rclone
 
 _DBT_PROJECT = Path(__file__).resolve().parents[2] / "citation-dbt"
 
@@ -207,6 +207,7 @@ def _rclone_lsjson(minio, prefix: str) -> list:
 
 def test_collab_manifest_atomic_and_correct(minio, monkeypatch):
     """e2e : dbt écrit le mart sous marts/collab/, l'asset écrit un manifest correct."""
+    requires_rclone()  # l'asset + ce test shellent rclone (absent de l'hôte CI/contributeur)
     load_raw_fixtures(minio)
     _set_minio_env(monkeypatch, minio)
 

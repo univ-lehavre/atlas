@@ -133,6 +133,18 @@ def minio():
         subprocess.run(["docker", "rm", "-f", name], capture_output=True, check=False)
 
 
+def requires_rclone() -> None:
+    """Saute le test si le binaire ``rclone`` est absent de l'hôte.
+
+    ``rclone`` n'est PAS une dépendance pip : il vit dans l'image (Dockerfile), pas
+    forcément sur l'hôte de CI ni la machine d'un contributeur. Les tests qui
+    invoquent ``rclone`` directement (manifest 3.4) s'auto-sautent alors — la logique
+    de l'asset reste couverte par les tests FakeRclone (rclone mocké).
+    """
+    if shutil.which("rclone") is None:
+        pytest.skip("rclone indisponible sur l'hôte — test sauté (self-skipping).")
+
+
 # Mapping fixture local → clé S3 sous `raw/` (layout écrit par `raw_snapshot`).
 _PART = "updated_date=2020-01-01/part_000.gz"
 _RAW_FIXTURES = {
