@@ -4,7 +4,7 @@ title: Parcours thématique des décisions
 
 Cette page propose un **tour cohérent des décisions** du dépôt, regroupées par
 thème plutôt que par numéro. Elle s'adresse à un **nouveau venu** : plutôt que de
-lire les 56 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
+lire les 57 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
 comprendre _pourquoi_ le dépôt est fait comme il est.
 
 Pour la liste exhaustive par numéro (et le statut de chacun), voir
@@ -177,6 +177,9 @@ authentifier le service CRF ([0041](/atlas/decisions/0041-strategie-auth-service
 - [0056 — Registre de drifts](/atlas/decisions/0056-registre-drifts/) : capitaliser
   les **écarts révélés à l'exécution** (que le lint ne voit pas) et les pièges de
   revue, dans un catalogue indexé et citable.
+- [0057 — Reproductibilité : tests hermétiques](/atlas/decisions/0057-reproductibilite-tests-hermetiques/) :
+  un test ne dépend ni du réseau ni de l'état machine — **fixtures figées**, images
+  par digest, déterminisme du pipeline (vérifie le `sha256` du contrat).
 
 ## 5. La documentation comme miroir du code
 
