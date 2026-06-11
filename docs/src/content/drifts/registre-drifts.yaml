@@ -17,7 +17,7 @@
 #   correctif : ce qui a été fait
 #   statut    : corrige | caduc (contexte abandonné) | ouvert
 #
-# Couverture : D1–D13 (pipeline OpenAlex/Dagster + transformations dbt, juin 2026).
+# Couverture : D1–D14 (pipeline OpenAlex/Dagster + transformations dbt, juin 2026).
 
 - id: D1
   campagne: "pipeline OpenAlex/Dagster — premier run sur le banc"
@@ -217,4 +217,22 @@
   correctif: >-
     Nommer explicitement le fichier dans la location (« …/run=<id>/part.parquet ») ; le
     préfixe dt=…/run=…/ reste l'unité immuable relisable via « run=<id>/*.parquet ».
+  statut: corrige
+
+- id: D14
+  campagne: "modèles dbt staging→curated (étape 3.2) — CI DataOps"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    La CI « DataOps (Python) » échoue (3 tests) alors que tout passe en local :
+    « dbt parse » s'arrête sur « Env var required but not provided: AWS_ACCESS_KEY_ID ».
+  cause: >-
+    Le « dbt parse » paresseux (ensure_manifest, quand le manifest absent — target/ est
+    git-ignoré) doit RENDRE profiles.yml, qui lit le secret S3 via env_var() SANS défaut.
+    En CI (aucune clé AWS, pas de manifest pré-généré) le rendu échoue, bien que le parse
+    ne fasse aucune I/O S3. Masqué en local par un manifest déjà généré. Révélé au 1er run CI.
+  correctif: >-
+    Injecter des identifiants S3 FACTICES (os.environ.setdefault — jamais d'écrasement d'un
+    vrai accès) avant le parse paresseux, parité avec le Dockerfile. Le « dbt build » runtime
+    garde le vrai environnement (chemin séparé). Le parse devient hermétique partout.
   statut: corrige

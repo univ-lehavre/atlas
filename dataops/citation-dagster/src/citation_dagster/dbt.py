@@ -35,6 +35,20 @@ dbt_project = DbtProject(project_dir=os.fspath(DBT_PROJECT_DIR))
 # No-op hors ``dagster dev`` ; régénère le manifest pendant le dev local.
 dbt_project.prepare_if_dev()
 
+# Valeurs FACTICES injectées (uniquement si absentes) pour rendre ``dbt parse``
+# hermétique : profiles.yml résout son secret S3 via ``env_var('AWS_…')`` au PARSE,
+# alors que le parse ne fait AUCUNE I/O S3. En CI / checkout neuf ces variables sont
+# absentes → le parse échouerait (« Env var required »). On ne pose les factices que
+# si elles manquent : en prod (image) et au run réel, les vraies clés (Secret
+# citation-s3-access) priment et ne sont jamais écrasées. Même principe que le
+# Dockerfile (drift D14 : parse non hermétique sans ces variables).
+_DUMMY_PARSE_ENV = {
+    "AWS_ACCESS_KEY_ID": "x",
+    "AWS_SECRET_ACCESS_KEY": "x",
+    "BUCKET_HOST": "x",
+    "BUCKET_PORT": "0",
+}
+
 
 def build_dbt_vars(run_id: str, curated_dt: str) -> dict[str, str]:
     """Variables dbt injectées au run : période + id de run IMMUABLE.
@@ -50,10 +64,15 @@ def ensure_manifest() -> Path:
 
     En prod le manifest est packagé dans l'image (``dbt parse`` au build) : ce
     chemin n'est emprunté qu'en test/CI/checkout neuf. Le ``parse`` n'effectue
-    aucune I/O S3 (résolution de graphe uniquement).
+    aucune I/O S3 (résolution de graphe uniquement) ; on injecte des identifiants
+    S3 factices (si absents) pour qu'il rende ``profiles.yml`` sans vraies clés.
     """
     manifest_path = dbt_project.manifest_path
     if not manifest_path.exists():
+        # DbtCliResource.cli hérite de os.environ : on y pose les factices manquantes
+        # AVANT le parse (jamais d'écrasement d'une vraie clé déjà présente).
+        for key, value in _DUMMY_PARSE_ENV.items():
+            os.environ.setdefault(key, value)
         DbtCliResource(project_dir=os.fspath(DBT_PROJECT_DIR)).cli(
             ["parse"], target_path=Path("target")
         ).wait()

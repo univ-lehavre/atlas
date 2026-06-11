@@ -44,6 +44,8 @@ ENV CITATION_DBT_PROJECT_DIR=/opt/dagster/citation-dbt
 
 # Génère le manifest dbt DANS l'image (hermétique : `parse` ne fait aucune I/O S3).
 # Des identifiants S3 factices suffisent à satisfaire le rendu de profiles.yml.
+# Mêmes valeurs que `_DUMMY_PARSE_ENV` dans citation_dagster.dbt (parse paresseux CI) :
+# garder les deux chemins de parse en phase (drift D14).
 RUN AWS_ACCESS_KEY_ID=x AWS_SECRET_ACCESS_KEY=x BUCKET_HOST=x BUCKET_PORT=0 \
     dbt parse --project-dir /opt/dagster/citation-dbt \
               --profiles-dir /opt/dagster/citation-dbt --target dev
