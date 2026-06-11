@@ -4,7 +4,7 @@ title: Parcours thématique des décisions
 
 Cette page propose un **tour cohérent des décisions** du dépôt, regroupées par
 thème plutôt que par numéro. Elle s'adresse à un **nouveau venu** : plutôt que de
-lire les 57 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
+lire les 59 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
 comprendre _pourquoi_ le dépôt est fait comme il est.
 
 Pour la liste exhaustive par numéro (et le statut de chacun), voir
@@ -184,6 +184,13 @@ authentifier le service CRF ([0041](/atlas/decisions/0041-strategie-auth-service
   pas un chargement d'index à demi (`pairs` sans la recherche `researchers`) — l'asset
   attend un **producteur de données par chercheur servi**, le vrai débloqueur (même gap
   capacité/producteur que `works`/`authorships`).
+- [0059 — Producteur par chercheur, ancrage `author_id`](/atlas/decisions/0059-mart-researchers-author-id-grain/) :
+  le producteur que 0058 attendait, dérivé du **seul brut S3** (reproductible), ancré sur
+  un identifiant **imparfait** (`author_id` — plusieurs par personne, publications bruitées).
+  La purge d'opposition est donc **chirurgicale au grain `(author_id, work_id)` validé** :
+  on ne retire que ce que la personne revendique, jamais une publication d'autrui. Le mart
+  conserve une **provenance par publication** (capacité de purge) ; la validation chercheur
+  et la liste d'opposition relèvent du **déployeur**.
 
 ## 5. La documentation comme miroir du code
 
