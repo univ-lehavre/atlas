@@ -29,6 +29,8 @@ vars:
   curated_dt: "0000-00"
   curated_run: "dev"
   raw_root: "s3://citation/raw"
+  # Racine du mart « servi » (étape 3.4, contrat ADR 0029) ; surchargée en test.
+  marts_root: "s3://citation/marts"
 
 # Staging = vues vivant le temps de la session DuckDB `:memory:` (pas d'artefact S3
 # intermédiaire). Seul `curated` est externalisé en Parquet — le contrat de sortie

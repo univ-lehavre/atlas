@@ -17,7 +17,7 @@
 #   correctif : ce qui a été fait
 #   statut    : corrige | caduc (contexte abandonné) | ouvert
 #
-# Couverture : D1–D14 (pipeline OpenAlex/Dagster + transformations dbt, juin 2026).
+# Couverture : D1–D16 (pipeline OpenAlex/Dagster + transformations dbt, juin 2026).
 
 - id: D1
   campagne: "pipeline OpenAlex/Dagster — premier run sur le banc"
@@ -235,4 +235,38 @@
     Injecter des identifiants S3 FACTICES (os.environ.setdefault — jamais d'écrasement d'un
     vrai accès) avant le parse paresseux, parité avec le Dockerfile. Le « dbt build » runtime
     garde le vrai environnement (chemin séparé). Le parse devient hermétique partout.
+  statut: corrige
+
+- id: D15
+  campagne: "manifest atomique du mart collab (étape 3.4)"
+  nature: piege-revue
+  portee: code
+  symptome: >-
+    « rclone hashsum sha256 » sur un objet S3 échoue : « hash unsupported: hash type not
+    supported » (code 1) — impossible de calculer le sha256 des parts pour le manifest.
+  cause: >-
+    S3/MinIO n'expose pas de sha256 côté serveur (seulement l'ETag/MD5) ; rclone réclame un
+    hash serveur par défaut. Révélé en sondant rclone contre un MinIO épinglé avant de coder.
+  correctif: >-
+    Forcer le calcul côté client avec « --download » : rclone télécharge les octets et hache
+    localement (« rclone hashsum sha256 --download »), résultat identique à hashlib/shasum.
+    Un test unitaire vérifie que la commande hashsum porte « --download » (anti-régression).
+  statut: corrige
+
+- id: D16
+  campagne: "manifest atomique du mart collab (étape 3.4) — CI DataOps"
+  nature: drift-e2e
+  portee: harnais
+  symptome: >-
+    La CI « DataOps (Python) » échoue : « FileNotFoundError: 'rclone' » sur le test
+    d'intégration du manifest, alors qu'il passe en local.
+  cause: >-
+    rclone N'EST PAS une dépendance pip : il vit dans l'IMAGE (Dockerfile), pas sur l'hôte
+    de CI ni la machine d'un contributeur. Le test d'intégration du manifest shelle rclone
+    directement sur l'hôte (pas dans un conteneur, contrairement à `mc`). Masqué en local
+    (rclone installé). Révélé au 1er run CI de l'étape 3.4.
+  correctif: >-
+    Auto-saut du test si rclone est absent (requires_rclone(), comme le skip Docker du
+    fixture MinIO) ; la logique de l'asset reste couverte par les tests FakeRclone (rclone
+    mocké). Garde-fou ADR 0057 : un test exigeant un outil hôte non garanti est self-skipping.
   statut: corrige

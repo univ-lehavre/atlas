@@ -24,7 +24,7 @@
 -- b_to_a=1.
 {{ config(
     materialized='external',
-    location=curated_location('marts_collab_pairs'),
+    location=marts_location('collab'),
     options={'format': 'parquet'}
 ) }}
 

@@ -17,13 +17,21 @@ import hashlib
 import json
 import os
 import subprocess
+import tempfile
 from pathlib import Path
 
 import duckdb
+from dagster import build_asset_context
 
+import citation_dagster.assets.manifest as cm
 from citation_dagster import lakehouse
-from citation_dagster.resources import DuckDBS3Config
-from tests.conftest import load_raw_fixtures
+from citation_dagster.dbt import CURATED_DT
+from citation_dagster.resources import (
+    DuckDBS3Config,
+    ceph_target_from_env,
+    render_rclone_config,
+)
+from tests.conftest import load_raw_fixtures, requires_rclone
 
 _DBT_PROJECT = Path(__file__).resolve().parents[2] / "citation-dbt"
 
@@ -42,8 +50,13 @@ _BOB = "https://openalex.org/A1000000002"
 _GOLDEN_PAIR = (_ALICE, _BOB, 3, 2, 1)  # author_a, author_b, cross, a_to_b, b_to_a
 
 
-def _dbt_build(minio, curated_run: str) -> subprocess.CompletedProcess:
-    """Lance `dbt build` (staging+curated+tests) contre MinIO, pour un run donné."""
+def _dbt_build(minio, curated_run: str, curated_dt: str = "2020-01") -> subprocess.CompletedProcess:
+    """Lance `dbt build` (staging+curated+marts+tests) contre MinIO, pour un run donné.
+
+    `marts_root` redirige le mart « servi » (3.4) vers le bucket MinIO ; `curated_dt`
+    est paramétrable pour aligner la partition avec l'asset manifest (qui fige
+    CURATED_DT) lors du test d'intégration du manifest.
+    """
     env = {
         **os.environ,
         "AWS_ACCESS_KEY_ID": minio.access_key,
@@ -55,7 +68,8 @@ def _dbt_build(minio, curated_run: str) -> subprocess.CompletedProcess:
     dbt_vars = {
         "raw_root": f"s3://{minio.bucket}/raw",
         "curated_root": f"s3://{minio.bucket}/curated",
-        "curated_dt": "2020-01",
+        "marts_root": f"s3://{minio.bucket}/marts",
+        "curated_dt": curated_dt,
         "curated_run": curated_run,
     }
     return subprocess.run(
@@ -95,7 +109,8 @@ def _canonical_sha256(rows: list[tuple]) -> str:
 
 
 def _read_collab_pairs(con: duckdb.DuckDBPyConnection, bucket: str, run: str) -> list[tuple]:
-    glob = f"s3://{bucket}/curated/marts_collab_pairs/dt=2020-01/run={run}/*.parquet"
+    # Le mart « servi » vit désormais sous marts/collab/ (étape 3.4), plus curated/.
+    glob = f"s3://{bucket}/marts/collab/dt=2020-01/run={run}/*.parquet"
     return con.sql(
         f"SELECT author_a, author_b, cross_citations, a_to_b, b_to_a "
         f"FROM read_parquet('{glob}') ORDER BY author_a, author_b"
@@ -165,3 +180,90 @@ def test_dbt_build_marts_collab_pairs_golden(minio):
     # cross_citations est bien la somme des deux sens.
     _a, _b, cross, a_to_b, b_to_a = pairs[0]
     assert cross == a_to_b + b_to_a
+
+
+# ── Manifest atomique du mart collab (étape 3.4) ─────────────────────────────
+
+
+def _set_minio_env(monkeypatch, minio) -> None:
+    """Pointe l'environnement S3 (rclone + DuckDB) vers le MinIO de test."""
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", minio.access_key)
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", minio.secret_key)
+    monkeypatch.setenv("BUCKET_HOST", minio.endpoint.split(":")[0])
+    monkeypatch.setenv("BUCKET_PORT", minio.endpoint.split(":")[1])
+    monkeypatch.setenv("BUCKET_NAME", minio.bucket)
+    monkeypatch.delenv("OPENLINEAGE_URL", raising=False)
+
+
+def _rclone_lsjson(minio, prefix: str) -> list:
+    """Liste un préfixe du bucket MinIO via un rclone configuré à la volée."""
+    target = ceph_target_from_env()
+    with tempfile.TemporaryDirectory() as tmp:
+        cfg = Path(tmp) / "rclone.conf"
+        cfg.write_text(render_rclone_config(target))
+        proc = cm._run_rclone(["lsjson", prefix], cfg)
+    return json.loads(proc.stdout) if proc.stdout.strip() else []
+
+
+def test_collab_manifest_atomic_and_correct(minio, monkeypatch):
+    """e2e : dbt écrit le mart sous marts/collab/, l'asset écrit un manifest correct."""
+    requires_rclone()  # l'asset + ce test shellent rclone (absent de l'hôte CI/contributeur)
+    load_raw_fixtures(minio)
+    _set_minio_env(monkeypatch, minio)
+
+    # Le run_id de l'asset (invocation directe) est 'EPHEMERAL' ; on aligne le dbt build
+    # dessus (même dt=CURATED_DT, même run) pour que les préfixes coïncident.
+    run_id = "EPHEMERAL"
+    r = _dbt_build(minio, curated_run=run_id, curated_dt=CURATED_DT)
+    assert r.returncode == 0, f"dbt build a échoué :\n{r.stdout}\n{r.stderr}"
+
+    prefix_s3 = f"ceph:{minio.bucket}/marts/collab/dt={CURATED_DT}/run={run_id}"
+
+    # ── NÉGATIF : avant l'asset, le mart existe mais PAS de manifest (sentinelle) ──
+    names_before = {e["Name"] for e in _rclone_lsjson(minio, prefix_s3)}
+    assert "part.parquet" in names_before
+    assert "manifest.json" not in names_before  # un consommateur refuserait de lire
+
+    # ── POSITIF : l'asset écrit le manifest EN DERNIER ──
+    res = cm.collab_manifest(build_asset_context())
+    assert res.metadata["row_count"].value == 1  # paire golden unique
+    assert res.metadata["partition"].value == f"dt={CURATED_DT}/run={run_id}"
+
+    names_after = {e["Name"] for e in _rclone_lsjson(minio, prefix_s3)}
+    assert "manifest.json" in names_after
+
+    # Relire le manifest et vérifier le contrat contre les octets réels.
+    cfg = DuckDBS3Config(
+        key_id=minio.access_key,
+        secret=minio.secret_key,
+        endpoint=minio.endpoint,
+        use_ssl=False,
+        region="us-east-1",
+        bucket=minio.bucket,
+    )
+    con = lakehouse.connect(cfg)
+    man = json.loads(
+        con.sql(
+            f"SELECT content FROM read_text("
+            f"'s3://{minio.bucket}/marts/collab/dt={CURATED_DT}/run={run_id}/manifest.json')"
+        ).fetchone()[0]
+    )
+    assert man["schema_version"] == cm.MANIFEST_SCHEMA_VERSION == 1
+    assert man["row_count"] == 1
+    assert man["partition"] == f"dt={CURATED_DT}/run={run_id}"
+    assert len(man["parts"]) == 1
+    part = man["parts"][0]
+    assert part["key"] == f"marts/collab/dt={CURATED_DT}/run={run_id}/part.parquet"
+
+    # sha256 + bytes recalculés INDÉPENDAMMENT sur le même objet.
+    target = ceph_target_from_env()
+    with tempfile.TemporaryDirectory() as tmp:
+        rc = Path(tmp) / "rclone.conf"
+        rc.write_text(render_rclone_config(target))
+        raw = subprocess.run(
+            ["rclone", "--config", str(rc), "cat", f"{prefix_s3}/part.parquet"],
+            capture_output=True,
+            check=True,
+        ).stdout
+    assert hashlib.sha256(raw).hexdigest() == part["sha256"]
+    assert len(raw) == part["bytes"]
