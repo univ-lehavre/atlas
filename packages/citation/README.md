@@ -112,6 +112,17 @@ interroge (`fts @@ to_tsquery`, classé par `ts_rank`).
 > **n'est pas couverte par un `manifest.json` servi** : l'invariant « valider le contrat
 > avant chargement » (3.6) ne s'applique pas à ce chemin.
 
+### Recherche sémantique kNN (vecteurs, étape 4.3)
+
+`load_researcher_vectors(sql, dt, run, vectors)` peuple `researchers.embedding`
+(`vector(384)`) à partir des embeddings `all-MiniLM-L6-v2` **déjà produits** par
+`researcher-profiles` (`{ researcherId, vector: Float32Array }`) — **aucun nouveau
+modèle, aucun GPU**, un vecteur par chercheur. Le `Float32Array` est sérialisé au format
+texte pgvector (`[f1,f2,…]`) ; l'upsert par partition **n'écrase pas le `fts`** posé par
+4.2 (symétrique du loader FTS). Une dimension ≠ 384 est rejetée tôt (avant l'upsert).
+`search_researchers_knn(sql, dt, run, query, limit)` interroge l'index HNSW
+(distance cosinus `<=>`), du plus proche au plus lointain.
+
 ## Internals
 
 ### `src/fetch/`

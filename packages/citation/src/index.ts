@@ -25,5 +25,10 @@ export {
 } from "./pg/index.js";
 export { load_researcher_fts, search_researchers_fts } from "./pg/fts.js";
 export type { ResearcherDocument } from "./pg/fts.js";
+export {
+  load_researcher_vectors,
+  search_researchers_knn,
+} from "./pg/vectors.js";
+export type { ResearcherVector } from "./pg/vectors.js";
 export type { CitationSearchAuthorAffiliationResult } from "./types/citation.js";
 export type { Args, Env, Query, QueryValue } from "./types/index.js";
