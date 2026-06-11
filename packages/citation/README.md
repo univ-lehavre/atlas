@@ -35,6 +35,32 @@ PER_PAGE=25
 OPENALEX_API_KEY=          # optional
 ```
 
+## Validateur du contrat de données (manifest)
+
+Le package expose aussi le **validateur du contrat** producteur↔consommateur du
+pipeline DataOps. Le pipeline (Python, `dataops/`) produit un `manifest.json` à côté du
+mart Parquet servi ; **avant de lire**, un consommateur (chargement d'index, `atlas-api`)
+valide ce manifest. La forme du contrat (`Manifest`, `MANIFEST_SCHEMA_VERSION`) vit dans
+[`@univ-lehavre/atlas-citation-types`](/atlas/packages/packages/citation-types/) —
+**miroir exact** du producteur Python (ADR 0029).
+
+```typescript
+import { Effect } from "effect";
+import { validateManifest, verifyPart } from "@univ-lehavre/atlas-citation";
+
+// 1) Valide la FORME + REFUSE une schema_version inconnue (pas de best-effort).
+const manifest = await Effect.runPromise(validateManifest(jsonFromS3));
+
+// 2) Pour chaque part, vérifie l'intégrité AVANT de lire (octets fournis par l'appelant).
+for (const part of manifest.parts) {
+  const bytes = await readObject(part.key); // lecture S3/disque côté consommateur
+  await Effect.runPromise(verifyPart(bytes, part.sha256));
+}
+```
+
+Échecs (`ManifestError`) : `schema_version` inconnue, manifest mal formé, `sha256`
+divergent. Le validateur est **pur** (aucune I/O S3) : l'appelant fournit les octets.
+
 ## Internals
 
 ### `src/fetch/`
