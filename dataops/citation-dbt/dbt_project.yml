@@ -1,0 +1,25 @@
+# Projet dbt-duckdb du pipeline de citations (étape 3, ADR 0055).
+#
+# dbt produit les modèles (staging → curated → marts) ; Dagster les orchestre et
+# émet le lineage (dagster-dbt). Le backend S3 est configuré dans profiles.yml
+# (DuckDB httpfs + secret path-style depuis l'environnement). Aucun modèle en 3.1 :
+# le squelette permet à `dbt parse` de réussir ; les modèles arrivent en 3.2.
+name: "citation"
+version: "0.0.0"
+config-version: 2
+
+profile: "citation"
+
+# Pas de télémétrie réseau ni d'identifiant machine généré (hermétisme, ADR 0057).
+flags:
+  send_anonymous_usage_stats: false
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+# Les modèles écrivent en Parquet partitionné sur S3 (étape 3.2+).
+models:
+  citation:
+    +materialized: external

@@ -1,5 +1,5 @@
 ---
-title: "0057 — Reproductibilité : tests hermétiques et fixtures figées"
+title: "0057 — Reproductibilité : tests hermétiques, fixtures figées et preuve par exécution"
 ---
 
 ## Contexte
@@ -48,6 +48,18 @@ de version (`.nvmrc`, `.python-version`). Les **services de test conteneurisés*
 Postgres de test…) sont référencés **par digest** (`image@sha256:…`), **jamais** par tag mobile
 (`latest`, `1`, `stable`). Un tag mobile rend le test non reproductible par construction.
 
+### Portabilité matérielle : x86_64 et arm64
+
+Tout le code du dépôt doit tourner **à l'identique sur les deux architectures
+processeur** : **x86_64** (la CI GitHub Actions, la prod _bare-metal_) et **arm64**
+(le banc Lima sur Mac ARM, les machines de développement). C'est une facette de la
+reproductibilité : un test qui passe sur une arche mais échoue sur l'autre n'est pas
+reproductible. Concrètement : toute **dépendance binaire** (wheel Python compilé,
+image de base) doit fournir des artefacts pour **les deux** arches ; le code ne
+suppose jamais une arche (pas d'extension native mono-plateforme, pas d'instruction
+spécifique). Une dépendance qui n'a de wheel que pour une arche est **rejetée** ou
+remplacée.
+
 ### Déterminisme du pipeline de données
 
 Une même entrée produit une même sortie, **à l'octet près**. C'est ce qui rend vérifiable le
@@ -55,6 +67,30 @@ Une même entrée produit une même sortie, **à l'octet près**. C'est ce qui r
 **ré-dérivabilité** du mart (re-générer une partition à l'identique). Tout non-déterminisme
 (ordre non trié, horodatage embarqué, identifiant aléatoire non seedé) est un défaut à corriger,
 pas à tolérer.
+
+### La preuve : une exécution réelle, reproductible et datée
+
+Un comportement n'est **prouvé** qu'après une **exécution réelle** — jamais par une
+simple revue de code ni un « ça devrait marcher ». La reproductibilité rend cette
+preuve **rejouable à volonté** (mêmes fixtures, mêmes versions, même résultat), donc
+crédible. On distingue **deux niveaux**, complémentaires :
+
+- **Preuve de mécanique** — un _smoke test_ **hermétique** (fixtures figées, service
+  conteneurisé épinglé par digest) qui exécute le vrai code et vérifie son effet. Il
+  prouve que la logique fonctionne, hors cluster, en quelques secondes. C'est le
+  niveau exigé **à chaque incrément**.
+- **Preuve d'intégration** — une exécution **déployée de bout en bout** (sur le banc,
+  via le harnais de validation de code-location externe du dépôt `cluster`) qui
+  prouve que la brique fonctionne **dans son environnement réel**. C'est le niveau
+  exigé **aux jalons**.
+
+Une preuve d'intégration **a une date et peut périmer** : l'environnement (cluster,
+images, dépendances) évolue, donc une preuve ancienne ne garantit plus rien. À
+l'image du garde-fou « fraîcheur des preuves de banc » du dépôt
+[cluster (ADR 0042)](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0042-fraicheur-preuves-banc.md),
+une preuve déployée périmée doit être **rejouée** avant de s'en réclamer. Un écart
+révélé au moment d'une preuve (de mécanique ou d'intégration) est consigné au
+[registre de drifts](/atlas/audit/registre-drifts/) ([ADR 0056](/atlas/decisions/0056-registre-drifts/)).
 
 ### Garde-fou : la non-hermétisme est un défaut de revue
 
@@ -89,3 +125,8 @@ réels existent toujours, mais hors du chemin par défaut.
 - Toolchain via lockfiles ; runtime via `.nvmrc`/`.python-version`.
 - Les tests exigeant un environnement externe sont **marqués et exclus** du défaut.
 - Le déterminisme du pipeline est **testé** (rejeu → même sortie ; `sha256` stable).
+- Toute dépendance binaire fournit des wheels **x86_64 et arm64** ; le code ne
+  suppose aucune arche (CI x86, banc arm).
+- Un comportement n'est « fait » qu'une fois **prouvé par exécution** : preuve de
+  mécanique (smoke hermétique) à chaque incrément, preuve d'intégration (déployée)
+  aux jalons. Une preuve d'intégration **périmée** est rejouée avant d'être invoquée.

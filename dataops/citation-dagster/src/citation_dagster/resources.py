@@ -81,3 +81,39 @@ def render_rclone_config(target: CephTarget) -> str:
             "",
         ]
     )
+
+
+@dataclass(frozen=True)
+class DuckDBS3Config:
+    """Coordonnées S3 au format attendu par le ``CREATE SECRET`` de DuckDB.
+
+    DuckDB veut un ``ENDPOINT`` **sans schéma** (``host:port``) et un drapeau
+    ``USE_SSL`` explicite — à la différence de rclone qui prend l'URL complète.
+    """
+
+    key_id: str
+    secret: str
+    endpoint: str  # host:port, sans schéma
+    use_ssl: bool
+    region: str
+    bucket: str
+
+
+def duckdb_s3_config_from_env(env: dict[str, str] | None = None) -> DuckDBS3Config:
+    """Construit la config S3 DuckDB depuis l'environnement.
+
+    Réutilise ``ceph_target_from_env`` (mêmes variables ``AWS_*``/``BUCKET_*``),
+    puis dérive le format DuckDB : ``host:port`` sans schéma, ``use_ssl`` selon
+    que l'endpoint est en ``https`` (RGW prod) ou ``http`` (SeaweedFS/MinIO).
+    """
+    target = ceph_target_from_env(env)
+    use_ssl = target.endpoint.startswith("https://")
+    host_port = target.endpoint.split("://", 1)[-1]
+    return DuckDBS3Config(
+        key_id=target.access_key_id,
+        secret=target.secret_access_key,
+        endpoint=host_port,
+        use_ssl=use_ssl,
+        region="us-east-1",
+        bucket=target.bucket,
+    )

@@ -66,19 +66,23 @@
   statut: corrige
 
 - id: D4
-  campagne: "pipeline OpenAlex/Dagster — pods de run (cluster#264)"
+  campagne: "pipeline OpenAlex/Dagster — lenteur du banc (cluster#264, #268)"
   nature: drift-e2e
   portee: env
   symptome: >-
     Un « rclone copy » d'un fichier de 915 Ko qui prend 1,2 s en local prend plusieurs
     minutes dans un pod de run sur le banc.
   cause: >-
-    Le K8sRunLauncher ne pose aucune `resources` sur les pods de run → classe BestEffort
-    → premiers throttlés sur un banc hyperconvergé. Révélé en comparant local et banc.
+    Cause réelle (diagnostic cluster #268) : SeaweedFS épuisait ses slots de volume
+    (-volume.max=0 → plafonné à 13, tous saturés → « Not enough data nodes found ») ;
+    toute écriture d'une nouvelle collection restait bloquée en retries TCP. L'hypothèse
+    initiale (pods BestEffort throttlés) était FAUSSE : l'egress était bon, le throttling
+    n'existait pas.
   correctif: >-
-    Correctif côté cluster (poser des resources par défaut aux pods de run), tracé en
-    cluster#264. Consigné ici comme drift atlas-observé.
-  statut: ouvert
+    Corrigé côté cluster (#268 : -volume.max=100 + volumeSizeLimitMB=1024) — upload S3
+    revenu à 1 s. Décision atlas : borner quand même les runs dbt par prudence (DuckDB
+    gourmand en RAM) via dagster-k8s/config — choix de prudence, pas correctif de throttling.
+  statut: corrige
 
 - id: D5
   campagne: "pipeline OpenAlex/Dagster — source merged_ids (ADR 0054)"
@@ -150,4 +154,20 @@
     de la code-location, pas au lint.
   correctif: >-
     Retrait de « from __future__ import annotations » des modules d'assets Dagster.
+  statut: corrige
+
+- id: D10
+  campagne: "pipeline OpenAlex/Dagster — dépendance dagster-dbt (étape 3.1)"
+  nature: piege-revue
+  portee: code
+  symptome: >-
+    La résolution des dépendances échoue : « no version of dagster-dbt==1.13.7 ».
+  cause: >-
+    Contrairement à dagster (1.13.7), la librairie dagster-dbt suit une numérotation
+    propre 0.YY.Z. La correspondance est : dagster-dbt 0.YY.Z épingle dagster==1.(YY-14).Z.
+    Pour dagster 1.13.7 il faut donc dagster-dbt==0.29.7 (et non 1.13.7). Découvert en
+    sondant la résolution uv avant de coder l'étape 3.1.
+  correctif: >-
+    Épingler dagster-dbt==0.29.7 (résout dagster==1.13.7). Les paquets de l'écosystème
+    Dagster en 0.YY suivent cette règle (à vérifier au prochain bump de dagster).
   statut: corrige

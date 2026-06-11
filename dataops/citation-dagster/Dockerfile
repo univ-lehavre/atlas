@@ -12,6 +12,12 @@
 #
 # rclone (MIT) est un binaire système (pas une dépendance pip) : l'asset de sync
 # l'invoque en sous-processus.
+#
+# Étape 3 : duckdb/dbt-duckdb/dagster-dbt sont tirés automatiquement par le
+# pyproject (wheels arm64 disponibles, dont duckdb manylinux aarch64). Le projet
+# dbt (../citation-dbt/) n'est PAS copié ici : il est hors du contexte de build et
+# n'est requis qu'à partir de l'étape 3.2 (branchement @dbt_assets) — le contexte
+# de build sera alors élargi.
 FROM python:3.10-slim
 
 RUN apt-get update \
