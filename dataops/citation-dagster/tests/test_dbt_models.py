@@ -267,3 +267,19 @@ def test_collab_manifest_atomic_and_correct(minio, monkeypatch):
         ).stdout
     assert hashlib.sha256(raw).hexdigest() == part["sha256"]
     assert len(raw) == part["bytes"]
+
+
+def test_ge_checks_pass_on_served_fixtures(minio, monkeypatch):
+    """Asset checks Great Expectations (3.5a) verts sur le brut + curated + mart réels."""
+    from citation_dagster.assets import quality as q
+
+    load_raw_fixtures(minio)
+    _set_minio_env(monkeypatch, minio)
+    run_id = "gesmoke"
+    r = _dbt_build(minio, curated_run=run_id, curated_dt=CURATED_DT)
+    assert r.returncode == 0, f"dbt build a échoué :\n{r.stdout}\n{r.stderr}"
+
+    # Les trois portes de qualité passent sur la donnée servie par dbt.
+    assert q.check_raw(minio.bucket).passed is True
+    assert q.check_curated_edges(minio.bucket, run_id).passed is True
+    assert q.check_marts(minio.bucket, run_id).passed is True

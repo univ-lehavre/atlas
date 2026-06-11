@@ -12,6 +12,11 @@ Deux familles d'assets :
 from dagster import AssetSelection, Definitions, define_asset_job
 
 from citation_dagster.assets import collab_manifest, raw_snapshot
+from citation_dagster.assets.quality import (
+    ge_curated_edges,
+    ge_marts_collab,
+    ge_raw_contract,
+)
 from citation_dagster.dbt import dbt_components
 
 # Le pod de run (K8sRunLauncher) doit recevoir les accès S3 du lakehouse : on
@@ -43,6 +48,14 @@ _dbt_assets, _dbt_resources = dbt_components()
 _assets = [raw_snapshot, collab_manifest, *_dbt_assets]
 _jobs = [ingestion_job]
 
+# Asset checks Great Expectations bloquants (étape 3.5a). Le check du brut s'applique
+# à raw_snapshot (toujours présent) ; ceux des couches dbt (curated_edges,
+# marts_collab_pairs) ne sont enregistrés QUE si les assets dbt existent — sinon leur
+# clé cible n'est pas résolue en mode dégradé (dbt indisponible : lint/checkout neuf).
+_asset_checks = [ge_raw_contract]
+if _dbt_assets:
+    _asset_checks += [ge_curated_edges, ge_marts_collab]
+
 # Le job de transformation n'est enregistré QUE si les assets dbt existent : un
 # job dont la sélection ne résout aucun asset ferait échouer la construction des
 # Definitions. En prod le manifest est packagé → les assets dbt sont présents. Le job
@@ -55,4 +68,4 @@ if _dbt_assets:
     )
     _jobs.append(transform_job)
 
-defs = Definitions(assets=_assets, jobs=_jobs, resources=_dbt_resources)
+defs = Definitions(assets=_assets, asset_checks=_asset_checks, jobs=_jobs, resources=_dbt_resources)

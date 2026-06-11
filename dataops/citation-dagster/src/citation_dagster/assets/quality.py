@@ -1,0 +1,114 @@
+"""Asset checks Great Expectations BLOQUANTS (étape 3.5a).
+
+Trois *asset checks* Dagster en **porte de qualité bloquante** (``blocking=True``) :
+un échec d'attente fait échouer le run et empêche l'aval (p. ex. l'écriture du
+manifest sentinelle après le mart). Ils s'appliquent à trois couches :
+
+- ``ge_raw_contract`` sur ``raw_snapshot`` — le brut JSONL.gz (aucun test dbt ici) ;
+- ``ge_curated_edges`` sur ``curated_edges`` — format des ids + pas d'auto-citation ;
+- ``ge_marts_collab`` sur ``marts_collab_pairs`` — contrat de colonnes + bornes.
+
+Ils **complètent** les *asset checks* que dagster-dbt génère automatiquement à partir
+des tests dbt (noms distincts ``ge_*`` → aucune collision). La donnée est chargée via
+DuckDB (``lakehouse.connect``) en ``DataFrame`` pandas, puis validée par les suites
+pures de ``ge_suites`` (contexte GE éphémère, hermétique).
+
+Le run courant est résolu par ``context.run.run_id`` (l'``AssetCheckExecutionContext``
+n'expose PAS ``run_id`` directement, contrairement à l'``AssetExecutionContext``).
+
+NB : pas de ``from __future__ import annotations`` (Dagster introspecte, drift D9).
+"""
+
+from dagster import AssetCheckExecutionContext, AssetCheckResult, AssetKey, asset_check
+
+from citation_dagster import ge_suites, lakehouse
+from citation_dagster.dbt import CURATED_DT
+from citation_dagster.resources import ceph_target_from_env
+
+_MART_GLOB = "marts/collab"
+
+
+def _result(passed: bool, metadata: dict) -> AssetCheckResult:
+    """Mappe un résultat de validation GE en ``AssetCheckResult`` Dagster."""
+    return AssetCheckResult(
+        passed=passed,
+        metadata={
+            "suite": metadata["suite"],
+            "evaluated": metadata["evaluated"],
+            "failed_expectations": ", ".join(metadata["failed"]) or "—",
+        },
+    )
+
+
+# ── Corps purs (chargement + validation), testables sans Dagster ─────────────
+
+
+def check_raw(bucket: str) -> AssetCheckResult:
+    """Valide le brut works + authors (contrat structurel + format des ids)."""
+    con = lakehouse.connect()
+    # hive_partitioning=false : neutralise la colonne fantôme updated_date (cf. staging).
+    works = con.sql(
+        f"SELECT * FROM read_json_auto('s3://{bucket}/raw/works/**/*.gz', "
+        "hive_partitioning=false, union_by_name=true)"
+    ).df()
+    authors = con.sql(
+        f"SELECT * FROM read_json_auto('s3://{bucket}/raw/authors/**/*.gz', "
+        "hive_partitioning=false, union_by_name=true)"
+    ).df()
+    ok_w, meta_w = ge_suites.validate_df(works, "raw_works", ge_suites.raw_works_expectations())
+    ok_a, meta_a = ge_suites.validate_df(
+        authors, "raw_authors", ge_suites.raw_authors_expectations()
+    )
+    failed = meta_w["failed"] + meta_a["failed"]
+    return _result(
+        ok_w and ok_a,
+        {
+            "suite": "raw_works+raw_authors",
+            "evaluated": meta_w["evaluated"] + meta_a["evaluated"],
+            "failed": failed,
+        },
+    )
+
+
+def check_curated_edges(bucket: str, run_id: str) -> AssetCheckResult:
+    """Valide curated_edges (format ids + invariant pas d'auto-citation, colonne dérivée)."""
+    con = lakehouse.connect()
+    glob = f"s3://{bucket}/curated/curated_edges/dt={CURATED_DT}/run={run_id}/*.parquet"
+    df = con.sql(
+        f"SELECT citing_work_id, cited_work_id, "
+        f"(citing_work_id <> cited_work_id) AS _no_self_edge "
+        f"FROM read_parquet('{glob}')"
+    ).df()
+    ok, meta = ge_suites.validate_df(df, "curated_edges", ge_suites.curated_edges_expectations())
+    return _result(ok, meta)
+
+
+def check_marts(bucket: str, run_id: str) -> AssetCheckResult:
+    """Valide le mart servi (contrat de colonnes + bornes + invariant somme dérivé)."""
+    con = lakehouse.connect()
+    glob = f"s3://{bucket}/{_MART_GLOB}/dt={CURATED_DT}/run={run_id}/*.parquet"
+    df = con.sql(
+        f"SELECT author_a, author_b, cross_citations, a_to_b, b_to_a, "
+        f"(a_to_b + b_to_a = cross_citations) AS _sum_ok "
+        f"FROM read_parquet('{glob}')"
+    ).df()
+    ok, meta = ge_suites.validate_df(df, "marts_collab", ge_suites.marts_collab_expectations())
+    return _result(ok, meta)
+
+
+# ── Asset checks Dagster (minces : résolvent le run puis délèguent) ───────────
+
+
+@asset_check(asset=AssetKey(["raw_snapshot"]), name="ge_raw_contract", blocking=True)
+def ge_raw_contract(context: AssetCheckExecutionContext) -> AssetCheckResult:
+    return check_raw(ceph_target_from_env().bucket)
+
+
+@asset_check(asset=AssetKey(["curated_edges"]), name="ge_curated_edges", blocking=True)
+def ge_curated_edges(context: AssetCheckExecutionContext) -> AssetCheckResult:
+    return check_curated_edges(ceph_target_from_env().bucket, context.run.run_id)
+
+
+@asset_check(asset=AssetKey(["marts_collab_pairs"]), name="ge_marts_collab", blocking=True)
+def ge_marts_collab(context: AssetCheckExecutionContext) -> AssetCheckResult:
+    return check_marts(ceph_target_from_env().bucket, context.run.run_id)
