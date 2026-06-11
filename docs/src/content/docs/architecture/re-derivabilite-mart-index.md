@@ -487,16 +487,40 @@ vecteurs sont des **embeddings** : des représentations numériques du « sens �
 texte, ici produites **par chercheur** par le modèle `all-MiniLM-L6-v2` (déjà
 calculées en amont par `researcher-profiles`).
 
-Propagation d'une opposition à l'index :
+**Schéma concret de l'index (livré en [étape 4.1](/atlas/plans/2026-06-02-pipeline-collaborations/)).**
+La purge n'est plus abstraite : le schéma `pgvector` existe (paquet
+`@univ-lehavre/atlas-citation`, migrations versionnées). Deux tables, toutes deux
+clés sur l'**entité chercheur** et porteuses des coordonnées de partition `(dt, run)` :
 
-1. **Purge ciblée** : `DELETE` des lignes de l'index correspondant aux entités
-   chercheur ∈ `exclusion_set(T)` (la clé `researcherId` rend la purge directe,
-   ligne par ligne — pas de recalcul d'embedding nécessaire : **aucun nouveau
-   modèle ni GPU**, ADR 0029).
-2. **Recharge depuis la partition régénérée** : `index_load` recharge l'index
-   depuis la **partition courante régénérée** (§2), qui **ne contient déjà plus**
-   les personnes opposées. Purge + recharge sont **idempotents** : recharger depuis
-   un mart déjà filtré ne réintroduit jamais une personne exclue.
+- **`researchers`** `(researcher_id, embedding vector(384), dt, run)` — un vecteur par
+  chercheur (clé naturelle `(researcher_id, dt, run)`) ;
+- **`pairs`** `(author_a, author_b, cross_citations, a_to_b, b_to_a, dt, run)` — une
+  paire par couple `(author_a, author_b, dt, run)`.
+
+Propagation d'une opposition à l'index, exprimée sur ce schéma :
+
+1. **Purge ciblée** : `DELETE` direct des lignes dont l'entité chercheur ∈
+   `exclusion_set(T)` — ligne par ligne, sans recalcul d'embedding (**aucun nouveau
+   modèle ni GPU**, ADR 0029). Concrètement, l'opposition d'un chercheur `R` retire :
+
+   ```sql
+   DELETE FROM researchers WHERE researcher_id = ANY($exclusion_set);
+   -- une paire est servie dès lors qu'UNE de ses deux entités est opposée :
+   DELETE FROM pairs
+     WHERE author_a = ANY($exclusion_set) OR author_b = ANY($exclusion_set);
+   ```
+
+   La clé chercheur (`researcher_id` / `author_a` / `author_b`) rend la purge directe.
+   La FTS lexicale (`tsvector`, [étape 4.2](/atlas/plans/2026-06-02-pipeline-collaborations/),
+   non encore matérialisée) sera purgée de la même façon, sur la même clé.
+
+2. **Recharge depuis la partition régénérée** : `index_load`
+   ([étape 4.4](/atlas/plans/2026-06-02-pipeline-collaborations/)) recharge
+   l'index depuis la **partition courante régénérée** (§2) — désignée par ses
+   coordonnées `(dt, run')` —, qui **ne contient déjà plus** les personnes opposées. Le
+   chargement se fait **par partition** : recharger `(dt, run')` **remplace** les lignes
+   de cette partition (pas de doublon). Purge + recharge sont **idempotents** :
+   recharger depuis un mart déjà filtré ne réintroduit jamais une personne exclue.
 3. L'index reste **cohérent** avec la partition courante servie et avec le registre
    d'opposition.
 
@@ -504,6 +528,16 @@ Propagation d'une opposition à l'index :
 > **suppression de lignes**, pas par masquage de partition. Le masquage `atlas-api`
 > (§3) reste la **défense en profondeur** durant la fenêtre entre l'opposition et
 > la fin de la purge/recharge.
+
+> **Capacité côté index : prête ; reste à brancher l'entrée.** Le **mécanisme** de
+> purge décrit ci-dessus est réalisable sur le schéma livré (tables `researchers` /
+> `pairs` clés sur la personne, coordonnées `(dt, run)`) : le dépôt **permet** la
+> purge. Ce qui manque n'est pas côté index mais côté **entrée** — la
+> `exclusion_set(T)` exprimée en **clé chercheur** (§1.4) : tant que la correspondance
+> compte ↔ chercheur n'est pas matérialisée et que le déployeur n'a pas branché le
+> registre d'opposition, la purge n'a pas de liste à appliquer. Le code fournit la
+> mécanique ; **l'actionner** (brancher le registre, trancher la recevabilité d'une
+> opposition, fixer le SLA) relève du **déployeur** (responsable de traitement).
 
 ---
 
