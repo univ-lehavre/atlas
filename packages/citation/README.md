@@ -96,6 +96,22 @@ Schéma (`migrations/`) : extension `vector` (nom SQL `vector`, pas
 la purge par partition (étapes 4.2–4.4). L'extension et la dimension 384 sont vérifiées en
 hermétique contre un PostgreSQL+pgvector épinglé par digest ([ADR 0057](https://univ-lehavre.github.io/atlas/decisions/0057-reproductibilite-tests-hermetiques/)).
 
+### Recherche plein-texte lexicale (FTS, étape 4.2)
+
+`researchers` porte aussi une colonne **`fts tsvector`** (index GIN, migration `0002`)
+pour la recherche **par mots-clés**, en complément du vecteur sémantique. Le document
+lexical d'un chercheur est construit à partir de ses **labels de topics/mots-clés**
+(`researcher-profiles`, même source et même clé `researcherId` que les vecteurs) —
+`load_researcher_fts(sql, dt, run, documents)` peuple la colonne (`to_tsvector`, upsert
+par partition sans écraser l'embedding), `search_researchers_fts(sql, dt, run, query)`
+interroge (`fts @@ to_tsquery`, classé par `ts_rank`).
+
+> **Périmètre assumé** : recherche **par chercheur** (topics/mots-clés), **pas par titre
+> d'œuvre** — le mart servi ne porte pas de titre (la recherche par titre est différée).
+> Comme le chargement des vecteurs (4.3), cette source vient de `researcher-profiles` et
+> **n'est pas couverte par un `manifest.json` servi** : l'invariant « valider le contrat
+> avant chargement » (3.6) ne s'applique pas à ce chemin.
+
 ## Internals
 
 ### `src/fetch/`
