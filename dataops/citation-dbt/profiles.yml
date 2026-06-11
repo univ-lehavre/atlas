@@ -1,0 +1,25 @@
+# Profil dbt-duckdb : backend DuckDB configuré pour le lakehouse S3 (étape 3.1).
+#
+# DuckDB lit le brut JSONL.gz et écrit le Parquet sur le stockage objet en
+# path-style (SeaweedFS au banc, RGW Ceph en prod). Les identifiants viennent de
+# l'ENVIRONNEMENT (jamais en dur) — mêmes variables que le code Python
+# (resources.duckdb_s3_config_from_env) : AWS_ACCESS_KEY_ID/SECRET, BUCKET_HOST/PORT.
+#
+# USE_SSL : http au banc/MinIO (port 8333/9000), https en prod si l'endpoint l'est.
+# Ici on cible le banc (use_ssl false) ; la prod surchargera via DBT_S3_USE_SSL.
+citation:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: ":memory:"
+      extensions:
+        - httpfs
+      secrets:
+        - type: s3
+          key_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
+          secret: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
+          region: us-east-1
+          endpoint: "{{ env_var('BUCKET_HOST') }}:{{ env_var('BUCKET_PORT', '8333') }}"
+          url_style: path
+          use_ssl: "{{ env_var('DBT_S3_USE_SSL', 'false') }}"

@@ -10,6 +10,13 @@ requires-python = ">=3.10,<3.11"
 dependencies = [
   "dagster==1.13.7",
   "openlineage-python",
+  # Pipeline de transformation (étape 3) : DuckDB lit le brut JSONL.gz et écrit
+  # le Parquet sur S3 (httpfs path-style) ; dbt-duckdb porte les modèles ;
+  # dagster-dbt expose les modèles comme assets. dagster-dbt suit une
+  # numérotation propre 0.YY.Z (PAS celle de dagster) : 0.29.7 ↔ dagster 1.13.7.
+  "duckdb",
+  "dbt-duckdb",
+  "dagster-dbt==0.29.7",
 ]
 # NB : ni dagster-postgres (event log) ni dagster-k8s (K8sRunLauncher) ne sont
 # requis par la code-location — ce sont des dépendances de l'orchestrateur,

@@ -76,3 +76,9 @@ __pycache__/
 .coverage
 coverage.xml
 htmlcov/
+# Artefacts dbt générés (étape 3) — jamais versionnés
+dataops/citation-dbt/target/
+dataops/citation-dbt/logs/
+dataops/citation-dbt/dbt_packages/
+dataops/citation-dbt/.user.yml
+.tmp_dagster_home_*/
