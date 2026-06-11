@@ -61,6 +61,41 @@ for (const part of manifest.parts) {
 Échecs (`ManifestError`) : `schema_version` inconnue, manifest mal formé, `sha256`
 divergent. Le validateur est **pur** (aucune I/O S3) : l'appelant fournit les octets.
 
+## Index PostgreSQL/pgvector (étape 4.1)
+
+Le package fournit l'accès à l'**index d'exploration** PostgreSQL/pgvector — **dérivé**
+du mart servi (jamais l'autorité du contrat, donc régénérable). Module Effect
+`src/pg/` : connexion via [`postgres`](https://github.com/porsager/postgres)
+enveloppé dans `Effect.tryPromise` (même patron que le module DuckDB), un **runner de
+migrations** raw-SQL idempotent, et la DSN construite **depuis l'environnement** (jamais
+de secret en dur — variables `POSTGRES_*` du Secret cluster `pg-role-pgvector`).
+
+```typescript
+import { Effect } from "effect";
+import {
+  dsn_from_env,
+  pg_connect,
+  read_migrations,
+  migrate,
+  pg_close,
+} from "@univ-lehavre/atlas-citation";
+
+await Effect.runPromise(
+  Effect.gen(function* () {
+    const sql = yield* pg_connect(yield* dsn_from_env());
+    yield* migrate(sql, yield* read_migrations()); // idempotent
+    yield* pg_close(sql);
+  }),
+);
+```
+
+Schéma (`migrations/`) : extension `vector` (nom SQL `vector`, pas
+`pgvector`), table **`pairs`** (paires + `cross_citations`, source = mart servi) et table
+**`researchers`** (`embedding vector(384)` + index HNSW cosinus, source = embeddings
+`all-MiniLM-L6-v2` réutilisés). Métadonnées de partition `(dt, run)` pour le chargement et
+la purge par partition (étapes 4.2–4.4). L'extension et la dimension 384 sont vérifiées en
+hermétique contre un PostgreSQL+pgvector épinglé par digest ([ADR 0057](https://univ-lehavre.github.io/atlas/decisions/0057-reproductibilite-tests-hermetiques/)).
+
 ## Internals
 
 ### `src/fetch/`
