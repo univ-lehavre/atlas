@@ -180,6 +180,10 @@ authentifier le service CRF ([0041](/atlas/decisions/0041-strategie-auth-service
 - [0057 — Reproductibilité : tests hermétiques](/atlas/decisions/0057-reproductibilite-tests-hermetiques/) :
   un test ne dépend ni du réseau ni de l'état machine — **fixtures figées**, images
   par digest, déterminisme du pipeline (vérifie le `sha256` du contrat).
+- [0058 — Report de `index_load`](/atlas/decisions/0058-report-index-load/) : on ne livre
+  pas un chargement d'index à demi (`pairs` sans la recherche `researchers`) — l'asset
+  attend un **producteur de données par chercheur servi**, le vrai débloqueur (même gap
+  capacité/producteur que `works`/`authorships`).
 
 ## 5. La documentation comme miroir du code
 

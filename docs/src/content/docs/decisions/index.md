@@ -84,6 +84,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0055 | [Catégorie dataops/ : code DataOps en Python natif](/atlas/decisions/0055-categorie-dataops-python/)                                              | Accepted |
 | 0056 | [Registre de drifts : catalogue indexé des écarts révélés à l'exécution](/atlas/decisions/0056-registre-drifts/)                                  | Accepted |
 | 0057 | [Reproductibilité : tests hermétiques et fixtures figées](/atlas/decisions/0057-reproductibilite-tests-hermetiques/)                              | Accepted |
+| 0058 | [Chargement de l'index (mart→Postgres) : report de `index_load` faute de producteur researchers](/atlas/decisions/0058-report-index-load/)        | Accepted |
 
 ## Quand ouvrir un ADR
 
