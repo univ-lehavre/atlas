@@ -7,6 +7,7 @@ import postgres from "postgres";
 
 import { connect, read_migrations, migrate, close } from "./index.js";
 import { load_researcher_fts, search_researchers_fts } from "./fts.js";
+import { load_researcher_vectors, search_researchers_knn } from "./vectors.js";
 
 /**
  * Test d'intégration HERMÉTIQUE de l'index pgvector (étape 4.1).
@@ -35,10 +36,10 @@ function freePort(): Promise<number> {
   });
 }
 
-function vec(first: number): string {
-  const arr = new Array(384).fill(0);
+function vecArr(first: number): Float32Array {
+  const arr = new Float32Array(384);
   arr[0] = first;
-  return `[${arr.join(",")}]`;
+  return arr;
 }
 
 describeOrSkip("pgvector integration (épinglé, self-skip sans Docker)", () => {
@@ -95,25 +96,23 @@ describeOrSkip("pgvector integration (épinglé, self-skip sans Docker)", () => 
       expect(applied).toContain("0001_index_schema.sql");
       expect(applied).toContain("0002_researchers_fts.sql");
 
-      // Round-trip d'un vecteur 384 + une paire.
-      yield* Effect.tryPromise(
-        () =>
-          sql`INSERT INTO researchers (researcher_id, embedding, dt, run) VALUES ('A1', ${vec(1)}::vector, '2020-01', 'r1')`,
-      );
-      yield* Effect.tryPromise(
-        () =>
-          sql`INSERT INTO researchers (researcher_id, embedding, dt, run) VALUES ('A2', ${vec(0.2)}::vector, '2020-01', 'r1')`,
-      );
+      // Vecteurs (4.3) : charge via le loader (sérialisation Float32Array → pgvector).
+      const nv = yield* load_researcher_vectors(sql, "2020-01", "r1", [
+        { researcherId: "A1", vector: vecArr(1) },
+        { researcherId: "A2", vector: vecArr(0.2) },
+      ]);
+      expect(nv).toBe(2);
       yield* Effect.tryPromise(
         () => sql`INSERT INTO pairs VALUES ('A1','A2',3,2,1,'2020-01','r1')`,
       );
 
-      // Recherche kNN (l'index pgvector existe).
-      const knn = yield* Effect.tryPromise(
-        () =>
-          sql<
-            { researcher_id: string }[]
-          >`SELECT researcher_id FROM researchers ORDER BY embedding <=> ${vec(1)}::vector LIMIT 1`,
+      // Recherche kNN (l'index pgvector HNSW existe).
+      const knn = yield* search_researchers_knn(
+        sql,
+        "2020-01",
+        "r1",
+        vecArr(1),
+        1,
       );
       expect(knn.length).toBe(1);
 
@@ -142,6 +141,18 @@ describeOrSkip("pgvector integration (épinglé, self-skip sans Docker)", () => 
       expect(a1[0]?.has_fts).toBe(true);
       const fts = yield* search_researchers_fts(sql, "2020-01", "r1", "neural");
       expect(fts.map((h) => h.researcher_id)).toEqual(["A1"]);
+
+      // Symétrie : un rechargement de vecteur n'écrase pas le fts (déjà posé).
+      yield* load_researcher_vectors(sql, "2020-01", "r1", [
+        { researcherId: "A1", vector: vecArr(0.5) },
+      ]);
+      const a1b = yield* Effect.tryPromise(
+        () =>
+          sql<
+            { has_fts: boolean }[]
+          >`SELECT (fts IS NOT NULL) AS has_fts FROM researchers WHERE researcher_id = 'A1'`,
+      );
+      expect(a1b[0]?.has_fts).toBe(true); // l'upsert vecteur a préservé le fts
 
       // Idempotence : un second migrate n'applique rien.
       const again = yield* migrate(sql, migs);
