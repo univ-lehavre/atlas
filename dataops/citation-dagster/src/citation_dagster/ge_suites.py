@@ -1,0 +1,136 @@
+"""Suites Great Expectations du pipeline + validation in-process (étape 3.5a).
+
+Module **pur** (aucun Dagster, aucune I/O réseau ni cluster) : il construit les
+suites d'attentes par couche et valide un ``DataFrame`` pandas via un **contexte GE
+éphémère** (en mémoire, hermétique — rien sous ``~/.great_expectations``, pas de
+réseau, télémétrie coupée). Les *asset checks* Dagster (assets/quality.py) ne font
+que charger la donnée puis appeler ``validate_df``.
+
+Les suites sont **complémentaires** des tests dbt (qui couvrent déjà
+not_null/unique/relationships et les invariants singuliers du mart) :
+- couche **raw** : le plus de valeur — le brut JSONL.gz n'a AUCUN test dbt. On
+  vérifie la présence des colonnes que le staging consomme, le format des ids et la
+  non-vacuité.
+- couche **curated** : format des ids + invariant « pas d'auto-citation » sur le
+  Parquet servi (que dbt n'asserte pas), en défense en profondeur.
+- couche **marts** : contrat de colonnes + bornes de sanité (garde anti-explosion de
+  jointure). Les invariants somme/ordre canonique sont DÉJÀ bloqués par le test dbt
+  singulier ``assert_collab_pairs_consistent`` ; on les redouble ici en **défense en
+  profondeur sur le Parquet servi** (pas une couverture neuve).
+
+NB : pas de ``from __future__ import annotations`` (cohérence dépôt, drift D9).
+"""
+
+import os
+
+import great_expectations as gx
+import great_expectations.expectations as gxe
+from great_expectations.data_context.types.base import ProgressBarsConfig
+
+# Coupe la télémétrie par précaution (le module analytics peut être absent selon le
+# build ; la variable reste le commutateur documenté).
+os.environ.setdefault("GX_ANALYTICS_ENABLED", "false")
+
+# Format d'id OpenAlex (en prose la marque est tolérée ; ici c'est le format réel).
+_WORK_ID_RE = r"^https://openalex\.org/W"
+_AUTHOR_ID_RE = r"^https://openalex\.org/A"
+
+# Borne haute de sanité pour cross_citations : un nombre absurde signalerait une
+# explosion de jointure (pas une vraie collaboration). Large mais fini.
+_CROSS_CITATIONS_MAX = 1_000_000
+
+# Colonnes du mart servi (contrat 3.4).
+_MARTS_COLS = ("author_a", "author_b", "cross_citations", "a_to_b", "b_to_a")
+
+
+# Les *builders* renvoient une LISTE d'attentes (objets gxe), sans contexte ni I/O —
+# purs et unit-testables. GE 1.18 exige un contexte actif pour ATTACHER une attente à
+# une suite ; on assemble donc la suite dans validate_df, après get_context().
+
+
+def raw_works_expectations() -> list:
+    """Contrat structurel du brut works (colonnes consommées par le staging + format id)."""
+    return [
+        gxe.ExpectColumnToExist(column="id"),
+        gxe.ExpectColumnToExist(column="referenced_works"),
+        gxe.ExpectColumnToExist(column="authorships"),
+        gxe.ExpectColumnValuesToNotBeNull(column="id"),
+        gxe.ExpectColumnValuesToMatchRegex(column="id", regex=_WORK_ID_RE),
+        gxe.ExpectTableRowCountToBeBetween(min_value=1),
+    ]
+
+
+def raw_authors_expectations() -> list:
+    """Contrat structurel du brut authors (id présent + format)."""
+    return [
+        gxe.ExpectColumnToExist(column="id"),
+        gxe.ExpectColumnValuesToNotBeNull(column="id"),
+        gxe.ExpectColumnValuesToMatchRegex(column="id", regex=_AUTHOR_ID_RE),
+        gxe.ExpectTableRowCountToBeBetween(min_value=1),
+    ]
+
+
+def curated_edges_expectations() -> list:
+    """Format des ids + invariant « pas d'auto-citation » sur le Parquet servi.
+
+    Le DataFrame doit porter la colonne dérivée booléenne ``_no_self_edge`` (calculée
+    par le loader : ``citing_work_id <> cited_work_id``).
+    """
+    return [
+        gxe.ExpectColumnValuesToNotBeNull(column="citing_work_id"),
+        gxe.ExpectColumnValuesToNotBeNull(column="cited_work_id"),
+        gxe.ExpectColumnValuesToMatchRegex(column="citing_work_id", regex=_WORK_ID_RE),
+        gxe.ExpectColumnValuesToMatchRegex(column="cited_work_id", regex=_WORK_ID_RE),
+        gxe.ExpectColumnValuesToBeInSet(column="_no_self_edge", value_set=[True]),
+    ]
+
+
+def marts_collab_expectations() -> list:
+    """Contrat de colonnes + bornes de sanité du mart servi (+ défense en profondeur).
+
+    Le DataFrame doit porter la colonne dérivée ``_sum_ok`` (calculée par le loader :
+    ``a_to_b + b_to_a == cross_citations``) — l'invariant somme, déjà bloqué par dbt,
+    redoublé ici au niveau du stockage servi.
+    """
+    exps = [gxe.ExpectColumnValuesToNotBeNull(column=c) for c in _MARTS_COLS]
+    exps += [
+        gxe.ExpectColumnValuesToBeBetween(
+            column="cross_citations", min_value=1, max_value=_CROSS_CITATIONS_MAX
+        ),
+        gxe.ExpectColumnValuesToBeBetween(column="a_to_b", min_value=0),
+        gxe.ExpectColumnValuesToBeBetween(column="b_to_a", min_value=0),
+        gxe.ExpectColumnValuesToBeInSet(column="_sum_ok", value_set=[True]),
+    ]
+    return exps
+
+
+def validate_df(df, suite_name: str, expectations: list) -> tuple[bool, dict]:
+    """Valide ``df`` contre une suite via un contexte GE éphémère (hermétique).
+
+    Retourne ``(passed, metadata)`` où ``metadata`` résume chaque attente (type +
+    succès) pour l'``AssetCheckResult``. Aucune écriture disque, aucun réseau ; la
+    barre de progression « Calculating Metrics » est coupée (sinon elle pollue les
+    logs Dagster).
+    """
+    ctx = gx.get_context(mode="ephemeral")
+    ctx.variables.progress_bars = ProgressBarsConfig(globally=False, metric_calculations=False)
+    suite = gx.ExpectationSuite(name=suite_name)
+    for expectation in expectations:
+        suite.add_expectation(expectation)
+    batch = (
+        ctx.data_sources.add_pandas(name="citation_quality")
+        .add_dataframe_asset(name="layer")
+        .add_batch_definition_whole_dataframe("batch")
+        .get_batch(batch_parameters={"dataframe": df})
+    )
+    result = batch.validate(suite, result_format="BASIC")
+    evaluated = [
+        {"type": r.expectation_config.type, "success": bool(r.success)} for r in result.results
+    ]
+    metadata = {
+        "suite": suite_name,
+        "passed": bool(result.success),
+        "evaluated": len(evaluated),
+        "failed": [e["type"] for e in evaluated if not e["success"]],
+    }
+    return bool(result.success), metadata

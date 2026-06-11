@@ -17,6 +17,12 @@ dependencies = [
   "duckdb",
   "dbt-duckdb",
   "dagster-dbt==0.29.7",
+  # Qualité des données (étape 3.5a) : suites Great Expectations exécutées en
+  # asset checks Dagster BLOQUANTS (en complément des tests dbt). Validation
+  # in-process sur DataFrame pandas (contexte éphémère, hermétique). GE 1.18 tire
+  # numpy/scipy/pandas/cryptography (image plus lourde, ~200 Mo) — toutes licences
+  # permissives ; épinglé (la résolution multi-arch vérifiée en dépend).
+  "great-expectations==1.18.0",
 ]
 # NB : ni dagster-postgres (event log) ni dagster-k8s (K8sRunLauncher) ne sont
 # requis par la code-location — ce sont des dépendances de l'orchestrateur,

@@ -50,21 +50,31 @@ tenue à la même exigence de qualité que le reste du dépôt (lint, tests, cou
 Le code Python vit sous [`src/citation_dagster/`](src/citation_dagster/). Objectif :
 définir les **assets** du pipeline et leur câblage à Dagster. Où en est-on : l'**ingestion**
 (étape 2), l'**accès lakehouse + transformation dbt** (étapes 3.1/3.2), la **feature
-citations croisées** (étape 3.3) et le **mart servi + manifest atomique** (étape 3.4) sont
-en place ; les étapes suivantes (qualité Great Expectations, lineage) viendront s'ajouter.
+citations croisées** (étape 3.3), le **mart servi + manifest atomique** (étape 3.4) et la
+**qualité Great Expectations** (étape 3.5a) sont en place ; le lineage (3.5b) viendra s'ajouter.
 
 | Module | Rôle | Étape |
 | --- | --- | --- |
-| [`definitions.py`](src/citation_dagster/definitions.py) | Point d'entrée : enregistre les assets + jobs que l'orchestrateur découvre. | — |
+| [`definitions.py`](src/citation_dagster/definitions.py) | Point d'entrée : enregistre les assets, asset checks + jobs que l'orchestrateur découvre. | — |
 | [`assets/raw_snapshot.py`](src/citation_dagster/assets/raw_snapshot.py) | Asset d'**ingestion** : sync borné du snapshot OpenAlex (`works`/`authors`) vers `raw/` via `rclone`. | 2 |
 | [`watermark.py`](src/citation_dagster/watermark.py) | Watermark de date persistant pour l'ingestion **incrémentale** (ne resynchronise que le nouveau). | 2 |
 | [`resources.py`](src/citation_dagster/resources.py) | Config des accès stockage objet (remotes `rclone`, config S3 DuckDB) depuis l'environnement — jamais de secret en dur. | 2/3 |
 | [`lakehouse.py`](src/citation_dagster/lakehouse.py) | Accès lakehouse **DuckDB↔S3** : lit le brut JSONL.gz, écrit du Parquet. Backend que dbt consomme. | 3.1 |
 | [`dbt.py`](src/citation_dagster/dbt.py) | **Intégration dbt↔Dagster** : expose les modèles dbt (`staging`→`curated`→`marts`) comme assets ; gère le manifest dbt. | 3.2/3.3 |
 | [`assets/manifest.py`](src/citation_dagster/assets/manifest.py) | Asset `collab_manifest` : écrit **en dernier** le `manifest.json` atomique du mart servi (sha256/row_count par part) — le **contrat de transfert**. | 3.4 |
+| [`ge_suites.py`](src/citation_dagster/ge_suites.py) | Suites **Great Expectations** (pures) + validation in-process (contexte éphémère, hermétique). | 3.5a |
+| [`assets/quality.py`](src/citation_dagster/assets/quality.py) | **Asset checks bloquants** : portes de qualité GE sur `raw`/`curated`/`marts` (un échec coupe l'aval). | 3.5a |
 
 Les **modèles de transformation SQL** ne sont pas ici mais dans le projet dbt frère
 [`../citation-dbt/`](../citation-dbt/) (voir son README).
+
+> **Qualité (étape 3.5a).** Trois *asset checks* Dagster **bloquants** valident la donnée
+> via Great Expectations, **en complément** des tests dbt : structure/format du brut (qui
+> n'a aucun test dbt), format des ids et absence d'auto-citation sur `curated`, contrat de
+> colonnes et bornes sur le mart servi. Un échec d'attente fait échouer le run et empêche
+> l'aval (p. ex. l'écriture du manifest). GE valide en mémoire un `DataFrame` pandas chargé
+> par DuckDB — hors cluster, hermétique. (GE alourdit l'image d'environ 200 Mo :
+> numpy/scipy/pandas/cryptography.)
 
 ## Développement local
 
