@@ -60,6 +60,12 @@ jobs:
           # « GPL-1.0-or-later » fantôme (faux positif d'expression composée) ;
           # protobuf est en BSD-3-Clause + un LicenseRef-scancode non reconnu.
           # Les deux sont permissives ; exception ciblée par paquet.
+          #
+          # Pipeline dbt-duckdb (étape 3) : licences toutes permissives mais mal
+          # ou non détectées par l'action (Apache-2.0 pour dbt/dagster-dbt, MIT pour
+          # duckdb/orjson/msgpack/typer/zipp, BSD pour gitdb/deepdiff/importlib-metadata) ;
+          # gitdb porte un « GPL-1.0-or-later » fantôme scancode (réellement BSD),
+          # text-unidecode est dual-licence Artistic-1.0-Perl OR GPL (permissif via Artistic).
           allow-dependencies-licenses: >-
             pkg:npm/%40sentry/cli,
             pkg:npm/%40sentry/cli-darwin,
@@ -72,5 +78,18 @@ jobs:
             pkg:npm/%40sentry/cli-win32-x64,
             pkg:npm/khroma,
             pkg:pypi/typing-extensions,
-            pkg:pypi/protobuf
+            pkg:pypi/protobuf,
+            pkg:pypi/gitdb,
+            pkg:pypi/text-unidecode,
+            pkg:pypi/dagster-dbt,
+            pkg:pypi/dbt-adapters,
+            pkg:pypi/dbt-common,
+            pkg:pypi/dbt-core,
+            pkg:pypi/deepdiff,
+            pkg:pypi/duckdb,
+            pkg:pypi/importlib-metadata,
+            pkg:pypi/msgpack,
+            pkg:pypi/orjson,
+            pkg:pypi/typer,
+            pkg:pypi/zipp
           comment-summary-in-pr: on-failure
