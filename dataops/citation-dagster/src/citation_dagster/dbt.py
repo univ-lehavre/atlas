@@ -23,6 +23,9 @@ from pathlib import Path
 
 from dagster import AssetExecutionContext
 from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
+from openlineage.client.event_v2 import RunState
+
+from citation_dagster import lineage
 
 # Racine du projet dbt. En dépôt : frère de ``citation-dagster`` sous ``dataops/``
 # (depuis src/citation_dagster/dbt.py → parents[3] == dataops/). Dans l'image, le
@@ -98,9 +101,18 @@ def build_citation_dbt_assets():
     @dbt_assets(manifest=manifest)
     def citation_dbt_models(context: AssetExecutionContext, dbt: DbtCliResource):
         dbt_vars = build_dbt_vars(context.run_id, curated_dt=CURATED_DT)  # pragma: no cover
+        # Lineage OpenLineage → Marquez (3.5b) : connecte raw → curated/mart. No-op
+        # sans OPENLINEAGE_URL. Émis autour du build pour encadrer le job dbt.
+        dbt_inputs, dbt_outputs = lineage.dbt_lineage_io()  # pragma: no cover
+        lineage.emit(  # pragma: no cover
+            RunState.START, context.run_id, "citation_dbt_models", dbt_inputs, dbt_outputs
+        )
         yield from dbt.cli(  # pragma: no cover
             ["build", "--vars", json.dumps(dbt_vars)], context=context
         ).stream()
+        lineage.emit(  # pragma: no cover
+            RunState.COMPLETE, context.run_id, "citation_dbt_models", dbt_inputs, dbt_outputs
+        )
 
     return citation_dbt_models
 

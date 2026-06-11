@@ -50,8 +50,9 @@ tenue à la même exigence de qualité que le reste du dépôt (lint, tests, cou
 Le code Python vit sous [`src/citation_dagster/`](src/citation_dagster/). Objectif :
 définir les **assets** du pipeline et leur câblage à Dagster. Où en est-on : l'**ingestion**
 (étape 2), l'**accès lakehouse + transformation dbt** (étapes 3.1/3.2), la **feature
-citations croisées** (étape 3.3), le **mart servi + manifest atomique** (étape 3.4) et la
-**qualité Great Expectations** (étape 3.5a) sont en place ; le lineage (3.5b) viendra s'ajouter.
+citations croisées** (étape 3.3), le **mart servi + manifest atomique** (étape 3.4), la
+**qualité Great Expectations** (étape 3.5a) et le **lineage OpenLineage→Marquez** (étape 3.5b)
+sont en place.
 
 | Module | Rôle | Étape |
 | --- | --- | --- |
@@ -64,6 +65,7 @@ citations croisées** (étape 3.3), le **mart servi + manifest atomique** (étap
 | [`assets/manifest.py`](src/citation_dagster/assets/manifest.py) | Asset `collab_manifest` : écrit **en dernier** le `manifest.json` atomique du mart servi (sha256/row_count par part) — le **contrat de transfert**. | 3.4 |
 | [`ge_suites.py`](src/citation_dagster/ge_suites.py) | Suites **Great Expectations** (pures) + validation in-process (contexte éphémère, hermétique). | 3.5a |
 | [`assets/quality.py`](src/citation_dagster/assets/quality.py) | **Asset checks bloquants** : portes de qualité GE sur `raw`/`curated`/`marts` (un échec coupe l'aval). | 3.5a |
+| [`lineage.py`](src/citation_dagster/lineage.py) | Émission **OpenLineage→Marquez** : convention de nommage des datasets qui **connecte** la chaîne source→raw→curated→mart→manifest. | 3.5b |
 
 Les **modèles de transformation SQL** ne sont pas ici mais dans le projet dbt frère
 [`../citation-dbt/`](../citation-dbt/) (voir son README).
@@ -75,6 +77,16 @@ Les **modèles de transformation SQL** ne sont pas ici mais dans le projet dbt f
 > l'aval (p. ex. l'écriture du manifest). GE valide en mémoire un `DataFrame` pandas chargé
 > par DuckDB — hors cluster, hermétique. (GE alourdit l'image d'environ 200 Mo :
 > numpy/scipy/pandas/cryptography.)
+
+> **Lineage (étape 3.5b).** Chaque job émet un événement **OpenLineage** vers **Marquez**
+> (`OPENLINEAGE_URL` ; no-op sans lui). La clé est la **convention de nommage des datasets**
+> ([`lineage.py`](src/citation_dagster/lineage.py)) : la sortie d'un job porte le même
+> `namespace:name` que l'entrée du job aval, d'où un graphe **connecté**
+> `openalex:data/* → citation:raw/* → citation:curated/* + citation:marts/collab →
+> citation:marts/collab/manifest`. **Aucune PII** dans le lineage (noms techniques
+> uniquement). La visibilité réelle dans Marquez est une **preuve d'intégration** jouée au
+> banc ([ADR 0057](https://univ-lehavre.github.io/atlas/decisions/0057-reproductibilite-tests-hermetiques/)) ;
+> l'émission elle-même est testée en hermétique (client mocké).
 
 ## Développement local
 
