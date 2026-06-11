@@ -3,6 +3,7 @@ import { createServer } from "node:net";
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { Effect } from "effect";
+import postgres from "postgres";
 
 import { connect, read_migrations, migrate, close } from "./index.js";
 
@@ -62,19 +63,22 @@ describeOrSkip("pgvector integration (épinglé, self-skip sans Docker)", () => 
       "POSTGRES_DB=pgvector",
       PG_IMAGE,
     ]);
-    // Attente de disponibilité (pg_isready), borné.
-    for (let i = 0; i < 60; i++) {
-      const r = spawnSync("docker", [
-        "exec",
-        container,
-        "pg_isready",
-        "-U",
-        "pgvector",
-      ]);
-      if (r.status === 0) break;
-      await new Promise((res) => setTimeout(res, 1000));
+    // Attente de disponibilité par une VRAIE requête `SELECT 1` (pas `pg_isready` :
+    // l'entrypoint Postgres démarre un serveur TEMPORAIRE pendant l'init, sur lequel
+    // pg_isready peut répondre « prêt » avant que le vrai serveur — avec le rôle/base
+    // pgvector — soit accessible. On boucle jusqu'à ce que la connexion réelle réussisse.
+    const dsn = `postgres://pgvector:test@127.0.0.1:${port}/pgvector`;
+    for (let i = 0; i < 90; i++) {
+      try {
+        const probe = postgres(dsn, { onnotice: () => {}, max: 1 });
+        await probe`SELECT 1`;
+        await probe.end();
+        break;
+      } catch {
+        await new Promise((res) => setTimeout(res, 1000));
+      }
     }
-  }, 120_000);
+  }, 180_000);
 
   afterAll(() => {
     if (container) spawnSync("docker", ["rm", "-f", container]);
