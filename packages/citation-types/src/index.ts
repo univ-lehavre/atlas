@@ -13,3 +13,5 @@ export type {
   RateLimitInfo,
 } from "./api-results.js";
 export type { FetchCitationAPIOptions } from "./api-parameters.js";
+export { MANIFEST_SCHEMA_VERSION } from "./manifest.js";
+export type { Manifest, ManifestPart } from "./manifest.js";

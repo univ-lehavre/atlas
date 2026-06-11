@@ -62,6 +62,17 @@ class ParametersError extends Data.TaggedError("ParametersError") {
   }
 }
 
+// Validation du contrat de données (manifest, étape 3.6)
+
+class ManifestError extends Data.TaggedError("ManifestError") {
+  constructor(message: string, opts?: ErrorOptions) {
+    super();
+    this.message = message;
+    this.name = "ManifestError";
+    if (opts?.cause) this.cause = opts.cause;
+  }
+}
+
 export {
   DuckDBError,
   FetchError,
@@ -69,4 +80,5 @@ export {
   CommandLineError,
   PromptError,
   ParametersError,
+  ManifestError,
 };

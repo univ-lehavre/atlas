@@ -11,6 +11,8 @@ export {
   CommandLineError,
   PromptError,
   ParametersError,
+  ManifestError,
 } from "./errors.js";
+export { validateManifest, verifyPart } from "./manifest/index.js";
 export type { CitationSearchAuthorAffiliationResult } from "./types/citation.js";
 export type { Args, Env, Query, QueryValue } from "./types/index.js";

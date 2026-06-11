@@ -1142,6 +1142,9 @@ importers:
       '@duckdb/node-api':
         specifier: ~1.3.4-alpha.27
         version: 1.3.4-alpha.27
+      '@univ-lehavre/atlas-citation-types':
+        specifier: workspace:*
+        version: link:../citation-types
       '@univ-lehavre/atlas-fetch-one-api-page':
         specifier: workspace:*
         version: link:../fetch-one-api-page
