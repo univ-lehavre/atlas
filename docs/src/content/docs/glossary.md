@@ -60,6 +60,9 @@ Définitions concises des termes techniques utilisés dans la documentation. Qua
 | **run e2e**              | _End-to-end_ — exécution complète du système dans des conditions réalistes (sur le banc), par opposition aux tests unitaires qui isolent un module.                                                                                                                        |
 | **drift**                | Écart entre comportement attendu et observé, **révélé à l'exécution** (run e2e) et invisible au lint comme aux tests unitaires. Catalogué dans le [registre de drifts](/atlas/audit/registre-drifts/) ([ADR 0056](/atlas/decisions/0056-registre-drifts/)).                |
 | **piège de revue**       | Bug subtil identifié par **revue de code** (souvent adversariale), et non au run. Consigné au même registre de drifts que les drifts e2e.                                                                                                                                  |
+| **test hermétique**      | Test dont le résultat ne dépend **que** de son code et d'entrées figées — ni du réseau, ni de l'horloge, ni de l'état de la machine, ni d'un service externe vivant ([ADR 0057](/atlas/decisions/0057-reproductibilite-tests-hermetiques/)).                               |
+| **fixture**              | Jeu de données de test versionné et figé (sous [`fixtures/`](https://github.com/univ-lehavre/atlas/tree/main/fixtures)), synthétique ou échantillon réel capturé une fois — jamais une source live re-téléchargée à l'exécution.                                           |
+| **déterminisme**         | Propriété d'un calcul qui, pour une même entrée, produit toujours la même sortie (à l'octet près). Rend vérifiable le `sha256` du contrat de données et la ré-dérivabilité du mart.                                                                                        |
 
 ## CI/CD et collaboration
 
