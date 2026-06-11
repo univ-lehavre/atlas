@@ -29,11 +29,32 @@ Le pipeline va du brut vers le raffiné, par couches successives :
   en **Parquet sur S3** (le contrat de sortie). Chaque sortie est immuable : un nouveau
   run écrit sous un chemin `dt=AAAA-MM/run=<id>/` distinct, jamais en écrasant l'ancien.
   - `curated_works` / `curated_authors` / `curated_authorships`.
-  - `curated_edges` — **le cœur** : les arêtes article→référence, dédupliquées. C'est ce
-    graphe de citations qui sert ensuite à mesurer les citations croisées entre chercheurs.
+  - `curated_edges` — les arêtes article→référence, dédupliquées. C'est ce graphe de
+    citations qui sert ensuite à mesurer les citations croisées entre chercheurs.
+- **`marts`** (`models/marts/`) — le **signal métier** final, Parquet immuable sur S3.
+  - `marts_collab_pairs` — **le cœur** : pour chaque **paire de chercheurs**, le nombre de
+    **citations croisées** article↔article (cf. ci-dessous).
 
-À venir (étapes suivantes) : une couche `marts` calculant le signal de citations
-croisées par paire de chercheurs.
+### `marts_collab_pairs` — sémantique des citations croisées
+
+Pour une paire de chercheurs (A, B), une **citation croisée** = une arête entre un article
+de A et un article de B, **dans un sens ou l'autre**. Le modèle joint chaque arête
+`curated_edges` (œuvre→œuvre) aux auteurs des deux œuvres (`curated_authorships`), écarte
+les **auto-citations** (un auteur se citant lui-même n'est pas un signal de collaboration),
+puis **canonicalise** la paire en `(author_a, author_b)` avec `author_a < author_b` (ordre
+des ids) — ainsi (A,B) et (B,A) fusionnent en **une ligne**.
+
+Trois colonnes exposent le détail :
+
+| Colonne | Sens |
+| --- | --- |
+| `a_to_b` | nombre de fois où **author_a cite author_b** (sens orienté) |
+| `b_to_a` | nombre de fois où **author_b cite author_a** (sens orienté) |
+| `cross_citations` | total **non orienté** = `a_to_b + b_to_a` |
+
+L'**asymétrie** est donc conservée (`a_to_b` ≠ `b_to_a` possible : qui cite qui), tandis que
+`cross_citations` est **symétrique** (la paire, pas le sens). Exemple golden (fixtures) : la
+paire (Alice, Bob) a `a_to_b = 2`, `b_to_a = 1`, `cross_citations = 3`.
 
 ## Conventions & garanties
 

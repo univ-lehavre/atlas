@@ -1,0 +1,36 @@
+version: 2
+
+# Tests dbt du mart (Parquet external relu pour exécuter les tests). Invariants
+# vrais à TOUTE échelle ; les valeurs chiffrées golden (cross_citations=3 sur les
+# fixtures) sont vérifiées côté pytest. La paire (author_a, author_b) est la clé.
+models:
+  - name: marts_collab_pairs
+    description: >-
+      Citations croisées article↔article par paire de chercheurs. Une ligne par
+      paire non orientée (author_a < author_b). cross_citations = a_to_b + b_to_a.
+    columns:
+      - name: author_a
+        description: "Auteur de la paire, id le plus petit (forme canonique)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('curated_authors')
+                field: author_id
+      - name: author_b
+        description: "Auteur de la paire, id le plus grand (forme canonique)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('curated_authors')
+                field: author_id
+      - name: cross_citations
+        description: "Total des citations croisées entre les deux chercheurs (>= 1)."
+        data_tests: [not_null]
+      - name: a_to_b
+        description: "Citations où author_a cite author_b."
+        data_tests: [not_null]
+      - name: b_to_a
+        description: "Citations où author_b cite author_a."
+        data_tests: [not_null]

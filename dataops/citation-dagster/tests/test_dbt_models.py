@@ -1,8 +1,10 @@
-"""Smoke hermétique des modèles dbt staging → curated (étape 3.2, ADR 0057).
+"""Smoke hermétique des modèles dbt staging → curated → marts (étapes 3.2/3.3, ADR 0057).
 
 « Preuve de mécanique » : lance un VRAI `dbt build` contre le MinIO épinglé chargé
-des fixtures synthétiques, puis relit le Parquet `curated` écrit sur S3 et vérifie :
+des fixtures synthétiques, puis relit le Parquet écrit sur S3 et vérifie :
   - `curated_edges` = exactement les 3 arêtes golden (W101→W201, W102→W201, W202→W101) ;
+  - `marts_collab_pairs` (3.3) = la paire (Alice, Bob) avec cross_citations=3, a_to_b=2,
+    b_to_a=1 (GOLDEN.md) ;
   - déterminisme : un 2ᵉ run (run=<id> distinct) produit un contenu canonique identique
     (sha256 des lignes triées — PAS des octets Parquet, que DuckDB ne garantit pas
     bit-à-bit) et n'écrase pas la partition du 1ᵉʳ run (immutabilité).
@@ -31,6 +33,13 @@ _GOLDEN_EDGES = {
     ("https://openalex.org/W102", "https://openalex.org/W201"),
     ("https://openalex.org/W202", "https://openalex.org/W101"),
 }
+
+# Citations croisées attendues (GOLDEN.md) pour la paire (Alice, Bob), canonique
+# author_a < author_b : A1000000001 < A1000000002 → a_to_b = Alice→Bob = 2,
+# b_to_a = Bob→Alice = 1, cross_citations = 3.
+_ALICE = "https://openalex.org/A1000000001"
+_BOB = "https://openalex.org/A1000000002"
+_GOLDEN_PAIR = (_ALICE, _BOB, 3, 2, 1)  # author_a, author_b, cross, a_to_b, b_to_a
 
 
 def _dbt_build(minio, curated_run: str) -> subprocess.CompletedProcess:
@@ -85,6 +94,14 @@ def _canonical_sha256(rows: list[tuple]) -> str:
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
+def _read_collab_pairs(con: duckdb.DuckDBPyConnection, bucket: str, run: str) -> list[tuple]:
+    glob = f"s3://{bucket}/curated/marts_collab_pairs/dt=2020-01/run={run}/*.parquet"
+    return con.sql(
+        f"SELECT author_a, author_b, cross_citations, a_to_b, b_to_a "
+        f"FROM read_parquet('{glob}') ORDER BY author_a, author_b"
+    ).fetchall()
+
+
 def test_dbt_build_curated_edges_golden_and_deterministic(minio):
     """dbt build réel → curated_edges golden (3 arêtes) + déterminisme + immutabilité."""
     load_raw_fixtures(minio)
@@ -123,3 +140,28 @@ def test_dbt_build_curated_edges_golden_and_deterministic(minio):
     assert _canonical_sha256(edges1) == _canonical_sha256(edges2)
     # La partition du run 1 n'a pas été écrasée (immutabilité : préfixes distincts).
     assert _read_edges(con, minio.bucket, "smoke1") == edges1
+
+
+def test_dbt_build_marts_collab_pairs_golden(minio):
+    """dbt build réel → marts_collab_pairs : la paire (Alice, Bob) a les valeurs golden."""
+    load_raw_fixtures(minio)
+    r = _dbt_build(minio, curated_run="smoke3")
+    assert r.returncode == 0, f"dbt build a échoué :\n{r.stdout}\n{r.stderr}"
+
+    cfg = DuckDBS3Config(
+        key_id=minio.access_key,
+        secret=minio.secret_key,
+        endpoint=minio.endpoint,
+        use_ssl=False,
+        region="us-east-1",
+        bucket=minio.bucket,
+    )
+    con = lakehouse.connect(cfg)
+
+    pairs = _read_collab_pairs(con, minio.bucket, "smoke3")
+    # Une seule paire dans les fixtures : (Alice, Bob), valeurs exactes (GOLDEN.md).
+    assert len(pairs) == 1, f"attendu 1 paire golden, obtenu {len(pairs)} : {pairs}"
+    assert pairs[0] == _GOLDEN_PAIR
+    # cross_citations est bien la somme des deux sens.
+    _a, _b, cross, a_to_b, b_to_a = pairs[0]
+    assert cross == a_to_b + b_to_a

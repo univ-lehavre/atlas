@@ -49,8 +49,9 @@ tenue à la même exigence de qualité que le reste du dépôt (lint, tests, cou
 
 Le code Python vit sous [`src/citation_dagster/`](src/citation_dagster/). Objectif :
 définir les **assets** du pipeline et leur câblage à Dagster. Où en est-on : l'**ingestion**
-(étape 2) et l'**accès lakehouse + transformation dbt** (étape 3.1/3.2) sont en place ; les
-étapes suivantes (citations croisées, mart + manifest, qualité/lineage) viendront s'ajouter.
+(étape 2), l'**accès lakehouse + transformation dbt** (étapes 3.1/3.2) et la **feature
+citations croisées** (étape 3.3) sont en place ; les étapes suivantes (mart + manifest
+atomique, qualité/lineage) viendront s'ajouter.
 
 | Module | Rôle | Étape |
 | --- | --- | --- |
@@ -59,7 +60,7 @@ définir les **assets** du pipeline et leur câblage à Dagster. Où en est-on :
 | [`watermark.py`](src/citation_dagster/watermark.py) | Watermark de date persistant pour l'ingestion **incrémentale** (ne resynchronise que le nouveau). | 2 |
 | [`resources.py`](src/citation_dagster/resources.py) | Config des accès stockage objet (remotes `rclone`, config S3 DuckDB) depuis l'environnement — jamais de secret en dur. | 2/3 |
 | [`lakehouse.py`](src/citation_dagster/lakehouse.py) | Accès lakehouse **DuckDB↔S3** : lit le brut JSONL.gz, écrit du Parquet. Backend que dbt consomme. | 3.1 |
-| [`dbt.py`](src/citation_dagster/dbt.py) | **Intégration dbt↔Dagster** : expose les modèles dbt (`staging`→`curated`) comme assets ; gère le manifest. | 3.2 |
+| [`dbt.py`](src/citation_dagster/dbt.py) | **Intégration dbt↔Dagster** : expose les modèles dbt (`staging`→`curated`→`marts`) comme assets ; gère le manifest. | 3.2/3.3 |
 
 Les **modèles de transformation SQL** ne sont pas ici mais dans le projet dbt frère
 [`../citation-dbt/`](../citation-dbt/) (voir son README).
@@ -91,10 +92,11 @@ lignage. Nos assets, du brut vers le raffiné :
   `rclone`. C'est la matière première de tout le reste. Émet un événement OpenLineage
   vers Marquez (traçabilité). Le binaire `rclone` est fourni par l'image.
 - **modèles dbt** (`citation_dbt_models`) — **produisent** le raffiné : les couches
-  `staging` → `curated` du projet dbt frère [`../citation-dbt/`](../citation-dbt/)
-  transforment le brut en Parquet propre sur S3 (dont le graphe de citations
-  `curated_edges`). Exposées comme assets via `dagster-dbt` ; le job `transform_job` les
-  exécute (`dbt build`). Voir [`src/citation_dagster/dbt.py`](src/citation_dagster/dbt.py).
+  `staging` → `curated` → `marts` du projet dbt frère [`../citation-dbt/`](../citation-dbt/)
+  transforment le brut en Parquet propre sur S3 (le graphe de citations `curated_edges`,
+  puis le signal `marts_collab_pairs` = citations croisées par paire de chercheurs).
+  Exposées comme assets via `dagster-dbt` ; le job `transform_job` les exécute
+  (`dbt build`). Voir [`src/citation_dagster/dbt.py`](src/citation_dagster/dbt.py).
 
 **À quoi servent ces produits ensuite ?** Le Parquet `curated` (puis le `mart` des étapes
 suivantes) est le **contrat de sortie** du pipeline. En aval — **hors de ce dossier** — il
