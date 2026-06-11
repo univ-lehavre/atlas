@@ -12,7 +12,16 @@ export {
   PromptError,
   ParametersError,
   ManifestError,
+  PostgresError,
 } from "./errors.js";
 export { validateManifest, verifyPart } from "./manifest/index.js";
+export {
+  dsn_from_env,
+  connect as pg_connect,
+  run as pg_run,
+  close as pg_close,
+  read_migrations,
+  migrate,
+} from "./pg/index.js";
 export type { CitationSearchAuthorAffiliationResult } from "./types/citation.js";
 export type { Args, Env, Query, QueryValue } from "./types/index.js";

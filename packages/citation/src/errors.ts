@@ -73,6 +73,17 @@ class ManifestError extends Data.TaggedError("ManifestError") {
   }
 }
 
+// Index PostgreSQL/pgvector (étape 4)
+
+class PostgresError extends Data.TaggedError("PostgresError") {
+  constructor(message: string, opts?: ErrorOptions) {
+    super();
+    this.message = message;
+    this.name = "PostgresError";
+    if (opts?.cause) this.cause = opts.cause;
+  }
+}
+
 export {
   DuckDBError,
   FetchError,
@@ -81,4 +92,5 @@ export {
   PromptError,
   ParametersError,
   ManifestError,
+  PostgresError,
 };
