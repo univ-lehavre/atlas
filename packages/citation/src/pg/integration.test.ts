@@ -6,6 +6,7 @@ import { Effect } from "effect";
 import postgres from "postgres";
 
 import { connect, read_migrations, migrate, close } from "./index.js";
+import { load_researcher_fts, search_researchers_fts } from "./fts.js";
 
 /**
  * Test d'intégration HERMÉTIQUE de l'index pgvector (étape 4.1).
@@ -84,14 +85,15 @@ describeOrSkip("pgvector integration (épinglé, self-skip sans Docker)", () => 
     if (container) spawnSync("docker", ["rm", "-f", container]);
   });
 
-  it("applique les migrations, round-trip vector(384), kNN, idempotence", async () => {
+  it("migrations, vector(384) kNN, FTS lexical, idempotence", async () => {
     const dsn = `postgres://pgvector:test@127.0.0.1:${port}/pgvector`;
     const program = Effect.gen(function* () {
       const sql = yield* connect(dsn);
       const migs = yield* read_migrations();
       const applied = yield* migrate(sql, migs);
-      // L'extension `vector` et les tables ont été créées.
+      // L'extension `vector`, les tables et la colonne FTS ont été créées.
       expect(applied).toContain("0001_index_schema.sql");
+      expect(applied).toContain("0002_researchers_fts.sql");
 
       // Round-trip d'un vecteur 384 + une paire.
       yield* Effect.tryPromise(
@@ -122,6 +124,24 @@ describeOrSkip("pgvector integration (épinglé, self-skip sans Docker)", () => 
           >`SELECT cross_citations FROM pairs WHERE author_a = 'A1'`,
       );
       expect(Number(pair[0]?.cross_citations)).toBe(3);
+
+      // FTS (4.2) : charge le document lexical par chercheur, l'upsert n'écrase pas
+      // l'embedding (A1 a déjà un vecteur), puis recherche par mot-clé.
+      const n = yield* load_researcher_fts(sql, "2020-01", "r1", [
+        { researcherId: "A1", text: "machine learning, neural networks" },
+        { researcherId: "A2", text: "climate ocean modeling" },
+      ]);
+      expect(n).toBe(2);
+      const a1 = yield* Effect.tryPromise(
+        () =>
+          sql<
+            { has_emb: boolean; has_fts: boolean }[]
+          >`SELECT (embedding IS NOT NULL) AS has_emb, (fts IS NOT NULL) AS has_fts FROM researchers WHERE researcher_id = 'A1'`,
+      );
+      expect(a1[0]?.has_emb).toBe(true); // l'upsert FTS a préservé le vecteur
+      expect(a1[0]?.has_fts).toBe(true);
+      const fts = yield* search_researchers_fts(sql, "2020-01", "r1", "neural");
+      expect(fts.map((h) => h.researcher_id)).toEqual(["A1"]);
 
       // Idempotence : un second migrate n'applique rien.
       const again = yield* migrate(sql, migs);
