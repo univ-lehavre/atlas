@@ -6,7 +6,10 @@ C'est le **projet de transformation** du pipeline de citations, écrit en
 [dbt](https://www.getdbt.com/) sur moteur [DuckDB](https://duckdb.org/). Il prend le
 **brut** ingéré (JSONL gzippé d'OpenAlex, déposé sur S3 par la code-location
 [`../citation-dagster/`](../citation-dagster/)) et le **raffine** en jeux de données
-propres et exploitables, écrits en Parquet sur le même stockage objet.
+propres et exploitables, écrits en fichiers **Parquet** sur le même stockage objet.
+
+> **Parquet** = le **format de fichier** [Apache Parquet](https://parquet.apache.org/)
+> (format colonne pour données tabulaires), jamais autre chose dans ce dépôt.
 
 dbt **décrit les transformations en SQL** ; Dagster les **orchestre** (les modèles dbt
 sont exposés comme assets Dagster via `dagster-dbt`, voir
