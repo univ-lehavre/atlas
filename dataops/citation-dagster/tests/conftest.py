@@ -22,8 +22,14 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
+
+# Racine des fixtures synthétiques (works/authors/merged_ids), figées et commitées
+# (ADR 0057). parents[3] depuis tests/conftest.py → dataops/citation-dagster/../.. →
+# racine du dépôt.
+FIXTURES_DIR = Path(__file__).resolve().parents[3] / "fixtures" / "openalex-sample"
 
 # Image MinIO épinglée par DIGEST (manifest list multi-arch) — jamais ``latest``.
 # Bumpée consciemment (ADR 0057). Release 2025-04-08.
@@ -125,3 +131,48 @@ def minio():
         yield MinioHandle(f"127.0.0.1:{port}", _ACCESS_KEY, _SECRET_KEY, _BUCKET)
     finally:
         subprocess.run(["docker", "rm", "-f", name], capture_output=True, check=False)
+
+
+# Mapping fixture local → clé S3 sous `raw/` (layout écrit par `raw_snapshot`).
+_PART = "updated_date=2020-01-01/part_000.gz"
+_RAW_FIXTURES = {
+    f"data/works/{_PART}": f"raw/works/{_PART}",
+    f"data/authors/{_PART}": f"raw/authors/{_PART}",
+    "legacy-data/merged_ids/works/2022-07-15.gz": "raw/merged_ids/works/2022-07-15.gz",
+}
+
+
+def load_raw_fixtures(minio: "MinioHandle") -> None:
+    """Charge works + authors + merged_ids synthétiques sous `raw/` du bucket MinIO.
+
+    Reproduit le layout écrit par l'asset `raw_snapshot`
+    (`raw/<entity>/updated_date=…/…gz`, `raw/merged_ids/works/…gz`) pour que les
+    sources dbt (globs `raw_root/<entity>/**/*.gz`) matchent la réalité. Upload via
+    un client `mc` jetable (même image épinglée, hermétique).
+    """
+    mounts: list[str] = []
+    cmds: list[str] = [
+        f"mc alias set t http://{minio.endpoint} {minio.access_key} {minio.secret_key}"
+    ]
+    for i, (local, key) in enumerate(_RAW_FIXTURES.items()):
+        src = FIXTURES_DIR / local
+        mounts += ["-v", f"{src}:/fix/{i}.gz:ro"]
+        cmds.append(f"mc cp /fix/{i}.gz t/{minio.bucket}/{key}")
+    subprocess.run(
+        [
+            "docker",
+            "run",
+            "--rm",
+            "--network",
+            "host",
+            *mounts,
+            "--entrypoint",
+            "sh",
+            _MINIO_IMAGE,
+            "-c",
+            " && ".join(cmds),
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )

@@ -1,0 +1,40 @@
+version: 2
+
+# Tests dbt sur les couches staging. Invariants vrais à TOUTE échelle (pas de test
+# « fixture-only » ici : le golden chiffré vit côté pytest). orcid n'a PAS de
+# not_null (nullable par nature).
+models:
+  - name: stg_citation_works
+    description: "Œuvres typées depuis le brut (vue de session)."
+    columns:
+      - name: work_id
+        description: "URL OpenAlex de l'œuvre (clé)."
+        data_tests: [not_null, unique]
+
+  - name: stg_citation_authors
+    description: "Auteurs typés depuis le brut (vue de session)."
+    columns:
+      - name: author_id
+        description: "URL OpenAlex de l'auteur (clé)."
+        data_tests: [not_null, unique]
+
+  - name: stg_citation_authorships
+    description: "Liens œuvre↔auteur (UNNEST des authorships)."
+    columns:
+      - name: work_id
+        data_tests: [not_null]
+      - name: author_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_citation_authors')
+                field: author_id
+
+  - name: stg_citation_referenced_works
+    description: "Arêtes brutes œuvre→référence (UNNEST des referenced_works)."
+    columns:
+      - name: citing_work_id
+        data_tests: [not_null]
+      - name: cited_work_id
+        data_tests: [not_null]

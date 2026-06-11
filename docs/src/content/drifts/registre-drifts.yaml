@@ -17,7 +17,7 @@
 #   correctif : ce qui a été fait
 #   statut    : corrige | caduc (contexte abandonné) | ouvert
 #
-# Couverture : D1–D9 (première salve — pipeline OpenAlex/Dagster, juin 2026).
+# Couverture : D1–D13 (pipeline OpenAlex/Dagster + transformations dbt, juin 2026).
 
 - id: D1
   campagne: "pipeline OpenAlex/Dagster — premier run sur le banc"
@@ -170,4 +170,51 @@
   correctif: >-
     Épingler dagster-dbt==0.29.7 (résout dagster==1.13.7). Les paquets de l'écosystème
     Dagster en 0.YY suivent cette règle (à vérifier au prochain bump de dagster).
+  statut: corrige
+
+- id: D11
+  campagne: "modèles dbt staging→curated (étape 3.2)"
+  nature: piege-revue
+  portee: code
+  symptome: >-
+    Une colonne fantôme « updated_date » (type DATE) apparaît dans les modèles staging
+    alors qu'elle n'existe pas dans le JSON brut.
+  cause: >-
+    read_json_auto active le partitionnement Hive par défaut : la date du chemin
+    (updated_date=YYYY-MM-DD/) est injectée comme colonne. Un SELECT * la propagerait.
+    Révélé en sondant le schéma inféré sur les fixtures.
+  correctif: >-
+    hive_partitioning=false sur les sources works/authors + projection EXPLICITE des
+    colonnes en staging (jamais SELECT *). La période curated vient des vars Dagster, pas
+    du chemin brut.
+  statut: corrige
+
+- id: D12
+  campagne: "modèles dbt staging→curated (étape 3.2)"
+  nature: piege-revue
+  portee: code
+  symptome: >-
+    Un glob « merged_ids/works/*.csv.gz » raterait le fichier réellement présent.
+  cause: >-
+    Le fichier merged_ids sur disque s'appelle « 2022-07-15.gz » (CSV gzippé sans infixe
+    .csv), pas « 2022-07-15.csv.gz ». Hypothèse de nommage fausse, vérifiée sur le fixture.
+  correctif: >-
+    Glob « merged_ids/works/*.gz » (pas « *.csv.gz ») + lecture forcée read_csv_auto.
+  statut: corrige
+
+- id: D13
+  campagne: "modèles dbt staging→curated (étape 3.2)"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    Le Parquet curated est introuvable au glob « run=<id>/**/*.parquet » après un
+    « dbt build » pourtant réussi.
+  cause: >-
+    dbt-duckdb interprète une « location » external terminée par « / » comme une CLÉ
+    d'objet unique (l'objet écrit s'appelle littéralement « run=<id>/ »), pas comme un
+    dossier de fichiers .parquet. Révélé au premier dbt build réel contre MinIO : build
+    vert, relecture vide.
+  correctif: >-
+    Nommer explicitement le fichier dans la location (« …/run=<id>/part.parquet ») ; le
+    préfixe dt=…/run=…/ reste l'unité immuable relisable via « run=<id>/*.parquet ».
   statut: corrige

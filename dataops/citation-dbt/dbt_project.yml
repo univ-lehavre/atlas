@@ -2,8 +2,8 @@
 #
 # dbt produit les modèles (staging → curated → marts) ; Dagster les orchestre et
 # émet le lineage (dagster-dbt). Le backend S3 est configuré dans profiles.yml
-# (DuckDB httpfs + secret path-style depuis l'environnement). Aucun modèle en 3.1 :
-# le squelette permet à `dbt parse` de réussir ; les modèles arrivent en 3.2.
+# (DuckDB httpfs + secret path-style depuis l'environnement). Étape 3.2 : couches
+# staging (vues éphémères de session `:memory:`) → curated (Parquet external S3).
 name: "citation"
 version: "0.0.0"
 config-version: 2
@@ -19,7 +19,23 @@ seed-paths: ["seeds"]
 test-paths: ["tests"]
 macro-paths: ["macros"]
 
-# Les modèles écrivent en Parquet partitionné sur S3 (étape 3.2+).
+# Variables injectées par Dagster au run (`dbt build --vars …`). Les défauts sont
+# inertes : ils permettent `dbt parse` et le dev local de réussir sans Dagster.
+#   - curated_dt  : période de la partition curated (YYYY-MM), remplacée au run.
+#   - curated_run : identifiant de run IMMUABLE (rejeu = nouveau run=<id>), de
+#     context.run_id côté Dagster. Garantit qu'un rejeu n'écrase jamais en place.
+#   - raw_root    : racine du brut (surchargée en test vers le bucket MinIO).
+vars:
+  curated_dt: "0000-00"
+  curated_run: "dev"
+  raw_root: "s3://citation/raw"
+
+# Staging = vues vivant le temps de la session DuckDB `:memory:` (pas d'artefact S3
+# intermédiaire). Seul `curated` est externalisé en Parquet — le contrat de sortie
+# de 3.2 (`location` immuable dt=…/run=…/ posée par modèle, cf. macro curated_location).
 models:
   citation:
-    +materialized: external
+    staging:
+      +materialized: view
+    curated:
+      +materialized: external
