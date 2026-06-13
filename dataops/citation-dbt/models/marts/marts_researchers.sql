@@ -18,10 +18,14 @@
 -- n'entre pas dans la somme. Diverge du seuil unique 0,3 du plan/ADR 0059/issue #379
 -- (assumé : distributions topics vs keywords très différentes — cf. dbt_project.yml).
 --
--- Provenance re-dérivable (capacité de purge chirurgicale, lot 5) : chaque ligne de
--- sortie mappe 1-pour-1 vers ses (author_id, work_id, label) sources. Le filtre
--- d'opposition (author_id, work_id) du lot 5 s'injectera dans les CTE sans toucher
--- le SELECT final. Déterminisme strict (ADR 0057) : agrégat + ORDER BY stable.
+-- Purge chirurgicale RGPD (lot 5) : la CTE `opposed` (var opposition_pairs, défaut
+-- vide) liste les couples (author_id, work_id) à exclure ; un ANTI-JOIN les retire
+-- AVANT agrégation, dans les deux CTE, SANS toucher le SELECT final — le GROUP BY
+-- re-dérive automatiquement weight (SUM) et freq (COUNT) sur les couples restants.
+-- Chirurgical : un label porté par un couple opposé disparaît, mais le MÊME label
+-- porté par un autre couple non opposé (autre work, ou autre auteur d'un work
+-- co-écrit) SURVIT. Liste vide → anti-join no-op → mart identique au jour J.
+-- Déterminisme strict (ADR 0057) : agrégat + ORDER BY stable.
 --
 -- Le produit (auteurs d'un work × labels d'un work) est VOULU : chaque co-auteur
 -- hérite des labels de la publication. `freq = count(distinct work_id)` (et non
@@ -33,7 +37,12 @@
     options={'format': 'parquet'}
 ) }}
 
-with topics_per_author as (
+with opposed as (
+    -- Couples (author_id, work_id) opposés (RGPD, lot 5). Vide par défaut.
+    {{ opposition_pairs_cte() }}
+),
+
+topics_per_author as (
     select
         ca.author_id,
         'topic'              as kind,
@@ -45,6 +54,10 @@ with topics_per_author as (
     join {{ ref('curated_authorships') }} ca
         on ca.work_id = t.work_id
     where t.score >= {{ var('topic_score_min') }}
+        and not exists (
+            select 1 from opposed o
+            where o.author_id = ca.author_id and o.work_id = ca.work_id
+        )
 ),
 
 keywords_per_author as (
@@ -59,6 +72,10 @@ keywords_per_author as (
     join {{ ref('curated_authorships') }} ca
         on ca.work_id = k.work_id
     where k.score >= {{ var('keyword_score_min') }}
+        and not exists (
+            select 1 from opposed o
+            where o.author_id = ca.author_id and o.work_id = ca.work_id
+        )
 ),
 
 labels_per_author as (

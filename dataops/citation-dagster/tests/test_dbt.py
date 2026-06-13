@@ -10,9 +10,23 @@ from pathlib import Path
 from citation_dagster import dbt as dbt_mod
 
 
-def test_build_dbt_vars_uses_run_id_as_immutable_run():
+def test_build_dbt_vars_uses_run_id_as_immutable_run(monkeypatch):
+    # Défaut : opposition vide (capacité de purge non actionnée, lot 5).
+    monkeypatch.delenv("OPPOSITION_PAIRS", raising=False)
     vars_ = dbt_mod.build_dbt_vars(run_id="run-abc", curated_dt="2026-06")
-    assert vars_ == {"curated_dt": "2026-06", "curated_run": "run-abc"}
+    assert vars_ == {
+        "curated_dt": "2026-06",
+        "curated_run": "run-abc",
+        "opposition_pairs": "[]",
+    }
+
+
+def test_build_dbt_vars_relays_opposition_env(monkeypatch):
+    """build_dbt_vars relaie l'env OPPOSITION_PAIRS vers dbt (source unique, lot 5)."""
+    payload = '[{"author_id": "A1", "work_id": "W1"}]'
+    monkeypatch.setenv("OPPOSITION_PAIRS", payload)
+    vars_ = dbt_mod.build_dbt_vars(run_id="r", curated_dt="2026-06")
+    assert vars_["opposition_pairs"] == payload
 
 
 def test_project_dir_points_to_citation_dbt():

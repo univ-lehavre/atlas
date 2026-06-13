@@ -60,12 +60,22 @@ CURATED_DT = "0000-00"
 
 
 def build_dbt_vars(run_id: str, curated_dt: str) -> dict[str, str]:
-    """Variables dbt injectées au run : période + id de run IMMUABLE.
+    """Variables dbt injectées au run : période + id de run IMMUABLE + opposition RGPD.
 
     ``curated_run`` vient de ``context.run_id`` → un rejeu écrit un nouveau
     préfixe ``run=<id>/`` (immutabilité, jamais d'écriture en place).
+
+    ``opposition_pairs`` (lot 5) relaie l'env ``OPPOSITION_PAIRS`` (JSON de couples
+    {author_id, work_id} à purger ; défaut ``[]``) TELLE QUELLE vers dbt. C'est la
+    SOURCE UNIQUE de la purge : le MÊME env est lu par l'asset vecteur Python, pour
+    que le filtrage lexical (dbt) et vecteur (Python) restent cohérents. On relaie
+    sans décider — la liste vient du déployeur (ADR 0059).
     """
-    return {"curated_dt": curated_dt, "curated_run": run_id}
+    return {
+        "curated_dt": curated_dt,
+        "curated_run": run_id,
+        "opposition_pairs": os.environ.get("OPPOSITION_PAIRS", "[]"),
+    }
 
 
 def ensure_manifest() -> Path:

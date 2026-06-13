@@ -112,11 +112,11 @@ def test_roundtrip_jsonl_gz_to_parquet_hive(minio):
     )
     con = lakehouse.connect(cfg)
 
-    # 1) Lecture du brut JSONL.gz synthétique (4 works attendus, cf. GOLDEN.md).
+    # 1) Lecture du brut JSONL.gz synthétique (5 works attendus, cf. GOLDEN.md).
     rel = lakehouse.read_jsonl_gz(con, f"s3://{minio.bucket}/raw/works/**/*.gz")
     con.register("works_raw", rel)
     n = con.sql("SELECT count(*) FROM works_raw").fetchone()[0]
-    assert n == 4
+    assert n == 5
 
     # 2) Écriture Parquet partitionné Hive (par publication_year), puis relecture.
     lakehouse.copy_to_parquet(
@@ -128,7 +128,7 @@ def test_roundtrip_jsonl_gz_to_parquet_hive(minio):
     back = con.sql(
         f"SELECT count(*) FROM read_parquet('s3://{minio.bucket}/curated/works/**/*.parquet')"
     ).fetchone()[0]
-    assert back == 4
+    assert back == 5
 
     # 3) Le partitionnement Hive a bien créé des dossiers publication_year=YYYY.
     keys = con.sql(
@@ -136,7 +136,7 @@ def test_roundtrip_jsonl_gz_to_parquet_hive(minio):
         f"read_parquet('s3://{minio.bucket}/curated/works/**/*.parquet')"
     ).fetchall()
     years = sorted(r[0] for r in keys)
-    assert years == [2017, 2018, 2019, 2020]  # les 4 années des works synthétiques
+    assert years == [2017, 2018, 2019, 2020, 2021]  # les 5 années (W303 = 2021)
 
 
 def test_fixtures_are_valid_jsonl_gz():
@@ -144,5 +144,5 @@ def test_fixtures_are_valid_jsonl_gz():
     works_gz = _FIXTURES / "data" / "works" / "updated_date=2020-01-01" / "part_000.gz"
     with gzip.open(works_gz, "rt", encoding="utf-8") as fh:
         works = [json.loads(line) for line in fh if line.strip()]
-    assert len(works) == 4
+    assert len(works) == 5
     assert all("referenced_works" in w for w in works)

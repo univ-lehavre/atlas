@@ -39,6 +39,14 @@ vars:
   # UNIQUE 0,3 mentionné dans le plan/ADR 0059/issue #379 ; configurables au run.
   topic_score_min: 0.5
   keyword_score_min: 0.2
+  # Liste d'opposition RGPD (lot 5) : couples (author_id, work_id) à EXCLURE de
+  # l'agrégat — JSON `[{"author_id": "...", "work_id": "..."}, ...]`. Défaut `[]` =
+  # AUCUNE opposition = mart STRICTEMENT identique au jour J (capacité non actionnée,
+  # non-régression). Le code PERMET la purge chirurgicale ; il ne DÉCIDE rien — la
+  # SOURCE de la liste (registre d'opposition, validation chercheur, SLA) relève du
+  # DÉPLOYEUR (ADR 0059, ADR 0030). Injectée par Dagster depuis l'env OPPOSITION_PAIRS,
+  # source UNIQUE partagée avec l'asset vecteur Python (cohérence lexical ↔ vecteur).
+  opposition_pairs: "[]"
 
 # Staging = vues vivant le temps de la session DuckDB `:memory:` (pas d'artefact S3
 # intermédiaire). Seul `curated` est externalisé en Parquet — le contrat de sortie

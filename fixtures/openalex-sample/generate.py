@@ -98,12 +98,13 @@ def _work(num, year, authorship, referenced, cited_by, fwci, topics, keywords):
 
 
 # ── Graphe de citations croisées CONTRÔLÉ (golden) ───────────────────────────
-# Works d'Alice : W101, W102 ; works de Bob : W201, W202.
+# Works d'Alice : W101, W102 ; works de Bob : W201, W202 ; CO-écrit Alice+Bob : W303.
 # Arêtes de référence (citer = referenced_works) :
 #   W101 (A) → W201 (B)   : A cite B  (1)
 #   W102 (A) → W201 (B)   : A cite B  (2)
 #   W202 (B) → W101 (A)   : B cite A  (1)
-# → citations croisées A↔B = 3 arêtes (2 A→B + 1 B→A).
+#   W303 (A+B)            : aucune référence → n'ajoute AUCUNE arête.
+# → citations croisées A↔B = 3 arêtes (2 A→B + 1 B→A), INCHANGÉ malgré W303.
 # Labels par work (voir GOLDEN.md). T20001 est PARTAGÉ par W101 et W102 (Alice) :
 # il doit apparaître une seule fois après DISTINCT au grain (work_id, topic_id),
 # et pondéré ×2 à l'agrégat author_id du lot 2. Le keyword `shield` (0,21 < 0,3)
@@ -148,12 +149,29 @@ WORKS = [
             _keyword("chemistry", "Chemistry", 0.6627),
         ],
     ),
+    # W303 : work CO-ÉCRIT Alice + Bob (authorship multiple), SANS référence ni
+    # citation (referenced=[], cited_by=0) → n'affecte NI les arêtes (curated_edges)
+    # NI les paires de collaboration (marts_collab_pairs) : son impact est isolé aux
+    # marts researchers. Cas RGPD FORT (lot 5) : si Alice s'oppose à (A1, W303), le
+    # work reste agrégé pour Bob — preuve qu'une opposition ne retire jamais la
+    # donnée d'un co-auteur non opposé. T20005/fusion sont propres à W303.
+    _work(
+        303, 2021,
+        [_authorship(A1, INST_LH, "first"), _authorship(A2, INST_LR, "middle")],
+        referenced=[], cited_by=0, fwci=0.0,
+        topics=[
+            _topic("20005", "Tokamak plasma diagnostics", 0.9500, _PHYS[0], _PHYS[1], _PHYS[2]),
+        ],
+        keywords=[
+            _keyword("fusion", "Fusion", 0.8000),
+        ],
+    ),
 ]
 
 AUTHORS = [
-    {"id": A1["id"], "orcid": A1["orcid"], "display_name": A1["display_name"], "works_count": 2,
+    {"id": A1["id"], "orcid": A1["orcid"], "display_name": A1["display_name"], "works_count": 3,
      "cited_by_count": 1, "last_known_institutions": [INST_LH]},
-    {"id": A2["id"], "orcid": A2["orcid"], "display_name": A2["display_name"], "works_count": 2,
+    {"id": A2["id"], "orcid": A2["orcid"], "display_name": A2["display_name"], "works_count": 3,
      "cited_by_count": 2, "last_known_institutions": [INST_LR]},
 ]
 
