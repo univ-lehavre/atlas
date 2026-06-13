@@ -18,6 +18,7 @@ Usage (pytest) ::
 import shutil
 import socket
 import subprocess
+import sys
 import time
 import urllib.error
 import urllib.request
@@ -188,3 +189,23 @@ def load_raw_fixtures(minio: "MinioHandle") -> None:
         text=True,
         check=True,
     )
+
+
+@pytest.fixture(scope="session")
+def embedding_model():
+    """Télécharge le modèle d'embedding (révision figée + sha256) dans le cache
+    par défaut, une fois par session. Skip si le réseau HuggingFace est
+    indisponible (le modèle n'est pas versionné — cf. scripts/fetch_model.py)."""
+    import urllib.error
+
+    from citation_dagster import embedding
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    import fetch_model  # noqa: E402
+
+    dest = embedding.model_dir()
+    try:
+        fetch_model.fetch(str(dest))
+    except (urllib.error.URLError, OSError) as exc:  # pragma: no cover
+        pytest.skip(f"modèle d'embedding indisponible (réseau ?) : {exc}")
+    return dest

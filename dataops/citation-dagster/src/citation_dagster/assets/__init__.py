@@ -5,5 +5,11 @@ from citation_dagster.assets.manifest import (
     collab_manifest,
 )
 from citation_dagster.assets.raw_snapshot import raw_snapshot
+from citation_dagster.assets.researcher_embeddings import researcher_embeddings
 
-__all__ = ["MANIFEST_SCHEMA_VERSION", "collab_manifest", "raw_snapshot"]
+__all__ = [
+    "MANIFEST_SCHEMA_VERSION",
+    "collab_manifest",
+    "raw_snapshot",
+    "researcher_embeddings",
+]

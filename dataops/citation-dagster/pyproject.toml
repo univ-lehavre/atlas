@@ -23,6 +23,15 @@ dependencies = [
   # numpy/scipy/pandas/cryptography (image plus lourde, ~200 Mo) — toutes licences
   # permissives ; épinglé (la résolution multi-arch vérifiée en dépend).
   "great-expectations==1.18.0",
+  # Embedding sémantique par publication (étape 4, lot 3) : le vecteur(384) est
+  # calculé en Python natif sur le MÊME model_quantized.onnx (all-MiniLM-L6-v2,
+  # vendoré sous src/.../models/) que le code TS — sans torch, modèle cuit
+  # hors-ligne (ADR 0055/0059). onnxruntime (MIT) exécute l'inférence,
+  # tokenizers (Apache-2.0) reproduit le tokenizer WordPiece ; déterminisme à
+  # 1 thread. numpy (déjà tiré par GE) est explicité car importé directement.
+  "onnxruntime==1.23.2",
+  "tokenizers==0.22.2",
+  "numpy",
 ]
 # NB : ni dagster-postgres (event log) ni dagster-k8s (K8sRunLauncher) ne sont
 # requis par la code-location — ce sont des dépendances de l'orchestrateur,

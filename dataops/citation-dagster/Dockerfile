@@ -37,6 +37,14 @@ COPY citation-dagster/pyproject.toml citation-dagster/uv.lock citation-dagster/R
 COPY citation-dagster/src ./src
 RUN python -m uv pip install --system .
 
+# Modèle d'embedding (lot 3) NON versionné dans git : téléchargé ICI, à une
+# révision HuggingFace figée + sha256 vérifié (scripts/fetch_model.py), puis figé
+# dans l'image — « cuit hors-ligne », aucune dépendance réseau au RUNTIME
+# (ADR 0059). Pointé par ONNX_MODEL_DIR (découplé du layout, comme le projet dbt).
+COPY citation-dagster/scripts ./scripts
+ENV ONNX_MODEL_DIR=/opt/dagster/models/all-MiniLM-L6-v2
+RUN python scripts/fetch_model.py "$ONNX_MODEL_DIR"
+
 # Projet dbt copié hors de l'arbre du paquet ; son chemin est découplé du layout du
 # dépôt via CITATION_DBT_PROJECT_DIR (lu par citation_dagster.dbt).
 COPY citation-dbt /opt/dagster/citation-dbt
