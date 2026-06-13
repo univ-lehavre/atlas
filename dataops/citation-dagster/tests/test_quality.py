@@ -80,6 +80,82 @@ def test_check_marts_fails_on_bad_df(monkeypatch):
     assert res.passed is False
 
 
+_GOOD_RESEARCHERS = pd.DataFrame(
+    {
+        "author_id": ["https://openalex.org/A1000000001"],
+        "kind": ["topic"],
+        "label_id": ["https://openalex.org/T20001"],
+        "label": ["Magnetic confinement fusion research"],
+        "weight": [1.9867],
+        "freq": [2],
+        "_weight_ok": [True],
+    }
+)
+
+
+def test_check_researchers_passes_on_good_df(monkeypatch):
+    _patch_loader(monkeypatch, _GOOD_RESEARCHERS)
+    res = q.check_researchers("citation", "run1")
+    assert isinstance(res, AssetCheckResult)
+    assert res.passed is True
+
+
+def test_check_researchers_fails_on_zero_weight(monkeypatch):
+    bad = _GOOD_RESEARCHERS.copy()
+    bad["weight"] = [0.0]  # weight strictement > 0 exigé
+    bad["_weight_ok"] = [False]
+    _patch_loader(monkeypatch, bad)
+    assert q.check_researchers("citation", "run1").passed is False
+
+
+def test_check_researchers_fails_on_bad_kind(monkeypatch):
+    bad = _GOOD_RESEARCHERS.copy()
+    bad["kind"] = ["concept"]  # hors {topic, keyword}
+    _patch_loader(monkeypatch, bad)
+    assert q.check_researchers("citation", "run1").passed is False
+
+
+def test_check_researcher_vectors_passes_normalised(monkeypatch):
+    # Vecteur de norme 1 (auteur normal) → _norm_ok True, _dim_ok True.
+    df = pd.DataFrame(
+        {
+            "author_id": ["https://openalex.org/A1000000001"],
+            "vector": [[0.1] * 384],
+            "_dim_ok": [True],
+            "_norm_ok": [True],
+        }
+    )
+    _patch_loader(monkeypatch, df)
+    assert q.check_researcher_vectors("citation", "run1").passed is True
+
+
+def test_check_researcher_vectors_passes_null_vector(monkeypatch):
+    # Vecteur NUL légitime (auteur sans publication vectorisable) → norme 0 tolérée.
+    df = pd.DataFrame(
+        {
+            "author_id": ["https://openalex.org/A1000000009"],
+            "vector": [[0.0] * 384],
+            "_dim_ok": [True],
+            "_norm_ok": [True],  # 0.0 ∈ {0, ≈1}
+        }
+    )
+    _patch_loader(monkeypatch, df)
+    assert q.check_researcher_vectors("citation", "run1").passed is True
+
+
+def test_check_researcher_vectors_fails_on_wrong_dim(monkeypatch):
+    df = pd.DataFrame(
+        {
+            "author_id": ["https://openalex.org/A1000000001"],
+            "vector": [[0.1] * 100],
+            "_dim_ok": [False],  # dimension != 384
+            "_norm_ok": [True],
+        }
+    )
+    _patch_loader(monkeypatch, df)
+    assert q.check_researcher_vectors("citation", "run1").passed is False
+
+
 def test_check_curated_edges_passes(monkeypatch):
     df = pd.DataFrame(
         {

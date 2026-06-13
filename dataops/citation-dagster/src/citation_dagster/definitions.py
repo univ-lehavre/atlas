@@ -15,11 +15,16 @@ from citation_dagster.assets import (
     collab_manifest,
     raw_snapshot,
     researcher_embeddings,
+    researcher_vectors_manifest,
+    researchers_manifest,
+    work_vectors_manifest,
 )
 from citation_dagster.assets.quality import (
     ge_curated_edges,
     ge_marts_collab,
+    ge_marts_researchers,
     ge_raw_contract,
+    ge_researcher_vectors,
 )
 from citation_dagster.dbt import dbt_components
 
@@ -54,16 +59,34 @@ _dbt_assets, _dbt_resources = dbt_components()
 # (même context.run_id → même préfixe dt=…/run=…). Ajouté inconditionnellement,
 # comme collab_manifest : en mode dégradé (dbt indisponible), ses clés sources ne
 # sont pas exécutables et il reste un asset orphelin chargeable.
-_assets = [raw_snapshot, collab_manifest, researcher_embeddings, *_dbt_assets]
+# Les manifests du producteur researchers (lot 4) sont ajoutés inconditionnellement,
+# comme collab_manifest : researchers_manifest dépend du mart dbt marts_researchers ;
+# researcher_vectors_manifest et work_vectors_manifest dépendent de l'asset Python
+# researcher_embeddings (toujours présent). En mode dégradé (dbt absent), les manifests
+# dont la dépendance est une clé dbt pendent sur une clé externe non exécutable et la
+# code-location reste chargeable (assets orphelins).
+_assets = [
+    raw_snapshot,
+    collab_manifest,
+    researcher_embeddings,
+    researchers_manifest,
+    researcher_vectors_manifest,
+    work_vectors_manifest,
+    *_dbt_assets,
+]
 _jobs = [ingestion_job]
 
 # Asset checks Great Expectations bloquants (étape 3.5a). Le check du brut s'applique
 # à raw_snapshot (toujours présent) ; ceux des couches dbt (curated_edges,
 # marts_collab_pairs) ne sont enregistrés QUE si les assets dbt existent — sinon leur
 # clé cible n'est pas résolue en mode dégradé (dbt indisponible : lint/checkout neuf).
-_asset_checks = [ge_raw_contract]
+# ge_researcher_vectors cible l'asset PYTHON researcher_embeddings (toujours enregistré)
+# → INCONDITIONNEL (ne pas copier le pattern conditionnel-dbt, sinon le check du vecteur
+# disparaîtrait en mode dégradé). ge_marts_researchers cible la clé dbt marts_researchers
+# → conditionnel comme les autres checks dbt.
+_asset_checks = [ge_raw_contract, ge_researcher_vectors]
 if _dbt_assets:
-    _asset_checks += [ge_curated_edges, ge_marts_collab]
+    _asset_checks += [ge_curated_edges, ge_marts_collab, ge_marts_researchers]
 
 # Le job de transformation n'est enregistré QUE si les assets dbt existent : un
 # job dont la sélection ne résout aucun asset ferait échouer la construction des
@@ -76,6 +99,9 @@ if _dbt_assets:
             AssetSelection.assets(*_dbt_assets)
             | AssetSelection.assets("collab_manifest")
             | AssetSelection.assets("researcher_embeddings")
+            | AssetSelection.assets("researchers_manifest")
+            | AssetSelection.assets("researcher_vectors_manifest")
+            | AssetSelection.assets("work_vectors_manifest")
         ),
         tags=_RUN_K8S_CONFIG,
     )

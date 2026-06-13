@@ -66,14 +66,20 @@ def partition_str(dt: str, run_id: str) -> str:
     return f"dt={dt}/run={run_id}"
 
 
-def mart_prefix(remote: str, bucket: str, dt: str, run_id: str) -> str:
-    """Préfixe rclone du mart : ``<remote>:<bucket>/marts/collab/dt=…/run=…``."""
-    return f"{remote}:{bucket}/{_MART_SUBDIR}/{partition_str(dt, run_id)}"
+def mart_prefix(
+    remote: str, bucket: str, dt: str, run_id: str, mart_subdir: str = _MART_SUBDIR
+) -> str:
+    """Préfixe rclone d'un artefact servi : ``<remote>:<bucket>/<mart_subdir>/dt=…/run=…``.
+
+    ``mart_subdir`` par défaut ``marts/collab`` (rétro-compat) ; les autres artefacts
+    passent ``marts/researchers``, ``marts/researcher_vectors``, ``curated/curated_work_vectors``.
+    """
+    return f"{remote}:{bucket}/{mart_subdir}/{partition_str(dt, run_id)}"
 
 
-def part_key(dt: str, run_id: str, name: str) -> str:
+def part_key(dt: str, run_id: str, name: str, mart_subdir: str = _MART_SUBDIR) -> str:
     """Clé S3 **relative au bucket** d'une part (résoluble en ``s3://<bucket>/<key>``)."""
-    return f"{_MART_SUBDIR}/{partition_str(dt, run_id)}/{name}"
+    return f"{mart_subdir}/{partition_str(dt, run_id)}/{name}"
 
 
 def parse_lsjson_sizes(stdout: str) -> dict[str, int]:
@@ -104,6 +110,7 @@ def build_manifest(
     sizes: dict[str, int],
     shas: dict[str, str],
     produced_at: str,
+    mart_subdir: str = _MART_SUBDIR,
 ) -> dict:
     """Construit le dict manifest (pur). Cross-check les jeux de noms, trie les parts.
 
@@ -122,7 +129,7 @@ def build_manifest(
             },
         )
     parts = [
-        {"key": part_key(dt, run_id, name), "sha256": shas[name], "bytes": sizes[name]}
+        {"key": part_key(dt, run_id, name, mart_subdir), "sha256": shas[name], "bytes": sizes[name]}
         for name in sorted(sizes)
     ]
     return {
@@ -171,10 +178,10 @@ def _hashsum(prefix: str, config_path: Path) -> dict[str, str]:
     return parse_hashsum(proc.stdout)
 
 
-def _count_rows(bucket: str, dt: str, run_id: str) -> int:
-    """Compte les lignes du mart via DuckDB (lecture Parquet sur le glob de la partition)."""
+def _count_rows(bucket: str, dt: str, run_id: str, mart_subdir: str = _MART_SUBDIR) -> int:
+    """Compte les lignes de l'artefact via DuckDB (lecture Parquet sur le glob de la partition)."""
     con = lakehouse.connect()
-    glob = f"s3://{bucket}/{_MART_SUBDIR}/{partition_str(dt, run_id)}/*.parquet"
+    glob = f"s3://{bucket}/{mart_subdir}/{partition_str(dt, run_id)}/*.parquet"
     return con.sql(f"SELECT count(*) FROM read_parquet('{glob}')").fetchone()[0]
 
 
@@ -194,8 +201,12 @@ def _write_manifest_last(prefix: str, payload: str, config_path: Path) -> None:
         )
 
 
-def _emit_lineage(state: RunState, run_id: str) -> None:
-    """Émet un événement OpenLineage vers Marquez (no-op si OPENLINEAGE_URL absent)."""
+def _emit_lineage(state: RunState, run_id: str, mart_subdir: str, job_name: str) -> None:
+    """Émet un événement OpenLineage vers Marquez (no-op si OPENLINEAGE_URL absent).
+
+    Relie l'artefact servi (``<mart_subdir>``) à son manifest (``<mart_subdir>/manifest``)
+    sous le job ``<job_name>``. Noms purement techniques (jamais de PII, invariant RGPD).
+    """
     if not os.environ.get("OPENLINEAGE_URL"):
         return
     namespace = os.environ.get("OPENLINEAGE_NAMESPACE", "dagster")  # pragma: no cover
@@ -205,30 +216,38 @@ def _emit_lineage(state: RunState, run_id: str) -> None:
             eventType=state,
             eventTime=datetime.now(timezone.utc).isoformat(),
             run=Run(runId=run_id),
-            job=Job(namespace=namespace, name="collab_manifest"),
+            job=Job(namespace=namespace, name=job_name),
             producer=_PRODUCER,
-            inputs=[Dataset(namespace="citation", name=_MART_SUBDIR)],
-            outputs=[Dataset(namespace="citation", name=f"{_MART_SUBDIR}/manifest")],
+            inputs=[Dataset(namespace="citation", name=mart_subdir)],
+            outputs=[Dataset(namespace="citation", name=f"{mart_subdir}/manifest")],
         )
     )
 
 
-@asset(name="collab_manifest", group_name="transform", deps=[AssetKey(["marts_collab_pairs"])])
-def collab_manifest(context: AssetExecutionContext) -> MaterializeResult:
-    """Écrit le ``manifest.json`` atomique du mart collab (après le mart dbt, même run)."""
+def _build_and_write_manifest(
+    context: AssetExecutionContext, mart_subdir: str, job_name: str
+) -> MaterializeResult:
+    """Écrit le ``manifest.json`` atomique d'un artefact servi (glue I/O paramétrée).
+
+    Cœur partagé par tous les manifests (collab + researchers + vecteurs) : énumère les
+    parts (lsjson + hashsum), compte les lignes, construit le contrat, l'écrit EN DERNIER
+    (sentinelle atomique), et émet le lineage. ``mart_subdir`` localise l'artefact ;
+    ``job_name`` nomme le job (= nom d'asset) côté lineage. ``run_id = context.run_id``
+    aligne la partition sur l'asset amont (même run → même préfixe dt=…/run=…).
+    """
     target = ceph_target_from_env()
     dt = CURATED_DT
-    run_id = context.run_id  # même run que l'asset dbt → même préfixe dt=…/run=…
+    run_id = context.run_id
 
     with tempfile.TemporaryDirectory() as tmp:
         config_path = Path(tmp) / "rclone.conf"
         config_path.write_text(render_rclone_config(target))
 
-        prefix = mart_prefix("ceph", target.bucket, dt, run_id)
-        _emit_lineage(RunState.START, run_id)
+        prefix = mart_prefix("ceph", target.bucket, dt, run_id, mart_subdir)
+        _emit_lineage(RunState.START, run_id, mart_subdir, job_name)
         sizes = _lsjson_sizes(prefix, config_path)
         shas = _hashsum(prefix, config_path)
-        row_count = _count_rows(target.bucket, dt, run_id)
+        row_count = _count_rows(target.bucket, dt, run_id, mart_subdir)
         manifest = build_manifest(
             dt=dt,
             run_id=run_id,
@@ -236,11 +255,12 @@ def collab_manifest(context: AssetExecutionContext) -> MaterializeResult:
             sizes=sizes,
             shas=shas,
             produced_at=datetime.now(timezone.utc).isoformat(),
+            mart_subdir=mart_subdir,
         )
         # Écriture EN DERNIER (sentinelle de complétude), JSON compact sans newline.
         payload = json.dumps(manifest, separators=(",", ":"))
         _write_manifest_last(prefix, payload, config_path)
-        _emit_lineage(RunState.COMPLETE, run_id)
+        _emit_lineage(RunState.COMPLETE, run_id, mart_subdir, job_name)
 
     return MaterializeResult(
         metadata={
@@ -250,3 +270,49 @@ def collab_manifest(context: AssetExecutionContext) -> MaterializeResult:
             "schema_version": MetadataValue.int(MANIFEST_SCHEMA_VERSION),
         }
     )
+
+
+@asset(name="collab_manifest", group_name="transform", deps=[AssetKey(["marts_collab_pairs"])])
+def collab_manifest(context: AssetExecutionContext) -> MaterializeResult:
+    """Écrit le ``manifest.json`` atomique du mart collab (après le mart dbt, même run)."""
+    return _build_and_write_manifest(context, _MART_SUBDIR, "collab_manifest")
+
+
+# Artefacts servis du producteur researchers (lot 4). Chaque artefact Parquet a son
+# manifest.json VOISIN (contrat ADR 0029 : le consommateur lit le manifest à côté du
+# Parquet qu'il va lire). Trois artefacts contractualisés :
+#   - marts/researchers          : mart lexical dbt (grain author_id,kind,label_id) ;
+#   - marts/researcher_vectors   : agrégat vecteur par author_id (asset Python) ;
+#   - curated/curated_work_vectors : provenance vecteur par publication (re-poolable,
+#     socle de la purge lot 5) — contractualisée comme un artefact servi (décision projet).
+_RESEARCHERS_SUBDIR = "marts/researchers"
+_RESEARCHER_VECTORS_SUBDIR = "marts/researcher_vectors"
+_WORK_VECTORS_SUBDIR = "curated/curated_work_vectors"
+
+
+@asset(name="researchers_manifest", group_name="transform", deps=[AssetKey(["marts_researchers"])])
+def researchers_manifest(context: AssetExecutionContext) -> MaterializeResult:
+    """Manifest atomique du mart lexical researchers (après le mart dbt, même run)."""
+    return _build_and_write_manifest(context, _RESEARCHERS_SUBDIR, "researchers_manifest")
+
+
+@asset(
+    name="researcher_vectors_manifest",
+    group_name="transform",
+    deps=[AssetKey(["researcher_embeddings"])],
+)
+def researcher_vectors_manifest(context: AssetExecutionContext) -> MaterializeResult:
+    """Manifest atomique de l'agrégat vecteur par author_id (après l'asset Python, même run)."""
+    return _build_and_write_manifest(
+        context, _RESEARCHER_VECTORS_SUBDIR, "researcher_vectors_manifest"
+    )
+
+
+@asset(
+    name="work_vectors_manifest",
+    group_name="transform",
+    deps=[AssetKey(["researcher_embeddings"])],
+)
+def work_vectors_manifest(context: AssetExecutionContext) -> MaterializeResult:
+    """Manifest atomique de la provenance vecteur par publication (curated_work_vectors)."""
+    return _build_and_write_manifest(context, _WORK_VECTORS_SUBDIR, "work_vectors_manifest")

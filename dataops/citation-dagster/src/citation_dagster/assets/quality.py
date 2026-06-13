@@ -21,7 +21,7 @@ NB : pas de ``from __future__ import annotations`` (Dagster introspecte, drift D
 
 from dagster import AssetCheckExecutionContext, AssetCheckResult, AssetKey, asset_check
 
-from citation_dagster import ge_suites, lakehouse
+from citation_dagster import embedding, ge_suites, lakehouse
 from citation_dagster.dbt import CURATED_DT
 from citation_dagster.resources import ceph_target_from_env
 
@@ -96,6 +96,43 @@ def check_marts(bucket: str, run_id: str) -> AssetCheckResult:
     return _result(ok, meta)
 
 
+def check_researchers(bucket: str, run_id: str) -> AssetCheckResult:
+    """Valide le mart lexical servi researchers (contrat de colonnes + bornes weight/freq)."""
+    con = lakehouse.connect()
+    glob = f"s3://{bucket}/marts/researchers/dt={CURATED_DT}/run={run_id}/*.parquet"
+    df = con.sql(
+        f"SELECT author_id, kind, label_id, label, weight, freq, "
+        f"(weight > 0) AS _weight_ok FROM read_parquet('{glob}')"
+    ).df()
+    ok, meta = ge_suites.validate_df(
+        df, "marts_researchers", ge_suites.marts_researchers_expectations()
+    )
+    return _result(ok, meta)
+
+
+def check_researcher_vectors(bucket: str, run_id: str) -> AssetCheckResult:
+    """Valide l'agrégat vecteur par author_id (dimension 384 + norme L2 tolérante {0, ≈1}).
+
+    Le vecteur nul d'un author_id sans publication vectorisable est ACCEPTÉ (norme 0) —
+    cf. ``embedding.aggregate_author``. Les colonnes dérivées ``_dim_ok``/``_norm_ok``
+    sont calculées en SQL DuckDB (``list_aggregate`` pour la norme, sans matérialiser).
+    """
+    con = lakehouse.connect()
+    glob = f"s3://{bucket}/marts/researcher_vectors/dt={CURATED_DT}/run={run_id}/*.parquet"
+    dim = embedding.EMBEDDING_DIM
+    df = con.sql(
+        f"SELECT author_id, vector, "
+        f"(len(vector) = {dim}) AS _dim_ok, "
+        f"(abs(sqrt(list_aggregate(list_transform(vector, x -> x * x), 'sum')) - 1.0) < 1e-4 "
+        f" OR list_aggregate(list_transform(vector, x -> x * x), 'sum') = 0.0) AS _norm_ok "
+        f"FROM read_parquet('{glob}')"
+    ).df()
+    ok, meta = ge_suites.validate_df(
+        df, "marts_researcher_vectors", ge_suites.marts_researcher_vectors_expectations()
+    )
+    return _result(ok, meta)
+
+
 # ── Asset checks Dagster (minces : résolvent le run puis délèguent) ───────────
 
 
@@ -112,3 +149,13 @@ def ge_curated_edges(context: AssetCheckExecutionContext) -> AssetCheckResult:
 @asset_check(asset=AssetKey(["marts_collab_pairs"]), name="ge_marts_collab", blocking=True)
 def ge_marts_collab(context: AssetCheckExecutionContext) -> AssetCheckResult:
     return check_marts(ceph_target_from_env().bucket, context.run.run_id)
+
+
+@asset_check(asset=AssetKey(["marts_researchers"]), name="ge_marts_researchers", blocking=True)
+def ge_marts_researchers(context: AssetCheckExecutionContext) -> AssetCheckResult:
+    return check_researchers(ceph_target_from_env().bucket, context.run.run_id)
+
+
+@asset_check(asset=AssetKey(["researcher_embeddings"]), name="ge_researcher_vectors", blocking=True)
+def ge_researcher_vectors(context: AssetCheckExecutionContext) -> AssetCheckResult:
+    return check_researcher_vectors(ceph_target_from_env().bucket, context.run.run_id)

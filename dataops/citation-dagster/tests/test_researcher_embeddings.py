@@ -13,12 +13,15 @@ NEON arm64 vs AVX amd64, admis ADR 0059). Normes validées par pytest.approx.
 """
 
 import hashlib
+import json
 
 import numpy as np
 import pytest
 from dagster import build_asset_context
 
+import citation_dagster.assets.manifest as cm
 from citation_dagster import embedding, lakehouse
+from citation_dagster.assets import quality as q
 from citation_dagster.assets.researcher_embeddings import researcher_embeddings
 from citation_dagster.dbt import CURATED_DT
 from citation_dagster.resources import DuckDBS3Config
@@ -184,3 +187,139 @@ def test_asset_researcher_embeddings_golden_and_deterministic(embedding_model, m
     authors2 = _read_vectors(con, minio.bucket, "marts/researcher_vectors", "author_id", run_id)
     assert _canonical_sha256(works2) == sha_works1
     assert _canonical_sha256(authors2) == sha_authors1
+
+
+def test_vector_manifests_and_ge_check(embedding_model, minio, monkeypatch):
+    """e2e lot 4 : dbt + asset embeddings, puis les manifests des deux artefacts
+    vecteur (marts/researcher_vectors + curated/curated_work_vectors) s'écrivent
+    correctement, et la porte GE du vecteur (dim 384 + norme tolérante) passe."""
+    requires_rclone()
+    load_raw_fixtures(minio)
+    _set_minio_env(monkeypatch, minio)
+
+    run_id = "EPHEMERAL"  # = run_id de build_asset_context
+    r = _dbt_build(minio, curated_run=run_id, curated_dt=CURATED_DT)
+    assert r.returncode == 0, f"dbt build a échoué :\n{r.stdout}\n{r.stderr}"
+    researcher_embeddings(build_asset_context())  # écrit les deux Parquet vecteur
+
+    # Manifests : agrégat author_id (2 lignes) + provenance work_id (4 lignes).
+    res_agg = cm.researcher_vectors_manifest(build_asset_context())
+    assert res_agg.metadata["row_count"].value == 2  # Alice, Bob
+    res_prov = cm.work_vectors_manifest(build_asset_context())
+    assert res_prov.metadata["row_count"].value == 4  # W101, W102, W201, W202
+
+    cfg = DuckDBS3Config(
+        key_id=minio.access_key,
+        secret=minio.secret_key,
+        endpoint=minio.endpoint,
+        use_ssl=False,
+        region="us-east-1",
+        bucket=minio.bucket,
+    )
+    con = lakehouse.connect(cfg)
+    for subdir, n in [("marts/researcher_vectors", 2), ("curated/curated_work_vectors", 4)]:
+        man = json.loads(
+            con.sql(
+                f"SELECT content FROM read_text("
+                f"'s3://{minio.bucket}/{subdir}/dt={CURATED_DT}/run={run_id}/manifest.json')"
+            ).fetchone()[0]
+        )
+        assert man["schema_version"] == cm.MANIFEST_SCHEMA_VERSION == 1
+        assert man["row_count"] == n
+        # Clé voisine du bon artefact (preuve du paramétrage mart_subdir).
+        assert man["parts"][0]["key"].startswith(f"{subdir}/dt={CURATED_DT}/run={run_id}/")
+
+    # Porte GE du vecteur : dimension 384 + norme tolérante {0, ≈1}, verte sur le réel.
+    assert q.check_researcher_vectors(minio.bucket, run_id).passed is True
+
+
+# ── Corps de l'asset piloté par des fakes (sans Docker ni modèle ONNX) ───────
+# Couvre la logique I/O de l'asset (lecture provenance, agrégat par author_id,
+# écriture Parquet, lineage) en CI où Docker/MinIO est absent — le smoke e2e
+# ci-dessus ne tourne qu'avec Docker.
+
+
+class _FakeCon:
+    """Connexion DuckDB factice : répond aux execute() selon la requête.
+
+    - SELECT sur curated_work_topics/keywords → lignes (work_id, topic_labels, keyword_labels) ;
+    - SELECT sur curated_authorships → couples (author_id, work_id) ;
+    - CREATE/INSERT/DROP (matérialisation) → no-op.
+    """
+
+    def __init__(self, work_label_rows, authorship_rows):
+        self._work_label_rows = work_label_rows
+        self._authorship_rows = authorship_rows
+
+    def execute(self, query):
+        self._last = query
+        return self
+
+    def executemany(self, query, rows):  # matérialisation _vec_tmp : no-op
+        return self
+
+    def fetchall(self):
+        if "curated_authorships" in self._last:
+            return self._authorship_rows
+        if "all_works" in self._last:  # la requête de _read_work_labels
+            return self._work_label_rows
+        return []
+
+
+class _FakeEmbedder:
+    """Embedder factice : vecteur déterministe par texte, sans charger le modèle."""
+
+    def embed_text(self, text):
+        # Vecteur non nul dépendant de la longueur du texte (suffit à exercer le flux).
+        base = float(len(text) or 1)
+        return np.full(embedding.EMBEDDING_DIM, base, dtype=np.float32)
+
+
+def test_asset_body_with_fakes(monkeypatch):
+    """Exerce le corps de l'asset (lecture provenance → agrégat author_id → écriture)
+    sans Docker ni modèle : loader, embedder et écriture Parquet mockés."""
+    import importlib
+
+    re_mod = importlib.import_module("citation_dagster.assets.researcher_embeddings")
+
+    work_label_rows = [
+        ("https://openalex.org/W101", ["Plasma"], ["Shield"]),
+        ("https://openalex.org/W102", ["Plasma"], []),
+    ]
+    authorship_rows = [
+        ("https://openalex.org/A1", "https://openalex.org/W101"),
+        ("https://openalex.org/A1", "https://openalex.org/W102"),
+    ]
+    fake_con = _FakeCon(work_label_rows, authorship_rows)
+    writes: list[str] = []
+
+    monkeypatch.setattr(re_mod.lakehouse, "connect", lambda cfg=None: fake_con)
+    monkeypatch.setattr(
+        re_mod.lakehouse,
+        "duckdb_s3_config_from_env",
+        lambda: type("Cfg", (), {"bucket": "citation"})(),
+    )
+    monkeypatch.setattr(
+        re_mod.lakehouse, "copy_to_parquet", lambda con, sql, dest: writes.append(dest)
+    )
+    monkeypatch.setattr(re_mod.embedding, "Embedder", _FakeEmbedder)
+    monkeypatch.delenv("OPENLINEAGE_URL", raising=False)  # lineage no-op
+
+    res = re_mod.researcher_embeddings(build_asset_context())
+    assert res.metadata["work_vectors"].value == 2  # W101, W102
+    assert res.metadata["author_vectors"].value == 1  # A1 (porte W101 + W102)
+    # Deux écritures Parquet : provenance work_id puis agrégat author_id.
+    assert any("curated/curated_work_vectors" in d for d in writes)
+    assert any("marts/researcher_vectors" in d for d in writes)
+
+
+def test_read_work_labels_applies_topic_threshold(monkeypatch):
+    """_read_work_labels assemble le texte via work_to_text (topics puis keywords)."""
+    import importlib
+
+    re_mod = importlib.import_module("citation_dagster.assets.researcher_embeddings")
+
+    rows = [("https://openalex.org/W1", ["Topic A", "Topic B"], ["kw"])]
+    fake_con = _FakeCon(rows, [])
+    out = re_mod._read_work_labels(fake_con, "citation", "run1")
+    assert out == [("https://openalex.org/W1", "Topic A, Topic B, kw")]
