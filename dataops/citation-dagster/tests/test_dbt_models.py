@@ -53,12 +53,15 @@ _BOB = "https://openalex.org/A1000000002"
 _GOLDEN_PAIR = (_ALICE, _BOB, 3, 2, 1)  # author_a, author_b, cross, a_to_b, b_to_a
 
 
-def _dbt_build(minio, curated_run: str, curated_dt: str = "2020-01") -> subprocess.CompletedProcess:
+def _dbt_build(
+    minio, curated_run: str, curated_dt: str = "2020-01", opposition_pairs: str = "[]"
+) -> subprocess.CompletedProcess:
     """Lance `dbt build` (staging+curated+marts+tests) contre MinIO, pour un run donné.
 
     `marts_root` redirige le mart « servi » (3.4) vers le bucket MinIO ; `curated_dt`
     est paramétrable pour aligner la partition avec l'asset manifest (qui fige
-    CURATED_DT) lors du test d'intégration du manifest.
+    CURATED_DT) lors du test d'intégration du manifest. `opposition_pairs` (JSON,
+    défaut vide) pilote la purge chirurgicale RGPD (lot 5).
     """
     env = {
         **os.environ,
@@ -74,6 +77,7 @@ def _dbt_build(minio, curated_run: str, curated_dt: str = "2020-01") -> subproce
         "marts_root": f"s3://{minio.bucket}/marts",
         "curated_dt": curated_dt,
         "curated_run": curated_run,
+        "opposition_pairs": opposition_pairs,
     }
     return subprocess.run(
         [
@@ -147,7 +151,7 @@ def test_dbt_build_curated_edges_golden_and_deterministic(minio):
         f"SELECT count(*) FROM read_parquet("
         f"'s3://{minio.bucket}/curated/curated_works/dt=2020-01/run=smoke1/*.parquet')"
     ).fetchone()[0]
-    assert works_n == 4  # W101, W102, W201, W202
+    assert works_n == 5  # W101, W102, W201, W202, W303 (co-écrit Alice+Bob)
 
     # ── Run 2 (id distinct) : déterminisme + immutabilité ────────────────────
     r2 = _dbt_build(minio, curated_run="smoke2")
@@ -186,6 +190,7 @@ _GOLDEN_WORK_TOPICS = {
     (_W + "102", _T + "20001"),
     (_W + "201", _T + "20003"),
     (_W + "202", _T + "20004"),
+    (_W + "303", _T + "20005"),  # W303 co-écrit Alice+Bob
 }
 _GOLDEN_WORK_KEYWORDS = {
     (_W + "101", _K + "plasma"),
@@ -194,6 +199,7 @@ _GOLDEN_WORK_KEYWORDS = {
     (_W + "201", _K + "chemistry"),
     (_W + "201", _K + "reagent"),
     (_W + "202", _K + "chemistry"),
+    (_W + "303", _K + "fusion"),  # W303 co-écrit Alice+Bob
 }
 
 
@@ -218,11 +224,11 @@ def test_dbt_build_work_topics_keywords_provenance_golden(minio):
 
     topics1 = _read_work_topics(con, minio.bucket, "smoke_lex1")
     # Grain (work_id, topic_id) distinct : T20001 partagé W101/W102 = 2 lignes, pas 1.
-    assert len(topics1) == 5, f"attendu 5 lignes topics golden, obtenu {len(topics1)} : {topics1}"
+    assert len(topics1) == 6, f"attendu 6 lignes topics golden, obtenu {len(topics1)} : {topics1}"
     assert set(topics1) == _GOLDEN_WORK_TOPICS
 
     keywords1 = _read_work_keywords(con, minio.bucket, "smoke_lex1")
-    assert len(keywords1) == 6, f"attendu 6 lignes keywords golden, obtenu {len(keywords1)}"
+    assert len(keywords1) == 7, f"attendu 7 lignes keywords golden, obtenu {len(keywords1)}"
     assert {(w, k) for w, k, _ in keywords1} == _GOLDEN_WORK_KEYWORDS
     # Provenance COMPLÈTE : les scores < 0,3 (shield 0,21 ; reagent 0,11) sont conservés.
     # Le seuil ≥ 0,3 est une décision d'agrégation du mart par author_id (lot 2), pas du curated.
@@ -275,22 +281,27 @@ def _read_researchers(con: duckdb.DuckDBPyConnection, bucket: str, run: str) -> 
 # - shield (0,2103 >= 0,2) est PRÉSENT ;
 # - tous les topics (0,95–0,999) passent >= 0,5.
 # T20001 (W101 0,9991 + W102 0,9876) et plasma (W101 0,5598 + W102 0,4471) ont freq=2.
+# T20005/fusion viennent de W303 co-écrit Alice+Bob → présents pour LES DEUX auteurs.
 _K = "https://openalex.org/keywords/"
 _GOLDEN_RESEARCHERS = {
     # (author_id, kind, label_id): (weight, freq)
     (_ALICE, "topic", "https://openalex.org/T20001"): (1.9867, 2),
     (_ALICE, "topic", "https://openalex.org/T20002"): (0.9982, 1),
+    (_ALICE, "topic", "https://openalex.org/T20005"): (0.9500, 1),
     (_ALICE, "keyword", _K + "plasma"): (1.0069, 2),
     (_ALICE, "keyword", _K + "shield"): (0.2103, 1),
+    (_ALICE, "keyword", _K + "fusion"): (0.8000, 1),
     (_BOB, "topic", "https://openalex.org/T20003"): (0.9678, 1),
     (_BOB, "topic", "https://openalex.org/T20004"): (0.9510, 1),
+    (_BOB, "topic", "https://openalex.org/T20005"): (0.9500, 1),
     (_BOB, "keyword", _K + "chemistry"): (1.5041, 2),
+    (_BOB, "keyword", _K + "fusion"): (0.8000, 1),
 }
 
 
 def test_dbt_build_marts_researchers_golden_and_deterministic(minio):
     """dbt build réel → marts_researchers : agrégat lexical par author_id golden
-    (7 lignes, seuils différenciés topic>=0,5 / keyword>=0,2, reagent coupé) +
+    (11 lignes, seuils différenciés topic>=0,5 / keyword>=0,2, reagent coupé) +
     déterminisme du contenu sur 2 runs."""
     load_raw_fixtures(minio)
 
@@ -308,7 +319,7 @@ def test_dbt_build_marts_researchers_golden_and_deterministic(minio):
     con = lakehouse.connect(cfg)
 
     rows1 = _read_researchers(con, minio.bucket, "smoke_res1")
-    assert len(rows1) == 7, f"attendu 7 lignes golden, obtenu {len(rows1)} : {rows1}"
+    assert len(rows1) == 11, f"attendu 11 lignes golden, obtenu {len(rows1)} : {rows1}"
     # reagent (0,1138) coupé par le seuil keyword 0,2 ; aucun label sous son seuil.
     assert not any("reagent" in label_id for _a, _k, label_id, _w, _f in rows1)
     # Chaque ligne servie a le poids et la fréquence golden attendus.
@@ -324,6 +335,72 @@ def test_dbt_build_marts_researchers_golden_and_deterministic(minio):
     r2 = _dbt_build(minio, curated_run="smoke_res2")
     assert r2.returncode == 0, f"dbt build (run 2) a échoué :\n{r2.stdout}\n{r2.stderr}"
     assert _read_researchers(con, minio.bucket, "smoke_res2") == rows1
+
+
+def test_dbt_build_marts_researchers_opposition_rgpd(minio):
+    """PURGE CHIRURGICALE RGPD (lot 5) : une opposition (author_id, work_id) ne retire
+    QUE le périmètre revendiqué, jamais la donnée d'autrui ni un author_id en bloc."""
+    load_raw_fixtures(minio)
+    cfg = DuckDBS3Config(
+        key_id=minio.access_key,
+        secret=minio.secret_key,
+        endpoint=minio.endpoint,
+        use_ssl=False,
+        region="us-east-1",
+        bucket=minio.bucket,
+    )
+    con = lakehouse.connect(cfg)
+
+    def rows_as_dict(run):
+        return {
+            (a, k, lid): (round(w, 4), f)
+            for a, k, lid, w, f in _read_researchers(con, minio.bucket, run)
+        }
+
+    # ── Cas 1 — opposition (Alice, W303) : anti-sur-effacement CO-AUTEUR ──────────
+    # W303 est co-écrit Alice+Bob. Alice s'oppose à SA participation à W303.
+    r = _dbt_build(
+        minio,
+        curated_run="opp_w303",
+        opposition_pairs=json.dumps([{"author_id": _ALICE, "work_id": _W + "303"}]),
+    )
+    assert r.returncode == 0, f"dbt build a échoué :\n{r.stdout}\n{r.stderr}"
+    m = rows_as_dict("opp_w303")
+    t5 = "https://openalex.org/T20005"
+    fusion = _K + "fusion"
+    # Alice PERD ce que W303 lui apportait en propre (T20005, fusion).
+    assert (_ALICE, "topic", t5) not in m
+    assert (_ALICE, "keyword", fusion) not in m
+    # Bob CONSERVE T20005 et fusion (portés par SA participation à W303, non opposée).
+    # PREUVE anti-sur-effacement : l'opposition d'Alice ne touche PAS le co-auteur Bob.
+    assert m[(_BOB, "topic", t5)] == (0.9500, 1)
+    assert m[(_BOB, "keyword", fusion)] == (0.8000, 1)
+    # Le reste d'Alice (hors W303) intact ; tout Bob intact.
+    assert m[(_ALICE, "topic", "https://openalex.org/T20001")] == (1.9867, 2)
+    assert m[(_BOB, "keyword", _K + "chemistry")] == (1.5041, 2)
+
+    # ── Cas 2 — opposition (Alice, W101) : label PARTAGÉ survit via W102 ──────────
+    r = _dbt_build(
+        minio,
+        curated_run="opp_w101",
+        opposition_pairs=json.dumps([{"author_id": _ALICE, "work_id": _W + "101"}]),
+    )
+    assert r.returncode == 0, f"dbt build a échoué :\n{r.stdout}\n{r.stderr}"
+    m = rows_as_dict("opp_w101")
+    # T20001 est sur W101 ET W102 : SURVIT via W102 (poids/freq re-dérivés sur W102 seul).
+    assert m[(_ALICE, "topic", "https://openalex.org/T20001")] == (0.9876, 1)
+    # plasma idem (W101 0,5598 + W102 0,4471 → reste 0,4471 via W102).
+    assert m[(_ALICE, "keyword", _K + "plasma")] == (0.4471, 1)
+    # T20002 et shield (W101 seul) DISPARAISSENT.
+    assert (_ALICE, "topic", "https://openalex.org/T20002") not in m
+    assert (_ALICE, "keyword", _K + "shield") not in m
+    # Bob totalement intact.
+    assert m[(_BOB, "topic", "https://openalex.org/T20003")] == (0.9678, 1)
+
+    # ── Cas 3 — NON-RÉGRESSION : opposition vide == golden 11 lignes ─────────────
+    r = _dbt_build(minio, curated_run="opp_empty", opposition_pairs="[]")
+    assert r.returncode == 0
+    assert len(_read_researchers(con, minio.bucket, "opp_empty")) == 11
 
 
 # ── Manifest atomique du mart collab (étape 3.4) ─────────────────────────────
@@ -447,7 +524,7 @@ def test_researchers_manifest_atomic_and_correct(minio, monkeypatch):
     assert "manifest.json" not in names_before  # sentinelle : pas encore écrite
 
     res = cm.researchers_manifest(build_asset_context())
-    assert res.metadata["row_count"].value == 7  # 7 lignes golden (cf. GOLDEN.md lot 2)
+    assert res.metadata["row_count"].value == 11  # 11 lignes golden (lot 2 + W303 co-auteur)
     assert res.metadata["partition"].value == f"dt={CURATED_DT}/run={run_id}"
 
     cfg = DuckDBS3Config(
@@ -466,7 +543,7 @@ def test_researchers_manifest_atomic_and_correct(minio, monkeypatch):
         ).fetchone()[0]
     )
     assert man["schema_version"] == cm.MANIFEST_SCHEMA_VERSION == 1
-    assert man["row_count"] == 7
+    assert man["row_count"] == 11
     part = man["parts"][0]
     # La clé porte bien le préfixe researchers (PAS collab) : preuve du paramétrage.
     assert part["key"] == f"marts/researchers/dt={CURATED_DT}/run={run_id}/part.parquet"

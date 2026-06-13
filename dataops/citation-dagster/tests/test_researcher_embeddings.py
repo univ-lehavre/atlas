@@ -138,6 +138,7 @@ def _canonical_sha256(rows, ndigits=6):
 # Alice (A1000000001) a W101+W102, Bob (A1000000002) a W201+W202 → 2 vecteurs auteur.
 _ALICE = "https://openalex.org/A1000000001"
 _BOB = "https://openalex.org/A1000000002"
+_W = "https://openalex.org/W"
 
 
 def test_asset_researcher_embeddings_golden_and_deterministic(embedding_model, minio, monkeypatch):
@@ -154,7 +155,7 @@ def test_asset_researcher_embeddings_golden_and_deterministic(embedding_model, m
     assert r.returncode == 0, f"dbt build a échoué :\n{r.stdout}\n{r.stderr}"
 
     res = researcher_embeddings(build_asset_context())
-    assert res.metadata["work_vectors"].value == 4  # W101, W102, W201, W202
+    assert res.metadata["work_vectors"].value == 5  # W101, W102, W201, W202, W303
     assert res.metadata["author_vectors"].value == 2  # Alice, Bob
 
     con = _connect(minio)
@@ -162,7 +163,7 @@ def test_asset_researcher_embeddings_golden_and_deterministic(embedding_model, m
     authors = _read_vectors(con, minio.bucket, "marts/researcher_vectors", "author_id", run_id)
 
     # Grain & dimension.
-    assert len(works) == 4
+    assert len(works) == 5
     assert len(authors) == 2
     assert all(len(v) == embedding.EMBEDDING_DIM for _id, v in works)
     assert all(len(v) == embedding.EMBEDDING_DIM for _id, v in authors)
@@ -189,6 +190,52 @@ def test_asset_researcher_embeddings_golden_and_deterministic(embedding_model, m
     assert _canonical_sha256(authors2) == sha_authors1
 
 
+def test_vector_opposition_rgpd(embedding_model, minio, monkeypatch):
+    """PURGE CHIRURGICALE RGPD du VECTEUR (lot 5) : opposition (Alice, W303) re-dérive
+    le vecteur d'Alice sans W303, laisse Bob INCHANGÉ, et garde la provenance COMPLÈTE."""
+    requires_rclone()
+    load_raw_fixtures(minio)
+    _set_minio_env(monkeypatch, minio)
+    run_id = "EPHEMERAL"
+
+    # 1) Run de référence SANS opposition.
+    r = _dbt_build(minio, curated_run=run_id, curated_dt=CURATED_DT)
+    assert r.returncode == 0, f"dbt build a échoué :\n{r.stdout}\n{r.stderr}"
+    monkeypatch.delenv("OPPOSITION_PAIRS", raising=False)
+    researcher_embeddings(build_asset_context())
+    con = _connect(minio)
+    authors_ref = dict(
+        _read_vectors(con, minio.bucket, "marts/researcher_vectors", "author_id", run_id)
+    )
+    works_ref = _read_vectors(con, minio.bucket, "curated/curated_work_vectors", "work_id", run_id)
+
+    # 2) Run AVEC opposition (Alice, W303) — MÊME source env que dbt (cohérence).
+    monkeypatch.setenv(
+        "OPPOSITION_PAIRS", json.dumps([{"author_id": _ALICE, "work_id": _W + "303"}])
+    )
+    researcher_embeddings(build_asset_context())
+    authors_opp = dict(
+        _read_vectors(con, minio.bucket, "marts/researcher_vectors", "author_id", run_id)
+    )
+    works_opp = _read_vectors(con, minio.bucket, "curated/curated_work_vectors", "work_id", run_id)
+
+    # Provenance INCHANGÉE : la couche curated reste complète (5 works, non filtrée).
+    assert _canonical_sha256(works_opp) == _canonical_sha256(works_ref)
+    assert len(works_opp) == 5
+
+    # Bob INCHANGÉ : son vecteur (agrégé sur W201, W202, W303) est byte-identique.
+    # PREUVE anti-sur-effacement : l'opposition d'Alice ne touche pas le co-auteur.
+    assert _canonical_sha256([(_BOB, authors_opp[_BOB])]) == _canonical_sha256(
+        [(_BOB, authors_ref[_BOB])]
+    )
+    # Alice TOUJOURS présente (garde W101, W102), re-dérivée → vecteur différent de la réf.
+    assert _ALICE in authors_opp
+    assert float(np.linalg.norm(authors_opp[_ALICE])) == pytest.approx(1.0, abs=1e-5)
+    assert _canonical_sha256([(_ALICE, authors_opp[_ALICE])]) != _canonical_sha256(
+        [(_ALICE, authors_ref[_ALICE])]
+    )
+
+
 def test_vector_manifests_and_ge_check(embedding_model, minio, monkeypatch):
     """e2e lot 4 : dbt + asset embeddings, puis les manifests des deux artefacts
     vecteur (marts/researcher_vectors + curated/curated_work_vectors) s'écrivent
@@ -206,7 +253,7 @@ def test_vector_manifests_and_ge_check(embedding_model, minio, monkeypatch):
     res_agg = cm.researcher_vectors_manifest(build_asset_context())
     assert res_agg.metadata["row_count"].value == 2  # Alice, Bob
     res_prov = cm.work_vectors_manifest(build_asset_context())
-    assert res_prov.metadata["row_count"].value == 4  # W101, W102, W201, W202
+    assert res_prov.metadata["row_count"].value == 5  # W101, W102, W201, W202, W303
 
     cfg = DuckDBS3Config(
         key_id=minio.access_key,
@@ -217,7 +264,7 @@ def test_vector_manifests_and_ge_check(embedding_model, minio, monkeypatch):
         bucket=minio.bucket,
     )
     con = lakehouse.connect(cfg)
-    for subdir, n in [("marts/researcher_vectors", 2), ("curated/curated_work_vectors", 4)]:
+    for subdir, n in [("marts/researcher_vectors", 2), ("curated/curated_work_vectors", 5)]:
         man = json.loads(
             con.sql(
                 f"SELECT content FROM read_text("

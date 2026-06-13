@@ -29,6 +29,9 @@ NB : pas de ``from __future__ import annotations`` (drift D9 : Dagster introspec
 les annotations à l'exécution).
 """
 
+import json
+import os
+
 from dagster import (
     AssetExecutionContext,
     AssetKey,
@@ -44,6 +47,18 @@ from citation_dagster.dbt import CURATED_DT
 # Sous-dossiers des deux artefacts (mêmes conventions que curated_*/marts_* dbt).
 _WORK_VECTORS_SUBDIR = "curated/curated_work_vectors"
 _AUTHOR_VECTORS_SUBDIR = "marts/researcher_vectors"
+
+
+def load_opposition_set():
+    """Couples (author_id, work_id) opposés (RGPD, lot 5), depuis l'env OPPOSITION_PAIRS.
+
+    SOURCE UNIQUE partagée avec le mart lexical dbt (relayée par build_dbt_vars) : le
+    MÊME env pilote le filtrage lexical ET vecteur → cohérence garantie. Format JSON
+    `[{"author_id": "...", "work_id": "..."}]`, défaut `[]`. Le code PERMET la purge ;
+    la liste vient du déployeur (ADR 0059). Renvoie un set de tuples (author_id, work_id).
+    """
+    raw = os.environ.get("OPPOSITION_PAIRS", "[]")
+    return {(p["author_id"], p["work_id"]) for p in json.loads(raw)}
 
 
 def _partition_glob(bucket, subdir, run_id):
@@ -166,7 +181,9 @@ def researcher_embeddings(context: AssetExecutionContext) -> MaterializeResult:
     ]
     lineage.emit(RunState.START, run_id, "researcher_embeddings", lineage_inputs, lineage_outputs)
 
-    # 1) Vecteur PAR PUBLICATION (provenance, sans L2).
+    # 1) Vecteur PAR PUBLICATION (provenance, sans L2). NON filtré par l'opposition :
+    #    la provenance grain-publication reste COMPLÈTE et re-poolable (ADR 0059) — c'est
+    #    elle qui rend la purge chirurgicale possible. Seul l'agrégat servi (étape 2) exclut.
     work_texts = _read_work_labels(con, bucket, run_id)
     embedder = embedding.Embedder()
     work_vectors = [(work_id, embedder.embed_text(text)) for work_id, text in work_texts]
@@ -177,11 +194,17 @@ def researcher_embeddings(context: AssetExecutionContext) -> MaterializeResult:
         _partition_part(bucket, _WORK_VECTORS_SUBDIR, run_id),
     )
 
-    # 2) Agrégat PAR author_id (mean-pool non pondéré + L2). Une publication
-    #    contribue une fois à chacun de ses auteurs.
+    # 2) Agrégat PAR author_id (mean-pool non pondéré + L2), re-dérivé sur les couples
+    #    NON opposés. Une publication contribue une fois à chacun de ses auteurs, SAUF
+    #    si le couple (author_id, work_id) est opposé (purge chirurgicale RGPD, lot 5).
+    #    Un author_id dont TOUS les couples sont opposés disparaît de l'agrégat servi
+    #    (aucun vecteur écrit) — cohérent : plus aucune donnée revendiquée.
+    opposition_set = load_opposition_set()
     work_vec_map = dict(work_vectors)
     author_works: dict[str, list] = {}
     for author_id, work_id in _read_authorships(con, bucket, run_id):
+        if (author_id, work_id) in opposition_set:
+            continue
         vec = work_vec_map.get(work_id)
         if vec is not None:
             author_works.setdefault(author_id, []).append(vec)
