@@ -427,3 +427,58 @@ def test_ge_checks_pass_on_served_fixtures(minio, monkeypatch):
     assert q.check_raw(minio.bucket).passed is True
     assert q.check_curated_edges(minio.bucket, run_id).passed is True
     assert q.check_marts(minio.bucket, run_id).passed is True
+    # Mart lexical researchers (lot 2) : contrat de colonnes + bornes weight/freq.
+    assert q.check_researchers(minio.bucket, run_id).passed is True
+
+
+def test_researchers_manifest_atomic_and_correct(minio, monkeypatch):
+    """e2e : dbt écrit marts/researchers, l'asset researchers_manifest écrit un manifest
+    correct (sentinelle atomique, sha256 recalculé), sans toucher au mart collab."""
+    requires_rclone()
+    load_raw_fixtures(minio)
+    _set_minio_env(monkeypatch, minio)
+    run_id = "EPHEMERAL"  # = run_id de build_asset_context (invocation directe)
+    r = _dbt_build(minio, curated_run=run_id, curated_dt=CURATED_DT)
+    assert r.returncode == 0, f"dbt build a échoué :\n{r.stdout}\n{r.stderr}"
+
+    prefix_s3 = f"ceph:{minio.bucket}/marts/researchers/dt={CURATED_DT}/run={run_id}"
+    names_before = {e["Name"] for e in _rclone_lsjson(minio, prefix_s3)}
+    assert "part.parquet" in names_before
+    assert "manifest.json" not in names_before  # sentinelle : pas encore écrite
+
+    res = cm.researchers_manifest(build_asset_context())
+    assert res.metadata["row_count"].value == 7  # 7 lignes golden (cf. GOLDEN.md lot 2)
+    assert res.metadata["partition"].value == f"dt={CURATED_DT}/run={run_id}"
+
+    cfg = DuckDBS3Config(
+        key_id=minio.access_key,
+        secret=minio.secret_key,
+        endpoint=minio.endpoint,
+        use_ssl=False,
+        region="us-east-1",
+        bucket=minio.bucket,
+    )
+    con = lakehouse.connect(cfg)
+    man = json.loads(
+        con.sql(
+            f"SELECT content FROM read_text("
+            f"'s3://{minio.bucket}/marts/researchers/dt={CURATED_DT}/run={run_id}/manifest.json')"
+        ).fetchone()[0]
+    )
+    assert man["schema_version"] == cm.MANIFEST_SCHEMA_VERSION == 1
+    assert man["row_count"] == 7
+    part = man["parts"][0]
+    # La clé porte bien le préfixe researchers (PAS collab) : preuve du paramétrage.
+    assert part["key"] == f"marts/researchers/dt={CURATED_DT}/run={run_id}/part.parquet"
+
+    target = ceph_target_from_env()
+    with tempfile.TemporaryDirectory() as tmp:
+        rc = Path(tmp) / "rclone.conf"
+        rc.write_text(render_rclone_config(target))
+        raw = subprocess.run(
+            ["rclone", "--config", str(rc), "cat", f"{prefix_s3}/part.parquet"],
+            capture_output=True,
+            check=True,
+        ).stdout
+    assert hashlib.sha256(raw).hexdigest() == part["sha256"]
+    assert len(raw) == part["bytes"]

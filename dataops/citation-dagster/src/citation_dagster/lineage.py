@@ -43,9 +43,13 @@ def curated_dataset(model: str) -> Dataset:
     return Dataset(namespace=NAMESPACE, name=f"curated/{model}")
 
 
-def mart_dataset() -> Dataset:
-    """Dataset du mart servi (sortie de dbt, entrée de collab_manifest)."""
-    return Dataset(namespace=NAMESPACE, name="marts/collab")
+def mart_dataset(mart_subdir: str = "marts/collab") -> Dataset:
+    """Dataset d'un artefact servi (sortie de dbt/asset, entrée de son manifest).
+
+    ``mart_subdir`` par défaut ``marts/collab`` (rétro-compat) ; les artefacts du
+    producteur researchers passent ``marts/researchers`` / ``marts/researcher_vectors``.
+    """
+    return Dataset(namespace=NAMESPACE, name=mart_subdir)
 
 
 def emit(
@@ -90,6 +94,13 @@ def dbt_lineage_io() -> tuple[list, list]:
         curated_dataset("curated_authors"),
         curated_dataset("curated_authorships"),
         curated_dataset("curated_edges"),
+        # Provenance lexicale du producteur researchers (lot 1, modèles dbt).
+        curated_dataset("curated_work_topics"),
+        curated_dataset("curated_work_keywords"),
         mart_dataset(),
+        # Mart lexical researchers (lot 2, modèle dbt). Le mart researcher_vectors
+        # vient de l'asset PYTHON researcher_embeddings, pas de dbt → hors dbt_lineage_io
+        # (il trace ses propres I/O depuis l'asset).
+        mart_dataset("marts/researchers"),
     ]
     return inputs, outputs

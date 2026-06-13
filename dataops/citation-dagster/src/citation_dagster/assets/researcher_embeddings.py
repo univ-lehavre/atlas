@@ -19,9 +19,11 @@ grain `(author_id, kind, label_id)`) reste intact ; le vecteur vit dans un
 artefact SÉPARÉ au grain `author_id`. La fusion lexical+vecteur se fait à
 l'ingestion `index_load` (Phase 4) / lot 5, pas au mart (plan:79).
 
-Le manifest/qualité/lineage de ces artefacts relève du LOT 4 (cet asset n'écrit
-aucun manifest). Le lineage OpenLineage→Marquez est émis automatiquement par
-Dagster, pas manuellement ici.
+Le manifest et la qualité GE de ces artefacts relèvent du LOT 4 (cet asset n'écrit
+aucun manifest). Le lineage OpenLineage→Marquez est émis MANUELLEMENT ici (l'émission
+est explicite dans tout le dépôt, via le module ``lineage`` — Dagster ne l'émet PAS
+automatiquement) : l'asset trace ses entrées (provenance lexicale curated) et ses
+sorties (les deux artefacts vecteur). No-op si ``OPENLINEAGE_URL`` est absent.
 
 NB : pas de ``from __future__ import annotations`` (drift D9 : Dagster introspecte
 les annotations à l'exécution).
@@ -34,8 +36,9 @@ from dagster import (
     MetadataValue,
     asset,
 )
+from openlineage.client.event_v2 import RunState
 
-from citation_dagster import embedding, lakehouse
+from citation_dagster import embedding, lakehouse, lineage
 from citation_dagster.dbt import CURATED_DT
 
 # Sous-dossiers des deux artefacts (mêmes conventions que curated_*/marts_* dbt).
@@ -150,6 +153,19 @@ def researcher_embeddings(context: AssetExecutionContext) -> MaterializeResult:
     cfg = lakehouse.duckdb_s3_config_from_env()
     bucket = cfg.bucket
 
+    # Lineage : provenance lexicale (entrées) → deux artefacts vecteur (sorties).
+    # Émission manuelle (no-op sans OPENLINEAGE_URL) ; noms techniques, jamais de PII.
+    lineage_inputs = [
+        lineage.curated_dataset("curated_work_topics"),
+        lineage.curated_dataset("curated_work_keywords"),
+        lineage.curated_dataset("curated_authorships"),
+    ]
+    lineage_outputs = [
+        lineage.curated_dataset("curated_work_vectors"),
+        lineage.mart_dataset("marts/researcher_vectors"),
+    ]
+    lineage.emit(RunState.START, run_id, "researcher_embeddings", lineage_inputs, lineage_outputs)
+
     # 1) Vecteur PAR PUBLICATION (provenance, sans L2).
     work_texts = _read_work_labels(con, bucket, run_id)
     embedder = embedding.Embedder()
@@ -178,6 +194,10 @@ def researcher_embeddings(context: AssetExecutionContext) -> MaterializeResult:
         con,
         "SELECT author_id, vector FROM _vec_tmp ORDER BY author_id",
         _partition_part(bucket, _AUTHOR_VECTORS_SUBDIR, run_id),
+    )
+
+    lineage.emit(
+        RunState.COMPLETE, run_id, "researcher_embeddings", lineage_inputs, lineage_outputs
     )
 
     return MaterializeResult(

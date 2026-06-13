@@ -13,12 +13,15 @@ NEON arm64 vs AVX amd64, admis ADR 0059). Normes validées par pytest.approx.
 """
 
 import hashlib
+import json
 
 import numpy as np
 import pytest
 from dagster import build_asset_context
 
+import citation_dagster.assets.manifest as cm
 from citation_dagster import embedding, lakehouse
+from citation_dagster.assets import quality as q
 from citation_dagster.assets.researcher_embeddings import researcher_embeddings
 from citation_dagster.dbt import CURATED_DT
 from citation_dagster.resources import DuckDBS3Config
@@ -184,3 +187,47 @@ def test_asset_researcher_embeddings_golden_and_deterministic(embedding_model, m
     authors2 = _read_vectors(con, minio.bucket, "marts/researcher_vectors", "author_id", run_id)
     assert _canonical_sha256(works2) == sha_works1
     assert _canonical_sha256(authors2) == sha_authors1
+
+
+def test_vector_manifests_and_ge_check(embedding_model, minio, monkeypatch):
+    """e2e lot 4 : dbt + asset embeddings, puis les manifests des deux artefacts
+    vecteur (marts/researcher_vectors + curated/curated_work_vectors) s'écrivent
+    correctement, et la porte GE du vecteur (dim 384 + norme tolérante) passe."""
+    requires_rclone()
+    load_raw_fixtures(minio)
+    _set_minio_env(monkeypatch, minio)
+
+    run_id = "EPHEMERAL"  # = run_id de build_asset_context
+    r = _dbt_build(minio, curated_run=run_id, curated_dt=CURATED_DT)
+    assert r.returncode == 0, f"dbt build a échoué :\n{r.stdout}\n{r.stderr}"
+    researcher_embeddings(build_asset_context())  # écrit les deux Parquet vecteur
+
+    # Manifests : agrégat author_id (2 lignes) + provenance work_id (4 lignes).
+    res_agg = cm.researcher_vectors_manifest(build_asset_context())
+    assert res_agg.metadata["row_count"].value == 2  # Alice, Bob
+    res_prov = cm.work_vectors_manifest(build_asset_context())
+    assert res_prov.metadata["row_count"].value == 4  # W101, W102, W201, W202
+
+    cfg = DuckDBS3Config(
+        key_id=minio.access_key,
+        secret=minio.secret_key,
+        endpoint=minio.endpoint,
+        use_ssl=False,
+        region="us-east-1",
+        bucket=minio.bucket,
+    )
+    con = lakehouse.connect(cfg)
+    for subdir, n in [("marts/researcher_vectors", 2), ("curated/curated_work_vectors", 4)]:
+        man = json.loads(
+            con.sql(
+                f"SELECT content FROM read_text("
+                f"'s3://{minio.bucket}/{subdir}/dt={CURATED_DT}/run={run_id}/manifest.json')"
+            ).fetchone()[0]
+        )
+        assert man["schema_version"] == cm.MANIFEST_SCHEMA_VERSION == 1
+        assert man["row_count"] == n
+        # Clé voisine du bon artefact (preuve du paramétrage mart_subdir).
+        assert man["parts"][0]["key"].startswith(f"{subdir}/dt={CURATED_DT}/run={run_id}/")
+
+    # Porte GE du vecteur : dimension 384 + norme tolérante {0, ≈1}, verte sur le réel.
+    assert q.check_researcher_vectors(minio.bucket, run_id).passed is True

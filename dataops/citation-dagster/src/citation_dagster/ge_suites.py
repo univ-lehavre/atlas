@@ -42,6 +42,10 @@ _CROSS_CITATIONS_MAX = 1_000_000
 # Colonnes du mart servi (contrat 3.4).
 _MARTS_COLS = ("author_a", "author_b", "cross_citations", "a_to_b", "b_to_a")
 
+# Colonnes du mart lexical researchers (lot 2) et borne haute de sanité du poids.
+_RESEARCHERS_COLS = ("author_id", "kind", "label_id", "label", "weight", "freq")
+_WEIGHT_MAX = 1_000_000.0
+
 
 # Les *builders* renvoient une LISTE d'attentes (objets gxe), sans contexte ni I/O —
 # purs et unit-testables. GE 1.18 exige un contexte actif pour ATTACHER une attente à
@@ -102,6 +106,42 @@ def marts_collab_expectations() -> list:
         gxe.ExpectColumnValuesToBeInSet(column="_sum_ok", value_set=[True]),
     ]
     return exps
+
+
+def marts_researchers_expectations() -> list:
+    """Contrat de colonnes + bornes de sanité du mart lexical researchers (lot 2).
+
+    Défense en profondeur sur le Parquet servi : les not_null/unicité/accepted_values
+    sont déjà bloqués par les tests dbt ; on redouble ici les not_null, le domaine de
+    ``kind`` et les bornes ``weight > 0`` / ``freq >= 1`` au niveau du stockage servi.
+    """
+    exps = [gxe.ExpectColumnValuesToNotBeNull(column=c) for c in _RESEARCHERS_COLS]
+    exps += [
+        gxe.ExpectColumnValuesToBeInSet(column="kind", value_set=["topic", "keyword"]),
+        # weight > 0 strict : porté par la colonne dérivée booléenne _weight_ok (calculée
+        # par le loader), GE 1.18 n'acceptant pas strict_min_value sur ExpectBetween.
+        gxe.ExpectColumnValuesToBeInSet(column="_weight_ok", value_set=[True]),
+        gxe.ExpectColumnValuesToBeBetween(column="weight", max_value=_WEIGHT_MAX),
+        gxe.ExpectColumnValuesToBeBetween(column="freq", min_value=1),
+    ]
+    return exps
+
+
+def marts_researcher_vectors_expectations() -> list:
+    """Contrat de l'agrégat vecteur par author_id (lot 3).
+
+    Le DataFrame doit porter deux colonnes dérivées (calculées par le loader) :
+    ``_dim_ok`` (len(vector) == EMBEDDING_DIM) et ``_norm_ok`` (norme L2 ∈ {0, ≈1}).
+    La tolérance {0, 1} accepte le vecteur NUL légitime d'un author_id sans publication
+    vectorisable (``embedding.aggregate_author`` renvoie un vecteur nul) — une assertion
+    stricte ``≈1`` rejetterait cette donnée valide.
+    """
+    return [
+        gxe.ExpectColumnValuesToNotBeNull(column="author_id"),
+        gxe.ExpectColumnValuesToNotBeNull(column="vector"),
+        gxe.ExpectColumnValuesToBeInSet(column="_dim_ok", value_set=[True]),
+        gxe.ExpectColumnValuesToBeInSet(column="_norm_ok", value_set=[True]),
+    ]
 
 
 def validate_df(df, suite_name: str, expectations: list) -> tuple[bool, dict]:

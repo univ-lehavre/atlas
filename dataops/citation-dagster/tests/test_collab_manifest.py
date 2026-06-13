@@ -31,6 +31,32 @@ def test_partition_and_keys():
     )
 
 
+def test_keys_parametrized_by_mart_subdir():
+    """Lot 4 : mart_prefix/part_key portent le bon préfixe pour chaque artefact servi."""
+    for subdir in ("marts/researchers", "marts/researcher_vectors", "curated/curated_work_vectors"):
+        assert cm.mart_prefix("ceph", "citation", "2020-01", "run9", subdir) == (
+            f"ceph:citation/{subdir}/dt=2020-01/run=run9"
+        )
+        assert cm.part_key("2020-01", "run9", "part.parquet", subdir) == (
+            f"{subdir}/dt=2020-01/run=run9/part.parquet"
+        )
+
+
+def test_build_manifest_carries_mart_subdir_in_keys():
+    """build_manifest propage mart_subdir dans parts[].key (clé voisine du Parquet)."""
+    man = cm.build_manifest(
+        "2020-01",
+        "r1",
+        2,
+        {"part.parquet": 10},
+        {"part.parquet": "a" * 64},
+        "t",
+        mart_subdir="marts/researchers",
+    )
+    assert man["parts"][0]["key"] == "marts/researchers/dt=2020-01/run=r1/part.parquet"
+    assert man["schema_version"] == cm.MANIFEST_SCHEMA_VERSION
+
+
 def test_parse_lsjson_sizes_skips_dirs():
     stdout = json.dumps(
         [
@@ -141,7 +167,7 @@ def test_asset_body_builds_and_writes_manifest_last(env, monkeypatch):
     fake = FakeRclone()
     monkeypatch.setattr(subprocess, "run", fake)
     # DuckDB count mocké (pas d'I/O S3 réelle).
-    monkeypatch.setattr(cm, "_count_rows", lambda bucket, dt, run_id: 1)
+    monkeypatch.setattr(cm, "_count_rows", lambda bucket, dt, run_id, mart_subdir: 1)
 
     res = collab_manifest_invoke()
     assert res.metadata["row_count"].value == 1
@@ -169,7 +195,7 @@ def test_asset_body_builds_and_writes_manifest_last(env, monkeypatch):
 def test_asset_body_fails_on_empty_mart(env, monkeypatch):
     fake = FakeRclone(lsjson="[]", hashsum="")
     monkeypatch.setattr(subprocess, "run", fake)
-    monkeypatch.setattr(cm, "_count_rows", lambda bucket, dt, run_id: 0)
+    monkeypatch.setattr(cm, "_count_rows", lambda bucket, dt, run_id, mart_subdir: 0)
     with pytest.raises(Failure):
         collab_manifest_invoke()
     # Aucun manifest écrit si le mart est vide (pas de sentinelle de complétude).
