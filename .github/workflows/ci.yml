@@ -20,7 +20,7 @@ env:
 
 jobs:
   # Détecte si la PR touche du code exécutable ou seulement de la
-  # documentation. Les jobs lourds (Test/Build/Typecheck) consultent
+  # documentation. Les jobs lourds (Lint/Test/Build/Typecheck/Audit) consultent
   # `outputs.code` pour court-circuiter leur travail coûteux SANS jamais se
   # rendre `skipped` — un check requis `skipped` resterait « Pending » et
   # bloquerait le merge (cf. ADR 0034). Conservateur : tout fichier hors de la
@@ -73,47 +73,17 @@ jobs:
           echo "code=${code}" >> "$GITHUB_OUTPUT"
           echo "Résultat : code=${code}"
 
+  # Tous les jobs lourds ne dépendent QUE de `changes` : ils partent en
+  # parallèle (ADR 0061). Turbo gère l'ordre réel des tâches (`^build`) à
+  # l'intérieur de chaque job — chaîner les jobs CI entre eux n'ajoutait que des
+  # barrières d'attente inutiles. Le pattern de court-circuit reste au niveau
+  # *step* (drapeau `RUN`) pour que chaque check requis sorte toujours `success`,
+  # jamais `skipped` (ADR 0034/0016).
+
   lint:
     name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
-
-      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
-
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Create SvelteKit env files
-        run: |
-          for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
-            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
-          done
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Turbo cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        with:
-          path: .turbo
-          key: turbo-v2-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-v2-${{ runner.os }}-
-
-      - run: pnpm format:check
-
-      - run: pnpm lint
-
-  typecheck:
-    name: Typecheck
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    # Court-circuit step-level (ADR 0034) : le job tourne toujours (le check
-    # requis est rapporté), mais ses étapes lourdes sont sautées si la PR ne
-    # touche pas de code → le job sort « success », jamais « skipped ».
     needs: [changes]
     env:
       RUN: ${{ needs.changes.outputs.code == 'true' }}
@@ -122,32 +92,31 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - if: env.RUN == 'true'
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+        uses: ./.github/actions/setup-workspace
 
       - if: env.RUN == 'true'
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Create SvelteKit env files
-        if: env.RUN == 'true'
-        run: |
-          for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
-            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
-          done
+        run: pnpm format:check
 
       - if: env.RUN == 'true'
-        run: pnpm install --frozen-lockfile
+        run: pnpm lint
 
-      - name: Turbo cache
-        if: env.RUN == 'true'
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        with:
-          path: .turbo
-          key: turbo-v2-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-v2-${{ runner.os }}-
+      - name: Skipped (PR documentaire)
+        if: env.RUN != 'true'
+        run: echo "PR sans code exécutable — lint non requis (ADR 0034)."
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [changes]
+    env:
+      RUN: ${{ needs.changes.outputs.code == 'true' }}
+    steps:
+      - if: env.RUN == 'true'
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - if: env.RUN == 'true'
+        uses: ./.github/actions/setup-workspace
 
       - if: env.RUN == 'true'
         run: pnpm typecheck
@@ -163,7 +132,6 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Court-circuit step-level (ADR 0034) : voir le job `typecheck`.
     needs: [changes]
     env:
       RUN: ${{ needs.changes.outputs.code == 'true' }}
@@ -172,32 +140,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - if: env.RUN == 'true'
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
-
-      - if: env.RUN == 'true'
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Create SvelteKit env files
-        if: env.RUN == 'true'
-        run: |
-          for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
-            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
-          done
-
-      - if: env.RUN == 'true'
-        run: pnpm install --frozen-lockfile
-
-      - name: Turbo cache
-        if: env.RUN == 'true'
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        with:
-          path: .turbo
-          key: turbo-v2-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-v2-${{ runner.os }}-
+        uses: ./.github/actions/setup-workspace
 
       - if: env.RUN == 'true'
         run: pnpm test:coverage
@@ -224,9 +167,11 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Court-circuit step-level (ADR 0034). `needs` inclut `changes` pour lire le
-    # drapeau ; les `needs` lint/typecheck/test restent (ordre du pipeline).
-    needs: [changes, lint, typecheck, test]
+    # ADR 0061 : ne dépend plus de lint/typecheck/test. Ce ne sont pas des
+    # dépendances de build mais des gates de qualité parallèles ; les chaîner
+    # ne faisait qu'allonger le chemin critique. Turbo construit l'ordre réel
+    # (`^build`) en interne.
+    needs: [changes]
     env:
       RUN: ${{ needs.changes.outputs.code == 'true' }}
     steps:
@@ -234,32 +179,7 @@ jobs:
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - if: env.RUN == 'true'
-        uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
-
-      - if: env.RUN == 'true'
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Create SvelteKit env files
-        if: env.RUN == 'true'
-        run: |
-          for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
-            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
-          done
-
-      - if: env.RUN == 'true'
-        run: pnpm install --frozen-lockfile
-
-      - name: Turbo cache
-        if: env.RUN == 'true'
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        with:
-          path: .turbo
-          key: turbo-v2-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-v2-${{ runner.os }}-
+        uses: ./.github/actions/setup-workspace
 
       - if: env.RUN == 'true'
         run: pnpm build
@@ -276,34 +196,17 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    needs: [build]
+    # ADR 0061 : détaché de `build`. `docs:build` ne lit que les sources
+    # (README de paquets, package.json pour la carte, historique git pour les
+    # stats) — aucun artefact buildé du workspace n'est requis (cf. step
+    # ci-dessous). Il peut donc tourner en parallèle de Build.
+    needs: [changes]
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
-
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Create SvelteKit env files
-        run: |
-          for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
-            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
-          done
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Turbo cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        with:
-          path: .turbo
-          key: turbo-v2-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-v2-${{ runner.os }}-
+      - uses: ./.github/actions/setup-workspace
 
       # `docs:build` ne lit que les sources (README de paquets, package.json
       # pour la carte, historique git pour les stats) — aucun artefact buildé.
@@ -315,8 +218,12 @@ jobs:
     name: Audit
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    needs: [changes]
+    env:
+      RUN: ${{ needs.changes.outputs.code == 'true' }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - if: env.RUN == 'true'
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           # Historique complet requis : `docs:generate:check` régénère la page
           # d'évolution (docs/quality/evolution-git.md) à partir de `git log`
@@ -324,22 +231,8 @@ jobs:
           # commit et la comparaison échouerait.
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
-
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Turbo cache
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
-        with:
-          path: .turbo
-          key: turbo-v2-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-v2-${{ runner.os }}-
+      - if: env.RUN == 'true'
+        uses: ./.github/actions/setup-workspace
 
       # knip (audit:unused) résout le graphe d'imports des apps SvelteKit
       # à partir de `.svelte-kit/`. Or les `svelte.config.js` importent
@@ -349,39 +242,54 @@ jobs:
       # uniquement les paquets workspace puis on régénère `.svelte-kit/`
       # via `svelte-kit sync` (qui n'a PAS besoin des `$env` runtime,
       # contrairement à un `vite build` complet d'app). Le cache turbo
-      # ci-dessus rend ce build quasi-instantané quand rien n'a changé.
-      - name: Build workspace packages
+      # rend ce build quasi-instantané quand rien n'a changé.
+      - if: env.RUN == 'true'
+        name: Build workspace packages
         run: pnpm --filter="./packages/**" --filter="./ui/**" build
 
-      - name: Sync SvelteKit metadata
+      - if: env.RUN == 'true'
+        name: Sync SvelteKit metadata
         run: pnpm --filter="./apps/**" exec svelte-kit sync
 
-      - name: Workspace structure
+      - if: env.RUN == 'true'
+        name: Workspace structure
         run: pnpm audit:structure
 
-      - name: Security audit
+      - if: env.RUN == 'true'
+        name: Security audit
         run: pnpm audit:security
 
-      - name: License audit
+      - if: env.RUN == 'true'
+        name: License audit
         run: pnpm audit:licenses
 
-      - name: Unused code
+      - if: env.RUN == 'true'
+        name: Unused code
         run: pnpm audit:unused
 
-      - name: Code duplication
+      - if: env.RUN == 'true'
+        name: Code duplication
         run: pnpm audit:duplicates
 
-      - name: Outdated dependencies
+      - if: env.RUN == 'true'
+        name: Outdated dependencies
         run: pnpm audit:versions
 
-      - name: Dependency specifier coherence
+      - if: env.RUN == 'true'
+        name: Dependency specifier coherence
         run: pnpm audit:dep-versions
 
-      - name: Packages map up-to-date
+      - if: env.RUN == 'true'
+        name: Packages map up-to-date
         run: pnpm docs:generate:check
 
-      - name: Documentation audit
+      - if: env.RUN == 'true'
+        name: Documentation audit
         run: pnpm audit:docs
+
+      - name: Skipped (PR documentaire)
+        if: env.RUN != 'true'
+        run: echo "PR sans code exécutable — audit non requis (ADR 0034)."
 
   dataops:
     name: DataOps (Python)
@@ -399,7 +307,13 @@ jobs:
         with:
           node-version-file: .nvmrc
 
+      # ADR 0061 : cache de l'environnement uv (téléchargements + venv résolu),
+      # invalidé sur changement des lockfiles Python. Sans cache, chaque run
+      # re-télécharge et re-résout l'environnement Dagster.
       - uses: astral-sh/setup-uv@e92bafb6253dcd438e0484186d7669ea7a8ca1cc # v6.4.3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "dataops/**/uv.lock"
 
       - name: DataOps quality (ruff + pytest + coverage)
         run: pnpm dataops:check
