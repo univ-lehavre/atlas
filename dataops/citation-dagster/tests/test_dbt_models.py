@@ -5,6 +5,8 @@ des fixtures synthétiques, puis relit le Parquet écrit sur S3 et vérifie :
   - `curated_edges` = exactement les 3 arêtes golden (W101→W201, W102→W201, W202→W101) ;
   - `marts_collab_pairs` (3.3) = la paire (Alice, Bob) avec cross_citations=3, a_to_b=2,
     b_to_a=1 (GOLDEN.md) ;
+  - `curated_work_topics`/`curated_work_keywords` (lot researchers) = provenance grain
+    publication (work_id, label) golden, scores < 0,3 conservés (ADR 0059) ;
   - déterminisme : un 2ᵉ run (run=<id> distinct) produit un contenu canonique identique
     (sha256 des lignes triées — PAS des octets Parquet, que DuckDB ne garantit pas
     bit-à-bit) et n'écrase pas la partition du 1ᵉʳ run (immutabilité).
@@ -155,6 +157,81 @@ def test_dbt_build_curated_edges_golden_and_deterministic(minio):
     assert _canonical_sha256(edges1) == _canonical_sha256(edges2)
     # La partition du run 1 n'a pas été écrasée (immutabilité : préfixes distincts).
     assert _read_edges(con, minio.bucket, "smoke1") == edges1
+
+
+def _read_work_topics(con: duckdb.DuckDBPyConnection, bucket: str, run: str) -> list[tuple]:
+    glob = f"s3://{bucket}/curated/curated_work_topics/dt=2020-01/run={run}/*.parquet"
+    return con.sql(
+        f"SELECT work_id, topic_id FROM read_parquet('{glob}') ORDER BY work_id, topic_id"
+    ).fetchall()
+
+
+def _read_work_keywords(con: duckdb.DuckDBPyConnection, bucket: str, run: str) -> list[tuple]:
+    glob = f"s3://{bucket}/curated/curated_work_keywords/dt=2020-01/run={run}/*.parquet"
+    return con.sql(
+        f"SELECT work_id, keyword_id, score FROM read_parquet('{glob}') "
+        "ORDER BY work_id, keyword_id"
+    ).fetchall()
+
+
+# Provenance topics/keywords attendue (GOLDEN.md), grain publication (work_id, label) :
+# T20001 PARTAGÉ par W101+W102 → 2 lignes distinctes (jamais agrégé par author_id, ADR 0059).
+_W = "https://openalex.org/W"
+_T = "https://openalex.org/T"
+_K = "https://openalex.org/keywords/"
+_GOLDEN_WORK_TOPICS = {
+    (_W + "101", _T + "20001"),
+    (_W + "101", _T + "20002"),
+    (_W + "102", _T + "20001"),
+    (_W + "201", _T + "20003"),
+    (_W + "202", _T + "20004"),
+}
+_GOLDEN_WORK_KEYWORDS = {
+    (_W + "101", _K + "plasma"),
+    (_W + "101", _K + "shield"),
+    (_W + "102", _K + "plasma"),
+    (_W + "201", _K + "chemistry"),
+    (_W + "201", _K + "reagent"),
+    (_W + "202", _K + "chemistry"),
+}
+
+
+def test_dbt_build_work_topics_keywords_provenance_golden(minio):
+    """dbt build réel → curated_work_topics/keywords : provenance grain publication
+    (work_id, label), golden exact, score NON filtré (< 0,3 conservés, ADR 0059),
+    déterministe d'un run à l'autre."""
+    load_raw_fixtures(minio)
+
+    r1 = _dbt_build(minio, curated_run="smoke_lex1")
+    assert r1.returncode == 0, f"dbt build (run 1) a échoué :\n{r1.stdout}\n{r1.stderr}"
+
+    cfg = DuckDBS3Config(
+        key_id=minio.access_key,
+        secret=minio.secret_key,
+        endpoint=minio.endpoint,
+        use_ssl=False,
+        region="us-east-1",
+        bucket=minio.bucket,
+    )
+    con = lakehouse.connect(cfg)
+
+    topics1 = _read_work_topics(con, minio.bucket, "smoke_lex1")
+    # Grain (work_id, topic_id) distinct : T20001 partagé W101/W102 = 2 lignes, pas 1.
+    assert len(topics1) == 5, f"attendu 5 lignes topics golden, obtenu {len(topics1)} : {topics1}"
+    assert set(topics1) == _GOLDEN_WORK_TOPICS
+
+    keywords1 = _read_work_keywords(con, minio.bucket, "smoke_lex1")
+    assert len(keywords1) == 6, f"attendu 6 lignes keywords golden, obtenu {len(keywords1)}"
+    assert {(w, k) for w, k, _ in keywords1} == _GOLDEN_WORK_KEYWORDS
+    # Provenance COMPLÈTE : les scores < 0,3 (shield 0,21 ; reagent 0,11) sont conservés.
+    # Le seuil ≥ 0,3 est une décision d'agrégation du mart par author_id (lot 2), pas du curated.
+    assert sum(1 for _w, _k, s in keywords1 if s < 0.3) == 2
+
+    # Déterminisme : un 2ᵉ run produit le même contenu canonique (ADR 0057).
+    r2 = _dbt_build(minio, curated_run="smoke_lex2")
+    assert r2.returncode == 0, f"dbt build (run 2) a échoué :\n{r2.stdout}\n{r2.stderr}"
+    assert _read_work_topics(con, minio.bucket, "smoke_lex2") == topics1
+    assert _read_work_keywords(con, minio.bucket, "smoke_lex2") == keywords1
 
 
 def test_dbt_build_marts_collab_pairs_golden(minio):

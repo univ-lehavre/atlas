@@ -48,3 +48,29 @@ models:
                 field: work_id
       - name: cited_work_id
         data_tests: [not_null]
+
+  - name: curated_work_topics
+    description: "Provenance topic↔œuvre (grain publication, ADR 0059). Socle de la purge chirurgicale."
+    columns:
+      - name: work_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('curated_works')
+                field: work_id
+      - name: topic_id
+        data_tests: [not_null]
+
+  - name: curated_work_keywords
+    description: "Provenance mot-clé↔œuvre (grain publication, ADR 0059). Socle de la purge chirurgicale."
+    columns:
+      - name: work_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('curated_works')
+                field: work_id
+      - name: keyword_id
+        data_tests: [not_null]
