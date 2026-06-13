@@ -74,6 +74,28 @@ lot 2, prouvant que le filtre vit au mart et non au grain publication.
 → **6 lignes** `curated_work_keywords`. (`keyword_id` ci-dessus = slug ; l'id réel
 est l'URL `https://openalex.org/keywords/<slug>`.)
 
+## Agrégat par author_id (mart `researchers`, lot 2)
+
+Grain `(author_id, kind, label_id)`. `weight` = somme des scores des publications du
+chercheur portant le label (au-dessus du seuil) ; `freq` = nombre de ces publications.
+Seuils **différenciés** : topic ≥ 0,5, keyword ≥ 0,2. `reagent` (0,1138 < 0,2) est
+**rejeté** ; `shield` (0,2103 ≥ 0,2) passe ; tous les topics (0,95–0,999) passent.
+
+| author_id (auteur)  | kind    | label_id  | weight                   | freq |
+| ------------------- | ------- | --------- | ------------------------ | ---- |
+| A1000000001 (Alice) | topic   | T20001    | 1,9867 (0,9991 + 0,9876) | 2    |
+| A1000000001 (Alice) | topic   | T20002    | 0,9982                   | 1    |
+| A1000000001 (Alice) | keyword | plasma    | 1,0069 (0,5598 + 0,4471) | 2    |
+| A1000000001 (Alice) | keyword | shield    | 0,2103                   | 1    |
+| A1000000002 (Bob)   | topic   | T20003    | 0,9678                   | 1    |
+| A1000000002 (Bob)   | topic   | T20004    | 0,9510                   | 1    |
+| A1000000002 (Bob)   | keyword | chemistry | 1,5041 (0,8414 + 0,6627) | 2    |
+
+→ **7 lignes** `marts_researchers`. `reagent` absent (coupé par le seuil keyword 0,2),
+ce qui prouve que le filtre vit au mart et non au grain publication (provenance lot 1
+complète, ADR 0059). `label_id` = id OpenAlex pour les topics, URL `keywords/<slug>`
+pour les keywords.
+
 ## Authors
 
 | id                  | orcid   | works_count |

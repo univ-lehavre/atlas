@@ -1,0 +1,57 @@
+# Action composite locale : factorise le préambule répété par presque tous
+# les jobs de `ci.yml` — checkout (implicite côté appelant), pnpm, Node avec
+# cache pnpm, fichiers .env SvelteKit, install, et cache Turbo.
+#
+# Pourquoi une action locale plutôt qu'un workflow réutilisable (`workflow_call`)
+# : on veut partager des *steps* à l'intérieur d'un job (pour ne pas multiplier
+# les jobs ni changer les noms des checks requis par la branch protection —
+# ADR 0016/0034), pas réorchestrer des jobs. Une composite action est l'outil
+# exact pour ça.
+#
+# Clé de cache Turbo (correction de fond, ADR 0061) : l'ancienne clé portait
+# `${{ github.sha }}` — un SHA est unique par commit, donc la clé n'était
+# JAMAIS réutilisée et seul le `restore-keys` partiel rattrapait un cache. Pire,
+# tous les jobs écrivaient le même chemin `.turbo` avec une clé SHA différente :
+# `actions/cache` ne réécrit pas une entrée existante, le cache se figeait sur le
+# premier job qui le peuplait. On hashe désormais le contenu pertinent
+# (lock + sources de config) : même contenu → même clé → hit réel inter-runs,
+# sans dépendre d'un remote cache Turbo (choix : pas de remote cache, ADR 0061).
+name: Setup workspace
+description: >-
+  Installe pnpm + Node (cache pnpm), prépare les .env SvelteKit, installe les
+  dépendances en frozen-lockfile et restaure le cache Turbo. À appeler après un
+  `actions/checkout` dans le job.
+
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+
+    - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+      with:
+        node-version-file: .nvmrc
+        cache: pnpm
+
+    - name: Create SvelteKit env files
+      shell: bash
+      run: |
+        for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
+          cp "$app/.env.example" "$app/.env" 2>/dev/null || true
+        done
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile --prefer-offline
+
+    # Cache Turbo partagé entre jobs et entre runs. La clé hashe le lockfile et
+    # les sources de configuration de tâches (turbo.json, tsconfig racine) :
+    # tant qu'ils ne changent pas, la clé est stable et le cache se réutilise.
+    # `restore-keys` dégrade vers le dernier cache du même OS si la clé exacte
+    # manque (toujours mieux qu'un cache froid).
+    - name: Turbo cache
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+      with:
+        path: .turbo
+        key: turbo-v3-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'tsconfig.json') }}
+        restore-keys: |
+          turbo-v3-${{ runner.os }}-

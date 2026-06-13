@@ -87,6 +87,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0058 | [Chargement de l'index (mart→Postgres) : report de `index_load` faute de producteur researchers](/atlas/decisions/0058-report-index-load/)                    | Accepted |
 | 0059 | [Producteur par chercheur : ancrage `author_id`, purge d'opposition au grain `(author_id, work_id)`](/atlas/decisions/0059-mart-researchers-author-id-grain/) | Accepted |
 | 0060 | [Consignation des reconnaissances multi-agents pré-implémentation](/atlas/decisions/0060-consignation-reconnaissances-multi-agents/)                          | Accepted |
+| 0061 | [Accélérer la CI : cache de contenu, parallélisation des jobs, court-circuit élargi](/atlas/decisions/0061-ci-acceleration-cache-parallelisation/)            | Accepted |
 
 ## Quand ouvrir un ADR
 
