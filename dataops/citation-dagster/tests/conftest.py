@@ -204,8 +204,13 @@ def embedding_model():
     import fetch_model  # noqa: E402
 
     dest = embedding.model_dir()
+    # En CI, le modèle est pré-téléchargé par une étape dédiée (cache + fetch_model) :
+    # fetch() ci-dessous est alors un no-op (fichiers déjà présents et valides). Hors
+    # CI sans réseau, on skip proprement. fetch_model lève SystemExit sur sha256
+    # mismatch (BaseException, PAS Exception) : on l'attrape explicitement pour skip
+    # au lieu de faire crasher pytest.
     try:
         fetch_model.fetch(str(dest))
-    except (urllib.error.URLError, OSError) as exc:  # pragma: no cover
+    except (urllib.error.URLError, OSError, SystemExit) as exc:  # pragma: no cover
         pytest.skip(f"modèle d'embedding indisponible (réseau ?) : {exc}")
     return dest
