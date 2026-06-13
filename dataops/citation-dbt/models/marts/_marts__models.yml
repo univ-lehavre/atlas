@@ -34,3 +34,39 @@ models:
       - name: b_to_a
         description: "Citations où author_b cite author_a."
         data_tests: [not_null]
+
+  - name: marts_researchers
+    description: >-
+      Sac de labels pondérés par chercheur (mart lexical servi, lot 2). Une ligne
+      par (author_id, kind, label_id) ; weight = somme des scores des publications
+      contributrices (tf brut), freq = nombre de ces publications. Pas d'IDF/L2
+      (corpus-relatif, non reproductible par partition). Le golden chiffré (7 lignes
+      sur les fixtures) est vérifié côté pytest.
+    columns:
+      - name: author_id
+        description: "Identifiant d'auteur OpenAlex (clé d'ancrage, ADR 0059)."
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('curated_authors')
+                field: author_id
+      - name: kind
+        description: "Type de label : 'topic' ou 'keyword'."
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["topic", "keyword"]
+      - name: label_id
+        description: "Id du label (topic_id OpenAlex ou keyword_id/URL selon kind)."
+        data_tests: [not_null]
+      - name: label
+        description: "Libellé affichable du label (display_name)."
+        data_tests: [not_null]
+      - name: weight
+        description: "Poids = SUM(score) des publications portant le label (>= seuil)."
+        data_tests: [not_null]
+      - name: freq
+        description: "Nombre de publications du chercheur ayant contribué au label (>= 1)."
+        data_tests: [not_null]

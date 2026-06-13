@@ -23,6 +23,7 @@ import tempfile
 from pathlib import Path
 
 import duckdb
+import pytest
 from dagster import build_asset_context
 
 import citation_dagster.assets.manifest as cm
@@ -257,6 +258,72 @@ def test_dbt_build_marts_collab_pairs_golden(minio):
     # cross_citations est bien la somme des deux sens.
     _a, _b, cross, a_to_b, b_to_a = pairs[0]
     assert cross == a_to_b + b_to_a
+
+
+def _read_researchers(con: duckdb.DuckDBPyConnection, bucket: str, run: str) -> list[tuple]:
+    glob = f"s3://{bucket}/marts/researchers/dt=2020-01/run={run}/*.parquet"
+    return con.sql(
+        f"SELECT author_id, kind, label_id, weight, freq FROM read_parquet('{glob}') "
+        "ORDER BY author_id, kind, label_id"
+    ).fetchall()
+
+
+# Agrégat lexical golden (GOLDEN.md), grain (author_id, kind, label_id). Poids = somme
+# des scores des publications du chercheur portant le label (>= seuil) ; freq = nombre
+# de ces publications. Seuils différenciés topic >= 0,5 / keyword >= 0,2 :
+# - reagent (0,1138 < 0,2) est ABSENT — prouve le filtre keyword ;
+# - shield (0,2103 >= 0,2) est PRÉSENT ;
+# - tous les topics (0,95–0,999) passent >= 0,5.
+# T20001 (W101 0,9991 + W102 0,9876) et plasma (W101 0,5598 + W102 0,4471) ont freq=2.
+_K = "https://openalex.org/keywords/"
+_GOLDEN_RESEARCHERS = {
+    # (author_id, kind, label_id): (weight, freq)
+    (_ALICE, "topic", "https://openalex.org/T20001"): (1.9867, 2),
+    (_ALICE, "topic", "https://openalex.org/T20002"): (0.9982, 1),
+    (_ALICE, "keyword", _K + "plasma"): (1.0069, 2),
+    (_ALICE, "keyword", _K + "shield"): (0.2103, 1),
+    (_BOB, "topic", "https://openalex.org/T20003"): (0.9678, 1),
+    (_BOB, "topic", "https://openalex.org/T20004"): (0.9510, 1),
+    (_BOB, "keyword", _K + "chemistry"): (1.5041, 2),
+}
+
+
+def test_dbt_build_marts_researchers_golden_and_deterministic(minio):
+    """dbt build réel → marts_researchers : agrégat lexical par author_id golden
+    (7 lignes, seuils différenciés topic>=0,5 / keyword>=0,2, reagent coupé) +
+    déterminisme du contenu sur 2 runs."""
+    load_raw_fixtures(minio)
+
+    r1 = _dbt_build(minio, curated_run="smoke_res1")
+    assert r1.returncode == 0, f"dbt build (run 1) a échoué :\n{r1.stdout}\n{r1.stderr}"
+
+    cfg = DuckDBS3Config(
+        key_id=minio.access_key,
+        secret=minio.secret_key,
+        endpoint=minio.endpoint,
+        use_ssl=False,
+        region="us-east-1",
+        bucket=minio.bucket,
+    )
+    con = lakehouse.connect(cfg)
+
+    rows1 = _read_researchers(con, minio.bucket, "smoke_res1")
+    assert len(rows1) == 7, f"attendu 7 lignes golden, obtenu {len(rows1)} : {rows1}"
+    # reagent (0,1138) coupé par le seuil keyword 0,2 ; aucun label sous son seuil.
+    assert not any("reagent" in label_id for _a, _k, label_id, _w, _f in rows1)
+    # Chaque ligne servie a le poids et la fréquence golden attendus.
+    for author_id, kind, label_id, weight, freq in rows1:
+        assert (author_id, kind, label_id) in _GOLDEN_RESEARCHERS, (
+            f"label inattendu : {(author_id, kind, label_id)}"
+        )
+        exp_weight, exp_freq = _GOLDEN_RESEARCHERS[(author_id, kind, label_id)]
+        assert weight == pytest.approx(exp_weight, abs=1e-4)
+        assert freq == exp_freq
+
+    # Déterminisme : un 2ᵉ run produit le même contenu (ADR 0057).
+    r2 = _dbt_build(minio, curated_run="smoke_res2")
+    assert r2.returncode == 0, f"dbt build (run 2) a échoué :\n{r2.stdout}\n{r2.stderr}"
+    assert _read_researchers(con, minio.bucket, "smoke_res2") == rows1
 
 
 # ── Manifest atomique du mart collab (étape 3.4) ─────────────────────────────

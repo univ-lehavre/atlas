@@ -31,6 +31,14 @@ vars:
   raw_root: "s3://citation/raw"
   # Racine du mart « servi » (étape 3.4, contrat ADR 0029) ; surchargée en test.
   marts_root: "s3://citation/marts"
+  # Seuils de score minimaux pour qu'un label entre dans l'agrégat lexical par
+  # author_id (mart researchers, lot 2). DIFFÉRENCIÉS par type : la distribution
+  # réelle OpenAlex est très différente entre topics (quasi tous > 0,9 → un seuil
+  # haut sélectionne les dominants) et keywords (étalés de ~0,05 à ~0,97 → un seuil
+  # bas garde le signal lexical sans le bruit). Diverge volontairement du seuil
+  # UNIQUE 0,3 mentionné dans le plan/ADR 0059/issue #379 ; configurables au run.
+  topic_score_min: 0.5
+  keyword_score_min: 0.2
 
 # Staging = vues vivant le temps de la session DuckDB `:memory:` (pas d'artefact S3
 # intermédiaire). Seul `curated` est externalisé en Parquet — le contrat de sortie
