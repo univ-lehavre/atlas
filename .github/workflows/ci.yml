@@ -237,16 +237,17 @@ jobs:
       # bloquerait tout merge. actionlint embarque shellcheck pour les blocs
       # `run:`. Ne tourne que sur une PR « code » (RUN) : une PR qui touche
       # `.github/**` est par construction hors liste blanche documentaire.
-      # reporter `local` : findings écrits dans les logs du job (pas d'API
-      # Checks), donc aucune permission `checks: write` requise — le workflow
-      # reste en `contents: read`. `fail_level: warning` rend le job rouge dès
-      # le premier warning, ce qui est l'effet de gate voulu.
+      # On invoque actionlint EN DIRECT (image officielle épinglée par digest)
+      # plutôt que via reviewdog : le reporter `local` de reviewdog exige un diff
+      # git qu'un job CI n'a pas (« diff command is empty » → step en erreur). Le
+      # binaire sort en code ≠ 0 au premier problème → le job rougit nativement,
+      # sans API Checks ni permission `checks: write` (workflow en `contents: read`).
       - if: env.RUN == 'true'
         name: Lint GitHub workflows
-        uses: reviewdog/action-actionlint@6fb7acc99f4a1008869fa8a0f09cfca740837d9d # v1.72.0
-        with:
-          reporter: local
-          fail_level: warning
+        run: |
+          docker run --rm -v "$PWD":/repo --workdir /repo \
+            rhysd/actionlint@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 \
+            -color
 
       - if: env.RUN == 'true'
         uses: ./.github/actions/setup-workspace
