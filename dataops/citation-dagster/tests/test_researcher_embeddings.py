@@ -231,3 +231,95 @@ def test_vector_manifests_and_ge_check(embedding_model, minio, monkeypatch):
 
     # Porte GE du vecteur : dimension 384 + norme tolérante {0, ≈1}, verte sur le réel.
     assert q.check_researcher_vectors(minio.bucket, run_id).passed is True
+
+
+# ── Corps de l'asset piloté par des fakes (sans Docker ni modèle ONNX) ───────
+# Couvre la logique I/O de l'asset (lecture provenance, agrégat par author_id,
+# écriture Parquet, lineage) en CI où Docker/MinIO est absent — le smoke e2e
+# ci-dessus ne tourne qu'avec Docker.
+
+
+class _FakeCon:
+    """Connexion DuckDB factice : répond aux execute() selon la requête.
+
+    - SELECT sur curated_work_topics/keywords → lignes (work_id, topic_labels, keyword_labels) ;
+    - SELECT sur curated_authorships → couples (author_id, work_id) ;
+    - CREATE/INSERT/DROP (matérialisation) → no-op.
+    """
+
+    def __init__(self, work_label_rows, authorship_rows):
+        self._work_label_rows = work_label_rows
+        self._authorship_rows = authorship_rows
+
+    def execute(self, query):
+        self._last = query
+        return self
+
+    def executemany(self, query, rows):  # matérialisation _vec_tmp : no-op
+        return self
+
+    def fetchall(self):
+        if "curated_authorships" in self._last:
+            return self._authorship_rows
+        if "all_works" in self._last:  # la requête de _read_work_labels
+            return self._work_label_rows
+        return []
+
+
+class _FakeEmbedder:
+    """Embedder factice : vecteur déterministe par texte, sans charger le modèle."""
+
+    def embed_text(self, text):
+        # Vecteur non nul dépendant de la longueur du texte (suffit à exercer le flux).
+        base = float(len(text) or 1)
+        return np.full(embedding.EMBEDDING_DIM, base, dtype=np.float32)
+
+
+def test_asset_body_with_fakes(monkeypatch):
+    """Exerce le corps de l'asset (lecture provenance → agrégat author_id → écriture)
+    sans Docker ni modèle : loader, embedder et écriture Parquet mockés."""
+    import importlib
+
+    re_mod = importlib.import_module("citation_dagster.assets.researcher_embeddings")
+
+    work_label_rows = [
+        ("https://openalex.org/W101", ["Plasma"], ["Shield"]),
+        ("https://openalex.org/W102", ["Plasma"], []),
+    ]
+    authorship_rows = [
+        ("https://openalex.org/A1", "https://openalex.org/W101"),
+        ("https://openalex.org/A1", "https://openalex.org/W102"),
+    ]
+    fake_con = _FakeCon(work_label_rows, authorship_rows)
+    writes: list[str] = []
+
+    monkeypatch.setattr(re_mod.lakehouse, "connect", lambda cfg=None: fake_con)
+    monkeypatch.setattr(
+        re_mod.lakehouse,
+        "duckdb_s3_config_from_env",
+        lambda: type("Cfg", (), {"bucket": "citation"})(),
+    )
+    monkeypatch.setattr(
+        re_mod.lakehouse, "copy_to_parquet", lambda con, sql, dest: writes.append(dest)
+    )
+    monkeypatch.setattr(re_mod.embedding, "Embedder", _FakeEmbedder)
+    monkeypatch.delenv("OPENLINEAGE_URL", raising=False)  # lineage no-op
+
+    res = re_mod.researcher_embeddings(build_asset_context())
+    assert res.metadata["work_vectors"].value == 2  # W101, W102
+    assert res.metadata["author_vectors"].value == 1  # A1 (porte W101 + W102)
+    # Deux écritures Parquet : provenance work_id puis agrégat author_id.
+    assert any("curated/curated_work_vectors" in d for d in writes)
+    assert any("marts/researcher_vectors" in d for d in writes)
+
+
+def test_read_work_labels_applies_topic_threshold(monkeypatch):
+    """_read_work_labels assemble le texte via work_to_text (topics puis keywords)."""
+    import importlib
+
+    re_mod = importlib.import_module("citation_dagster.assets.researcher_embeddings")
+
+    rows = [("https://openalex.org/W1", ["Topic A", "Topic B"], ["kw"])]
+    fake_con = _FakeCon(rows, [])
+    out = re_mod._read_work_labels(fake_con, "citation", "run1")
+    assert out == [("https://openalex.org/W1", "Topic A, Topic B, kw")]
