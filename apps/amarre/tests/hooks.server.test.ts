@@ -21,6 +21,23 @@ vi.mock('$lib/server/baas', () => ({
   createSessionClient: mocks.createSessionClient,
 }));
 
+// Mock @sentry/sveltekit : le test ne vérifie que les en-têtes de sécurité. Charger
+// le vrai SDK (lourd) via `await import` prend ~9 s sous charge CI → dépasse le
+// testTimeout de 5 s (flaky). Le mock élimine la cause ; `sentryHandle` reste un
+// Handle valide pour `sequence`.
+const passthroughHandle = ({
+  event,
+  resolve,
+}: {
+  event: unknown;
+  resolve: (e: unknown) => unknown;
+}) => resolve(event);
+vi.mock('@sentry/sveltekit', () => ({
+  init: vi.fn(),
+  sentryHandle: () => passthroughHandle,
+  handleErrorWithSentry: () => vi.fn(),
+}));
+
 const buildEvent = (url: string) => ({
   cookies: { get: vi.fn() },
   locals: {},
