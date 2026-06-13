@@ -52,11 +52,13 @@ jobs:
         env:
           REVIEW_DATE: ${{ github.event.inputs.date }}
         run: |
-          DATE_ARG=""
+          # Tableau pour passer zéro OU un argument sans non-quoting (SC2086) :
+          # une chaîne vide quotée deviendrait un argument littéral parasite.
+          date_args=()
           if [ -n "$REVIEW_DATE" ]; then
-            DATE_ARG="--date=$REVIEW_DATE"
+            date_args+=("--date=$REVIEW_DATE")
           fi
-          node scripts/audit/daily-target.mjs $DATE_ARG --json > target.json
+          node scripts/audit/daily-target.mjs "${date_args[@]}" --json > target.json
           cat target.json
 
       - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0

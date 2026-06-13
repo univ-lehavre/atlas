@@ -154,12 +154,20 @@ jobs:
       - name: Smoke test (start + healthcheck)
         shell: bash
         env:
-          PORT: ${{ matrix.port || '3000' }}
+          # Les trois unités exposent 3000 (adapter-node SvelteKit + service
+          # Hono, cf. leurs Dockerfile : ENV PORT=3000 / EXPOSE 3000). On code la
+          # valeur en clair : aucune entrée de matrice ne surcharge le port
+          # aujourd'hui. Si une unité change de port, ajouter `port:` à sa ligne
+          # de matrice et restaurer `${{ matrix.port || '3000' }}`.
+          PORT: "3000"
           HEALTH_PATH: ${{ matrix.health_path }}
           RUN_ENV: ${{ matrix.run_env || '' }}
         run: |
           set -euo pipefail
-          # shellcheck disable=SC2086 -- RUN_ENV est une liste de -e volontaire
+          # RUN_ENV est une liste de drapeaux `-e` à découper en mots : le
+          # non-quoting est volontaire (la directive shellcheck ci-dessous
+          # n'admet pas de commentaire `--`, il doit être sur sa propre ligne).
+          # shellcheck disable=SC2086
           cid="$(docker run -d -p ${PORT}:${PORT} ${RUN_ENV} ${{ matrix.image }}:smoke)"
           echo "Conteneur démarré: ${cid}"
           ok=false

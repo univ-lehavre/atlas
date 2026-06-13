@@ -65,7 +65,7 @@ jobs:
               *.md) ;;                         # tout Markdown (README, ADR, plans…)
               *.mdx) ;;
               LICENSE|LICENSE.*) ;;            # licence
-              *.editorconfig|.editorconfig) ;; # confort éditeur
+              .editorconfig) ;;                # confort éditeur
               fixtures/*.txt|fixtures/*.csv|fixtures/*.json) ;; # fixtures texte
               *) code=true; echo "→ hors liste blanche : $f" ;;
             esac
@@ -230,6 +230,23 @@ jobs:
           # sur tout l'historique. Un checkout superficiel ne verrait qu'un
           # commit et la comparaison échouerait.
           fetch-depth: 0
+
+      # Valide les workflows et actions composites GitHub (ADR 0061) : un
+      # `needs` orphelin, un `uses` non résolvable ou une expression `${{ }}`
+      # cassée échouerait silencieusement en production — et sur un check requis,
+      # bloquerait tout merge. actionlint embarque shellcheck pour les blocs
+      # `run:`. Ne tourne que sur une PR « code » (RUN) : une PR qui touche
+      # `.github/**` est par construction hors liste blanche documentaire.
+      # reporter `local` : findings écrits dans les logs du job (pas d'API
+      # Checks), donc aucune permission `checks: write` requise — le workflow
+      # reste en `contents: read`. `fail_level: warning` rend le job rouge dès
+      # le premier warning, ce qui est l'effet de gate voulu.
+      - if: env.RUN == 'true'
+        name: Lint GitHub workflows
+        uses: reviewdog/action-actionlint@6fb7acc99f4a1008869fa8a0f09cfca740837d9d # v1.72.0
+        with:
+          reporter: local
+          fail_level: warning
 
       - if: env.RUN == 'true'
         uses: ./.github/actions/setup-workspace
