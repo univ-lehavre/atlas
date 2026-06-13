@@ -96,6 +96,39 @@ ce qui prouve que le filtre vit au mart et non au grain publication (provenance 
 complète, ADR 0059). `label_id` = id OpenAlex pour les topics, URL `keywords/<slug>`
 pour les keywords.
 
+## Vecteurs sémantiques (lot 3)
+
+Calculés en Python (`onnxruntime` + `tokenizers`, modèle `all-MiniLM-L6-v2` téléchargé
+hors git puis figé dans l'image, cf. `scripts/fetch_model.py`),
+en parité stricte avec le code TS (`embedding-profile.ts` / `topic-extractor.ts`). Un
+embedding n'est **pas figeable par valeurs** (384 floats, non bit-exact cross-archi —
+ADR 0059) : le golden porte sur la **forme, les invariants et le déterminisme**.
+
+**Texte source par publication** (topics score ≥ 0,3 puis keywords non filtrés, joints
+par `, ` ; ordre `score desc, id`) :
+
+| work_id | texte encodé                                                                              |
+| ------- | ----------------------------------------------------------------------------------------- |
+| W101    | `Magnetic confinement fusion research, Fusion materials and technologies, Plasma, Shield` |
+| W102    | `Magnetic confinement fusion research, Plasma`                                            |
+| W201    | `Glycosylation and Glycoproteins Research, Chemistry, Reagent`                            |
+| W202    | `Muscle metabolism and nutrition, Chemistry`                                              |
+
+> Pour le texte, le seuil topic est 0,3 (parité TS), **pas** le 0,5 du mart lexical : le
+> filtre du _texte_ et celui des _poids_ (lot 2) sont des décisions distinctes. Les
+> keywords ne sont jamais filtrés pour le texte → `Reagent` (0,11) y figure, alors qu'il
+> est absent du mart lexical.
+
+**`curated_work_vectors`** (provenance, grain `work_id`) : **4 lignes**, vecteur(384)
+`float32` **non normalisé** (re-poolable pour la purge chirurgicale, ADR 0059).
+
+**`marts/researcher_vectors`** (servi, grain `author_id`) : **2 lignes** (Alice, Bob),
+mean-pool non pondéré des vecteurs des publications **puis** un unique L2 → `‖v‖ ≈ 1`.
+
+Invariants vérifiés (pytest) : dimensions 384 ; `‖v_publication‖ ≠ 1` ; `‖v_auteur‖ ≈ 1`
+(`abs=1e-5`) ; **déterminisme intra-archi** (2 runs → `sha256` canonique identique sur
+les vecteurs arrondis à 6 décimales). Pas de comparaison bit-exact cross-archi.
+
 ## Authors
 
 | id                  | orcid   | works_count |

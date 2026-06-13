@@ -11,7 +11,11 @@ Deux familles d'assets :
 
 from dagster import AssetSelection, Definitions, define_asset_job
 
-from citation_dagster.assets import collab_manifest, raw_snapshot
+from citation_dagster.assets import (
+    collab_manifest,
+    raw_snapshot,
+    researcher_embeddings,
+)
 from citation_dagster.assets.quality import (
     ge_curated_edges,
     ge_marts_collab,
@@ -45,7 +49,12 @@ _dbt_assets, _dbt_resources = dbt_components()
 # APRÈS le mart, dans le même run (donc même context.run_id → même préfixe dt=…/run=…).
 # Ajouté inconditionnellement : si dbt est indisponible ([],{}), sa dépendance pend sur
 # une clé externe non exécutable et la code-location reste chargeable (asset orphelin).
-_assets = [raw_snapshot, collab_manifest, *_dbt_assets]
+# researcher_embeddings (lot 3) dépend des assets dbt curated_work_topics/keywords
+# et curated_authorships (via AssetKey) : il s'exécute APRÈS eux, dans le même run
+# (même context.run_id → même préfixe dt=…/run=…). Ajouté inconditionnellement,
+# comme collab_manifest : en mode dégradé (dbt indisponible), ses clés sources ne
+# sont pas exécutables et il reste un asset orphelin chargeable.
+_assets = [raw_snapshot, collab_manifest, researcher_embeddings, *_dbt_assets]
 _jobs = [ingestion_job]
 
 # Asset checks Great Expectations bloquants (étape 3.5a). Le check du brut s'applique
@@ -63,7 +72,11 @@ if _dbt_assets:
 if _dbt_assets:
     transform_job = define_asset_job(
         "transform_job",
-        selection=AssetSelection.assets(*_dbt_assets) | AssetSelection.assets("collab_manifest"),
+        selection=(
+            AssetSelection.assets(*_dbt_assets)
+            | AssetSelection.assets("collab_manifest")
+            | AssetSelection.assets("researcher_embeddings")
+        ),
         tags=_RUN_K8S_CONFIG,
     )
     _jobs.append(transform_job)
