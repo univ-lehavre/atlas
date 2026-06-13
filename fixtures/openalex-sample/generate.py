@@ -4,8 +4,10 @@
 Fabriquées à la main d'après le schéma réel du snapshot OpenAlex (champs
 réellement utilisés par le pipeline : ``id``, ``publication_year``,
 ``referenced_works``, ``authorships[].author``, ``authorships[].institutions``,
-``cited_by_count``, ``fwci`` pour les works ; ``id``, ``orcid``,
-``display_name`` pour les authors). Aucune donnée réelle, aucune source live.
+``cited_by_count``, ``fwci``, ``topics[]``, ``keywords[]`` pour les works ;
+``id``, ``orcid``, ``display_name`` pour les authors). Aucune donnée réelle,
+aucune source live. La forme de ``topics[]``/``keywords[]`` est calquée sur un
+échantillon réel (api.openalex.org/works?select=topics,keywords).
 
 Le graphe de citations est **contrôlé** pour servir de golden test (étape 3.3) :
 deux chercheurs A (A1) et B (A2) avec un nombre connu de citations croisées
@@ -45,7 +47,36 @@ def _authorship(author, inst, position):
     }
 
 
-def _work(num, year, authorship, referenced, cited_by, fwci):
+def _topic(num, label, score, subfield, field, domain):
+    """Reproduit la forme réelle d'un topic OpenAlex : id/display_name/score +
+    hiérarchie subfield/field/domain, chacun {id, display_name}. Vérifiée sur
+    échantillon réel (api.openalex.org/works?select=topics)."""
+    return {
+        "id": f"{OA}/T{num}",
+        "display_name": label,
+        "score": score,
+        "subfield": {"id": f"{OA}/subfields/{subfield[0]}", "display_name": subfield[1]},
+        "field": {"id": f"{OA}/fields/{field[0]}", "display_name": field[1]},
+        "domain": {"id": f"{OA}/domains/{domain[0]}", "display_name": domain[1]},
+    }
+
+
+def _keyword(slug, label, score):
+    """Forme réelle d'un keyword OpenAlex : id (URL .../keywords/<slug>),
+    display_name, score (descend bas : on garde des scores < 0,3 pour exercer
+    le filtre d'agrégation du lot 2 ; le grain provenance lot 1 les conserve)."""
+    return {"id": f"{OA}/keywords/{slug}", "display_name": label, "score": score}
+
+
+# ── Référentiel de labels synthétiques ───────────────────────────────────────
+# Hiérarchie partagée pour qu'Alice (W101+W102) porte un topic COMMUN aux deux
+# works (T20001) → exerce le DISTINCT du curated et l'agrégat pondéré du lot 2.
+_PHYS = (("3106", "Nuclear and High Energy Physics"), ("31", "Physics and Astronomy"), ("3", "Physical Sciences"))
+_MAT = (("2505", "Materials Chemistry"), ("25", "Materials Science"), ("3", "Physical Sciences"))
+_BIO = (("1312", "Molecular Biology"), ("13", "Biochemistry, Genetics and Molecular Biology"), ("1", "Life Sciences"))
+
+
+def _work(num, year, authorship, referenced, cited_by, fwci, topics, keywords):
     wid = f"{OA}/W{num}"
     return {
         "id": wid,
@@ -55,6 +86,8 @@ def _work(num, year, authorship, referenced, cited_by, fwci):
         "publication_year": year,
         "type": "article",
         "authorships": authorship,
+        "topics": topics,
+        "keywords": keywords,
         "referenced_works": [f"{OA}/W{r}" for r in referenced],
         "referenced_works_count": len(referenced),
         "cited_by_count": cited_by,
@@ -71,11 +104,50 @@ def _work(num, year, authorship, referenced, cited_by, fwci):
 #   W102 (A) → W201 (B)   : A cite B  (2)
 #   W202 (B) → W101 (A)   : B cite A  (1)
 # → citations croisées A↔B = 3 arêtes (2 A→B + 1 B→A).
+# Labels par work (voir GOLDEN.md). T20001 est PARTAGÉ par W101 et W102 (Alice) :
+# il doit apparaître une seule fois après DISTINCT au grain (work_id, topic_id),
+# et pondéré ×2 à l'agrégat author_id du lot 2. Le keyword `shield` (0,21 < 0,3)
+# reste dans la provenance lot 1 et sera coupé par le seuil d'agrégation du lot 2.
 WORKS = [
-    _work(101, 2018, [_authorship(A1, INST_LH, "first")], referenced=[201], cited_by=1, fwci=0.5),
-    _work(102, 2019, [_authorship(A1, INST_LH, "first")], referenced=[201], cited_by=0, fwci=0.0),
-    _work(201, 2017, [_authorship(A2, INST_LR, "first")], referenced=[], cited_by=2, fwci=1.2),
-    _work(202, 2020, [_authorship(A2, INST_LR, "first")], referenced=[101], cited_by=0, fwci=0.0),
+    _work(
+        101, 2018, [_authorship(A1, INST_LH, "first")], referenced=[201], cited_by=1, fwci=0.5,
+        topics=[
+            _topic("20001", "Magnetic confinement fusion research", 0.9991, _PHYS[0], _PHYS[1], _PHYS[2]),
+            _topic("20002", "Fusion materials and technologies", 0.9982, _MAT[0], _MAT[1], _MAT[2]),
+        ],
+        keywords=[
+            _keyword("plasma", "Plasma", 0.5598),
+            _keyword("shield", "Shield", 0.2103),
+        ],
+    ),
+    _work(
+        102, 2019, [_authorship(A1, INST_LH, "first")], referenced=[201], cited_by=0, fwci=0.0,
+        topics=[
+            _topic("20001", "Magnetic confinement fusion research", 0.9876, _PHYS[0], _PHYS[1], _PHYS[2]),
+        ],
+        keywords=[
+            _keyword("plasma", "Plasma", 0.4471),
+        ],
+    ),
+    _work(
+        201, 2017, [_authorship(A2, INST_LR, "first")], referenced=[], cited_by=2, fwci=1.2,
+        topics=[
+            _topic("20003", "Glycosylation and Glycoproteins Research", 0.9678, _BIO[0], _BIO[1], _BIO[2]),
+        ],
+        keywords=[
+            _keyword("chemistry", "Chemistry", 0.8414),
+            _keyword("reagent", "Reagent", 0.1138),
+        ],
+    ),
+    _work(
+        202, 2020, [_authorship(A2, INST_LR, "first")], referenced=[101], cited_by=0, fwci=0.0,
+        topics=[
+            _topic("20004", "Muscle metabolism and nutrition", 0.9510, _BIO[0], _BIO[1], _BIO[2]),
+        ],
+        keywords=[
+            _keyword("chemistry", "Chemistry", 0.6627),
+        ],
+    ),
 ]
 
 AUTHORS = [

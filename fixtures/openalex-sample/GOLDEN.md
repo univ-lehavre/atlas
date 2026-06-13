@@ -39,6 +39,41 @@ work de Bob, dans un sens ou l'autre :
 **Attendu du modèle `marts_collab_pairs` pour la paire (A1000000001, A1000000002) :**
 `cross_citations = 3` (avec `a_to_b = 2`, `b_to_a = 1` si la direction est exposée).
 
+## Topics par œuvre (provenance `curated_work_topics`, lot 1)
+
+Grain publication `(work_id, topic_id)`, provenance **complète** (aucun filtre de
+score — le seuil ≥ 0,3 est au mart par author_id, lot 2). `T20001` est **partagé**
+par W101 et W102 (Alice) : une seule ligne par work après DISTINCT, et poids ×2 à
+l'agrégat author_id du lot 2.
+
+| work_id | topic_id | display_name                             | score  | subfield / field / domain                                                   |
+| ------- | -------- | ---------------------------------------- | ------ | --------------------------------------------------------------------------- |
+| W101    | T20001   | Magnetic confinement fusion research     | 0.9991 | Nuclear and High Energy Physics / Physics and Astronomy / Physical Sciences |
+| W101    | T20002   | Fusion materials and technologies        | 0.9982 | Materials Chemistry / Materials Science / Physical Sciences                 |
+| W102    | T20001   | Magnetic confinement fusion research     | 0.9876 | Nuclear and High Energy Physics / Physics and Astronomy / Physical Sciences |
+| W201    | T20003   | Glycosylation and Glycoproteins Research | 0.9678 | Molecular Biology / Biochemistry… / Life Sciences                           |
+| W202    | T20004   | Muscle metabolism and nutrition          | 0.9510 | Cell Biology\* / Biochemistry… / Life Sciences                              |
+
+→ **5 lignes** `curated_work_topics` (4 topic_id distincts ; T20001 sur 2 works). \* le subfield de W202 réutilise `_BIO` (Molecular Biology) dans generate.py.
+
+## Keywords par œuvre (provenance `curated_work_keywords`, lot 1)
+
+Provenance complète : `shield` (0.2103) et `reagent` (0.1138) sont **< 0,3** et
+restent dans la provenance lot 1 — ils seront coupés par le seuil d'agrégation du
+lot 2, prouvant que le filtre vit au mart et non au grain publication.
+
+| work_id | keyword_id | display_name | score  |
+| ------- | ---------- | ------------ | ------ |
+| W101    | plasma     | Plasma       | 0.5598 |
+| W101    | shield     | Shield       | 0.2103 |
+| W102    | plasma     | Plasma       | 0.4471 |
+| W201    | chemistry  | Chemistry    | 0.8414 |
+| W201    | reagent    | Reagent      | 0.1138 |
+| W202    | chemistry  | Chemistry    | 0.6627 |
+
+→ **6 lignes** `curated_work_keywords`. (`keyword_id` ci-dessus = slug ; l'id réel
+est l'URL `https://openalex.org/keywords/<slug>`.)
+
 ## Authors
 
 | id                  | orcid   | works_count |
