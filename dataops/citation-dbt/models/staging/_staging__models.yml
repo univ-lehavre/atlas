@@ -38,3 +38,19 @@ models:
         data_tests: [not_null]
       - name: cited_work_id
         data_tests: [not_null]
+
+  - name: stg_citation_topics
+    description: "Liens œuvre↔topic (UNNEST des topics) — provenance complète, sans filtre de score."
+    columns:
+      - name: work_id
+        data_tests: [not_null]
+      - name: topic_id
+        data_tests: [not_null]
+
+  - name: stg_citation_keywords
+    description: "Liens œuvre↔mot-clé (UNNEST des keywords) — provenance complète, sans filtre de score."
+    columns:
+      - name: work_id
+        data_tests: [not_null]
+      - name: keyword_id
+        data_tests: [not_null]
