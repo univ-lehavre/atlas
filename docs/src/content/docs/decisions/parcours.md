@@ -4,7 +4,7 @@ title: Parcours thématique des décisions
 
 Cette page propose un **tour cohérent des décisions** du dépôt, regroupées par
 thème plutôt que par numéro. Elle s'adresse à un **nouveau venu** : plutôt que de
-lire les 59 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
+lire les 60 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
 comprendre _pourquoi_ le dépôt est fait comme il est.
 
 Pour la liste exhaustive par numéro (et le statut de chacun), voir
@@ -222,6 +222,11 @@ Astro Starlight) et pourquoi on en a changé.
   comment historiser des indicateurs sans rendre la CI instable.
 - [0036 — Migration VitePress → Astro Starlight](/atlas/decisions/0036-migration-vitepress-astro-starlight/) :
   l'outil qui construit la documentation, et pourquoi on en change.
+- [0060 — Consignation des reconnaissances multi-agents](/atlas/decisions/0060-consignation-reconnaissances-multi-agents/) :
+  le _cheminement vérifié_ qui mène à une décision — la cartographie du terrain conduite
+  avant un lot structurant — est consigné sous [`docs/audit/`](/atlas/audit/), distinct de
+  l'audit transverse trimestriel ([0039](/atlas/decisions/0039-cadence-audit-transverse/)).
+  On garde ainsi le _pourquoi_ d'une forme de code, pas seulement son _quoi_.
 
 ## 6. Le pipeline de collaborations (le grand projet)
 

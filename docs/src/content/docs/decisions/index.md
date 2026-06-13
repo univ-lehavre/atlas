@@ -86,6 +86,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0057 | [Reproductibilité : tests hermétiques et fixtures figées](/atlas/decisions/0057-reproductibilite-tests-hermetiques/)                                          | Accepted |
 | 0058 | [Chargement de l'index (mart→Postgres) : report de `index_load` faute de producteur researchers](/atlas/decisions/0058-report-index-load/)                    | Accepted |
 | 0059 | [Producteur par chercheur : ancrage `author_id`, purge d'opposition au grain `(author_id, work_id)`](/atlas/decisions/0059-mart-researchers-author-id-grain/) | Accepted |
+| 0060 | [Consignation des reconnaissances multi-agents pré-implémentation](/atlas/decisions/0060-consignation-reconnaissances-multi-agents/)                          | Accepted |
 
 ## Quand ouvrir un ADR
 
