@@ -1,4 +1,4 @@
-import { REDCAP_API_TOKEN } from '$env/static/private';
+import { redcapApiToken } from '$lib/server/env';
 import { fetchCrf } from '$lib/crf/server';
 import type { Fetch } from '$lib/types';
 import { transformToName } from '../../transformers/build-name';
@@ -12,7 +12,7 @@ interface Contact {
 
 export const listUsersFromCrf = async (fetch: Fetch): Promise<{ id: string; name: string }[]> => {
   const requestData = {
-    token: REDCAP_API_TOKEN,
+    token: redcapApiToken(),
     content: 'record',
     action: 'export',
     format: 'json',
@@ -39,7 +39,7 @@ export const listUsersFromCrf = async (fetch: Fetch): Promise<{ id: string; name
 
 export const fetchUserId = async (fetch: Fetch, email: string): Promise<string | null> => {
   const requestData = {
-    token: REDCAP_API_TOKEN,
+    token: redcapApiToken(),
     content: 'record',
     action: 'export',
     format: 'json',

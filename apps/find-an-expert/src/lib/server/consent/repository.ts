@@ -1,10 +1,10 @@
 import { Query, ID, type Models } from 'node-appwrite';
 import { createAdminClient } from '$lib/server/baas';
 import {
-  APPWRITE_DATABASE_ID,
-  APPWRITE_CONSENT_EVENTS_COLLECTION_ID,
-  APPWRITE_CURRENT_CONSENTS_COLLECTION_ID,
-} from '$env/static/private';
+  appwriteDatabaseId,
+  appwriteConsentEventsCollectionId,
+  appwriteCurrentConsentsCollectionId,
+} from '$lib/server/env';
 import {
   ConsentEvent,
   CurrentConsent,
@@ -65,8 +65,8 @@ export class BaasConsentEventRepository implements ConsentEventRepository {
     const { databases } = createAdminClient();
 
     const created = await databases.createDocument(
-      APPWRITE_DATABASE_ID,
-      APPWRITE_CONSENT_EVENTS_COLLECTION_ID,
+      appwriteDatabaseId(),
+      appwriteConsentEventsCollectionId(),
       ID.unique(),
       event
     );
@@ -88,8 +88,8 @@ export class BaasConsentEventRepository implements ConsentEventRepository {
     }
 
     const result = await databases.listDocuments(
-      APPWRITE_DATABASE_ID,
-      APPWRITE_CONSENT_EVENTS_COLLECTION_ID,
+      appwriteDatabaseId(),
+      appwriteConsentEventsCollectionId(),
       queries
     );
 
@@ -116,8 +116,8 @@ export class BaasCurrentConsentRepository implements CurrentConsentRepository {
     const { databases } = createAdminClient();
 
     const result = await databases.listDocuments(
-      APPWRITE_DATABASE_ID,
-      APPWRITE_CURRENT_CONSENTS_COLLECTION_ID,
+      appwriteDatabaseId(),
+      appwriteCurrentConsentsCollectionId(),
       [Query.equal('userId', userId), Query.equal('consentType', consentType), Query.limit(1)]
     );
 
@@ -139,8 +139,8 @@ export class BaasCurrentConsentRepository implements CurrentConsentRepository {
 
     if (existing) {
       const updated = await databases.updateDocument(
-        APPWRITE_DATABASE_ID,
-        APPWRITE_CURRENT_CONSENTS_COLLECTION_ID,
+        appwriteDatabaseId(),
+        appwriteCurrentConsentsCollectionId(),
         existing.docId,
         { granted }
       );
@@ -148,8 +148,8 @@ export class BaasCurrentConsentRepository implements CurrentConsentRepository {
     }
 
     const created = await databases.createDocument(
-      APPWRITE_DATABASE_ID,
-      APPWRITE_CURRENT_CONSENTS_COLLECTION_ID,
+      appwriteDatabaseId(),
+      appwriteCurrentConsentsCollectionId(),
       ID.unique(),
       { userId, consentType, granted }
     );
@@ -164,8 +164,8 @@ export class BaasCurrentConsentRepository implements CurrentConsentRepository {
     const { databases } = createAdminClient();
 
     const result = await databases.listDocuments(
-      APPWRITE_DATABASE_ID,
-      APPWRITE_CURRENT_CONSENTS_COLLECTION_ID,
+      appwriteDatabaseId(),
+      appwriteCurrentConsentsCollectionId(),
       [Query.equal('userId', userId), Query.equal('consentType', consentType), Query.limit(1)]
     );
 

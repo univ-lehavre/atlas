@@ -4,7 +4,7 @@ import { createRouteEvent } from '@univ-lehavre/atlas-test-utils-sveltekit';
 // Phase 3 — couverture handler `GET /api/v1/account/pushed`. AUTH-gated
 // par `getSession(cookies)`.
 
-vi.mock('$env/static/private', () => ({ APPWRITE_KEY: 'k', REDCAP_API_TOKEN: 'tok' }));
+vi.mock('$lib/server/env', () => ({ appwriteKey: () => 'k', redcapApiToken: () => 'tok' }));
 vi.mock('$env/static/public', () => ({
   PUBLIC_APPWRITE_ENDPOINT: 'http://localhost',
   PUBLIC_APPWRITE_PROJECT: 'p',

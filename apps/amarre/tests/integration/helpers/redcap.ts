@@ -5,7 +5,12 @@
 // stack isn't up so they're safe to leave in `pnpm test`.
 
 import { PUBLIC_REDCAP_URL } from '$env/static/public';
-import { REDCAP_API_TOKEN } from '$env/static/private';
+import { env } from '$env/dynamic/private';
+
+// Helper de test : lecture TOLÉRANTE du token (forme objet `env` de
+// dynamic/private), pas le getter fail-closed `$lib/server/env` — la suite doit
+// pouvoir DÉTECTER un token absent/placeholder pour se skip, pas throw.
+const REDCAP_API_TOKEN = env.REDCAP_API_TOKEN;
 
 /**
  * Probes the REDCap API on the configured URL with the configured token.
@@ -59,6 +64,9 @@ export const nodeContext = { fetch: globalThis.fetch.bind(globalThis) };
  * a delete operation — that's a server-side admin concern).
  */
 export const deleteRecordsByPrefix = async (prefix: string): Promise<void> => {
+  // Appelé seulement quand `isRedcapReachable()` a déjà validé le token ; la
+  // garde locale le rend explicite pour TypeScript (token: string garanti).
+  if (!REDCAP_API_TOKEN) return;
   // Export record_id + userid pour tous les records.
   const exportRes = await fetch(PUBLIC_REDCAP_URL, {
     method: 'POST',

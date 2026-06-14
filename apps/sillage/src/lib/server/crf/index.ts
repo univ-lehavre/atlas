@@ -1,5 +1,5 @@
 import type { Fetch } from '$lib/types';
-import { REDCAP_API_TOKEN } from '$env/static/private';
+import { redcapApiToken } from '$lib/server/env';
 import { PUBLIC_REDCAP_URL } from '$env/static/public';
 
 // Minimal REDCap API wrapper. Cloned from amarre's `server/crf/index.ts`
@@ -29,7 +29,7 @@ const fetchCrf = async (
   const requestData: Record<string, string> = {
     ...defaultParameters,
     ...params,
-    token: REDCAP_API_TOKEN,
+    token: redcapApiToken(),
   };
   const body = new URLSearchParams(requestData).toString();
   return context.fetch(PUBLIC_REDCAP_URL, {

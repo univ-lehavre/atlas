@@ -1,10 +1,11 @@
 name: Images
 
-# Construit les images de déploiement des unités à config runtime/publique
-# (atlas-dashboard, crf-dashboard, service Hono) et, depuis `main`, les publie
-# sur GHCR (ADR 0043). Sur PR : build + smoke healthcheck, sans push — ferme la
-# dérive silencieuse des Dockerfile (#314). Les apps à secrets `static/private`
-# rejoignent la matrice après migration vers `dynamic/private` (#324).
+# Construit les images de déploiement de toutes les unités (apps SvelteKit +
+# service Hono) et, depuis `main`, les publie sur GHCR (ADR 0043). Sur PR : build
+# + smoke healthcheck, sans push — ferme la dérive silencieuse des Dockerfile
+# (#314). Les apps à secrets (amarre, ecrin, find-an-expert, sillage) ont rejoint
+# la matrice après migration de `static/private` vers `dynamic/private` (#324) :
+# leurs secrets sont lus au runtime, donc leurs images sont déployables.
 
 on:
   push:
@@ -55,13 +56,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Apps SvelteKit sans secret en `$env/static/private` (config 100 %
-        # runtime ou publique), plus le service Hono. Les apps qui lisent des
-        # secrets via `$env/static/private` (amarre, ecrin, find-an-expert,
-        # sillage) en sont **volontairement absentes** : `static/private` fige
-        # les valeurs au build, donc leur image n'est pas déployable telle
-        # quelle. Elles rejoignent la matrice une fois migrées vers
-        # `$env/dynamic/private` (lecture runtime) — issue #324.
+        # Toutes les apps SvelteKit déployables (config runtime/publique) plus le
+        # service Hono. amarre, ecrin, find-an-expert et sillage ont rejoint la
+        # matrice après la migration de leurs secrets de `$env/static/private`
+        # (figé au build) vers `$env/dynamic/private` (lu au runtime) — issue #324,
+        # ADR 0033. Leurs secrets sont lus en late-binding via `$lib/server/env`
+        # (getters), donc le smoke (GET sur l'endpoint de santé) ne les touche pas ;
+        # les `run_env` factices ci-dessous sont une ceinture-bretelles (et
+        # documentent les secrets requis au déploiement réel).
         include:
           - name: atlas-dashboard
             dockerfile: apps/atlas-dashboard/Dockerfile
@@ -81,6 +83,47 @@ jobs:
               -e REDCAP_API_URL=https://redcap.example.com/api
               -e REDCAP_API_TOKEN=ABCDEF0123456789ABCDEF0123456789
               -e CRF_AUTH_TOKEN=smoke-bearer
+          # Apps migrées vers `$env/dynamic/private` (#324). `run_env` factices :
+          # secrets lus au runtime via `$lib/server/env`, valeurs au format attendu
+          # pour le smoke seul (aucune connexion réelle).
+          - name: amarre
+            dockerfile: apps/amarre/Dockerfile
+            image: atlas-amarre
+            health_path: /
+            run_env: >-
+              -e APPWRITE_KEY=smoke-appwrite-key
+              -e REDCAP_API_TOKEN=ABCDEF0123456789ABCDEF0123456789
+              -e ALLOWED_DOMAINS_REGEXP=@example\.org
+          - name: ecrin
+            dockerfile: apps/ecrin/Dockerfile
+            image: atlas-ecrin
+            health_path: /
+            run_env: >-
+              -e APPWRITE_KEY=smoke-appwrite-key
+              -e APPWRITE_DB_ID=smoke-db
+              -e APPWRITE_TABLE_ID_ALLOWED_EMAIL_DOMAINS_TO_SUBSCRIBE=smoke-table
+              -e REDCAP_API_TOKEN=ABCDEF0123456789ABCDEF0123456789
+              -e REDCAP_URL=https://redcap.example.com/api/
+          - name: find-an-expert
+            dockerfile: apps/find-an-expert/Dockerfile
+            image: atlas-find-an-expert
+            health_path: /
+            run_env: >-
+              -e APPWRITE_ENDPOINT=https://appwrite.example.com/v1
+              -e APPWRITE_PROJECT=smoke-project
+              -e APPWRITE_KEY=smoke-appwrite-key
+              -e APPWRITE_DATABASE_ID=smoke-db
+              -e APPWRITE_CONSENT_EVENTS_COLLECTION_ID=smoke-consent-events
+              -e APPWRITE_CURRENT_CONSENTS_COLLECTION_ID=smoke-current-consents
+              -e ALLOWED_DOMAINS_REGEXP=@example\.org
+          - name: sillage
+            dockerfile: apps/sillage/Dockerfile
+            image: atlas-sillage
+            health_path: /
+            run_env: >-
+              -e APPWRITE_KEY=smoke-appwrite-key
+              -e REDCAP_API_TOKEN=ABCDEF0123456789ABCDEF0123456789
+              -e ALLOWED_DOMAINS_REGEXP=@example\.org
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 

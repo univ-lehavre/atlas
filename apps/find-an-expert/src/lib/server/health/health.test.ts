@@ -17,11 +17,14 @@ const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
 }));
 
-vi.mock('$env/static/private', () => ({
-  APPWRITE_ENDPOINT: 'https://appwrite.example.test/v1',
-  APPWRITE_DATABASE_ID: 'atlas',
-  APPWRITE_CONSENT_EVENTS_COLLECTION_ID: 'consent-events',
-  APPWRITE_CURRENT_CONSENTS_COLLECTION_ID: 'current-consents',
+// On mocke le module env de l'app (getters) plutôt que `$env/dynamic/private` :
+// on reste sur la forme « getter -> string » du code prod, sans re-traverser la
+// validation fail-closed, et le test ne dépend pas de la forme objet de dynamic.
+vi.mock('$lib/server/env', () => ({
+  appwriteEndpoint: () => 'https://appwrite.example.test/v1',
+  appwriteDatabaseId: () => 'atlas',
+  appwriteConsentEventsCollectionId: () => 'consent-events',
+  appwriteCurrentConsentsCollectionId: () => 'current-consents',
 }));
 
 vi.mock('$lib/server/baas', () => ({

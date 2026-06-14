@@ -3,7 +3,7 @@ import type { Cookies } from '@sveltejs/kit';
 
 import { SessionError } from '@univ-lehavre/atlas-errors';
 import { SESSION_COOKIE } from '@univ-lehavre/atlas-baas';
-import { APPWRITE_KEY } from '$env/static/private';
+import { appwriteKey } from '$lib/server/env';
 import { PUBLIC_APPWRITE_ENDPOINT, PUBLIC_APPWRITE_PROJECT } from '$env/static/public';
 
 interface AdminClient {
@@ -13,14 +13,16 @@ interface AdminClient {
 }
 
 const createAdminClient = (): AdminClient => {
-  if (!PUBLIC_APPWRITE_ENDPOINT || !PUBLIC_APPWRITE_PROJECT || !APPWRITE_KEY) {
+  if (!PUBLIC_APPWRITE_ENDPOINT || !PUBLIC_APPWRITE_PROJECT) {
     throw new Error('Appwrite admin client not configured: missing environment variables');
   }
 
+  // La clé admin est lue au runtime (late-binding) : `appwriteKey()` throw
+  // lui-même si le secret est absent — la garde sur les PUBLIC_* suffit ici.
   const client = new Client()
     .setEndpoint(PUBLIC_APPWRITE_ENDPOINT)
     .setProject(PUBLIC_APPWRITE_PROJECT)
-    .setKey(APPWRITE_KEY);
+    .setKey(appwriteKey());
 
   return {
     get account() {

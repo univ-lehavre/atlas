@@ -4,13 +4,18 @@
 
 import { createAdminClient } from '@univ-lehavre/atlas-baas';
 import { Query } from 'node-appwrite';
-import { APPWRITE_KEY } from '$env/static/private';
+import { env } from '$env/dynamic/private';
 import { PUBLIC_APPWRITE_ENDPOINT, PUBLIC_APPWRITE_PROJECT } from '$env/static/public';
+
+// Helper de test : lecture TOLÉRANTE de la clé (forme objet `env` de
+// dynamic/private), pas le getter fail-closed `$lib/server/env` — la suite doit
+// pouvoir DÉTECTER une clé absente/placeholder pour se skip, pas throw.
+const APPWRITE_KEY = env.APPWRITE_KEY;
 
 const adminConfig = {
   endpoint: PUBLIC_APPWRITE_ENDPOINT,
   projectId: PUBLIC_APPWRITE_PROJECT,
-  apiKey: APPWRITE_KEY,
+  apiKey: APPWRITE_KEY ?? '',
 };
 
 /**

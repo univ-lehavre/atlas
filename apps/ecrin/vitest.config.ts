@@ -22,11 +22,11 @@ export default defineConfig({
   resolve: {
     alias: {
       $lib: path.resolve(__dirname, 'src/lib'),
-      '$env/static/private': path.resolve(__dirname, 'test-utils/env-mocks.ts'),
-      // Phase 13.3 — hooks now read SENTRY_DSN / PUBLIC_SENTRY_DSN from the
-      // `$env/dynamic/*` virtual modules. This config has no SvelteKit
-      // plugin to provide them, so alias them to empty-env mocks (no DSN =
-      // Sentry stays a no-op).
+      // Le code serveur lit ses secrets via `$lib/server/env` → `$env/dynamic/private`
+      // (#324, migration depuis `$env/static/private`). Cette config n'a pas le
+      // plugin SvelteKit pour fournir les modules virtuels `$env/dynamic/*`, on les
+      // aliase vers des mocks : `env-dynamic-private.ts` porte les secrets de test
+      // (et garde SENTRY_DSN absent → Sentry no-op, Phase 13.3).
       '$env/dynamic/private': path.resolve(__dirname, 'test-utils/env-dynamic-private.ts'),
       '$env/dynamic/public': path.resolve(__dirname, 'test-utils/env-dynamic-public.ts'),
     },

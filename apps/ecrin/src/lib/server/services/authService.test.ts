@@ -16,7 +16,7 @@ vi.mock('@univ-lehavre/atlas-auth', () => ({
   createAuthService: mocks.createAuthService,
 }));
 
-vi.mock('$env/static/private', () => ({ APPWRITE_KEY: 'k' }));
+vi.mock('$lib/server/env', () => ({ appwriteKey: () => 'k' }));
 vi.mock('$env/static/public', () => ({
   PUBLIC_APPWRITE_ENDPOINT: 'https://endpoint.test',
   PUBLIC_APPWRITE_PROJECT: 'proj',
@@ -38,7 +38,15 @@ describe('authService wrapping', () => {
       deleteUser: vi.fn(),
     });
 
-    await import('./authService');
+    const mod = await import('./authService');
+
+    // Le service partagé est construit en LAZY (late-binding 12-factor, ADR 0045,
+    // #324) : `createAuthService` n'est PAS appelé à l'import du module, mais au
+    // premier accès. On déclenche `login()` puis on vérifie la config transmise.
+    expect(mocks.createAuthService).not.toHaveBeenCalled();
+
+    // Le `login` du service mocké ignore les cookies ; un objet vide suffit.
+    await mod.login('uid', 'secret', {} as never);
 
     expect(mocks.createAuthService).toHaveBeenCalledWith(
       expect.objectContaining({

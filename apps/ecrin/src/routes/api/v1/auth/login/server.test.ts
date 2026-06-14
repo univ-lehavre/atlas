@@ -7,7 +7,7 @@ import { createRouteEvent } from '@univ-lehavre/atlas-test-utils-sveltekit';
 //   - 4xx sur Content-Type incorrect ou JSON invalide
 //   - 401 sur identifiants invalides (le service lève)
 
-vi.mock('$env/static/private', () => ({ APPWRITE_KEY: 'k' }));
+vi.mock('$lib/server/env', () => ({ appwriteKey: () => 'k' }));
 vi.mock('$env/static/public', () => ({
   PUBLIC_APPWRITE_ENDPOINT: 'http://localhost',
   PUBLIC_APPWRITE_PROJECT: 'p',

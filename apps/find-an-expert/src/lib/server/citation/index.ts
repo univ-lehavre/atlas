@@ -1,5 +1,5 @@
 import { Effect } from 'effect';
-import { OPENALEX_API_TOKEN } from '$env/static/private';
+import { openalexApiToken } from '$lib/server/env';
 import { env as dynamicEnv } from '$env/dynamic/private';
 import {
   searchInstitutions as searchInstitutionsEffect,
@@ -22,7 +22,7 @@ const DEFAULT_USER_AGENT = 'find-an-expert/1.0 (https://github.com/univ-lehavre/
 // runtime — 12-factor late-binding, the explicit guard of ADR 0045.
 const getConfig = (): CitationConfig => ({
   userAgent: dynamicEnv.OPENALEX_USER_AGENT || DEFAULT_USER_AGENT,
-  apiKey: OPENALEX_API_TOKEN || undefined,
+  apiKey: openalexApiToken(),
 });
 
 // Effect errors surfaced by the citation functions (FetchError |
