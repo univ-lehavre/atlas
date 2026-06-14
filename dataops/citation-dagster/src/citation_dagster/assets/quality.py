@@ -19,11 +19,13 @@ n'expose PAS ``run_id`` directement, contrairement à l'``AssetExecutionContext`
 NB : pas de ``from __future__ import annotations`` (Dagster introspecte, drift D9).
 """
 
+import json
+
 from dagster import AssetCheckExecutionContext, AssetCheckResult, AssetKey, asset_check
 
 from citation_dagster import embedding, ge_suites, lakehouse
 from citation_dagster.dbt import CURATED_DT
-from citation_dagster.resources import ceph_target_from_env
+from citation_dagster.resources import ceph_target_from_env, postgres_target_from_env
 
 _MART_GLOB = "marts/collab"
 
@@ -133,6 +135,39 @@ def check_researcher_vectors(bucket: str, run_id: str) -> AssetCheckResult:
     return _result(ok, meta)
 
 
+def check_index_load(bucket: str, run_id: str) -> AssetCheckResult:
+    """Vérifie que l'index Postgres a EXACTEMENT le nombre de chercheurs attendu (étape 4).
+
+    Confronte count(researchers en base pour la partition courante) au row_count du
+    manifest FTS servi (une ligne par chercheur). Un écart signale un chargement
+    partiel/dupliqué (l'idempotence DELETE+INSERT a échoué) — porte bloquante.
+    """
+    con = lakehouse.connect()
+    manifest_path = (
+        f"s3://{bucket}/marts/researchers_fts/dt={CURATED_DT}/run={run_id}/manifest.json"
+    )
+    manifest = json.loads(
+        con.sql(f"SELECT content FROM read_text('{manifest_path}')").fetchone()[0]
+    )
+    expected = manifest["row_count"]
+
+    lakehouse.attach_postgres(con, postgres_target_from_env())
+    loaded = con.sql(
+        f"SELECT count(*) FROM pg.researchers WHERE dt = '{CURATED_DT}' AND run = '{run_id}'"
+    ).fetchone()[0]
+    passed = loaded == expected
+    return _result(
+        passed,
+        {
+            "suite": "index_load",
+            "evaluated": 1,
+            "failed": []
+            if passed
+            else [f"count Postgres={loaded} != manifest row_count={expected}"],
+        },
+    )
+
+
 # ── Asset checks Dagster (minces : résolvent le run puis délèguent) ───────────
 
 
@@ -159,3 +194,8 @@ def ge_marts_researchers(context: AssetCheckExecutionContext) -> AssetCheckResul
 @asset_check(asset=AssetKey(["researcher_embeddings"]), name="ge_researcher_vectors", blocking=True)
 def ge_researcher_vectors(context: AssetCheckExecutionContext) -> AssetCheckResult:
     return check_researcher_vectors(ceph_target_from_env().bucket, context.run.run_id)
+
+
+@asset_check(asset=AssetKey(["index_load"]), name="ge_index_load", blocking=True)
+def ge_index_load(context: AssetCheckExecutionContext) -> AssetCheckResult:
+    return check_index_load(ceph_target_from_env().bucket, context.run.run_id)
