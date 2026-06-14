@@ -6,7 +6,7 @@ import { createRouteEvent } from '@univ-lehavre/atlas-test-utils-sveltekit';
 // On mocke à la fois `$lib/baas/server` (wrapper Appwrite local) et
 // le service métier.
 
-vi.mock('$env/static/private', () => ({ APPWRITE_KEY: 'k', REDCAP_API_TOKEN: 'tok' }));
+vi.mock('$lib/server/env', () => ({ appwriteKey: () => 'k', redcapApiToken: () => 'tok' }));
 vi.mock('$env/static/public', () => ({
   PUBLIC_APPWRITE_ENDPOINT: 'http://localhost',
   PUBLIC_APPWRITE_PROJECT: 'p',

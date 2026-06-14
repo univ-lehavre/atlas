@@ -1,13 +1,13 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getSession } from '$lib/baas/server';
-import { REDCAP_API_TOKEN } from '$env/static/private';
+import { redcapApiToken } from '$lib/server/env';
 import { checkAccountPushed } from '$lib/server/services/accountService';
 
 export const GET: RequestHandler = async ({ cookies, fetch }) => {
   try {
     const { id, email } = await getSession(cookies);
-    const result = await checkAccountPushed(REDCAP_API_TOKEN, id, email, fetch);
+    const result = await checkAccountPushed(redcapApiToken(), id, email, fetch);
     return json({ data: result, error: null });
   } catch {
     return json(

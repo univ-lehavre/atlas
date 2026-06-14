@@ -2,7 +2,7 @@ import type { Cookies } from '@sveltejs/kit';
 import type { Models } from 'node-appwrite';
 
 import { createAuthService } from '@univ-lehavre/atlas-auth';
-import { ALLOWED_DOMAINS_REGEXP, APPWRITE_KEY } from '$env/static/private';
+import { allowedDomainsRegexp, appwriteKey } from '$lib/server/env';
 import {
   PUBLIC_APPWRITE_ENDPOINT,
   PUBLIC_APPWRITE_PROJECT,
@@ -14,24 +14,33 @@ import type { Fetch } from '$lib/types';
 // Configuration partagée pour les flux login/logout (pas besoin du fetch
 // SvelteKit). Le signup utilise une instance dédiée par requête pour
 // brancher la résolution d'ID via REDCap (`fetchUserId`).
-const baseConfig = {
-  baas: {
-    endpoint: PUBLIC_APPWRITE_ENDPOINT,
-    projectId: PUBLIC_APPWRITE_PROJECT,
-    apiKey: APPWRITE_KEY,
-  },
-  loginUrl: PUBLIC_LOGIN_URL,
-  domainValidation: { allowedDomainsRegexp: ALLOWED_DOMAINS_REGEXP },
-} as const;
+//
+// `baseConfig` est une FONCTION (et non une const) : la clé Appwrite et la regex
+// sont des secrets lus au runtime via `$lib/server/env` (late-binding 12-factor,
+// ADR 0045). Une const top-level lirait les secrets à l'import du module. Les
+// `PUBLIC_*` restent build-time (hors périmètre #324).
+const baseConfig = () =>
+  ({
+    baas: {
+      endpoint: PUBLIC_APPWRITE_ENDPOINT,
+      projectId: PUBLIC_APPWRITE_PROJECT,
+      apiKey: appwriteKey(),
+    },
+    loginUrl: PUBLIC_LOGIN_URL,
+    domainValidation: { allowedDomainsRegexp: allowedDomainsRegexp() },
+  }) as const;
 
-const sharedService = createAuthService(baseConfig);
+// Service login/logout construit à l'APPEL et mémoïsé (un par process).
+type AuthService = ReturnType<typeof createAuthService>;
+let serviceInstance: AuthService | undefined;
+const sharedService = (): AuthService => (serviceInstance ??= createAuthService(baseConfig()));
 
 export const signupWithEmail = async (
   unsecuredEmail: unknown,
   { fetch }: { fetch: Fetch }
 ): Promise<Models.Token> => {
   const service = createAuthService({
-    ...baseConfig,
+    ...baseConfig(),
     resolveUserId: async (email) => {
       try {
         const id = await fetchUserId(email, { fetch });
@@ -49,7 +58,7 @@ export const login = (
   unsecuredUserId: unknown,
   unsecuredSecret: unknown,
   cookies: Cookies
-): Promise<Models.Session> => sharedService.login(unsecuredUserId, unsecuredSecret, cookies);
+): Promise<Models.Session> => sharedService().login(unsecuredUserId, unsecuredSecret, cookies);
 
 export const logout = (unsecuredUserId: unknown, cookies: Cookies): Promise<void> =>
-  sharedService.logout(unsecuredUserId, cookies);
+  sharedService().logout(unsecuredUserId, cookies);

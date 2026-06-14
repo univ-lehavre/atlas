@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRouteEvent } from '@univ-lehavre/atlas-test-utils-sveltekit';
 
-// `$env/static/private` est résolu par mergeConfig(viteConfig, …) à
-// partir des fichiers `.env` du paquet. Le handler appelle
-// `signupWithEmail` du service `$lib/server/services/auth` — mocké ici
+// `$env/dynamic/private` est résolu par mergeConfig(viteConfig, …) à
+// partir des fichiers `.env` du paquet (via `$lib/server/env`). Le handler
+// appelle `signupWithEmail` du service `$lib/server/services/auth` — mocké ici
 // pour ne pas joindre Appwrite. La validation d'email passe par le
 // vrai `validateSignupEmail` du paquet `@univ-lehavre/atlas-auth`.
 vi.mock('$lib/server/services/auth', () => ({

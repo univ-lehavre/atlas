@@ -6,7 +6,7 @@ import { createRouteEvent } from '@univ-lehavre/atlas-test-utils-sveltekit';
 // SessionError quand `locals.userId` est manquant/invalide ; on
 // laisse remonter pour vérifier la cartographie d'erreur.
 
-vi.mock('$env/static/private', () => ({ APPWRITE_KEY: 'k' }));
+vi.mock('$lib/server/env', () => ({ appwriteKey: () => 'k' }));
 vi.mock('$env/static/public', () => ({
   PUBLIC_APPWRITE_ENDPOINT: 'http://localhost',
   PUBLIC_APPWRITE_PROJECT: 'p',

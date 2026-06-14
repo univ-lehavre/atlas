@@ -1,12 +1,12 @@
 import type { EAV } from '$lib/types';
 import { generateGraph } from '$lib/graph';
-import { REDCAP_API_TOKEN, REDCAP_URL } from '$env/static/private';
+import { redcapApiToken, redcapUrl } from '$lib/server/env';
 import type Graph from 'graphology';
 
 export const fetchRecordsFromCrf = async (params: Record<string, string>) => {
-  const requestData = { token: REDCAP_API_TOKEN, ...params } as Record<string, string>;
+  const requestData = { token: redcapApiToken(), ...params } as Record<string, string>;
   const DATA = new URLSearchParams(requestData).toString();
-  const response = await fetch(REDCAP_URL, {
+  const response = await fetch(redcapUrl(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
     body: DATA,

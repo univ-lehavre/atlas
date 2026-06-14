@@ -4,7 +4,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 // servis par les factories (cf. packages/auth/src/handlers.ts). Mock
 // les services + l'env SvelteKit pour exercer uniquement le contrat
 // handler.
-vi.mock('$env/static/private', () => ({ APPWRITE_KEY: 'k' }));
+vi.mock('$lib/server/env', () => ({ appwriteKey: () => 'k' }));
 vi.mock('$env/static/public', () => ({
   PUBLIC_APPWRITE_ENDPOINT: 'http://localhost',
   PUBLIC_APPWRITE_PROJECT: 'p',

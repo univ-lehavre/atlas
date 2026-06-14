@@ -1,9 +1,9 @@
 import {
-  APPWRITE_ENDPOINT,
-  APPWRITE_DATABASE_ID,
-  APPWRITE_CONSENT_EVENTS_COLLECTION_ID,
-  APPWRITE_CURRENT_CONSENTS_COLLECTION_ID,
-} from '$env/static/private';
+  appwriteEndpoint,
+  appwriteDatabaseId,
+  appwriteConsentEventsCollectionId,
+  appwriteCurrentConsentsCollectionId,
+} from '$lib/server/env';
 import { createAdminClient } from '$lib/server/baas';
 import type {
   THealthCheckResponse,
@@ -100,7 +100,7 @@ const checkUrl = async (
  * Checks Appwrite server health (endpoint reachability only).
  */
 const checkBaasEndpoint = async (): Promise<TServiceHealth> => {
-  const healthUrl = `${APPWRITE_ENDPOINT}/health`;
+  const healthUrl = `${appwriteEndpoint()}/health`;
   const result = await checkUrl(healthUrl);
 
   return {
@@ -194,7 +194,7 @@ const checkCollectionAttributes = async (
 ): Promise<TAttributeHealth[]> => {
   try {
     const { databases } = createAdminClient();
-    const attributes = await databases.listAttributes(APPWRITE_DATABASE_ID, collectionId);
+    const attributes = await databases.listAttributes(appwriteDatabaseId(), collectionId);
 
     const attributeNames = new Set(attributes.attributes.map((attr) => attr.key));
 
@@ -223,7 +223,7 @@ const checkCollection = async (
 ): Promise<TCollectionHealth> => {
   try {
     const { databases } = createAdminClient();
-    const collection = await databases.getCollection(APPWRITE_DATABASE_ID, collectionId);
+    const collection = await databases.getCollection(appwriteDatabaseId(), collectionId);
 
     const attributes = await checkCollectionAttributes(collectionId, expectedAttributes);
 
@@ -251,23 +251,24 @@ const checkCollection = async (
  * @returns Database health check result
  */
 const checkBaasDatabase = async (): Promise<TDatabaseHealth> => {
+  // Lu une seule fois ici : réutilisé dans le `catch` sans re-throw. Un getter
+  // fail-closed (`appwriteDatabaseId()`) rappelé dans le `catch` masquerait
+  // l'erreur d'origine par son propre throw ; on capture la valeur en amont.
+  const databaseId = appwriteDatabaseId();
   try {
     const { databases } = createAdminClient();
 
     // First, try to get the database (this validates project + API key + database existence)
-    const database = await databases.get(APPWRITE_DATABASE_ID);
+    const database = await databases.get(databaseId);
 
     // Check collections
     const collections = await Promise.all([
-      checkCollection(APPWRITE_CONSENT_EVENTS_COLLECTION_ID, CONSENT_EVENTS_EXPECTED_ATTRIBUTES),
-      checkCollection(
-        APPWRITE_CURRENT_CONSENTS_COLLECTION_ID,
-        CURRENT_CONSENTS_EXPECTED_ATTRIBUTES
-      ),
+      checkCollection(appwriteConsentEventsCollectionId(), CONSENT_EVENTS_EXPECTED_ATTRIBUTES),
+      checkCollection(appwriteCurrentConsentsCollectionId(), CURRENT_CONSENTS_EXPECTED_ATTRIBUTES),
     ]);
 
     return {
-      id: APPWRITE_DATABASE_ID,
+      id: databaseId,
       name: database.name,
       exists: true,
       apiKeyValid: true,
@@ -297,7 +298,7 @@ const checkBaasDatabase = async (): Promise<TDatabaseHealth> => {
     }
 
     return {
-      id: APPWRITE_DATABASE_ID || 'not-configured',
+      id: databaseId,
       name: 'Database',
       exists: false,
       apiKeyValid,

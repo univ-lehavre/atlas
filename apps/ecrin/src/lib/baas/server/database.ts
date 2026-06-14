@@ -1,8 +1,5 @@
 import { createAdminClient } from '$lib/baas/server';
-import {
-  APPWRITE_DB_ID,
-  APPWRITE_TABLE_ID_ALLOWED_EMAIL_DOMAINS_TO_SUBSCRIBE,
-} from '$env/static/private';
+import { appwriteDbId, appwriteTableIdAllowedEmailDomainsToSubscribe } from '$lib/server/env';
 import type { Models } from 'node-appwrite';
 
 const getAllowedEmailsToSubscribe = async (): Promise<string[]> => {
@@ -10,8 +7,8 @@ const getAllowedEmailsToSubscribe = async (): Promise<string[]> => {
   try {
     const { databases } = createAdminClient();
     const result: Models.RowList = await databases.listRows({
-      databaseId: APPWRITE_DB_ID,
-      tableId: APPWRITE_TABLE_ID_ALLOWED_EMAIL_DOMAINS_TO_SUBSCRIBE,
+      databaseId: appwriteDbId(),
+      tableId: appwriteTableIdAllowedEmailDomainsToSubscribe(),
     });
     console.log(result);
     for (const item of result.rows) {
