@@ -286,6 +286,7 @@ def collab_manifest(context: AssetExecutionContext) -> MaterializeResult:
 #   - curated/curated_work_vectors : provenance vecteur par publication (re-poolable,
 #     socle de la purge lot 5) — contractualisée comme un artefact servi (décision projet).
 _RESEARCHERS_SUBDIR = "marts/researchers"
+_RESEARCHERS_FTS_SUBDIR = "marts/researchers_fts"
 _RESEARCHER_VECTORS_SUBDIR = "marts/researcher_vectors"
 _WORK_VECTORS_SUBDIR = "curated/curated_work_vectors"
 
@@ -294,6 +295,16 @@ _WORK_VECTORS_SUBDIR = "curated/curated_work_vectors"
 def researchers_manifest(context: AssetExecutionContext) -> MaterializeResult:
     """Manifest atomique du mart lexical researchers (après le mart dbt, même run)."""
     return _build_and_write_manifest(context, _RESEARCHERS_SUBDIR, "researchers_manifest")
+
+
+@asset(
+    name="researchers_fts_manifest",
+    group_name="transform",
+    deps=[AssetKey(["marts_researchers_fts"])],
+)
+def researchers_fts_manifest(context: AssetExecutionContext) -> MaterializeResult:
+    """Manifest atomique du document FTS par chercheur (source d'index_load, étape 4)."""
+    return _build_and_write_manifest(context, _RESEARCHERS_FTS_SUBDIR, "researchers_fts_manifest")
 
 
 @asset(

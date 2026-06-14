@@ -52,6 +52,15 @@ def mart_dataset(mart_subdir: str = "marts/collab") -> Dataset:
     return Dataset(namespace=NAMESPACE, name=mart_subdir)
 
 
+def index_dataset(name: str) -> Dataset:
+    """Dataset de l'index Postgres servi (sortie d'index_load, étape 4).
+
+    ``name`` ex. ``researchers`` → ``citation:index/researchers``. Termine la chaîne
+    raw → curated → mart → INDEX dans Marquez. Noms techniques (pas de PII).
+    """
+    return Dataset(namespace=NAMESPACE, name=f"index/{name}")
+
+
 def emit(
     state: RunState,
     run_id: str,

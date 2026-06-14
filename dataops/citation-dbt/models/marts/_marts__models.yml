@@ -70,3 +70,23 @@ models:
       - name: freq
         description: "Nombre de publications du chercheur ayant contribué au label (>= 1)."
         data_tests: [not_null]
+
+  - name: marts_researchers_fts
+    description: >-
+      Document texte FTS par chercheur (étape 4, index_load). Une ligne par author_id ;
+      doc_text = labels de marts_researchers répétés `freq` fois, concaténés dans un
+      ordre déterministe (weight desc, kind, label_id). Source de la colonne tsvector
+      de l'index Postgres. Hérite des seuils (lot 2) et de la purge d'opposition (lot 5).
+    columns:
+      - name: author_id
+        description: "Identifiant d'auteur OpenAlex (mappé en researcher_id au chargement)."
+        data_tests:
+          - not_null
+          - unique
+          - relationships:
+              arguments:
+                to: ref('curated_authors')
+                field: author_id
+      - name: doc_text
+        description: "Document texte agrégé (labels pondérés par répétition) à indexer en FTS."
+        data_tests: [not_null]

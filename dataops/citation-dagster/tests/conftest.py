@@ -214,3 +214,116 @@ def embedding_model():
     except (urllib.error.URLError, OSError, SystemExit) as exc:  # pragma: no cover
         pytest.skip(f"modèle d'embedding indisponible (réseau ?) : {exc}")
     return dest
+
+
+# Image PostgreSQL+pgvector épinglée par DIGEST (ADR 0057) — même digest que le test
+# d'intégration TS (packages/citation/src/pg/integration.test.ts) pour la cohérence.
+_PGVECTOR_IMAGE = (
+    "pgvector/pgvector:pg18@sha256:42e7f6b4e1eceb02ff14e3e6bc6108bbe259abbe83879dc1845d0da1ddeb555d"
+)
+_PG_DB = "citation"
+_PG_USER = "postgres"
+_PG_PASSWORD = "postgres"
+# Migrations réelles de l'index (schéma researchers FTS + pgvector), appliquées telles
+# quelles : la fixture teste l'asset contre le VRAI schéma cible, pas une copie.
+_MIGRATIONS_DIR = Path(__file__).resolve().parents[3] / "packages" / "citation" / "migrations"
+
+
+@dataclass(frozen=True)
+class PgHandle:
+    host: str
+    port: str
+    dbname: str
+    user: str
+    password: str
+
+
+@pytest.fixture
+def pgvector(monkeypatch):
+    """PostgreSQL+pgvector éphémère (schéma index appliqué) ; skip si Docker absent.
+
+    Démarre le conteneur épinglé, applique les migrations 0001/0002 réelles, et injecte
+    les POSTGRES_* dans l'environnement (Secret pg-role-pgvector simulé) pour que
+    postgres_target_from_env / l'asset index_load se connectent sans config en dur.
+    """
+    if shutil.which("docker") is None:
+        pytest.skip("Docker indisponible — test index_load hermétique sauté.")
+
+    port = _free_port()
+    name = f"citation-pgvector-test-{port}"
+    proc = subprocess.run(
+        [
+            "docker",
+            "run",
+            "-d",
+            "--rm",
+            "--name",
+            name,
+            "-p",
+            f"127.0.0.1:{port}:5432",
+            "-e",
+            f"POSTGRES_DB={_PG_DB}",
+            "-e",
+            f"POSTGRES_USER={_PG_USER}",
+            "-e",
+            f"POSTGRES_PASSWORD={_PG_PASSWORD}",
+            _PGVECTOR_IMAGE,
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        pytest.skip(f"Démarrage pgvector impossible : {proc.stderr[-200:]}")
+
+    try:
+        # Attente readiness via pg_isready dans le conteneur.
+        ready = False
+        for _ in range(60):
+            r = subprocess.run(
+                ["docker", "exec", name, "pg_isready", "-U", _PG_USER, "-d", _PG_DB],
+                capture_output=True,
+                check=False,
+            )
+            if r.returncode == 0:
+                ready = True
+                break
+            time.sleep(0.5)
+        if not ready:
+            pytest.skip("pgvector n'a pas démarré à temps.")
+
+        # Applique les migrations réelles (ordre lexical 0001, 0002).
+        for sql_file in sorted(_MIGRATIONS_DIR.glob("*.sql")):
+            mig = subprocess.run(
+                [
+                    "docker",
+                    "exec",
+                    "-i",
+                    name,
+                    "psql",
+                    "-U",
+                    _PG_USER,
+                    "-d",
+                    _PG_DB,
+                    "-v",
+                    "ON_ERROR_STOP=1",
+                    "-f",
+                    "-",
+                ],
+                input=sql_file.read_text(encoding="utf-8"),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if mig.returncode != 0:
+                pytest.skip(f"Migration {sql_file.name} échouée : {mig.stderr[-300:]}")
+
+        # Injecte les POSTGRES_* (Secret pg-role-pgvector simulé).
+        monkeypatch.setenv("POSTGRES_HOST", "127.0.0.1")
+        monkeypatch.setenv("POSTGRES_PORT", str(port))
+        monkeypatch.setenv("POSTGRES_DB", _PG_DB)
+        monkeypatch.setenv("POSTGRES_USER", _PG_USER)
+        monkeypatch.setenv("POSTGRES_PASSWORD", _PG_PASSWORD)
+        yield PgHandle("127.0.0.1", str(port), _PG_DB, _PG_USER, _PG_PASSWORD)
+    finally:
+        subprocess.run(["docker", "rm", "-f", name], capture_output=True, check=False)

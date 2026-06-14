@@ -37,6 +37,14 @@ COPY citation-dagster/pyproject.toml citation-dagster/uv.lock citation-dagster/R
 COPY citation-dagster/src ./src
 RUN python -m uv pip install --system .
 
+# Extensions DuckDB cuites HORS-LIGNE dans l'image (ADR 0055/0059 : aucune I/O réseau
+# au runtime). DuckDB télécharge sinon ses extensions au premier usage → casse le
+# hors-ligne. `httpfs` (lecture S3, déjà utilisé) + `postgres` (chargement de l'index
+# vers CNPG, étape 4 index_load via ATTACH). Le répertoire est figé et exporté par
+# DUCKDB_EXTENSION_DIRECTORY, lu par lakehouse.connect().
+ENV DUCKDB_EXTENSION_DIRECTORY=/opt/dagster/duckdb_extensions
+RUN python -c "import duckdb; c=duckdb.connect(config={'extension_directory': '$DUCKDB_EXTENSION_DIRECTORY'}); c.execute('INSTALL httpfs'); c.execute('INSTALL postgres')"
+
 # Modèle d'embedding (lot 3) NON versionné dans git : téléchargé ICI, à une
 # révision HuggingFace figée + sha256 vérifié (scripts/fetch_model.py), puis figé
 # dans l'image — « cuit hors-ligne », aucune dépendance réseau au RUNTIME

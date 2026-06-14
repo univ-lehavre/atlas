@@ -57,6 +57,38 @@ def ceph_target_from_env(env: dict[str, str] | None = None) -> CephTarget:
     )
 
 
+@dataclass(frozen=True)
+class PostgresTarget:
+    """Coordonnées Postgres/CNPG cibles de l'index (étape 4 index_load).
+
+    Lues du Secret ``pg-role-pgvector`` injecté au pod de run (jamais en dur). Le mot de
+    passe ne doit JAMAIS être loggé (pas de print de la DSN).
+    """
+
+    host: str
+    port: str
+    dbname: str
+    user: str
+    password: str
+
+
+def postgres_target_from_env(env: dict[str, str] | None = None) -> PostgresTarget:
+    """Construit la cible Postgres depuis l'environnement (Secret pg-role-pgvector).
+
+    Variables : ``POSTGRES_HOST`` / ``POSTGRES_PORT`` (défaut 5432) / ``POSTGRES_DB`` /
+    ``POSTGRES_USER`` / ``POSTGRES_PASSWORD``. Mêmes conventions que le contrat cluster ;
+    le branchement effectif du Secret au pod relève du déployeur (frontière infra).
+    """
+    env = dict(os.environ if env is None else env)
+    return PostgresTarget(
+        host=_require(env, "POSTGRES_HOST"),
+        port=env.get("POSTGRES_PORT", "5432"),
+        dbname=_require(env, "POSTGRES_DB"),
+        user=_require(env, "POSTGRES_USER"),
+        password=_require(env, "POSTGRES_PASSWORD"),
+    )
+
+
 def render_rclone_config(target: CephTarget) -> str:
     """Rend le contenu d'un ``rclone.conf`` à deux remotes (openalex, ceph).
 
