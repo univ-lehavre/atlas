@@ -94,8 +94,10 @@ jobs:
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
           # Pas de `latest` comme référence de déploiement (ADR 0033/0043).
+          # format=long : le tag SHA est `sha-<40 chars>` (= `sha-${{ github.sha }}`),
+          # pour que le retag local `:smoke` (étape smoke sur main) le retrouve.
           tags: |
-            type=sha,prefix=sha-
+            type=sha,format=long,prefix=sha-
             type=raw,value=pr-${{ github.event.pull_request.number }},enable=${{ github.event_name == 'pull_request' }}
 
       # Login GHCR uniquement sur `main` (les PR ne publient pas).
@@ -140,13 +142,28 @@ jobs:
           file: ${{ matrix.dockerfile }}
           load: true
           push: true
+          # SEULEMENT des tags GHCR (registre où l'on est loggé). Le tag local
+          # `${{ matrix.image }}:smoke` ne doit PAS figurer ici : sans préfixe de
+          # registre, Docker le résout en `docker.io/library/<image>` et tente de le
+          # pousser sur Docker Hub → 401 (insufficient scopes). Il est recréé en
+          # local par un `docker tag` juste avant le smoke (étape suivante).
           tags: |
             ${{ steps.meta.outputs.tags }}
             ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${{ steps.ver.outputs.version }}
-            ${{ matrix.image }}:smoke
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      # Tag local `:smoke` pour l'étape de healthcheck (commune PR/main). Sur main,
+      # l'image vient d'être `load`ée sous ses tags GHCR ; on retague le tag SHA
+      # (toujours présent, déterministe) en `:smoke` localement, sans le repousser. Sur
+      # PR, `:smoke` est déjà produit par le build PR (load, push:false) → step sauté.
+      - name: Tag image for smoke (push only)
+        if: github.event_name == 'push'
+        run: |
+          docker tag \
+            "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:sha-${{ github.sha }}" \
+            "${{ matrix.image }}:smoke"
 
       # Smoke : démarrer le conteneur et vérifier que le HEALTHCHECK passe
       # (l'app/le service répond sur son endpoint de santé). Build cassé,
