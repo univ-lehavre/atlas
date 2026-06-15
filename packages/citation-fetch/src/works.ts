@@ -179,6 +179,157 @@ const buildYearCounts = (
     { yearCountMap: new Map(), beforeCount: 0 },
   );
 
+const emptyInstitutionStats = (
+  years: readonly number[],
+): InstitutionStatsResult => ({
+  worksCount: 0,
+  articlesCount: 0,
+  articlesByYear: [
+    { year: "before" as const, count: 0 },
+    ...years.map((year) => ({ year, count: 0 })),
+  ],
+  authorsCount: 0,
+  responseTimeMs: 0,
+  institutionCount: 0,
+});
+
+type ApiParams = Record<string, string | number | boolean | undefined>;
+
+interface InstitutionStatsParams {
+  oldestYear: number;
+  currentYear: number;
+  worksParams: ApiParams;
+  articlesGroupByParams: ApiParams;
+  authorsParams: ApiParams;
+}
+
+const buildInstitutionStatsParams = (
+  institutionIds: string[],
+  config: CitationConfig,
+  years: readonly number[],
+): InstitutionStatsParams => {
+  const institutionsFilter = institutionIds.join("|");
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- years always has YEARS_LOOKBACK+1 elements
+  const oldestYear = years[0]!;
+  const currentYear = years.at(-1)!; // eslint-disable-line @typescript-eslint/no-non-null-assertion -- same
+
+  return {
+    oldestYear,
+    currentYear,
+    worksParams: buildParams(
+      `authorships.institutions.id:${institutionsFilter},publication_year:${String(oldestYear)}-${String(currentYear)}`,
+      { select: "id", per_page: 1 },
+      config.apiKey,
+    ),
+    articlesGroupByParams: buildParams(
+      `authorships.institutions.id:${institutionsFilter},type:article`,
+      { group_by: "publication_year" },
+      config.apiKey,
+    ),
+    authorsParams: buildParams(
+      `affiliations.institution.id:${institutionsFilter}`,
+      { select: "id", per_page: 1 },
+      config.apiKey,
+    ),
+  };
+};
+
+const assembleInstitutionStats = (
+  institutionIds: string[],
+  years: readonly number[],
+  params: InstitutionStatsParams,
+  worksResult: {
+    data: { meta: { count: number; db_response_time_ms: number } };
+  },
+  articlesResult: {
+    data: {
+      meta: { count: number; db_response_time_ms: number };
+      group_by: readonly WorksGroupByItem[];
+    };
+  },
+  authorsResult: {
+    data: { meta: { count: number; db_response_time_ms: number } };
+    rateLimit?: RateLimitInfo;
+  },
+): InstitutionStatsResult => {
+  const { yearCountMap, beforeCount } = buildYearCounts(
+    articlesResult.data.group_by,
+    params.oldestYear,
+    params.currentYear,
+  );
+
+  const articlesByYear: YearlyArticleCount[] = [
+    { year: "before", count: beforeCount },
+    ...years.map((year) => ({ year, count: yearCountMap.get(year) ?? 0 })),
+  ];
+
+  const totalArticles = years.reduce(
+    (sum, year) => sum + (yearCountMap.get(year) ?? 0),
+    0,
+  );
+
+  return {
+    worksCount: worksResult.data.meta.count,
+    articlesCount: totalArticles,
+    articlesByYear,
+    authorsCount: authorsResult.data.meta.count,
+    responseTimeMs:
+      worksResult.data.meta.db_response_time_ms +
+      articlesResult.data.meta.db_response_time_ms +
+      authorsResult.data.meta.db_response_time_ms,
+    institutionCount: institutionIds.length,
+    rateLimit: authorsResult.rateLimit,
+  };
+};
+
+const fetchInstitutionStats = (
+  institutionIds: string[],
+  config: CitationConfig,
+  years: readonly number[],
+): Effect.Effect<
+  InstitutionStatsResult,
+  FetchError | ResponseParseError,
+  FetchOnePage
+> =>
+  Effect.gen(function* () {
+    const fetchOnePage = yield* FetchOnePage;
+    const baseURL = config.apiURL ?? OPENALEX_BASE_URL;
+    const params = buildInstitutionStatsParams(institutionIds, config, years);
+
+    const [worksResult, articlesResult, authorsResult] = yield* Effect.all(
+      [
+        fetchOnePage(
+          new URL(`${baseURL}/works`),
+          params.worksParams,
+          config.userAgent,
+          WorksMetaResponseSchema,
+        ),
+        fetchOnePage(
+          new URL(`${baseURL}/works`),
+          params.articlesGroupByParams,
+          config.userAgent,
+          WorksGroupByResponseSchema,
+        ),
+        fetchOnePage(
+          new URL(`${baseURL}/authors`),
+          params.authorsParams,
+          config.userAgent,
+          WorksMetaResponseSchema,
+        ),
+      ],
+      { concurrency: "unbounded" },
+    );
+
+    return assembleInstitutionStats(
+      institutionIds,
+      years,
+      params,
+      worksResult,
+      articlesResult,
+      authorsResult,
+    );
+  });
+
 /**
  * Gets comprehensive statistics for selected institutions.
  * Fetches works count, articles by year, and authors count in parallel.
@@ -186,7 +337,6 @@ const buildYearCounts = (
  * @param config - OpenAlex API configuration
  * @returns Effect containing institution statistics with rate limit info
  */
-// eslint-disable-next-line max-lines-per-function -- pipeline Effect cohérent (fetch → parse → agréger), split rendrait le flot moins lisible
 const getInstitutionStats = (
   institutionIds: string[],
   config: CitationConfig,
@@ -198,98 +348,8 @@ const getInstitutionStats = (
   const years = getYearsToQuery();
 
   return institutionIds.length === 0
-    ? Effect.succeed({
-        worksCount: 0,
-        articlesCount: 0,
-        articlesByYear: [
-          { year: "before" as const, count: 0 },
-          ...years.map((year) => ({ year, count: 0 })),
-        ],
-        authorsCount: 0,
-        responseTimeMs: 0,
-        institutionCount: 0,
-      })
-    : // eslint-disable-next-line max-lines-per-function -- Effect.gen séquentiel HTTP→parse→agréger
-      Effect.gen(function* () {
-        const fetchOnePage = yield* FetchOnePage;
-        const baseURL = config.apiURL ?? OPENALEX_BASE_URL;
-        const institutionsFilter = institutionIds.join("|");
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- years always has YEARS_LOOKBACK+1 elements
-        const oldestYear = years[0]!;
-        const currentYear = years.at(-1)!; // eslint-disable-line @typescript-eslint/no-non-null-assertion -- same
-
-        const worksParams = buildParams(
-          `authorships.institutions.id:${institutionsFilter},publication_year:${String(oldestYear)}-${String(currentYear)}`,
-          { select: "id", per_page: 1 },
-          config.apiKey,
-        );
-        const articlesGroupByParams = buildParams(
-          `authorships.institutions.id:${institutionsFilter},type:article`,
-          { group_by: "publication_year" },
-          config.apiKey,
-        );
-        const authorsParams = buildParams(
-          `affiliations.institution.id:${institutionsFilter}`,
-          { select: "id", per_page: 1 },
-          config.apiKey,
-        );
-
-        const [worksResult, articlesResult, authorsResult] = yield* Effect.all(
-          [
-            fetchOnePage(
-              new URL(`${baseURL}/works`),
-              worksParams,
-              config.userAgent,
-              WorksMetaResponseSchema,
-            ),
-            fetchOnePage(
-              new URL(`${baseURL}/works`),
-              articlesGroupByParams,
-              config.userAgent,
-              WorksGroupByResponseSchema,
-            ),
-            fetchOnePage(
-              new URL(`${baseURL}/authors`),
-              authorsParams,
-              config.userAgent,
-              WorksMetaResponseSchema,
-            ),
-          ],
-          { concurrency: "unbounded" },
-        );
-
-        const { yearCountMap, beforeCount } = buildYearCounts(
-          articlesResult.data.group_by,
-          oldestYear,
-          currentYear,
-        );
-
-        const articlesByYear: YearlyArticleCount[] = [
-          { year: "before", count: beforeCount },
-          ...years.map((year) => ({
-            year,
-            count: yearCountMap.get(year) ?? 0,
-          })),
-        ];
-
-        const totalArticles = years.reduce(
-          (sum, year) => sum + (yearCountMap.get(year) ?? 0),
-          0,
-        );
-
-        return {
-          worksCount: worksResult.data.meta.count,
-          articlesCount: totalArticles,
-          articlesByYear,
-          authorsCount: authorsResult.data.meta.count,
-          responseTimeMs:
-            worksResult.data.meta.db_response_time_ms +
-            articlesResult.data.meta.db_response_time_ms +
-            authorsResult.data.meta.db_response_time_ms,
-          institutionCount: institutionIds.length,
-          rateLimit: authorsResult.rateLimit,
-        };
-      });
+    ? Effect.succeed(emptyInstitutionStats(years))
+    : fetchInstitutionStats(institutionIds, config, years);
 };
 
 export {

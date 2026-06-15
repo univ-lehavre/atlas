@@ -10,15 +10,15 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/starlight": "^0.39.0",
+    "@astrojs/starlight": "^0.40.0",
     "@astrojs/vue": "^6.0.0",
-    "astro": "^6.4.4",
+    "astro": "^6.4.6",
     "astro-mermaid": "^2.0.0",
     "mermaid": "^11.15.0",
-    "vue": "^3.5.35"
+    "vue": "^3.5.38"
   },
   "devDependencies": {
-    "@astrojs/mdx": "^6.0.2",
-    "starlight-links-validator": "^0.24.0"
+    "@astrojs/mdx": "^6.0.3",
+    "starlight-links-validator": "^0.24.1"
   }
 }
