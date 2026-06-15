@@ -173,7 +173,61 @@ export interface CollectAtlasStatsHooks {
   onWarning?: (message: string) => void;
 }
 
-// eslint-disable-next-line max-lines-per-function -- séquentielles GitHub→npm→downloads, refactor en sous-fonctions briserait la lecture linéaire des étapes
+const fetchReleasesSafe = async (
+  token: string,
+  hooks: CollectAtlasStatsHooks,
+): Promise<{ releases: GithubRelease[]; ok: boolean }> => {
+  hooks.onProgress?.("Récupération des releases GitHub…");
+  try {
+    const releases = await fetchReleases(token);
+    hooks.onProgress?.(
+      `${String(releases.length)} releases récupérées — paquets npm…`,
+    );
+    return { releases, ok: true };
+  } catch (error) {
+    hooks.onWarning?.(
+      `Impossible de récupérer les releases GitHub: ${formatErrorMessage(error)}`,
+    );
+    return { releases: [], ok: false };
+  }
+};
+
+const fetchNpmPackagesSafe = async (
+  hooks: CollectAtlasStatsHooks,
+): Promise<{ packages: NpmPackageMeta[]; ok: boolean }> => {
+  try {
+    const packages = await fetchNpmPackages();
+    hooks.onProgress?.(
+      `${String(packages.length)} paquets npm trouvés — téléchargements…`,
+    );
+    return { packages, ok: true };
+  } catch (error) {
+    hooks.onWarning?.(
+      `Impossible de récupérer la liste des paquets npm: ${formatErrorMessage(error)}`,
+    );
+    return { packages: [], ok: false };
+  }
+};
+
+const fetchDownloadsSafe = async (
+  packages: NpmPackageMeta[],
+  start: Date,
+  end: Date,
+  hooks: CollectAtlasStatsHooks,
+): Promise<Record<string, NpmDailyPoint[]>> => {
+  if (packages.length === 0) return {};
+  try {
+    return await fetchAllDownloads(packages, start, end, (done, total) => {
+      hooks.onProgress?.(`Téléchargements ${String(done)}/${String(total)}…`);
+    });
+  } catch (error) {
+    hooks.onWarning?.(
+      `Impossible de récupérer les téléchargements npm: ${formatErrorMessage(error)}`,
+    );
+    return {};
+  }
+};
+
 export const collectAtlasStats = async (
   token: string,
   hooks: CollectAtlasStatsHooks = {},
@@ -182,56 +236,9 @@ export const collectAtlasStats = async (
   const start = new Date();
   start.setDate(start.getDate() - 89);
 
-  let githubOk = false;
-  let npmPackagesOk = false;
-
-  hooks.onProgress?.("Récupération des releases GitHub…");
-  let releases: GithubRelease[] = [];
-  try {
-    releases = await fetchReleases(token);
-    githubOk = true;
-  } catch (error) {
-    hooks.onWarning?.(
-      `Impossible de récupérer les releases GitHub: ${formatErrorMessage(error)}`,
-    );
-  }
-  hooks.onProgress?.(
-    `${String(releases.length)} releases récupérées — paquets npm…`,
-  );
-
-  let packages: NpmPackageMeta[];
-  try {
-    packages = await fetchNpmPackages();
-    npmPackagesOk = true;
-  } catch (error) {
-    packages = [];
-    hooks.onWarning?.(
-      `Impossible de récupérer la liste des paquets npm: ${formatErrorMessage(error)}`,
-    );
-  }
-  hooks.onProgress?.(
-    `${String(packages.length)} paquets npm trouvés — téléchargements…`,
-  );
-
-  let downloads: Record<string, NpmDailyPoint[]> = {};
-  if (packages.length > 0) {
-    try {
-      downloads = await fetchAllDownloads(
-        packages,
-        start,
-        end,
-        (done, total) => {
-          hooks.onProgress?.(
-            `Téléchargements ${String(done)}/${String(total)}…`,
-          );
-        },
-      );
-    } catch (error) {
-      hooks.onWarning?.(
-        `Impossible de récupérer les téléchargements npm: ${formatErrorMessage(error)}`,
-      );
-    }
-  }
+  const { releases, ok: githubOk } = await fetchReleasesSafe(token, hooks);
+  const { packages, ok: npmPackagesOk } = await fetchNpmPackagesSafe(hooks);
+  const downloads = await fetchDownloadsSafe(packages, start, end, hooks);
 
   if (!githubOk && !npmPackagesOk) {
     throw new Error(
@@ -309,24 +316,11 @@ export interface AtlasCliReport {
   };
 }
 
-// eslint-disable-next-line max-lines-per-function -- enrichit + agrège chaque CLI une fois, refactor ferait double passe sur les paquets
-export const buildAtlasCliReport = async (
+const buildAtlasCliRows = (
+  stats: ReturnType<typeof computeStats>,
   cache: AtlasStatsCache,
-  period: Period,
-  workspaceRoot: string,
-): Promise<AtlasCliReport> => {
-  const warnings: string[] = [];
-  const stats = computeStats(cache, period);
-
-  let workspacePackageNames = new Set<string>();
-  try {
-    workspacePackageNames = await readWorkspacePackageNames(workspaceRoot);
-  } catch (error) {
-    warnings.push(
-      `Impossible de lire la liste des paquets du monorepo: ${formatErrorMessage(error)}`,
-    );
-  }
-
+  workspacePackageNames: Set<string>,
+): AtlasCliRow[] => {
   const knownPackages = new Set<string>([
     ...stats.packages.map((pkg) => pkg.name),
     ...workspacePackageNames,
@@ -345,7 +339,7 @@ export const buildAtlasCliReport = async (
     }),
   );
 
-  const rows = [...stats.packages]
+  return [...stats.packages]
     .toSorted((a, b) => {
       const inMonorepoA = workspacePackageNames.has(a.name) ? 1 : 0;
       const inMonorepoB = workspacePackageNames.has(b.name) ? 1 : 0;
@@ -366,8 +360,15 @@ export const buildAtlasCliReport = async (
         totalDownloads: pkg.totalDownloads,
       } satisfies AtlasCliRow;
     });
+};
 
-  const splitIndex = rows.findIndex((row) => !row.monorepoPresent);
+const summarizeAtlasCliRows = (
+  rows: AtlasCliRow[],
+): {
+  npmReleasesTotalLabel: string;
+  ghReleasesTotal: number;
+  downloadsTotal: number;
+} => {
   const npmKnownReleasesTotal = rows.reduce(
     (sum, row) => sum + (row.npmReleaseCount ?? 0),
     0,
@@ -384,6 +385,31 @@ export const buildAtlasCliReport = async (
     0,
   );
   const downloadsTotal = rows.reduce((sum, row) => sum + row.totalDownloads, 0);
+
+  return { npmReleasesTotalLabel, ghReleasesTotal, downloadsTotal };
+};
+
+export const buildAtlasCliReport = async (
+  cache: AtlasStatsCache,
+  period: Period,
+  workspaceRoot: string,
+): Promise<AtlasCliReport> => {
+  const warnings: string[] = [];
+  const stats = computeStats(cache, period);
+
+  let workspacePackageNames = new Set<string>();
+  try {
+    workspacePackageNames = await readWorkspacePackageNames(workspaceRoot);
+  } catch (error) {
+    warnings.push(
+      `Impossible de lire la liste des paquets du monorepo: ${formatErrorMessage(error)}`,
+    );
+  }
+
+  const rows = buildAtlasCliRows(stats, cache, workspacePackageNames);
+  const splitIndex = rows.findIndex((row) => !row.monorepoPresent);
+  const { npmReleasesTotalLabel, ghReleasesTotal, downloadsTotal } =
+    summarizeAtlasCliRows(rows);
 
   return {
     warnings,
