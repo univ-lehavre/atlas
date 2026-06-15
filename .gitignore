@@ -52,7 +52,6 @@ INSTALLATION-K3S-ROCKETCHAT.md
 
 rocketchat-k3s-roadmap.pdf
 *.traineddata
-CLAUDE.md
 *-token.csv
 apps/crf-dashboard/.crf-stats.json
 apps/redcap-dashboard/.redcap-stats.json
