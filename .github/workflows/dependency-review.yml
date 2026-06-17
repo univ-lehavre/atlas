@@ -42,6 +42,29 @@ jobs:
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: high
+          # Advisories exemptées (risque résiduel documenté). deepdiff est
+          # tiré transitivement par dbt-common (chaîne dagster-dbt==0.29.7 ↔
+          # dagster 1.13.7), qui l'épingle deepdiff<8 ; monter à 8.0.0 (la
+          # version corrigée) rétrograde dbt-core 1.10→1.7 et rompt
+          # l'alignement de version requis par dagster-dbt. Les deux CVE
+          # n'exploitent que la désérialisation d'un Delta deepdiff non fiable
+          # (GHSA-mw26 : Class Pollution dans Delta → RCE/DoS ; GHSA-54jj :
+          # DoS mémoire via SAFE_TO_IMPORT) — dbt n'utilise deepdiff que pour
+          # differ des manifests/configs locaux et fiables, jamais pour
+          # désérialiser une entrée externe. À lever dès que dagster-dbt
+          # acceptera deepdiff>=8.
+          #
+          # nltk est tiré transitivement par evidently==0.4.40 (détection de
+          # drift). GHSA-p4gq-832x-fm9v (path traversal dans nltk.data.load()
+          # → lecture de fichier local arbitraire) n'a AUCUNE version corrigée
+          # (vulnerableVersionRange <=3.9.4, firstPatchedVersion null) : rien à
+          # monter. La surface n'est atteinte que si on passe une entrée non
+          # fiable à nltk.data.load() ; le pipeline drift ne compare que des
+          # vecteurs numériques (384-dim) et n'appelle jamais cette API. À
+          # lever dès qu'upstream publie un correctif.
+          allow-ghsas: >-
+            GHSA-mw26-5g2v-hqw3, GHSA-54jj-px8x-5w5q,
+            GHSA-p4gq-832x-fm9v
           allow-licenses: >-
             MIT, MIT-0, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD,
             Unlicense, CC0-1.0, CC-BY-3.0, CC-BY-4.0, Python-2.0,
@@ -73,6 +96,13 @@ jobs:
           # altair/numpy/pandas/scipy/pycparser, Apache-2.0 OR BSD pour cryptography, MIT
           # pour marshmallow) mais plusieurs ne déclarent leur licence qu'en classifier ou
           # blob de copyright → l'action les remonte « unknown » (avertissement, pas blocage).
+          #
+          # Détection de drift (étape MLOps 1→2) : evidently (Apache-2.0) et sa
+          # fermeture transitive neuve, toutes permissives mais mal détectées par
+          # scancode : evidently se remonte « unknown-license-reference »,
+          # regex est Apache-2.0 AND CNRI-Python (CNRI permissive, hors allowlist),
+          # statsmodels est BSD AND un « public-domain-disclaimer » LicenseRef qui
+          # casse l'expression composée. Exceptions ciblées par paquet.
           allow-dependencies-licenses: >-
             pkg:npm/%40sentry/cli,
             pkg:npm/%40sentry/cli-darwin,
@@ -112,5 +142,8 @@ jobs:
             pkg:pypi/pyparsing,
             pkg:pypi/ruamel-yaml,
             pkg:pypi/scipy,
-            pkg:pypi/tzlocal
+            pkg:pypi/tzlocal,
+            pkg:pypi/evidently,
+            pkg:pypi/regex,
+            pkg:pypi/statsmodels
           comment-summary-in-pr: on-failure

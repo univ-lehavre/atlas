@@ -9,7 +9,7 @@ Deux familles d'assets :
   ``dagster-dbt`` (``citation_dagster.dbt``).
 """
 
-from dagster import AssetSelection, Definitions, define_asset_job
+from dagster import AssetSelection, Definitions, ScheduleDefinition, define_asset_job
 
 from citation_dagster.assets import (
     collab_manifest,
@@ -21,6 +21,7 @@ from citation_dagster.assets import (
     researchers_manifest,
     work_vectors_manifest,
 )
+from citation_dagster.assets.drift import evidently_embedding_drift
 from citation_dagster.assets.quality import (
     ge_curated_edges,
     ge_index_load,
@@ -111,7 +112,10 @@ _jobs = [ingestion_job]
 # ge_index_load cible l'asset Python index_load (toujours enregistré) → inconditionnel
 # (comme ge_researcher_vectors). Il vérifie count(researchers en base) == row_count
 # attendu du manifest FTS pour la partition chargée.
-_asset_checks = [ge_raw_contract, ge_researcher_vectors, ge_index_load]
+# evidently_embedding_drift cible l'asset PYTHON researcher_embeddings (toujours
+# enregistré) → INCONDITIONNEL comme ge_researcher_vectors. NON bloquant : il mesure le
+# drift N vs N-1 (informatif, loggué MLflow), ne casse pas le run (cf. assets/drift.py).
+_asset_checks = [ge_raw_contract, ge_researcher_vectors, ge_index_load, evidently_embedding_drift]
 if _dbt_assets:
     _asset_checks += [ge_curated_edges, ge_marts_collab, ge_marts_researchers]
 
@@ -137,4 +141,27 @@ if _dbt_assets:
     )
     _jobs.append(transform_job)
 
-defs = Definitions(assets=_assets, asset_checks=_asset_checks, jobs=_jobs, resources=_dbt_resources)
+# ENTRAÎNEMENT CONTINU (CT, MLOps 1→2) : le transform_job (dbt → embeddings → index)
+# se rejoue automatiquement, plus de re-trigger 100 % manuel. Cadence par défaut
+# QUOTIDIENNE (02:00 UTC, heure creuse) ; statut STOPPED par défaut — l'opérateur
+# l'arme dans l'UI Dagster (pas de re-training silencieux non voulu). Le drift mesuré
+# par evidently_embedding_drift nourrit la décision d'ajuster cette cadence. Enregistré
+# UNIQUEMENT si transform_job existe (assets dbt présents), comme le job lui-même.
+_schedules = []
+if _dbt_assets:
+    transform_daily = ScheduleDefinition(
+        name="transform_daily",
+        job=transform_job,
+        cron_schedule="0 2 * * *",
+        execution_timezone="UTC",
+        description="Entraînement continu : rejoue transform_job (dbt → embeddings → index).",
+    )
+    _schedules.append(transform_daily)
+
+defs = Definitions(
+    assets=_assets,
+    asset_checks=_asset_checks,
+    jobs=_jobs,
+    schedules=_schedules,
+    resources=_dbt_resources,
+)
