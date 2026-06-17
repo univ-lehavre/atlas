@@ -96,6 +96,13 @@ jobs:
           # altair/numpy/pandas/scipy/pycparser, Apache-2.0 OR BSD pour cryptography, MIT
           # pour marshmallow) mais plusieurs ne déclarent leur licence qu'en classifier ou
           # blob de copyright → l'action les remonte « unknown » (avertissement, pas blocage).
+          #
+          # Détection de drift (étape MLOps 1→2) : evidently (Apache-2.0) et sa
+          # fermeture transitive neuve, toutes permissives mais mal détectées par
+          # scancode : evidently se remonte « unknown-license-reference »,
+          # regex est Apache-2.0 AND CNRI-Python (CNRI permissive, hors allowlist),
+          # statsmodels est BSD AND un « public-domain-disclaimer » LicenseRef qui
+          # casse l'expression composée. Exceptions ciblées par paquet.
           allow-dependencies-licenses: >-
             pkg:npm/%40sentry/cli,
             pkg:npm/%40sentry/cli-darwin,
@@ -135,5 +142,8 @@ jobs:
             pkg:pypi/pyparsing,
             pkg:pypi/ruamel-yaml,
             pkg:pypi/scipy,
-            pkg:pypi/tzlocal
+            pkg:pypi/tzlocal,
+            pkg:pypi/evidently,
+            pkg:pypi/regex,
+            pkg:pypi/statsmodels
           comment-summary-in-pr: on-failure
