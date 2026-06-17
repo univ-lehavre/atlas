@@ -42,6 +42,18 @@ jobs:
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: high
+          # Advisories exemptées (risque résiduel documenté). deepdiff est
+          # tiré transitivement par dbt-common (chaîne dagster-dbt==0.29.7 ↔
+          # dagster 1.13.7), qui l'épingle deepdiff<8 ; monter à 8.0.0 (la
+          # version corrigée) rétrograde dbt-core 1.10→1.7 et rompt
+          # l'alignement de version requis par dagster-dbt. Les deux CVE
+          # n'exploitent que la désérialisation d'un Delta deepdiff non fiable
+          # (GHSA-mw26 : Class Pollution dans Delta → RCE/DoS ; GHSA-54jj :
+          # DoS mémoire via SAFE_TO_IMPORT) — dbt n'utilise deepdiff que pour
+          # differ des manifests/configs locaux et fiables, jamais pour
+          # désérialiser une entrée externe. À lever dès que dagster-dbt
+          # acceptera deepdiff>=8.
+          allow-ghsas: GHSA-mw26-5g2v-hqw3, GHSA-54jj-px8x-5w5q
           allow-licenses: >-
             MIT, MIT-0, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD,
             Unlicense, CC0-1.0, CC-BY-3.0, CC-BY-4.0, Python-2.0,
