@@ -349,5 +349,20 @@ jobs:
           dataops/citation-dagster/scripts/fetch_model.py
           dataops/citation-dagster/src/citation_dagster/models/all-MiniLM-L6-v2
 
-      - name: DataOps quality (ruff + pytest + coverage)
+      # kubeconform pour valider les manifestes de déploiement rendus par
+      # kustomize (kubectl est préinstallé sur les runners). Version pinnée
+      # (cohérent avec le pin par SHA des actions) ; checksum vérifié.
+      - name: Install kubeconform
+        run: |
+          set -euo pipefail
+          ver=v0.6.7
+          url="https://github.com/yannh/kubeconform/releases/download/${ver}/kubeconform-linux-amd64.tar.gz"
+          sha=95f14e87aa28c09d5941f11bd024c1d02fdc0303ccaa23f61cef67bc92619d73
+          curl -fsSL "$url" -o kubeconform.tar.gz
+          echo "${sha}  kubeconform.tar.gz" | sha256sum -c -
+          tar -xzf kubeconform.tar.gz kubeconform
+          sudo install kubeconform /usr/local/bin/
+          rm -f kubeconform.tar.gz kubeconform
+
+      - name: DataOps quality (ruff + pytest + coverage + manifests)
         run: pnpm dataops:check
