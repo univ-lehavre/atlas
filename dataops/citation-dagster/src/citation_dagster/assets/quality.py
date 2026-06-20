@@ -48,13 +48,21 @@ def _result(passed: bool, metadata: dict) -> AssetCheckResult:
 def check_raw(bucket: str) -> AssetCheckResult:
     """Valide le brut works + authors (contrat structurel + format des ids)."""
     con = lakehouse.connect()
-    # hive_partitioning=false : neutralise la colonne fantôme updated_date (cf. staging).
+    # On PROJETTE les seules colonnes que les suites GE valident (cf. ge_suites :
+    # raw_works → id/referenced_works/authorships ; raw_authors → id) au lieu d'un
+    # SELECT * : sur le brut OpenAlex réel, l'inférence de schéma complète de
+    # read_json_auto bute sur des objets JSON à clés dupliquées (p. ex.
+    # abstract_inverted_index converti en MAP) → DuckDB lève « Map keys must be
+    # unique » et fait échouer ce check pourtant satisfait. Projeter évite de
+    # parser ces champs non validés (plus robuste, plus léger). hive_partitioning
+    # =false : neutralise la colonne fantôme updated_date (cf. staging).
     works = con.sql(
-        f"SELECT * FROM read_json_auto('s3://{bucket}/raw/works/**/*.gz', "
+        f"SELECT id, referenced_works, authorships "
+        f"FROM read_json_auto('s3://{bucket}/raw/works/**/*.gz', "
         "hive_partitioning=false, union_by_name=true)"
     ).df()
     authors = con.sql(
-        f"SELECT * FROM read_json_auto('s3://{bucket}/raw/authors/**/*.gz', "
+        f"SELECT id FROM read_json_auto('s3://{bucket}/raw/authors/**/*.gz', "
         "hive_partitioning=false, union_by_name=true)"
     ).df()
     ok_w, meta_w = ge_suites.validate_df(works, "raw_works", ge_suites.raw_works_expectations())
