@@ -9,6 +9,17 @@ requires-python = ">=3.10,<3.11"
 # l'image (voir Dockerfile), invoqué en sous-processus par l'asset de sync.
 dependencies = [
   "dagster==1.13.7",
+  # Le run worker (K8sRunLauncher) EST cette image : à chaque run, le launcher
+  # crée un pod depuis DAGSTER_CURRENT_IMAGE (= cette image) qui REHYDRATE
+  # l'instance Dagster du cluster (dagster.yaml). Or le socle configure
+  # PostgresRunStorage/ScheduleStorage + K8sRunLauncher (contrat ADR 0043) : le
+  # pod doit donc pouvoir importer dagster_postgres ET dagster_k8s, sinon il
+  # échoue au démarrage (« Couldn't import module dagster_postgres.run_storage »)
+  # avant même d'exécuter l'asset. Numérotation propre 0.YY.Z (comme dagster-dbt,
+  # PAS celle de dagster core) : 0.29.7 ↔ dagster 1.13.7 (parité chart Helm ↔
+  # paquet Python, ADR cluster 0006).
+  "dagster-postgres==0.29.7",
+  "dagster-k8s==0.29.7",
   "openlineage-python",
   # Pipeline de transformation (étape 3) : DuckDB lit le brut JSONL.gz et écrit
   # le Parquet sur S3 (httpfs path-style) ; dbt-duckdb porte les modèles ;
@@ -43,10 +54,11 @@ dependencies = [
   # contrat cluster ADR 0043). mlflow (Apache-2.0) ; client seul, pas de serveur ici.
   "mlflow-skinny==2.17.2",
 ]
-# NB : ni dagster-postgres (event log) ni dagster-k8s (K8sRunLauncher) ne sont
-# requis par la code-location — ce sont des dépendances de l'orchestrateur,
-# géré côté cluster. Les exclure allège l'image et évite des dépendances
-# transitives sous licence non permissive (psycopg2-binary en LGPL).
+# NB : dagster-postgres tire psycopg2-binary (LGPL) en transitive. Cette image
+# l'embarque NÉCESSAIREMENT pour rehydrater l'instance dans le run worker (voir
+# plus haut) ; on l'assume dans dataops/ (Python, hors gate licences Node — ADR
+# 0055). Le code applicatif, lui, n'utilise jamais psycopg2 directement : l'index
+# (index_load) passe par DuckDB `ATTACH ... TYPE postgres`, pas par psycopg2.
 
 [dependency-groups]
 dev = ["ruff==0.15.16", "pytest", "pytest-cov"]
