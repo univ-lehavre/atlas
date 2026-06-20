@@ -1,0 +1,27 @@
+# Prod : l'ObjectBucketClaim génère un Secret (AWS_*) ET un ConfigMap (BUCKET_*)
+# du nom de la claim. La code-location branche les deux.
+#
+# DAGSTER_CURRENT_IMAGE est l'image que le K8sRunLauncher donne aux pods de RUN
+# (run workers). kustomize `images:` ne réécrit QUE le champ `image:` du
+# conteneur, pas cette valeur d'env — on l'aligne ici explicitement sur le tag
+# de prod, sinon le serveur gRPC tournerait sur le bon tag mais les runs sur
+# `:dev` (code divergent). Tenir ce tag synchronisé avec `images[].newTag` de
+# la kustomization.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: citation-dagster
+  namespace: dagster
+spec:
+  template:
+    spec:
+      containers:
+        - name: grpc
+          env:
+            - name: DAGSTER_CURRENT_IMAGE
+              value: registry:80/citation-dagster:0.0.0 # exemple ; = images[].newTag
+          envFrom:
+            - secretRef:
+                name: atlas-datalake
+            - configMapRef:
+                name: atlas-datalake

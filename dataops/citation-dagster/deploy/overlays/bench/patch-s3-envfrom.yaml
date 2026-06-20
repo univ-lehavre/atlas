@@ -1,0 +1,14 @@
+# Banc : un Secret unique (SeaweedFS) porte AWS_* ET BUCKET_*.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: citation-dagster
+  namespace: dagster
+spec:
+  template:
+    spec:
+      containers:
+        - name: grpc
+          envFrom:
+            - secretRef:
+                name: citation-s3-access

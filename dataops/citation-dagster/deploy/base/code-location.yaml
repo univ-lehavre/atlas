@@ -42,12 +42,19 @@ spec:
               value: api/v1/lineage
             - name: OPENLINEAGE_NAMESPACE
               value: dagster
-          # Accès S3 du lakehouse : creds + endpoint depuis un Secret/ConfigMap.
-          # Au banc léger = SeaweedFS (citation-s3-access) ; en prod = Secret +
-          # ConfigMap de l'ObjectBucketClaim Ceph (voir objectbucketclaim.yaml).
-          envFrom:
-            - secretRef:
-                name: citation-s3-access
+            # Suivi de modèles MLflow → serveur du socle (contrat cluster,
+            # ADR 0062). FQDN intra-cluster identique banc ↔ prod. Le code
+            # (drift Evidently, instrumentation CT) logue runs/params/métriques
+            # ici ; sans cette variable, le logging best-effort tombe en no-op
+            # silencieux. L'egress dagster→mlflow:5000 est ouvert côté cluster
+            # (allow-mlflow-egress, univ-lehavre/cluster#407).
+            - name: MLFLOW_TRACKING_URI
+              value: http://mlflow.mlflow.svc.cluster.local:5000
+          # Accès S3 du lakehouse (creds + endpoint) : injecté par overlay, car
+          # la SOURCE diffère selon le profil — banc léger = Secret SeaweedFS
+          # (overlays/bench) ; prod = Secret + ConfigMap de l'ObjectBucketClaim
+          # Ceph (overlays/prod). Les NOMS de variables (AWS_*/BUCKET_*) sont
+          # identiques des deux côtés, donc le code de l'asset est inchangé.
           readinessProbe:
             tcpSocket:
               port: 4000

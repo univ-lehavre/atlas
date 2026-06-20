@@ -168,7 +168,7 @@ Le contrat machine-lisible (`cluster/contract/*.example.yaml`, `contract_version
 
 1. Faire de la **Phase 3 le vrai livrable-cible bloquant**, dès le départ — c'est elle, pas l'e2e, qui attrape >80 % de la dérive (rename de Service, rotation de Secret) au moment de la revue.
 2. Reconnaître que, projet **bus-factor 1** avec un banc 30 min non-CI-able, la cohérence fine du contrat **restera partiellement tenue par discipline** — et que la **fusion ne résoudrait pas ce point** (la virtualisation imbriquée ne rentre pas davantage dans un runner GitHub après fusion).
-3. Calibrer le smoke-test e2e sur les profils distincts déjà présents (`s3-access.bench.yaml` banc vs `objectbucketclaim.prod.yaml` prod) pour éviter les faux positifs qui le feraient désactiver.
+3. Calibrer le smoke-test e2e sur les profils distincts déjà présents (overlays kustomize `overlays/bench` SeaweedFS vs `overlays/prod` ObjectBucketClaim Ceph) pour éviter les faux positifs qui le feraient désactiver.
 4. Inscrire le **seuil de bascule** : _si_ le consommateur TS du Parquet est écrit **et** la charge data croît, rouvrir la question (c) en évaluant **dataops complet (Dagster + dbt) → cluster**.
 
 ## Journal d'exécution

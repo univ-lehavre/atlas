@@ -1,0 +1,21 @@
+# Accès S3 du lakehouse — profil PROD (RGW Ceph, ObjectBucketClaim).
+#
+# Rook provisionne le bucket et génère DEUX ressources du nom de la claim
+# (`atlas-datalake`), dans le namespace `dagster` :
+#   - un Secret `atlas-datalake` : AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY ;
+#   - un ConfigMap `atlas-datalake` : BUCKET_HOST / BUCKET_PORT / BUCKET_NAME.
+# La code-location les consomme via `envFrom` (patch-s3-envfrom.yaml) — mêmes NOMS
+# de variables qu'au banc SeaweedFS, donc le code de l'asset `raw_snapshot` est
+# identique banc ↔ prod ; seule la source (1 Secret au banc ; Secret + ConfigMap
+# en prod) change, d'où l'injection par overlay.
+#
+# StorageClass `rook-ceph-datalake` : la SC bucket exposée par le socle
+# (contract/storage-classes.example.yaml → object_store.bucket_storage_class).
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: atlas-datalake
+  namespace: dagster
+spec:
+  generateBucketName: atlas-datalake
+  storageClassName: rook-ceph-datalake
