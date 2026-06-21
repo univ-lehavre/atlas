@@ -64,14 +64,5 @@ select
     count(*) filter (where direction = 'a_to_b')      as a_to_b,
     count(*) filter (where direction = 'b_to_a')      as b_to_a
 from canonical
--- Garde-fou de contrat : ne jamais émettre de paire à clé nulle. Sur un jeu sans
--- arête auteur→auteur (échantillon où les œuvres citées n'ont pas d'auteur
--- co-ingéré → canonical vide), la matérialisation externe DuckDB peut écrire une
--- ligne fantôme author_a/author_b NULL qui viole le contrat not_null du mart et
--- fait échouer le check GE bloquant ge_marts_collab. Ce filtre garantit un mart
--- soit vide, soit à clés non nulles — sans retirer aucune paire réelle (author_a/
--- author_b sont non nuls par construction : least()/greatest() sur des author_id
--- non nuls, l'auto-citation étant déjà écartée en amont).
-where author_a is not null and author_b is not null
 group by author_a, author_b
 order by author_a, author_b

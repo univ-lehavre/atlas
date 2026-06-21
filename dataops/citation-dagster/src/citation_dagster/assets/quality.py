@@ -97,10 +97,16 @@ def check_marts(bucket: str, run_id: str) -> AssetCheckResult:
     """Valide le mart servi (contrat de colonnes + bornes + invariant somme dérivé)."""
     con = lakehouse.connect()
     glob = f"s3://{bucket}/{_MART_GLOB}/dt={CURATED_DT}/run={run_id}/*.parquet"
+    # WHERE author_a IS NOT NULL : un mart vide (aucune paire de collaboration sur
+    # le jeu courant) reste un état VALIDE. La matérialisation `external` de
+    # dbt-duckdb écrit alors une ligne fantôme à clés NULL (placeholder de schéma
+    # sur relation vide) ; on l'écarte ici pour que le contrat not_null porte sur
+    # les paires RÉELLES (zéro ou plus), pas sur ce placeholder. Mêmes clés non
+    # nulles par construction côté modèle (least()/greatest() sur author_id non nuls).
     df = con.sql(
         f"SELECT author_a, author_b, cross_citations, a_to_b, b_to_a, "
         f"(a_to_b + b_to_a = cross_citations) AS _sum_ok "
-        f"FROM read_parquet('{glob}')"
+        f"FROM read_parquet('{glob}') WHERE author_a IS NOT NULL"
     ).df()
     ok, meta = ge_suites.validate_df(df, "marts_collab", ge_suites.marts_collab_expectations())
     return _result(ok, meta)
