@@ -191,8 +191,7 @@ def _count_rows(bucket: str, dt: str, run_id: str, mart_subdir: str = _MART_SUBD
     con = lakehouse.connect()
     glob = f"s3://{bucket}/{mart_subdir}/{partition_str(dt, run_id)}/*.parquet"
     return con.sql(
-        f"SELECT count(*) FROM read_parquet('{glob}') "
-        "WHERE NOT (COLUMNS(*) IS NULL)"
+        f"SELECT count(*) FROM read_parquet('{glob}') WHERE NOT (COLUMNS(*) IS NULL)"
     ).fetchone()[0]
 
 
