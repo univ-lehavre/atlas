@@ -30,12 +30,17 @@ from openlineage.client.event_v2 import Dataset, Job, Run, RunEvent, RunState
 from openlineage.client.uuid import generate_new_uuid
 from pydantic import Field
 
+from citation_dagster import lakehouse
 from citation_dagster.resources import (
     CephTarget,
     ceph_target_from_env,
     render_rclone_config,
 )
 from citation_dagster.watermark import read_watermark, write_watermark
+
+# Partition RÉSERVÉE des authors dérivés (mode échantillon cohérent, ADR 0063). Valeur
+# non-date pour ne JAMAIS entrer en collision avec une partition réelle updated_date=YYYY-MM-DD.
+_COHERENT_AUTHORS_PARTITION = "updated_date=coherent-sample"
 
 # Bucket source externe (en prose uniquement ; jamais dans un identifiant interne).
 _SOURCE_BUCKET = "openalex"
@@ -66,6 +71,21 @@ class RawSnapshotConfig(Config):
 
     ``None`` (cas normal) : l'incrémental traite les partitions postérieures au
     watermark (bornées par ``max_partitions``).
+    """
+
+    coherent_sample: bool = False
+    """Mode « échantillon cohérent » pour les **petits bancs** (ADR 0063 ; OFF par défaut).
+
+    Sur un petit banc, les tranches ``works`` et ``authors`` ingérées par date sont
+    **disjointes** : les ``author_id`` cités par les works échantillonnés sont quasi
+    absents de l'échantillon d'``authors`` → clés étrangères pendantes (tests dbt
+    ``relationships``). Activé, ce mode **dérive** après le sync des works une tranche
+    ``authors`` contenant EXACTEMENT les auteurs cités, depuis les objets ``author``
+    inline (``id``/``display_name``/``orcid``) de ``works.authorships``. Écrite sous la
+    partition réservée ``updated_date=coherent-sample``. N'altère aucune tranche réelle.
+
+    **Banc uniquement** : en prod, laisser ``False`` (snapshot complet = cohérence native,
+    ADR 0054). Requiert ``works`` dans ``entities``.
     """
 
 
@@ -346,6 +366,44 @@ def _sync_one_entity(
     }
 
 
+def _derive_coherent_authors(bucket: str) -> int:
+    """Dérive une tranche ``authors`` cohérente depuis les works (mode banc, ADR 0063).
+
+    Écrit sous ``raw/authors/<partition réservée>/`` un JSONL.gz contenant EXACTEMENT
+    les auteurs cités par les works déjà synchronisés, depuis les objets ``author`` inline
+    (``id``/``display_name``/``orcid``) de ``works.authorships``. ``works_count`` et
+    ``cited_by_count`` (absents de l'inline, non contraints par les suites GE / tests
+    ``relationships``) sont mis à ``0``. Renvoie le nombre d'auteurs dérivés.
+
+    Lecture/écriture via DuckDB↔S3 (backend lakehouse, ADR 0055) : ``COPY … (FORMAT JSON,
+    COMPRESSION gzip)`` produit le même JSONL.gz que la source, relu par dbt à l'identique.
+    """
+    con = lakehouse.connect()
+    src = f"s3://{bucket}/raw/works/**/*.gz"
+    dest = f"s3://{bucket}/raw/authors/{_COHERENT_AUTHORS_PARTITION}/part_0000.gz"
+    # DISTINCT sur author.id ; un auteur peut être cité par plusieurs works.
+    con.execute(
+        f"""
+        COPY (
+            SELECT DISTINCT
+                ash.author.id           AS id,
+                ash.author.orcid        AS orcid,
+                ash.author.display_name AS display_name,
+                0                       AS works_count,
+                0                       AS cited_by_count
+            FROM (
+                SELECT unnest(authorships) AS ash
+                FROM read_json_auto('{src}', hive_partitioning=false, union_by_name=true)
+            ) t
+            WHERE ash.author.id IS NOT NULL
+        ) TO '{dest}' (FORMAT JSON, COMPRESSION gzip)
+        """
+    )
+    return con.sql(
+        f"SELECT count(*) FROM read_json_auto('{dest}', hive_partitioning=false)"
+    ).fetchone()[0]
+
+
 @asset(name="raw_snapshot", group_name="ingestion")
 def raw_snapshot(config: RawSnapshotConfig) -> MaterializeResult:
     """Sync incrémental borné du snapshot OpenAlex (works + authors + merged_ids) vers ``raw/``."""
@@ -360,6 +418,14 @@ def raw_snapshot(config: RawSnapshotConfig) -> MaterializeResult:
         results = [_sync_one_entity(e, config, target, config_path) for e in config.entities]
         _emit_lineage(RunState.COMPLETE, run_id, config.entities, target.bucket)
 
+    # Mode banc (ADR 0063) : rendre l'échantillon cohérent (authors cités par les works)
+    # APRÈS le sync, pour que les tests dbt relationships passent sur un petit banc.
+    coherent_authors = 0
+    if config.coherent_sample:
+        if "works" not in config.entities:
+            raise Failure(description="coherent_sample exige « works » dans entities (ADR 0063)")
+        coherent_authors = _derive_coherent_authors(target.bucket)
+
     total_files = sum(r["files"] for r in results)
     total_merged = sum(r["merged_files"] for r in results)
     watermarks = ", ".join(f"{r['entity']}={r['watermark']}" for r in results)
@@ -370,5 +436,6 @@ def raw_snapshot(config: RawSnapshotConfig) -> MaterializeResult:
             "watermarks": MetadataValue.text(watermarks),
             "entities": MetadataValue.text(", ".join(config.entities)),
             "bucket": MetadataValue.text(f"{target.bucket}/raw"),
+            "coherent_authors": MetadataValue.int(coherent_authors),
         }
     )

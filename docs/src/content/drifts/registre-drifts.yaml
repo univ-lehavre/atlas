@@ -17,7 +17,7 @@
 #   correctif : ce qui a été fait
 #   statut    : corrige | caduc (contexte abandonné) | ouvert
 #
-# Couverture : D1–D22 (pipeline OpenAlex/Dagster + transformations dbt, juin 2026).
+# Couverture : D1–D23 (pipeline OpenAlex/Dagster + transformations dbt, juin 2026).
 
 - id: D1
   campagne: "pipeline OpenAlex/Dagster — premier run sur le banc"
@@ -379,4 +379,26 @@
     et @effect/platform-node. Un seuil d'override périmé casse check-audit (dette racine).
   correctif: >-
     Relever l'override undici à « >=7.28.0 <8 » + pnpm install. audit:security repasse vert.
+  statut: corrige
+
+- id: D23
+  campagne: "E2E OpenAlex banc Lima — échantillon works/authors disjoint"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    transform_job échoue aux tests dbt relationships : 903 authorships.author_id et 7658
+    marts_researchers.author_id pointent vers des auteurs absents de la table authors
+    (clés étrangères pendantes).
+  cause: >-
+    raw_snapshot ingère works et authors par FICHIERS, partition par date (ADR 0054). Sur
+    un petit banc, les tranches sont DISJOINTES : les works (p. ex. 2016) citent ~856
+    auteurs précis, quasi absents de l'échantillon d'authors (p. ex. 2026). Structurel à
+    l'échantillonnage borné par fichiers (OpenAlex partitionne par updated_date, pas par
+    contenu) ; en prod (snapshot complet) la cohérence est native.
+  correctif: >-
+    Mode « échantillon cohérent » opt-in dans raw_snapshot (config coherent_sample, OFF par
+    défaut, ADR 0063) : après le sync des works, dérive une tranche authors contenant
+    EXACTEMENT les auteurs cités, depuis les objets author inline (id/display_name/orcid) de
+    works.authorships, écrite sous la partition réservée updated_date=coherent-sample.
+    Vérifié au banc : 0 FK manquante, dbt PASS=69, transform_job RUN_SUCCESS sans seed manuel.
   statut: corrige
