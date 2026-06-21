@@ -179,10 +179,21 @@ def _hashsum(prefix: str, config_path: Path) -> dict[str, str]:
 
 
 def _count_rows(bucket: str, dt: str, run_id: str, mart_subdir: str = _MART_SUBDIR) -> int:
-    """Compte les lignes de l'artefact via DuckDB (lecture Parquet sur le glob de la partition)."""
+    """Compte les lignes RÉELLES de l'artefact via DuckDB (Parquet du glob de la partition).
+
+    Exclut la ligne fantôme à TOUTES colonnes nulles que la matérialisation ``external``
+    de dbt-duckdb écrit sur une relation VIDE (placeholder de schéma). Sans ce filtre,
+    un mart légitimement vide donnerait ``row_count = 1`` — un compte faux qui, confronté
+    au sha256 des octets par un consommateur, casserait le contrat du manifest. Le filtre
+    est agnostique du mart (``COLUMNS(*) IS NULL`` couvre toute colonne) : un mart non vide
+    n'a aucune ligne entièrement nulle, donc le compte est inchangé pour les cas réels.
+    """
     con = lakehouse.connect()
     glob = f"s3://{bucket}/{mart_subdir}/{partition_str(dt, run_id)}/*.parquet"
-    return con.sql(f"SELECT count(*) FROM read_parquet('{glob}')").fetchone()[0]
+    return con.sql(
+        f"SELECT count(*) FROM read_parquet('{glob}') "
+        "WHERE NOT (COLUMNS(*) IS NULL)"
+    ).fetchone()[0]
 
 
 def _write_manifest_last(prefix: str, payload: str, config_path: Path) -> None:
