@@ -65,3 +65,55 @@ updates:
         applies-to: version-updates
         patterns:
           - "*"
+
+  # ---------------------------------------------------------------------------
+  # pip — code-location DataOps (Python natif, ADR 0055 ; hors graphe pnpm)
+  # ---------------------------------------------------------------------------
+  # Sans ce bloc, Dependabot ouvrait une PR PAR paquet Python (bruit) et
+  # proposait des bumps INGÉRABLES car la stack est verrouillée par alignement
+  # de versions (chart Helm Dagster ↔ paquets Python, ADR cluster 0006) :
+  # dagster 1.13.7 ↔ dagster-dbt/dagster-postgres/dagster-k8s 0.29.7, et la
+  # chaîne dbt (dbt-core/dbt-common/dbt-adapters) + deepdiff<8 qu'épingle
+  # dagster-dbt. On groupe minor/patch en une PR et on IGNORE les paquets dont
+  # la version est contrainte (un bump y casse la résolution / l'alignement).
+  - package-ecosystem: "pip"
+    directory: "/dataops/citation-dagster"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 1
+    labels:
+      - "dependencies"
+      - "automation"
+    commit-message:
+      prefix: "chore"
+      include: "scope"
+    groups:
+      # Tous les minor + patch dans une seule PR par run.
+      dataops-minor-patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      # Verrouillés par l'alignement Dagster (ADR cluster 0006) : ne bumper
+      # qu'en relevant dagster core de façon coordonnée, jamais par Dependabot.
+      - dependency-name: "dagster"
+      - dependency-name: "dagster-dbt"
+      - dependency-name: "dagster-postgres"
+      - dependency-name: "dagster-k8s"
+      # Chaîne dbt épinglée par dagster-dbt==0.29.7 (dont deepdiff<8) : un bump
+      # rétrograde dbt-core et rompt l'alignement (cf. dependency-review.yml).
+      - dependency-name: "dbt-core"
+      - dependency-name: "dbt-common"
+      - dependency-name: "dbt-adapters"
+      - dependency-name: "dbt-duckdb"
+      - dependency-name: "deepdiff"
+      # Majors écartés globalement (alignement à valider à la main) ; les
+      # minor/patch des autres paquets restent suivis et groupés.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

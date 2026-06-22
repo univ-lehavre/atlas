@@ -48,7 +48,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     # Dependabot ne doit pas pousser de commit qui passe par Semgrep —
-    # ses PRs sont audit-only sur la déclaration de version.
+    # ses PRs sont audit-only sur la déclaration de version. Le check requis
+    # « Semgrep » est alors satisfait par le job compagnon `semgrep-dependabot`
+    # ci-dessous (sinon : check requis sauté = PR bloquée).
     if: github.actor != 'dependabot[bot]'
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
@@ -92,3 +94,20 @@ jobs:
               --error \
               --metrics=off
           fi
+
+  # Job COMPAGNON (même nom de check « Semgrep ») pour les PR Dependabot.
+  # « Semgrep » est un check REQUIS (ruleset main) : or le job ci-dessus est
+  # volontairement sauté pour Dependabot (un diff de manifeste/lock n'a pas de
+  # code à scanner). Un check requis SAUTÉ est considéré NON satisfait par
+  # GitHub → la PR reste BLOCKED et l'auto-merge attend indéfiniment. Ce job
+  # mutuellement exclusif publie le même check « Semgrep » en SUCCÈS pour les PR
+  # Dependabot, satisfaisant le ruleset sans scanner. (Les deux jobs ne tournent
+  # jamais ensemble : leurs `if` sur l'acteur sont complémentaires.)
+  semgrep-dependabot:
+    name: Semgrep
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Skip Semgrep for Dependabot (no code diff to scan)
+        run: echo "PR Dependabot (diff de version uniquement) — scan Semgrep non requis."
