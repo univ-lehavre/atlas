@@ -58,7 +58,12 @@ overrides:
   fast-uri: ">=3.1.2"
   fast-xml-parser: ">=5.7.2"
   flatted: ">=3.4.2"
-  "js-yaml@>=4.0.0 <4.2.0": ">=4.2.0"
+  # Plancher 4.2.0 (advisory merge-key DoS) ET plafond <5 : js-yaml 5.x est
+  # ESM-only (plus d'export `default`), or @astrojs/internal-helpers fait
+  # `import yaml from "js-yaml"` → `astro build` casse (« does not provide an
+  # export named 'default' », job Documentation). La 4.x couvre l'advisory ; la
+  # 5.x n'apporte rien ici. À relever quand Astro consommera js-yaml 5 (named).
+  "js-yaml@>=4.0.0 <5": ">=4.2.0 <5"
   lodash: ">=4.18.1"
   lodash-es: ">=4.18.1"
   minimatch: ">=10.2.5"
