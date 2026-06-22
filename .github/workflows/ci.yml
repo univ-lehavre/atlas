@@ -32,7 +32,7 @@ jobs:
     outputs:
       code: ${{ steps.filter.outputs.code }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
 
@@ -89,7 +89,7 @@ jobs:
       RUN: ${{ needs.changes.outputs.code == 'true' }}
     steps:
       - if: env.RUN == 'true'
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - if: env.RUN == 'true'
         uses: ./.github/actions/setup-workspace
@@ -113,7 +113,7 @@ jobs:
       RUN: ${{ needs.changes.outputs.code == 'true' }}
     steps:
       - if: env.RUN == 'true'
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - if: env.RUN == 'true'
         uses: ./.github/actions/setup-workspace
@@ -137,7 +137,7 @@ jobs:
       RUN: ${{ needs.changes.outputs.code == 'true' }}
     steps:
       - if: env.RUN == 'true'
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - if: env.RUN == 'true'
         uses: ./.github/actions/setup-workspace
@@ -176,7 +176,7 @@ jobs:
       RUN: ${{ needs.changes.outputs.code == 'true' }}
     steps:
       - if: env.RUN == 'true'
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - if: env.RUN == 'true'
         uses: ./.github/actions/setup-workspace
@@ -202,7 +202,7 @@ jobs:
     # ci-dessous). Il peut donc tourner en parallèle de Build.
     needs: [changes]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
 
@@ -223,7 +223,7 @@ jobs:
       RUN: ${{ needs.changes.outputs.code == 'true' }}
     steps:
       - if: env.RUN == 'true'
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           # Historique complet requis : `docs:generate:check` régénère la page
           # d'évolution (docs/quality/evolution-git.md) à partir de `git log`
@@ -314,12 +314,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       # Catégorie dataops/ (Python, ADR 0055) : mêmes exigences de qualité que le
       # code Node (ruff + pytest + couverture à seuil). pnpm orchestre (scripts
       # lint:python / test:python), uv exécute le toolchain Python.
-      - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
+      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
 
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
