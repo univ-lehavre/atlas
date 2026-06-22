@@ -35,9 +35,13 @@ spec:
             # Sans elle, le launcher échoue (« dagster/image … Got None »).
             - name: DAGSTER_CURRENT_IMAGE
               value: registry:80/citation-dagster:dev
-            # Lineage OpenLineage → Marquez (contrat cluster).
+            # Lineage OpenLineage → Marquez (contrat cluster). host en forme COURTE
+            # `marquez.marquez` (<svc>.<ns>) et NON le FQDN `…svc.cluster.local` : en prod,
+            # un search domain externe (resolv.conf, ndots:5) fait timeouter la résolution
+            # du FQDN complet (cf. univ-lehavre/cluster#458). La forme <svc>.<ns> résout via
+            # le 1er search domain ; cross-ns (marquez≠dagster) donc le nom nu ne suffit pas.
             - name: OPENLINEAGE_URL
-              value: http://marquez.marquez.svc.cluster.local:5000
+              value: http://marquez.marquez:5000
             - name: OPENLINEAGE_ENDPOINT
               value: api/v1/lineage
             - name: OPENLINEAGE_NAMESPACE
@@ -48,8 +52,10 @@ spec:
             # ici ; sans cette variable, le logging best-effort tombe en no-op
             # silencieux. L'egress dagster→mlflow:5000 est ouvert côté cluster
             # (allow-mlflow-egress, univ-lehavre/cluster#407).
+            # host COURT `mlflow.mlflow` (<svc>.<ns>) — même raison DNS que OPENLINEAGE_URL
+            # ci-dessus (FQDN complet timeoute en prod, search domain externe + ndots:5).
             - name: MLFLOW_TRACKING_URI
-              value: http://mlflow.mlflow.svc.cluster.local:5000
+              value: http://mlflow.mlflow:5000
           # Accès S3 du lakehouse (creds + endpoint) : injecté par overlay, car
           # la SOURCE diffère selon le profil — banc léger = Secret SeaweedFS
           # (overlays/bench) ; prod = Secret + ConfigMap de l'ObjectBucketClaim
