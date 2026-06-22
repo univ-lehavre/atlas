@@ -45,7 +45,7 @@
   "dependencies": {
     "@univ-lehavre/atlas-net": "workspace:*",
     "@univ-lehavre/atlas-crf-core": "workspace:*",
-    "effect": "~3.21.3"
+    "effect": "~3.21.4"
   },
   "devDependencies": {
     "@effect/vitest": "^0.29.0",
@@ -55,7 +55,7 @@
     "openapi-typescript": "^7.13.0",
     "prettier": "^3.8.4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   },
   "publishConfig": {
     "access": "public"

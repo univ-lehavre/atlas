@@ -32,12 +32,12 @@
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
-    "@clack/prompts": "~1.5.1",
+    "@clack/prompts": "~1.6.0",
     "@effect/experimental": "~0.60.0",
     "@univ-lehavre/atlas-citation-types": "workspace:*",
     "@univ-lehavre/atlas-citation-validate": "workspace:*",
     "@univ-lehavre/atlas-cli-toolkit": "workspace:*",
-    "effect": "~3.21.3"
+    "effect": "~3.21.4"
   },
   "devDependencies": {
     "@types/node": "^25.9.3",
@@ -45,7 +45,7 @@
     "eslint": "^10.5.0",
     "prettier": "^3.8.4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   },
   "publishConfig": {
     "access": "public"
