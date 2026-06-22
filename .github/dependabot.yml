@@ -113,6 +113,16 @@ updates:
       - dependency-name: "dbt-adapters"
       - dependency-name: "dbt-duckdb"
       - dependency-name: "deepdiff"
+      # onnxruntime : verrouillé par l'image python:3.10-slim (parité Dagster,
+      # ADR cluster 0006). À partir de 1.24, onnxruntime ne publie PLUS de wheel
+      # cp310 → `uv` ne résout plus du tout (CI DataOps en échec immédiat, #418).
+      # À ne bumper qu'avec une montée coordonnée de la version de Python.
+      - dependency-name: "onnxruntime"
+      # evidently : l'API a été RÉÉCRITE entre 0.4 et 0.6+ (ColumnMapping,
+      # EmbeddingsDriftMetric, Report.as_dict() supprimés/déplacés). Un bump casse
+      # `assets/drift.py` — c'est un chantier de réécriture, pas une MAJ auto (#418).
+      # Épinglé à la ligne 0.4.x tant que drift.py n'est pas porté à la nouvelle API.
+      - dependency-name: "evidently"
       # Majors écartés globalement (alignement à valider à la main) ; les
       # minor/patch des autres paquets restent suivis et groupés.
       - dependency-name: "*"
