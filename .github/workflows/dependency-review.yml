@@ -103,7 +103,28 @@ jobs:
           # regex est Apache-2.0 AND CNRI-Python (CNRI permissive, hors allowlist),
           # statsmodels est BSD AND un « public-domain-disclaimer » LicenseRef qui
           # casse l'expression composée. Exceptions ciblées par paquet.
+          #
+          # Run worker Dagster (ADR 0063/0086 ; ADR 0055 : Python hors gate Node) :
+          # dagster-postgres et dagster-k8s (Apache-2.0, métadonnées PyPI nulles →
+          # « unknown ») sont REQUIS dans l'image code-location pour que le pod de run
+          # du K8sRunLauncher rehydrate l'instance Postgres. Leurs transitifs neufs :
+          # - aiohttp (Apache-2.0 AND MIT, remonté « unknown ») et la chaîne aio-libs
+          #   (aiosignal/frozenlist/propcache/yarl/multidict/async-timeout : Apache-2.0,
+          #   déjà dans l'allowlist) ;
+          # - aiohappyeyeballs : RÉELLEMENT PSF-2.0 (permissive) ; scancode y détecte un
+          #   « GPL-1.0-or-later » fantôme via une expression composée → faux positif ;
+          # - psycopg2-binary : SEUL vrai copyleft (LGPL-2.0/3.0). Risque résiduel ASSUMÉ
+          #   et borné : extension C liée DYNAMIQUEMENT (usage LGPL standard), tirée par
+          #   dagster-postgres, jamais modifiée ni redistribuée comme œuvre dérivée, et
+          #   confinée au pod de run. Le code applicatif n'utilise JAMAIS psycopg2
+          #   directement (index_load passe par DuckDB ATTACH TYPE postgres). À retirer si
+          #   dagster-postgres offre un backend non-LGPL.
           allow-dependencies-licenses: >-
+            pkg:pypi/dagster-postgres,
+            pkg:pypi/dagster-k8s,
+            pkg:pypi/aiohttp,
+            pkg:pypi/aiohappyeyeballs,
+            pkg:pypi/psycopg2-binary,
             pkg:npm/%40sentry/cli,
             pkg:npm/%40sentry/cli-darwin,
             pkg:npm/%40sentry/cli-linux-arm,

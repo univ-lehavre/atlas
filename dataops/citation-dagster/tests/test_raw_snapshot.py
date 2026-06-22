@@ -1,6 +1,7 @@
 """Tests de l'asset de sync incrémental ``raw_snapshot`` (rclone mocké)."""
 
 import subprocess
+import sys
 
 import pytest
 from dagster import Failure, build_asset_context
@@ -155,3 +156,121 @@ def test_merged_watermark_independent_no_silent_loss(env):
     last = merged_payloads[-1]
     assert '"merged_ids:works": "2024-01-05"' in last, "n'avance qu'au fichier copié"
     assert "2026-03-29" not in last, "ne dépasse JAMAIS le dernier fichier copié (anti-perte)"
+
+
+# ── Mode échantillon cohérent (ADR 0063) ─────────────────────────────────────
+
+
+def test_coherent_sample_requires_works(env):
+    """Garde-fou : coherent_sample sans « works » dans entities échoue (ADR 0063)."""
+    fake = FakeRclone(watermark_json="")
+    env.setattr(subprocess, "run", fake)
+    with pytest.raises(Failure):
+        raw_snapshot(
+            build_asset_context(),
+            RawSnapshotConfig(entities=["authors"], coherent_sample=True),
+        )
+
+
+# Le module est ombré dans le namespace `assets` par l'asset homonyme (assets/__init__
+# ré-exporte `raw_snapshot`) : on récupère le VRAI module via sys.modules pour patcher.
+_RS_MODULE = sys.modules["citation_dagster.assets.raw_snapshot"]
+
+
+def test_coherent_sample_derives_authors(env, monkeypatch):
+    """coherent_sample=True dérive les authors APRÈS le sync et reporte le compte."""
+    called = {}
+
+    def fake_derive(bucket):
+        called["bucket"] = bucket
+        return 42
+
+    monkeypatch.setattr(_RS_MODULE, "_derive_coherent_authors", fake_derive)
+    fake = FakeRclone(watermark_json="")
+    result = _run(env, fake, coherent_sample=True)
+    assert called["bucket"] == "atlas-datalake-x"
+    assert result.metadata["coherent_authors"].value == 42
+
+
+def test_coherent_sample_off_by_default(env, monkeypatch):
+    """Par défaut (OFF), aucune dérivation : compte 0, _derive non appelé."""
+
+    def _boom(bucket):
+        raise AssertionError("ne doit pas être appelé")
+
+    monkeypatch.setattr(_RS_MODULE, "_derive_coherent_authors", _boom)
+    fake = FakeRclone(watermark_json="")
+    result = _run(env, fake)
+    assert result.metadata["coherent_authors"].value == 0
+
+
+def test_derive_coherent_authors_sql_extracts_distinct_inline_authors(tmp_path):
+    """La logique de dérivation (DuckDB) : authors distincts depuis l'inline des works.
+
+    Hermétique (DuckDB en mémoire, fichiers locaux, aucun S3) : on valide le SELECT
+    embarqué par _derive_coherent_authors — DISTINCT sur author.id, champs id/orcid/
+    display_name conservés, works_count/cited_by_count à 0.
+    """
+    import gzip
+    import json
+
+    import duckdb
+
+    # Deux works ; l'auteur A1 cité par les deux (doit être dédupliqué), A2 par un seul.
+    works = [
+        {
+            "id": "https://openalex.org/W1",
+            "authorships": [
+                {
+                    "author": {
+                        "id": "https://openalex.org/A1",
+                        "display_name": "Alice",
+                        "orcid": None,
+                    }
+                },
+                {
+                    "author": {
+                        "id": "https://openalex.org/A2",
+                        "display_name": "Bob",
+                        "orcid": "0000-0002",
+                    }
+                },
+            ],
+        },
+        {
+            "id": "https://openalex.org/W2",
+            "authorships": [
+                {
+                    "author": {
+                        "id": "https://openalex.org/A1",
+                        "display_name": "Alice",
+                        "orcid": None,
+                    }
+                },
+                {"author": {"id": None, "display_name": "Anon", "orcid": None}},  # ignoré (id nul)
+            ],
+        },
+    ]
+    src = tmp_path / "part_0000.gz"
+    with gzip.open(src, "wt") as fh:
+        for w in works:
+            fh.write(json.dumps(w) + "\n")
+
+    con = duckdb.connect()
+    rows = con.execute(
+        f"""
+        SELECT DISTINCT
+            ash.author.id AS id, ash.author.orcid AS orcid,
+            ash.author.display_name AS display_name, 0 AS works_count, 0 AS cited_by_count
+        FROM (SELECT unnest(authorships) AS ash
+              FROM read_json_auto('{src}', hive_partitioning=false, union_by_name=true)) t
+        WHERE ash.author.id IS NOT NULL
+        ORDER BY id
+        """
+    ).fetchall()
+    assert [r[0] for r in rows] == [
+        "https://openalex.org/A1",
+        "https://openalex.org/A2",
+    ]  # A1 dédupliqué, id nul écarté
+    assert rows[0] == ("https://openalex.org/A1", None, "Alice", 0, 0)
+    assert rows[1] == ("https://openalex.org/A2", "0000-0002", "Bob", 0, 0)

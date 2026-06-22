@@ -113,6 +113,34 @@ def test_build_manifest_raises_on_keyset_mismatch():
         cm.build_manifest("2020-01", "r1", 1, {"a.parquet": 10}, {"b.parquet": "a" * 64}, "t")
 
 
+def test_count_rows_ignores_all_null_phantom_row(tmp_path):
+    """La ligne fantôme à toutes colonnes nulles (mart vide, matérialisation external
+    dbt-duckdb) ne doit PAS être comptée ; les lignes réelles le restent. Hermétique
+    (DuckDB en mémoire, aucun Docker) : on valide le PRÉDICAT de comptage de _count_rows.
+    """
+    import duckdb
+
+    con = duckdb.connect()
+    pred = "WHERE NOT (COLUMNS(*) IS NULL)"  # le filtre embarqué par _count_rows
+
+    # 1) mart « vide » : une seule ligne, toutes colonnes nulles (placeholder).
+    empty = tmp_path / "empty.parquet"
+    con.execute(
+        f"COPY (SELECT NULL::text author_a, NULL::text author_b, NULL::bigint cc) "
+        f"TO '{empty}' (FORMAT parquet)"
+    )
+    assert con.execute(f"SELECT count(*) FROM read_parquet('{empty}')").fetchone()[0] == 1
+    assert con.execute(f"SELECT count(*) FROM read_parquet('{empty}') {pred}").fetchone()[0] == 0
+
+    # 2) mart réel : lignes non nulles → compte inchangé.
+    real = tmp_path / "real.parquet"
+    con.execute(
+        f"COPY (SELECT * FROM (VALUES ('A','B',3),('C','D',1)) t(author_a,author_b,cc)) "
+        f"TO '{real}' (FORMAT parquet)"
+    )
+    assert con.execute(f"SELECT count(*) FROM read_parquet('{real}') {pred}").fetchone()[0] == 2
+
+
 # ── Corps de l'asset piloté par un FakeRclone ────────────────────────────────
 
 _ENV = {

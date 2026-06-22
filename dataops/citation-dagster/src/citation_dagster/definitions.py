@@ -37,9 +37,24 @@ from citation_dagster.dbt import dbt_components
 # de l'op — en mode multiprocess, seule la config run-level configure le pod).
 # Le job de transformation dbt en a besoin AUSSI : dbt-duckdb crée son secret S3
 # depuis l'environnement (profiles.yml + env_var) à l'ouverture de session.
+#
+# Piège ADR 0086 (contrat cluster) : les variables posées sur le Deployment de la
+# code-location gRPC (OPENLINEAGE_URL, MLFLOW_TRACKING_URI…) NE se propagent PAS
+# aux pods de run du K8sRunLauncher. Sans les réinjecter ICI, l'émission de lineage
+# (_emit_lineage no-op si OPENLINEAGE_URL absent) et le logging MLflow (drift/CT)
+# tombent en no-op SILENCIEUX dans le run (run SUCCESS mais rien d'émis). On les
+# déclare donc au niveau du run via container_config.env. Valeurs = mêmes FQDN
+# intra-cluster que le contrat (identiques banc ↔ prod, ADR 0043).
+_RUN_ENV = [
+    {"name": "OPENLINEAGE_URL", "value": "http://marquez.marquez.svc.cluster.local:5000"},
+    {"name": "OPENLINEAGE_ENDPOINT", "value": "api/v1/lineage"},
+    {"name": "OPENLINEAGE_NAMESPACE", "value": "dagster"},
+    {"name": "MLFLOW_TRACKING_URI", "value": "http://mlflow.mlflow.svc.cluster.local:5000"},
+]
 _RUN_K8S_CONFIG = {
     "dagster-k8s/config": {
         "container_config": {
+            "env": _RUN_ENV,
             "env_from": [{"secret_ref": {"name": "citation-s3-access"}}],
         },
     },
@@ -52,6 +67,10 @@ _RUN_K8S_CONFIG = {
 _TRANSFORM_K8S_CONFIG = {
     "dagster-k8s/config": {
         "container_config": {
+            # Mêmes variables de run que _RUN_K8S_CONFIG (lineage + MLflow, piège
+            # ADR 0086) : le drift Evidently et l'instrumentation CT loggent vers
+            # MLflow depuis le pod de run de transform_job.
+            "env": _RUN_ENV,
             "env_from": [
                 {"secret_ref": {"name": "citation-s3-access"}},
                 {"secret_ref": {"name": "pg-role-pgvector"}},

@@ -17,7 +17,7 @@
 #   correctif : ce qui a été fait
 #   statut    : corrige | caduc (contexte abandonné) | ouvert
 #
-# Couverture : D1–D16 (pipeline OpenAlex/Dagster + transformations dbt, juin 2026).
+# Couverture : D1–D23 (pipeline OpenAlex/Dagster + transformations dbt, juin 2026).
 
 - id: D1
   campagne: "pipeline OpenAlex/Dagster — premier run sur le banc"
@@ -269,4 +269,136 @@
     Auto-saut du test si rclone est absent (requires_rclone(), comme le skip Docker du
     fixture MinIO) ; la logique de l'asset reste couverte par les tests FakeRclone (rclone
     mocké). Garde-fou ADR 0057 : un test exigeant un outil hôte non garanti est self-skipping.
+  statut: corrige
+
+# ── E2E OpenAlex COMPLET sur banc Lima (ingestion + transform) — D17–D22 ──────
+- id: D17
+  campagne: "E2E OpenAlex banc Lima — déploiement de la code-location"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    Le pod de RUN (K8sRunLauncher) crashe au démarrage : « Couldn't import module
+    dagster_postgres.run_storage » — avant même d'exécuter l'asset.
+  cause: >-
+    Le run worker EST l'image code-location (lancée depuis DAGSTER_CURRENT_IMAGE) :
+    il doit rehydrater l'instance Dagster du cluster (dagster.yaml → PostgresRunStorage
+    + K8sRunLauncher). Or le pyproject excluait volontairement dagster-postgres et
+    dagster-k8s (« deps de l'orchestrateur seulement ») — hypothèse fausse pour ce
+    modèle d'exécution. Invisible en tests (pas de run K8s).
+  correctif: >-
+    Ajout de dagster-postgres==0.29.7 + dagster-k8s==0.29.7 (numérotation 0.YY.Z comme
+    dagster-dbt, ↔ dagster 1.13.7) aux dépendances de la code-location. psycopg2-binary
+    (LGPL) entre en transitif, assumé côté dataops (Python, hors gate licences Node, ADR 0055).
+  statut: corrige
+
+- id: D18
+  campagne: "E2E OpenAlex banc Lima — check GE du brut"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    Le check GE bloquant ge_raw_contract échoue : DuckDB lève « Invalid Input Error:
+    Map keys must be unique » alors que l'ingestion a réussi.
+  cause: >-
+    check_raw lit le brut OpenAlex en SELECT * : read_json_auto infère le schéma nested
+    COMPLET, dont abstract_inverted_index (objet JSON à clés de mots) converti en MAP ;
+    certains enregistrements réels ont des clés dupliquées → DuckDB rejette. Invisible
+    en tests hermétiques (fixtures propres) ; révélé sur le snapshot réel.
+  correctif: >-
+    Projeter dans check_raw les SEULES colonnes que les suites GE valident (works :
+    id/referenced_works/authorships ; authors : id) au lieu de SELECT * — on ne parse
+    plus les champs non validés. Plus robuste et plus léger.
+  statut: corrige
+
+- id: D19
+  campagne: "E2E OpenAlex banc Lima — lineage + MLflow dans les runs"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    Run SUCCESS mais AUCUN lineage dans Marquez (pas de namespace citation ni de job
+    raw_snapshot) et aucun run MLflow : émission silencieusement en no-op.
+  cause: >-
+    Piège ADR 0086 (contrat cluster) : OPENLINEAGE_URL / MLFLOW_TRACKING_URI posés sur le
+    Deployment de la code-location gRPC NE se propagent PAS aux pods de run du
+    K8sRunLauncher. _emit_lineage est gardé par « if OPENLINEAGE_URL » → no-op ; le logging
+    MLflow du drift idem. La garde validate.sh vérifie la variable dans le MANIFESTE (Deployment),
+    pas dans la config de run → ne détecte pas le trou.
+  correctif: >-
+    Injecter OPENLINEAGE_* + MLFLOW_TRACKING_URI au niveau RUN via container_config.env
+    (tag dagster-k8s/config), pour ingestion_job ET transform_job ; test anti-régression.
+    GOTCHA : après rebuild de la code-location, redémarrer daemon ET webserver (cache gRPC)
+    pour que les nouveaux tags atteignent les runs.
+  statut: corrige
+
+- id: D20
+  campagne: "E2E OpenAlex banc Lima — chargement de l'index (index_load)"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    index_load échoue : « relation "researchers" does not exist » — sur un déploiement neuf,
+    le pipeline ne peut pas charger l'index.
+  cause: >-
+    L'asset index_load CONSOMME le schéma de l'index sans le créer (frontière explicitée dans
+    son docstring + ADR 0058 §4.1 « migrations versionnées »). Or RIEN dans le dépôt ne
+    fournissait ce schéma : la migration supposée appliquée au déploiement n'existait pas.
+  correctif: >-
+    Migration versionnée deploy/migrations/0001_researchers_index.sql : table researchers
+    (embedding vector(384) + index HNSW cosinus, fts tsvector + index GIN, index de partition
+    dt/run), conforme ADR 0058 §4.1/4.2, idempotente. Le branchement d'exécution reste au
+    déployeur (frontière infra) ; le dépôt fournit le SQL.
+  statut: corrige
+
+- id: D21
+  campagne: "E2E OpenAlex banc Lima — mart collab vide (check GE)"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    Le check GE bloquant ge_marts_collab échoue (viole le contrat not_null) alors que le
+    résultat correct est un mart VIDE : le mart contient une ligne à author_a/author_b NULL.
+  cause: >-
+    Sur un jeu sans arête auteur→auteur (les œuvres citées n'ont pas d'auteur co-ingéré →
+    relation vide), la matérialisation « external » de dbt-duckdb écrit un placeholder de
+    schéma à toutes colonnes NULL. Un garde côté MODÈLE (WHERE author_a IS NOT NULL) est
+    inopérant : la ligne ne vient pas du SELECT (qui renvoie 0 ligne) mais de la matérialisation.
+  correctif: >-
+    Filtrer la ligne fantôme au POINT DE LECTURE : check_marts lit WHERE author_a IS NOT NULL
+    → un mart sans paire est un état valide (0 paire réelle). Idem _count_rows du manifest :
+    NOT (COLUMNS(*) IS NULL), agnostique du mart, pour que row_count ne compte pas le placeholder
+    (sinon row_count=1 ≠ sha256 des octets → contrat manifest cassé).
+  statut: corrige
+
+- id: D22
+  campagne: "E2E OpenAlex banc Lima — push de la branche de correctifs"
+  nature: drift-e2e
+  portee: harnais
+  symptome: >-
+    Le pre-push échoue pour tout le monde au hook check-audit (audit:security).
+  cause: >-
+    Override de sécurité undici périmé dans pnpm-workspace.yaml (>=7.25.0) : de nouvelles
+    advisories (GHSA-vmh5-mc38-953g, vxpw-j846-p89q, hm92-r4w5-c3mj + une moderate) exigent
+    >=7.28.0 (bypass TLS, DoS WebSocket, routage cross-origin). undici est transitif via jsdom
+    et @effect/platform-node. Un seuil d'override périmé casse check-audit (dette racine).
+  correctif: >-
+    Relever l'override undici à « >=7.28.0 <8 » + pnpm install. audit:security repasse vert.
+  statut: corrige
+
+- id: D23
+  campagne: "E2E OpenAlex banc Lima — échantillon works/authors disjoint"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    transform_job échoue aux tests dbt relationships : 903 authorships.author_id et 7658
+    marts_researchers.author_id pointent vers des auteurs absents de la table authors
+    (clés étrangères pendantes).
+  cause: >-
+    raw_snapshot ingère works et authors par FICHIERS, partition par date (ADR 0054). Sur
+    un petit banc, les tranches sont DISJOINTES : les works (p. ex. 2016) citent ~856
+    auteurs précis, quasi absents de l'échantillon d'authors (p. ex. 2026). Structurel à
+    l'échantillonnage borné par fichiers (OpenAlex partitionne par updated_date, pas par
+    contenu) ; en prod (snapshot complet) la cohérence est native.
+  correctif: >-
+    Mode « échantillon cohérent » opt-in dans raw_snapshot (config coherent_sample, OFF par
+    défaut, ADR 0063) : après le sync des works, dérive une tranche authors contenant
+    EXACTEMENT les auteurs cités, depuis les objets author inline (id/display_name/orcid) de
+    works.authorships, écrite sous la partition réservée updated_date=coherent-sample.
+    Vérifié au banc : 0 FK manquante, dbt PASS=69, transform_job RUN_SUCCESS sans seed manuel.
   statut: corrige
