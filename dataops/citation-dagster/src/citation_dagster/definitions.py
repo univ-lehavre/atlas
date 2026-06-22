@@ -63,21 +63,39 @@ _RUN_K8S_CONFIG = {
     },
 }
 
-# Le transform_job inclut index_load (étape 4), qui écrit vers Postgres/CNPG : son pod
-# de run a besoin EN PLUS du Secret pg-role-pgvector (POSTGRES_*), au-delà de l'accès S3.
-# Le branchement effectif du Secret au pod relève du déployeur (frontière infra) ; le
-# dépôt l'EXPOSE ici (env_from) sans le garantir.
+# index_load (transform_job, étape 4) écrit l'index pgvector → son pod de run a besoin
+# de POSTGRES_HOST/PORT/DB/USER/PASSWORD (resources.postgres_target_from_env, qui LÈVE
+# si absents). On les MAPPE EXPLICITEMENT — on N'injecte PAS `env_from: pg-role-pgvector`
+# brut, qui était DOUBLEMENT faux : (1) ce Secret (type basic-auth) porte les clés
+# `username`/`password`, PAS `POSTGRES_USER`/`POSTGRES_PASSWORD` → variables absentes ;
+# (2) `env_from`/`secret_ref` est résolu SAME-NAMESPACE, or pg-role-pgvector vit en ns
+# `postgres` et le pod de run en ns `dagster` → introuvable. Le déployeur fournit donc un
+# Secret DÉRIVÉ `pgvector-pg-auth` dans le ns `dagster` (clés username/password, recopie
+# de pg-role-pgvector — même patron que dagster-pg-auth ; cf. contrat namespaces-secrets,
+# univ-lehavre/cluster). Host/db/port en littéraux NOM COURT (pg-rw.postgres, cf. note DNS
+# du contrat / cluster#458). USER/PASSWORD via secretKeyRef vers le dérivé.
+_PG_ENV_SECRET = "pgvector-pg-auth"
+
+
+def _pg_secret_env(var: str, key: str) -> dict:
+    """Variable POSTGRES_* lue d'une clé du Secret dérivé (ns dagster), via secretKeyRef."""
+    return {"name": var, "value_from": {"secret_key_ref": {"name": _PG_ENV_SECRET, "key": key}}}
+
+
+_TRANSFORM_ENV = [
+    *_RUN_ENV,
+    {"name": "POSTGRES_HOST", "value": "pg-rw.postgres"},
+    {"name": "POSTGRES_PORT", "value": "5432"},
+    {"name": "POSTGRES_DB", "value": "pgvector"},
+    _pg_secret_env("POSTGRES_USER", "username"),
+    _pg_secret_env("POSTGRES_PASSWORD", "password"),
+]
 _TRANSFORM_K8S_CONFIG = {
     "dagster-k8s/config": {
         "container_config": {
-            # Mêmes variables de run que _RUN_K8S_CONFIG (lineage + MLflow, piège
-            # ADR 0086) : le drift Evidently et l'instrumentation CT loggent vers
-            # MLflow depuis le pod de run de transform_job.
-            "env": _RUN_ENV,
-            "env_from": [
-                {"secret_ref": {"name": "citation-s3-access"}},
-                {"secret_ref": {"name": "pg-role-pgvector"}},
-            ],
+            # Lineage + MLflow (piège ADR 0086) ET les POSTGRES_* d'index_load.
+            "env": _TRANSFORM_ENV,
+            "env_from": [{"secret_ref": {"name": "citation-s3-access"}}],
         },
     },
 }
