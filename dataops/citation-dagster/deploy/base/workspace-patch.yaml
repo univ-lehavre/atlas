@@ -11,9 +11,16 @@ metadata:
   name: dagster-workspace
   namespace: dagster
 data:
+  # host: nom COURT `citation-dagster` (PAS le FQDN `…svc.cluster.local`). Le résolveur
+  # gRPC/c-ares du webserver/daemon Dagster suit `resolv.conf` (ndots:5) ; en prod, un
+  # search domain externe (DNS de l'organisation) fait TIMEOUTER la résolution du FQDN
+  # complet → « DagsterUserCodeUnreachableError: gRPC UNAVAILABLE » alors que le pod gRPC
+  # est sain. Le nom court résout via le 1er search domain (`dagster.svc.cluster.local`).
+  # Constaté sur la prod côté cluster (toy-codeloc, univ-lehavre/cluster#458). Le webserver
+  # et cette code-location sont dans le même ns `dagster` → le nom court nu suffit.
   workspace.yaml: |
     load_from:
       - grpc_server:
-          host: citation-dagster.dagster.svc.cluster.local
+          host: citation-dagster
           port: 4000
           location_name: citation
