@@ -61,7 +61,7 @@
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
-    "@clack/prompts": "~1.5.1",
+    "@clack/prompts": "~1.6.0",
     "@univ-lehavre/atlas-crf-core": "workspace:*",
     "picocolors": "~1.1.1",
     "yaml": "~2.9.0"
@@ -73,7 +73,7 @@
     "prettier": "^3.8.4",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   },
   "publishConfig": {
     "access": "public"

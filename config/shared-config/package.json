@@ -61,7 +61,7 @@
     "eslint-plugin-turbo": "~2.9.18",
     "eslint-plugin-unicorn": "~64.0.0",
     "globals": "~17.6.0",
-    "typescript-eslint": "~8.61.0"
+    "typescript-eslint": "~8.61.1"
   },
   "peerDependencies": {
     "eslint": "^10.0.0",
@@ -76,6 +76,6 @@
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "devDependencies": {
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   }
 }

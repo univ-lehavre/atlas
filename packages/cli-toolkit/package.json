@@ -57,7 +57,7 @@
     "@univ-lehavre/atlas-effect-socle": "workspace:*"
   },
   "peerDependencies": {
-    "effect": "~3.21.3"
+    "effect": "~3.21.4"
   },
   "peerDependenciesMeta": {
     "effect": {
@@ -68,12 +68,12 @@
     "@effect/vitest": "^0.29.0",
     "@types/node": "^25.9.3",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "effect": "~3.21.3",
+    "effect": "~3.21.4",
     "eslint": "^10.5.0",
     "prettier": "^3.8.4",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   },
   "publishConfig": {
     "access": "public"
