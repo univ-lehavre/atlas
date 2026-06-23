@@ -128,6 +128,35 @@ collaborations (cf. [le plan](https://univ-lehavre.github.io/atlas/plans/2026-06
 et [ADR 0029](https://univ-lehavre.github.io/atlas/decisions/0029-architecture-pipeline-collaborations/)).
 Ce dossier **produit la donnée** ; il ne sert pas l'utilisateur final directement.
 
+## MLOps : suivi de modèles, dérive et entraînement continu
+
+La chaîne d'embedding est instrumentée pour le **suivi de modèles** (MLOps 1→2,
+[ADR 0062](https://univ-lehavre.github.io/atlas/decisions/0062-mlops-niveau-2-tracking-drift-ct/)) :
+
+- **Suivi (MLflow).** À chaque matérialisation de `researcher_embeddings`, on logge un
+  *run* MLflow — **params** (révision HuggingFace figée + `sha256` du modèle, réutilisés
+  de [`model_provenance.py`](src/citation_dagster/model_provenance.py) ; dimension, longueur,
+  seuil de [`embedding.py`](src/citation_dagster/embedding.py)) et **métriques**
+  (`work_vectors`, `author_vectors`, `null_vectors`) — et on enregistre le modèle
+  `all-MiniLM-L6-v2` au **model registry** (`citation-researcher-embeddings`), version taguée
+  de sa provenance exacte. Voir [`src/citation_dagster/tracking.py`](src/citation_dagster/tracking.py).
+- **Dérive (Evidently).** L'asset check non bloquant `evidently_embedding_drift` mesure le
+  *drift* des vecteurs (N vs N-1) et logue son score **et le rapport HTML** dans MLflow.
+- **Qualité (Great Expectations).** Chaque asset check `ge_*` publie aussi son verdict +
+  résultat JSON dans MLflow (experiment `citation_quality`) — vue « rapports qualité »
+  unifiée à côté du drift.
+- **Entraînement continu (CT).** Le `@schedule` `transform_daily` rejoue `transform_job`
+  (dbt → embeddings → index), **STOPPED par défaut** : le déployeur l'arme et fixe sa
+  cadence (le code permet, ne décide pas).
+
+> **Variable d'environnement.** Tout le logging MLflow lit `MLFLOW_TRACKING_URI`
+> (`http://mlflow.mlflow:5000` au contrat cluster). Elle doit atteindre les **pods de
+> run** (tag `dagster-k8s/config`, cf. [`definitions.py`](src/citation_dagster/definitions.py)),
+> pas seulement la code-location (piège ADR 0086). **Absente** (dev local / CI hermétique) :
+> tout le suivi est un **no-op silencieux** — la matérialisation reste identique, rien n'est
+> loggué. L'instrumentation est du **code applicatif** ; le **serveur** MLflow est fourni par
+> le socle (frontière [ADR 0033](https://univ-lehavre.github.io/atlas/decisions/0033-contrat-interface-cluster/)).
+
 ## Image et déploiement : comment ce code arrive dans le cluster
 
 Cette code-location n'est pas un programme qu'on lance à la main : elle doit **tourner en

@@ -41,7 +41,7 @@ from dagster import (
 )
 from openlineage.client.event_v2 import RunState
 
-from citation_dagster import embedding, lakehouse, lineage
+from citation_dagster import embedding, lakehouse, lineage, tracking
 from citation_dagster.dbt import CURATED_DT
 
 # Sous-dossiers des deux artefacts (mêmes conventions que curated_*/marts_* dbt).
@@ -223,10 +223,30 @@ def researcher_embeddings(context: AssetExecutionContext) -> MaterializeResult:
         RunState.COMPLETE, run_id, "researcher_embeddings", lineage_inputs, lineage_outputs
     )
 
-    return MaterializeResult(
-        metadata={
-            "work_vectors": MetadataValue.int(len(work_vectors)),
-            "author_vectors": MetadataValue.int(len(author_vectors)),
-            "partition": MetadataValue.text(f"dt={CURATED_DT}/run={run_id}"),
-        }
+    # Complétude : nombre d'author_id au vecteur NUL (norme ≈ 0) — un agrégat sans
+    # publication vectorisable. Mesure de qualité loguée dans MLflow (atlas#397).
+    null_vectors = sum(1 for _, vec in author_vectors if float((vec * vec).sum()) < 1e-12)
+
+    # Suivi de modèles MLflow (atlas#397) : params (provenance HF figée + constantes) +
+    # métriques + enregistrement de la version du modèle au registry. Best-effort, no-op
+    # sans MLFLOW_TRACKING_URI (dev/CI hermétique) — ne casse jamais la matérialisation.
+    mlflow_run = tracking.log_embeddings_run(
+        run_id,
+        CURATED_DT,
+        metrics={
+            "work_vectors": len(work_vectors),
+            "author_vectors": len(author_vectors),
+            "null_vectors": null_vectors,
+        },
+        config=tracking.mlflow_config_from_env(),
     )
+
+    metadata = {
+        "work_vectors": MetadataValue.int(len(work_vectors)),
+        "author_vectors": MetadataValue.int(len(author_vectors)),
+        "null_vectors": MetadataValue.int(null_vectors),
+        "partition": MetadataValue.text(f"dt={CURATED_DT}/run={run_id}"),
+    }
+    if mlflow_run:
+        metadata["mlflow_run"] = MetadataValue.text(mlflow_run)
+    return MaterializeResult(metadata=metadata)
