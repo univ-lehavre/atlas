@@ -28,11 +28,11 @@ import zipfile
 from dataclasses import asdict
 from pathlib import Path
 
-import httpx
 from dagster import Config, Failure, MaterializeResult, MetadataValue, asset
 from openlineage.client.event_v2 import Dataset, RunState
 
 from mediawatch_dagster import lineage, ror
+from mediawatch_dagster.http_fetch import RateLimitError, RetryPolicy, ThrottledClient
 from mediawatch_dagster.resources import CephTarget, ceph_target_from_env, render_rclone_config
 from mediawatch_dagster.ror import University
 
@@ -71,16 +71,18 @@ def _download_and_project(dump_url: str) -> list[University]:
             description="Aucune URL de dump fournie (config dump_url) : le déployeur "
             "doit pointer le référentiel choisi (ADR 0065)."
         )
+    # Une seule requête (gros fichier), mais throttlée + retry/backoff sur 429/5xx :
+    # le registre du référentiel peut aussi limiter le débit (ADR 0064).
+    client = ThrottledClient(RetryPolicy(timeout_s=_HTTP_TIMEOUT))
     try:
-        response = httpx.get(dump_url, timeout=_HTTP_TIMEOUT, follow_redirects=True)
-        response.raise_for_status()
-    except httpx.HTTPError as exc:
+        content = client.get_bytes(dump_url)
+    except RateLimitError as exc:
         raise Failure(
             description=f"Téléchargement du dump référentiel échoué : {dump_url}",
             metadata={"error": MetadataValue.text(str(exc))},
         ) from exc
     try:
-        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        with zipfile.ZipFile(io.BytesIO(content)) as archive:
             member = _select_dump_member(archive.namelist())
             records = json.loads(archive.read(member).decode("utf-8"))
     except (zipfile.BadZipFile, json.JSONDecodeError, KeyError) as exc:

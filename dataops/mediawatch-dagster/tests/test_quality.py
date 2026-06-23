@@ -103,7 +103,7 @@ def test_curated_university_suite_fails_on_null_university_id() -> None:
 
 def test_check_curated_universities_passes(monkeypatch) -> None:
     monkeypatch.setattr(q.lakehouse, "connect", lambda cfg=None: _FakeCon(_GOOD_CURATED))
-    res = q.check_curated_universities("mediawatch", "run1")
+    res = q.check_curated_universities("mediawatch", "2026-01-01", "run1")
     assert res.passed is True
 
 
@@ -142,5 +142,5 @@ def test_timeline_suite_fails_on_zero_articles() -> None:
 
 def test_check_marts_timeline_passes(monkeypatch) -> None:
     monkeypatch.setattr(q.lakehouse, "connect", lambda cfg=None: _FakeCon(_GOOD_TIMELINE))
-    res = q.check_marts_timeline("mediawatch", "run1")
+    res = q.check_marts_timeline("mediawatch", "2026-01-01", "run1")
     assert res.passed is True

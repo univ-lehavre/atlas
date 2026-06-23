@@ -39,7 +39,7 @@ from dagster import (
 from openlineage.client.event_v2 import RunState
 
 from mediawatch_dagster import lakehouse, lineage
-from mediawatch_dagster.dbt import CURATED_DT
+from mediawatch_dagster.assets.raw_gkg import gkg_daily_partitions
 from mediawatch_dagster.resources import ceph_target_from_env, render_rclone_config
 
 # Version du schéma du contrat manifest. SOURCE DE VÉRITÉ (Python) ; un bump
@@ -54,30 +54,55 @@ _SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 # ── Fonctions pures (testables sans I/O) ─────────────────────────────────────
 
-
-def partition_str(dt: str, run_id: str) -> str:
-    """Identifiant de partition du contrat : ``dt=YYYY-MM/run=<id>`` (ADR 0029)."""
-    return f"dt={dt}/run={run_id}"
+_DT_RUN_RE = re.compile(r"dt=([^/]+)/run=([^/]+)/")
 
 
-def mart_prefix(remote: str, bucket: str, dt: str, run_id: str) -> str:
-    """Préfixe rclone de l'artefact servi : ``<remote>:<bucket>/<subdir>/dt=…/run=…``."""
-    return f"{remote}:{bucket}/{_MART_SUBDIR}/{partition_str(dt, run_id)}"
+def mart_root(remote: str, bucket: str) -> str:
+    """Préfixe rclone RACINE du mart servi (toutes les partitions journalières)."""
+    return f"{remote}:{bucket}/{_MART_SUBDIR}"
 
 
-def part_key(dt: str, run_id: str, name: str) -> str:
-    """Clé S3 **relative au bucket** d'une part (résoluble en ``s3://<bucket>/<key>``)."""
-    return f"{_MART_SUBDIR}/{partition_str(dt, run_id)}/{name}"
+def latest_run_parts(entries: list[dict]) -> dict[str, int]:
+    """Sélectionne, par jour (``dt=``), les parts du DERNIER ``run=`` (ADR 0064).
+
+    Le mart accumule une partition par jour ; chaque re-matérialisation écrit un
+    nouveau ``run=`` (immutabilité). Pour le manifest GLOBAL servi, on ne retient que
+    le **dernier run de chaque jour** (le plus complet) — « dernier run gagne ». Les
+    runs obsolètes restent sur disque (nettoyage par lifecycle S3, contrat infra).
+
+    ``entries`` = lsjson récursif (champs ``Path`` relatif + ``Size``, ``IsDir``).
+    Retourne ``{chemin_relatif: octets}`` des seules parts retenues. « Dernier » = run
+    lexicographiquement maximal par jour.
+    """
+    paths = [
+        (e["Path"], int(e["Size"]))
+        for e in entries
+        if not e.get("IsDir", False) and e["Path"].endswith(".parquet")
+    ]
+    latest: dict[str, str] = {}
+    for path, _ in paths:
+        m = _DT_RUN_RE.search(path)
+        if m and (m.group(1) not in latest or m.group(2) > latest[m.group(1)]):
+            latest[m.group(1)] = m.group(2)
+    kept: dict[str, int] = {}
+    for path, size in paths:
+        m = _DT_RUN_RE.search(path)
+        if m and latest.get(m.group(1)) == m.group(2):
+            kept[f"{_MART_SUBDIR}/{path}"] = size
+    return kept
 
 
-def parse_lsjson_sizes(stdout: str) -> dict[str, int]:
-    """Parse la sortie ``rclone lsjson`` → ``{nom: octets}`` (champs ``Name``/``Size``)."""
-    entries = json.loads(stdout) if stdout.strip() else []
-    return {e["Name"]: int(e["Size"]) for e in entries if not e.get("IsDir", False)}
+def parse_lsjson_entries(stdout: str) -> list[dict]:
+    """Parse la sortie ``rclone lsjson`` (récursive) en liste d'entrées brutes."""
+    return json.loads(stdout) if stdout.strip() else []
 
 
-def parse_hashsum(stdout: str) -> dict[str, str]:
-    """Parse ``rclone hashsum sha256`` → ``{nom: sha256}`` (lignes ``<hash>  <nom>``)."""
+def parse_hashsum(stdout: str, prefix: str = "") -> dict[str, str]:
+    """Parse ``rclone hashsum sha256 -R`` → ``{clé: sha256}`` (lignes ``<hash>  <chemin>``).
+
+    ``prefix`` (ex. ``marts/university_timeline``) est préfixé aux chemins relatifs pour
+    obtenir la **clé S3 absolue au bucket**, comparable à celle de ``latest_run_parts``.
+    """
     result: dict[str, str] = {}
     for line in stdout.splitlines():
         line = line.strip()
@@ -87,21 +112,25 @@ def parse_hashsum(stdout: str) -> dict[str, str]:
         if len(parts) != 2 or not _SHA256_RE.match(parts[0]):
             raise Failure(description=f"Ligne hashsum inattendue : « {line} »")
         digest, name = parts
-        result[name] = digest
+        key = f"{prefix}/{name}" if prefix else name
+        result[key] = digest
     return result
 
 
 def build_manifest(
-    dt: str,
-    run_id: str,
-    row_count: int,
     sizes: dict[str, int],
     shas: dict[str, str],
+    row_count: int,
     produced_at: str,
 ) -> dict:
-    """Construit le dict manifest (pur). Cross-check les jeux de noms, trie les parts."""
+    """Construit le dict manifest GLOBAL (pur). Cross-check les clés, trie les parts.
+
+    ``sizes``/``shas`` sont indexés par **clé S3 absolue au bucket** (multi-partitions,
+    dernier run par jour). Le manifest est servi à la racine du mart ; le consommateur
+    lit chaque part par sa clé et valide ``sha256``/``bytes``.
+    """
     if not sizes:
-        raise Failure(description="Aucune part Parquet sous le préfixe du mart : run incomplet ?")
+        raise Failure(description="Aucune part Parquet sous le mart : run incomplet ?")
     if set(sizes) != set(shas):
         raise Failure(
             description="Désaccord lsjson/hashsum sur les parts du mart",
@@ -110,12 +139,9 @@ def build_manifest(
                 "hashsum": MetadataValue.text(", ".join(sorted(shas))),
             },
         )
-    parts = [
-        {"key": part_key(dt, run_id, name), "sha256": shas[name], "bytes": sizes[name]}
-        for name in sorted(sizes)
-    ]
+    parts = [{"key": key, "sha256": shas[key], "bytes": sizes[key]} for key in sorted(sizes)]
     return {
-        "partition": partition_str(dt, run_id),
+        "mart": _MART_SUBDIR,
         "schema_version": MANIFEST_SCHEMA_VERSION,
         "row_count": row_count,
         "parts": parts,
@@ -135,45 +161,50 @@ def _run_rclone(args: list[str], config_path: Path) -> subprocess.CompletedProce
     )
 
 
-def _lsjson_sizes(prefix: str, config_path: Path) -> dict[str, int]:
-    proc = _run_rclone(["lsjson", "--include", "*.parquet", prefix], config_path)
+def _latest_sizes(root: str, config_path: Path) -> dict[str, int]:
+    """Liste RÉCURSIVEMENT le mart, garde les parts du dernier run par jour (octets)."""
+    proc = _run_rclone(["lsjson", "-R", "--include", "*.parquet", root], config_path)
     if proc.returncode != 0:
         raise Failure(
             description="rclone lsjson a échoué sur le mart",
             metadata={"stderr": MetadataValue.text(proc.stderr[-2000:])},
         )
-    return parse_lsjson_sizes(proc.stdout)
+    return latest_run_parts(parse_lsjson_entries(proc.stdout))
 
 
-def _hashsum(prefix: str, config_path: Path) -> dict[str, str]:
+def _hashsum(root: str, config_path: Path) -> dict[str, str]:
+    """Calcule le sha256 de toutes les parts du mart (récursif, clés absolues bucket)."""
     proc = _run_rclone(
-        ["hashsum", "sha256", "--download", "--include", "*.parquet", prefix], config_path
+        ["hashsum", "sha256", "--download", "-R", "--include", "*.parquet", root], config_path
     )
     if proc.returncode != 0:
         raise Failure(
             description="rclone hashsum a échoué sur le mart",
             metadata={"stderr": MetadataValue.text(proc.stderr[-2000:])},
         )
-    return parse_hashsum(proc.stdout)
+    return parse_hashsum(proc.stdout, prefix=_MART_SUBDIR)
 
 
-def _count_rows(bucket: str, dt: str, run_id: str) -> int:
-    """Compte les lignes RÉELLES via DuckDB (exclut la ligne fantôme NULL de dbt-duckdb).
+def _count_rows(bucket: str, keys: list[str]) -> int:
+    """Compte les lignes RÉELLES des parts retenues via DuckDB (exclut la ligne NULL).
 
     La matérialisation ``external`` de dbt-duckdb écrit une ligne à toutes colonnes
-    nulles sur une relation VIDE (placeholder de schéma) ; sans ce filtre un mart
-    vide donnerait ``row_count = 1`` — faux face au sha256 des octets (contrat cassé).
+    nulles sur une relation VIDE (placeholder de schéma) ; sans ce filtre un mart vide
+    donnerait des lignes fantômes — faux face au sha256 (contrat cassé). On ne lit que
+    les parts du DERNIER run par jour (les mêmes que le manifest), pas les obsolètes.
     """
+    if not keys:
+        return 0
     con = lakehouse.connect()
-    glob = f"s3://{bucket}/{_MART_SUBDIR}/{partition_str(dt, run_id)}/*.parquet"
+    files = ", ".join(f"'s3://{bucket}/{k}'" for k in sorted(keys))
     return con.sql(
-        f"SELECT count(*) FROM read_parquet('{glob}') WHERE NOT (COLUMNS(*) IS NULL)"
+        f"SELECT count(*) FROM read_parquet([{files}]) WHERE NOT (COLUMNS(*) IS NULL)"
     ).fetchone()[0]
 
 
-def _write_manifest_last(prefix: str, payload: str, config_path: Path) -> None:
+def _write_manifest_last(root: str, payload: str, config_path: Path) -> None:
     proc = subprocess.run(
-        ["rclone", "--config", str(config_path), "rcat", f"{prefix}/manifest.json"],
+        ["rclone", "--config", str(config_path), "rcat", f"{root}/manifest.json"],
         input=payload,
         capture_output=True,
         text=True,
@@ -190,18 +221,27 @@ def _write_manifest_last(prefix: str, payload: str, config_path: Path) -> None:
     name="timeline_manifest",
     group_name="transform",
     deps=[AssetKey(["marts_university_timeline"])],
+    partitions_def=gkg_daily_partitions,
 )
 def timeline_manifest(context: AssetExecutionContext) -> MaterializeResult:
-    """Écrit le ``manifest.json`` atomique du mart timeline (après le mart dbt, même run)."""
+    """Écrit le ``manifest.json`` GLOBAL atomique du mart timeline (dernier run/jour).
+
+    Partitionné par jour (pour s'enchaîner dans le transform_job partitionné), mais le
+    manifest produit est GLOBAL : à chaque exécution il recouvre TOUT le mart. La clé
+    de partition borne le mart dbt amont, pas le manifest.
+
+    Recalculé à chaque run de transformation : liste tout le mart, retient le dernier
+    ``run=`` de chaque jour (ADR 0064), recompose le contrat servi. Écrit EN DERNIER à
+    la racine du mart (sentinelle atomique, ADR 0029).
+    """
     target = ceph_target_from_env()
-    dt = CURATED_DT
     run_id = context.run_id
 
     with tempfile.TemporaryDirectory() as tmp:
         config_path = Path(tmp) / "rclone.conf"
         config_path.write_text(render_rclone_config(target))
 
-        prefix = mart_prefix("ceph", target.bucket, dt, run_id)
+        root = mart_root("ceph", target.bucket)
         lineage.emit(
             RunState.START,
             run_id,
@@ -209,19 +249,20 @@ def timeline_manifest(context: AssetExecutionContext) -> MaterializeResult:
             [lineage.mart_dataset(_MART_SUBDIR)],
             [],
         )
-        sizes = _lsjson_sizes(prefix, config_path)
-        shas = _hashsum(prefix, config_path)
-        row_count = _count_rows(target.bucket, dt, run_id)
+        sizes = _latest_sizes(root, config_path)
+        all_shas = _hashsum(root, config_path)
+        # On ne garde que les sha des parts retenues (dernier run/jour) — les obsolètes
+        # sont hachés par rclone mais EXCLUS du contrat.
+        shas = {k: v for k, v in all_shas.items() if k in sizes}
+        row_count = _count_rows(target.bucket, list(sizes))
         manifest = build_manifest(
-            dt=dt,
-            run_id=run_id,
             row_count=row_count,
             sizes=sizes,
             shas=shas,
             produced_at=datetime.now(timezone.utc).isoformat(),
         )
         payload = json.dumps(manifest, separators=(",", ":"))
-        _write_manifest_last(prefix, payload, config_path)
+        _write_manifest_last(root, payload, config_path)
         lineage.emit(
             RunState.COMPLETE,
             run_id,
@@ -232,7 +273,7 @@ def timeline_manifest(context: AssetExecutionContext) -> MaterializeResult:
 
     return MaterializeResult(
         metadata={
-            "partition": MetadataValue.text(manifest["partition"]),
+            "mart": MetadataValue.text(_MART_SUBDIR),
             "row_count": MetadataValue.int(row_count),
             "parts": MetadataValue.int(len(manifest["parts"])),
             "schema_version": MetadataValue.int(MANIFEST_SCHEMA_VERSION),

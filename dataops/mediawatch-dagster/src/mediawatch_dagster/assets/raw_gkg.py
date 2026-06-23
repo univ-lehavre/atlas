@@ -32,7 +32,6 @@ import zipfile
 from dataclasses import asdict
 from pathlib import Path
 
-import httpx
 from dagster import (
     Config,
     DailyPartitionsDefinition,
@@ -45,12 +44,12 @@ from openlineage.client.event_v2 import RunState
 
 from mediawatch_dagster import gkg, lineage
 from mediawatch_dagster.gkg import GkgFile, OrgMention
+from mediawatch_dagster.http_fetch import RateLimitError, RetryPolicy, ThrottledClient
 from mediawatch_dagster.resources import CephTarget, ceph_target_from_env, render_rclone_config
 
 # Source externe (en prose uniquement ; jamais dans un identifiant interne, ADR 0035).
 _MASTER_LIST_URL = "http://data.gdeltproject.org/gdeltv2/masterfilelist.txt"
 _MASTER_LIST_TRANSLATION_URL = "http://data.gdeltproject.org/gdeltv2/masterfilelist-translation.txt"
-_HTTP_TIMEOUT = 60.0
 
 # Date de départ des partitions journalières. GKG 2.1 (Translingual) démarre au
 # 2015-02-19 ; surchargeable par env pour borner un banc (pas de backfill géant en
@@ -77,40 +76,47 @@ class RawGkgConfig(Config):
     lists sont fusionnées et triées par timestamp avant filtrage par jour.
     """
 
+    # ── Robustesse face au rate-limiting GDELT (ADR 0064) ──
+    min_interval_s: float = 1.0
+    """Délai minimal entre deux requêtes HTTP (throttle ; ≈ 1 req/s par défaut)."""
 
-def _fetch_text(url: str) -> str:
-    """Télécharge un fichier texte (master list) ; ``Failure`` sur erreur HTTP."""
+    max_attempts: int = 5
+    """Tentatives par requête (retry sur 429/5xx avec backoff, respecte Retry-After)."""
+
+
+def _retry_policy(config: RawGkgConfig) -> RetryPolicy:
+    """Politique de robustesse dérivée de la config (throttle + retry)."""
+    return RetryPolicy(
+        max_attempts=config.max_attempts,
+        min_interval_s=config.min_interval_s,
+    )
+
+
+def _fetch_master_files(client: ThrottledClient, config: RawGkgConfig) -> list[GkgFile]:
+    """Construit la liste fusionnée et triée des fichiers GKG disponibles."""
     try:
-        response = httpx.get(url, timeout=_HTTP_TIMEOUT, follow_redirects=True)
-        response.raise_for_status()
-    except httpx.HTTPError as exc:
+        files = gkg.parse_master_list(client.get_text(_MASTER_LIST_URL))
+        if config.include_translation:
+            files += gkg.parse_master_list(client.get_text(_MASTER_LIST_TRANSLATION_URL))
+    except RateLimitError as exc:
         raise Failure(
-            description=f"Téléchargement de la master list échoué : {url}",
+            description="Téléchargement de la master list échoué (rate-limit ?)",
             metadata={"error": MetadataValue.text(str(exc))},
         ) from exc
-    return response.text
-
-
-def _fetch_master_files(config: RawGkgConfig) -> list[GkgFile]:
-    """Construit la liste fusionnée et triée des fichiers GKG disponibles."""
-    files = gkg.parse_master_list(_fetch_text(_MASTER_LIST_URL))
-    if config.include_translation:
-        files += gkg.parse_master_list(_fetch_text(_MASTER_LIST_TRANSLATION_URL))
     return sorted(files, key=lambda f: f.timestamp)
 
 
-def _download_and_project(file: GkgFile) -> list[OrgMention]:
+def _download_and_project(client: ThrottledClient, file: GkgFile) -> list[OrgMention]:
     """Télécharge un ``.gkg.csv.zip``, le décompresse et le projette en mentions."""
     try:
-        response = httpx.get(file.url, timeout=_HTTP_TIMEOUT, follow_redirects=True)
-        response.raise_for_status()
-    except httpx.HTTPError as exc:
+        content = client.get_bytes(file.url)
+    except RateLimitError as exc:
         raise Failure(
-            description=f"Téléchargement du fichier GKG échoué : {file.url}",
+            description=f"Téléchargement du fichier GKG échoué (rate-limit ?) : {file.url}",
             metadata={"error": MetadataValue.text(str(exc))},
         ) from exc
     try:
-        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
+        with zipfile.ZipFile(io.BytesIO(content)) as archive:
             name = archive.namelist()[0]
             # Le GKG peut contenir des octets non-UTF8 (noms propres) → tolérant.
             text = archive.read(name).decode("utf-8", errors="replace")
@@ -163,19 +169,22 @@ def raw_gkg(context, config: RawGkgConfig) -> MaterializeResult:
     target = ceph_target_from_env()
     run_id = context.run_id
     partition_date = context.partition_key  # YYYY-MM-DD
+    # Client HTTP throttlé + retry/backoff (anti rate-limit GDELT, ADR 0064). La
+    # limite de CONCURRENCE des partitions (backfill) est posée par tag Dagster.
+    client = ThrottledClient(_retry_policy(config))
 
     with tempfile.TemporaryDirectory() as tmp:
         config_path = Path(tmp) / "rclone.conf"
         config_path.write_text(render_rclone_config(target))
 
-        available = _fetch_master_files(config)
+        available = _fetch_master_files(client, config)
         day_files, truncated = gkg.files_in_day(available, partition_date, config.max_files)
 
         lineage.emit(RunState.START, run_id, "raw_gkg", [lineage.source_dataset()], [])
 
         total_mentions = 0
         for file in day_files:
-            mentions = _download_and_project(file)
+            mentions = _download_and_project(client, file)
             total_mentions += _write_mentions(
                 mentions, file.timestamp, partition_date, run_id, target, config_path
             )

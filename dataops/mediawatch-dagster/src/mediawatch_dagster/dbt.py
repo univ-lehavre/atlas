@@ -24,6 +24,7 @@ from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 from openlineage.client.event_v2 import RunState
 
 from mediawatch_dagster import lineage
+from mediawatch_dagster.assets.raw_gkg import gkg_daily_partitions
 
 # Racine du projet dbt. En dépôt : frère de ``mediawatch-dagster`` sous ``dataops/``
 # (depuis src/mediawatch_dagster/dbt.py → parents[3] == dataops/). Dans l'image, le
@@ -48,14 +49,19 @@ _DUMMY_PARSE_ENV = {
     "BUCKET_PORT": "0",
 }
 
-# Période (YYYY-MM) de la partition curated. SOURCE UNIQUE partagée entre le run dbt
-# et l'asset de manifest (PR 4) : les deux doivent viser EXACTEMENT le même préfixe
-# dt=…/run=…/. (Provisoire : dérivé d'une partition Dagster temporelle en PR 4.)
-CURATED_DT = "0000-00"
+# Valeur de partition par défaut hors run partitionné (dev/parse). En run réel, la
+# transformation est partitionnée par jour : la partition (YYYY-MM-DD) sert à la fois
+# de période curated/mart (dt=) ET de borne de scan du brut (event_day).
+DEFAULT_EVENT_DAY = "0000-00-00"
 
 
-def build_dbt_vars(run_id: str, curated_dt: str) -> dict[str, str]:
-    """Variables dbt injectées au run : période + id de run IMMUABLE + source du réf.
+def build_dbt_vars(run_id: str, event_day: str) -> dict[str, str]:
+    """Variables dbt injectées au run : jour de partition + id de run + source du réf.
+
+    ``event_day`` (YYYY-MM-DD) est LE curseur de la transformation incrémentale
+    (ADR 0064) : il BORNE le scan du brut (`raw/gkg/dt=<event_day>/`) et sert de
+    période immuable (`curated_dt`) des artefacts curated/mart. Aligné sur la
+    partition du run raw_gkg amont — full-scan évité.
 
     ``curated_run`` vient de ``context.run_id`` → un rejeu écrit un nouveau préfixe
     ``run=<id>/`` (immutabilité, jamais d'écriture en place).
@@ -65,7 +71,8 @@ def build_dbt_vars(run_id: str, curated_dt: str) -> dict[str, str]:
     ROR ingéré par ``ref_universities_snapshot`` (classification autonome, ADR 0065).
     """
     return {
-        "curated_dt": curated_dt,
+        "event_day": event_day,
+        "curated_dt": event_day,
         "curated_run": run_id,
         "ref_source": os.environ.get("MEDIAWATCH_REF_SOURCE", "seed"),
     }
@@ -99,9 +106,11 @@ def build_mediawatch_dbt_assets():
     """
     manifest = ensure_manifest()
 
-    @dbt_assets(manifest=manifest)
+    @dbt_assets(manifest=manifest, partitions_def=gkg_daily_partitions)
     def mediawatch_dbt_models(context: AssetExecutionContext, dbt: DbtCliResource):
-        dbt_vars = build_dbt_vars(context.run_id, curated_dt=CURATED_DT)  # pragma: no cover
+        # event_day = la partition journalière (borne le scan du brut, ADR 0064).
+        day = context.partition_key  # pragma: no cover
+        dbt_vars = build_dbt_vars(context.run_id, event_day=day)  # pragma: no cover
         inputs = [lineage.raw_dataset()]  # pragma: no cover
         outputs = [  # pragma: no cover
             lineage.curated_dataset("curated_university_mentions"),

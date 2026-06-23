@@ -15,12 +15,18 @@ import httpx
 import pytest
 from dagster import Failure, build_asset_context
 
+from mediawatch_dagster import http_fetch
 from mediawatch_dagster.assets.raw_gkg import RawGkgConfig, raw_gkg
 from mediawatch_dagster.resources import ceph_target_from_env
 
 # Module réel (et non l'asset re-exporté sous le même nom dans assets/__init__) :
 # c'est lui qu'on patche pour ceph_target_from_env (idiome partagé avec citation).
 _MODULE = sys.modules["mediawatch_dagster.assets.raw_gkg"]
+
+# Throttle nul + pas de retry en test : aucune attente réelle (la robustesse
+# retry/backoff est testée dans test_http_fetch ; ici on ne valide que la logique
+# de l'asset, et max_attempts=1 évite tout sleep de backoff sur les chemins d'échec).
+_NO_THROTTLE = {"min_interval_s": 0.0, "max_attempts": 1}
 
 _FIXTURES = Path(__file__).resolve().parents[3] / "fixtures" / "gkg-sample"
 _ZIP_BYTES = (_FIXTURES / "20260101120000.gkg.csv.zip").read_bytes()
@@ -45,6 +51,8 @@ class _Resp:
     def __init__(self, *, text: str = "", content: bytes = b"") -> None:
         self.text = text
         self.content = content
+        self.status_code = 200
+        self.headers: dict = {}
 
     def raise_for_status(self) -> None:
         return None
@@ -80,7 +88,8 @@ class _FakeRclone:
 
 def _patch(monkeypatch, fake_httpx: _FakeHttpx, fake_rclone: _FakeRclone) -> None:
     monkeypatch.setattr(_MODULE, "ceph_target_from_env", lambda: ceph_target_from_env(_ENV))
-    monkeypatch.setattr(_MODULE.httpx, "get", fake_httpx.get)
+    # Le ThrottledClient appelle http_fetch.httpx.get : c'est là qu'on mocke le réseau.
+    monkeypatch.setattr(http_fetch.httpx, "get", fake_httpx.get)
     monkeypatch.setattr(subprocess, "run", fake_rclone)
 
 
@@ -92,7 +101,9 @@ def test_partition_ingests_only_that_day(monkeypatch) -> None:
     fake_httpx, fake_rclone = _FakeHttpx(), _FakeRclone()
     _patch(monkeypatch, fake_httpx, fake_rclone)
 
-    result = _run("2026-01-01", RawGkgConfig(max_files=10, include_translation=False))
+    result = _run(
+        "2026-01-01", RawGkgConfig(max_files=10, include_translation=False, **_NO_THROTTLE)
+    )
     # 2 fichiers le 2026-01-01 ingérés ; celui du 2026-01-02 exclu.
     assert result.metadata["files_ingested"].value == 2
     assert result.metadata["partition"].text == "2026-01-01"
@@ -107,7 +118,9 @@ def test_partition_bounded_by_max_files(monkeypatch) -> None:
     fake_httpx, fake_rclone = _FakeHttpx(), _FakeRclone()
     _patch(monkeypatch, fake_httpx, fake_rclone)
 
-    result = _run("2026-01-01", RawGkgConfig(max_files=1, include_translation=False))
+    result = _run(
+        "2026-01-01", RawGkgConfig(max_files=1, include_translation=False, **_NO_THROTTLE)
+    )
     assert result.metadata["files_ingested"].value == 1
     assert result.metadata["truncated"].value is True
 
@@ -117,7 +130,9 @@ def test_empty_partition_writes_nothing(monkeypatch) -> None:
     _patch(monkeypatch, fake_httpx, fake_rclone)
 
     # Un jour sans aucun fichier dans la master list.
-    result = _run("2025-12-31", RawGkgConfig(max_files=10, include_translation=False))
+    result = _run(
+        "2025-12-31", RawGkgConfig(max_files=10, include_translation=False, **_NO_THROTTLE)
+    )
     assert result.metadata["files_ingested"].value == 0
     assert [d for d in fake_rclone.rcat_dests if "raw/gkg/" in d] == []
 
@@ -127,7 +142,9 @@ def test_mentions_written_matches_fixture(monkeypatch) -> None:
     _patch(monkeypatch, fake_httpx, fake_rclone)
 
     # 1 seul fichier (max_files=1) → 4 mentions (GOLDEN : doc4 sans org, Harvard dédup).
-    result = _run("2026-01-01", RawGkgConfig(max_files=1, include_translation=False))
+    result = _run(
+        "2026-01-01", RawGkgConfig(max_files=1, include_translation=False, **_NO_THROTTLE)
+    )
     assert result.metadata["mentions_written"].value == 4
 
 
@@ -146,7 +163,9 @@ def test_translation_stream_merged_when_enabled(monkeypatch) -> None:
     fake_httpx, fake_rclone = _BothListsHttpx(), _FakeRclone()
     _patch(monkeypatch, fake_httpx, fake_rclone)
 
-    result = _run("2026-01-01", RawGkgConfig(max_files=10, include_translation=True))
+    result = _run(
+        "2026-01-01", RawGkgConfig(max_files=10, include_translation=True, **_NO_THROTTLE)
+    )
     # 2 anglais + 1 traduit, tous le 2026-01-01.
     assert result.metadata["files_ingested"].value == 3
 
@@ -159,10 +178,10 @@ def test_master_list_http_error_raises_failure(monkeypatch) -> None:
         raise httpx.ConnectError("dns")
 
     monkeypatch.setattr(_MODULE, "ceph_target_from_env", lambda: ceph_target_from_env(_ENV))
-    monkeypatch.setattr(_MODULE.httpx, "get", boom)
+    monkeypatch.setattr(http_fetch.httpx, "get", boom)
     monkeypatch.setattr(subprocess, "run", _FakeRclone())
     with pytest.raises(Failure, match="master list"):
-        _run("2026-01-01", RawGkgConfig(max_files=1, include_translation=False))
+        _run("2026-01-01", RawGkgConfig(max_files=1, include_translation=False, **_NO_THROTTLE))
 
 
 def test_bad_zip_raises_failure(monkeypatch) -> None:
@@ -173,10 +192,10 @@ def test_bad_zip_raises_failure(monkeypatch) -> None:
             return _Resp(content=b"not a zip")
 
     monkeypatch.setattr(_MODULE, "ceph_target_from_env", lambda: ceph_target_from_env(_ENV))
-    monkeypatch.setattr(_MODULE.httpx, "get", _BadZipHttpx().get)
+    monkeypatch.setattr(http_fetch.httpx, "get", _BadZipHttpx().get)
     monkeypatch.setattr(subprocess, "run", _FakeRclone())
     with pytest.raises(Failure, match="Archive GKG illisible"):
-        _run("2026-01-01", RawGkgConfig(max_files=1, include_translation=False))
+        _run("2026-01-01", RawGkgConfig(max_files=1, include_translation=False, **_NO_THROTTLE))
 
 
 def test_write_failure_raises(monkeypatch) -> None:
@@ -187,10 +206,10 @@ def test_write_failure_raises(monkeypatch) -> None:
             return super().__call__(cmd, **kwargs)
 
     monkeypatch.setattr(_MODULE, "ceph_target_from_env", lambda: ceph_target_from_env(_ENV))
-    monkeypatch.setattr(_MODULE.httpx, "get", _FakeHttpx().get)
+    monkeypatch.setattr(http_fetch.httpx, "get", _FakeHttpx().get)
     monkeypatch.setattr(subprocess, "run", _FailingRcat())
     with pytest.raises(Failure, match="Écriture du brut GKG"):
-        _run("2026-01-01", RawGkgConfig(max_files=1, include_translation=False))
+        _run("2026-01-01", RawGkgConfig(max_files=1, include_translation=False, **_NO_THROTTLE))
 
 
 # Garde le ZIP cohérent avec le fixture (mention identique CSV ↔ ZIP) — sanity.

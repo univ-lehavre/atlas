@@ -11,6 +11,7 @@ import httpx
 import pytest
 from dagster import Failure, build_asset_context
 
+from mediawatch_dagster import http_fetch
 from mediawatch_dagster.assets.ref_universities_snapshot import (
     RefUniversitiesConfig,
     ref_universities_snapshot,
@@ -52,6 +53,8 @@ def _zip_with(member: str, records: list) -> bytes:
 class _Resp:
     def __init__(self, content: bytes) -> None:
         self.content = content
+        self.status_code = 200
+        self.headers: dict = {}
 
     def raise_for_status(self) -> None:
         return None
@@ -71,7 +74,7 @@ def test_ingests_only_universities(monkeypatch) -> None:
     zip_bytes = _zip_with("v2.8-ror-data_schema_v2.json", _RECORDS)
     fake_rclone = _FakeRclone()
     monkeypatch.setattr(_MODULE, "ceph_target_from_env", lambda: ceph_target_from_env(_ENV))
-    monkeypatch.setattr(_MODULE.httpx, "get", lambda url, **k: _Resp(zip_bytes))
+    monkeypatch.setattr(http_fetch.httpx, "get", lambda url, **k: _Resp(zip_bytes))
     monkeypatch.setattr(subprocess, "run", fake_rclone)
 
     result = ref_universities_snapshot(
@@ -95,7 +98,9 @@ def test_http_error_raises(monkeypatch) -> None:
         raise httpx.ConnectError("dns")
 
     monkeypatch.setattr(_MODULE, "ceph_target_from_env", lambda: ceph_target_from_env(_ENV))
-    monkeypatch.setattr(_MODULE.httpx, "get", boom)
+    monkeypatch.setattr(http_fetch.httpx, "get", boom)
+    # Pas d'attente réelle pendant les retries de backoff (test rapide).
+    monkeypatch.setattr(http_fetch.time, "sleep", lambda _s: None)
     with pytest.raises(Failure, match="dump référentiel"):
         ref_universities_snapshot(
             build_asset_context(), RefUniversitiesConfig(dump_url="http://x/d.zip")
@@ -109,7 +114,7 @@ def test_prefers_schema_v2_member(monkeypatch) -> None:
         z.writestr("ror-data.json", json.dumps([]))  # v1 (vide)
         z.writestr("ror-data_schema_v2.json", json.dumps(_RECORDS))  # v2
     monkeypatch.setattr(_MODULE, "ceph_target_from_env", lambda: ceph_target_from_env(_ENV))
-    monkeypatch.setattr(_MODULE.httpx, "get", lambda url, **k: _Resp(buf.getvalue()))
+    monkeypatch.setattr(http_fetch.httpx, "get", lambda url, **k: _Resp(buf.getvalue()))
     monkeypatch.setattr(subprocess, "run", _FakeRclone())
     result = ref_universities_snapshot(
         build_asset_context(), RefUniversitiesConfig(dump_url="http://x/d.zip")

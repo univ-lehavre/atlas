@@ -16,7 +16,6 @@ NB : pas de ``from __future__ import annotations`` (Dagster introspecte, drift D
 from dagster import AssetCheckExecutionContext, AssetCheckResult, AssetKey, asset_check
 
 from mediawatch_dagster import ge_suites, lakehouse
-from mediawatch_dagster.dbt import CURATED_DT
 from mediawatch_dagster.resources import ceph_target_from_env
 
 
@@ -50,16 +49,14 @@ def check_raw_gkg(bucket: str) -> AssetCheckResult:
     return _result(ok, meta)
 
 
-def check_curated_universities(bucket: str, run_id: str) -> AssetCheckResult:
+def check_curated_universities(bucket: str, dt: str, run_id: str) -> AssetCheckResult:
     """Valide le curated des mentions qualifiées « université » (contrat servi).
 
-    Lit la partition immuable ``dt=…/run=<run_id>/`` du modèle dbt
+    Lit la partition immuable ``dt=<jour>/run=<run_id>/`` du modèle dbt
     ``curated_university_mentions`` et valide le contrat de colonnes + non-vacuité.
     """
     con = lakehouse.connect()
-    glob = (
-        f"s3://{bucket}/curated/curated_university_mentions/dt={CURATED_DT}/run={run_id}/*.parquet"
-    )
+    glob = f"s3://{bucket}/curated/curated_university_mentions/dt={dt}/run={run_id}/*.parquet"
     df = con.sql(
         f"SELECT record_id, event_date, university_id, university_name FROM read_parquet('{glob}')"
     ).df()
@@ -75,14 +72,14 @@ def ge_raw_gkg(context: AssetCheckExecutionContext) -> AssetCheckResult:
     return check_raw_gkg(ceph_target_from_env().bucket)
 
 
-def check_marts_timeline(bucket: str, run_id: str) -> AssetCheckResult:
+def check_marts_timeline(bucket: str, dt: str, run_id: str) -> AssetCheckResult:
     """Valide le mart timeline servi (contrat de colonnes + bornes de sanité).
 
-    Lit la partition immuable ``dt=…/run=<run_id>/`` du modèle dbt
+    Lit la partition immuable ``dt=<jour>/run=<run_id>/`` du modèle dbt
     ``marts_university_timeline`` et valide le contrat consommé par l'application.
     """
     con = lakehouse.connect()
-    glob = f"s3://{bucket}/marts/university_timeline/dt={CURATED_DT}/run={run_id}/*.parquet"
+    glob = f"s3://{bucket}/marts/university_timeline/dt={dt}/run={run_id}/*.parquet"
     df = con.sql(
         f"SELECT university_id, university_name, event_date, n_articles FROM read_parquet('{glob}')"
     ).df()
@@ -99,7 +96,9 @@ def check_marts_timeline(bucket: str, run_id: str) -> AssetCheckResult:
 )
 def ge_curated_universities(context: AssetCheckExecutionContext) -> AssetCheckResult:
     """Porte de qualité bloquante du curated des mentions université."""
-    return check_curated_universities(ceph_target_from_env().bucket, context.run.run_id)
+    return check_curated_universities(
+        ceph_target_from_env().bucket, context.partition_key, context.run.run_id
+    )
 
 
 @asset_check(
@@ -109,4 +108,6 @@ def ge_curated_universities(context: AssetCheckExecutionContext) -> AssetCheckRe
 )
 def ge_marts_timeline(context: AssetCheckExecutionContext) -> AssetCheckResult:
     """Porte de qualité bloquante du mart timeline servi."""
-    return check_marts_timeline(ceph_target_from_env().bucket, context.run.run_id)
+    return check_marts_timeline(
+        ceph_target_from_env().bucket, context.partition_key, context.run.run_id
+    )

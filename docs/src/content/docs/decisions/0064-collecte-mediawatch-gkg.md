@@ -104,6 +104,44 @@ partition par partition. Chaque jour backfillé est indépendant et idempotent. 
 volume par partition reste borné (`max_files`) ; un backfill large est étalé sous
 contrôle de l'opérateur, jamais un téléchargement géant en un seul run.
 
+### Robustesse face au rate-limiting HTTP
+
+La source impose des **limites de débit** (non documentées précisément) : un pull
+naïf (96 fichiers/jour en boucle, backfill de partitions en parallèle) provoque des
+`HTTP 429` voire le **bannissement de l'IP de sortie** du cluster. Trois garde-fous,
+tous **configurables** (défauts prudents) :
+
+1. **Retry avec backoff exponentiel** sur `429`/`5xx`, respectant l'en-tête
+   `Retry-After` quand il est fourni (module `http_fetch`, client throttlé partagé
+   par l'ingestion GKG et celle du référentiel).
+2. **Throttle** : un délai minimal entre deux requêtes (≈ 1 req/s par défaut).
+3. **Limite de concurrence du backfill** : les runs d'ingestion portent un tag
+   commun ; le déployeur fixe la limite de runs simultanés
+   (`run_queue.tag_concurrency_limits` de l'instance Dagster, contrat cluster
+   [ADR 0033](/atlas/decisions/0033-contrat-interface-cluster/)) — la **valeur**
+   relève de l'infra, le **tag** du code.
+
+### Transformation incrémentale par jour (performance)
+
+La couche dbt est **partitionnée par jour**, alignée 1:1 sur l'ingestion : la
+partition (`event_day`) **borne le scan du brut** (`raw/gkg/dt=<jour>/`) au lieu
+d'un glob `**` qui relirait tout l'historique à chaque run. Le `transform_job` est
+partitionné ; un run transforme exactement le jour ingéré. Les artefacts curated et
+le mart sont écrits sous `dt=<jour>/`, le chronogramme s'**accumule** par jour sans
+tout recalculer. Sans ce bornage, un full-scan deviendrait prohibitif une fois le
+backfill historique réalisé.
+
+### Rétention des `run=` : « dernier run gagne » + lifecycle S3
+
+La re-matérialisation 15 minutes accumule, pour un même jour, plusieurs répertoires
+`run=` (chacun un cumul plus complet — immutabilité, jamais d'écrasement). Pour
+éviter de **compter plusieurs fois** le même article : l'aval ne lit que le
+**dernier `run=` de chaque jour** (déduplication par `record_id` au staging ;
+sélection du dernier run au manifest servi). Les `run=` obsolètes restent sur disque
+et sont **expirés par un lifecycle S3 (TTL)** côté infrastructure (contrat
+[ADR 0033](/atlas/decisions/0033-contrat-interface-cluster/)) — le code n'efface
+jamais, conformément à l'immutabilité ([ADR 0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/)).
+
 ### Projection à l'ingestion : ne garder que les champs utiles
 
 Le flux complet (27 champs) étant lourd, l'asset brut ne **conserve** que les

@@ -88,14 +88,22 @@ def _transform_run_config() -> dict:
     }
 
 
+# Tag de limite de CONCURRENCE du backfill (anti rate-limit GDELT, ADR 0064). Un
+# backfill matérialise N partitions journalières ; sans borne, autant de pods de run
+# tapent GDELT EN MÊME TEMPS → 429/bannissement de l'IP de sortie. On marque les runs
+# d'ingestion d'un tag commun ; le déployeur fixe la limite (ex. 3-5 runs simultanés)
+# côté instance Dagster (`run_queue.tag_concurrency_limits` du dagster.yaml, contrat
+# cluster ADR 0033) — la VALEUR de la limite relève de l'infra, le TAG du code.
+_INGEST_CONCURRENCY_TAG = {"mediawatch/ingest-source": "gdelt"}
+
 # Le job d'ingestion ne sélectionne que raw_gkg (le pull HTTP du flux GKG). Il
-# porte le câblage K8s du run (Secret S3 + lineage). Partitionné par jour (la
-# définition de partition vient de l'asset).
+# porte le câblage K8s du run (Secret S3 + lineage) + le tag de concurrence.
+# Partitionné par jour (la définition de partition vient de l'asset).
 ingestion_job = define_asset_job(
     "ingestion_job",
     selection=AssetSelection.assets("raw_gkg"),
     partitions_def=gkg_daily_partitions,
-    tags=RUN_K8S_CONFIG,
+    tags={**RUN_K8S_CONFIG, **_INGEST_CONCURRENCY_TAG},
 )
 
 # Ingestion du référentiel d'universités : asset NON partitionné (instantané courant,
@@ -146,18 +154,17 @@ _asset_checks = [ge_raw_gkg]
 if _dbt_assets:
     _asset_checks += [ge_curated_universities, ge_marts_timeline]
 
-# Le transform_job enchaîne les modèles dbt (staging → curated, classification). Il
-# n'est enregistré QUE si les assets dbt existent : un job dont la sélection ne résout
-# aucun asset ferait échouer la construction des Definitions. En prod le manifest est
-# packagé → les assets dbt sont présents. Le mart + son manifest s'y ajouteront (PR 4).
+# Le transform_job enchaîne les modèles dbt (staging → curated, classification) PUIS
+# l'écriture du manifest, dans un seul run. PARTITIONNÉ par jour (ADR 0064) : un run
+# transforme exactement la partition du jour ingéré (event_day borne le scan du brut).
+# Enregistré seulement si les assets dbt existent (sinon la sélection ne résout rien).
 if _dbt_assets:
     transform_job = define_asset_job(
         "transform_job",
-        # Enchaîne les modèles dbt PUIS l'écriture du manifest (sentinelle servie),
-        # dans un seul run (même préfixe dt=…/run=…).
         selection=(
             AssetSelection.assets(*_dbt_assets) | AssetSelection.assets("timeline_manifest")
         ),
+        partitions_def=gkg_daily_partitions,
         # Relaie DBT_S3_USE_SSL / MEDIAWATCH_REF_SOURCE aux pods de run (piège ADR 0086).
         tags=_transform_run_config(),
     )

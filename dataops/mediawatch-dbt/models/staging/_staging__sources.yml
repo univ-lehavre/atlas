@@ -8,11 +8,16 @@ version: 2
 #
 # `hive_partitioning=false` : le brut est rangé sous `dt=YYYY-MM-DD/run=<id>/`, mais
 # ces clés viennent du CHEMIN, pas du JSON. Sans ce drapeau, DuckDB injecterait des
-# colonnes fantômes `dt`/`run` ; la période de la partition curated vient des vars
-# Dagster (`curated_dt`), pas du chemin brut.
+# colonnes fantômes `dt`/`run`.
 #
-# `raw_root` est une var (défaut `s3://mediawatch/raw`, surchargée en test → bucket
-# MinIO épinglé). Le glob `gkg/**/*.jsonl.gz` couvre toutes les partitions.
+# PERFORMANCE (ADR 0064) : le scan est BORNÉ au jour de la partition courante
+# (`event_day`, injectée par Dagster = la partition raw_gkg du run), pas un glob `**`
+# qui relirait TOUT l'historique à chaque run. Le glob `run=*` couvre les multiples
+# `run=` du jour (re-matérialisations 15 min) ; la DÉDUPLICATION (dernier run gagne)
+# est faite dans `stg_gkg_mentions`. Défaut `event_day=*` (tous les jours) pour le dev
+# local et les tests, surchargé au run réel par la date de partition.
+#
+# `raw_root` est une var (défaut `s3://mediawatch/raw`, surchargée en test).
 sources:
   - name: mediawatch_raw
     description: "Brut GKG projeté (JSONL.gz), ingéré dans le lakehouse par raw_gkg."
@@ -20,7 +25,7 @@ sources:
       - name: gkg
         description: "Mentions d'organisations : record_id, date, organization, source, url, translated."
         meta:
-          external_location: "read_json_auto('{{ var('raw_root') }}/gkg/**/*.jsonl.gz', hive_partitioning=false, union_by_name=true)"
+          external_location: "read_json_auto('{{ var('raw_root') }}/gkg/dt={{ var('event_day', '*') }}/run=*/*.jsonl.gz', hive_partitioning=false, union_by_name=true, filename=true)"
 
   - name: mediawatch_ref
     description: "Référentiel d'universités ingéré (JSONL.gz) par ref_universities_snapshot."
