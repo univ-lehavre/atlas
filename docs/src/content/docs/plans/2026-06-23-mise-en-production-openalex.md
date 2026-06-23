@@ -22,8 +22,10 @@ Mettre en production le pipeline OpenAlex de bout en bout : **ingestion**
 (`raw_snapshot`) → **transform dbt** (staging → curated → marts) → **embeddings**
 (`researcher_embeddings`) → **qualité** (Great Expectations) + **drift** (Evidently)
 → **manifests** (sentinelles Parquet) → **index_load** (pgvector). Déploiement
-**GitOps via Argo CD** (jamais `kubectl apply`), validé au **banc Lima** avant prod
-(action humaine, [ADR cluster 0044](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0044-topologie-deploiement-banc-atlas.md)).
+**GitOps via Argo CD** (jamais `kubectl apply`), profil **Ceph** (overlay
+`overlays/prod`), validé sur le **banc Ceph** avant prod — le banc léger
+(`local-path`/SeaweedFS, `overlays/bench`) sert à itérer, pas de preuve (action
+humaine, ADR cluster [0035](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0035-strategie-bancs-fidelite-vitesse.md)/[0044](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0044-topologie-deploiement-banc-atlas.md)).
 
 ## État constaté (post-pull 2026-06-23, HEAD `3da16d93`)
 
@@ -223,11 +225,12 @@ ingestion → transform.
 
 ### Lot 8 — Bascule production
 
-> **Action HUMAINE** validée au banc Lima avant la prod (ADR cluster 0043/0044) :
+> **Action HUMAINE** validée sur le **banc Ceph** (profil Ceph, overlay
+> `overlays/prod` — pas le banc léger SeaweedFS) avant la prod (ADR cluster 0043/0044) :
 > aucun agent ne la déclenche. La procédure pas à pas est le **runbook**
 > [`deploy/RUNBOOK.md`](https://github.com/univ-lehavre/atlas/blob/main/dataops/citation-dagster/deploy/RUNBOOK.md)
 > — prérequis socle, build + tag immuable, **push Gitea** (déclencheur GitOps, pas
-> GitHub), réconciliation Argo CD, run de validation, rollback.
+> GitHub), réconciliation Argo CD, preuve banc Ceph, rollback.
 
 - [ ] `validate.sh` vert (build + kubeconform + invariants des deux overlays).
 - [ ] Image taguée immuable, poussée sur le registry interne (`registry:80`) ; tag
@@ -236,7 +239,8 @@ ingestion → transform.
   intra-banc** → webhook → Argo CD réconcilie — **jamais** `kubectl apply`.
 - [ ] `Application` `citation-dagster` **Synced + Healthy** ; code-location visible
   dans l'UI Dagster.
-- [ ] Run réel **au banc Lima** d'abord : `ingestion_job` puis `transform_job` ;
+- [ ] Run réel **sur le banc Ceph** (profil Ceph, overlay `overlays/prod`) d'abord :
+  `ingestion_job` puis `transform_job` ;
   vérifier dans les pods de run que `AWS_*`/`BUCKET_*`, `OPENLINEAGE_URL`,
   `MLFLOW_TRACKING_URI`, `POSTGRES_*` sont présents (pas de no-op silencieux), que
   Marquez reçoit le lineage et MLflow les runs/métriques.
