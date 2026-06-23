@@ -82,14 +82,16 @@ divergent sans dupliquer la logique d'injection).
 - Le Secret dérivé `pgvector-pg-auth` (clés `username`/`password`) doit exister en
   ns `dagster` — c'est dans le contrat (`namespaces-secrets`), responsabilité du
   socle.
-- **NetworkPolicy egress `dagster → mlflow:5000`** — _bloquant pour les Lots 5/7/8_.
-  Sous double default-deny, l'ingress MLflow est ouvert mais l'**egress côté
-  `dagster` manque** : sans lui, tout le logging MLflow (instrumentation #397,
-  métriques de drift du CT) **timeout silencieusement** en prod (no-op best-effort).
-  Déjà tracé côté cluster :
-  [univ-lehavre/cluster#407](https://github.com/univ-lehavre/cluster/issues/407)
-  (correctif : `platform/network-policies/dagster/allow-mlflow-egress.yaml`). **Pas
-  de nouvelle issue cluster à créer** — celle-ci suffit ; à lever avant d'armer le CT.
+- **NetworkPolicy egress `dagster → mlflow:5000`** — _**RÉSOLU côté infra**
+  (2026-06-23)_. Sous double default-deny, il fallait ouvrir l'egress côté `dagster`
+  (l'ingress MLflow l'était déjà) ; sans lui, le logging MLflow (instrumentation
+  #397, métriques de drift du CT) tombait en no-op silencieux en prod. La policy
+  `allow-mlflow-egress` est livrée dans cluster main (PR #408) et **vérifiée sur
+  dirqual** ([univ-lehavre/cluster#407](https://github.com/univ-lehavre/cluster/issues/407),
+  [#404](https://github.com/univ-lehavre/cluster/issues/404)). Reste seulement la
+  **preuve banc Ceph multi-nœud** du flux drift+CT de bout en bout (différée,
+  dépend de cluster#391 ; tracée cluster#404/#414). Plus de blocage infra pour les
+  Lots 5/6/7 — uniquement la preuve e2e reste à produire.
 
 ### Lot 2 — Durcissement prod de la code-location (qualité) · [#400](https://github.com/univ-lehavre/atlas/issues/400)
 
@@ -241,11 +243,10 @@ ingestion → transform.
   dépendance d'infra à l'écriture/aux tests (hermétiques).
 - **Lot 8** (bascule prod) dépend de Lot 1, idéalement Lot 2.
 - **Lot 5** (armement CT) dépend de Lot 8 (prod fonctionnelle + idempotence
-  reconfirmée) **et de [cluster#407](https://github.com/univ-lehavre/cluster/issues/407)**
-  (egress MLflow) : sans cet egress, drift/CT loguent dans le vide. Idem, le
-  **bénéfice prod** des Lots 6/7 (tracking/CT visibles dans MLflow) est conditionné
-  à #407 — leur code se livre et se teste sans, mais ne *trace* rien en prod tant
-  que l'egress n'est pas ouvert.
+  reconfirmée). La dépendance infra [cluster#407](https://github.com/univ-lehavre/cluster/issues/407)
+  (egress MLflow) est **levée** (vérifiée dirqual 2026-06-23) ; il ne reste que la
+  **preuve banc Ceph** du flux drift+CT (différée, cluster#404/#414). Les Lots 6/7
+  (tracking/CT visibles dans MLflow) ne sont donc plus bloqués par l'infra.
 - Doc (Lot 3) et portail (Lot 4, #431) ne bloquent pas le déploiement fonctionnel
   mais relèvent de la « définition de fini ».
 
@@ -266,7 +267,7 @@ d'infra réel — l'egress `dagster → mlflow` — est **déjà** tracé en clu
   rejeu reconfirmée, sans cadence figée dans le code générique (doctrine ADR 0062).
 - `researcher_embeddings` loggue runs/params/métriques dans MLflow et enregistre le
   modèle au registry (`citation-*`, révision HF + sha256) — visible dans l'UI MLflow
-  une fois [cluster#407](https://github.com/univ-lehavre/cluster/issues/407) levée ;
+  (egress [cluster#407](https://github.com/univ-lehavre/cluster/issues/407) levé) ;
   no-op hermétique sans `MLFLOW_TRACKING_URI`.
 - (Option) `@sensor` watermark câblé, STOPPED par défaut, sans double-déclenchement
   avec le schedule mensuel.
