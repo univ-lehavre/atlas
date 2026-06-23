@@ -52,6 +52,9 @@ def raw_gkg_expectations() -> list:
 # Colonnes du curated des mentions qualifiées « université » (contrat servi au mart).
 _CURATED_UNIV_COLS = ("record_id", "event_date", "university_id", "university_name")
 
+# Colonnes du mart timeline servi (le contrat lu par l'application).
+_TIMELINE_COLS = ("university_id", "university_name", "event_date", "n_articles")
+
 
 def curated_university_mentions_expectations() -> list:
     """Contrat des mentions qualifiées « université » (appariées au référentiel).
@@ -65,6 +68,24 @@ def curated_university_mentions_expectations() -> list:
         gxe.ExpectColumnValuesToNotBeNull(column="record_id"),
         gxe.ExpectColumnValuesToNotBeNull(column="university_id"),
         gxe.ExpectColumnValuesToNotBeNull(column="event_date"),
+        gxe.ExpectTableRowCountToBeBetween(min_value=1),
+    ]
+    return exps
+
+
+def marts_university_timeline_expectations() -> list:
+    """Contrat du mart timeline servi (colonnes + non-vacuité + n_articles ≥ 1).
+
+    Défense en profondeur sur le Parquet servi à l'application : les not_null sont
+    déjà bloqués par les tests dbt ; on redouble ici les colonnes du contrat, la
+    non-vacuité des clés et la borne ``n_articles ≥ 1`` (un jour listé a au moins un
+    article — sinon il ne figurerait pas dans l'agrégat).
+    """
+    exps = [gxe.ExpectColumnToExist(column=c) for c in _TIMELINE_COLS]
+    exps += [
+        gxe.ExpectColumnValuesToNotBeNull(column="university_id"),
+        gxe.ExpectColumnValuesToNotBeNull(column="event_date"),
+        gxe.ExpectColumnValuesToBeBetween(column="n_articles", min_value=1),
         gxe.ExpectTableRowCountToBeBetween(min_value=1),
     ]
     return exps

@@ -75,6 +75,23 @@ def ge_raw_gkg(context: AssetCheckExecutionContext) -> AssetCheckResult:
     return check_raw_gkg(ceph_target_from_env().bucket)
 
 
+def check_marts_timeline(bucket: str, run_id: str) -> AssetCheckResult:
+    """Valide le mart timeline servi (contrat de colonnes + bornes de sanité).
+
+    Lit la partition immuable ``dt=…/run=<run_id>/`` du modèle dbt
+    ``marts_university_timeline`` et valide le contrat consommé par l'application.
+    """
+    con = lakehouse.connect()
+    glob = f"s3://{bucket}/marts/university_timeline/dt={CURATED_DT}/run={run_id}/*.parquet"
+    df = con.sql(
+        f"SELECT university_id, university_name, event_date, n_articles FROM read_parquet('{glob}')"
+    ).df()
+    ok, meta = ge_suites.validate_df(
+        df, "marts_university_timeline", ge_suites.marts_university_timeline_expectations()
+    )
+    return _result(ok, meta)
+
+
 @asset_check(
     asset=AssetKey(["curated_university_mentions"]),
     name="ge_curated_universities",
@@ -83,3 +100,13 @@ def ge_raw_gkg(context: AssetCheckExecutionContext) -> AssetCheckResult:
 def ge_curated_universities(context: AssetCheckExecutionContext) -> AssetCheckResult:
     """Porte de qualité bloquante du curated des mentions université."""
     return check_curated_universities(ceph_target_from_env().bucket, context.run.run_id)
+
+
+@asset_check(
+    asset=AssetKey(["marts_university_timeline"]),
+    name="ge_marts_timeline",
+    blocking=True,
+)
+def ge_marts_timeline(context: AssetCheckExecutionContext) -> AssetCheckResult:
+    """Porte de qualité bloquante du mart timeline servi."""
+    return check_marts_timeline(ceph_target_from_env().bucket, context.run.run_id)

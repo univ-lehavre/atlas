@@ -23,8 +23,12 @@ from dagster import (
     schedule,
 )
 
-from mediawatch_dagster.assets import raw_gkg
-from mediawatch_dagster.assets.quality import ge_curated_universities, ge_raw_gkg
+from mediawatch_dagster.assets import raw_gkg, timeline_manifest
+from mediawatch_dagster.assets.quality import (
+    ge_curated_universities,
+    ge_marts_timeline,
+    ge_raw_gkg,
+)
 from mediawatch_dagster.assets.raw_gkg import gkg_daily_partitions
 from mediawatch_dagster.dbt import dbt_components
 
@@ -90,7 +94,12 @@ def ingest_current_day(context: ScheduleEvaluationContext) -> RunRequest:
 # Assets dbt + ressource CLI (ou [], {} si dbt indisponible — lint/checkout neuf).
 _dbt_assets, _dbt_resources = dbt_components()
 
-_assets = [raw_gkg, *_dbt_assets]
+# timeline_manifest dépend du mart dbt marts_university_timeline (via AssetKey) : il
+# s'exécute APRÈS le mart, dans le même run (même context.run_id → même préfixe
+# dt=…/run=…). Ajouté inconditionnellement comme l'asset dbt : en mode dégradé (dbt
+# absent), sa dépendance pend sur une clé externe non exécutable et la code-location
+# reste chargeable (asset orphelin).
+_assets = [raw_gkg, timeline_manifest, *_dbt_assets]
 _jobs = [ingestion_job]
 
 # Le check GE du curated cible les modèles dbt (clé curated_university_mentions) :
@@ -98,7 +107,7 @@ _jobs = [ingestion_job]
 # en mode dégradé (dbt indisponible). Le check du brut, lui, est inconditionnel.
 _asset_checks = [ge_raw_gkg]
 if _dbt_assets:
-    _asset_checks.append(ge_curated_universities)
+    _asset_checks += [ge_curated_universities, ge_marts_timeline]
 
 # Le transform_job enchaîne les modèles dbt (staging → curated, classification). Il
 # n'est enregistré QUE si les assets dbt existent : un job dont la sélection ne résout
@@ -107,7 +116,11 @@ if _dbt_assets:
 if _dbt_assets:
     transform_job = define_asset_job(
         "transform_job",
-        selection=AssetSelection.assets(*_dbt_assets),
+        # Enchaîne les modèles dbt PUIS l'écriture du manifest (sentinelle servie),
+        # dans un seul run (même préfixe dt=…/run=…).
+        selection=(
+            AssetSelection.assets(*_dbt_assets) | AssetSelection.assets("timeline_manifest")
+        ),
         tags=RUN_K8S_CONFIG,
     )
     _jobs.append(transform_job)

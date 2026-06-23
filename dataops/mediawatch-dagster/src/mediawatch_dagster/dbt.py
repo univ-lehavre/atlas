@@ -98,6 +98,7 @@ def build_mediawatch_dbt_assets():
         outputs = [  # pragma: no cover
             lineage.curated_dataset("curated_university_mentions"),
             lineage.curated_dataset("curated_university_candidates"),
+            lineage.mart_dataset("marts/university_timeline"),
         ]
         lineage.emit(  # pragma: no cover
             RunState.START, context.run_id, "mediawatch_dbt_models", inputs, outputs

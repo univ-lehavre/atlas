@@ -105,3 +105,42 @@ def test_check_curated_universities_passes(monkeypatch) -> None:
     monkeypatch.setattr(q.lakehouse, "connect", lambda cfg=None: _FakeCon(_GOOD_CURATED))
     res = q.check_curated_universities("mediawatch", "run1")
     assert res.passed is True
+
+
+# ── Mart timeline (chronogramme servi) ───────────────────────────────────────
+
+_GOOD_TIMELINE = pd.DataFrame(
+    {
+        "university_id": ["ror-03vek6s52"],
+        "university_name": ["Harvard University"],
+        "event_date": ["2026-01-01"],
+        "n_articles": [3],
+    }
+)
+
+
+def test_timeline_suite_passes() -> None:
+    ok, meta = ge_suites.validate_df(
+        _GOOD_TIMELINE,
+        "marts_university_timeline",
+        ge_suites.marts_university_timeline_expectations(),
+    )
+    assert ok is True
+    assert meta["failed"] == []
+
+
+def test_timeline_suite_fails_on_zero_articles() -> None:
+    bad = _GOOD_TIMELINE.copy()
+    bad["n_articles"] = [0]  # un jour listé a au moins 1 article
+    ok, _ = ge_suites.validate_df(
+        bad,
+        "marts_university_timeline",
+        ge_suites.marts_university_timeline_expectations(),
+    )
+    assert ok is False
+
+
+def test_check_marts_timeline_passes(monkeypatch) -> None:
+    monkeypatch.setattr(q.lakehouse, "connect", lambda cfg=None: _FakeCon(_GOOD_TIMELINE))
+    res = q.check_marts_timeline("mediawatch", "run1")
+    assert res.passed is True

@@ -47,3 +47,5 @@ models:
       +materialized: view
     curated:
       +materialized: external
+    marts:
+      +materialized: external
