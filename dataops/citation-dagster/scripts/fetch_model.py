@@ -20,31 +20,13 @@ import sys
 import urllib.request
 from pathlib import Path
 
-# Révision HuggingFace ÉPINGLÉE de Xenova/all-MiniLM-L6-v2 (le même modèle que le
-# code TS via @xenova/transformers). Figée par commit hash pour la reproductibilité.
-_HF_REPO = "Xenova/all-MiniLM-L6-v2"
-_HF_REVISION = "751bff37182d3f1213fa05d7196b954e230abad9"
-
-# Fichiers nécessaires + leur sha256 de référence (vérifié à la récupération).
-# {chemin distant (resolve/<rev>/<path>): (nom local, sha256)}
-_FILES = {
-    "onnx/model_quantized.onnx": (
-        "model_quantized.onnx",
-        "afdb6f1a0e45b715d0bb9b11772f032c399babd23bfc31fed1c170afc848bdb1",
-    ),
-    "tokenizer.json": (
-        "tokenizer.json",
-        "da0e79933b9ed51798a3ae27893d3c5fa4a201126cef75586296df9b4d2c62a0",
-    ),
-    "tokenizer_config.json": (
-        "tokenizer_config.json",
-        "9261e7d79b44c8195c1cada2b453e55b00aeb81e907a6664974b4d7776172ab3",
-    ),
-    "config.json": (
-        "config.json",
-        "7135149f7cffa1a573466c6e4d8423ed73b62fd2332c575bf738a0d033f70df7",
-    ),
-}
+# Provenance (révision HF figée + sha256 par fichier) : SOURCE DE VÉRITÉ UNIQUE dans le
+# package (citation_dagster.model_provenance), partagée avec l'instrumentation MLflow
+# (tracking.py / atlas#397) — pas de redéfinition ici. Au build de l'image, le package
+# est installé AVANT l'appel de ce script (cf. Dockerfile), donc l'import fonctionne.
+from citation_dagster.model_provenance import FILES as _FILES
+from citation_dagster.model_provenance import HF_REPO as _HF_REPO
+from citation_dagster.model_provenance import HF_REVISION as _HF_REVISION
 
 _BASE = f"https://huggingface.co/{_HF_REPO}/resolve/{_HF_REVISION}"
 
