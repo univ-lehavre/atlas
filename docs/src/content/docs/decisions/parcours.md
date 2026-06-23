@@ -4,7 +4,7 @@ title: Parcours thématique des décisions
 
 Cette page propose un **tour cohérent des décisions** du dépôt, regroupées par
 thème plutôt que par numéro. Elle s'adresse à un **nouveau venu** : plutôt que de
-lire les 62 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
+lire les 65 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
 comprendre _pourquoi_ le dépôt est fait comme il est.
 
 Pour la liste exhaustive par numéro (et le statut de chacun), voir
@@ -264,6 +264,12 @@ incrémentale par date), l'API REST étant reléguée aux compléments ciblés.
   la frontière entre le code applicatif et l'infrastructure.
 - [0054 — Ingestion massive par snapshot S3](/atlas/decisions/0054-ingestion-massive-snapshot-s3/) :
   toute la base OpenAlex (works + authors), incrémentale, en remplacement de l'API REST.
+- [0064 — Collecte « veille médiatique » (GKG v2)](/atlas/decisions/0064-collecte-mediawatch-gkg/) :
+  une **seconde source** dans un code-location dédié (`mediawatch`) — pull HTTP incrémental
+  des fichiers 15 minutes de GDELT, sans dépendance Google Cloud, multilingue natif.
+- [0065 — Qualifier une organisation comme « université »](/atlas/decisions/0065-classification-universites-heuristique-referentiel/) :
+  GKG ne type pas les organisations — la qualification se fait par **heuristique de nom
+  multilingue + référentiel** d'établissements faisant foi.
 
 ## 7. Données personnelles et conformité
 

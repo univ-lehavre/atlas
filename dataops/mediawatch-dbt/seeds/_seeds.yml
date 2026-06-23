@@ -1,0 +1,21 @@
+version: 2
+
+seeds:
+  - name: ref_universities
+    description: >
+      Référentiel d'universités (exemple minimal versionné). Autorité de la
+      classification « université » (ADR 0065). Identifiants génériques (neutralité
+      ADR 0035) ; le déployeur le remplace par son référentiel (ROR, Wikidata…).
+    config:
+      column_types:
+        university_id: varchar
+        name: varchar
+        country: varchar
+    columns:
+      - name: university_id
+        tests:
+          - not_null
+          - unique
+      - name: name
+        tests:
+          - not_null

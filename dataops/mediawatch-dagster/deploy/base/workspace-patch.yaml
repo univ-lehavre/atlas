@@ -1,0 +1,31 @@
+# Patch du ConfigMap `dagster-workspace` : enregistre la code-location mediawatch.
+#
+# Le socle cluster livre ce ConfigMap avec `load_from: []` (orchestrateur vide).
+# On le surcharge par GitOps (Argo CD applique ce manifeste, jamais kubectl apply —
+# ADR cluster 0046) pour y déclarer notre serveur gRPC. Le webserver et le daemon
+# Dagster lisent ce workspace (-w /workspace/workspace.yaml, déjà câblé) ; après
+# réconciliation, la location « mediawatch » apparaît dans l'UI.
+#
+# COHABITATION : ce ConfigMap est PARTAGÉ avec la code-location « citation ». Les
+# deux patches déclarent chacun un `grpc_server` sous `load_from`. Le déployeur
+# fusionne les deux entrées dans le workspace effectif (une par code-location) —
+# elles ne s'écrasent pas (location_name distincts : `citation`, `mediawatch`).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dagster-workspace
+  namespace: dagster
+data:
+  # host: nom COURT `mediawatch-dagster` (PAS le FQDN `…svc.cluster.local`). Le résolveur
+  # gRPC/c-ares du webserver/daemon Dagster suit `resolv.conf` (ndots:5) ; en prod, un
+  # search domain externe (DNS de l'organisation) fait TIMEOUTER la résolution du FQDN
+  # complet → « DagsterUserCodeUnreachableError: gRPC UNAVAILABLE » alors que le pod gRPC
+  # est sain. Le nom court résout via le 1er search domain (`dagster.svc.cluster.local`).
+  # Constaté sur la prod côté cluster (univ-lehavre/cluster#458). Le webserver et cette
+  # code-location sont dans le même ns `dagster` → le nom court nu suffit.
+  workspace.yaml: |
+    load_from:
+      - grpc_server:
+          host: mediawatch-dagster
+          port: 4000
+          location_name: mediawatch

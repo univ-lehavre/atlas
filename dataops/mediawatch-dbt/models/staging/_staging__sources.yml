@@ -1,0 +1,36 @@
+version: 2
+
+# Source du brut GKG projeté par `raw_gkg` (PR 2) vers `s3://mediawatch/raw/gkg/`.
+# dbt-duckdb résout `meta.external_location` en un reader DuckDB (`read_json_auto`) ;
+# le secret S3 du profil (path-style, depuis l'environnement) s'y applique. Déclarer
+# la source ici (plutôt qu'un `read_json_auto` en dur dans chaque modèle) centralise
+# le chemin et rend le lineage source→staging visible dans le manifest (Marquez).
+#
+# `hive_partitioning=false` : le brut est rangé sous `dt=YYYY-MM-DD/run=<id>/`, mais
+# ces clés viennent du CHEMIN, pas du JSON. Sans ce drapeau, DuckDB injecterait des
+# colonnes fantômes `dt`/`run`.
+#
+# PERFORMANCE (ADR 0064) : le scan est BORNÉ au jour de la partition courante
+# (`event_day`, injectée par Dagster = la partition raw_gkg du run), pas un glob `**`
+# qui relirait TOUT l'historique à chaque run. Le glob `run=*` couvre les multiples
+# `run=` du jour (re-matérialisations 15 min) ; la DÉDUPLICATION (dernier run gagne)
+# est faite dans `stg_gkg_mentions`. Défaut `event_day=*` (tous les jours) pour le dev
+# local et les tests, surchargé au run réel par la date de partition.
+#
+# `raw_root` est une var (défaut `s3://mediawatch/raw`, surchargée en test).
+sources:
+  - name: mediawatch_raw
+    description: "Brut GKG projeté (JSONL.gz), ingéré dans le lakehouse par raw_gkg."
+    tables:
+      - name: gkg
+        description: "Mentions d'organisations : record_id, date, organization, source, url, translated."
+        meta:
+          external_location: "read_json_auto('{{ var('raw_root') }}/gkg/dt={{ var('event_day', '*') }}/run=*/*.jsonl.gz', hive_partitioning=false, union_by_name=true, filename=true)"
+
+  - name: mediawatch_ref
+    description: "Référentiel d'universités ingéré (JSONL.gz) par ref_universities_snapshot."
+    tables:
+      - name: universities
+        description: "Universités du référentiel : university_id, name, country."
+        meta:
+          external_location: "read_json_auto('{{ var('ref_root') }}/universities/current/*.jsonl.gz', union_by_name=true)"

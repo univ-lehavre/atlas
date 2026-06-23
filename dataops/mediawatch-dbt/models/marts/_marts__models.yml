@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: marts_university_timeline
+    description: "Chronogramme servi : nombre d'articles par (université, jour) — ADR 0064."
+    columns:
+      - name: university_id
+        description: "Identifiant de l'université (référentiel)."
+        tests:
+          - not_null
+      - name: event_date
+        description: "Jour du chronogramme."
+        tests:
+          - not_null
+      - name: n_articles
+        description: "Nombre de documents distincts mentionnant l'université ce jour."
+        tests:
+          - not_null
