@@ -1,0 +1,70 @@
+[project]
+name = "mediawatch-dagster"
+version = "0.0.0"
+description = "Code-location Dagster de la veille médiatique (collecte GKG v2, ADR 0064)"
+requires-python = ">=3.10,<3.11"
+# Parité avec l'image Dagster du cluster (python:3.10-slim, dagster==1.13.7,
+# ADR cluster 0006 : verrou chart Helm <-> paquet Python 1:1).
+# NB : rclone n'est PAS une dépendance pip — c'est un binaire installé dans
+# l'image (voir Dockerfile), invoqué en sous-processus pour l'écriture lakehouse.
+dependencies = [
+  "dagster==1.13.7",
+  # Le run worker (K8sRunLauncher) EST cette image : à chaque run, le launcher
+  # crée un pod depuis DAGSTER_CURRENT_IMAGE (= cette image) qui REHYDRATE
+  # l'instance Dagster du cluster (dagster.yaml). Or le socle configure
+  # PostgresRunStorage/ScheduleStorage + K8sRunLauncher (contrat ADR 0043) : le
+  # pod doit donc pouvoir importer dagster_postgres ET dagster_k8s, sinon il
+  # échoue au démarrage (« Couldn't import module dagster_postgres.run_storage »)
+  # avant même d'exécuter l'asset. Numérotation propre 0.YY.Z (comme dagster-dbt,
+  # PAS celle de dagster core) : 0.29.7 ↔ dagster 1.13.7 (parité chart Helm ↔
+  # paquet Python, ADR cluster 0006).
+  "dagster-postgres==0.29.7",
+  "dagster-k8s==0.29.7",
+  "openlineage-python",
+  # Ingestion du brut GKG : pull HTTP des fichiers 15 minutes de GDELT (ADR 0064).
+  # httpx (BSD) télécharge les .gkg.csv.zip ; le ZIP est décompressé en mémoire
+  # (zipfile, stdlib) puis le CSV tab-delimited projeté (champs utiles) est écrit
+  # au lakehouse. Pas de rclone côté source (HTTP, pas S3).
+  "httpx",
+  # Pipeline de transformation : DuckDB lit le brut et écrit le Parquet sur S3
+  # (httpfs path-style) ; dbt-duckdb porte les modèles ; dagster-dbt expose les
+  # modèles comme assets. dagster-dbt suit une numérotation propre 0.YY.Z (PAS
+  # celle de dagster) : 0.29.7 ↔ dagster 1.13.7.
+  "duckdb",
+  "dbt-duckdb",
+  "dagster-dbt==0.29.7",
+  # Qualité des données : suites Great Expectations exécutées en asset checks
+  # Dagster BLOQUANTS (en complément des tests dbt). Validation in-process sur
+  # DataFrame pandas (contexte éphémère, hermétique). GE 1.18 tire
+  # numpy/scipy/pandas/cryptography (image plus lourde, ~200 Mo) — toutes licences
+  # permissives ; épinglé (la résolution multi-arch vérifiée en dépend).
+  "great-expectations==1.18.1",
+  "numpy",
+]
+# NB : dagster-postgres tire psycopg2-binary (LGPL) en transitive. Cette image
+# l'embarque NÉCESSAIREMENT pour rehydrater l'instance dans le run worker (voir
+# plus haut) ; on l'assume dans dataops/ (Python, hors gate licences Node — ADR
+# 0055). Le code applicatif, lui, n'utilise jamais psycopg2 directement.
+
+[dependency-groups]
+dev = ["ruff==0.15.18", "pytest", "pytest-cov"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mediawatch_dagster"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "--cov=mediawatch_dagster --cov-report=term-missing --cov-fail-under=90"
