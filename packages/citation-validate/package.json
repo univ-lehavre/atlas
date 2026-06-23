@@ -40,14 +40,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@clack/prompts": "~1.5.1",
+    "@clack/prompts": "~1.6.0",
     "@univ-lehavre/atlas-fetch-one-api-page": "workspace:*",
     "@univ-lehavre/atlas-citation-fetch": "workspace:*",
     "@univ-lehavre/atlas-citation-types": "workspace:*",
-    "effect": "~3.21.3",
+    "effect": "~3.21.4",
     "json-stable-stringify": "~1.3.0",
     "picocolors": "~1.1.1",
-    "uuid": "~14.0.0"
+    "uuid": "~14.0.1"
   },
   "devDependencies": {
     "@effect/vitest": "^0.29.0",
@@ -56,7 +56,7 @@
     "eslint": "^10.5.0",
     "prettier": "^3.8.4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.9"
   },
   "publishConfig": {
     "access": "public"
