@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: stg_gkg_mentions
+    description: "Mentions d'organisations GKG typées/normalisées (clé de rapprochement)."
+    columns:
+      - name: record_id
+        description: "Identifiant du document GKG (un document = un article)."
+        tests:
+          - not_null
+      - name: event_date
+        description: "Date civile (YYYY-MM-DD) extraite du timestamp GKG ; axe du chronogramme."
+        tests:
+          - not_null
+      - name: org_name
+        description: "Nom d'organisation nettoyé (non vide)."
+        tests:
+          - not_null
+      - name: org_key
+        description: "Clé de rapprochement normalisée (minuscule, sans accents ni ponctuation)."
+        tests:
+          - not_null
+
+  - name: stg_ref_universities
+    description: "Référentiel d'universités normalisé (autorité de la classification)."
+    columns:
+      - name: university_id
+        description: "Identifiant d'établissement (référentiel ouvert, générique)."
+        tests:
+          - not_null
+          - unique
+      - name: org_key
+        description: "Clé de rapprochement normalisée, identique à celle des mentions."
+        tests:
+          - not_null
+          - unique

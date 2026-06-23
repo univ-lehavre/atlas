@@ -1,0 +1,49 @@
+# Projet dbt-duckdb de la veille médiatique (ADR 0055, ADR 0064).
+#
+# dbt produit les modèles (staging → curated) ; Dagster les orchestre et émet le
+# lineage (dagster-dbt). Le backend S3 est configuré dans profiles.yml (DuckDB
+# httpfs + secret path-style depuis l'environnement). Staging = vues éphémères de
+# session `:memory:` → curated = Parquet external S3.
+name: "mediawatch"
+version: "0.0.0"
+config-version: 2
+
+profile: "mediawatch"
+
+# Pas de télémétrie réseau ni d'identifiant machine généré (hermétisme, ADR 0057).
+flags:
+  send_anonymous_usage_stats: false
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+# Variables injectées par Dagster au run (`dbt build --vars …`). Les défauts sont
+# inertes : ils permettent `dbt parse` et le dev local de réussir sans Dagster.
+#   - curated_dt  : période de la partition curated (YYYY-MM), remplacée au run.
+#   - curated_run : identifiant de run IMMUABLE (rejeu = nouveau run=<id>), de
+#     context.run_id côté Dagster. Garantit qu'un rejeu n'écrase jamais en place.
+#   - raw_root    : racine du brut (surchargée en test vers le bucket MinIO).
+vars:
+  curated_dt: "0000-00"
+  curated_run: "dev"
+  raw_root: "s3://mediawatch/raw"
+  # Racine du mart « servi » (contrat ADR 0029) ; surchargée en test.
+  marts_root: "s3://mediawatch/marts"
+  # Expression rationnelle d'aspect universitaire (heuristique de nom, ADR 0065).
+  # Multilingue : couvre les formes courantes traduites/non traduites. Configurable
+  # au run. Le référentiel (seed ref_universities) reste l'autorité ; l'heuristique
+  # élargit le rappel et signale les organisations universitaires hors référentiel.
+  university_name_regex: '(?i)(universit|hochschule|polytechnic|politecnico|institute of technology|大学|대학)'
+
+# Staging = vues vivant le temps de la session DuckDB `:memory:` (pas d'artefact S3
+# intermédiaire). Seul `curated` est externalisé en Parquet (contrat de sortie).
+# Le référentiel d'universités est un seed (CSV versionné) — l'autorité de la
+# classification (ADR 0065) — chargé en table de session DuckDB par défaut.
+models:
+  mediawatch:
+    staging:
+      +materialized: view
+    curated:
+      +materialized: external

@@ -80,6 +80,10 @@ dataops/citation-dbt/target/
 dataops/citation-dbt/logs/
 dataops/citation-dbt/dbt_packages/
 dataops/citation-dbt/.user.yml
+dataops/mediawatch-dbt/target/
+dataops/mediawatch-dbt/logs/
+dataops/mediawatch-dbt/dbt_packages/
+dataops/mediawatch-dbt/.user.yml
 .tmp_dagster_home_*/
 # Modèle d'embedding (lot 3) — téléchargé (révision HF figée + sha256), jamais versionné
 dataops/citation-dagster/src/citation_dagster/models/all-MiniLM-L6-v2/

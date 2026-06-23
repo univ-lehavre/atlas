@@ -42,9 +42,19 @@ RUN python -m uv pip install --system .
 ENV DUCKDB_EXTENSION_DIRECTORY=/opt/dagster/duckdb_extensions
 RUN python -c "import duckdb; c=duckdb.connect(config={'extension_directory': '$DUCKDB_EXTENSION_DIRECTORY'}); c.execute('INSTALL httpfs')"
 
-# NB : le projet dbt frère (`mediawatch-dbt/`) et le `dbt parse` hermétique seront
-# ajoutés ici à l'arrivée des modèles dbt (PR 3), sur le même patron que
-# citation-dagster (copie hors layout + CITATION_DBT_PROJECT_DIR équivalent).
+# Projet dbt frère (`mediawatch-dbt/`) copié hors de l'arbre du paquet ; son chemin
+# est découplé du layout du dépôt via MEDIAWATCH_DBT_PROJECT_DIR (lu par
+# mediawatch_dagster.dbt).
+COPY mediawatch-dbt /opt/dagster/mediawatch-dbt
+ENV MEDIAWATCH_DBT_PROJECT_DIR=/opt/dagster/mediawatch-dbt
+
+# Génère le manifest dbt DANS l'image (hermétique : `parse` ne fait aucune I/O S3).
+# Des identifiants S3 factices suffisent à satisfaire le rendu de profiles.yml.
+# Mêmes valeurs que `_DUMMY_PARSE_ENV` dans mediawatch_dagster.dbt (parse paresseux
+# CI) : garder les deux chemins de parse en phase.
+RUN AWS_ACCESS_KEY_ID=x AWS_SECRET_ACCESS_KEY=x BUCKET_HOST=x BUCKET_PORT=0 \
+    dbt parse --project-dir /opt/dagster/mediawatch-dbt \
+              --profiles-dir /opt/dagster/mediawatch-dbt --target dev
 
 # Exécution en utilisateur non privilégié (jamais root, contrat ADR cluster 0033).
 RUN useradd --create-home --uid 1000 dagster \

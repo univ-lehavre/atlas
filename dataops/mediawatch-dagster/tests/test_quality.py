@@ -66,3 +66,42 @@ def test_check_raw_gkg_fails_on_bad_data(monkeypatch) -> None:
     monkeypatch.setattr(q.lakehouse, "connect", lambda cfg=None: _FakeCon(bad))
     res = q.check_raw_gkg("mediawatch")
     assert res.passed is False
+
+
+# ── Curated (mentions qualifiées « université ») ─────────────────────────────
+
+_GOOD_CURATED = pd.DataFrame(
+    {
+        "record_id": ["20260101120000-1"],
+        "event_date": ["2026-01-01"],
+        "university_id": ["ror-03vek6s52"],
+        "university_name": ["Harvard University"],
+    }
+)
+
+
+def test_curated_university_suite_passes() -> None:
+    ok, meta = ge_suites.validate_df(
+        _GOOD_CURATED,
+        "curated_university_mentions",
+        ge_suites.curated_university_mentions_expectations(),
+    )
+    assert ok is True
+    assert meta["failed"] == []
+
+
+def test_curated_university_suite_fails_on_null_university_id() -> None:
+    bad = _GOOD_CURATED.copy()
+    bad["university_id"] = [None]
+    ok, _ = ge_suites.validate_df(
+        bad,
+        "curated_university_mentions",
+        ge_suites.curated_university_mentions_expectations(),
+    )
+    assert ok is False
+
+
+def test_check_curated_universities_passes(monkeypatch) -> None:
+    monkeypatch.setattr(q.lakehouse, "connect", lambda cfg=None: _FakeCon(_GOOD_CURATED))
+    res = q.check_curated_universities("mediawatch", "run1")
+    assert res.passed is True

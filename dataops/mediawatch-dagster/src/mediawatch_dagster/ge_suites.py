@@ -49,6 +49,27 @@ def raw_gkg_expectations() -> list:
     return exps
 
 
+# Colonnes du curated des mentions qualifiées « université » (contrat servi au mart).
+_CURATED_UNIV_COLS = ("record_id", "event_date", "university_id", "university_name")
+
+
+def curated_university_mentions_expectations() -> list:
+    """Contrat des mentions qualifiées « université » (appariées au référentiel).
+
+    Défense en profondeur sur le Parquet servi : les not_null sont déjà bloqués par
+    les tests dbt ; on redouble ici la présence des colonnes du contrat et la
+    non-vacuité des clés (université + date) au niveau du stockage curated.
+    """
+    exps = [gxe.ExpectColumnToExist(column=c) for c in _CURATED_UNIV_COLS]
+    exps += [
+        gxe.ExpectColumnValuesToNotBeNull(column="record_id"),
+        gxe.ExpectColumnValuesToNotBeNull(column="university_id"),
+        gxe.ExpectColumnValuesToNotBeNull(column="event_date"),
+        gxe.ExpectTableRowCountToBeBetween(min_value=1),
+    ]
+    return exps
+
+
 def validate_df(df, suite_name: str, expectations: list) -> tuple[bool, dict]:
     """Valide ``df`` contre une suite via un contexte GE éphémère (hermétique).
 

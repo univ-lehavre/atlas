@@ -1,0 +1,23 @@
+version: 2
+
+# Source du brut GKG projeté par `raw_gkg` (PR 2) vers `s3://mediawatch/raw/gkg/`.
+# dbt-duckdb résout `meta.external_location` en un reader DuckDB (`read_json_auto`) ;
+# le secret S3 du profil (path-style, depuis l'environnement) s'y applique. Déclarer
+# la source ici (plutôt qu'un `read_json_auto` en dur dans chaque modèle) centralise
+# le chemin et rend le lineage source→staging visible dans le manifest (Marquez).
+#
+# `hive_partitioning=false` : le brut est rangé sous `dt=YYYY-MM-DD/run=<id>/`, mais
+# ces clés viennent du CHEMIN, pas du JSON. Sans ce drapeau, DuckDB injecterait des
+# colonnes fantômes `dt`/`run` ; la période de la partition curated vient des vars
+# Dagster (`curated_dt`), pas du chemin brut.
+#
+# `raw_root` est une var (défaut `s3://mediawatch/raw`, surchargée en test → bucket
+# MinIO épinglé). Le glob `gkg/**/*.jsonl.gz` couvre toutes les partitions.
+sources:
+  - name: mediawatch_raw
+    description: "Brut GKG projeté (JSONL.gz), ingéré dans le lakehouse par raw_gkg."
+    tables:
+      - name: gkg
+        description: "Mentions d'organisations : record_id, date, organization, source, url, translated."
+        meta:
+          external_location: "read_json_auto('{{ var('raw_root') }}/gkg/**/*.jsonl.gz', hive_partitioning=false, union_by_name=true)"

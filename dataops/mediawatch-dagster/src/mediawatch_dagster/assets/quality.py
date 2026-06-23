@@ -16,6 +16,7 @@ NB : pas de ``from __future__ import annotations`` (Dagster introspecte, drift D
 from dagster import AssetCheckExecutionContext, AssetCheckResult, AssetKey, asset_check
 
 from mediawatch_dagster import ge_suites, lakehouse
+from mediawatch_dagster.dbt import CURATED_DT
 from mediawatch_dagster.resources import ceph_target_from_env
 
 
@@ -49,7 +50,36 @@ def check_raw_gkg(bucket: str) -> AssetCheckResult:
     return _result(ok, meta)
 
 
+def check_curated_universities(bucket: str, run_id: str) -> AssetCheckResult:
+    """Valide le curated des mentions qualifiées « université » (contrat servi).
+
+    Lit la partition immuable ``dt=…/run=<run_id>/`` du modèle dbt
+    ``curated_university_mentions`` et valide le contrat de colonnes + non-vacuité.
+    """
+    con = lakehouse.connect()
+    glob = (
+        f"s3://{bucket}/curated/curated_university_mentions/dt={CURATED_DT}/run={run_id}/*.parquet"
+    )
+    df = con.sql(
+        f"SELECT record_id, event_date, university_id, university_name FROM read_parquet('{glob}')"
+    ).df()
+    ok, meta = ge_suites.validate_df(
+        df, "curated_university_mentions", ge_suites.curated_university_mentions_expectations()
+    )
+    return _result(ok, meta)
+
+
 @asset_check(asset=AssetKey(["raw_gkg"]), name="ge_raw_gkg", blocking=True)
 def ge_raw_gkg(context: AssetCheckExecutionContext) -> AssetCheckResult:
     """Porte de qualité bloquante du brut GKG."""
     return check_raw_gkg(ceph_target_from_env().bucket)
+
+
+@asset_check(
+    asset=AssetKey(["curated_university_mentions"]),
+    name="ge_curated_universities",
+    blocking=True,
+)
+def ge_curated_universities(context: AssetCheckExecutionContext) -> AssetCheckResult:
+    """Porte de qualité bloquante du curated des mentions université."""
+    return check_curated_universities(ceph_target_from_env().bucket, context.run.run_id)
