@@ -70,10 +70,15 @@ def compute_drift(reference_df, current_df) -> dict:
     report = Report(metrics=[EmbeddingsDriftMetric("researcher_vectors")])
     report.run(reference_data=reference_df, current_data=current_df, column_mapping=mapping)
     result = report.as_dict()["metrics"][0]["result"]
+    # Le RAPPORT VISUEL (HTML autonome) est capturé ici, en mémoire (get_html, pas de
+    # fichier ni de réseau → la fonction reste pure/testable) pour être loggué comme
+    # artefact MLflow par l'appelant : seules les métriques étaient visibles jusqu'ici
+    # (atlas#431), le HTML rend le drift consultable dans l'UI MLflow (déjà exposée).
     return {
         "drift_score": float(result["drift_score"]),
         "drift_detected": bool(result["drift_detected"]),
         "method": result.get("method_name", "—"),
+        "html": report.get_html(),
     }
 
 
@@ -93,6 +98,13 @@ def _log_to_mlflow(run_id: str, drift: dict) -> bool:
             mlflow.log_param("dt", CURATED_DT)
             mlflow.log_metric("drift_score", drift["drift_score"])
             mlflow.log_metric("drift_detected", int(drift["drift_detected"]))
+            # Rapport visuel Evidently consultable dans l'UI MLflow (atlas#431).
+            # log_text écrit la string directement comme artefact (artefact store S3
+            # côté serveur) — pas de fichier temporaire local. Toléré absent (1er run
+            # sans HTML, ou compute_drift d'une version antérieure).
+            html = drift.get("html")
+            if html:
+                mlflow.log_text(html, "evidently_drift_report.html")
     except Exception:  # noqa: BLE001 — best-effort : MLflow ne doit jamais casser le check
         return False
     return True
