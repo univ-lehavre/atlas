@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: curated_university_mentions
+    description: "Mentions qualifiées « université » (appariées au référentiel, ADR 0065)."
+    columns:
+      - name: record_id
+        description: "Document GKG mentionnant l'université."
+        tests:
+          - not_null
+      - name: event_date
+        description: "Date civile de la mention (axe du chronogramme)."
+        tests:
+          - not_null
+      - name: university_id
+        description: "Identifiant de l'université appariée (référentiel)."
+        tests:
+          - not_null
+      - name: name_looks_university
+        description: "Drapeau d'aspect universitaire (heuristique de nom) — informatif."
+
+  - name: curated_university_candidates
+    description: "Organisations universitaires d'aspect ABSENTES du référentiel (enrichissement)."
+    columns:
+      - name: org_name
+        description: "Nom candidat à arbitrer pour enrichir le référentiel."
+        tests:
+          - not_null
+          - unique
+      - name: mention_count
+        description: "Nombre de mentions (priorise l'arbitrage)."
+        tests:
+          - not_null
