@@ -7,6 +7,12 @@
 # de prod, sinon le serveur gRPC tournerait sur le bon tag mais les runs sur
 # `:dev` (code divergent). Tenir ce tag synchronisé avec `images[].newTag` de
 # la kustomization.
+#
+# CITATION_S3_SECRET / CITATION_S3_CONFIGMAP nomment les ressources de l'OBC pour
+# les pods de RUN : definitions.py les branche au niveau run via dagster-k8s/config
+# (les env/envFrom du Deployment ne se propagent PAS aux pods de run, piège ADR 0086).
+# Le ConfigMap est REQUIS en prod (l'OBC sépare BUCKET_* du Secret AWS_*), à la
+# différence du banc (Secret unique). Tenir ces noms = celui de l'ObjectBucketClaim.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -20,6 +26,10 @@ spec:
           env:
             - name: DAGSTER_CURRENT_IMAGE
               value: registry:80/citation-dagster:0.0.0 # exemple ; = images[].newTag
+            - name: CITATION_S3_SECRET
+              value: atlas-datalake # = nom de l'ObjectBucketClaim (Secret AWS_*)
+            - name: CITATION_S3_CONFIGMAP
+              value: atlas-datalake # = nom de l'ObjectBucketClaim (ConfigMap BUCKET_*)
           envFrom:
             - secretRef:
                 name: atlas-datalake

@@ -9,6 +9,8 @@ Deux familles d'assets :
   ``dagster-dbt`` (``citation_dagster.dbt``).
 """
 
+import os
+
 from dagster import AssetSelection, Definitions, ScheduleDefinition, define_asset_job
 
 from citation_dagster.assets import (
@@ -33,10 +35,21 @@ from citation_dagster.assets.quality import (
 from citation_dagster.dbt import dbt_components
 
 # Le pod de run (K8sRunLauncher) doit recevoir les accès S3 du lakehouse : on
-# injecte le Secret citation-s3-access via les tags k8s au niveau du RUN (et non
-# de l'op — en mode multiprocess, seule la config run-level configure le pod).
+# injecte la SOURCE des creds (AWS_*/BUCKET_*) via les tags k8s au niveau du RUN (et
+# non de l'op — en mode multiprocess, seule la config run-level configure le pod).
 # Le job de transformation dbt en a besoin AUSSI : dbt-duckdb crée son secret S3
 # depuis l'environnement (profiles.yml + env_var) à l'ouverture de session.
+#
+# La SOURCE diffère selon le profil (comme l'envFrom du Deployment, cf. overlays) :
+#   - banc léger (SeaweedFS) : UN Secret unique porte AWS_* ET BUCKET_* ;
+#   - prod (ObjectBucketClaim Rook) : un Secret (AWS_*) ET un ConfigMap (BUCKET_*),
+#     tous deux du nom de la claim (≠ `citation-s3-access`).
+# Les NOMS de ces ressources sont donc des valeurs d'INSTANCE : on les lit de
+# l'environnement du pod gRPC (posé par chaque overlay via CITATION_S3_SECRET /
+# CITATION_S3_CONFIGMAP) plutôt que de les coder en dur. Défaut = `citation-s3-access`
+# (banc / checkout neuf / tests), pas de ConfigMap par défaut. Sans ce paramétrage,
+# un nom codé en dur ferait échouer le pod de run en prod (« Secret not found ») et,
+# même au bon nom, n'apporterait jamais le ConfigMap BUCKET_* de l'OBC.
 #
 # Piège ADR 0086 (contrat cluster) : les variables posées sur le Deployment de la
 # code-location gRPC (OPENLINEAGE_URL, MLFLOW_TRACKING_URI…) NE se propagent PAS
@@ -54,11 +67,29 @@ _RUN_ENV = [
     {"name": "OPENLINEAGE_NAMESPACE", "value": "dagster"},
     {"name": "MLFLOW_TRACKING_URI", "value": "http://mlflow.mlflow:5000"},
 ]
+
+
+def _s3_env_from() -> list[dict]:
+    """`env_from` des pods de run pour les creds S3 (AWS_*/BUCKET_*), par profil.
+
+    Lit les NOMS depuis l'env du pod gRPC (posés par l'overlay) : `CITATION_S3_SECRET`
+    (défaut `citation-s3-access`) toujours en `secret_ref` ; `CITATION_S3_CONFIGMAP`
+    ajouté en `config_map_ref` UNIQUEMENT s'il est défini (prod : ConfigMap BUCKET_*
+    de l'OBC ; banc : absent, le Secret unique porte déjà BUCKET_*).
+    """
+    secret = os.environ.get("CITATION_S3_SECRET", "citation-s3-access")
+    env_from = [{"secret_ref": {"name": secret}}]
+    configmap = os.environ.get("CITATION_S3_CONFIGMAP")
+    if configmap:
+        env_from.append({"config_map_ref": {"name": configmap}})
+    return env_from
+
+
 _RUN_K8S_CONFIG = {
     "dagster-k8s/config": {
         "container_config": {
             "env": _RUN_ENV,
-            "env_from": [{"secret_ref": {"name": "citation-s3-access"}}],
+            "env_from": _s3_env_from(),
         },
     },
 }
@@ -95,7 +126,8 @@ _TRANSFORM_K8S_CONFIG = {
         "container_config": {
             # Lineage + MLflow (piège ADR 0086) ET les POSTGRES_* d'index_load.
             "env": _TRANSFORM_ENV,
-            "env_from": [{"secret_ref": {"name": "citation-s3-access"}}],
+            # Même source S3 paramétrée par profil que le run d'ingestion.
+            "env_from": _s3_env_from(),
         },
     },
 }

@@ -68,6 +68,40 @@ for o in "${overlays[@]}"; do
     else
       echo "✓ configMapRef OBC branché"
     fi
+    # Pods de RUN : definitions.py branche la source S3 via CITATION_S3_SECRET /
+    # CITATION_S3_CONFIGMAP (le nom vit dans le Python, hors du rendu kustomize —
+    # angle mort de ce garde). En prod l'OBC sépare Secret AWS_* et ConfigMap
+    # BUCKET_* : les DEUX variables doivent être posées sur le Deployment, sinon le
+    # pod de run échoue (« Secret not found ») ou perd BUCKET_*. On vérifie leur
+    # présence ET que CITATION_S3_SECRET pointe le MÊME nom que l'ObjectBucketClaim.
+    obc_name="$(printf '%s' "$rendered" | awk '
+      $1=="kind:" && $2=="ObjectBucketClaim"{f=1}
+      f && $1=="name:"{print $2; exit}')"
+    for v in CITATION_S3_SECRET CITATION_S3_CONFIGMAP; do
+      # grep -F (chaîne fixe) : pas de \b portable en awk/grep BSD comme GNU.
+      if ! printf '%s' "$rendered" | grep -qF "name: $v"; then
+        echo "✗ prod : $v absent du Deployment (pods de run sans source S3)." >&2; fail=1
+      else
+        echo "✓ $v présent"
+      fi
+    done
+    if [ -n "$obc_name" ]; then
+      # La valeur de CITATION_S3_SECRET (ligne `value:` suivant son `name:`) doit
+      # être le nom de la claim — sinon le pod de run vise un Secret inexistant.
+      # index($0, k) plutôt que /.../ : pas de \b, et on isole le nom EXACT (le préfixe
+      # CITATION_S3_SECRET est aussi celui de _CONFIGMAP → ancrer sur la fin de ligne).
+      # Le nom est un item de liste YAML : `- name: CITATION_S3_SECRET` → $2/$3 ;
+      # la valeur suit sur sa propre ligne : `value: atlas-datalake` → $1/$2.
+      s3_secret_val="$(printf '%s' "$rendered" | awk '
+        $2=="name:" && $3=="CITATION_S3_SECRET"{f=1; next}
+        f && $1=="value:"{print $2; exit}')"
+      if [ "$s3_secret_val" != "$obc_name" ]; then
+        echo "✗ prod : CITATION_S3_SECRET ($s3_secret_val) ≠ ObjectBucketClaim ($obc_name)." >&2
+        fail=1
+      else
+        echo "✓ CITATION_S3_SECRET aligné sur l'OBC ($obc_name)"
+      fi
+    fi
   fi
 done
 
