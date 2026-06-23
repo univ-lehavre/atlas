@@ -1,15 +1,20 @@
-"""Tests du point d'entrée : la code-location reste chargeable au scaffold (PR 1)."""
+"""Tests du point d'entrée : la code-location se charge avec raw_gkg (PR 2)."""
 
-from dagster import Definitions
+from dagster import AssetKey, Definitions
 
 from mediawatch_dagster import definitions
 
 
-def test_definitions_loads_and_is_empty_at_scaffold() -> None:
-    # Le serveur gRPC importe ce module : il doit être chargeable même sans asset.
+def test_definitions_loads_with_raw_gkg() -> None:
+    # Le serveur gRPC importe ce module : il doit être chargeable.
     assert isinstance(definitions.defs, Definitions)
-    # Scaffold : aucune définition d'asset/job/schedule encore livrée (PR 2+).
-    assert list(definitions.defs.resolve_asset_graph().get_all_asset_keys()) == []
+    keys = list(definitions.defs.resolve_asset_graph().get_all_asset_keys())
+    assert AssetKey(["raw_gkg"]) in keys
+
+
+def test_ingestion_job_selects_raw_gkg() -> None:
+    job = definitions.defs.get_job_def("ingestion_job")
+    assert job is not None
 
 
 def test_run_k8s_config_injects_s3_secret_and_lineage_env() -> None:

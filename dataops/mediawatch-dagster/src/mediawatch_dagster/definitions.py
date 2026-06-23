@@ -3,20 +3,19 @@
 Chargé par le serveur gRPC (``dagster api grpc -m mediawatch_dagster.definitions``)
 que l'orchestrateur Dagster du cluster découvre via son workspace.
 
-Au scaffold (ADR 0064, PR 1), aucune définition d'asset n'est encore livrée : les
-``Definitions`` sont volontairement **vides** mais la code-location reste
-**chargeable** (le serveur gRPC démarre, la location apparaît dans l'UI). Les
-assets, jobs, asset checks et schedules sont ajoutés par lots :
-- ``raw_gkg`` + ``ingestion_job`` + GE du brut (PR 2) ;
+Lots livrés / à venir :
+- ``raw_gkg`` + ``ingestion_job`` + GE du brut (PR 2, livré) ;
 - modèles dbt + classification université + GE (PR 3) ;
 - mart ``university_timeline`` + manifest + schedule (PR 4).
 
-Le câblage K8s des pods de run (run workers) est déjà posé ici car il est commun à
-tous les lots : injection du Secret S3 du lakehouse et des variables OpenLineage au
-niveau du RUN.
+Le câblage K8s des pods de run (run workers) est commun à tous les lots : injection
+du Secret S3 du lakehouse et des variables OpenLineage au niveau du RUN.
 """
 
-from dagster import Definitions
+from dagster import AssetSelection, Definitions, define_asset_job
+
+from mediawatch_dagster.assets import raw_gkg
+from mediawatch_dagster.assets.quality import ge_raw_gkg
 
 # Le pod de run (K8sRunLauncher) doit recevoir les accès S3 du lakehouse : on
 # injecte le Secret mediawatch-s3-access via les tags k8s au niveau du RUN (et non
@@ -46,9 +45,18 @@ RUN_K8S_CONFIG = {
     },
 }
 
+# Le job d'ingestion ne sélectionne que raw_gkg (le pull HTTP du flux GKG). Il
+# porte le câblage K8s du run (Secret S3 + lineage). Les transformations dbt et le
+# mart viendront dans un transform_job distinct (PR 3/4).
+ingestion_job = define_asset_job(
+    "ingestion_job",
+    selection=AssetSelection.assets("raw_gkg"),
+    tags=RUN_K8S_CONFIG,
+)
+
 defs = Definitions(
-    assets=[],
-    asset_checks=[],
-    jobs=[],
+    assets=[raw_gkg],
+    asset_checks=[ge_raw_gkg],
+    jobs=[ingestion_job],
     schedules=[],
 )
