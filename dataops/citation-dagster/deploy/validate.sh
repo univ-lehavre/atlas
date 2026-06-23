@@ -54,6 +54,21 @@ for o in "${overlays[@]}"; do
     echo "✓ MLFLOW_TRACKING_URI présent"
   fi
 
+  # Invariant commun QoS (issue #400) : la code-location doit déclarer des
+  # resources.limits (sinon BestEffort, premier tué sous pression mémoire) ET un
+  # PodDisruptionBudget (anti-SPOF sur replicas:1). On garde leur présence pour
+  # qu'un retrait silencieux fasse échouer la validation.
+  if ! printf '%s' "$rendered" | grep -q 'limits:'; then
+    echo "✗ $o : resources.limits absentes (QoS BestEffort)." >&2; fail=1
+  else
+    echo "✓ resources.limits présentes"
+  fi
+  if ! printf '%s' "$rendered" | grep -q 'kind: PodDisruptionBudget'; then
+    echo "✗ $o : PodDisruptionBudget absent (SPOF non couvert)." >&2; fail=1
+  else
+    echo "✓ PodDisruptionBudget présent"
+  fi
+
   if [ "$o" = "prod" ]; then
     # Contrat ADR 0033 : pas de tag `:dev`/`latest` en production (ni sur
     # l'image du conteneur, ni sur DAGSTER_CURRENT_IMAGE des run workers).

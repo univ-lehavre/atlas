@@ -66,6 +66,30 @@ spec:
               port: 4000
             initialDelaySeconds: 5
             periodSeconds: 10
+          # Liveness : redémarre le pod si le serveur gRPC se fige (≠ readiness, qui
+          # ne fait que le retirer du routage). Délais PLUS LARGES que la readiness :
+          # le démarrage charge definitions.py + le manifest dbt packagé et importe
+          # la pile ML (onnxruntime/evidently/GE/duckdb) — ne pas tuer un pod qui
+          # démarre lentement. failureThreshold tolérant pour la même raison.
+          livenessProbe:
+            tcpSocket:
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+          # QoS (issue #400) : sans requests/limits, le pod est BestEffort → premier
+          # tué sous pression mémoire du nœud. Ce conteneur ne fait que SERVIR le gRPC
+          # (les runs lourds tournent dans des pods séparés du K8sRunLauncher), mais il
+          # importe la pile ML au chargement, d'où une request mémoire confortable.
+          # Valeurs = défaut raisonnable ; le déployeur les ajuste selon sa volumétrie
+          # (valeur d'instance, ADR 0031) — surcharge possible par patch d'overlay.
+          resources:
+            requests:
+              cpu: 100m
+              memory: 384Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
 ---
 apiVersion: v1
 kind: Service
