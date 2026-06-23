@@ -12,8 +12,9 @@ C'est une **seconde source** de la plateforme DataOps, distincte de `citation-da
 
 - **Source HTTP, pas S3.** Le brut est tiré par **pull HTTP** des fichiers 15 minutes
   de GDELT (`httpx`), pas par un sync S3→S3 rclone. Un seul remote rclone (`ceph`)
-  sert l'écriture lakehouse. Le watermark est un **timestamp** (`YYYYMMDDHHMMSS`),
-  pas une date de partition.
+  sert l'écriture lakehouse. L'ingestion est **partitionnée par jour** (la partition
+  est le curseur) : schedule 15 min pour le temps réel, backfill par matérialisation
+  des partitions passées.
 - **Classification à faire nous-mêmes.** Le GKG ne type pas les organisations : la
   qualification « université » se fait par heuristique de nom multilingue + référentiel
   ([ADR 0065](https://univ-lehavre.github.io/atlas/decisions/0065-classification-universites-heuristique-referentiel/)).
@@ -42,7 +43,14 @@ pnpm dataops:manifests  # validate.sh des overlays de déploiement
 pnpm dataops:check      # les trois enchaînés
 ```
 
-## Statut
+## Pipeline (assets)
 
-**Scaffold** (PR 1) : structure, déploiement et câblage K8s posés ; assets ajoutés
-par lots (voir [`definitions.py`](src/mediawatch_dagster/definitions.py)).
+- `raw_gkg` — pull HTTP du flux GKG, **partitionné par jour** (schedule 15 min
+  `ingest_current_day`, STOPPED par défaut) ;
+- `ref_universities_snapshot` — ingestion du **référentiel** d'universités (dump
+  ouvert, type _education_) ;
+- modèles dbt (`mediawatch-dbt`) — staging → curated (classification) → mart ;
+- `timeline_manifest` — `manifest.json` atomique du mart servi (contrat ADR 0029).
+
+Jobs : `ingestion_job` (partitionné), `ref_job`, `transform_job` (dbt + manifest).
+GE bloquant à chaque couche (brut, curated, mart).

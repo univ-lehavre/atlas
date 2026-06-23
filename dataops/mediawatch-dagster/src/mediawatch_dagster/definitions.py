@@ -13,6 +13,8 @@ Le câblage K8s des pods de run (run workers) est commun à tous les lots : inje
 du Secret S3 du lakehouse et des variables OpenLineage au niveau du RUN.
 """
 
+import os
+
 from dagster import (
     AssetSelection,
     DefaultScheduleStatus,
@@ -59,6 +61,32 @@ RUN_K8S_CONFIG = {
         },
     },
 }
+
+
+def _transform_run_config() -> dict:
+    """Config K8s du run de transformation : relaie les vars dbt aux pods de run.
+
+    Piège ADR 0086 : les vars posées sur le Deployment gRPC (overlay prod :
+    ``DBT_S3_USE_SSL``, ``MEDIAWATCH_REF_SOURCE``) NE se propagent PAS aux pods de
+    run. Or dbt-duckdb (SSL) et ``build_dbt_vars`` (ref_source) les lisent DANS le
+    pod de run. Ce module étant importé dans le Deployment gRPC, ``os.environ`` y
+    porte les valeurs de l'overlay : on les RELAIE explicitement au niveau du run
+    (valeurs absentes au banc → défauts ``false``/``seed``, inchangé).
+    """
+    relayed = [
+        {"name": name, "value": os.environ[name]}
+        for name in ("DBT_S3_USE_SSL", "MEDIAWATCH_REF_SOURCE")
+        if name in os.environ
+    ]
+    return {
+        "dagster-k8s/config": {
+            "container_config": {
+                "env": _RUN_ENV + relayed,
+                "env_from": [{"secret_ref": {"name": "mediawatch-s3-access"}}],
+            },
+        },
+    }
+
 
 # Le job d'ingestion ne sélectionne que raw_gkg (le pull HTTP du flux GKG). Il
 # porte le câblage K8s du run (Secret S3 + lineage). Partitionné par jour (la
@@ -130,7 +158,8 @@ if _dbt_assets:
         selection=(
             AssetSelection.assets(*_dbt_assets) | AssetSelection.assets("timeline_manifest")
         ),
-        tags=RUN_K8S_CONFIG,
+        # Relaie DBT_S3_USE_SSL / MEDIAWATCH_REF_SOURCE aux pods de run (piège ADR 0086).
+        tags=_transform_run_config(),
     )
     _jobs.append(transform_job)
 

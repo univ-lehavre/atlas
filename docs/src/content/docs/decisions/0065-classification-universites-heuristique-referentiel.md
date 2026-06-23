@@ -51,11 +51,16 @@ faire nous-mêmes**, en aval de l'ingestion. Cette décision en fixe la méthode
    comme « MIT », « Sorbonne ») — elle ne **décide pas** seule.
 
 2. **Référentiel d'établissements (gazetteer).** Un **référentiel d'universités
-   connues**, ingéré comme une source de données figée et versionnée (par exemple
-   **ROR** — _Research Organization Registry_ — ou les entités **Wikidata**
-   _instance of: university_, accès ouvert), sert de **table d'appariement** sur le
-   nom normalisé. C'est lui qui **fait foi** : une organisation retenue est une
-   organisation qui **matche le référentiel**.
+   connues**, ingéré comme une source de données (par exemple **ROR** — _Research
+   Organization Registry_, dump ouvert en domaine public, ~24 000 établissements de
+   type _education_ ; ou les entités **Wikidata** _instance of: university_), sert de
+   **table d'appariement** sur le nom normalisé. C'est lui qui **fait foi** : une
+   organisation retenue est une organisation qui **matche le référentiel**.
+   Le référentiel a sa **propre ingestion** (asset dédié, comme la collecte GKG) :
+   la classification est ainsi **autonome** dès le déploiement, sans dépendre d'un
+   référentiel fourni hors dépôt. Un **seed minimal** versionné sert d'exemple et de
+   support aux tests hermétiques ; le déployeur bascule sur le référentiel ingéré
+   (la **source** est configurable — le code permet, n'impose pas).
 
 Une organisation est **retenue** si elle apparie le référentiel. L'heuristique de
 nom sert à **deux fins** : pré-filtrer le volume avant l'appariement (performance),

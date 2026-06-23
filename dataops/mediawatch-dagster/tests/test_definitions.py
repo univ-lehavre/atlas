@@ -45,6 +45,27 @@ def test_run_k8s_config_injects_s3_secret_and_lineage_env() -> None:
     assert url == "http://marquez.marquez:5000"
 
 
+def test_transform_run_config_relays_dbt_env(monkeypatch) -> None:
+    # Piège ADR 0086 : les vars de l'overlay (DBT_S3_USE_SSL, MEDIAWATCH_REF_SOURCE)
+    # doivent être relayées aux pods de run. Présentes dans l'env → relayées.
+    monkeypatch.setenv("DBT_S3_USE_SSL", "true")
+    monkeypatch.setenv("MEDIAWATCH_REF_SOURCE", "ingested")
+    cfg = definitions._transform_run_config()["dagster-k8s/config"]["container_config"]
+    env = {e["name"]: e["value"] for e in cfg["env"]}
+    assert env["DBT_S3_USE_SSL"] == "true"
+    assert env["MEDIAWATCH_REF_SOURCE"] == "ingested"
+
+
+def test_transform_run_config_omits_absent_env(monkeypatch) -> None:
+    monkeypatch.delenv("DBT_S3_USE_SSL", raising=False)
+    monkeypatch.delenv("MEDIAWATCH_REF_SOURCE", raising=False)
+    cfg = definitions._transform_run_config()["dagster-k8s/config"]["container_config"]
+    names = {e["name"] for e in cfg["env"]}
+    # Au banc (vars absentes), rien à relayer → seules les vars de base présentes.
+    assert "DBT_S3_USE_SSL" not in names
+    assert "MEDIAWATCH_REF_SOURCE" not in names
+
+
 def test_no_mlflow_or_postgres_env_in_v1() -> None:
     # Périmètre v1 « articles seulement » : pas de MLflow ni d'index Postgres.
     names = {

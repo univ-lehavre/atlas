@@ -20,6 +20,13 @@ spec:
           env:
             - name: DAGSTER_CURRENT_IMAGE
               value: registry:80/mediawatch-dagster:0.0.0 # exemple ; = images[].newTag
+            # Prod (RGW Ceph) : endpoint en TLS → dbt-duckdb doit ouvrir le S3 en https.
+            - name: DBT_S3_USE_SSL
+              value: "true"
+            # Prod : la classification lit le référentiel ROR INGÉRÉ (autonome), pas le
+            # seed d'exemple (ADR 0065). Relayé en var dbt ref_source par dbt.py.
+            - name: MEDIAWATCH_REF_SOURCE
+              value: ingested
           envFrom:
             - secretRef:
                 name: atlas-mediawatch

@@ -55,12 +55,20 @@ CURATED_DT = "0000-00"
 
 
 def build_dbt_vars(run_id: str, curated_dt: str) -> dict[str, str]:
-    """Variables dbt injectées au run : période + id de run IMMUABLE.
+    """Variables dbt injectées au run : période + id de run IMMUABLE + source du réf.
 
     ``curated_run`` vient de ``context.run_id`` → un rejeu écrit un nouveau préfixe
     ``run=<id>/`` (immutabilité, jamais d'écriture en place).
+
+    ``ref_source`` relaie l'env ``MEDIAWATCH_REF_SOURCE`` (défaut ``seed`` : exemple
+    versionné, tests hermétiques). La prod pose ``ingested`` pour lire le référentiel
+    ROR ingéré par ``ref_universities_snapshot`` (classification autonome, ADR 0065).
     """
-    return {"curated_dt": curated_dt, "curated_run": run_id}
+    return {
+        "curated_dt": curated_dt,
+        "curated_run": run_id,
+        "ref_source": os.environ.get("MEDIAWATCH_REF_SOURCE", "seed"),
+    }
 
 
 def ensure_manifest() -> Path:

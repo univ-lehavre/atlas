@@ -46,9 +46,9 @@ Le présent ADR ne tranche que **où** et **comment** la source est collectée.
 
 > **La collecte GKG v2 vit dans un code-location Dagster dédié,
 > `mediawatch-dagster`, distinct de `citation-dagster`. L'ingestion se fait par
-> pull HTTP incrémental des fichiers 15 minutes depuis `data.gdeltproject.org`,
-> bornée par un watermark de timestamp, vers le lakehouse souverain. Aucune
-> dépendance à un service tiers (BigQuery) n'est introduite.**
+> pull HTTP des fichiers 15 minutes depuis `data.gdeltproject.org`, pilotée par une
+> partition temporelle journalière (curseur ré-matérialisable), vers le lakehouse
+> souverain. Aucune dépendance à un service tiers (BigQuery) n'est introduite.**
 
 ### Source : pull HTTP des fichiers 15 minutes, pas BigQuery
 
@@ -72,16 +72,37 @@ fait en **HTTP GET** (`httpx`, déjà dans l'écosystème Python). Les fichiers 
 mêmes briques que `citation-dagster` (`rclone` / DuckDB `httpfs`). `rclone` reste
 ajouté à l'image du code-location pour l'écriture S3 et le `manifest`.
 
-### Incrémental par watermark de timestamp
+### Curseur d'ingestion : partition temporelle journalière (pas de watermark)
 
-L'ingestion est **incrémentale**. Un **watermark de timestamp** persistant
-(`raw/_watermark.json` dans le lakehouse, même mécanique read-modify-write
-séquentielle que `citation-dagster`) mémorise le **dernier `YYYYMMDDHHMMSS`
-traité**. Chaque exécution ne télécharge que les fichiers **postérieurs** au
-watermark, lequel n'avance qu'après écriture **complète et réussie**
-(idempotence : un rejeu ne corrompt pas l'état). Sur le banc, le volume est
-**borné par configuration** (`sample_size` : nombre de fichiers 15 minutes par
-run), comme l'ingestion OpenAlex — on ne rapatrie jamais le flux complet en test.
+L'ingestion est pilotée par une **partition temporelle journalière** (Dagster
+`DailyPartitionsDefinition`) : **la partition EST le curseur**. Matérialiser la
+partition d'un jour rapatrie tous les fichiers 15 minutes de ce jour
+(`YYYYMMDD…`), écrits sous `raw/gkg/dt=YYYY-MM-DD/run=<run_id>/` — idempotent (un
+rejeu écrit un nouveau `run=`). Ce choix remplace un watermark applicatif : il rend
+chaque jour **ré-matérialisable indépendamment**, donc le **backfill** historique
+parallélisable et traçable (voir ci-dessous). Sur le banc, le volume reste **borné
+par configuration** (`max_files` par partition) — on ne rapatrie jamais une journée
+entière en test.
+
+### Cadence : quasi temps réel (15 minutes), schedule armé par l'opérateur
+
+La source publie toutes les 15 minutes ; on **colle à cette cadence**. Un schedule
+`*/15 * * * *` (`ingest_current_day`, **STOPPED par défaut** — l'opérateur l'arme,
+même posture que `citation` `transform_daily`) **re-matérialise la partition du jour
+courant** à chaque tick : les nouveaux fichiers du jour sont rapatriés au fil de
+l'eau (ingestion quasi temps réel). Le watermark n'étant plus nécessaire, la
+re-matérialisation est sûre (immutabilité par `run=`). Une cadence plus lente
+resterait correcte (la partition rattrape le jour entier) ; on retient 15 minutes
+pour la fraîcheur maximale, à la main de l'opérateur.
+
+### Backfill historique : matérialiser les partitions passées
+
+Le rattrapage de l'historique (GKG 2.1 démarre le 2015-02-19) **ne passe pas** par
+le schedule : il se fait en **matérialisant les partitions journalières passées**
+depuis l'UI Dagster (ou par l'API de backfill), **parallélisable** et **traçable**
+partition par partition. Chaque jour backfillé est indépendant et idempotent. Le
+volume par partition reste borné (`max_files`) ; un backfill large est étalé sous
+contrôle de l'opérateur, jamais un téléchargement géant en un seul run.
 
 ### Projection à l'ingestion : ne garder que les champs utiles
 
@@ -145,29 +166,35 @@ mis à jour dans la même PR le cas échéant.
 **Bénéfices.** Souveraineté : pas de dépendance Google Cloud, la source est un
 serveur HTTP public en accès anonyme. Multilingue **natif** : la traduction
 amont de GDELT rend « toutes langues » gratuit, sans logique d'ingestion par
-langue. Incrémentalité simple : un watermark de timestamp suffit, le flux est
-nativement partitionné par tranche de 15 minutes. Séparation des domaines : la
-veille médiatique n'alourdit pas le code-location bibliométrique.
+langue. Pilotage simple : la partition journalière sert de curseur, le flux étant
+nativement horodaté ; chaque jour est ré-matérialisable, donc le **backfill** est
+parallélisable et traçable. Séparation des domaines : la veille médiatique
+n'alourdit pas le code-location bibliométrique.
 
 **Prix à payer.** Volumétrie du flux : plusieurs Go/jour décompressé si l'on
 ingérait tout — d'où la **projection à l'ingestion** (champs utiles seulement) et
-le **bornage banc** (`sample_size`). Rattrapage : sur une fenêtre historique
-longue, le pull 15 minutes représente beaucoup de fichiers (96/jour) ; le bootstrap
-doit être **borné** et étalé. _Boilerplate_ de déploiement : un second
-code-location duplique le patron `base`/`overlays`, le Dockerfile gRPC et la
-chaîne CI Python. Egress Internet : comme pour OpenAlex, le pull HTTP exige un
-**egress sortant** depuis le cluster, en tension avec le réseau **default-deny**
-(ADR cluster
+le **bornage** par partition (`max_files`). Backfill : sur une fenêtre historique
+longue, chaque jour est une partition (96 fichiers) ; le rattrapage doit être
+**étalé** sous contrôle de l'opérateur (jamais un run géant). Cadence 15 minutes :
+~96 runs/jour quand le schedule est armé (coût orchestrateur et pods de run K8s,
+assumé pour la fraîcheur quasi temps réel ; STOPPED par défaut). _Boilerplate_ de
+déploiement : un second code-location duplique le patron `base`/`overlays`, le
+Dockerfile gRPC et la chaîne CI Python. Egress Internet : comme pour OpenAlex, le
+pull HTTP exige un **egress sortant** depuis le cluster, en tension avec le réseau
+**default-deny** (ADR cluster
 [0019](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0019-durcissement-reseau-cilium.md)) :
-une politique d'egress vers `data.gdeltproject.org` est un **prérequis
-d'infrastructure** (tracé côté dépôt `cluster`).
+une politique d'egress vers `data.gdeltproject.org` (et le registre du référentiel,
+voir [ADR 0065](/atlas/decisions/0065-classification-universites-heuristique-referentiel/))
+est un **prérequis d'infrastructure** (tracé côté dépôt `cluster`).
 
-**Garde-fous.** La donnée brute reste **immuable** (un rejeu produit un nouveau
-`run`, jamais une réécriture). Le **contrat de transfert** producteur↔consommateur
-(Parquet + `manifest`, [ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/))
-est **réutilisé tel quel** : cette source produit ses marts sous le même contrat.
-Le watermark n'avance qu'après succès complet. En test, l'échelle est **bornée**
-(quelques fichiers 15 minutes, fixtures figées) — on ne télécharge jamais le flux
-réel sur le banc ([ADR 0057](/atlas/decisions/0057-reproductibilite-tests-hermetiques/)).
-Aucune marque dans les identifiants
+**Garde-fous.** La donnée brute reste **immuable** (un rejeu d'une partition produit
+un nouveau `run`, jamais une réécriture). Le **contrat de transfert**
+producteur↔consommateur (Parquet + `manifest`,
+[ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/)) est
+**réutilisé tel quel** : cette source produit son mart sous le même contrat. Le
+schedule d'ingestion est **STOPPED par défaut** (l'opérateur l'arme). En test,
+l'échelle est **bornée** (quelques fichiers 15 minutes par partition, fixtures
+figées) — on ne télécharge jamais le flux réel sur le banc
+([ADR 0057](/atlas/decisions/0057-reproductibilite-tests-hermetiques/)). Aucune
+marque dans les identifiants
 ([ADR 0035](/atlas/decisions/0035-depot-generaliste-ouvert/)).
