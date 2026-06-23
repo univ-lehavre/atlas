@@ -8,6 +8,14 @@ packages:
   - sandbox/*
   - services/*
   - ui/*
+  # Code-locations dataops (Python/uv) — déclarées ICI uniquement pour entrer dans
+  # le graphe Turbo et bénéficier du cache des checks (lint:py/test:py/manifests:py,
+  # ADR 0066). Elles restent pilotées par uv/ruff/pytest, hors des audits Node
+  # (knip les exclut, audit:structure ne les voit pas). Chemins EXPLICITES (pas
+  # `dataops/*`) : les projets dbt (citation-dbt/mediawatch-dbt) n'ont pas de
+  # package.json et restent hors workspace.
+  - dataops/citation-dagster
+  - dataops/mediawatch-dagster
 
 ignoredOptionalDependencies:
   # sharp (optionalDependency d'astro) tire @img/sharp-libvips-* en LGPL.

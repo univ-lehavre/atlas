@@ -5,7 +5,7 @@
     "CRF_LOGS_CACHE_PATH",
     "GITHUB_TOKEN"
   ],
-  "globalDependencies": [".nvmrc", "pnpm-workspace.yaml"],
+  "globalDependencies": [".nvmrc", "pnpm-workspace.yaml", "fixtures/**"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -76,6 +76,27 @@
     "check": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", "tsconfig.json", "svelte.config.js"]
+    },
+    "lint:py": {
+      "inputs": [
+        "src/**",
+        "tests/**",
+        "pyproject.toml",
+        "uv.lock",
+        ".python-version"
+      ]
+    },
+    "test:py": {
+      "inputs": [
+        "src/**",
+        "tests/**",
+        "pyproject.toml",
+        "uv.lock",
+        ".python-version"
+      ]
+    },
+    "manifests:py": {
+      "inputs": ["deploy/**"]
     }
   }
 }

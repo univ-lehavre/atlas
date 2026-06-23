@@ -92,6 +92,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0063 | [Échantillon cohérent par construction sur les petits bancs (authors dérivés des works)](/atlas/decisions/0063-echantillon-coherent-banc/)                      | Accepted |
 | 0064 | [Collecte « veille médiatique » (GKG v2) par pull HTTP incrémental, code-location dédié](/atlas/decisions/0064-collecte-mediawatch-gkg/)                        | Accepted |
 | 0065 | [Qualifier une organisation comme « université » : heuristique de nom + référentiel](/atlas/decisions/0065-classification-universites-heuristique-referentiel/) | Accepted |
+| 0066 | [Cache Turbo des checks dataops : package.json minimal et entrée dans le workspace](/atlas/decisions/0066-cache-turbo-dataops/)                                 | Accepted |
 
 ## Quand ouvrir un ADR
 

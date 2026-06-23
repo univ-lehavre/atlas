@@ -1,0 +1,11 @@
+{
+  "name": "@univ-lehavre/atlas-mediawatch-dagster",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Code-location Dagster mediawatch (Python/uv) — package.json minimal pour le cache Turbo des checks (ADR 0066). Le code reste piloté par uv/ruff/pytest.",
+  "scripts": {
+    "lint:py": "uv run ruff check . && uv run ruff format --check .",
+    "test:py": "uv run pytest",
+    "manifests:py": "bash deploy/validate.sh"
+  }
+}

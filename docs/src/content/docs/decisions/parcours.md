@@ -4,7 +4,7 @@ title: Parcours thématique des décisions
 
 Cette page propose un **tour cohérent des décisions** du dépôt, regroupées par
 thème plutôt que par numéro. Elle s'adresse à un **nouveau venu** : plutôt que de
-lire les 65 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
+lire les 66 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
 comprendre _pourquoi_ le dépôt est fait comme il est.
 
 Pour la liste exhaustive par numéro (et le statut de chacun), voir
@@ -69,6 +69,10 @@ que sur le périmètre TypeScript.
   colonne vertébrale — chaque sous-projet a une catégorie et des règles propres.
 - [0055 — Catégorie `dataops/` (Python natif)](/atlas/decisions/0055-categorie-dataops-python/) :
   la 9e catégorie, pour le code DataOps (Dagster/dbt), hors du graphe Node/TypeScript.
+- [0066 — Cache Turbo des checks dataops](/atlas/decisions/0066-cache-turbo-dataops/) :
+  **amende** 0055 sur le seul point « aucun package.json » — les code-locations
+  reçoivent un `package.json` privé minimal pour entrer dans le cache Turbo (skip des
+  checks Python inchangés), sans devenir des paquets Node.
 - [0008 — CLIs thins, logique dans `packages/`](/atlas/decisions/0008-clis-thins-logique-dans-packages/) :
   où vit la logique métier.
 - [0009 — `atlas` source canonique vs `amarre`](/atlas/decisions/0009-atlas-source-canonique-amarre/) :
