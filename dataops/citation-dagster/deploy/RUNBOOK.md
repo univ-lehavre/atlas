@@ -16,6 +16,20 @@ changement passé en `local-path` doit être **revalidé en Ceph avant prod**
 (ADR 0036). Prérequis socle Ceph : OBC `atlas-datalake`, Secret `pgvector-pg-auth`
 (ns `dagster`), egress `dagster→mlflow` ([cluster#407](https://github.com/univ-lehavre/cluster/issues/407)).
 
+## En une commande
+
+[`install.sh`](install.sh) enchaîne build → tag → checks (`validate.sh` + lint +
+tests) → push Gitea, par profil. Il **demande confirmation** avant le push (le push
+déclenche Argo CD) ; `--no-push` s'arrête aux checks.
+
+```bash
+deploy/install.sh prod              # build SHA + checks + (confirmation) push → prod
+deploy/install.sh bench             # profil léger SeaweedFS (itération)
+deploy/install.sh prod v1.2.0 --no-push   # prépare sans déployer
+```
+
+## Pas à pas (équivalent manuel)
+
 ```bash
 # 1. Image, taguée immuable (jamais :dev/latest)
 TAG="$(git rev-parse --short HEAD)"
