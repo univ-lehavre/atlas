@@ -3,17 +3,25 @@
 Mise en prod du pipeline OpenAlex. **Action humaine**, GitOps : on **pousse sur
 Gitea**, Argo CD réconcilie — jamais de `kubectl apply`.
 
-**Deux overlays, deux profils** (ADR cluster [0035](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0035-strategie-bancs-fidelite-vitesse.md)/[0036](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0036-backing-s3-unique-rgw.md)) :
+**Preuve sur banc local-path ; prod sur Ceph** (ADR cluster [0085](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0085-preuves-applicatives-local-path.md),
+amende [0035](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0035-strategie-bancs-fidelite-vitesse.md)/[0045](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0045-chemins-installation-banc-couches.md)).
+Le code parle au stockage par un **chemin S3 paramétré unique** (`seaweedfs` ↔ `rgw`,
+storageClass dérivé du cluster, [ADR 0036](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0036-backing-s3-unique-rgw.md)) :
+prouver le pipeline sur local-path exerce **le même code** qu'en prod ; seul le
+*backing* change. Monter la chaîne applicative sur Ceph **ne tient pas** en ressources
+sur un banc mono-nœud (ADR 0085).
 
-| Profil | Overlay | S3 | Usage |
-| --- | --- | --- | --- |
-| `local-path` (banc léger, ~11 min) | `overlays/bench` | SeaweedFS | **itérer** un manifeste — pas une preuve |
-| Ceph (banc Ceph ~30 min, **et prod**) | `overlays/prod` | RGW Ceph + OBC | **preuve d'intégration** puis prod |
+| Environnement | Chemin d'install | Overlay | S3 | Rôle |
+| --- | --- | --- | --- | --- |
+| **Banc `atlas`** (mono-nœud local-path) | `run-phases.sh atlas` | `overlays/bench` | SeaweedFS | **preuve applicative de référence** (ingestion → transform → index → MLflow) |
+| **Prod** | (cluster de prod) | `overlays/prod` | RGW Ceph + OBC | la cible |
 
-La prod tourne sur Ceph ⇒ l'overlay de prod est `overlays/prod`. Il se valide
-**sur le banc Ceph** (même overlay, même profil), **pas** sur le banc léger : un
-changement passé en `local-path` doit être **revalidé en Ceph avant prod**
-(ADR 0036). Prérequis socle Ceph : OBC `atlas-datalake`, Secret `pgvector-pg-auth`
+> **Soupape S3 (ADR 0036/0085).** Un changement touchant le **chemin S3 / le backing /
+> un storageClass** doit être revalidé sur Ceph applicatif (`run-phases.sh cluster-dataops`,
+> **sur demande**) — local-path n'attrape pas une incompat propre à l'API RGW (signatures
+> S3, multipart). Hors de ce cas, la preuve `atlas` (local-path) suffit.
+
+Prérequis socle prod (Ceph) : OBC `atlas-datalake`, Secret `pgvector-pg-auth`
 (ns `dagster`), egress `dagster→mlflow` ([cluster#407](https://github.com/univ-lehavre/cluster/issues/407)).
 
 ## En une commande
@@ -43,20 +51,19 @@ dataops/citation-dagster/deploy/validate.sh
 git push   # remote Gitea déjà configuré par cluster/bench/lima/access.sh
 ```
 
-4. **Preuve sur le banc Ceph** (`run-phases.sh cluster-dataops`, profil Ceph) avec
-   `overlays/prod` : Application `citation-dagster` Synced/Healthy ; lancer
-   `ingestion_job` puis `transform_job` → les asset checks GE passent, la table
+4. **Preuve applicative sur le banc `atlas`** (`run-phases.sh atlas`, mono-nœud
+   local-path) avec `overlays/bench` : Application `citation-dagster` Synced/Healthy ;
+   lancer `ingestion_job` puis `transform_job` → les asset checks GE passent, la table
    `researchers` (pgvector) est peuplée, Marquez a le lineage, MLflow les runs.
-   Rejouer `transform_job` → nouvelle partition `dt=…/run=…` (idempotence OK).
-5. **Prod** : même overlay `overlays/prod` réconcilié par Argo CD sur le cluster de
-   prod (Ceph). La preuve banc Ceph faite, la prod ne change que les valeurs
-   d'instance (endpoints, creds).
-6. **(Option) Armer le CT** : poser `CITATION_CT_CRON` (mensuel `0 2 1 * *`) sur le
+   Rejouer `transform_job` → nouvelle partition `dt=…/run=…` (idempotence OK). C'est la
+   preuve de référence (ADR 0085) : même code applicatif qu'en prod, seul le backing S3
+   diffère.
+5. **(Si le diff touche le chemin S3 / backing / un storageClass)** revalider sur Ceph
+   applicatif `run-phases.sh cluster-dataops` avec `overlays/prod` — soupape ADR 0036/0085.
+6. **Prod** : `overlays/prod` (Ceph) réconcilié par Argo CD sur le cluster de prod ; la
+   prod ne change que les valeurs d'instance (endpoints, creds, OBC).
+7. **(Option) Armer le CT** : poser `CITATION_CT_CRON` (mensuel `0 2 1 * *`) sur le
    Deployment, puis basculer `transform_daily` sur **Running** dans l'UI Dagster.
-
-**Itération rapide** (hors bascule) : profil léger `run-phases.sh atlas` +
-`overlays/bench` (SeaweedFS) — pour tester un manifeste sans Ceph, ne vaut pas
-preuve.
 
 **Rollback** : remettre le tag précédent dans `overlays/prod`, `git push` — Argo CD
 reconverge (`selfHeal`). Ne jamais éditer le live à la main.

@@ -7,10 +7,12 @@
 # une confirmation explicite avant — un HUMAIN le lance (aucun agent ne déclenche le
 # déploiement réel, ADR cluster 0033). `--yes` saute la confirmation (CI/scripté).
 #
-# Deux profils (ADR cluster 0035/0036) :
-#   - bench : profil léger (SeaweedFS, overlays/bench) — ITÉRER, pas une preuve ;
-#   - prod  : profil Ceph (RGW/OBC, overlays/prod) — preuve banc Ceph PUIS prod.
-#     En prod le tag est IMMUABLE (jamais :dev/latest) et figé dans l'overlay.
+# Deux profils (ADR cluster 0085/0036) :
+#   - bench : banc `atlas` local-path (SeaweedFS, overlays/bench) — PREUVE APPLICATIVE
+#     de référence (même code qu'en prod, seul le backing S3 diffère, ADR 0085) ;
+#   - prod  : Ceph (RGW/OBC, overlays/prod) — la cible. Tag IMMUABLE (jamais
+#     :dev/latest), figé dans l'overlay. Un diff touchant le chemin S3/backing se
+#     revalide sur Ceph applicatif (soupape `cluster-dataops`, ADR 0036/0085).
 #
 # Usage :
 #   deploy/install.sh <bench|prod> [tag] [--yes] [--no-push]
