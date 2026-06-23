@@ -31,6 +31,21 @@ def test_read_existing_entity(monkeypatch):
     assert watermark.read_watermark("missing", "bucket", Path("/tmp/x")) is None
 
 
+def test_read_all_returns_full_document(monkeypatch):
+    # read_all (utilisé par le sensor de CT) renvoie le document complet, {} si absent.
+    payload = json.dumps({"works": "2024-01-05", "merged_ids:works": "2022-07-18"})
+    monkeypatch.setattr(subprocess, "run", lambda cmd, **k: _completed(cmd, stdout=payload))
+    assert watermark.read_all("bucket", Path("/tmp/x")) == {
+        "works": "2024-01-05",
+        "merged_ids:works": "2022-07-18",
+    }
+
+
+def test_read_all_absent_returns_empty(monkeypatch):
+    monkeypatch.setattr(subprocess, "run", lambda cmd, **k: _completed(cmd, stdout=""))
+    assert watermark.read_all("bucket", Path("/tmp/x")) == {}
+
+
 def test_write_merges_existing_keys(monkeypatch):
     """L'écriture met à jour une entité sans écraser l'autre (merge du JSON)."""
     written = {}
