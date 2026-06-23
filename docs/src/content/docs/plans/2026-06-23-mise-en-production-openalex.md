@@ -223,11 +223,19 @@ ingestion → transform.
 
 ### Lot 8 — Bascule production
 
+> **Action HUMAINE** validée au banc Lima avant la prod (ADR cluster 0043/0044) :
+> aucun agent ne la déclenche. La procédure pas à pas est le **runbook**
+> [`deploy/RUNBOOK.md`](https://github.com/univ-lehavre/atlas/blob/main/dataops/citation-dagster/deploy/RUNBOOK.md)
+> — prérequis socle, build + tag immuable, **push Gitea** (déclencheur GitOps, pas
+> GitHub), réconciliation Argo CD, run de validation, rollback.
+
 - [ ] `validate.sh` vert (build + kubeconform + invariants des deux overlays).
-- [ ] Image taguée immuable, poussée sur le registry interne (`registry:80`).
-- [ ] `Application` Argo CD pointant l'overlay `prod` (cf.
-  `deploy/application.example.yaml`), réconciliée depuis Gitea — **jamais**
-  `kubectl apply`.
+- [ ] Image taguée immuable, poussée sur le registry interne (`registry:80`) ; tag
+  figé dans l'overlay prod (`newTag` + `DAGSTER_CURRENT_IMAGE` alignés).
+- [ ] Manifestes (overlay `prod` + `Application` Argo CD) **poussés sur Gitea
+  intra-banc** → webhook → Argo CD réconcilie — **jamais** `kubectl apply`.
+- [ ] `Application` `citation-dagster` **Synced + Healthy** ; code-location visible
+  dans l'UI Dagster.
 - [ ] Run réel **au banc Lima** d'abord : `ingestion_job` puis `transform_job` ;
   vérifier dans les pods de run que `AWS_*`/`BUCKET_*`, `OPENLINEAGE_URL`,
   `MLFLOW_TRACKING_URI`, `POSTGRES_*` sont présents (pas de no-op silencieux), que
