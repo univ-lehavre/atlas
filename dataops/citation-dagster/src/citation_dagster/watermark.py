@@ -69,6 +69,16 @@ def read_watermark(key: str, bucket: str, config_path: Path) -> str | None:
     return _load(bucket, config_path).get(key)
 
 
+def read_all(bucket: str, config_path: Path) -> dict[str, str]:
+    """Renvoie le document watermark COMPLET (``{}`` si absent).
+
+    Le sensor de CT (``definitions.py``) compare cet état d'ensemble à son curseur
+    pour détecter qu'une INGESTION a avancé (nouvelle donnée brute) et déclencher le
+    réentraînement. Lecture seule, sans effet de bord (contrairement à
+    ``write_watermark``)."""
+    return _load(bucket, config_path)
+
+
 def write_watermark(key: str, date: str, bucket: str, config_path: Path) -> None:
     """Avance le watermark de ``key`` à ``date`` (réécrit le document JSON).
 

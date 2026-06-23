@@ -9,10 +9,24 @@ Deux familles d'assets :
   ``dagster-dbt`` (``citation_dagster.dbt``).
 """
 
+import json
 import os
+import tempfile
+from pathlib import Path
 
-from dagster import AssetSelection, Definitions, ScheduleDefinition, define_asset_job
+from dagster import (
+    AssetSelection,
+    DefaultSensorStatus,
+    Definitions,
+    RunRequest,
+    ScheduleDefinition,
+    SensorEvaluationContext,
+    SkipReason,
+    define_asset_job,
+    sensor,
+)
 
+from citation_dagster import watermark
 from citation_dagster.assets import (
     collab_manifest,
     index_load,
@@ -33,6 +47,7 @@ from citation_dagster.assets.quality import (
     ge_researcher_vectors,
 )
 from citation_dagster.dbt import dbt_components
+from citation_dagster.resources import ceph_target_from_env, render_rclone_config
 
 # Le pod de run (K8sRunLauncher) doit recevoir les accès S3 du lakehouse : on
 # injecte la SOURCE des creds (AWS_*/BUCKET_*) via les tags k8s au niveau du RUN (et
@@ -230,10 +245,69 @@ if _dbt_assets:
     )
     _schedules.append(transform_daily)
 
+
+# CT PAR SIGNAL (atlas#399) : un @sensor déclenche transform_job quand l'INGESTION a
+# avancé — réentraîner sur de la donnée VRAIMENT neuve, pas seulement au calendrier
+# (complète le @schedule mensuel d'instance ci-dessus). Le signal est l'avancée du
+# watermark d'ingestion (raw/_watermark.json) : on compare l'état complet du watermark
+# au curseur du sensor ; tout changement → un RunRequest. STOPPED par défaut comme le
+# schedule (le code PERMET, le déployeur arme — ADR 0062/0031).
+
+
+def evaluate_ct_sensor(state: dict, cursor: str | None) -> tuple[bool, str, str]:
+    """Corps PUR (sans I/O ni Dagster) : décide si l'avancée du watermark déclenche un run.
+
+    ``state`` : document watermark complet (``watermark.read_all``). ``cursor`` : sérialisé
+    de l'état vu au dernier tick. Renvoie ``(should_run, run_key, new_cursor)`` :
+    - ``new_cursor`` = état courant sérialisé (clés triées → déterministe) ;
+    - ``should_run`` = l'état a changé ET n'est pas vide (rien à réentraîner sans donnée) ;
+    - ``run_key`` = ce même sérialisé → **dédup Dagster** : un état déjà déclenché ne
+      relance pas (idempotence ; pas de double-déclenchement sur re-éval du même état).
+    """
+    new_cursor = json.dumps(state, sort_keys=True)
+    should_run = bool(state) and new_cursor != cursor
+    return should_run, new_cursor, new_cursor
+
+
+_sensors = []
+if _dbt_assets:
+
+    @sensor(
+        name="transform_on_watermark_advance",
+        job=transform_job,
+        default_status=DefaultSensorStatus.STOPPED,  # le déployeur l'arme (ADR 0062/0031)
+        minimum_interval_seconds=300,  # éval toutes les 5 min max (le watermark bouge lentement)
+        description="CT par signal : déclenche transform_job à l'avancée du watermark.",
+    )
+    def transform_on_watermark_advance(context: SensorEvaluationContext):
+        # Lecture best-effort du watermark (rclone.conf temporaire, comme les assets) :
+        # sans accès S3 (dev/CI), le sensor SKIP proprement plutôt que d'échouer.
+        try:
+            target = ceph_target_from_env()
+            with tempfile.TemporaryDirectory() as tmp:
+                config_path = Path(tmp) / "rclone.conf"
+                config_path.write_text(render_rclone_config(target))
+                state = watermark.read_all(target.bucket, config_path)
+        except Exception as exc:  # noqa: BLE001 — pas d'accès S3 : on n'échoue pas le sensor
+            yield SkipReason(f"watermark illisible (accès S3 indisponible) : {exc}")
+            return
+        should_run, run_key, new_cursor = evaluate_ct_sensor(state, context.cursor)
+        context.update_cursor(new_cursor)
+        if should_run:
+            # run_key = état du watermark → Dagster dédoublonne : un même état ne relance pas.
+            yield RunRequest(run_key=run_key)
+        else:
+            yield SkipReason(
+                "watermark inchangé depuis le dernier run (rien de neuf à réentraîner)"
+            )
+
+    _sensors.append(transform_on_watermark_advance)
+
 defs = Definitions(
     assets=_assets,
     asset_checks=_asset_checks,
     jobs=_jobs,
     schedules=_schedules,
+    sensors=_sensors,
     resources=_dbt_resources,
 )

@@ -2,7 +2,12 @@
 
 import json
 
-from citation_dagster.definitions import _s3_env_from, defs, ingestion_job
+from citation_dagster.definitions import (
+    _s3_env_from,
+    defs,
+    evaluate_ct_sensor,
+    ingestion_job,
+)
 
 
 def _run_container_config(job):
@@ -89,3 +94,62 @@ def test_transform_job_injects_all_postgres_env_into_run_pod():
         assert ref == {"name": "pgvector-pg-auth", "key": key}
     # on n'injecte PLUS le Secret brut pg-role-pgvector (mauvaises clés + mauvais ns).
     assert {"secret_ref": {"name": "pg-role-pgvector"}} not in cfg.get("env_from", [])
+
+
+# ── CT par signal : @sensor watermark → transform_job (atlas#399) ─────────────
+
+
+def test_ct_sensor_registered_when_dbt_present():
+    # En présence des assets dbt (manifest packagé), le sensor de CT est enregistré.
+    names = {s.name for s in defs.sensors}
+    assert "transform_on_watermark_advance" in names
+
+
+def test_ct_sensor_stopped_by_default():
+    # Le code PERMET, le déployeur ARME (ADR 0062/0031) : sensor STOPPED par défaut.
+    from dagster import DefaultSensorStatus
+
+    s = next(s for s in defs.sensors if s.name == "transform_on_watermark_advance")
+    assert s.default_status == DefaultSensorStatus.STOPPED
+
+
+def test_evaluate_ct_sensor_first_state_triggers():
+    # Premier watermark observé (curseur None) et non vide → déclenche, curseur = état.
+    state = {"works": "2024-01-05", "authors": "2024-01-04"}
+    should_run, run_key, new_cursor = evaluate_ct_sensor(state, None)
+    assert should_run is True
+    assert run_key == new_cursor == json.dumps(state, sort_keys=True)
+
+
+def test_evaluate_ct_sensor_unchanged_skips():
+    # État identique au curseur → pas de re-déclenchement (dédup, pas de double-run).
+    state = {"works": "2024-01-05"}
+    cursor = json.dumps(state, sort_keys=True)
+    should_run, run_key, new_cursor = evaluate_ct_sensor(state, cursor)
+    assert should_run is False
+    assert new_cursor == cursor
+
+
+def test_evaluate_ct_sensor_advance_triggers_new_run_key():
+    # Le watermark avance → déclenche, et le run_key CHANGE (Dagster ne dédupe pas l'ancien).
+    old = {"works": "2024-01-05"}
+    cursor = json.dumps(old, sort_keys=True)
+    new = {"works": "2024-02-10"}
+    should_run, run_key, _ = evaluate_ct_sensor(new, cursor)
+    assert should_run is True
+    assert run_key == json.dumps(new, sort_keys=True)
+    assert run_key != cursor
+
+
+def test_evaluate_ct_sensor_empty_state_skips():
+    # Watermark vide (aucune ingestion encore) → rien à réentraîner, pas de déclenchement.
+    should_run, _, new_cursor = evaluate_ct_sensor({}, None)
+    assert should_run is False
+    assert new_cursor == json.dumps({}, sort_keys=True)
+
+
+def test_evaluate_ct_sensor_key_order_insensitive():
+    # Le sérialisé est trié → un même état à clés permutées ne re-déclenche pas (déterminisme).
+    cursor = json.dumps({"authors": "2024-01-04", "works": "2024-01-05"}, sort_keys=True)
+    should_run, _, _ = evaluate_ct_sensor({"works": "2024-01-05", "authors": "2024-01-04"}, cursor)
+    assert should_run is False
