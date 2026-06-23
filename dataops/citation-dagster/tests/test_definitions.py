@@ -2,7 +2,7 @@
 
 import json
 
-from citation_dagster.definitions import defs, ingestion_job
+from citation_dagster.definitions import _s3_env_from, defs, ingestion_job
 
 
 def _run_container_config(job):
@@ -19,9 +19,41 @@ def test_defs_exposes_raw_snapshot_asset():
 
 def test_ingestion_job_injects_s3_secret_into_run_pod():
     # Les tags k8s au niveau run propagent le Secret S3 au pod de run.
-    # Dagster sérialise la valeur du tag en chaîne JSON.
+    # Dagster sérialise la valeur du tag en chaîne JSON. Sans env d'overlay, le
+    # défaut est le Secret unique du banc (citation-s3-access), sans ConfigMap.
     env_from = _run_container_config(ingestion_job)["env_from"]
     assert {"secret_ref": {"name": "citation-s3-access"}} in env_from
+
+
+def test_s3_env_from_default_bench_secret_only(monkeypatch):
+    # Sans CITATION_S3_* (banc / checkout neuf / tests) : un seul secret_ref par
+    # défaut (citation-s3-access), AUCUN config_map_ref (le Secret unique du banc
+    # porte déjà BUCKET_*).
+    monkeypatch.delenv("CITATION_S3_SECRET", raising=False)
+    monkeypatch.delenv("CITATION_S3_CONFIGMAP", raising=False)
+    env_from = _s3_env_from()
+    assert env_from == [{"secret_ref": {"name": "citation-s3-access"}}]
+
+
+def test_s3_env_from_prod_obc_secret_and_configmap(monkeypatch):
+    # Prod (ObjectBucketClaim Rook) : le Secret AWS_* ET le ConfigMap BUCKET_* sont
+    # tous deux du nom de la claim. Les pods de RUN doivent recevoir LES DEUX (le
+    # ConfigMap est requis en prod, à la différence du banc) — sinon BUCKET_* absent.
+    monkeypatch.setenv("CITATION_S3_SECRET", "atlas-datalake")
+    monkeypatch.setenv("CITATION_S3_CONFIGMAP", "atlas-datalake")
+    env_from = _s3_env_from()
+    assert {"secret_ref": {"name": "atlas-datalake"}} in env_from
+    assert {"config_map_ref": {"name": "atlas-datalake"}} in env_from
+    assert len(env_from) == 2
+
+
+def test_s3_env_from_secret_without_configmap(monkeypatch):
+    # Un overlay peut renommer le Secret sans déclarer de ConfigMap (ex. banc à
+    # creds custom) : on n'ajoute config_map_ref QUE si CITATION_S3_CONFIGMAP existe.
+    monkeypatch.setenv("CITATION_S3_SECRET", "custom-s3")
+    monkeypatch.delenv("CITATION_S3_CONFIGMAP", raising=False)
+    env_from = _s3_env_from()
+    assert env_from == [{"secret_ref": {"name": "custom-s3"}}]
 
 
 def test_ingestion_job_injects_lineage_and_mlflow_env_into_run_pod():
