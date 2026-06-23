@@ -20,6 +20,7 @@ NB : pas de ``from __future__ import annotations`` (Dagster introspecte, drift D
 """
 
 import json
+import os
 
 from dagster import AssetCheckExecutionContext, AssetCheckResult, AssetKey, asset_check
 
@@ -28,6 +29,36 @@ from citation_dagster.dbt import CURATED_DT
 from citation_dagster.resources import ceph_target_from_env, postgres_target_from_env
 
 _MART_GLOB = "marts/collab"
+
+
+def _log_ge_to_mlflow(check_name: str, run_id: str, result: AssetCheckResult) -> bool:
+    """Logge le RÉSULTAT d'un asset check GE dans MLflow (best-effort, atlas#431).
+
+    Les suites GE sont validées in-process : leur verdict n'était visible que dans l'UI
+    Dagster. On publie ici, comme artefact MLflow JSON (UI MLflow déjà exposée), le
+    verdict + les métadonnées (suite, evaluated, failed) pour une vue « rapports
+    qualité » unifiée à côté du drift. Best-effort : MLflow ne doit JAMAIS faire échouer
+    une porte de qualité. ``MLFLOW_TRACKING_URI`` absent (dev/CI hermétique) → no-op.
+    Renvoie True si loggué, False sinon (le check ne DÉPEND pas de MLflow).
+    """
+    if not os.environ.get("MLFLOW_TRACKING_URI"):
+        return False
+    try:
+        import mlflow
+
+        # Les valeurs de métadonnée sont des MetadataValue Dagster → .value/.text ; on
+        # sérialise leur représentation texte (robuste quel que soit le type).
+        meta = {k: getattr(v, "value", getattr(v, "text", v)) for k, v in result.metadata.items()}
+        payload = {"check": check_name, "run_id": run_id, "passed": result.passed, **meta}
+        mlflow.set_experiment("citation_quality")
+        with mlflow.start_run(run_name=f"{check_name}:{run_id}"):
+            mlflow.log_param("check", check_name)
+            mlflow.log_param("run_id", run_id)
+            mlflow.log_metric("passed", int(result.passed))
+            mlflow.log_text(json.dumps(payload, ensure_ascii=False, indent=2), f"{check_name}.json")
+    except Exception:  # noqa: BLE001 — best-effort : MLflow ne casse jamais la porte GE
+        return False
+    return True
 
 
 def _result(passed: bool, metadata: dict) -> AssetCheckResult:
@@ -185,31 +216,48 @@ def check_index_load(bucket: str, run_id: str) -> AssetCheckResult:
 # ── Asset checks Dagster (minces : résolvent le run puis délèguent) ───────────
 
 
+# Chaque wrapper exécute le corps pur PUIS publie le résultat dans MLflow (best-effort,
+# atlas#431) avant de le renvoyer à Dagster. Le logging vit au niveau wrapper (en
+# cluster) pour que les corps purs (check_*) restent testables hermétiquement.
+
+
 @asset_check(asset=AssetKey(["raw_snapshot"]), name="ge_raw_contract", blocking=True)
 def ge_raw_contract(context: AssetCheckExecutionContext) -> AssetCheckResult:
-    return check_raw(ceph_target_from_env().bucket)
+    result = check_raw(ceph_target_from_env().bucket)
+    _log_ge_to_mlflow("ge_raw_contract", context.run.run_id, result)
+    return result
 
 
 @asset_check(asset=AssetKey(["curated_edges"]), name="ge_curated_edges", blocking=True)
 def ge_curated_edges(context: AssetCheckExecutionContext) -> AssetCheckResult:
-    return check_curated_edges(ceph_target_from_env().bucket, context.run.run_id)
+    result = check_curated_edges(ceph_target_from_env().bucket, context.run.run_id)
+    _log_ge_to_mlflow("ge_curated_edges", context.run.run_id, result)
+    return result
 
 
 @asset_check(asset=AssetKey(["marts_collab_pairs"]), name="ge_marts_collab", blocking=True)
 def ge_marts_collab(context: AssetCheckExecutionContext) -> AssetCheckResult:
-    return check_marts(ceph_target_from_env().bucket, context.run.run_id)
+    result = check_marts(ceph_target_from_env().bucket, context.run.run_id)
+    _log_ge_to_mlflow("ge_marts_collab", context.run.run_id, result)
+    return result
 
 
 @asset_check(asset=AssetKey(["marts_researchers"]), name="ge_marts_researchers", blocking=True)
 def ge_marts_researchers(context: AssetCheckExecutionContext) -> AssetCheckResult:
-    return check_researchers(ceph_target_from_env().bucket, context.run.run_id)
+    result = check_researchers(ceph_target_from_env().bucket, context.run.run_id)
+    _log_ge_to_mlflow("ge_marts_researchers", context.run.run_id, result)
+    return result
 
 
 @asset_check(asset=AssetKey(["researcher_embeddings"]), name="ge_researcher_vectors", blocking=True)
 def ge_researcher_vectors(context: AssetCheckExecutionContext) -> AssetCheckResult:
-    return check_researcher_vectors(ceph_target_from_env().bucket, context.run.run_id)
+    result = check_researcher_vectors(ceph_target_from_env().bucket, context.run.run_id)
+    _log_ge_to_mlflow("ge_researcher_vectors", context.run.run_id, result)
+    return result
 
 
 @asset_check(asset=AssetKey(["index_load"]), name="ge_index_load", blocking=True)
 def ge_index_load(context: AssetCheckExecutionContext) -> AssetCheckResult:
-    return check_index_load(ceph_target_from_env().bucket, context.run.run_id)
+    result = check_index_load(ceph_target_from_env().bucket, context.run.run_id)
+    _log_ge_to_mlflow("ge_index_load", context.run.run_id, result)
+    return result
