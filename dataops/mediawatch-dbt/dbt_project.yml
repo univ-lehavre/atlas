@@ -31,6 +31,12 @@ vars:
   raw_root: "s3://mediawatch/raw"
   # Racine du mart « servi » (contrat ADR 0029) ; surchargée en test.
   marts_root: "s3://mediawatch/marts"
+  # Racine du référentiel ingéré (ref_universities_snapshot) ; surchargée en test.
+  ref_root: "s3://mediawatch/ref"
+  # Source du référentiel d'universités (ADR 0065) : `seed` (exemple versionné,
+  # défaut — tests hermétiques) ou `ingested` (référentiel ROR ingéré dans le
+  # lakehouse, autonome en prod). La prod surcharge à `ingested`.
+  ref_source: "seed"
   # Expression rationnelle d'aspect universitaire (heuristique de nom, ADR 0065).
   # Multilingue : couvre les formes courantes traduites/non traduites. Configurable
   # au run. Le référentiel (seed ref_universities) reste l'autorité ; l'heuristique

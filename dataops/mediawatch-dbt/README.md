@@ -25,10 +25,18 @@ une université du seed `ref_universities`. L'heuristique de nom (regex multilin
 var `university_name_regex`) **n'est pas** un critère de rétention à elle seule ;
 elle alimente le canal d'enrichissement (`curated_university_candidates`).
 
-Le seed `ref_universities.csv` est un **exemple minimal** versionné (identifiants
-génériques, neutralité [ADR 0035](https://univ-lehavre.github.io/atlas/decisions/0035-depot-generaliste-ouvert/)).
-Le déployeur le remplace par son référentiel (ROR, Wikidata, liste maison) — le
-code **permet** de charger un référentiel, il n'en impose aucun.
+La **source** du référentiel est choisie par la var `ref_source` :
+
+- `seed` (défaut) — le seed `ref_universities.csv`, **exemple minimal** versionné
+  (identifiants génériques, neutralité [ADR 0035](https://univ-lehavre.github.io/atlas/decisions/0035-depot-generaliste-ouvert/)) ;
+  utilisé par les tests hermétiques ;
+- `ingested` — le référentiel **ingéré** dans le lakehouse par l'asset
+  `ref_universities_snapshot` (dump ouvert d'organisations de recherche, type
+  `education`). La prod surcharge à `ingested` : la classification est alors
+  **autonome** (≈ 24 000 universités), sans référentiel hors dépôt.
+
+Le code **permet** de charger un référentiel, il n'en impose aucun ; le déployeur
+fournit l'URL du dump (config de l'asset).
 
 ## Le mart du chronogramme
 

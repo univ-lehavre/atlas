@@ -23,7 +23,7 @@ from dagster import (
     schedule,
 )
 
-from mediawatch_dagster.assets import raw_gkg, timeline_manifest
+from mediawatch_dagster.assets import raw_gkg, ref_universities_snapshot, timeline_manifest
 from mediawatch_dagster.assets.quality import (
     ge_curated_universities,
     ge_marts_timeline,
@@ -70,6 +70,15 @@ ingestion_job = define_asset_job(
     tags=RUN_K8S_CONFIG,
 )
 
+# Ingestion du référentiel d'universités : asset NON partitionné (instantané courant,
+# évolue lentement). Job dédié, matérialisé ponctuellement (mensuel) par l'opérateur
+# quand une nouvelle version du dump paraît — pas de schedule serré.
+ref_job = define_asset_job(
+    "ref_job",
+    selection=AssetSelection.assets("ref_universities_snapshot"),
+    tags=RUN_K8S_CONFIG,
+)
+
 
 # Ingestion QUASI TEMPS RÉEL (ADR 0064, PR 4) : toutes les 15 minutes on
 # (re)matérialise la partition du JOUR COURANT, qui rapatrie les nouveaux fichiers
@@ -99,8 +108,8 @@ _dbt_assets, _dbt_resources = dbt_components()
 # dt=…/run=…). Ajouté inconditionnellement comme l'asset dbt : en mode dégradé (dbt
 # absent), sa dépendance pend sur une clé externe non exécutable et la code-location
 # reste chargeable (asset orphelin).
-_assets = [raw_gkg, timeline_manifest, *_dbt_assets]
-_jobs = [ingestion_job]
+_assets = [raw_gkg, ref_universities_snapshot, timeline_manifest, *_dbt_assets]
+_jobs = [ingestion_job, ref_job]
 
 # Le check GE du curated cible les modèles dbt (clé curated_university_mentions) :
 # enregistré UNIQUEMENT si les assets dbt existent, sinon sa cible n'est pas résolue

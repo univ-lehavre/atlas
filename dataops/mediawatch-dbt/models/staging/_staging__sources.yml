@@ -21,3 +21,11 @@ sources:
         description: "Mentions d'organisations : record_id, date, organization, source, url, translated."
         meta:
           external_location: "read_json_auto('{{ var('raw_root') }}/gkg/**/*.jsonl.gz', hive_partitioning=false, union_by_name=true)"
+
+  - name: mediawatch_ref
+    description: "Référentiel d'universités ingéré (JSONL.gz) par ref_universities_snapshot."
+    tables:
+      - name: universities
+        description: "Universités du référentiel : university_id, name, country."
+        meta:
+          external_location: "read_json_auto('{{ var('ref_root') }}/universities/current/*.jsonl.gz', union_by_name=true)"
