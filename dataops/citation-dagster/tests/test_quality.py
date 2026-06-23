@@ -9,6 +9,8 @@ Le vrai bout-en-bout (GE sur le Parquet servi par un dbt build réel) est prouv�
 le smoke MinIO (test_dbt_models / quality intégration).
 """
 
+import json
+
 import pandas as pd
 from dagster import AssetCheckResult, AssetKey, asset, materialize
 
@@ -241,3 +243,56 @@ def test_blocking_check_passes_allows_downstream(monkeypatch):
     assert res.success is True
     materialized = {tuple(e.asset_key.path) for e in res.get_asset_materialization_events()}
     assert ("downstream",) in materialized
+
+
+# ── _log_ge_to_mlflow (best-effort, atlas#431) ────────────────────────────────
+
+
+def test_log_ge_noop_without_uri(monkeypatch):
+    # MLFLOW_TRACKING_URI absent (CI/dev hermétique) → no-op, renvoie False.
+    monkeypatch.delenv("MLFLOW_TRACKING_URI", raising=False)
+    result = AssetCheckResult(passed=True, metadata={"suite": "raw_works", "evaluated": 4})
+    assert q._log_ge_to_mlflow("ge_raw_contract", "run1", result) is False
+
+
+def test_log_ge_logs_result_artifact(monkeypatch):
+    # URI posée + MLflow stubé → logge le verdict (param/metric) et le JSON du résultat.
+    monkeypatch.setenv("MLFLOW_TRACKING_URI", "http://mlflow.local:5000")
+    import contextlib
+
+    import mlflow
+
+    logged = {"params": {}, "metrics": {}, "texts": {}}
+    monkeypatch.setattr(mlflow, "set_experiment", lambda name: None)
+    monkeypatch.setattr(mlflow, "start_run", lambda **k: contextlib.nullcontext())
+    monkeypatch.setattr(mlflow, "log_param", lambda k, v: logged["params"].__setitem__(k, v))
+    monkeypatch.setattr(mlflow, "log_metric", lambda k, v: logged["metrics"].__setitem__(k, v))
+    monkeypatch.setattr(
+        mlflow, "log_text", lambda text, path: logged["texts"].__setitem__(path, text)
+    )
+
+    result = AssetCheckResult(
+        passed=False,
+        metadata={"suite": "marts_collab", "evaluated": 6, "failed_expectations": "weight > 0"},
+    )
+    assert q._log_ge_to_mlflow("ge_marts_collab", "runX", result) is True
+    assert logged["params"]["check"] == "ge_marts_collab"
+    assert logged["metrics"]["passed"] == 0  # passed=False → 0
+    # Le résultat est publié comme artefact JSON nommé d'après le check.
+    payload = json.loads(logged["texts"]["ge_marts_collab.json"])
+    assert payload["check"] == "ge_marts_collab"
+    assert payload["passed"] is False
+    assert payload["suite"] == "marts_collab"
+
+
+def test_log_ge_handles_failure(monkeypatch):
+    # URI posée mais MLflow injoignable → best-effort, renvoie False sans lever.
+    monkeypatch.setenv("MLFLOW_TRACKING_URI", "http://127.0.0.1:1/unreachable")
+    import mlflow
+
+    def _boom(*a, **k):
+        raise RuntimeError("unreachable")
+
+    monkeypatch.setattr(mlflow, "set_experiment", _boom)
+    result = AssetCheckResult(passed=True, metadata={"suite": "raw_works"})
+    assert q._log_ge_to_mlflow("ge_raw_contract", "run1", result) is False

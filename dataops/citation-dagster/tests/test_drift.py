@@ -77,8 +77,10 @@ def test_compute_drift_stable_identical():
     ref = _emb_df(60, 0.0, seed=1)
     cur = _emb_df(60, 0.0, seed=2)
     out = d.compute_drift(ref, cur)
-    assert set(out) == {"drift_score", "drift_detected", "method"}
+    assert set(out) == {"drift_score", "drift_detected", "method", "html"}
     assert out["drift_detected"] is False
+    # Le rapport visuel Evidently est capturé (HTML autonome) pour MLflow (atlas#431).
+    assert isinstance(out["html"], str) and "<html" in out["html"].lower()
 
 
 def test_compute_drift_detects_shift():
@@ -178,3 +180,38 @@ def test_log_to_mlflow_success(monkeypatch):
     assert logged["params"]["run_id"] == "runX"
     assert logged["metrics"]["drift_score"] == 0.42
     assert logged["metrics"]["drift_detected"] == 1
+
+
+def test_log_to_mlflow_logs_html_artifact(monkeypatch):
+    # Le HTML Evidently (atlas#431) est loggué comme artefact via log_text quand présent.
+    monkeypatch.setenv("MLFLOW_TRACKING_URI", "http://mlflow.local:5000")
+    import contextlib
+
+    import mlflow
+
+    texts = {}
+    monkeypatch.setattr(mlflow, "set_experiment", lambda name: None)
+    monkeypatch.setattr(mlflow, "start_run", lambda **k: contextlib.nullcontext())
+    monkeypatch.setattr(mlflow, "log_param", lambda k, v: None)
+    monkeypatch.setattr(mlflow, "log_metric", lambda k, v: None)
+    monkeypatch.setattr(mlflow, "log_text", lambda text, path: texts.__setitem__(path, text))
+    drift = {"drift_score": 0.3, "drift_detected": False, "html": "<html>rapport</html>"}
+    assert d._log_to_mlflow("runH", drift) is True
+    assert texts["evidently_drift_report.html"] == "<html>rapport</html>"
+
+
+def test_log_to_mlflow_skips_html_when_absent(monkeypatch):
+    # Sans clé `html` (compute_drift d'une version antérieure), log_text n'est pas appelé.
+    monkeypatch.setenv("MLFLOW_TRACKING_URI", "http://mlflow.local:5000")
+    import contextlib
+
+    import mlflow
+
+    called = {"log_text": 0}
+    monkeypatch.setattr(mlflow, "set_experiment", lambda name: None)
+    monkeypatch.setattr(mlflow, "start_run", lambda **k: contextlib.nullcontext())
+    monkeypatch.setattr(mlflow, "log_param", lambda k, v: None)
+    monkeypatch.setattr(mlflow, "log_metric", lambda k, v: None)
+    monkeypatch.setattr(mlflow, "log_text", lambda text, path: called.__setitem__("log_text", 1))
+    assert d._log_to_mlflow("runN", {"drift_score": 0.1, "drift_detected": False}) is True
+    assert called["log_text"] == 0
