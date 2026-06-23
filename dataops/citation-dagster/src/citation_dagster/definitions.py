@@ -43,13 +43,16 @@ from citation_dagster.dbt import dbt_components
 # aux pods de run du K8sRunLauncher. Sans les réinjecter ICI, l'émission de lineage
 # (_emit_lineage no-op si OPENLINEAGE_URL absent) et le logging MLflow (drift/CT)
 # tombent en no-op SILENCIEUX dans le run (run SUCCESS mais rien d'émis). On les
-# déclare donc au niveau du run via container_config.env. Valeurs = mêmes FQDN
-# intra-cluster que le contrat (identiques banc ↔ prod, ADR 0043).
+# déclare donc au niveau du run via container_config.env. Hosts en forme COURTE
+# `<svc>.<ns>` (marquez.marquez, mlflow.mlflow) et NON le FQDN `…svc.cluster.local` :
+# en prod, un search domain externe (resolv.conf, ndots:5) fait timeouter la résolution
+# du FQDN complet côté pod de run (cf. univ-lehavre/cluster#458). Ces valeurs DOIVENT
+# rester identiques à code-location.yaml (sinon Deployment gRPC ≠ pods de run).
 _RUN_ENV = [
-    {"name": "OPENLINEAGE_URL", "value": "http://marquez.marquez.svc.cluster.local:5000"},
+    {"name": "OPENLINEAGE_URL", "value": "http://marquez.marquez:5000"},
     {"name": "OPENLINEAGE_ENDPOINT", "value": "api/v1/lineage"},
     {"name": "OPENLINEAGE_NAMESPACE", "value": "dagster"},
-    {"name": "MLFLOW_TRACKING_URI", "value": "http://mlflow.mlflow.svc.cluster.local:5000"},
+    {"name": "MLFLOW_TRACKING_URI", "value": "http://mlflow.mlflow:5000"},
 ]
 _RUN_K8S_CONFIG = {
     "dagster-k8s/config": {
@@ -60,21 +63,39 @@ _RUN_K8S_CONFIG = {
     },
 }
 
-# Le transform_job inclut index_load (étape 4), qui écrit vers Postgres/CNPG : son pod
-# de run a besoin EN PLUS du Secret pg-role-pgvector (POSTGRES_*), au-delà de l'accès S3.
-# Le branchement effectif du Secret au pod relève du déployeur (frontière infra) ; le
-# dépôt l'EXPOSE ici (env_from) sans le garantir.
+# index_load (transform_job, étape 4) écrit l'index pgvector → son pod de run a besoin
+# de POSTGRES_HOST/PORT/DB/USER/PASSWORD (resources.postgres_target_from_env, qui LÈVE
+# si absents). On les MAPPE EXPLICITEMENT — on N'injecte PAS `env_from: pg-role-pgvector`
+# brut, qui était DOUBLEMENT faux : (1) ce Secret (type basic-auth) porte les clés
+# `username`/`password`, PAS `POSTGRES_USER`/`POSTGRES_PASSWORD` → variables absentes ;
+# (2) `env_from`/`secret_ref` est résolu SAME-NAMESPACE, or pg-role-pgvector vit en ns
+# `postgres` et le pod de run en ns `dagster` → introuvable. Le déployeur fournit donc un
+# Secret DÉRIVÉ `pgvector-pg-auth` dans le ns `dagster` (clés username/password, recopie
+# de pg-role-pgvector — même patron que dagster-pg-auth ; cf. contrat namespaces-secrets,
+# univ-lehavre/cluster). Host/db/port en littéraux NOM COURT (pg-rw.postgres, cf. note DNS
+# du contrat / cluster#458). USER/PASSWORD via secretKeyRef vers le dérivé.
+_PG_ENV_SECRET = "pgvector-pg-auth"
+
+
+def _pg_secret_env(var: str, key: str) -> dict:
+    """Variable POSTGRES_* lue d'une clé du Secret dérivé (ns dagster), via secretKeyRef."""
+    return {"name": var, "value_from": {"secret_key_ref": {"name": _PG_ENV_SECRET, "key": key}}}
+
+
+_TRANSFORM_ENV = [
+    *_RUN_ENV,
+    {"name": "POSTGRES_HOST", "value": "pg-rw.postgres"},
+    {"name": "POSTGRES_PORT", "value": "5432"},
+    {"name": "POSTGRES_DB", "value": "pgvector"},
+    _pg_secret_env("POSTGRES_USER", "username"),
+    _pg_secret_env("POSTGRES_PASSWORD", "password"),
+]
 _TRANSFORM_K8S_CONFIG = {
     "dagster-k8s/config": {
         "container_config": {
-            # Mêmes variables de run que _RUN_K8S_CONFIG (lineage + MLflow, piège
-            # ADR 0086) : le drift Evidently et l'instrumentation CT loggent vers
-            # MLflow depuis le pod de run de transform_job.
-            "env": _RUN_ENV,
-            "env_from": [
-                {"secret_ref": {"name": "citation-s3-access"}},
-                {"secret_ref": {"name": "pg-role-pgvector"}},
-            ],
+            # Lineage + MLflow (piège ADR 0086) ET les POSTGRES_* d'index_load.
+            "env": _TRANSFORM_ENV,
+            "env_from": [{"secret_ref": {"name": "citation-s3-access"}}],
         },
     },
 }
