@@ -6,16 +6,26 @@ que l'orchestrateur Dagster du cluster découvre via son workspace.
 Lots livrés / à venir :
 - ``raw_gkg`` + ``ingestion_job`` + GE du brut (PR 2, livré) ;
 - modèles dbt (classification université) + GE curated (PR 3, livré) ;
-- mart ``university_timeline`` + manifest + schedule (PR 4).
+- ``raw_gkg`` partitionné par jour + schedule 15 min (PR 4, livré) ;
+- mart ``university_timeline`` + manifest (PR 4).
 
 Le câblage K8s des pods de run (run workers) est commun à tous les lots : injection
 du Secret S3 du lakehouse et des variables OpenLineage au niveau du RUN.
 """
 
-from dagster import AssetSelection, Definitions, define_asset_job
+from dagster import (
+    AssetSelection,
+    DefaultScheduleStatus,
+    Definitions,
+    RunRequest,
+    ScheduleEvaluationContext,
+    define_asset_job,
+    schedule,
+)
 
 from mediawatch_dagster.assets import raw_gkg
 from mediawatch_dagster.assets.quality import ge_curated_universities, ge_raw_gkg
+from mediawatch_dagster.assets.raw_gkg import gkg_daily_partitions
 from mediawatch_dagster.dbt import dbt_components
 
 # Le pod de run (K8sRunLauncher) doit recevoir les accès S3 du lakehouse : on
@@ -47,12 +57,35 @@ RUN_K8S_CONFIG = {
 }
 
 # Le job d'ingestion ne sélectionne que raw_gkg (le pull HTTP du flux GKG). Il
-# porte le câblage K8s du run (Secret S3 + lineage).
+# porte le câblage K8s du run (Secret S3 + lineage). Partitionné par jour (la
+# définition de partition vient de l'asset).
 ingestion_job = define_asset_job(
     "ingestion_job",
     selection=AssetSelection.assets("raw_gkg"),
+    partitions_def=gkg_daily_partitions,
     tags=RUN_K8S_CONFIG,
 )
+
+
+# Ingestion QUASI TEMPS RÉEL (ADR 0064, PR 4) : toutes les 15 minutes on
+# (re)matérialise la partition du JOUR COURANT, qui rapatrie les nouveaux fichiers
+# 15 minutes du jour (idempotent — nouveau run=<id>). La cadence colle à la source
+# (96 fichiers/jour). STOPPED par défaut : l'opérateur l'arme dans l'UI (pas
+# d'ingestion silencieuse non voulue ; même posture que citation transform_daily).
+# Le BACKFILL historique ne passe PAS par ce schedule : il se fait en matérialisant
+# les partitions passées depuis l'UI (parallélisable, traçable).
+@schedule(
+    job=ingestion_job,
+    cron_schedule="*/15 * * * *",
+    default_status=DefaultScheduleStatus.STOPPED,
+    execution_timezone="UTC",
+    name="ingest_current_day",
+)
+def ingest_current_day(context: ScheduleEvaluationContext) -> RunRequest:
+    """Matérialise la partition du jour courant (UTC) à chaque tick de 15 minutes."""
+    partition_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+    return RunRequest(partition_key=partition_date)
+
 
 # Assets dbt + ressource CLI (ou [], {} si dbt indisponible — lint/checkout neuf).
 _dbt_assets, _dbt_resources = dbt_components()
@@ -83,6 +116,6 @@ defs = Definitions(
     assets=_assets,
     asset_checks=_asset_checks,
     jobs=_jobs,
-    schedules=[],
+    schedules=[ingest_current_day],
     resources=_dbt_resources,
 )

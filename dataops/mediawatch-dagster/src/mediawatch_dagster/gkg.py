@@ -7,7 +7,8 @@ l'asset ``raw_gkg`` reste une simple orchestration. Faits vérifiés (codebook G
 - **Master file list** : lignes ``<taille> <md5> <url>`` (séparées par des espaces).
   On ne retient que les URL ``*.gkg.csv.zip``.
 - **Nom de fichier** : ``YYYYMMDDHHMMSS.gkg.csv.zip`` → le **timestamp** (14 chiffres)
-  ordonne le flux (lexicographique = chronologique). C'est la clé du watermark.
+  ordonne le flux (lexicographique = chronologique) et rattache chaque fichier à sa
+  partition journalière (8 premiers chiffres = ``YYYYMMDD``).
 - **Contenu** : un ZIP d'un unique ``.gkg.csv`` **tab-delimited** (l'extension
   ``.csv`` est trompeuse : le séparateur est la TABULATION), **sans en-tête**,
   **27 colonnes** (ordre V2.1).
@@ -67,16 +68,30 @@ def parse_master_list(text: str) -> list[GkgFile]:
     return sorted(files, key=lambda f: f.timestamp)
 
 
-def select_fresh(files: list[GkgFile], after: str | None, limit: int) -> tuple[list[GkgFile], bool]:
-    """Sélectionne les fichiers postérieurs au watermark, bornés à ``limit``.
+def day_prefix(partition_date: str) -> str:
+    """``YYYY-MM-DD`` → préfixe de timestamp ``YYYYMMDD`` (8 chiffres).
 
-    ``after`` ``None`` (premier run) → tout est candidat (bootstrap). Renvoie
-    ``(retenus, tronqué)`` où ``tronqué`` indique qu'il restait des candidats
-    au-delà de ``limit`` (le run suivant les reprendra : reprise idempotente).
+    Un fichier GKG appartient au jour ``partition_date`` si son timestamp (14
+    chiffres) commence par ce préfixe.
     """
-    candidates = [f for f in files if after is None or f.timestamp > after]
-    fresh = candidates[:limit]
-    return fresh, len(candidates) > len(fresh)
+    return partition_date.replace("-", "")
+
+
+def files_in_day(
+    files: list[GkgFile], partition_date: str, limit: int
+) -> tuple[list[GkgFile], bool]:
+    """Sélectionne les fichiers du jour ``partition_date``, triés, bornés à ``limit``.
+
+    La **partition temporelle** (jour) est le curseur d'ingestion (ADR 0064, PR 4) :
+    matérialiser une partition rapatrie tous les fichiers 15 minutes de ce jour. Le
+    bornage ``limit`` protège des runs trop volumineux ; renvoie ``(retenus, tronqué)``
+    où ``tronqué`` signale qu'il restait des fichiers du jour au-delà de ``limit``
+    (re-matérialiser la partition avec un ``limit`` plus haut les rapatrie).
+    """
+    prefix = day_prefix(partition_date)
+    same_day = [f for f in files if f.timestamp.startswith(prefix)]
+    kept = same_day[:limit]
+    return kept, len(same_day) > len(kept)
 
 
 @dataclass(frozen=True)

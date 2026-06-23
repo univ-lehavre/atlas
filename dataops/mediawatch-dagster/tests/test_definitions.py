@@ -17,6 +17,22 @@ def test_ingestion_job_selects_raw_gkg() -> None:
     assert job is not None
 
 
+def test_raw_gkg_is_daily_partitioned() -> None:
+    # raw_gkg est partitionné par jour (la partition est le curseur, PR 4).
+    keys = definitions.gkg_daily_partitions.get_partition_keys()
+    # Les clés sont des dates YYYY-MM-DD ; la première est la date de départ.
+    assert keys[0] == "2015-02-19"
+
+
+def test_schedule_targets_current_day_partition_every_15min() -> None:
+    sched = definitions.ingest_current_day
+    assert sched.cron_schedule == "*/15 * * * *"
+    # STOPPED par défaut : l'opérateur l'arme (pas d'ingestion silencieuse).
+    from dagster import DefaultScheduleStatus
+
+    assert sched.default_status == DefaultScheduleStatus.STOPPED
+
+
 def test_run_k8s_config_injects_s3_secret_and_lineage_env() -> None:
     cfg = definitions.RUN_K8S_CONFIG["dagster-k8s/config"]["container_config"]
     # Le Secret S3 du lakehouse est injecté au niveau du RUN (pods de run).

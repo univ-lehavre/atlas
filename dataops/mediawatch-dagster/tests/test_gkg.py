@@ -29,24 +29,30 @@ def test_parse_master_list_keeps_only_gkg_zip_sorted() -> None:
     assert files[0].url.endswith("20260101120000.gkg.csv.zip")
 
 
-def test_select_fresh_bootstrap_takes_oldest_bounded() -> None:
+def test_files_in_day_filters_by_partition_date_bounded() -> None:
     files = gkg.parse_master_list(
         "1 a http://x/20260101120000.gkg.csv.zip\n"
         "1 b http://x/20260101121500.gkg.csv.zip\n"
         "1 c http://x/20260101123000.gkg.csv.zip\n"
+        "1 d http://x/20260102000000.gkg.csv.zip\n"  # autre jour
     )
-    fresh, truncated = gkg.select_fresh(files, after=None, limit=2)
-    assert [f.timestamp for f in fresh] == ["20260101120000", "20260101121500"]
+    kept, truncated = gkg.files_in_day(files, "2026-01-01", limit=2)
+    # Seuls les fichiers du 2026-01-01, triés, bornés à 2 → tronqué (3 dispo).
+    assert [f.timestamp for f in kept] == ["20260101120000", "20260101121500"]
     assert truncated is True
 
 
-def test_select_fresh_only_after_watermark() -> None:
+def test_files_in_day_excludes_other_days() -> None:
     files = gkg.parse_master_list(
-        "1 a http://x/20260101120000.gkg.csv.zip\n1 b http://x/20260101121500.gkg.csv.zip\n"
+        "1 a http://x/20260101120000.gkg.csv.zip\n1 b http://x/20260102000000.gkg.csv.zip\n"
     )
-    fresh, truncated = gkg.select_fresh(files, after="20260101120000", limit=10)
-    assert [f.timestamp for f in fresh] == ["20260101121500"]
+    kept, truncated = gkg.files_in_day(files, "2026-01-02", limit=10)
+    assert [f.timestamp for f in kept] == ["20260102000000"]
     assert truncated is False
+
+
+def test_day_prefix_strips_dashes() -> None:
+    assert gkg.day_prefix("2026-01-01") == "20260101"
 
 
 # ── Projection des lignes ────────────────────────────────────────────────────
