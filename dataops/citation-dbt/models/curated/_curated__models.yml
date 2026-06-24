@@ -74,3 +74,11 @@ models:
                 field: work_id
       - name: keyword_id
         data_tests: [not_null]
+
+  - name: curated_eunicoast_works
+    description: "Périmètre EUNICoast : works avec ≥1 auteur affilié EUNICoast ∩ <10 ans, porte le FWCI (ADR 0067)."
+    columns:
+      - name: work_id
+        data_tests: [not_null, unique]
+      - name: publication_year
+        data_tests: [not_null]
