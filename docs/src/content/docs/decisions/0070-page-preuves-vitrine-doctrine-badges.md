@@ -139,7 +139,8 @@ intégré (axe-core, CodeQL, Zenodo) en **description** reste légitime — la n
 
 ## Statut
 
-Proposed.
+Accepted (2026-06-24). La page de preuves (`quality/preuves.md`) et les badges
+README sont en place ; les badges restent bornés aux signaux réellement câblés.
 
 ## Conséquences
 
