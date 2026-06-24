@@ -1,0 +1,29 @@
+# Exceptions de scan de vulnérabilité des images conteneur (ADR 0069).
+#
+# Garde-fou « exceptions tracées » : une vulnérabilité amont SANS correctif
+# disponible se consigne ICI — versionnée, commentée (justification + lien),
+# et revue — plutôt qu'en abaissant le seuil global du scan (images.yml).
+#
+# Format (Trivy) : un identifiant CVE par ligne. Chaque entrée DOIT être
+# précédée d'un commentaire indiquant :
+#   - pourquoi l'exception est admise (pas de correctif amont, non
+#     atteignable dans notre contexte d'exécution, etc.) ;
+#   - la référence (advisory / CVE / issue de suivi) ;
+#   - la date de revue.
+#
+# Exemple (à supprimer quand une vraie exception est ajoutée) :
+#   # CVE-XXXX-YYYY — libfoo : pas de correctif Alpine au 2026-06-24, code
+#   # non atteint au runtime (binaire absent de l'image). Suivi : #NNN.
+#   # CVE-XXXX-YYYY
+
+# CVE-2026-12151 — undici (déni de service par croissance mémoire non bornée
+# via WebSocket). Présent UNIQUEMENT dans l'`undici` que `npm` embarque
+# (/usr/local/lib/node_modules/npm/node_modules/undici), fourni par l'image de
+# base Node officielle (npm 11.16.0 → undici 6.26.0 ; correctif amont en
+# 6.27.0, pas encore bundlé par Node). `npm` ne sert qu'au BUILD : il est
+# absent de l'étage `runner` exécuté en production (qui ne copie que le build
+# et un node_modules de prod élagué). Aucune de nos applications ne dépend
+# d'undici. Vulnérabilité donc non atteignable au runtime. À retirer dès qu'une
+# image Node bundle npm avec undici >= 6.27.0. Revue : 2026-06-25.
+# https://avd.aquasec.com/nvd/cve-2026-12151
+CVE-2026-12151

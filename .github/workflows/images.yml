@@ -76,6 +76,12 @@ jobs:
       contents: read
       # Nécessaire pour pousser sur GHCR depuis `main` (no-op sur PR).
       packages: write
+      # OIDC keyless : cosign lie la signature à l'identité du workflow,
+      # sans clé privée à stocker (ADR 0069). No-op sur PR (on ne signe pas).
+      id-token: write
+      # Remonte le rapport de scan (SARIF) dans l'onglet Security du dépôt,
+      # sur le modèle de codeql.yml (ADR 0069, scan « partout »).
+      security-events: write
     strategy:
       fail-fast: false
       matrix:
@@ -195,6 +201,7 @@ jobs:
       # Build. Sur PR : `load` l'image localement (pour le smoke), pas de push.
       # Sur `main` : push avec tags SHA + version.
       - name: Build image (load for smoke)
+        id: build-pr
         if: env.RUN == 'true' && github.event_name == 'pull_request'
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
@@ -207,6 +214,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
 
       - name: Build and push image
+        id: build
         if: env.RUN == 'true' && github.event_name == 'push'
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
@@ -223,6 +231,12 @@ jobs:
             ${{ steps.meta.outputs.tags }}
             ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${{ steps.ver.outputs.version }}
           labels: ${{ steps.meta.outputs.labels }}
+          # Provenance SLSA (attestation in-toto) + SBOM CycloneDX attachés à
+          # l'image, adressés par son digest (ADR 0069). C'est le volet
+          # « provenance/SBOM par image » : build-push-action les rattache au
+          # manifeste poussé sur GHCR au moment du push.
+          provenance: true
+          sbom: true
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
 
@@ -236,6 +250,58 @@ jobs:
           docker tag \
             "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:sha-${{ github.sha }}" \
             "${{ matrix.image }}:smoke"
+
+      # Scan de vulnérabilité de l'image (ADR 0069 — geste à plus fort retour
+      # sur effort, livré EN PREMIER, avant toute signature). Tourne sur PR
+      # comme sur main : une CVE CRITICAL/HIGH dans la couche de base (Alpine,
+      # Node, OpenSSL…) casse le run avant qu'elle n'atteigne (ou ne reste
+      # dans) le registre. On scanne l'image construite localement
+      # (`:smoke`, chargée via `load: true` sur les deux contextes), pas un tag
+      # distant. Les exceptions amont sans correctif se consignent dans un
+      # `.trivyignore` versionné et commenté (garde-fou ADR 0069), pas en
+      # abaissant le seuil global.
+      # On installe Trivy par son script d'installation officiel plutôt que via
+      # une action tierce. Les actions `aquasecurity/trivy-action` et
+      # `aquasecurity/setup-trivy` se sont toutes deux révélées trop fragiles ici :
+      # la première déclare un `uses: setup-trivy@v0.2.2` (tag 404) résolu au
+      # `Set up job` même derrière un `if`, la seconde échoue à l'installation.
+      # Le script officiel, épinglé à une version, va dans `/usr/local/bin`
+      # (déjà dans le PATH) et ne dépend d'aucun tag d'action.
+      - name: Install Trivy
+        if: env.RUN == 'true'
+        env:
+          TRIVY_VERSION: "0.71.2"
+        run: |
+          install_url="https://raw.githubusercontent.com/aquasecurity/trivy/v${TRIVY_VERSION}/contrib/install.sh"
+          curl -fsSL "$install_url" | sudo sh -s -- -b /usr/local/bin "v${TRIVY_VERSION}"
+          trivy --version
+
+      # Comportement défini par l'ADR 0069 : rapport SARIF, blocage sur
+      # CRITICAL/HIGH, vulnérabilités sans correctif ignorées, exceptions amont
+      # consignées dans `.trivyignore` versionné.
+      - name: Scan image for vulnerabilities
+        id: scan
+        if: env.RUN == 'true'
+        run: |
+          trivy image \
+            --format sarif \
+            --output "trivy-${{ matrix.name }}.sarif" \
+            --severity CRITICAL,HIGH \
+            --ignore-unfixed \
+            --ignorefile .trivyignore \
+            --exit-code 1 \
+            "${{ matrix.image }}:smoke"
+
+      # Remonte le rapport SARIF dans l'onglet Security (même mécanisme que
+      # codeql.yml). `if: always()` : on veut le rapport même quand le scan a
+      # échoué sur une CVE bloquante (sinon l'alerte ne serait jamais visible).
+      - name: Upload Trivy scan results to Security tab
+        if: env.RUN == 'true' && always()
+        # Même action (épinglée par SHA) et même mécanisme que codeql.yml.
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        with:
+          sarif_file: trivy-${{ matrix.name }}.sarif
+          category: trivy-${{ matrix.name }}
 
       # Smoke : démarrer le conteneur et vérifier que le HEALTHCHECK passe
       # (l'app/le service répond sur son endpoint de santé). Build cassé,
@@ -277,3 +343,29 @@ jobs:
             exit 1
           fi
           docker rm -f "${cid}" >/dev/null 2>&1 || true
+
+      # Signature ENSUITE (ADR 0069 — ordre imposé : le scan d'abord, la
+      # signature ensuite). UNIQUEMENT sur `main` : aucun jeton OIDC de
+      # signature n'est délivré à une PR (les PR scannent mais ne signent ni ne
+      # publient). On n'arrive ici que si le scan ci-dessus a réussi : on ne
+      # signe jamais une image qu'on n'a pas scannée (garde-fou « digest et
+      # scan couplés »).
+      - name: Install cosign
+        if: env.RUN == 'true' && github.event_name == 'push'
+        uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da # v3.7.0
+
+      # Signe le DIGEST sha256 de l'image (immuable), pas un tag mutable, en
+      # mode keyless : `cosign` obtient un jeton OIDC GitHub Actions
+      # (`id-token: write`) et lie la signature à l'identité du workflow,
+      # attestée publiquement par Sigstore (journal de transparence). La
+      # provenance SLSA et le SBOM CycloneDX par image sont déjà rattachés au
+      # même digest par build-push-action (provenance:true / sbom:true).
+      - name: Sign image digest (cosign keyless)
+        if: env.RUN == 'true' && github.event_name == 'push'
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+          IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          set -euo pipefail
+          cosign sign --yes "${IMAGE}@${DIGEST}"
