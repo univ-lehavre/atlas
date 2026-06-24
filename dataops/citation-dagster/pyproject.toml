@@ -67,7 +67,12 @@ dependencies = [
 # (index_load) passe par DuckDB `ATTACH ... TYPE postgres`, pas par psycopg2.
 
 [dependency-groups]
-dev = ["ruff==0.15.18", "pytest", "pytest-cov"]
+# hypothesis : tests basés sur les propriétés (PBT, ADR 0072) — homologue Python de
+# fast-check, branché DANS pytest via @given (pas un framework concurrent). Ciblé sur
+# les dérivations bornées pures (uplift_model.py : symétrie, bornes, déterminisme).
+# Dev-dépendance de test uniquement (zéro empreinte runtime) ; épinglée et verrouillée
+# par uv.lock.
+dev = ["ruff==0.15.18", "pytest", "pytest-cov", "hypothesis==6.155.7"]
 
 [build-system]
 requires = ["hatchling"]
