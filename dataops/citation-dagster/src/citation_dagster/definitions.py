@@ -229,17 +229,32 @@ if _dbt_assets:
     _jobs.append(transform_job)
 
 # ENTRAÎNEMENT CONTINU (CT, MLOps 1→2) : le transform_job (dbt → embeddings → index)
-# se rejoue automatiquement, plus de re-trigger 100 % manuel. Cadence par défaut
-# QUOTIDIENNE (02:00 UTC, heure creuse) ; statut STOPPED par défaut — l'opérateur
-# l'arme dans l'UI Dagster (pas de re-training silencieux non voulu). Le drift mesuré
-# par evidently_embedding_drift nourrit la décision d'ajuster cette cadence. Enregistré
-# UNIQUEMENT si transform_job existe (assets dbt présents), comme le job lui-même.
+# se rejoue automatiquement, plus de re-trigger 100 % manuel. Statut STOPPED par défaut
+# — l'opérateur l'arme dans l'UI Dagster (pas de re-training silencieux non voulu). Le
+# drift mesuré par evidently_embedding_drift nourrit la décision d'ajuster cette cadence.
+# Enregistré UNIQUEMENT si transform_job existe (assets dbt présents), comme le job.
+#
+# CADENCE = VALEUR D'INSTANCE (ADR 0062 : « le code PERMET la cadence ; activer le
+# schedule et FIXER sa fréquence relèvent du DÉPLOYEUR — le code n'impose pas un rythme »).
+# On NE fige donc PAS la fréquence dans le code générique : elle se lit de CITATION_CT_CRON
+# (cron 5-champs), défaut QUOTIDIEN 02:00 UTC (heure creuse) = simple exemple. Un déployeur
+# aligné sur le rythme des snapshots OpenAlex la met en MENSUEL (p. ex. « 0 2 1 * * » = le
+# 1ᵉʳ du mois) sans toucher au code — ou surcharge directement la cadence à l'armement (UI).
+_DEFAULT_CT_CRON = "0 2 * * *"
+
+
+def _ct_cron(env: dict | None = None) -> str:
+    """Cron du CT, lu de CITATION_CT_CRON (valeur d'instance), défaut quotidien (exemple)."""
+    env = env if env is not None else os.environ
+    return env.get("CITATION_CT_CRON") or _DEFAULT_CT_CRON
+
+
 _schedules = []
 if _dbt_assets:
     transform_daily = ScheduleDefinition(
         name="transform_daily",
         job=transform_job,
-        cron_schedule="0 2 * * *",
+        cron_schedule=_ct_cron(),
         execution_timezone="UTC",
         description="Entraînement continu : rejoue transform_job (dbt → embeddings → index).",
     )

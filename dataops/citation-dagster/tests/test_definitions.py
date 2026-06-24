@@ -3,6 +3,8 @@
 import json
 
 from citation_dagster.definitions import (
+    _DEFAULT_CT_CRON,
+    _ct_cron,
     _s3_env_from,
     defs,
     evaluate_ct_sensor,
@@ -153,3 +155,28 @@ def test_evaluate_ct_sensor_key_order_insensitive():
     cursor = json.dumps({"authors": "2024-01-04", "works": "2024-01-05"}, sort_keys=True)
     should_run, _, _ = evaluate_ct_sensor({"works": "2024-01-05", "authors": "2024-01-04"}, cursor)
     assert should_run is False
+
+
+# ── Cadence du CT = valeur d'instance (ADR 0062, atlas#399) ───────────────────
+
+
+def test_ct_cron_default_when_env_absent():
+    # Sans CITATION_CT_CRON : défaut quotidien (exemple) — le code ne fige PAS la cadence.
+    assert _ct_cron({}) == _DEFAULT_CT_CRON
+
+
+def test_ct_cron_overridable_by_instance():
+    # Le déployeur fixe la cadence (ex. mensuel) par env, sans toucher au code générique.
+    assert _ct_cron({"CITATION_CT_CRON": "0 2 1 * *"}) == "0 2 1 * *"
+
+
+def test_ct_cron_blank_falls_back_to_default():
+    # Une valeur vide retombe sur le défaut (pas de cron vide qui casserait le schedule).
+    assert _ct_cron({"CITATION_CT_CRON": ""}) == _DEFAULT_CT_CRON
+
+
+def test_transform_daily_uses_default_cron_in_ci():
+    # En CI (env absent), le schedule enregistré porte bien le cron par défaut.
+    sched = next((s for s in defs.schedules if s.name == "transform_daily"), None)
+    assert sched is not None
+    assert sched.cron_schedule == _DEFAULT_CT_CRON
