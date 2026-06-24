@@ -82,3 +82,18 @@ models:
         data_tests: [not_null, unique]
       - name: publication_year
         data_tests: [not_null]
+
+  - name: curated_pair_uplift_labels
+    description: >-
+      Labels d'uplift FWCI observé par paire (ADR 0067, lot 3) — cible d'entraînement.
+      Une ligne par (author_a, author_b) ayant ≥2 co-publications EUNICoast avec
+      baseline solo ANTÉRIEURE des deux côtés (anti-fuite temporelle). uplift =
+      copub_fwci − moyenne des baselines solo.
+    columns:
+      - name: author_a
+        data_tests: [not_null]
+      - name: author_b
+        data_tests: [not_null]
+      - name: uplift
+        description: "Uplift observé (peut être négatif : collaboration moins impactante que le solo)."
+        data_tests: [not_null]
