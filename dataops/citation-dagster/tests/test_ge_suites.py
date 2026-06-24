@@ -96,3 +96,35 @@ def test_validate_df_does_not_leak_progress_bar_to_stdout():
         g.validate_df(df, "raw_authors", g.raw_authors_expectations())
     # La barre « Calculating Metrics » de GE ne doit pas polluer stdout (logs Dagster).
     assert "Calculating Metrics" not in buf.getvalue()
+
+
+def test_pair_uplift_predictions_pass_and_fail():
+    good = pd.DataFrame(
+        {
+            "author_a": ["A1"],
+            "author_b": ["A2"],
+            "uplift": [1.5],
+            "_canonical": [True],
+            "served_mode": ["predictive"],
+        }
+    )
+    assert g.validate_df(good, "pred", g.pair_uplift_predictions_expectations())[0]
+    bad = good.copy()
+    bad["served_mode"] = ["bogus"]  # hors domaine {predictive, descriptive}
+    assert not g.validate_df(bad, "pred", g.pair_uplift_predictions_expectations())[0]
+    bad2 = good.copy()
+    bad2["_canonical"] = [False]  # paire non canonique (a >= b)
+    assert not g.validate_df(bad2, "pred", g.pair_uplift_predictions_expectations())[0]
+
+
+def test_author_recommendations_pass_and_fail():
+    good = pd.DataFrame(
+        {"author_id": ["A1"], "partner_id": ["A2"], "_not_self": [True], "rank": [1]}
+    )
+    assert g.validate_df(good, "reco", g.author_recommendations_expectations())[0]
+    bad = good.copy()
+    bad["_not_self"] = [False]  # auto-recommandation interdite
+    assert not g.validate_df(bad, "reco", g.author_recommendations_expectations())[0]
+    bad2 = good.copy()
+    bad2["rank"] = [0]  # rang doit être >= 1
+    assert not g.validate_df(bad2, "reco", g.author_recommendations_expectations())[0]

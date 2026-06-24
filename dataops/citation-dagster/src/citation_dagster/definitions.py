@@ -28,9 +28,11 @@ from dagster import (
 
 from citation_dagster import watermark
 from citation_dagster.assets import (
+    author_recommendations_manifest,
     collab_manifest,
     index_load,
     pair_uplift_model,
+    pair_uplift_predictions_manifest,
     raw_snapshot,
     researcher_embeddings,
     researcher_vectors_manifest,
@@ -40,10 +42,12 @@ from citation_dagster.assets import (
 )
 from citation_dagster.assets.drift import evidently_embedding_drift
 from citation_dagster.assets.quality import (
+    ge_author_recommendations,
     ge_curated_edges,
     ge_index_load,
     ge_marts_collab,
     ge_marts_researchers,
+    ge_pair_uplift_predictions,
     ge_raw_contract,
     ge_researcher_vectors,
 )
@@ -188,6 +192,9 @@ _assets = [
     # Modèle d'uplift FWCI EUNICoast (ADR 0067, lots 4/5) : dépend des assets dbt
     # marts_author_profiles + curated_pair_uplift_labels (via AssetKey) ; même run.
     pair_uplift_model,
+    # Manifests des deux marts servis du modèle d'uplift (contrat ADR 0029).
+    pair_uplift_predictions_manifest,
+    author_recommendations_manifest,
     *_dbt_assets,
 ]
 _jobs = [ingestion_job]
@@ -206,7 +213,16 @@ _jobs = [ingestion_job]
 # evidently_embedding_drift cible l'asset PYTHON researcher_embeddings (toujours
 # enregistré) → INCONDITIONNEL comme ge_researcher_vectors. NON bloquant : il mesure le
 # drift N vs N-1 (informatif, loggué MLflow), ne casse pas le run (cf. assets/drift.py).
-_asset_checks = [ge_raw_contract, ge_researcher_vectors, ge_index_load, evidently_embedding_drift]
+# ge_pair_uplift_predictions / ge_author_recommendations ciblent l'asset PYTHON
+# pair_uplift_model (toujours enregistré) → INCONDITIONNELS (comme ge_researcher_vectors).
+_asset_checks = [
+    ge_raw_contract,
+    ge_researcher_vectors,
+    ge_index_load,
+    evidently_embedding_drift,
+    ge_pair_uplift_predictions,
+    ge_author_recommendations,
+]
 if _dbt_assets:
     _asset_checks += [ge_curated_edges, ge_marts_collab, ge_marts_researchers]
 
@@ -227,6 +243,8 @@ if _dbt_assets:
             | AssetSelection.assets("work_vectors_manifest")
             | AssetSelection.assets("index_load")
             | AssetSelection.assets("pair_uplift_model")
+            | AssetSelection.assets("pair_uplift_predictions_manifest")
+            | AssetSelection.assets("author_recommendations_manifest")
         ),
         # index_load écrit vers Postgres → ce job a besoin du Secret pg-role-pgvector.
         tags=_TRANSFORM_K8S_CONFIG,

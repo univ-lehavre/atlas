@@ -3,7 +3,9 @@
 from citation_dagster.assets.index_load import index_load
 from citation_dagster.assets.manifest import (
     MANIFEST_SCHEMA_VERSION,
+    author_recommendations_manifest,
     collab_manifest,
+    pair_uplift_predictions_manifest,
     researcher_vectors_manifest,
     researchers_fts_manifest,
     researchers_manifest,
@@ -15,9 +17,11 @@ from citation_dagster.assets.uplift import pair_uplift_model
 
 __all__ = [
     "MANIFEST_SCHEMA_VERSION",
+    "author_recommendations_manifest",
     "collab_manifest",
     "index_load",
     "pair_uplift_model",
+    "pair_uplift_predictions_manifest",
     "raw_snapshot",
     "researcher_embeddings",
     "researcher_vectors_manifest",
