@@ -70,12 +70,15 @@ ajout d'ingestion du chantier.
 
 ### Représentation d'un auteur : thématiques, jamais l'identité
 
-Un auteur est représenté par **deux** vecteurs thématiques, **jamais** par son
+Un auteur est représenté par des vecteurs **thématiques**, **jamais** par son
 `author_id` :
 
-1. l'**embedding 384** existant (`researcher_embeddings`, similarité sémantique fine) ;
-2. un **vecteur de subfields** (distribution pondérée sur les ~250 sous-domaines
-   OpenAlex, interprétable — permet de recommander des **thématiques** explicites).
+1. un **vecteur de subfields** (distribution pondérée sur les ~250 sous-domaines
+   OpenAlex, interprétable — permet de recommander des **thématiques** explicites) :
+   c'est la représentation **implémentée et testée** du modèle ;
+2. l'**embedding 384** existant (`researcher_embeddings`, similarité sémantique fine) :
+   seconde famille de features **prospective** — actée en intention, **pas encore
+   branchée** au modèle (à ne pas présenter comme un appui existant).
 
 Ce choix est **load-bearing** : raisonner sur des thématiques (et non des personnes)
 est ce qui rend la prédiction **généralisable aux paires inédites** (une paire qui n'a
@@ -114,6 +117,19 @@ solo et uplift sur des fenêtres cohérentes, ne pas prédire le passé avec le 
 Si, en conditions honnêtes, le R² s'effondre vers 0, on **rabat** sur une sortie
 descriptive plutôt que de servir un modèle sans pouvoir réel. C'est une **porte de
 sortie explicite**, pas un doute sur le GO.
+
+Le seuil opérationnel de la porte est **R² > 0,05 _et_ MAE meilleure que la baseline**
+(prédire la moyenne). _Pourquoi 0,05 ?_ Un R² ≤ 0 ne fait pas mieux que la moyenne ; on
+exige donc une marge **strictement positive et non triviale**. 0,05 est un plancher
+**bas et prudent** : on ne réclame pas une forte corrélation pour servir du prédictif,
+mais on **refuse le bruit** — le contrôle anti-sur-apprentissage (uplift = bruit pur)
+tombe sous ce seuil, ce qui valide le choix. _Contre quelles alternatives ?_ Un seuil
+plus haut (0,10) rejetterait des modèles faibles mais réels (plus de repli descriptif) ;
+un seuil nul accepterait un modèle sans valeur. La condition jointe sur la MAE empêche un
+R² légèrement positif mais inutile de passer la porte. Seuil **révisable** à la lumière
+des mesures de production. La page de surface
+[« Modèle d'uplift de FWCI »](/atlas/architecture/modele-uplift-fwci/) détaille ces
+garde-fous et leurs tests (dont le contrôle sur bruit pur) pour un lecteur non développeur.
 
 ## Statut
 
