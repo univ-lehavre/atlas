@@ -48,7 +48,8 @@ docker buildx build --platform linux/arm64 -f dataops/citation-dagster/Dockerfil
 
 # 3. Valider les deux overlays, puis pousser sur Gitea (déclenche Argo CD)
 dataops/citation-dagster/deploy/validate.sh
-git push   # remote Gitea déjà configuré par cluster/bench/lima/access.sh
+git push "$GITEA_PUSH_URL" HEAD:main   # cible EXPLICITE, lue du .env injecté (access.sh) ;
+                                       # jamais le remote ambiant (garde-fou de cible, ADR 0073 §B)
 ```
 
 4. **Preuve applicative sur le banc `atlas`** (`run-phases.sh atlas`, mono-nœud

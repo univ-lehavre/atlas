@@ -109,6 +109,20 @@ env_file="$repo_root/.env.cluster.local"
 # shellcheck source=/dev/null
 [ -f "$env_file" ] && set -a && . "$env_file" && set +a
 
+# ── Garde-fou de cible (ADR 0073 §B) ─────────────────────────────────────────
+# La cible GitOps se LIT dans le `.env` injecté par l'infrastructure
+# (GITEA_PUSH_URL, contrat ADR 0033) ; elle n'est jamais déduite de
+# l'environnement ambiant. À cible absente ou vide, on REFUSE de pousser (échec
+# bruyant) plutôt que de retomber sur le remote `git push` par défaut — celui-ci
+# pourrait viser la mauvaise cible (banc vs prod) sans message d'erreur franc.
+if [ -z "${GITEA_PUSH_URL:-}" ]; then
+  echo "✗ cible GitOps non confirmée : GITEA_PUSH_URL absente (profil $profile)." >&2
+  echo "  Atlas LIT sa cible dans $env_file (généré par l'access.sh du dépôt cluster," >&2
+  echo "  contrat ADR 0033) ; il ne la devine pas. Régénérer le .env d'instance," >&2
+  echo "  ou exporter GITEA_PUSH_URL explicitement, puis relancer (ADR 0073 §B)." >&2
+  exit 2
+fi
+
 echo
 echo "⚠ Le push va DÉCLENCHER la réconciliation Argo CD (déploiement réel, profil $profile)."
 if [ "$assume_yes" -ne 1 ]; then
@@ -126,11 +140,9 @@ if [ "$profile" = "prod" ]; then
   git -C "$repo_root" commit -m "deploy(citation-dagster): image $tag (prod)" || true
 fi
 
-echo "→ push (Gitea → Argo CD)"
-if [ -n "${GITEA_PUSH_URL:-}" ]; then
-  git -C "$repo_root" push "$GITEA_PUSH_URL" HEAD:main
-else
-  git -C "$repo_root" push   # remote Gitea déjà configuré (cluster/bench/lima/access.sh)
-fi
+echo "→ push (Gitea → Argo CD) vers la cible confirmée"
+# Cible explicite uniquement : GITEA_PUSH_URL est garantie posée par le garde-fou
+# ci-dessus. On ne retombe JAMAIS sur un `git push` au remote ambiant (ADR 0073 §B).
+git -C "$repo_root" push "$GITEA_PUSH_URL" HEAD:main
 
 echo "✓ poussé. Argo CD réconcilie ; vérifier Synced/Healthy + run de validation (RUNBOOK.md)."
