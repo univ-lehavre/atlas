@@ -46,11 +46,11 @@ def test_s3_env_from_prod_obc_secret_and_configmap(monkeypatch):
     # Prod (ObjectBucketClaim Rook) : le Secret AWS_* ET le ConfigMap BUCKET_* sont
     # tous deux du nom de la claim. Les pods de RUN doivent recevoir LES DEUX (le
     # ConfigMap est requis en prod, à la différence du banc) — sinon BUCKET_* absent.
-    monkeypatch.setenv("CITATION_S3_SECRET", "atlas-datalake")
-    monkeypatch.setenv("CITATION_S3_CONFIGMAP", "atlas-datalake")
+    monkeypatch.setenv("CITATION_S3_SECRET", "citation-datalake")
+    monkeypatch.setenv("CITATION_S3_CONFIGMAP", "citation-datalake")
     env_from = _s3_env_from()
-    assert {"secret_ref": {"name": "atlas-datalake"}} in env_from
-    assert {"config_map_ref": {"name": "atlas-datalake"}} in env_from
+    assert {"secret_ref": {"name": "citation-datalake"}} in env_from
+    assert {"config_map_ref": {"name": "citation-datalake"}} in env_from
     assert len(env_from) == 2
 
 

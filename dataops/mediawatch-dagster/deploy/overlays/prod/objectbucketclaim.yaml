@@ -1,15 +1,15 @@
 # Accès S3 du lakehouse — profil PROD (RGW Ceph, ObjectBucketClaim).
 #
 # Rook provisionne le bucket et génère DEUX ressources du nom de la claim
-# (`atlas-mediawatch`), dans le namespace `dagster` :
-#   - un Secret `atlas-mediawatch` : AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY ;
-#   - un ConfigMap `atlas-mediawatch` : BUCKET_HOST / BUCKET_PORT / BUCKET_NAME.
+# (`mediawatch-datalake`), dans le namespace `dagster` :
+#   - un Secret `mediawatch-datalake` : AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY ;
+#   - un ConfigMap `mediawatch-datalake` : BUCKET_HOST / BUCKET_PORT / BUCKET_NAME.
 # La code-location les consomme via `envFrom` (patch-s3-envfrom.yaml) — mêmes NOMS
 # de variables qu'au banc SeaweedFS, donc le code des assets est identique banc ↔
 # prod ; seule la source (1 Secret au banc ; Secret + ConfigMap en prod) change,
 # d'où l'injection par overlay.
 #
-# Claim DISTINCTE de `atlas-datalake` (citation) : la veille médiatique a son
+# Claim DISTINCTE de `citation-datalake` (citation) : la veille médiatique a son
 # propre bucket, isolé de la bibliométrie.
 #
 # StorageClass `rook-ceph-datalake` : la SC bucket exposée par le socle
@@ -17,8 +17,8 @@
 apiVersion: objectbucket.io/v1alpha1
 kind: ObjectBucketClaim
 metadata:
-  name: atlas-mediawatch
+  name: mediawatch-datalake
   namespace: dagster
 spec:
-  generateBucketName: atlas-mediawatch
+  generateBucketName: mediawatch-datalake
   storageClassName: rook-ceph-datalake

@@ -27,11 +27,11 @@ spec:
             - name: DAGSTER_CURRENT_IMAGE
               value: registry:80/citation-dagster:0.0.0 # exemple ; = images[].newTag
             - name: CITATION_S3_SECRET
-              value: atlas-datalake # = nom de l'ObjectBucketClaim (Secret AWS_*)
+              value: citation-datalake # = nom de l'ObjectBucketClaim (Secret AWS_*)
             - name: CITATION_S3_CONFIGMAP
-              value: atlas-datalake # = nom de l'ObjectBucketClaim (ConfigMap BUCKET_*)
+              value: citation-datalake # = nom de l'ObjectBucketClaim (ConfigMap BUCKET_*)
           envFrom:
             - secretRef:
-                name: atlas-datalake
+                name: citation-datalake
             - configMapRef:
-                name: atlas-datalake
+                name: citation-datalake

@@ -10,7 +10,7 @@
 #   1. l'overlay se construit (`kubectl kustomize`) ;
 #   2. le rendu est valide vis-à-vis des schémas K8s (kubeconform) ;
 #   3. invariants de contrat : OPENLINEAGE_URL présent ; en prod, image jamais en
-#      `:dev` et envFrom du ConfigMap BUCKET_* (atlas-mediawatch).
+#      `:dev` et envFrom du ConfigMap BUCKET_* (mediawatch-datalake).
 #
 # NB : pas d'invariant MLFLOW ici (contrairement à citation) — la v1 mediawatch
 # n'entraîne aucun modèle (périmètre « articles seulement », ADR 0064).

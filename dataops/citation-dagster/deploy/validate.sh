@@ -10,7 +10,7 @@
 #   1. l'overlay se construit (`kubectl kustomize`) ;
 #   2. le rendu est valide vis-à-vis des schémas K8s (kubeconform) ;
 #   3. invariants de contrat : MLFLOW_TRACKING_URI présent ; en prod, image
-#      jamais en `:dev` et envFrom du ConfigMap BUCKET_* (atlas-datalake).
+#      jamais en `:dev` et envFrom du ConfigMap BUCKET_* (citation-datalake).
 #
 # Usage : dataops/citation-dagster/deploy/validate.sh   (ou `pnpm dataops:manifests`)
 set -euo pipefail
@@ -106,7 +106,7 @@ for o in "${overlays[@]}"; do
       # index($0, k) plutôt que /.../ : pas de \b, et on isole le nom EXACT (le préfixe
       # CITATION_S3_SECRET est aussi celui de _CONFIGMAP → ancrer sur la fin de ligne).
       # Le nom est un item de liste YAML : `- name: CITATION_S3_SECRET` → $2/$3 ;
-      # la valeur suit sur sa propre ligne : `value: atlas-datalake` → $1/$2.
+      # la valeur suit sur sa propre ligne : `value: citation-datalake` → $1/$2.
       s3_secret_val="$(printf '%s' "$rendered" | awk '
         $2=="name:" && $3=="CITATION_S3_SECRET"{f=1; next}
         f && $1=="value:"{print $2; exit}')"

@@ -1,0 +1,47 @@
+# Manifeste de déclaration montant (atlas → cluster) — ADR cluster 0094.
+#
+# atlas DÉCLARE ce que la code-location `citation` apporte et consomme ; cluster LIT ce
+# fichier pour valider les dépendances + la capacité AVANT d'instancier l'Application Argo
+# CD, et pour ordonner le déploiement. Ce manifeste REMPLACE la copie figée du contrat
+# cluster (cause racine de l'audit atlas#499 / cluster#499) : atlas ne duplique plus le
+# contrat, il déclare ce qu'il consomme + contre quelle `contractVersion`, et cluster
+# valide. Toute dérive (version inconnue, dépendance absente) échoue bruyamment.
+#
+# `revision` est le SIGNAL CANONIQUE d'évolution : un nouveau SHA poussé = nouvelle version
+# à réconcilier ; l'image registry:80/citation-dagster:<revision> en DÉRIVE (même tag).
+
+codeLocation: citation
+ready: true # code mergé sur main (#449/#451/#452), testé (180 tests, 92 % couv), validate.sh OK
+revision: c98feea9 # SHA git court de main ; l'image en dérive (même tag)
+contractVersion: "1.0" # contract_version ciblé (cluster/contract/endpoints.example.yaml)
+
+# Besoins déclarés → cluster valide la capacité AVANT de déployer.
+# Ces valeurs concernent les pods de RUN (K8sRunLauncher) qui exécutent les
+# transformations, PAS le serveur gRPC de la code-location (dont les requests, plus
+# modestes — cpu 100m / mem 384Mi, base/code-location.yaml — ne portent pas le travail).
+# RAM relevée à dessein : DuckDB matérialise des intermédiaires de jointure (works×authors,
+# agrégats par auteur) sur le snapshot OpenAlex ; tenir en mémoire évite un spill disque
+# coûteux. Le `disk` est un scratch BLOC (PVC RBD) pour le spill RÉSIDUEL de DuckDB
+# (temp_directory) — il NE stocke PAS le datalake (qui vit en S3 objet, cf. buckets).
+resources:
+  cpu: 500m
+  memory: 4Gi # tient les jointures en mémoire → spill minimal
+  disk: 50Gi # scratch bloc (PVC RBD) : spill DuckDB résiduel, pas le datalake
+
+dependsOn:
+  # Dépendances INTER-applicatives (autres code-locations gRPC). AUCUNE :
+  # - citation lit le snapshot OpenAlex (ingestion propre), pas les marts de `mediawatch` ;
+  # - le projet `citation-dbt` n'est PAS une dépendance : il est EMBARQUÉ dans l'image
+  #   citation-dagster (COPY au build + manifest dbt généré par `dbt parse`, Dockerfile),
+  #   donc couvert par `revision` — rien à déclarer ici.
+  codeLocations: []
+  database: [pgvector] # base logique CNPG (index researchers + extension vector)
+  secrets: [pgvector-pg-auth] # secret dérivé (ns dagster) pour atteindre Postgres cross-ns
+  # Stockage OBJET (OBC S3 RGW Ceph), distinct d'un volume bloc : raw snapshot OpenAlex +
+  # curated + marts servis (immuables dt=/run=, donc cumulatifs).
+  buckets:
+    - name: citation-datalake # convention <service>-<usage> (cf. mlflow-artifacts, cnpg-backups)
+      size: 3Ti # snapshot OpenAlex complet + accumulation des partitions immuables
+      storageClass: rook-ceph-datalake
+  # Migration de schéma métier FOURNIE par atlas (cluster l'applique en hook PreSync).
+  migrations: [0001_researchers_index.sql]

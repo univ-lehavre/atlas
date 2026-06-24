@@ -29,6 +29,6 @@ spec:
               value: ingested
           envFrom:
             - secretRef:
-                name: atlas-mediawatch
+                name: mediawatch-datalake
             - configMapRef:
-                name: atlas-mediawatch
+                name: mediawatch-datalake

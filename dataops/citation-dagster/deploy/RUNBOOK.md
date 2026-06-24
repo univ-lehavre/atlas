@@ -21,7 +21,7 @@ sur un banc mono-nœud (ADR 0085).
 > **sur demande**) — local-path n'attrape pas une incompat propre à l'API RGW (signatures
 > S3, multipart). Hors de ce cas, la preuve `atlas` (local-path) suffit.
 
-Prérequis socle prod (Ceph) : OBC `atlas-datalake`, Secret `pgvector-pg-auth`
+Prérequis socle prod (Ceph) : OBC `citation-datalake`, Secret `pgvector-pg-auth`
 (ns `dagster`), egress `dagster→mlflow` ([cluster#407](https://github.com/univ-lehavre/cluster/issues/407)).
 
 ## En une commande
