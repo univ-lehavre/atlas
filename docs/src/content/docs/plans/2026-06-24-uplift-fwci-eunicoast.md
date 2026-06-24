@@ -157,14 +157,13 @@ testé sur petit échantillon déterministe (graine figée). `pnpm dataops:check
 
 ## Issues liées
 
-Findings actionnables ouverts en issues (label `enhancement`) :
+Un lot = une issue (label `enhancement`), en chaîne de dépendance :
 
-- extraction des affiliations ROR (lot 1) ;
-- seed référentiel EUNICoast (lot 1) ;
-- **validation anti-fuite du pouvoir prédictif** (lot 4) — la plus à risque, à traiter
-  tôt ;
-- modèle ML + MLflow (lot 4) ;
-- marts servis + recommandations (lot 5).
+- [#444](https://github.com/univ-lehavre/atlas/issues/444) — lot 1 : affiliations ROR + filtre EUNICoast (fondation) ;
+- [#445](https://github.com/univ-lehavre/atlas/issues/445) — lot 2 : profils thématiques par auteur ;
+- [#446](https://github.com/univ-lehavre/atlas/issues/446) — lot 3 : labels d'uplift observé (anti-fuite temporelle) ;
+- [#447](https://github.com/univ-lehavre/atlas/issues/447) — lot 4 : modèle ML + validation honnête (**porte de décision**) ;
+- [#448](https://github.com/univ-lehavre/atlas/issues/448) — lot 5 : prédictions + recommandations servies.
 
 ## Garde-fous
 
