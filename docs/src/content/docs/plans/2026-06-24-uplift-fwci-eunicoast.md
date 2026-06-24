@@ -137,16 +137,20 @@ tranchée et tracée.
 
 **Quoi** : produire la sortie consommable.
 
-- **Mart** `marts_pair_uplift_predictions` : pour les paires candidates (y compris
-  **inédites** — c'est l'intérêt du prédictif), l'uplift prédit.
-- **Mart** `marts_author_recommendations` : par `author_id`, le top-N auteurs **et** le
-  top-N thématiques (subfields) à fort uplift prédit.
-- **Manifest** : `timeline`-style atomique (réutilise `manifest.py`,
-  [ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/)) — sha256,
-  row_count, sentinelle.
-- **GE bloquant** sur les marts servis.
+- **Mart** `marts/pair_uplift_predictions` : pour les paires candidates (y compris
+  **inédites** — c'est l'intérêt du prédictif), l'uplift prédit. **Livré** par l'asset
+  Python `pair_uplift_model` (lots 4 et 5 fusionnés dans un seul asset : il a déjà les
+  données en mémoire).
+- **Mart** `marts/author_recommendations` : par `author_id`, le top-N partenaires à fort
+  uplift prédit (la reco de **thématiques** se dérive du profil du partenaire). **Livré**
+  (fonction pure `top_recommendations`, déterministe).
+- **Manifest + GE** : raffinement restant (contrat servi atomique sur ces deux marts,
+  réutilise `manifest.py`, [ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/)) —
+  l'asset écrit déjà du Parquet immuable `dt=…/run=…` ; le manifest sentinelle et un GE
+  bloquant sont à ajouter pour fermer complètement le contrat.
 
-**Done** : marts servis + manifest validés ; E2E hermétique vert (fixture → recommandations).
+**Done (cœur)** : marts servis (prédictions + recommandations) + porte de décision
+prouvés sur fixture ML synthétique (13 tests). Manifest/GE = finition.
 
 ## Validation E2E (preuve par exécution, [ADR 0057])
 

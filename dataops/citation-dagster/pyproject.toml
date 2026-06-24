@@ -53,6 +53,12 @@ dependencies = [
   # vecteurs comme artefacts dans le serveur MLflow du socle (MLFLOW_TRACKING_URI,
   # contrat cluster ADR 0043). mlflow (Apache-2.0) ; client seul, pas de serveur ici.
   "mlflow-skinny==2.22.5",
+  # Modèle d'UPLIFT FWCI (ADR 0067, lot 4) : gradient boosting non linéaire (le R²=0,50
+  # du spike vient de la non-linéarité, vs 0,12 en linéaire). scikit-learn (BSD-3) tire
+  # numpy/scipy (déjà présents via GE) — surcoût d'image limité. Déterminisme par graine
+  # figée (ADR 0057). Épinglé en 1.6.x : dernière série compatible Python 3.10 (1.7+
+  # exige 3.11 ; le code-location est figé en 3.10, parité Dagster cluster ADR 0006).
+  "scikit-learn==1.6.1",
 ]
 # NB : dagster-postgres tire psycopg2-binary (LGPL) en transitive. Cette image
 # l'embarque NÉCESSAIREMENT pour rehydrater l'instance dans le run worker (voir

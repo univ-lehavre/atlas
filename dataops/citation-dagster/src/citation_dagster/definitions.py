@@ -30,6 +30,7 @@ from citation_dagster import watermark
 from citation_dagster.assets import (
     collab_manifest,
     index_load,
+    pair_uplift_model,
     raw_snapshot,
     researcher_embeddings,
     researcher_vectors_manifest,
@@ -184,6 +185,9 @@ _assets = [
     researcher_vectors_manifest,
     work_vectors_manifest,
     index_load,
+    # Modèle d'uplift FWCI EUNICoast (ADR 0067, lots 4/5) : dépend des assets dbt
+    # marts_author_profiles + curated_pair_uplift_labels (via AssetKey) ; même run.
+    pair_uplift_model,
     *_dbt_assets,
 ]
 _jobs = [ingestion_job]
@@ -222,6 +226,7 @@ if _dbt_assets:
             | AssetSelection.assets("researcher_vectors_manifest")
             | AssetSelection.assets("work_vectors_manifest")
             | AssetSelection.assets("index_load")
+            | AssetSelection.assets("pair_uplift_model")
         ),
         # index_load écrit vers Postgres → ce job a besoin du Secret pg-role-pgvector.
         tags=_TRANSFORM_K8S_CONFIG,

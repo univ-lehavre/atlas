@@ -1,0 +1,123 @@
+"""Tests de l'asset pair_uplift_model (câblage : lecture → décision → écriture).
+
+La logique ML pure est testée dans test_uplift_model. Ici on valide l'orchestration de
+l'asset : porte de décision (prédictif vs repli descriptif), métadonnées, écriture —
+avec lakehouse + MLflow mockés (hermétique, sans S3 ni serveur MLflow).
+"""
+
+import sys
+
+import numpy as np
+from dagster import build_asset_context
+
+from citation_dagster.assets import uplift as mod
+
+_MODULE = sys.modules["citation_dagster.assets.uplift"]
+
+_ENV = {
+    "AWS_ACCESS_KEY_ID": "AK",
+    "AWS_SECRET_ACCESS_KEY": "SK",
+    "BUCKET_HOST": "seaweedfs.s3.svc.cluster.local",
+    "BUCKET_PORT": "8333",
+    "BUCKET_NAME": "citation",
+}
+
+
+class _FakeCon:
+    """Connexion DuckDB factice : sert profils/labels selon la requête, capte les COPY."""
+
+    def __init__(self, profiles_rows, labels_rows) -> None:
+        self._profiles = profiles_rows
+        self._labels = labels_rows
+        self.executed: list[str] = []
+        self.created_rows: list | None = None
+
+    def sql(self, query: str):
+        if "author_profiles" in query:
+            return _FakeRel(self._profiles)
+        if "curated_pair_uplift_labels" in query:
+            return _FakeRel(self._labels)
+        return _FakeRel([])
+
+    def execute(self, query: str):
+        self.executed.append(query)
+        return self
+
+
+class _FakeRel:
+    def __init__(self, rows) -> None:
+        self._rows = rows
+
+    def fetchall(self):
+        return self._rows
+
+
+def _patch(monkeypatch, con):
+    from citation_dagster.resources import ceph_target_from_env
+
+    monkeypatch.setattr(_MODULE, "ceph_target_from_env", lambda: ceph_target_from_env(_ENV))
+    monkeypatch.setattr(_MODULE.lakehouse, "connect", lambda cfg=None: con)
+    # MLflow no-op (pas de serveur en test).
+    monkeypatch.setattr(_MODULE.tracking, "mlflow_config_from_env", lambda: None)
+    monkeypatch.setattr(_MODULE.tracking, "log_embeddings_run", lambda *a, **k: None)
+
+
+def _signal_data(n_authors: int):
+    """Profils + labels avec un VRAI signal thématique (uplift = f(cosinus))."""
+    rng = np.random.default_rng(0)
+    subs = [f"S{i}" for i in range(6)]
+    vecs, profiles = {}, []
+    for i in range(n_authors):
+        a = f"A{i}"
+        v = rng.random(len(subs))
+        v = v / np.linalg.norm(v)
+        vecs[a] = v
+        for j, s in enumerate(subs):
+            profiles.append((a, s, float(v[j])))
+    labels = []
+    for i in range(n_authors):
+        for j in range(i + 1, n_authors):
+            a, b = f"A{i}", f"A{j}"
+            cos = float(vecs[a] @ vecs[b])
+            labels.append((a, b, 5.0 * (1 - cos) ** 2 - 1.0 + rng.normal(0, 0.1)))
+    return profiles, labels
+
+
+def test_asset_serves_predictive_on_signal(monkeypatch) -> None:
+    profiles, labels = _signal_data(40)
+    con = _FakeCon(profiles, labels)
+    _patch(monkeypatch, con)
+    result = mod.pair_uplift_model(build_asset_context())
+    # Signal réel → porte de décision = prédictif ; R² honnête positif.
+    assert result.metadata["served_mode"].text == "predictive"
+    assert result.metadata["r2_honest"].value > 0.2
+    # Prédictif sert TOUTES les paires d'auteurs profilés (y compris inédites) :
+    # 40 auteurs → C(40,2) = 780 paires.
+    assert result.metadata["pairs_served"].value == 780
+    # Recommandations par auteur produites (top-N partenaires).
+    assert result.metadata["recommendations"].value > 0
+    # Deux écritures Parquet (prédictions + recommandations).
+    assert sum(1 for q in con.executed if "COPY" in q) == 2
+
+
+def test_asset_falls_back_descriptive_on_noise(monkeypatch) -> None:
+    rng = np.random.default_rng(1)
+    subs = [f"S{i}" for i in range(6)]
+    vecs, profiles = {}, []
+    for i in range(40):
+        a = f"A{i}"
+        v = rng.random(len(subs))
+        v = v / np.linalg.norm(v)
+        vecs[a] = v
+        for j, s in enumerate(subs):
+            profiles.append((a, s, float(v[j])))
+    # Uplift = bruit pur (aucun lien aux thématiques).
+    labels = [
+        (f"A{i}", f"A{j}", float(rng.normal(0, 1))) for i in range(40) for j in range(i + 1, 40)
+    ]
+    con = _FakeCon(profiles, labels)
+    _patch(monkeypatch, con)
+    result = mod.pair_uplift_model(build_asset_context())
+    # Pas de pouvoir prédictif honnête → repli descriptif (uplift observé des paires).
+    assert result.metadata["served_mode"].text == "descriptive"
+    assert result.metadata["pairs_served"].value == len(labels)
