@@ -32,15 +32,15 @@ prod, seul le backing S3 diffère (action humaine, ADR cluster [0085](https://gi
 Le pipeline est **complet et largement conforme** au contrat. Audit des points de
 contact :
 
-| Point de contact (contrat) | État atlas | Verdict |
-| --- | --- | --- |
-| StorageClass bucket `rook-ceph-datalake` | `overlays/prod/objectbucketclaim.yaml:21` | ✅ |
-| Noms DNS **courts** (`marquez.marquez`, `mlflow.mlflow`, `pg-rw.postgres`) — piège ndots:5 prod | code + manifestes | ✅ |
-| Postgres via Secret dérivé `pgvector-pg-auth` (secretKeyRef, ns `dagster`) | `definitions.py:77-92` | ✅ |
-| Injection env pods de run pour OPENLINEAGE/MLFLOW (piège ADR 0086) | `definitions.py:51-64,93-101` | ✅ |
-| Déploie uniquement en ns `dagster` (dans toutes les allowlists NetworkPolicy) | `deploy/base/code-location.yaml` | ✅ |
-| Aucune UI attendant Gateway/`*.cluster.lan` (obsolète en L4 NodePort) | — | ✅ |
-| **Accès S3 des pods de RUN en prod** | `definitions.py:61,98` | ❌ **bloquant** |
+| Point de contact (contrat)                                                                      | État atlas                                | Verdict         |
+| ----------------------------------------------------------------------------------------------- | ----------------------------------------- | --------------- |
+| StorageClass bucket `rook-ceph-datalake`                                                        | `overlays/prod/objectbucketclaim.yaml:21` | ✅              |
+| Noms DNS **courts** (`marquez.marquez`, `mlflow.mlflow`, `pg-rw.postgres`) — piège ndots:5 prod | code + manifestes                         | ✅              |
+| Postgres via Secret dérivé `pgvector-pg-auth` (secretKeyRef, ns `dagster`)                      | `definitions.py:77-92`                    | ✅              |
+| Injection env pods de run pour OPENLINEAGE/MLFLOW (piège ADR 0086)                              | `definitions.py:51-64,93-101`             | ✅              |
+| Déploie uniquement en ns `dagster` (dans toutes les allowlists NetworkPolicy)                   | `deploy/base/code-location.yaml`          | ✅              |
+| Aucune UI attendant Gateway/`*.cluster.lan` (obsolète en L4 NodePort)                           | —                                         | ✅              |
+| **Accès S3 des pods de RUN en prod**                                                            | `definitions.py:61,98`                    | ❌ **bloquant** |
 
 ### Le seul écart bloquant prod : accès S3 des pods de run
 
@@ -50,7 +50,7 @@ contact :
 - **Banc** : le Secret `citation-s3-access` existe et **regroupe** `AWS_*` **et**
   `BUCKET_*` (`overlays/bench/s3-access.yaml`) → un seul `secret_ref` suffit.
 - **Prod** : l'`ObjectBucketClaim` génère un **Secret** ET un **ConfigMap** tous
-  deux nommés `atlas-datalake` (`overlays/prod/objectbucketclaim.yaml:17`). Les
+  deux nommés `citation-datalake` (`overlays/prod/objectbucketclaim.yaml:17`). Les
   pods de run (a) référencent un **nom de Secret inexistant** et (b) n'ont **pas**
   de `config_map_ref` → ils ne reçoivent jamais `BUCKET_HOST/PORT/NAME`. **Les
   runs échouent en prod** (le `Deployment` de la code-location, lui, est correct :
@@ -67,20 +67,21 @@ Approche retenue : **paramétrage par variables d'environnement** (banc/prod
 divergent sans dupliquer la logique d'injection).
 
 - [ ] Le `Deployment` de chaque overlay pose le **nom** des sources S3 des pods de
-  run : `CITATION_S3_SECRET` (banc : `citation-s3-access` ; prod : `atlas-datalake`)
-  et, en prod uniquement, `CITATION_S3_CONFIGMAP` (`atlas-datalake`).
+      run : `CITATION_S3_SECRET` (banc : `citation-s3-access` ; prod : `citation-datalake`)
+      et, en prod uniquement, `CITATION_S3_CONFIGMAP` (`citation-datalake`).
 - [ ] `definitions.py` lit ces noms à la construction des Definitions et bâtit le
-  `env_from` des tags run : `secret_ref` (toujours) + `config_map_ref` **si**
-  `CITATION_S3_CONFIGMAP` est défini. Défaut sain = `citation-s3-access` (banc /
-  checkout neuf), pour ne pas casser les tests ni le mode dégradé.
+      `env_from` des tags run : `secret_ref` (toujours) + `config_map_ref` **si**
+      `CITATION_S3_CONFIGMAP` est défini. Défaut sain = `citation-s3-access` (banc /
+      checkout neuf), pour ne pas casser les tests ni le mode dégradé.
 - [ ] Étendre `deploy/validate.sh` : vérifier que le rendu prod expose bien, pour
-  les pods de run, le **même** nom de Secret que l'OBC (`atlas-datalake`) **et** un
-  `config_map_ref` (croise Python ↔ manifeste, comme le garde déjà fait pour
-  `MLFLOW_TRACKING_URI` et `:dev`).
+      les pods de run, le **même** nom de Secret que l'OBC (`citation-datalake`) **et** un
+      `config_map_ref` (croise Python ↔ manifeste, comme le garde déjà fait pour
+      `MLFLOW_TRACKING_URI` et `:dev`).
 - [ ] Tests : `test_definitions.py` couvre les deux profils (banc → 1 `secret_ref`
-  sans configmap ; prod → `secret_ref` + `config_map_ref` aux bons noms).
+      sans configmap ; prod → `secret_ref` + `config_map_ref` aux bons noms).
 
 **Prérequis déployeur (côté cluster, hors code atlas)** :
+
 - Le Secret dérivé `pgvector-pg-auth` (clés `username`/`password`) doit exister en
   ns `dagster` — c'est dans le contrat (`namespaces-secrets`), responsabilité du
   socle.
@@ -98,27 +99,27 @@ divergent sans dupliquer la logique d'injection).
 ### Lot 2 — Durcissement prod de la code-location (qualité) · [#400](https://github.com/univ-lehavre/atlas/issues/400)
 
 - [ ] `resources` requests/limits sur le conteneur gRPC (aujourd'hui aucun → QoS
-  BestEffort, premier tué sous pression mémoire).
+      BestEffort, premier tué sous pression mémoire).
 - [ ] `livenessProbe` (en plus de la `readinessProbe` TCP existante).
 - [ ] `PodDisruptionBudget` (`minAvailable: 1`) — aujourd'hui `replicas:1` sans PDB
-  = SPOF lors d'un drain de nœud.
+      = SPOF lors d'un drain de nœud.
 - [ ] Tag d'image **immuable réel** dans l'overlay prod (remplacer l'exemple
-  `0.0.0`), aligné `images[].newTag` ↔ `DAGSTER_CURRENT_IMAGE` (garde `validate.sh`
-  déjà en place pour l'absence de `:dev`).
+      `0.0.0`), aligné `images[].newTag` ↔ `DAGSTER_CURRENT_IMAGE` (garde `validate.sh`
+      déjà en place pour l'absence de `:dev`).
 
 ### Lot 3 — Doc : exposition L4 NodePort · [#430](https://github.com/univ-lehavre/atlas/issues/430)
 
 - [ ] Aligner `docs/src/content/docs/plans/2026-06-02-pipeline-collaborations.md`
-  (L24, L128–131, L442–443, L513) : remplacer Gateway Cilium L7 + LB-IPAM +
-  `*.cluster.lan` par **L4 NodePort** (`http://<IP-nœud>:<nodePort>`, zéro DNS/LB/
-  Gateway). Endpoints **intra-cluster** consommés par atlas inchangés (noms courts).
+      (L24, L128–131, L442–443, L513) : remplacer Gateway Cilium L7 + LB-IPAM +
+      `*.cluster.lan` par **L4 NodePort** (`http://<IP-nœud>:<nodePort>`, zéro DNS/LB/
+      Gateway). Endpoints **intra-cluster** consommés par atlas inchangés (noms courts).
 
 ### Lot 4 — Visibilité qualité depuis le portail · [#431](https://github.com/univ-lehavre/atlas/issues/431)
 
 - [ ] `mlflow.log_artifact()` du **HTML Evidently** dans `assets/drift.py` (1–2
-  lignes) → rapport visuel consultable dans l'UI MLflow (déjà exposée en NodePort).
+      lignes) → rapport visuel consultable dans l'UI MLflow (déjà exposée en NodePort).
 - [ ] Idem Great Expectations : publier les data docs / résultats de validation
-  comme artefact MLflow. Gain immédiat, zéro infra, zéro couplage cluster↔atlas.
+      comme artefact MLflow. Gain immédiat, zéro infra, zéro couplage cluster↔atlas.
 
 ### Lot 5 — Entraînement continu (CT) : armer le `@schedule` · [#399](https://github.com/univ-lehavre/atlas/issues/399)
 
@@ -145,9 +146,9 @@ informe, ne déclenche pas).
 > pas décision ».
 
 - [ ] (Optionnel, qualité) Rendre le cron du `@schedule` **configurable par env
-  d'instance** (`CITATION_CT_CRON`, défaut inchangé) plutôt qu'en littéral — pour
-  que le déployeur fixe « mensuel » sans modifier le code générique. Sinon,
-  override de cadence directement à l'armement côté UI Dagster.
+      d'instance** (`CITATION_CT_CRON`, défaut inchangé) plutôt qu'en littéral — pour
+      que le déployeur fixe « mensuel » sans modifier le code générique. Sinon,
+      override de cadence directement à l'armement côté UI Dagster.
 - [ ] **Préalables à l'armement** (sinon CT automatique dangereux) :
   - idempotence du rejeu `transform_job` : chaque run écrit sous
     `dt=…/run=<run_id>/` (immuable) → un rejeu ne corrompt pas l'existant ✅ (acté
@@ -157,10 +158,10 @@ informe, ne déclenche pas).
     sur le watermark — **vérifier** qu'aucun chevauchement schedule ↔ ingestion
     manuelle ne réécrit le watermark concurremment.
     - politique de **concurrence** des runs schedulés (un run mensuel ne doit pas
-    se superposer au précédent s'il déborde) — `max_concurrent_runs` / tag de
-    concurrence Dagster à acter.
+      se superposer au précédent s'il déborde) — `max_concurrent_runs` / tag de
+      concurrence Dagster à acter.
 - [ ] Armer `transform_daily` dans l'UI Dagster **une fois** la prod fonctionnelle
-  (Lot 8) et la cadence mensuelle posée — pas de re-training silencieux non voulu.
+      (Lot 8) et la cadence mensuelle posée — pas de re-training silencieux non voulu.
 
 ### Lot 6 — Instrumentation MLflow de `researcher_embeddings` · [#397](https://github.com/univ-lehavre/atlas/issues/397)
 
@@ -171,52 +172,52 @@ mais **aucun run/param/métrique MLflow** ni enregistrement au model registry.
 MLflow, on lit `MLFLOW_TRACKING_URI` et on instrumente — comme le lineage).
 
 - [ ] Dépendance `mlflow` épinglée dans `pyproject.toml` (déjà `mlflow-skinny`
-  présent — **vérifier** s'il suffit pour le model registry, sinon `mlflow`
-  complet) + `uv.lock` régénéré.
+      présent — **vérifier** s'il suffit pour le model registry, sinon `mlflow`
+      complet) + `uv.lock` régénéré.
 - [ ] Module pur `tracking.py` : `mlflow_config_from_env()` (patron `resources.py`,
-  helper `_require`), experiment `citation-*` configurable. **No-op sans
-  `MLFLOW_TRACKING_URI`** (early-return documenté, parité avec `lineage.emit`) →
-  CI/tests restent hermétiques (ADR 0057).
+      helper `_require`), experiment `citation-*` configurable. **No-op sans
+      `MLFLOW_TRACKING_URI`** (early-return documenté, parité avec `lineage.emit`) →
+      CI/tests restent hermétiques (ADR 0057).
 - [ ] Dans `researcher_embeddings` (`assets/researcher_embeddings.py:163-232`) :
-  run MLflow autour du calcul ; **params** = révision HF (`_HF_REVISION`), repo HF,
-  `sha256` des fichiers (réutiliser les constantes de `fetch_model.py`, ne pas les
-  redéfinir), `EMBEDDING_DIM`, `MAX_LENGTH`, `TEXT_TOPIC_SCORE_MIN`, partition
-  `dt=…/run=…` ; **métriques** = `work_vectors`, `author_vectors` (déjà dans le
-  `MaterializeResult`) + une mesure de complétude (ex. nb d'`author_id` au vecteur
-  nul). URI/run reporté dans `MetadataValue` du `MaterializeResult`.
+      run MLflow autour du calcul ; **params** = révision HF (`_HF_REVISION`), repo HF,
+      `sha256` des fichiers (réutiliser les constantes de `fetch_model.py`, ne pas les
+      redéfinir), `EMBEDDING_DIM`, `MAX_LENGTH`, `TEXT_TOPIC_SCORE_MIN`, partition
+      `dt=…/run=…` ; **métriques** = `work_vectors`, `author_vectors` (déjà dans le
+      `MaterializeResult`) + une mesure de complétude (ex. nb d'`author_id` au vecteur
+      nul). URI/run reporté dans `MetadataValue` du `MaterializeResult`.
 - [ ] Enregistrer `all-MiniLM-L6-v2` au **model registry** sous un nom `citation-*`,
-  tags = révision HF figée + sha256 (la version registry pointe la révision exacte,
-  pas `main`).
+      tags = révision HF figée + sha256 (la version registry pointe la révision exacte,
+      pas `main`).
 - [ ] **Invariants** : aucune PII dans params/métriques/tags (ADR 0030, vérifié par
-  test) ; nommage `citation` jamais une marque (ADR 0022) ; aucune I/O réseau
-  ajoutée au runtime de l'embedding (déterminisme/parité `embedding-profile.ts`).
+      test) ; nommage `citation` jamais une marque (ADR 0022) ; aucune I/O réseau
+      ajoutée au runtime de l'embedding (déterminisme/parité `embedding-profile.ts`).
 - [ ] Tests hermétiques : (a) no-op sans `MLFLOW_TRACKING_URI` (zéro réseau) ;
-  (b) params/métriques contre un client MLflow mocké ; (c) aucune PII loggée.
+      (b) params/métriques contre un client MLflow mocké ; (c) aucune PII loggée.
 - [ ] README MLOps + docstring renvoyant à l'ADR 0062.
 
 ### Lot 7 — CT par signal : `@sensor` watermark → `transform_job` · [#399](https://github.com/univ-lehavre/atlas/issues/399)
 
 Complète le `@schedule` du Lot 5 par un déclencheur **sémantique** : réentraîner
-quand il y a *vraiment* de la donnée neuve, pas seulement au calendrier. Le
+quand il y a _vraiment_ de la donnée neuve, pas seulement au calendrier. Le
 `@sensor` se branche sur l'**avancée du watermark** (`raw/_watermark.json`,
 `watermark.py`) ou l'apparition d'une nouvelle partition brute → relie
 ingestion → transform.
 
 - [ ] `@sensor` ciblant `transform_job`, **désactivé par défaut**
-  (`DefaultSensorStatus.STOPPED`) — capacité, pas décision (ADR 0062/0031). Évalue
-  l'avancée du watermark sans I/O bloquante non maîtrisée.
+      (`DefaultSensorStatus.STOPPED`) — capacité, pas décision (ADR 0062/0031). Évalue
+      l'avancée du watermark sans I/O bloquante non maîtrisée.
 - [ ] Enregistrement **conditionnel** (`if _dbt_assets:` uniquement, parité avec
-  `transform_job` et le schedule) → la code-location reste chargeable en mode
-  dégradé. Ajouter `sensors=` à `Definitions` dans cette seule branche.
+      `transform_job` et le schedule) → la code-location reste chargeable en mode
+      dégradé. Ajouter `sensors=` à `Definitions` dans cette seule branche.
 - [ ] Chaque déclenchement = `run_id` distinct → partition `dt=…/run=…` neuve
-  immuable (ADR 0054) ; documenter la dérivation de `dt` si elle devient dynamique
-  (attention au placeholder `CURATED_DT = "0000-00"`).
+      immuable (ADR 0054) ; documenter la dérivation de `dt` si elle devient dynamique
+      (attention au placeholder `CURATED_DT = "0000-00"`).
 - [ ] Tests hermétiques : (a) code-location chargeable avec le sensor quand
-  `transform_job` existe ; (b) chargeable en mode dégradé sans sensor ; (c) sensor
-  STOPPED par défaut ; (d) déclenche sur watermark neuf et pas autrement.
+      `transform_job` existe ; (b) chargeable en mode dégradé sans sensor ; (c) sensor
+      STOPPED par défaut ; (d) déclenche sur watermark neuf et pas autrement.
 - [ ] **Coexistence schedule + sensor** : éviter le double-déclenchement (sensor sur
-  donnée neuve + schedule mensuel sur la même fenêtre) → politique de concurrence
-  / dédup de run-key à acter (lien Lot 5).
+      donnée neuve + schedule mensuel sur la même fenêtre) → politique de concurrence
+      / dédup de run-key à acter (lien Lot 5).
 - [ ] README : nom du sensor, STOPPED par défaut, armement déployeur, renvoi 0062.
 
 > Le sensor ne ferme `#399` **pleinement** qu'avec le schedule (Lot 5) : ensemble
@@ -235,18 +236,18 @@ ingestion → transform.
 
 - [ ] `validate.sh` vert (build + kubeconform + invariants des deux overlays).
 - [ ] Image taguée immuable, poussée sur le registry interne (`registry:80`) ; tag
-  figé dans l'overlay prod (`newTag` + `DAGSTER_CURRENT_IMAGE` alignés).
+      figé dans l'overlay prod (`newTag` + `DAGSTER_CURRENT_IMAGE` alignés).
 - [ ] Manifestes (overlay `prod` + `Application` Argo CD) **poussés sur Gitea
-  intra-banc** → webhook → Argo CD réconcilie — **jamais** `kubectl apply`.
+      intra-banc** → webhook → Argo CD réconcilie — **jamais** `kubectl apply`.
 - [ ] `Application` `citation-dagster` **Synced + Healthy** ; code-location visible
-  dans l'UI Dagster.
+      dans l'UI Dagster.
 - [ ] Run réel **sur le banc `atlas` (local-path, `overlays/bench`)** d'abord :
-  `ingestion_job` puis `transform_job` ;
-  vérifier dans les pods de run que `AWS_*`/`BUCKET_*`, `OPENLINEAGE_URL`,
-  `MLFLOW_TRACKING_URI`, `POSTGRES_*` sont présents (pas de no-op silencieux), que
-  Marquez reçoit le lineage et MLflow les runs/métriques.
+      `ingestion_job` puis `transform_job` ;
+      vérifier dans les pods de run que `AWS_*`/`BUCKET_*`, `OPENLINEAGE_URL`,
+      `MLFLOW_TRACKING_URI`, `POSTGRES_*` sont présents (pas de no-op silencieux), que
+      Marquez reçoit le lineage et MLflow les runs/métriques.
 - [ ] Double-run de `transform_job` au banc → confirmer l'idempotence (préalable CT,
-  Lot 5).
+      Lot 5).
 
 ## Ordre & dépendances
 
@@ -272,7 +273,7 @@ d'infra réel — l'egress `dagster → mlflow` — est **déjà** tracé en clu
 
 - Les pods de run accèdent au S3 datalake : pipeline prouvé sur le banc **`atlas`
   local-path** (SeaweedFS) ; l'accès **OBC Ceph** spécifique à la prod (Secret +
-  ConfigMap `atlas-datalake`) relève de la **soupape Ceph** `cluster-dataops` (le S3
+  ConfigMap `citation-datalake`) relève de la **soupape Ceph** `cluster-dataops` (le S3
   change de backing — ADR 0036/0085) ou se valide à la première bascule prod.
 - Lineage visible dans Marquez ; runs/métriques (drift inclus) visibles dans MLflow.
 - `index_load` peuple la table `researchers` (pgvector) ; `ge_index_load` vert.

@@ -40,7 +40,7 @@ dependsOn:
   # Stockage OBJET (OBC S3 RGW Ceph), distinct d'un volume bloc : raw snapshot OpenAlex +
   # curated + marts servis (immuables dt=/run=, donc cumulatifs).
   buckets:
-    - name: atlas-datalake
+    - name: citation-datalake # convention <service>-<usage> (cf. mlflow-artifacts, cnpg-backups)
       size: 3Ti # snapshot OpenAlex complet + accumulation des partitions immuables
       storageClass: rook-ceph-datalake
   # Migration de schéma métier FOURNIE par atlas (cluster l'applique en hook PreSync).

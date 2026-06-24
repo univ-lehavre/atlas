@@ -13,13 +13,13 @@ _ENV = {
     "AWS_SECRET_ACCESS_KEY": "SK",
     "BUCKET_HOST": "rook-ceph-rgw-datalake.rook-ceph.svc.cluster.local",
     "BUCKET_PORT": "80",
-    "BUCKET_NAME": "atlas-datalake-abc123",
+    "BUCKET_NAME": "citation-datalake-abc123",
 }
 
 
 def test_ceph_target_from_env_builds_path_style_endpoint() -> None:
     target = ceph_target_from_env(_ENV)
-    assert target.bucket == "atlas-datalake-abc123"
+    assert target.bucket == "citation-datalake-abc123"
     assert target.endpoint == "http://rook-ceph-rgw-datalake.rook-ceph.svc.cluster.local:80"
     assert target.access_key_id == "AK"
 

@@ -12,7 +12,7 @@ _ENV = {
     "AWS_ACCESS_KEY_ID": "AK",
     "AWS_SECRET_ACCESS_KEY": "SK",
     "BUCKET_HOST": "rgw.local",
-    "BUCKET_NAME": "atlas-datalake-x",
+    "BUCKET_NAME": "citation-datalake-x",
 }
 
 # Partitions retournées par `lsf --dirs-only` (triées = chronologiques).
@@ -125,7 +125,7 @@ def test_merged_ids_synced_to_raw_never_applied(env):
     _run(env, fake, max_partitions=1, max_merged_files=5)
     merged_copies = [c for c in fake.calls if "copy" in c and "merged_ids" in c[-1]]
     assert len(merged_copies) == 1
-    assert merged_copies[0][-1] == "ceph:atlas-datalake-x/raw/merged_ids/works"
+    assert merged_copies[0][-1] == "ceph:citation-datalake-x/raw/merged_ids/works"
 
 
 def test_explicit_partition_ignores_watermark(env):
@@ -136,7 +136,7 @@ def test_explicit_partition_ignores_watermark(env):
     assert fake.rcat_payloads == [], "mode ciblé → watermark non touché"
     # la cible utilise la partition explicite
     copy = next(c for c in fake.calls if "copy" in c and "merged_ids" not in c[-1])
-    assert copy[-1] == "ceph:atlas-datalake-x/raw/works/updated_date=2016-06-24"
+    assert copy[-1] == "ceph:citation-datalake-x/raw/works/updated_date=2016-06-24"
 
 
 def test_merged_watermark_independent_no_silent_loss(env):
@@ -188,7 +188,7 @@ def test_coherent_sample_derives_authors(env, monkeypatch):
     monkeypatch.setattr(_RS_MODULE, "_derive_coherent_authors", fake_derive)
     fake = FakeRclone(watermark_json="")
     result = _run(env, fake, coherent_sample=True)
-    assert called["bucket"] == "atlas-datalake-x"
+    assert called["bucket"] == "citation-datalake-x"
     assert result.metadata["coherent_authors"].value == 42
 
 
