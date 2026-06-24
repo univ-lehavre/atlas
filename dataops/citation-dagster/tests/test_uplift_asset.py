@@ -57,9 +57,10 @@ def _patch(monkeypatch, con):
 
     monkeypatch.setattr(_MODULE, "ceph_target_from_env", lambda: ceph_target_from_env(_ENV))
     monkeypatch.setattr(_MODULE.lakehouse, "connect", lambda cfg=None: con)
-    # MLflow no-op (pas de serveur en test).
+    # MLflow + lineage no-op (pas de serveur ni de Marquez en test).
     monkeypatch.setattr(_MODULE.tracking, "mlflow_config_from_env", lambda: None)
-    monkeypatch.setattr(_MODULE.tracking, "log_embeddings_run", lambda *a, **k: None)
+    monkeypatch.setattr(_MODULE.tracking, "log_run", lambda *a, **k: None)
+    monkeypatch.setattr(_MODULE.lineage, "emit", lambda *a, **k: None)
 
 
 def _signal_data(n_authors: int):

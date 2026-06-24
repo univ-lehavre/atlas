@@ -15,8 +15,9 @@ NB : pas de ``from __future__ import annotations`` — Dagster introspecte les a
 """
 
 from dagster import AssetExecutionContext, AssetKey, MaterializeResult, MetadataValue, asset
+from openlineage.client.event_v2 import RunState
 
-from citation_dagster import lakehouse, tracking, uplift_model
+from citation_dagster import lakehouse, lineage, tracking, uplift_model
 from citation_dagster.dbt import CURATED_DT
 from citation_dagster.resources import ceph_target_from_env
 
@@ -25,6 +26,24 @@ _LABELS_SUBDIR = "curated/curated_pair_uplift_labels"
 _PREDICTIONS_SUBDIR = "marts/pair_uplift_predictions"
 _RECOMMENDATIONS_SUBDIR = "marts/author_recommendations"
 _TOP_N = 10
+
+
+def _lineage_io() -> tuple[list, list]:
+    """Datasets d'entrée/sortie du modèle d'uplift (connecte le graphe Marquez).
+
+    Entrées : le mart de profils (asset Python) + les labels d'uplift (modèle dbt).
+    Sorties : les deux marts servis (entrées de leurs manifests). Noms techniques, pas
+    de PII (invariant lineage). Réutilisé pour START et COMPLETE (mêmes I/O).
+    """
+    inputs = [
+        lineage.mart_dataset(_PROFILES_SUBDIR),
+        lineage.curated_dataset("curated_pair_uplift_labels"),
+    ]
+    outputs = [
+        lineage.mart_dataset(_PREDICTIONS_SUBDIR),
+        lineage.mart_dataset(_RECOMMENDATIONS_SUBDIR),
+    ]
+    return inputs, outputs
 
 
 def _read_profiles(con, bucket: str, run_id: str):
@@ -129,6 +148,9 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
     run_id = context.run_id
     con = lakehouse.connect()
 
+    lin_inputs, lin_outputs = _lineage_io()
+    lineage.emit(RunState.START, run_id, "pair_uplift_model", lin_inputs, lin_outputs)
+
     profiles, subfields = _read_profiles(con, target.bucket, run_id)
     labels = _read_labels(con, target.bucket, run_id)
     vecs = uplift_model.author_vectors(profiles, subfields)
@@ -158,7 +180,10 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
     _write_predictions(rows, target.bucket, run_id)
     _write_recommendations(recos, target.bucket, run_id)
 
-    # Logging MLflow (best-effort, no-op si MLFLOW_TRACKING_URI absent).
+    lineage.emit(RunState.COMPLETE, run_id, "pair_uplift_model", lin_inputs, lin_outputs)
+
+    # Logging MLflow (best-effort, no-op si MLFLOW_TRACKING_URI absent). Run DÉDIÉ à
+    # l'uplift (expérience et nom propres), pas mêlé à l'expérience des embeddings.
     metrics = {
         "n_pairs_labeled": float(len(labels)),
         "n_pairs_served": float(len(rows)),
@@ -168,8 +193,13 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
         metrics.update(
             {"r2": evaluation.r2, "mae": evaluation.mae, "baseline_mae": evaluation.baseline_mae}
         )
-    tracking.log_embeddings_run(  # réutilise le canal MLflow du socle
-        f"uplift:{run_id}", CURATED_DT, metrics, tracking.mlflow_config_from_env()
+    tracking.log_run(
+        run_name=f"uplift:{run_id}",
+        experiment=tracking.EXPERIMENT_UPLIFT,
+        dt=CURATED_DT,
+        metrics=metrics,
+        params={"served_mode": served_mode, "dt": CURATED_DT, "run_id": run_id},
+        config=tracking.mlflow_config_from_env(),
     )
 
     return MaterializeResult(

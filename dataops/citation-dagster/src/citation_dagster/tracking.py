@@ -25,6 +25,9 @@ from citation_dagster import embedding, model_provenance
 # Identifiants partagés MLflow — convention `citation`, jamais une marque (ADR 0022).
 EXPERIMENT = "citation_researcher_embeddings"
 REGISTERED_MODEL = "citation-researcher-embeddings"
+# Expérience DÉDIÉE au modèle d'uplift FWCI (ADR 0067) : ses runs ne doivent pas se
+# noyer dans l'expérience des embeddings (dérives suivies séparément).
+EXPERIMENT_UPLIFT = "citation_uplift_fwci"
 
 
 @dataclass(frozen=True)
@@ -81,6 +84,39 @@ def _model_version_tags(run_id: str, dt: str) -> dict:
     for name, sha in model_provenance.file_sha256().items():
         tags[f"sha256_{name}"] = sha
     return tags
+
+
+def log_run(
+    run_name: str,
+    experiment: str,
+    dt: str,
+    metrics: dict,
+    params: dict,
+    config: MlflowConfig | None,
+) -> str | None:
+    """Logge un run MLflow GÉNÉRIQUE (params + métriques), sans toucher au registry.
+
+    Brique partagée : ``log_embeddings_run`` l'enrichit du registry du modèle d'embeddings ;
+    les autres assets (p. ex. ``pair_uplift_model``) l'appellent directement avec leur propre
+    ``experiment``/``run_name`` pour que leurs runs soient correctement RANGÉS et NOMMÉS
+    (pas mêlés à l'expérience des embeddings). Best-effort : ``config`` ``None`` → no-op,
+    MLflow injoignable → erreur avalée. Renvoie ``runs:/<id>`` si loggué, sinon ``None``.
+    Aucune PII (ADR 0030) ; l'``experiment`` passé prime sur ``config.experiment``.
+    """
+    if config is None:
+        return None
+    try:
+        import mlflow
+
+        mlflow.set_tracking_uri(config.tracking_uri)
+        mlflow.set_experiment(experiment)
+        with mlflow.start_run(run_name=run_name) as run:
+            mlflow.log_params(params)
+            for name, value in metrics.items():
+                mlflow.log_metric(name, value)
+            return f"runs:/{run.info.run_id}"
+    except Exception:  # noqa: BLE001 — best-effort : MLflow ne casse jamais la matérialisation
+        return None
 
 
 def log_embeddings_run(run_id: str, dt: str, metrics: dict, config: MlflowConfig | None) -> bool:

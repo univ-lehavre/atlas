@@ -136,3 +136,29 @@ def test_log_run_handles_failure(monkeypatch):
     monkeypatch.setattr(mlflow, "set_tracking_uri", _boom)
     cfg = tracking.MlflowConfig("http://127.0.0.1:1/unreachable", "citation_researcher_embeddings")
     assert tracking.log_embeddings_run("runX", "0000-00", {"author_vectors": 1}, cfg) is None
+
+
+def test_log_run_none_without_config():
+    # Brique générique : config None (MLFLOW_TRACKING_URI absent) → no-op, renvoie None.
+    assert tracking.log_run("uplift:r1", "exp", "0000-00", {"r2": 0.5}, {}, None) is None
+
+
+def test_log_run_uses_given_experiment_and_name_without_registry(_mlflow_stub):
+    # Le run uplift est RANGÉ dans son expérience dédiée et NOMMÉ proprement, sans
+    # toucher au registry du modèle d'embeddings (la brique générique ne register pas).
+    cfg = tracking.MlflowConfig("http://mlflow.local:5000", "ignored_config_experiment")
+    out = tracking.log_run(
+        run_name="uplift:runZ",
+        experiment=tracking.EXPERIMENT_UPLIFT,
+        dt="0000-00",
+        metrics={"r2": 0.5, "n_pairs_served": 12},
+        params={"served_mode": "predictive"},
+        config=cfg,
+    )
+    assert out == "runs:/mlflow-abc"
+    # L'experiment passé prime (pas celui de la config), et c'est bien l'expérience uplift.
+    assert _mlflow_stub["experiment"] == "citation_uplift_fwci"
+    assert _mlflow_stub["metrics"]["r2"] == 0.5
+    assert _mlflow_stub["params"]["served_mode"] == "predictive"
+    # Aucun modèle enregistré au registry (brique générique, pas log_embeddings_run).
+    assert _FakeClient.instances == []
