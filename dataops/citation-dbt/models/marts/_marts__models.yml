@@ -90,3 +90,23 @@ models:
       - name: doc_text
         description: "Document texte agrégé (labels pondérés par répétition) à indexer en FTS."
         data_tests: [not_null]
+
+  - name: marts_author_profiles
+    description: >-
+      Profil thématique par auteur (ADR 0067, lot 2) : distribution pondérée sur les
+      subfields OpenAlex, restreinte au périmètre EUNICoast. Une ligne par
+      (author_id, subfield_id) ; weight = SUM(score), freq = nb de publications. L'une
+      des deux représentations thématiques de l'auteur (l'autre = embedding 384).
+    columns:
+      - name: author_id
+        description: "Clé de jointure du profil (jamais une feature du modèle, ADR 0067)."
+        data_tests: [not_null]
+      - name: subfield_id
+        description: "Subfield OpenAlex (axe du vecteur thématique interprétable)."
+        data_tests: [not_null]
+      - name: weight
+        description: "Poids = SUM(score) des publications EUNICoast portant le subfield."
+        data_tests: [not_null]
+      - name: freq
+        description: "Nombre de publications contributrices (>= 1)."
+        data_tests: [not_null]
