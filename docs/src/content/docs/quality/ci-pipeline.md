@@ -15,7 +15,7 @@ Objectif : aucun code non vérifié n'entre dans `main`. Si une vérification é
 
 ## Vue d'ensemble
 
-Le dépôt compte **quinze _workflows_** qui se répartissent selon **quand** ils se déclenchent. L'enchaînement type, du point de vue d'un contributeur, est le suivant :
+Le dépôt compte **quatorze _workflows_** qui se répartissent selon **quand** ils se déclenchent. L'enchaînement type, du point de vue d'un contributeur, est le suivant :
 
 1. **À l'ouverture (ou à la mise à jour) d'une pull request**, plusieurs _workflows_ démarrent **en parallèle** : la chaîne qualité (`ci.yml`), les analyses de sécurité du code (`codeql.yml`, `semgrep.yml`), la détection de secrets (`gitleaks.yml`) et la revue des dépendances ajoutées (`dependency-review.yml`). Certains ne se réveillent **que si la PR touche les fichiers concernés** : `images.yml` (construction des images Docker, sur tout changement de code applicatif ou de `Dockerfile`) et `e2e.yml` (tests de bout en bout, seulement si la PR touche les apps ou _sandboxes_ ciblées). **Toutes ces vérifications doivent passer** pour que la PR soit fusionnable.
 2. **À la fusion sur `main`** (après revue), d'autres _workflows_ prennent le relais : publication de la documentation (`docs.yml`), publication des paquets (`release.yml`), construction et publication des images Docker (`images.yml`), génération du SBOM (`sbom.yml`) et analyse de référence CodeQL (`codeql.yml` tourne aussi sur `main`).
@@ -79,22 +79,23 @@ Le tableau ci-dessous récapitule le rôle de chaque _workflow_. Les sections su
 
 ## Le workflow `ci.yml` en détail
 
-`ci.yml` est la chaîne qualité du dépôt. Il regroupe plusieurs _jobs_ (un _job_ est un groupe d'étapes exécuté sur une machine dédiée). La plupart tournent **en parallèle** pour aller vite ; seuls `build` puis `docs` sont **enchaînés**, car il est inutile de compiler tant que le code n'a pas passé le lint, le typage et les tests. Un premier _job_, `changes`, détecte si la PR ne touche que de la documentation : dans ce cas, les _jobs_ lourds (`typecheck`, `test`, `build`) sautent leur travail coûteux tout en restant « verts » (CI adaptative, [ADR 0034](/atlas/decisions/0034-ci-adaptative-par-chemin/)).
+`ci.yml` est la chaîne qualité du dépôt. Il regroupe plusieurs _jobs_ (un _job_ est un groupe d'étapes exécuté sur une machine dédiée). Un premier _job_, `changes`, détecte si la PR ne touche que de la documentation : dans ce cas, les _jobs_ lourds (`lint`, `typecheck`, `test`, `build`, `audit`) sautent leur travail coûteux tout en restant « verts » (CI adaptative, [ADR 0034](/atlas/decisions/0034-ci-adaptative-par-chemin/)). Tous les autres _jobs_ ne dépendent **que** de `changes` (`needs: [changes]`) : ils partent donc **tous en parallèle** dès que `changes` a répondu, sans aucune barrière d'attente entre eux. C'est un choix assumé d'accélération ([ADR 0061](/atlas/decisions/0061-ci-acceleration-cache-parallelisation/)) : chaîner `build` derrière `lint`/`typecheck`/`test` n'ajoutait que de l'attente, car ce sont des contrôles de qualité indépendants et non des prérequis de compilation. L'ordre réel des tâches de build (un paquet avant ceux qui en dépendent, `^build`) est géré **à l'intérieur** de chaque _job_ par Turbo, pas par l'enchaînement des _jobs_.
 
 Le graphe ci-dessous montre cet enchaînement et les conditions de passage :
 
 ```mermaid
 flowchart LR
-    push([push / PR]) --> lint[lint]
-    push --> audit[audit]
-    push --> changes[changes<br/>doc seulement ?]
+    push([push / PR]) --> changes[changes<br/>doc seulement ?]
+    changes --> lint[lint]
     changes --> typecheck[typecheck]
     changes --> test[test]
-    lint & typecheck & test --> build[build]
-    build --> docs[docs]
+    changes --> build[build]
+    changes --> docs[docs]
+    changes --> audit[audit]
+    changes --> dataops[dataops]
 ```
 
-`lint`, `audit` et `changes` démarrent dès le push. `typecheck` et `test` lisent le résultat de `changes` pour décider s'ils sautent leur travail (PR documentaire). `build` attend que `lint`, `typecheck` et `test` aient réussi ; `docs` s'exécute après `build`.
+`changes` démarre seul dès le push. Tous les autres _jobs_ (`lint`, `typecheck`, `test`, `build`, `docs`, `audit`, `dataops`) attendent uniquement sa réponse, puis s'exécutent **en parallèle** : aucun n'attend un autre. Chacun lit le résultat de `changes` (drapeau `RUN`) pour décider s'il saute son travail coûteux sur une PR documentaire, tout en sortant toujours « vert » (jamais `skipped`, qui resterait « Pending » et bloquerait le merge — [ADR 0034](/atlas/decisions/0034-ci-adaptative-par-chemin/)).
 
 ### `lint`
 
@@ -131,7 +132,7 @@ pnpm build            # Compilation de chaque sous-projet
 pnpm audit:size       # Vérifie les budgets de taille de bundle
 ```
 
-`build` attend que `lint`, `typecheck` et `test` aient réussi — pas la peine de compiler si l'un d'eux échoue.
+`build` ne dépend plus de `lint`, `typecheck` ni `test` : il part en parallèle d'eux dès la réponse de `changes` ([ADR 0061](/atlas/decisions/0061-ci-acceleration-cache-parallelisation/)). Ces vérifications sont des contrôles de qualité indépendants, pas des prérequis de compilation ; l'ordre interne des paquets (`^build`) est assuré par Turbo.
 
 ### `audit`
 
@@ -161,7 +162,7 @@ Sur `main`, ce _job_ est suivi du déploiement sur GitHub Pages via le _workflow
 
 ## Les autres workflows
 
-`ci.yml` n'est qu'un _workflow_ parmi quinze. Voici ce que font les autres, regroupés par fonction. Toutes les descriptions sont tirées des fichiers `.github/workflows/*.yml` du dépôt.
+`ci.yml` n'est qu'un _workflow_ parmi quatorze. Voici ce que font les autres, regroupés par fonction. Toutes les descriptions sont tirées des fichiers `.github/workflows/*.yml` du dépôt.
 
 ### Sécurité du code et des dépendances
 
@@ -205,7 +206,8 @@ Lance dans l'ordre, _fail-fast_ :
 3. `lint` — ESLint
 4. `typecheck` — TypeScript
 5. `test:coverage` — tests
-6. `build` — compilation (le plus long, en dernier)
+6. `build` — compilation (le plus long)
+7. `dataops:check` — qualité de la catégorie `dataops/` (Python : ruff, pytest avec couverture, validation des manifestes), hors graphe Turbo donc lancée à part en fin de chaîne
 
 Les _hooks Git_ locaux ([lefthook](/atlas/quality/hooks/)) exécutent automatiquement les étapes 1–4 sur les fichiers modifiés avant chaque commit, et un sous-ensemble plus large avant chaque push. Voir [Hooks Git](/atlas/quality/hooks/).
 
@@ -216,7 +218,7 @@ Les _hooks Git_ locaux ([lefthook](/atlas/quality/hooks/)) exécutent automatiqu
 3. Reproduire localement la commande exacte (`pnpm lint`, `pnpm test:coverage`, etc.).
 4. Corriger, recommitter, repousser — la CI relance automatiquement.
 
-Tous les _workflows_ échouent **vite** : la dépendance entre _jobs_ (`build` après `lint`/`typecheck`/`test`) évite d'attendre 5 min de build pour découvrir qu'une virgule manque dans un commentaire.
+Tous les _workflows_ échouent **vite**, mais plus par une chaîne de dépendances entre _jobs_ (supprimée par l'[ADR 0061](/atlas/decisions/0061-ci-acceleration-cache-parallelisation/)). Le _fail-fast_ vient désormais de deux mécanismes : le _job_ `changes` **court-circuite par chemin** (une PR documentaire saute tout le travail coûteux) ; et le **parallélisme** fait remonter chaque échec dès que le _job_ concerné finit, sans attendre les autres — un lint qui casse n'a pas à patienter derrière 5 min de build.
 
 ## Cache distribué
 

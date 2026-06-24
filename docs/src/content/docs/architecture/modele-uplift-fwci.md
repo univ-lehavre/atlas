@@ -91,7 +91,7 @@ gonfler la baseline — sinon on tricherait en utilisant l'avenir pour expliquer
 | Co-publication | Année | FWCI ensemble | Baseline solo (pubs **antérieures** seulement) | Uplift |
 | -------------- | ----- | ------------- | ---------------------------------------------- | ------ |
 | W10            | 2018  | 10,0          | (1,5 + 4,0) / 2 = 2,75                         | 7,25   |
-| W11            | 2019  | 6,0           | (2,0 + 3,5) / 2 = 2,75                         | 3,25   |
+| W11            | 2019  | 6,0           | (1,5 + 4,0) / 2 = 2,75                         | 3,25   |
 
 Uplift moyen de la paire = (7,25 + 3,25) / 2 = **5,25**.
 

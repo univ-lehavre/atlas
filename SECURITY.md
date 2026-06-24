@@ -44,10 +44,10 @@ Les anciens packages renommés sont **dépréciés** sur npm avec un pointeur ve
 
 Atlas documente l'ensemble de ses garde-fous applicatifs et opérationnels sur le site de documentation :
 
-- [Sécurité applicative](docs/quality/security.md) — inventaire des secrets, classification des surfaces exposées, DAST, SBOM
-- [Réponse aux incidents](docs/quality/incident-response.md) — runbook opérationnel (P0–P3, 5 phases, RGPD)
+- [Sécurité applicative](https://univ-lehavre.github.io/atlas/quality/security/) — inventaire des secrets, classification des surfaces exposées, DAST, SBOM
+- [Réponse aux incidents](https://univ-lehavre.github.io/atlas/quality/incident-response/) — runbook opérationnel (P0–P3, 5 phases, RGPD)
 
-Pour vérifier qu'un package installé provient bien du workflow Atlas (provenance OIDC, SLSA Build L3) :
+Pour vérifier qu'un package installé provient bien du workflow Atlas (provenance OIDC, SLSA Build L2) :
 
 ```bash
 npm audit signatures

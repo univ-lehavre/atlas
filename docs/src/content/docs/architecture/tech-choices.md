@@ -79,15 +79,13 @@ Le dépôt est un **monorepo** : de nombreux paquets versionnés ensemble dans u
 
 [Model Context Protocol](https://modelcontextprotocol.io/) est un protocole qui permet à un assistant de développement IA de récupérer de la documentation et d'invoquer des outils. Atlas configure plusieurs serveurs MCP dans [`.mcp.json`](https://github.com/univ-lehavre/atlas/blob/main/.mcp.json) :
 
-| Serveur         | Rôle                                                         |
-| --------------- | ------------------------------------------------------------ |
-| `effect-mcp`    | Documentation Effect                                         |
-| `svelte-mcp`    | Documentation Svelte 5 et SvelteKit                          |
-| `appwrite-docs` | Documentation Appwrite                                       |
-| `appwrite-api`  | API Appwrite (nécessite des variables d'environnement)       |
-| `openalex`      | API OpenAlex — base bibliographique ouverte (240M+ articles) |
+| Serveur      | Rôle                                               |
+| ------------ | -------------------------------------------------- |
+| `effect-mcp` | Documentation Effect                               |
+| `svelte-mcp` | Documentation Svelte 5 et SvelteKit                |
+| `kubernetes` | Outils Kubernetes (inspection et pilotage de pods) |
 
-La mise en place de ces serveurs (prérequis `uv`, variables
-d'environnement d'`appwrite-api`) est un détail d'**installation**, pas un
-choix technique : elle est documentée dans
+La mise en place de ces serveurs (téléchargés à la volée via `pnpm dlx` ou
+`npx`) est un détail d'**installation**, pas un choix technique : elle est
+documentée dans
 [Environnement local → Serveurs MCP](/atlas/collaboration/environnement-local/#serveurs-mcp-assistant-de-développement-ia).

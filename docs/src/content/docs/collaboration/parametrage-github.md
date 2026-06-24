@@ -48,13 +48,14 @@ plus spécifiques couvrent les zones sensibles :
 
 ### Mises à jour de dépendances (Dependabot)
 
-[`dependabot.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/dependabot.yml) maintient deux
+[`dependabot.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/dependabot.yml) maintient trois
 écosystèmes à jour, chaque **lundi à 06:00 (Europe/Paris)** :
 
-| Écosystème         | Regroupement                                          | Préfixe de commit |
-| ------------------ | ----------------------------------------------------- | ----------------- |
-| **npm** (racine)   | tous les `minor` + `patch` dans une PR unique par run | `chore`           |
-| **github-actions** | tous les bumps d'actions dans une PR unique par run   | `ci`              |
+| Écosystème                            | Regroupement                                          | Préfixe de commit |
+| ------------------------------------- | ----------------------------------------------------- | ----------------- |
+| **npm** (racine)                      | tous les `minor` + `patch` dans une PR unique par run | `chore`           |
+| **github-actions**                    | tous les bumps d'actions dans une PR unique par run   | `ci`              |
+| **pip** (`/dataops/citation-dagster`) | tous les `minor` + `patch` dans une PR unique par run | `chore`           |
 
 Pour **limiter le bruit de PR**, `open-pull-requests-limit: 1` garantit
 une seule PR Dependabot ouverte par écosystème à la fois ; les mises à
@@ -63,9 +64,13 @@ propre PR (comportement par défaut de Dependabot) mais restent soumis à la
 même limite. Les **alertes de sécurité** ne sont pas affectées par cette
 limite et restent prioritaires.
 
-Les bumps `patch` / `minor` de Dependabot sont fusionnés automatiquement
-par [`dependabot-auto-merge.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/dependabot-auto-merge.yml)
-une fois la CI verte.
+Une partie des bumps Dependabot est fusionnée automatiquement par
+[`dependabot-auto-merge.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/dependabot-auto-merge.yml)
+une fois la CI verte : **tous les `patch`**, et les `minor` **sur les
+`devDependencies` seulement** (`direct:development` — eslint, vitest,
+prettier… qui ne touchent pas le code de production). Les `minor` sur les
+dépendances de _runtime_ et **tous** les `major` restent en revue
+manuelle.
 
 ## Protections de branche (`main`)
 
@@ -95,11 +100,11 @@ Les secrets du dépôt vivent dans _Settings → Secrets and variables →
 Actions_. Ils ne sont **jamais** présents dans le dépôt ni nécessaires en
 local (voir [environnement local](/atlas/collaboration/environnement-local/#variables-denvironnement-et-secrets)).
 
-| Secret        | Utilisé par                                                                                    | Rôle                                                                        |
-| ------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `TURBO_TOKEN` | [`ci.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/ci.yml)           | Cache distribué Turborepo, pour accélérer la CI                             |
-| `NPM_TOKEN`   | [`release.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/release.yml) | Authentification au registre npmjs à la publication                         |
-| `PAT_TOKEN`   | [`release.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/release.yml) | Jeton personnel permettant à Changesets d'ouvrir la PR « Version Packages » |
+| Secret        | Utilisé par                                                                                    | Rôle                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `TURBO_TOKEN` | [`ci.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/ci.yml)           | Cache distribué Turborepo, pour accélérer la CI                                    |
+| `NPM_TOKEN`   | [`release.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/release.yml) | Authentification au registre npmjs à la publication                                |
+| `PAT_TOKEN`   | [`release.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/release.yml) | Jeton personnel permettant à Changesets d'ouvrir la PR « chore: version packages » |
 
 Le jeton de registre GitHub Packages, lui, n'est pas un secret dédié :
 `release.yml` réutilise le `GITHUB_TOKEN` éphémère du run (exposé en
@@ -109,8 +114,9 @@ voir [ADR 0017](/atlas/decisions/0017-releases-npm-oidc-deux-registres/).
 
 Côté **autorisations**, les workflows suivent le principe du moindre
 privilège : chaque workflow déclare les `permissions:` minimales dont il a
-besoin (par exemple `contents: read` pour la CI, `contents: write` +
-`pages: write` pour le déploiement de la documentation).
+besoin (par exemple `contents: read` pour la CI, et `contents: read` +
+`pages: write` + `id-token: write` pour le déploiement de la documentation
+sur GitHub Pages).
 
 ## GitHub Pages (documentation)
 

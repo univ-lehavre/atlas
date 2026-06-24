@@ -41,7 +41,7 @@ chaîne de qualité**, comme le reste.
 | **Type explicite des boutons**  | `svelte/button-has-type` en `error` : tout `<button>` déclare son `type`, ce qui évite les soumissions de formulaire implicites et clarifie le rôle de l'élément.                                                                     |
 | **Tests d'accessibilité (axe)** | Des tests dédiés `*.a11y.test.ts` exécutent **axe-core** (via `vitest-axe`) sur les composants rendus et échouent en cas de violation — `ui/atlas-ui/tests/`, `apps/find-an-expert/`.                                                 |
 | **Niveau WCAG épinglé**         | Les tests ciblent explicitement le **WCAG 2.x niveau AA** (config `runOnly` partagée `@univ-lehavre/atlas-shared-config/a11y`, importée par les deux codebases) — [ADR 0038](/atlas/decisions/0038-epingler-niveau-wcag-tests-a11y/). |
-| **Projet de test isolé**        | Les tests a11y tournent dans un projet vitest séparé (`a11y`), pour les lancer et les suivre indépendamment des tests unitaires — `ui/atlas-ui/vitest.config.ts`.                                                                     |
+| **Projet de test isolé**        | Les tests a11y tournent dans un projet vitest séparé (`a11y`), pour les lancer et les suivre indépendamment des tests unitaires — `apps/find-an-expert/vite.config.ts`.                                                               |
 
 ## Appliqué dans les composants
 

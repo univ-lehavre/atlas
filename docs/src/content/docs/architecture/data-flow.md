@@ -98,7 +98,7 @@ routes d'une API, leurs paramètres et la forme des réponses. Le dépôt en pro
 
 - **Le client vers REDCap.** L'outil
   [`crf-openapi`](/atlas/packages/cli/crf-openapi/) (publié sous le nom
-  `@univ-lehavre/atlas-ln`) analyse le code source de REDCap pour en **extraire**
+  `@univ-lehavre/atlas-crf-openapi`) analyse le code source de REDCap pour en **extraire**
   la spécification OpenAPI, **comparer** les versions et **servir** la
   documentation. Les specs versionnées vivent dans
   [`cli/crf-openapi/specs/versions/`](https://github.com/univ-lehavre/atlas/tree/main/cli/crf-openapi/specs/versions).
@@ -112,8 +112,9 @@ routes d'une API, leurs paramètres et la forme des réponses. Le dépôt en pro
   `/docs`. Côté applications SvelteKit, `ecrin` et `find-an-expert` servent
   chacune la spécification OpenAPI de leur API `v1` (consultable sous
   `/api/docs`) ; `amarre` annote ses routes avec des métadonnées OpenAPI dérivées
-  de ses schémas de validation Zod — un dictionnaire de types et de règles — sans
-  pour autant exposer (à ce jour) de document assemblé dans le dépôt.
+  de ses schémas de validation Zod — un dictionnaire de types et de règles — puis
+  assemble le tout en un document (`static/api/openapi.json`, OpenAPI 3.1.0, généré
+  par `scripts/generate-openapi.ts`), exposé sous `/api/docs` via RapiDoc.
 
 Ces contrats OpenAPI sont aujourd'hui **générés depuis le code** plutôt
 qu'écrits avant lui (« contrat d'abord ») ; c'est un écart documenté dans

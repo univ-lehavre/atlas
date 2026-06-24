@@ -59,9 +59,9 @@ Le fichier `.changeset/<slug>.md` créé doit être commité avec le reste de la
 Description courte du changement.
 ```
 
-## 2. PR « Version Packages »
+## 2. PR « chore: version packages »
 
-À chaque merge sur `main` contenant des changesets, le bot `changesets/action` ouvre automatiquement une PR titrée **« Version Packages »**. Cette PR :
+À chaque merge sur `main` contenant des changesets, le bot `changesets/action` ouvre automatiquement une PR titrée **« chore: version packages »**. Cette PR :
 
 - consomme les fichiers `.changeset/*.md`,
 - incrémente les versions dans les `package.json` concernés,
@@ -98,7 +98,7 @@ npm audit signatures
 
 ## Paquets renommés ou dépréciés
 
-Quand un paquet est renommé (par exemple `crf-core` → `redcap-client`), un script déprécie l'ancien nom pour signaler aux consommateurs où aller :
+Quand un paquet est renommé (par exemple `redcap-core` → `crf-core`), un script déprécie l'ancien nom pour signaler aux consommateurs où aller :
 
 ```bash
 pnpm release:deprecate-renamed

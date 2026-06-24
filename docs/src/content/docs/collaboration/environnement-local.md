@@ -98,9 +98,9 @@ brew install gitleaks
 scoop install gitleaks
 ```
 
-> **Note macOS.** Le hook _pre-commit_ et le hook _commit-msg_ utilisent
-> la syntaxe BSD de `sed -i ''` (deux arguments), spécifique à macOS ; sur
-> Linux (GNU `sed`), `sed -i` n'attend pas d'argument vide. L'équipe
+> **Note macOS.** Le hook _commit-msg_ utilise la syntaxe BSD de
+> `sed -i ''` (deux arguments), spécifique à macOS ; sur Linux (GNU
+> `sed`), `sed -i` n'attend pas d'argument vide. L'équipe
 > développe principalement sous macOS ; un contributeur sous Linux qui
 > rencontre une erreur `sed` dans un hook peut le signaler par une
 > [issue](https://github.com/univ-lehavre/atlas/issues) — la portabilité
@@ -125,23 +125,19 @@ la contient (voir [politique de documentation](/atlas/quality/documentation/)).
 
 Le dépôt configure plusieurs serveurs [MCP](/atlas/architecture/tech-choices/#serveurs-mcp)
 dans [`.mcp.json`](https://github.com/univ-lehavre/atlas/blob/main/.mcp.json).
-La plupart ne demandent que **Node.js/npm** (déjà installés ci-dessus) ;
-deux ont des prérequis supplémentaires, à mettre en place une seule fois :
+Tous se lancent via **Node.js/npm** (déjà installés ci-dessus) et sont
+récupérés à la volée (`pnpm dlx` / `npx`) — **aucun prérequis ni variable
+d'environnement supplémentaires** :
 
-- `appwrite-api` nécessite **uv** (gestionnaire de paquets Python) :
-  `curl -LsSf https://astral.sh/uv/install.sh | sh`
-- `appwrite-api` lit aussi trois variables d'environnement (un jeton
-  d'API Appwrite et l'_endpoint_ du projet) :
+- `svelte-mcp` (`pnpm dlx @sveltejs/mcp`) : documentation et aide au
+  code Svelte ;
+- `effect-mcp` (`pnpm dlx @effect/mcp`) : documentation de la
+  bibliothèque Effect ;
+- `kubernetes` (`npx kubernetes-mcp-server`) : interaction avec un
+  cluster Kubernetes via le `kubeconfig` local.
 
-  ```bash
-  export APPWRITE_PROJECT_ID="<project_id>"
-  export APPWRITE_API_KEY="<api_key>"
-  export APPWRITE_ENDPOINT="https://appwrite.<host>/v1"
-  ```
-
-  Ces variables ne servent qu'au serveur MCP local (confort de
-  développement) ; elles ne sont **pas** requises pour build, tester ou
-  lint le dépôt.
+Ces serveurs ne servent qu'au confort de développement (assistant IA) ;
+ils ne sont **pas** requis pour build, tester ou lint le dépôt.
 
 ## Si quelque chose ne va pas
 
