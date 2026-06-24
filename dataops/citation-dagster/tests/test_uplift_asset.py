@@ -24,11 +24,12 @@ _ENV = {
 
 
 class _FakeCon:
-    """Connexion DuckDB factice : sert profils/labels selon la requête, capte les COPY."""
+    """Connexion DuckDB factice : sert profils/labels/embeddings selon la requête, capte COPY."""
 
-    def __init__(self, profiles_rows, labels_rows) -> None:
+    def __init__(self, profiles_rows, labels_rows, embedding_rows=None) -> None:
         self._profiles = profiles_rows
         self._labels = labels_rows
+        self._embeddings = embedding_rows or []
         self.executed: list[str] = []
         self.created_rows: list | None = None
 
@@ -37,6 +38,8 @@ class _FakeCon:
             return _FakeRel(self._profiles)
         if "curated_pair_uplift_labels" in query:
             return _FakeRel(self._labels)
+        if "researcher_vectors" in query:
+            return _FakeRel(self._embeddings)
         return _FakeRel([])
 
     def execute(self, query: str):
@@ -99,6 +102,32 @@ def test_asset_serves_predictive_on_signal(monkeypatch) -> None:
     assert result.metadata["recommendations"].value > 0
     # Deux écritures Parquet (prédictions + recommandations).
     assert sum(1 for q in con.executed if "COPY" in q) == 2
+    # Sans mart d'embeddings servi (FakeCon vide) → couverture nulle, mais l'asset tourne
+    # (dégradation propre sur les seules features thématiques).
+    assert result.metadata["embedding_coverage"].value == 0.0
+
+
+def test_asset_uses_embedding_family_when_available(monkeypatch) -> None:
+    # Avec un mart researcher_vectors servi, la 2ᵉ famille de features est branchée :
+    # la couverture embedding reflète les auteurs profilés disposant d'un vecteur. Les
+    # embeddings ont la dimension RÉELLE (EMBEDDING_DIM), comme le mart de production.
+    from citation_dagster import embedding
+
+    profiles, labels = _signal_data(40)
+    rng = np.random.default_rng(7)
+    authors = sorted({a for a, _b, _u in labels} | {b for _a, b, _u in labels})
+    # Embedding pour 30 des 40 auteurs (couverture partielle = 0,75).
+    embeddings = []
+    for a in authors[:30]:
+        v = rng.random(embedding.EMBEDDING_DIM)
+        embeddings.append((a, (v / np.linalg.norm(v)).tolist()))
+    con = _FakeCon(profiles, labels, embedding_rows=embeddings)
+    _patch(monkeypatch, con)
+    result = mod.pair_uplift_model(build_asset_context())
+    assert result.metadata["served_mode"].text == "predictive"
+    assert abs(result.metadata["embedding_coverage"].value - 0.75) < 1e-9
+    # Toujours servi (prédictif), les features combinées n'ont pas cassé la porte.
+    assert result.metadata["pairs_served"].value == 780
 
 
 def test_asset_falls_back_descriptive_on_noise(monkeypatch) -> None:

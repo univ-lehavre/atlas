@@ -17,12 +17,13 @@ NB : pas de ``from __future__ import annotations`` — Dagster introspecte les a
 from dagster import AssetExecutionContext, AssetKey, MaterializeResult, MetadataValue, asset
 from openlineage.client.event_v2 import RunState
 
-from citation_dagster import lakehouse, lineage, tracking, uplift_model
+from citation_dagster import embedding, lakehouse, lineage, tracking, uplift_model
 from citation_dagster.dbt import CURATED_DT
 from citation_dagster.resources import ceph_target_from_env
 
 _PROFILES_SUBDIR = "marts/author_profiles"
 _LABELS_SUBDIR = "curated/curated_pair_uplift_labels"
+_EMBEDDINGS_SUBDIR = "marts/researcher_vectors"
 _PREDICTIONS_SUBDIR = "marts/pair_uplift_predictions"
 _RECOMMENDATIONS_SUBDIR = "marts/author_recommendations"
 _TOP_N = 10
@@ -38,6 +39,8 @@ def _lineage_io() -> tuple[list, list]:
     inputs = [
         lineage.mart_dataset(_PROFILES_SUBDIR),
         lineage.curated_dataset("curated_pair_uplift_labels"),
+        # 2ᵉ famille de features : l'embedding 384 par auteur.
+        lineage.mart_dataset(_EMBEDDINGS_SUBDIR),
     ]
     outputs = [
         lineage.mart_dataset(_PREDICTIONS_SUBDIR),
@@ -67,6 +70,23 @@ def _read_labels(con, bucket: str, run_id: str):
     return [(r[0], r[1], float(r[2])) for r in rows]
 
 
+def _read_embeddings(con, bucket: str, run_id: str):
+    """Lit le mart researcher_vectors → (author_id, vector) (embedding 384 par auteur).
+
+    Best-effort : si le mart n'existe pas encore pour ce run (chaîne embeddings non
+    exécutée), on renvoie une liste vide → le modèle reste sur les seules features
+    thématiques. Le vecteur est une LIST DuckDB convertie en liste Python par fetchall.
+    """
+    glob = f"s3://{bucket}/{_EMBEDDINGS_SUBDIR}/dt={CURATED_DT}/run={run_id}/*.parquet"
+    try:
+        rows = con.sql(
+            f"SELECT author_id, vector FROM read_parquet('{glob}') WHERE author_id IS NOT NULL"
+        ).fetchall()
+    except Exception:  # noqa: BLE001 — mart absent (chaîne embeddings non jouée) : dégradation propre
+        return []
+    return [(r[0], r[1]) for r in rows]
+
+
 def _candidate_pairs(vecs: dict, predicted, served_mode: str):
     """Paires servies : prédictions du modèle, ou uplift observé en repli descriptif.
 
@@ -80,17 +100,20 @@ def _candidate_pairs(vecs: dict, predicted, served_mode: str):
     ]
 
 
-def _predict_all_pairs(model, vecs: dict):
+def _predict_all_pairs(model, vecs: dict, emb_vecs: dict, emb_dim: int):
     """Prédit l'uplift de TOUTES les paires d'auteurs profilés (y compris inédites).
 
     C'est l'intérêt du prédictif (ADR 0067) : recommander de NOUVEAUX partenaires. On
-    énumère les paires (a < b) d'auteurs ayant un profil, on les passe au modèle.
+    énumère les paires (a < b) d'auteurs ayant un profil, on les passe au modèle — avec
+    les MÊMES features combinées (thématique + embedding) que l'entraînement.
     """
     authors = sorted(vecs)
     preds = []
     for i, a in enumerate(authors):
         for b in authors[i + 1 :]:
-            feat = uplift_model.pair_features(vecs[a], vecs[b]).reshape(1, -1)
+            feat = uplift_model.pair_features_combined(
+                vecs[a], vecs[b], emb_vecs.get(a), emb_vecs.get(b), emb_dim
+            ).reshape(1, -1)
             preds.append((a, b, float(model.predict(feat)[0])))
     return preds
 
@@ -140,7 +163,12 @@ def _write_recommendations(
 @asset(
     name="pair_uplift_model",
     group_name="transform",
-    deps=[AssetKey(["marts_author_profiles"]), AssetKey(["curated_pair_uplift_labels"])],
+    deps=[
+        AssetKey(["marts_author_profiles"]),
+        AssetKey(["curated_pair_uplift_labels"]),
+        # 2ᵉ famille de features : l'embedding 384 par auteur (best-effort, cf. _read_embeddings).
+        AssetKey(["researcher_embeddings"]),
+    ],
 )
 def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
     """Entraîne, valide honnêtement et sert le modèle d'uplift FWCI (ADR 0067)."""
@@ -154,7 +182,12 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
     profiles, subfields = _read_profiles(con, target.bucket, run_id)
     labels = _read_labels(con, target.bucket, run_id)
     vecs = uplift_model.author_vectors(profiles, subfields)
-    ds = uplift_model.build_dataset(labels, vecs)
+    # 2ᵉ famille : embedding 384 par auteur (enrichit les features, ne remplace pas le
+    # socle thématique). Absent/nul → features embedding neutres + drapeau (jamais l'identité).
+    emb_vecs = uplift_model.embedding_vectors(
+        _read_embeddings(con, target.bucket, run_id), embedding.EMBEDDING_DIM
+    )
+    ds = uplift_model.build_dataset(labels, vecs, emb_vecs, embedding.EMBEDDING_DIM)
 
     # Validation honnête (groupée par auteur). Peut échouer si trop peu de groupes —
     # dans ce cas, repli descriptif d'office (pas assez de signal pour un modèle).
@@ -171,7 +204,7 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
     # descriptif (uplift observé des paires connues).
     if served_mode == "predictive":
         model = uplift_model.train_final(ds)
-        predicted = _predict_all_pairs(model, vecs)
+        predicted = _predict_all_pairs(model, vecs, emb_vecs, embedding.EMBEDDING_DIM)
     else:
         predicted = list(labels)  # uplift observé, paires connues uniquement
 
@@ -184,10 +217,14 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
 
     # Logging MLflow (best-effort, no-op si MLFLOW_TRACKING_URI absent). Run DÉDIÉ à
     # l'uplift (expérience et nom propres), pas mêlé à l'expérience des embeddings.
+    # Couverture embedding : part des auteurs profilés disposant aussi d'un embedding
+    # utilisable (mesure honnête de l'apport réel de la 2ᵉ famille de features).
+    emb_coverage = (len(set(emb_vecs) & set(vecs)) / len(vecs)) if vecs else 0.0
     metrics = {
         "n_pairs_labeled": float(len(labels)),
         "n_pairs_served": float(len(rows)),
         "predictive": 1.0 if served_mode == "predictive" else 0.0,
+        "embedding_coverage": emb_coverage,
     }
     if evaluation is not None:
         metrics.update(
@@ -210,6 +247,7 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
             "pairs_labeled": MetadataValue.int(len(labels)),
             "pairs_served": MetadataValue.int(len(rows)),
             "recommendations": MetadataValue.int(len(recos)),
+            "embedding_coverage": MetadataValue.float(emb_coverage),
             "decision": MetadataValue.text(
                 "prédictif (pouvoir confirmé)"
                 if served_mode == "predictive"
