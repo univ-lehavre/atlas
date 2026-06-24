@@ -157,6 +157,26 @@ révisable à la lumière des mesures de production.
 > une garantie de performance en production. La performance réelle est ce que la porte de
 > décision mesurera, honnêtement, à chaque exécution.
 
+## Surveiller la dérive du modèle dans le temps
+
+La porte de décision protège **à l'instant t**. Mais un modèle peut **se dégrader au fil
+des exécutions** — les co-publications évoluent, le périmètre change, les embeddings
+disponibles varient. Un **suivi de dérive** ([ADR 0068](/atlas/decisions/0068-suivi-derive-modele-uplift/))
+compare chaque exécution à la précédente sur quatre signaux :
+
+- la **distribution des uplift prédits** (un décalage marqué est détecté par Evidently) ;
+- la **qualité honnête** (R², MAE) au fil des runs, suivie dans MLflow ;
+- la **bascule du mode servi** (`predictive → descriptive`) ;
+- la **couverture embedding** (part de chercheurs disposant d'un embedding).
+
+**Informatif, sauf un cas.** Un décalage de distribution, une baisse de qualité ou de
+couverture sont **signalés** (visibles dans Dagster, journalisés dans MLflow) mais
+n'arrêtent **pas** le pipeline : ils nourrissent la décision de ré-entraîner. **En
+revanche**, une bascule `predictive → descriptive` **arrête l'exécution** : passer
+silencieusement de prédictions servies à un repli descriptif est un changement de contrat
+trop important pour rester inaperçu — un humain doit décider de la suite. C'est une **porte
+de sécurité** ciblée, pas une alarme tatillonne.
+
 ## Le contrat des données servies (qualité bloquante)
 
 Deux contrôles **Great Expectations bloquants** valident les marts servis avant qu'ils ne
@@ -222,6 +242,9 @@ l'anti-fuite). Cette reproductibilité est une exigence du dépôt.
 | `test_combined_features_capture_embedding_signal`               | Un signal porté **uniquement** par l'embedding est appris (validation groupée).          |
 | `test_combined_dataset_rejects_noise`                           | Contrôle négatif **avec** embedding : le bruit reste à R² < 0,05 (pas de faux signal).   |
 | `test_asset_uses_embedding_family_when_available`               | L'asset branche l'embedding et expose sa **couverture** (part d'auteurs concernés).      |
+| `test_served_mode_regression_blocks`                            | Suivi de dérive : une bascule `predictive → descriptive` **bloque** l'exécution.         |
+| `test_distribution_shift_alone_is_informative`                  | Suivi de dérive : un décalage de distribution seul est **informatif** (ne bloque pas).   |
+| `test_regression_only_on_predictive_to_descriptive`             | Seule la bascule vers descriptif est une régression (le rétablissement ne l'est pas).    |
 
 ## Ce qui n'est pas (encore) en place
 
@@ -229,8 +252,6 @@ Par honnêteté, ce que le modèle **ne fait pas encore**, malgré son intérêt
 
 - La **recommandation de thématiques explicites** (au-delà des partenaires) est dérivable du
   profil des partenaires recommandés, mais n'est pas un livrable distinct à ce stade.
-- Le **suivi de dérive** (drift) du modèle relève du chantier MLOps de niveau 2 et n'est pas
-  une garantie de ce modèle.
 
 Ces points sont des perspectives, pas des promesses tenues — la distinction est faite ici
 pour ne pas laisser croire à un appui qui n'existe pas dans le code.

@@ -41,6 +41,7 @@ from citation_dagster.assets import (
     work_vectors_manifest,
 )
 from citation_dagster.assets.drift import evidently_embedding_drift
+from citation_dagster.assets.drift_uplift import evidently_uplift_drift
 from citation_dagster.assets.quality import (
     ge_author_recommendations,
     ge_curated_edges,
@@ -220,6 +221,7 @@ _asset_checks = [
     ge_researcher_vectors,
     ge_index_load,
     evidently_embedding_drift,
+    evidently_uplift_drift,
     ge_pair_uplift_predictions,
     ge_author_recommendations,
 ]
