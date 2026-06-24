@@ -24,18 +24,42 @@ const packageReadmes = defineCollection({
 // Registre des drifts (ADR 0056) : YAML source de vérité, parsé nativement par le
 // loader `file()` d'Astro (aucune dépendance ajoutée). Le schéma Zod est le
 // garde-fou : `docs:build` échoue si une entrée est malformée.
+//
+// Registre VIVANT (ADR 0071, volet a) : un drift non clos (`ouvert` ou `en-cours`
+// de résorption) doit lier une issue GitHub de suivi (`issue`, ex. `#42`). Le
+// `superRefine` ci-dessous EXIGE cette issue pour ces statuts — un drift non clos
+// sans issue fait échouer le `docs:build` (donc la CI), comme une entrée malformée.
+// Les statuts terminaux `corrige`/`caduc` n'en demandent pas (l'écart est clos ou
+// caduc, plus rien à suivre).
 const drifts = defineCollection({
   loader: file("src/content/drifts/registre-drifts.yaml"),
-  schema: z.object({
-    id: z.string().regex(/^D\d+$/),
-    campagne: z.string(),
-    nature: z.enum(["drift-e2e", "piege-revue"]),
-    portee: z.enum(["code", "env", "harnais"]),
-    symptome: z.string(),
-    cause: z.string(),
-    correctif: z.string(),
-    statut: z.enum(["corrige", "caduc", "ouvert"]),
-  }),
+  schema: z
+    .object({
+      id: z.string().regex(/^D\d+$/),
+      campagne: z.string(),
+      nature: z.enum(["drift-e2e", "piege-revue"]),
+      portee: z.enum(["code", "env", "harnais"]),
+      symptome: z.string(),
+      cause: z.string(),
+      correctif: z.string(),
+      statut: z.enum(["corrige", "caduc", "ouvert", "en-cours"]),
+      // Référence d'issue GitHub de suivi (ex. `#42`). Requise pour un drift non
+      // clos (voir `superRefine`).
+      issue: z
+        .string()
+        .regex(/^#\d+$/)
+        .optional(),
+    })
+    .superRefine((drift, ctx) => {
+      const nonClos = drift.statut === "ouvert" || drift.statut === "en-cours";
+      if (nonClos && !drift.issue) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["issue"],
+          message: `Drift ${drift.id} au statut « ${drift.statut} » doit lier une issue de suivi (champ \`issue\`, ex. \`#42\`) — ADR 0071, volet a.`,
+        });
+      }
+    }),
 });
 
 export const collections = {

@@ -159,6 +159,62 @@ export const staleAdrCounts = (markdown, adrCount) =>
     .filter((m) => Number.parseInt(m[1], 10) !== adrCount)
     .map((m) => m[0]);
 
+/**
+ * Numéros `NNNN` listés dans le tableau d'index ADR (`decisions/index.md`). On
+ * ne lit que les lignes du tableau Markdown dont la première cellule est un
+ * numéro à quatre chiffres (`| 0042 | … |`) — l'en-tête (`| #  | … |`) et le
+ * séparateur (`| ---- | … |`) n'en sont pas et sont ignorés de fait. Un numéro
+ * répété est conservé (un doublon de ligne doit pouvoir être signalé).
+ * @returns {string[]} les numéros dans l'ordre d'apparition (avec répétitions).
+ */
+export const indexAdrNumbers = (markdown) =>
+  [...markdown.matchAll(/^\|\s*(\d{4})\s*\|/gm)].map((m) => m[1]);
+
+/**
+ * Croise l'index ADR (`decisions/index.md`) avec les fichiers `NNNN-*.md` réels
+ * et signale toute incohérence **factuelle** de numérotation (ADR 0071, volet b).
+ * Fonction pure : on lui passe les numéros parsés de l'index (`indexNumbers`,
+ * avec leurs répétitions) et la liste des numéros de fichiers présents
+ * (`fileNumbers`, sans répétition attendue). Trois familles de constats :
+ *
+ *   1. **trou** — un numéro listé dans l'index sans fichier, ou un fichier sans
+ *      ligne d'index ;
+ *   2. **doublon** — deux lignes d'index ou deux fichiers pour le même numéro.
+ *
+ * @param {string[]} indexNumbers numéros lus dans le tableau d'index (ordonnés).
+ * @param {string[]} fileNumbers numéros des fichiers `NNNN-*.md` présents.
+ * @returns {string[]} les libellés de constats, `[]` si l'index est cohérent.
+ */
+export const adrIndexConsistency = (indexNumbers, fileNumbers) => {
+  const problems = [];
+  const countOf = (list) =>
+    list.reduce((acc, n) => acc.set(n, (acc.get(n) ?? 0) + 1), new Map());
+  const indexCounts = countOf(indexNumbers);
+  const fileCounts = countOf(fileNumbers);
+
+  // Doublons : un numéro listé/présent plus d'une fois.
+  for (const [n, c] of [...indexCounts].sort()) {
+    if (c > 1) problems.push(`numéro ${n} listé ${c} fois dans l'index`);
+  }
+  for (const [n, c] of [...fileCounts].sort()) {
+    if (c > 1) problems.push(`numéro ${n} porté par ${c} fichiers`);
+  }
+
+  // Trous : présent d'un côté, absent de l'autre.
+  for (const n of [...indexCounts.keys()].sort()) {
+    if (!fileCounts.has(n)) {
+      problems.push(`numéro ${n} listé dans l'index sans fichier NNNN-*.md`);
+    }
+  }
+  for (const n of [...fileCounts.keys()].sort()) {
+    if (!indexCounts.has(n)) {
+      problems.push(`fichier ${n} sans ligne d'index dans decisions/index.md`);
+    }
+  }
+
+  return problems;
+};
+
 /** Racine du contenu de documentation (Starlight). */
 const DOCS_ROOT = path.join("docs", "src", "content", "docs");
 
@@ -345,6 +401,24 @@ export const auditDocumentation = (cwd = ".") => {
       blocking.push(
         `[B9] ${orphan} : page orpheline (dossier absent de la sidebar Starlight).`,
       );
+    }
+  }
+
+  // B10 — cohérence de l'index ADR : croise `decisions/index.md` avec les
+  // fichiers `NNNN-*.md` réels et signale trou et doublon de numéro (ADR 0071,
+  // volet b). Bloquant comme le reste de l'audit : un index incohérent est un
+  // défaut factuel, pas une question de goût (ADR 0028).
+  if (existsSync(decisionsDir)) {
+    const indexPath = path.join(decisionsDir, "index.md");
+    const indexContent = readText(indexPath);
+    if (indexContent !== null) {
+      const fileNumbers = readdirSync(decisionsDir)
+        .map((f) => /^(\d{4})-.+\.mdx?$/.exec(f)?.[1])
+        .filter((n) => n !== undefined);
+      const indexNumbers = indexAdrNumbers(indexContent);
+      for (const problem of adrIndexConsistency(indexNumbers, fileNumbers)) {
+        blocking.push(`[B10] decisions/index.md : ${problem}.`);
+      }
     }
   }
 
