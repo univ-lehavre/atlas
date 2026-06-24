@@ -51,10 +51,19 @@ précautions ci-dessous.
 ## Précaution n°1 — Une personne n'est jamais une variable du modèle
 
 **Le principe.** Pour l'entraînement, on n'utilise **jamais l'identité** d'un chercheur
-(son identifiant). Un chercheur entre dans le modèle **uniquement par ses thématiques** :
-le vecteur des subfields qu'il a traités. Une paire est décrite par la **combinaison** des
-deux vecteurs thématiques (leur proximité, leur complémentarité), pas par « qui » sont les
-deux personnes.
+(son identifiant). Un chercheur entre dans le modèle **uniquement par ses thématiques**,
+via **deux familles de features** :
+
+1. le **vecteur de subfields** (sa distribution pondérée de sous-domaines) — le socle,
+   toujours présent et interprétable ;
+2. l'**embedding sémantique** (un vecteur de 384 dimensions issu du texte de ses
+   publications, `researcher_embeddings`) — qui capte une proximité thématique **fine**,
+   au-delà des catégories. Quand un chercheur n'a pas d'embedding utilisable, cette
+   famille est **neutralisée** pour la paire (et un indicateur le signale au modèle), sans
+   jamais faire disparaître la paire ni écraser le socle thématique.
+
+Une paire est décrite par la **combinaison** de ces vecteurs (leur proximité, leur
+complémentarité), pas par « qui » sont les deux personnes.
 
 **Pourquoi.** Deux raisons.
 
@@ -179,6 +188,9 @@ savoir que l'écriture est complète et intègre.
   moins de dix ans, portant leur FWCI.
 - **`marts_author_profiles`** : pour chaque chercheur, sa distribution pondérée de subfields
   (sa représentation thématique). L'identifiant n'y est qu'une **clé de jointure**.
+- **`marts/researcher_vectors`** : pour chaque chercheur, son **embedding sémantique** (384
+  dimensions, L2-normalisé) — la seconde famille de features. Un chercheur sans embedding
+  utilisable (vecteur nul) est simplement traité avec la famille embedding neutralisée.
 - **`curated_pair_uplift_labels`** : la cible d'apprentissage (l'uplift observé par paire),
   calculée avec l'anti-fuite temporelle décrite plus haut.
 
@@ -190,30 +202,31 @@ l'anti-fuite). Cette reproductibilité est une exigence du dépôt.
 
 ## Récapitulatif des tests
 
-| Test                                             | Ce qu'il prouve                                                                          |
-| ------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `test_pair_features_symmetric`                   | Une paire n'est pas orientée : f(A,B) = f(B,A).                                          |
-| `test_author_vectors_l2_normalized`              | La représentation thématique est normalisée (comparable par cosinus).                    |
-| `test_model_learns_thematic_signal`              | Sur un vrai signal, le modèle l'apprend (R² > 0,2, validation **groupée**).              |
-| `test_no_signal_gives_zero_r2`                   | Sur du **bruit pur**, le modèle n'apprend rien (R² < 0,05) — **anti-sur-apprentissage**. |
-| `test_build_dataset_skips_pairs_without_profile` | Une paire sans profil thématique des deux côtés est écartée.                             |
-| `test_top_recommendations_per_author_ranked`     | Les partenaires sont classés par uplift décroissant, top-N par auteur.                   |
-| `test_top_recommendations_respects_top_n`        | On ne garde que les N meilleurs partenaires.                                             |
-| `test_train_final_predicts`                      | Le modèle final prédit un uplift par paire.                                              |
-| `test_asset_serves_predictive_on_signal`         | Porte de décision : signal réel → mode **prédictif**, sert toutes les paires.            |
-| `test_asset_falls_back_descriptive_on_noise`     | Porte de décision : bruit → **repli descriptif** (paires connues seules).                |
-| `test_uplift_anti_temporal_leakage`              | L'anti-fuite : une publication future ne gonfle pas la baseline (uplift = 5,25).         |
-| `test_pair_needs_two_copubs_with_baseline`       | Une paire exige ≥ 2 co-publications avec baseline.                                       |
-| `test_copub_without_prior_solo_dropped`          | Une co-publication sans solo antérieur est écartée.                                      |
+| Test                                                            | Ce qu'il prouve                                                                          |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `test_pair_features_symmetric`                                  | Une paire n'est pas orientée : f(A,B) = f(B,A).                                          |
+| `test_author_vectors_l2_normalized`                             | La représentation thématique est normalisée (comparable par cosinus).                    |
+| `test_model_learns_thematic_signal`                             | Sur un vrai signal, le modèle l'apprend (R² > 0,2, validation **groupée**).              |
+| `test_no_signal_gives_zero_r2`                                  | Sur du **bruit pur**, le modèle n'apprend rien (R² < 0,05) — **anti-sur-apprentissage**. |
+| `test_build_dataset_skips_pairs_without_profile`                | Une paire sans profil thématique des deux côtés est écartée.                             |
+| `test_top_recommendations_per_author_ranked`                    | Les partenaires sont classés par uplift décroissant, top-N par auteur.                   |
+| `test_top_recommendations_respects_top_n`                       | On ne garde que les N meilleurs partenaires.                                             |
+| `test_train_final_predicts`                                     | Le modèle final prédit un uplift par paire.                                              |
+| `test_asset_serves_predictive_on_signal`                        | Porte de décision : signal réel → mode **prédictif**, sert toutes les paires.            |
+| `test_asset_falls_back_descriptive_on_noise`                    | Porte de décision : bruit → **repli descriptif** (paires connues seules).                |
+| `test_uplift_anti_temporal_leakage`                             | L'anti-fuite : une publication future ne gonfle pas la baseline (uplift = 5,25).         |
+| `test_pair_needs_two_copubs_with_baseline`                      | Une paire exige ≥ 2 co-publications avec baseline.                                       |
+| `test_copub_without_prior_solo_dropped`                         | Une co-publication sans solo antérieur est écartée.                                      |
+| `test_embedding_vectors_l2_normalized_and_skips_null`           | L'embedding par auteur est L2-normalisé ; un vecteur nul/absent est écarté.              |
+| `test_pair_features_combined_symmetric_and_neutral_when_absent` | Features deux familles symétriques ; embedding neutralisé (+ drapeau) si absent.         |
+| `test_combined_features_capture_embedding_signal`               | Un signal porté **uniquement** par l'embedding est appris (validation groupée).          |
+| `test_combined_dataset_rejects_noise`                           | Contrôle négatif **avec** embedding : le bruit reste à R² < 0,05 (pas de faux signal).   |
+| `test_asset_uses_embedding_family_when_available`               | L'asset branche l'embedding et expose sa **couverture** (part d'auteurs concernés).      |
 
 ## Ce qui n'est pas (encore) en place
 
 Par honnêteté, ce que le modèle **ne fait pas encore**, malgré son intérêt :
 
-- La représentation d'un chercheur repose **aujourd'hui sur ses subfields**. L'enrichissement
-  par un **embedding de texte** (384 dimensions) comme seconde famille de features est
-  **prospectif** (acté en intention dans l'[ADR 0067](/atlas/decisions/0067-modele-uplift-fwci-eunicoast/)),
-  pas encore branché ni testé dans le modèle.
 - La **recommandation de thématiques explicites** (au-delà des partenaires) est dérivable du
   profil des partenaires recommandés, mais n'est pas un livrable distinct à ce stade.
 - Le **suivi de dérive** (drift) du modèle relève du chantier MLOps de niveau 2 et n'est pas

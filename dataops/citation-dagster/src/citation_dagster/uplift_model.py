@@ -62,6 +62,53 @@ def pair_features(va: np.ndarray, vb: np.ndarray) -> np.ndarray:
     return np.concatenate([[cos, float(np.linalg.norm(va - vb))], np.abs(va - vb), va * vb])
 
 
+def embedding_vectors(rows: list[tuple[str, list]], dim: int) -> dict[str, np.ndarray]:
+    """Construit le vecteur d'embedding (384) L2-normalisé de chaque auteur.
+
+    ``rows`` : lignes ``(author_id, vector)`` du mart ``researcher_vectors`` (vecteur
+    déjà L2-normalisé OU NUL pour un auteur sans publication vectorisable). On REJETTE
+    ici les vecteurs nuls (norme ≈ 0) : un auteur sans embedding utilisable n'entre pas
+    dans le dict — la paire utilisera alors les features d'embedding neutres (cf.
+    ``pair_features_combined``), sans perdre le socle thématique.
+    """
+    vecs: dict[str, np.ndarray] = {}
+    for author_id, vector in rows:
+        if vector is None:
+            continue
+        v = np.asarray(vector, dtype=np.float64)
+        norm = np.linalg.norm(v)
+        if norm > 1e-9:
+            vecs[author_id] = v / norm
+    return vecs
+
+
+def pair_features_combined(
+    va_sub: np.ndarray,
+    vb_sub: np.ndarray,
+    va_emb: np.ndarray | None,
+    vb_emb: np.ndarray | None,
+    emb_dim: int,
+) -> np.ndarray:
+    """Features symétriques DEUX familles : thématique (subfields) + sémantique (embedding).
+
+    Le socle thématique est TOUJOURS présent (``pair_features`` sur les subfields). La
+    famille embedding ENRICHIT : si les deux auteurs ont un embedding, on ajoute ses
+    features de paire (cosinus, |diff|, produit) ; sinon, ces features sont **neutres
+    (zéros)** et un drapeau binaire ``has_embedding`` (0/1) le signale au modèle. Ainsi
+    une paire n'est jamais perdue faute d'embedding, et le modèle peut pondérer le signal
+    sémantique sans le confondre avec un vrai zéro. Symétrie préservée (chaque terme l'est).
+    """
+    feat_sub = pair_features(va_sub, vb_sub)
+    if va_emb is not None and vb_emb is not None:
+        feat_emb = pair_features(va_emb, vb_emb)
+        has_emb = 1.0
+    else:
+        # Embedding neutre : 2 scalaires + 2 vecteurs de dim emb_dim (cf. pair_features).
+        feat_emb = np.zeros(2 + 2 * emb_dim, dtype=np.float64)
+        has_emb = 0.0
+    return np.concatenate([feat_sub, [has_emb], feat_emb])
+
+
 @dataclass(frozen=True)
 class Dataset:
     """Matrice de features X, cible y (uplift), et groupes (auteurs) pour le split."""
@@ -77,18 +124,30 @@ class Dataset:
 def build_dataset(
     labels: list[tuple[str, str, float]],
     vecs: dict[str, np.ndarray],
+    emb_vecs: dict[str, np.ndarray] | None = None,
+    emb_dim: int = 0,
 ) -> Dataset:
     """Assemble (X, y, groupes) depuis les labels d'uplift et les vecteurs d'auteurs.
 
     ``labels`` : ``(author_a, author_b, uplift)`` (curated_pair_uplift_labels). On ne
-    retient que les paires dont les DEUX auteurs ont un vecteur (profil thématique).
+    retient que les paires dont les DEUX auteurs ont un vecteur THÉMATIQUE (``vecs``) — le
+    socle obligatoire. ``emb_vecs`` (optionnel) ajoute la 2ᵉ famille de features (embedding
+    384) : présent pour une paire → enrichit ; absent pour l'un des deux → features
+    embedding neutres + drapeau (cf. ``pair_features_combined``). Sans ``emb_vecs``, on
+    reste sur les seules features thématiques (rétro-compatible).
     """
     rows_x, rows_y, groups = [], [], []
     for a, b, uplift in labels:
-        if a in vecs and b in vecs:
+        if a not in vecs or b not in vecs:
+            continue
+        if emb_vecs is None:
             rows_x.append(pair_features(vecs[a], vecs[b]))
-            rows_y.append(uplift)
-            groups.append(a)
+        else:
+            rows_x.append(
+                pair_features_combined(vecs[a], vecs[b], emb_vecs.get(a), emb_vecs.get(b), emb_dim)
+            )
+        rows_y.append(uplift)
+        groups.append(a)
     return Dataset(
         X=np.array(rows_x, dtype=np.float64),
         y=np.array(rows_y, dtype=np.float64),

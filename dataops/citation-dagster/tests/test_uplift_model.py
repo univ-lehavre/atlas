@@ -26,11 +26,50 @@ def _random_unit(rng) -> np.ndarray:
     return v / np.linalg.norm(v)
 
 
+_EMB_DIM = 5
+
+
 def test_pair_features_symmetric() -> None:
     rng = _rng()
     va, vb = _random_unit(rng), _random_unit(rng)
     # Une paire n'est pas orientée : f(va,vb) == f(vb,va).
     assert np.allclose(um.pair_features(va, vb), um.pair_features(vb, va))
+
+
+def test_embedding_vectors_l2_normalized_and_skips_null() -> None:
+    rows = [
+        ("A", [3.0, 4.0, 0.0]),  # norme 5 → normalisé
+        ("B", [0.0, 0.0, 0.0]),  # vecteur NUL → écarté (pas d'embedding utilisable)
+        ("C", None),  # absent → écarté
+    ]
+    vecs = um.embedding_vectors(rows, dim=3)
+    assert set(vecs) == {"A"}  # B (nul) et C (None) écartés
+    assert abs(np.linalg.norm(vecs["A"]) - 1.0) < 1e-9
+    assert abs(vecs["A"][0] - 0.6) < 1e-9 and abs(vecs["A"][1] - 0.8) < 1e-9
+
+
+def test_pair_features_combined_symmetric_and_neutral_when_absent() -> None:
+    rng = _rng()
+    sa, sb = _random_unit(rng), _random_unit(rng)
+    ea = rng.random(_EMB_DIM)
+    ea = ea / np.linalg.norm(ea)
+    eb = rng.random(_EMB_DIM)
+    eb = eb / np.linalg.norm(eb)
+    # Symétrie avec les deux embeddings présents.
+    f_ab = um.pair_features_combined(sa, sb, ea, eb, _EMB_DIM)
+    f_ba = um.pair_features_combined(sb, sa, eb, ea, _EMB_DIM)
+    assert np.allclose(f_ab, f_ba)
+    # Drapeau has_embedding = 1 quand présent, 0 quand absent ; mêmes dimensions.
+    f_present = um.pair_features_combined(sa, sb, ea, eb, _EMB_DIM)
+    f_absent = um.pair_features_combined(sa, sb, None, eb, _EMB_DIM)  # un côté manquant
+    assert f_present.shape == f_absent.shape
+    sub_len = 2 + 2 * len(_SUBFIELDS)
+    assert f_present[sub_len] == 1.0  # has_embedding
+    assert f_absent[sub_len] == 0.0
+    # Features embedding neutres (zéros) quand absent.
+    assert np.allclose(f_absent[sub_len + 1 :], 0.0)
+    # Le socle thématique est identique dans les deux cas (l'embedding n'écrase rien).
+    assert np.allclose(f_present[:sub_len], f_absent[:sub_len])
 
 
 def test_author_vectors_l2_normalized() -> None:
@@ -94,6 +133,60 @@ def test_build_dataset_skips_pairs_without_profile() -> None:
     vecs = {"A": _random_unit(_rng())}  # B absent
     ds = um.build_dataset([("A", "B", 1.0), ("A", "C", 2.0)], vecs)
     assert len(ds.y) == 0  # aucune paire complète
+
+
+def test_combined_features_capture_embedding_signal() -> None:
+    # L'uplift dépend du SEUL embedding (subfields aléatoires, sans lien) → le modèle ne
+    # peut l'apprendre QUE via la 2ᵉ famille. Prouve que brancher l'embedding apporte un
+    # signal réel, en validation GROUPÉE honnête.
+    rng = _rng()
+    n, emb_dim = 40, 6
+    authors = [f"A{i}" for i in range(n)]
+    profiles, sub_vecs, emb_rows = [], {}, []
+    for a in authors:
+        sub = _random_unit(rng)  # subfields = bruit (aucun lien à l'uplift)
+        sub_vecs[a] = sub
+        for i, s in enumerate(_SUBFIELDS):
+            profiles.append((a, s, float(sub[i])))
+        e = rng.random(emb_dim)
+        emb_rows.append((a, (e / np.linalg.norm(e)).tolist()))
+    emb_vecs = um.embedding_vectors(emb_rows, dim=emb_dim)
+    labels = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            a, b = authors[i], authors[j]
+            cos_emb = float(emb_vecs[a] @ emb_vecs[b])
+            labels.append((a, b, 5.0 * (1.0 - cos_emb) ** 2 - 1.0 + rng.normal(0, 0.1)))
+    vecs = um.author_vectors(profiles, _SUBFIELDS)
+    ds = um.build_dataset(labels, vecs, emb_vecs, emb_dim)
+    ev = um.evaluate_grouped(ds, n_splits=5)
+    # Le signal (porté par l'embedding) est appris malgré des subfields non informatifs.
+    assert ev.r2 > 0.15
+    assert ev.has_predictive_power
+
+
+def test_combined_dataset_rejects_noise() -> None:
+    # Contrôle négatif AVEC embeddings : uplift = bruit pur → R² honnête ≈ 0, la porte
+    # ne s'arme pas (le branchement de l'embedding ne crée pas de faux signal).
+    rng = _rng()
+    n, emb_dim = 40, 6
+    authors = [f"A{i}" for i in range(n)]
+    profiles, emb_rows = [], []
+    for a in authors:
+        sub = _random_unit(rng)
+        for i, s in enumerate(_SUBFIELDS):
+            profiles.append((a, s, float(sub[i])))
+        e = rng.random(emb_dim)
+        emb_rows.append((a, (e / np.linalg.norm(e)).tolist()))
+    emb_vecs = um.embedding_vectors(emb_rows, dim=emb_dim)
+    labels = [
+        (authors[i], authors[j], float(rng.normal(0, 1))) for i in range(n) for j in range(i + 1, n)
+    ]
+    vecs = um.author_vectors(profiles, _SUBFIELDS)
+    ds = um.build_dataset(labels, vecs, emb_vecs, emb_dim)
+    ev = um.evaluate_grouped(ds, n_splits=5)
+    assert ev.r2 < 0.05
+    assert not ev.has_predictive_power
 
 
 def test_top_recommendations_per_author_ranked() -> None:

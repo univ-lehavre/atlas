@@ -71,14 +71,17 @@ ajout d'ingestion du chantier.
 ### Représentation d'un auteur : thématiques, jamais l'identité
 
 Un auteur est représenté par des vecteurs **thématiques**, **jamais** par son
-`author_id` :
+`author_id`, via **deux familles de features** désormais **toutes deux branchées et
+testées** :
 
 1. un **vecteur de subfields** (distribution pondérée sur les ~250 sous-domaines
    OpenAlex, interprétable — permet de recommander des **thématiques** explicites) :
-   c'est la représentation **implémentée et testée** du modèle ;
+   le **socle** obligatoire ;
 2. l'**embedding 384** existant (`researcher_embeddings`, similarité sémantique fine) :
-   seconde famille de features **prospective** — actée en intention, **pas encore
-   branchée** au modèle (à ne pas présenter comme un appui existant).
+   seconde famille qui **enrichit** la première. Lorsqu'un auteur n'a pas d'embedding
+   utilisable, cette famille est **neutralisée** pour la paire (features à zéro + drapeau
+   `has_embedding`), sans perdre la paire ni écraser le socle thématique. La part
+   d'auteurs couverts est exposée en métrique (`embedding_coverage`).
 
 Ce choix est **load-bearing** : raisonner sur des thématiques (et non des personnes)
 est ce qui rend la prédiction **généralisable aux paires inédites** (une paire qui n'a
