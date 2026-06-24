@@ -96,6 +96,11 @@ def test_transform_job_injects_all_postgres_env_into_run_pod():
         assert ref == {"name": "pgvector-pg-auth", "key": key}
     # on n'injecte PLUS le Secret brut pg-role-pgvector (mauvaises clés + mauvais ns).
     assert {"secret_ref": {"name": "pg-role-pgvector"}} not in cfg.get("env_from", [])
+    # Piège ADR 0086 (régression) : pair_uplift_model tourne dans transform_job et
+    # logge MLflow + émet du lineage → ces deux vars DOIVENT atteindre le pod de run,
+    # sinon observabilité no-op silencieuse. (Couverture symétrique à ingestion_job.)
+    assert "OPENLINEAGE_URL" in env
+    assert "MLFLOW_TRACKING_URI" in env
 
 
 # ── CT par signal : @sensor watermark → transform_job (atlas#399) ─────────────

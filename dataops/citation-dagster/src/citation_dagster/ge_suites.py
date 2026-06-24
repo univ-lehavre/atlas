@@ -144,6 +144,38 @@ def marts_researcher_vectors_expectations() -> list:
     ]
 
 
+def pair_uplift_predictions_expectations() -> list:
+    """Contrat des prédictions d'uplift servies (ADR 0067, marts servi).
+
+    Les clés de paire sont non nulles, la paire est canonique (author_a < author_b, via
+    la colonne dérivée ``_canonical`` calculée par le loader), et ``served_mode`` est dans
+    le domaine attendu {predictive, descriptive}.
+    """
+    return [
+        gxe.ExpectColumnValuesToNotBeNull(column="author_a"),
+        gxe.ExpectColumnValuesToNotBeNull(column="author_b"),
+        gxe.ExpectColumnValuesToNotBeNull(column="uplift"),
+        gxe.ExpectColumnValuesToBeInSet(column="_canonical", value_set=[True]),
+        gxe.ExpectColumnValuesToBeInSet(
+            column="served_mode", value_set=["predictive", "descriptive"]
+        ),
+    ]
+
+
+def author_recommendations_expectations() -> list:
+    """Contrat des recommandations par auteur servies (ADR 0067, marts servi).
+
+    Un auteur ne se recommande pas lui-même (colonne dérivée ``_not_self`` =
+    author_id <> partner_id), le rang est >= 1, et les clés sont non nulles.
+    """
+    return [
+        gxe.ExpectColumnValuesToNotBeNull(column="author_id"),
+        gxe.ExpectColumnValuesToNotBeNull(column="partner_id"),
+        gxe.ExpectColumnValuesToBeInSet(column="_not_self", value_set=[True]),
+        gxe.ExpectColumnValuesToBeBetween(column="rank", min_value=1),
+    ]
+
+
 def validate_df(df, suite_name: str, expectations: list) -> tuple[bool, dict]:
     """Valide ``df`` contre une suite via un contexte GE éphémère (hermétique).
 

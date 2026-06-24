@@ -182,3 +182,20 @@ opposés **disparaît** des marts servis (plus aucune donnée revendiquée).
 | 2022-07-15 | W900000900 | W101          |
 
 → après application (étape 3, en aval), `W900000900` redirige vers `W101`.
+
+## Affiliations EUNICoast (ADR 0067)
+
+Le Havre (`INST_LH`) porte le **vrai ROR EUNICoast** `https://ror.org/05v509s40` ; La
+Rochelle (`INST_LR`) un ROR **hors** EUNICoast. Le filtre périmètre
+(`curated_eunicoast_works`) doit donc retenir les works avec ≥ 1 auteur Le Havre et
+écarter ceux uniquement La Rochelle :
+
+| work | auteurs (institution) | retenu EUNICoast ? |
+| ---- | --------------------- | ------------------ |
+| W101 | Alice (Le Havre)      | ✓                  |
+| W102 | Alice (Le Havre)      | ✓                  |
+| W201 | Bob (La Rochelle)     | ✗                  |
+| W202 | Bob (La Rochelle)     | ✗                  |
+| W303 | Alice (LH) + Bob (LR) | ✓ (≥ 1 LH)         |
+
+→ `curated_eunicoast_works` = **W101, W102, W303** (3 works), avec leur `fwci`.

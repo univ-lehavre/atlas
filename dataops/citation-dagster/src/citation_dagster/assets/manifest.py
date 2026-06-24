@@ -337,3 +337,34 @@ def researcher_vectors_manifest(context: AssetExecutionContext) -> MaterializeRe
 def work_vectors_manifest(context: AssetExecutionContext) -> MaterializeResult:
     """Manifest atomique de la provenance vecteur par publication (curated_work_vectors)."""
     return _build_and_write_manifest(context, _WORK_VECTORS_SUBDIR, "work_vectors_manifest")
+
+
+# Artefacts servis du modèle d'uplift FWCI EUNICoast (ADR 0067, lots 4/5), écrits par
+# l'asset Python pair_uplift_model. Chaque mart a son manifest.json voisin (contrat
+# ADR 0029) : le consommateur (application) le lit avant de lire le Parquet.
+_PAIR_UPLIFT_SUBDIR = "marts/pair_uplift_predictions"
+_RECOMMENDATIONS_SUBDIR = "marts/author_recommendations"
+
+
+@asset(
+    name="pair_uplift_predictions_manifest",
+    group_name="transform",
+    deps=[AssetKey(["pair_uplift_model"])],
+)
+def pair_uplift_predictions_manifest(context: AssetExecutionContext) -> MaterializeResult:
+    """Manifest atomique des prédictions d'uplift servies (après l'asset, même run)."""
+    return _build_and_write_manifest(
+        context, _PAIR_UPLIFT_SUBDIR, "pair_uplift_predictions_manifest"
+    )
+
+
+@asset(
+    name="author_recommendations_manifest",
+    group_name="transform",
+    deps=[AssetKey(["pair_uplift_model"])],
+)
+def author_recommendations_manifest(context: AssetExecutionContext) -> MaterializeResult:
+    """Manifest atomique des recommandations par auteur servies (après l'asset, même run)."""
+    return _build_and_write_manifest(
+        context, _RECOMMENDATIONS_SUBDIR, "author_recommendations_manifest"
+    )

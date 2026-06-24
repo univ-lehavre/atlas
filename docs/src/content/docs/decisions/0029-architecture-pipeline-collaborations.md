@@ -10,6 +10,14 @@ title: "0029 — Pipeline de collaborations : architecture V1 (plateforme DataOp
 > de cet ADR (contrat Parquet + manifest, dbt, Dagster, OpenLineage/Marquez, index pgvector,
 > scoring déterministe) demeure en vigueur.
 
+> **Amendé par [0067](/atlas/decisions/0067-modele-uplift-fwci-eunicoast/)** sur la
+> **finalité**. Au-delà du signal de citations croisées décrit ici, le pipeline produit
+> aussi un modèle **prédictif d'uplift de FWCI** (valeur ajoutée d'une collaboration)
+> sur le périmètre **EUNICoast**, à partir d'une représentation **thématique** des
+> auteurs (jamais leur identité). Les couches d'ingestion, staging/curated et le contrat
+> Parquet + manifest sont réutilisés ; de nouveaux modèles dbt et assets Python sont
+> ajoutés à côté du mart de collaborations.
+
 ## Contexte
 
 Le monorepo `atlas` cherche à produire un premier service de bout en bout qui

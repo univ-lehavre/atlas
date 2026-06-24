@@ -180,6 +180,39 @@ def check_researcher_vectors(bucket: str, run_id: str) -> AssetCheckResult:
     return _result(ok, meta)
 
 
+def check_pair_uplift_predictions(bucket: str, run_id: str) -> AssetCheckResult:
+    """Valide les prédictions d'uplift servies (clés, paire canonique, served_mode).
+
+    La colonne dérivée ``_canonical`` (author_a < author_b) est calculée en SQL. Un mart
+    vide est un état valide ; on n'a pas de ligne fantôme ici (écrit par DuckDB COPY, pas
+    par dbt external), donc pas de filtre placeholder.
+    """
+    con = lakehouse.connect()
+    glob = f"s3://{bucket}/marts/pair_uplift_predictions/dt={CURATED_DT}/run={run_id}/*.parquet"
+    df = con.sql(
+        f"SELECT author_a, author_b, uplift, served_mode, "
+        f"(author_a < author_b) AS _canonical FROM read_parquet('{glob}')"
+    ).df()
+    ok, meta = ge_suites.validate_df(
+        df, "pair_uplift_predictions", ge_suites.pair_uplift_predictions_expectations()
+    )
+    return _result(ok, meta)
+
+
+def check_author_recommendations(bucket: str, run_id: str) -> AssetCheckResult:
+    """Valide les recommandations par auteur servies (clés, pas d'auto-reco, rang >= 1)."""
+    con = lakehouse.connect()
+    glob = f"s3://{bucket}/marts/author_recommendations/dt={CURATED_DT}/run={run_id}/*.parquet"
+    df = con.sql(
+        f"SELECT author_id, partner_id, rank, "
+        f"(author_id <> partner_id) AS _not_self FROM read_parquet('{glob}')"
+    ).df()
+    ok, meta = ge_suites.validate_df(
+        df, "author_recommendations", ge_suites.author_recommendations_expectations()
+    )
+    return _result(ok, meta)
+
+
 def check_index_load(bucket: str, run_id: str) -> AssetCheckResult:
     """Vérifie que l'index Postgres a EXACTEMENT le nombre de chercheurs attendu (étape 4).
 
@@ -260,4 +293,20 @@ def ge_researcher_vectors(context: AssetCheckExecutionContext) -> AssetCheckResu
 def ge_index_load(context: AssetCheckExecutionContext) -> AssetCheckResult:
     result = check_index_load(ceph_target_from_env().bucket, context.run.run_id)
     _log_ge_to_mlflow("ge_index_load", context.run.run_id, result)
+    return result
+
+
+@asset_check(
+    asset=AssetKey(["pair_uplift_model"]), name="ge_pair_uplift_predictions", blocking=True
+)
+def ge_pair_uplift_predictions(context: AssetCheckExecutionContext) -> AssetCheckResult:
+    result = check_pair_uplift_predictions(ceph_target_from_env().bucket, context.run.run_id)
+    _log_ge_to_mlflow("ge_pair_uplift_predictions", context.run.run_id, result)
+    return result
+
+
+@asset_check(asset=AssetKey(["pair_uplift_model"]), name="ge_author_recommendations", blocking=True)
+def ge_author_recommendations(context: AssetCheckExecutionContext) -> AssetCheckResult:
+    result = check_author_recommendations(ceph_target_from_env().bucket, context.run.run_id)
+    _log_ge_to_mlflow("ge_author_recommendations", context.run.run_id, result)
     return result

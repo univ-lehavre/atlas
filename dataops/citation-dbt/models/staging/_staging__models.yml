@@ -54,3 +54,22 @@ models:
         data_tests: [not_null]
       - name: keyword_id
         data_tests: [not_null]
+
+  - name: stg_citation_author_institutions
+    description: "Affiliations (work_id, author_id, ror) — double UNNEST authorships/institutions (ADR 0067)."
+    columns:
+      - name: work_id
+        data_tests: [not_null]
+      - name: author_id
+        data_tests: [not_null]
+      - name: ror
+        description: "ROR de l'établissement (URL OpenAlex complète) — jointure au seed EUNICoast."
+        data_tests: [not_null]
+
+seeds:
+  - name: ref_eunicoast
+    description: "Référentiel des 13 ROR EUNICoast (+ alias legacy Antilles) — autorité du filtre périmètre (ADR 0067)."
+    columns:
+      - name: ror
+        description: "ROR (URL complète) d'un établissement membre EUNICoast."
+        data_tests: [not_null, unique]

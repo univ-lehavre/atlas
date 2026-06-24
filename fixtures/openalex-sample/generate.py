@@ -30,8 +30,11 @@ OA = "https://openalex.org"
 # ── Deux chercheurs et deux institutions (synthétiques) ──────────────────────
 A1 = {"id": f"{OA}/A1000000001", "orcid": f"{OA[:5]}orcid.org/0000-0000-0000-0001", "display_name": "Alice Martin"}
 A2 = {"id": f"{OA}/A1000000002", "orcid": None, "display_name": "Bob Durand"}
-INST_LH = {"id": f"{OA}/I0000001", "display_name": "Universite Le Havre Normandie", "country_code": "FR", "type": "education", "ror": f"{OA[:5]}ror.org/00000001a", "lineage": [f"{OA}/I0000001"]}
-INST_LR = {"id": f"{OA}/I0000002", "display_name": "La Rochelle Universite", "country_code": "FR", "type": "education", "ror": f"{OA[:5]}ror.org/00000002b", "lineage": [f"{OA}/I0000002"]}
+# Le Havre porte le VRAI ROR EUNICoast (05v509s40) pour que le filtre périmètre
+# (curated_eunicoast_works, ADR 0067) le reconnaisse ; La Rochelle porte un ROR hors
+# EUNICoast (le filtre doit donc l'écarter quand un work n'a QUE des auteurs LR).
+INST_LH = {"id": f"{OA}/I0000001", "display_name": "Universite Le Havre Normandie", "country_code": "FR", "type": "education", "ror": "https://ror.org/05v509s40", "lineage": [f"{OA}/I0000001"]}
+INST_LR = {"id": f"{OA}/I0000002", "display_name": "La Rochelle Universite", "country_code": "FR", "type": "education", "ror": "https://ror.org/00rcxh774", "lineage": [f"{OA}/I0000002"]}
 
 
 def _authorship(author, inst, position):
