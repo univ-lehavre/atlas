@@ -4,7 +4,7 @@ title: Parcours thématique des décisions
 
 Cette page propose un **tour cohérent des décisions** du dépôt, regroupées par
 thème plutôt que par numéro. Elle s'adresse à un **nouveau venu** : plutôt que de
-lire les 67 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
+lire les 68 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
 comprendre _pourquoi_ le dépôt est fait comme il est.
 
 Pour la liste exhaustive par numéro (et le statut de chacun), voir
@@ -272,6 +272,10 @@ incrémentale par date), l'API REST étant reléguée aux compléments ciblés.
   **réoriente** la finalité de `citation` — au-delà des citations croisées, prédire la
   **valeur ajoutée** d'une collaboration (FWCI collab − solo) depuis les **thématiques**
   (jamais l'identité), pour recommander auteurs/thématiques sur le réseau EUNICoast.
+- [0068 — Suivi de dérive du modèle d'uplift FWCI](/atlas/decisions/0068-suivi-derive-modele-uplift/) :
+  surveille la **dérive du modèle** (distribution des uplift, R²/MAE honnêtes, couverture
+  embedding) — **informatif**, sauf la bascule `predictive → descriptive` qui **bloque**
+  (perte totale de pouvoir prédictif). Réutilise le drift d'embeddings (ADR 0062).
 - [0064 — Collecte « veille médiatique » (GKG v2)](/atlas/decisions/0064-collecte-mediawatch-gkg/) :
   une **seconde source** dans un code-location dédié (`mediawatch`) — pull HTTP incrémental
   des fichiers 15 minutes de GDELT, sans dépendance Google Cloud, multilingue natif.

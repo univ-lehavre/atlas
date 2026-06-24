@@ -94,6 +94,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0065 | [Qualifier une organisation comme « université » : heuristique de nom + référentiel](/atlas/decisions/0065-classification-universites-heuristique-referentiel/) | Accepted |
 | 0066 | [Cache Turbo des checks dataops : package.json minimal et entrée dans le workspace](/atlas/decisions/0066-cache-turbo-dataops/)                                 | Accepted |
 | 0067 | [Modèle prédictif d'uplift FWCI sur EUNICoast (réorientation du pipeline citation)](/atlas/decisions/0067-modele-uplift-fwci-eunicoast/)                        | Accepted |
+| 0068 | [Suivi de dérive du modèle d'uplift FWCI (drift applicatif, porte de sécurité)](/atlas/decisions/0068-suivi-derive-modele-uplift/)                              | Accepted |
 
 ## Quand ouvrir un ADR
 
