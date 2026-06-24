@@ -198,5 +198,12 @@ docker buildx build --platform linux/arm64 \
 la tient en service ; c'est elle qui exécute nos assets lors des runs. Les manifestes de
 déploiement (Deployment + Service gRPC, `ObjectBucketClaim` pour l'accès S3, patch du
 workspace Dagster, `Application` Argo CD) vivent dans [`deploy/`](deploy/) et sont
-réconciliés par Argo CD depuis Gitea — jamais de `kubectl apply` manuel
+réconciliés par Argo CD depuis **Gitea** (push sur le dépôt intra-banc → webhook), jamais
+de `kubectl apply` manuel
 ([ADR cluster 0046](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0046-corriger-le-code-pas-l-etat.md)).
+La **procédure de bascule** pas à pas (build → tag immuable → push Gitea → réconciliation
+→ preuve sur le **banc Ceph** → armement du CT) est le **runbook**
+[`deploy/RUNBOOK.md`](deploy/RUNBOOK.md). La bascule (profil **Ceph**, overlay
+`overlays/prod`) est une **action humaine** validée sur le banc Ceph avant la prod — le
+banc léger SeaweedFS (`overlays/bench`) sert à itérer, pas de preuve. Aucun agent ne la déclenche
+([ADR cluster 0043](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0043-contrat-interface-cluster-atlas.md)/[0044](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0044-topologie-deploiement-banc-atlas.md)).

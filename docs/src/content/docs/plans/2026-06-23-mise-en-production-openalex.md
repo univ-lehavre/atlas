@@ -22,8 +22,10 @@ Mettre en production le pipeline OpenAlex de bout en bout : **ingestion**
 (`raw_snapshot`) → **transform dbt** (staging → curated → marts) → **embeddings**
 (`researcher_embeddings`) → **qualité** (Great Expectations) + **drift** (Evidently)
 → **manifests** (sentinelles Parquet) → **index_load** (pgvector). Déploiement
-**GitOps via Argo CD** (jamais `kubectl apply`), validé au **banc Lima** avant prod
-(action humaine, [ADR cluster 0044](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0044-topologie-deploiement-banc-atlas.md)).
+**GitOps via Argo CD** (jamais `kubectl apply`). Prod sur **Ceph** (overlay
+`overlays/prod`) ; la **preuve applicative** se fait sur le banc **`atlas`
+mono-nœud local-path** (`overlays/bench`, SeaweedFS) — même code applicatif qu'en
+prod, seul le backing S3 diffère (action humaine, ADR cluster [0085](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0085-preuves-applicatives-local-path.md)/[0044](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0044-topologie-deploiement-banc-atlas.md)).
 
 ## État constaté (post-pull 2026-06-23, HEAD `3da16d93`)
 
@@ -88,10 +90,10 @@ divergent sans dupliquer la logique d'injection).
   #397, métriques de drift du CT) tombait en no-op silencieux en prod. La policy
   `allow-mlflow-egress` est livrée dans cluster main (PR #408) et **vérifiée sur
   dirqual** ([univ-lehavre/cluster#407](https://github.com/univ-lehavre/cluster/issues/407),
-  [#404](https://github.com/univ-lehavre/cluster/issues/404)). Reste seulement la
-  **preuve banc Ceph multi-nœud** du flux drift+CT de bout en bout (différée,
-  dépend de cluster#391 ; tracée cluster#404/#414). Plus de blocage infra pour les
-  Lots 5/6/7 — uniquement la preuve e2e reste à produire.
+  [#404](https://github.com/univ-lehavre/cluster/issues/404)). La **preuve e2e** du flux
+  drift+CT se fait désormais sur le banc **`atlas` local-path** (et non un banc Ceph
+  multi-nœud irréalisable en ressources) — [ADR cluster 0085](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0085-preuves-applicatives-local-path.md)
+  requalifie #404/#407 en preuve `atlas`. Plus de blocage pour les Lots 5/6/7.
 
 ### Lot 2 — Durcissement prod de la code-location (qualité) · [#400](https://github.com/univ-lehavre/atlas/issues/400)
 
@@ -223,12 +225,23 @@ ingestion → transform.
 
 ### Lot 8 — Bascule production
 
+> **Action HUMAINE** : preuve applicative sur le banc **`atlas` (local-path)**
+> avant la prod sur Ceph (ADR cluster 0085/0044) — aucun agent ne la déclenche. La
+> procédure pas à pas est le **runbook**
+> [`deploy/RUNBOOK.md`](https://github.com/univ-lehavre/atlas/blob/main/dataops/citation-dagster/deploy/RUNBOOK.md)
+> et le script [`deploy/install.sh`](https://github.com/univ-lehavre/atlas/blob/main/dataops/citation-dagster/deploy/install.sh)
+> — build + tag immuable, **push Gitea** (déclencheur GitOps, pas GitHub),
+> réconciliation Argo CD, preuve `atlas`, soupape Ceph si le diff touche le S3, rollback.
+
 - [ ] `validate.sh` vert (build + kubeconform + invariants des deux overlays).
-- [ ] Image taguée immuable, poussée sur le registry interne (`registry:80`).
-- [ ] `Application` Argo CD pointant l'overlay `prod` (cf.
-  `deploy/application.example.yaml`), réconciliée depuis Gitea — **jamais**
-  `kubectl apply`.
-- [ ] Run réel **au banc Lima** d'abord : `ingestion_job` puis `transform_job` ;
+- [ ] Image taguée immuable, poussée sur le registry interne (`registry:80`) ; tag
+  figé dans l'overlay prod (`newTag` + `DAGSTER_CURRENT_IMAGE` alignés).
+- [ ] Manifestes (overlay `prod` + `Application` Argo CD) **poussés sur Gitea
+  intra-banc** → webhook → Argo CD réconcilie — **jamais** `kubectl apply`.
+- [ ] `Application` `citation-dagster` **Synced + Healthy** ; code-location visible
+  dans l'UI Dagster.
+- [ ] Run réel **sur le banc `atlas` (local-path, `overlays/bench`)** d'abord :
+  `ingestion_job` puis `transform_job` ;
   vérifier dans les pods de run que `AWS_*`/`BUCKET_*`, `OPENLINEAGE_URL`,
   `MLFLOW_TRACKING_URI`, `POSTGRES_*` sont présents (pas de no-op silencieux), que
   Marquez reçoit le lineage et MLflow les runs/métriques.
@@ -244,9 +257,9 @@ ingestion → transform.
 - **Lot 8** (bascule prod) dépend de Lot 1, idéalement Lot 2.
 - **Lot 5** (armement CT) dépend de Lot 8 (prod fonctionnelle + idempotence
   reconfirmée). La dépendance infra [cluster#407](https://github.com/univ-lehavre/cluster/issues/407)
-  (egress MLflow) est **levée** (vérifiée dirqual 2026-06-23) ; il ne reste que la
-  **preuve banc Ceph** du flux drift+CT (différée, cluster#404/#414). Les Lots 6/7
-  (tracking/CT visibles dans MLflow) ne sont donc plus bloqués par l'infra.
+  (egress MLflow) est **levée** (vérifiée dirqual 2026-06-23) ; la **preuve e2e** du
+  flux drift+CT se fait sur le banc **`atlas` local-path** (ADR cluster 0085, plus de
+  banc Ceph applicatif). Les Lots 6/7 ne sont donc plus bloqués.
 - Doc (Lot 3) et portail (Lot 4, #431) ne bloquent pas le déploiement fonctionnel
   mais relèvent de la « définition de fini ».
 
@@ -257,8 +270,10 @@ d'infra réel — l'egress `dagster → mlflow` — est **déjà** tracé en clu
 
 ## Critères de fini
 
-- Les pods de run accèdent au S3 datalake **en prod** (zéro « Secret not found »,
-  `BUCKET_*` résolus) — prouvé par un run réel au banc Ceph.
+- Les pods de run accèdent au S3 datalake : pipeline prouvé sur le banc **`atlas`
+  local-path** (SeaweedFS) ; l'accès **OBC Ceph** spécifique à la prod (Secret +
+  ConfigMap `atlas-datalake`) relève de la **soupape Ceph** `cluster-dataops` (le S3
+  change de backing — ADR 0036/0085) ou se valide à la première bascule prod.
 - Lineage visible dans Marquez ; runs/métriques (drift inclus) visibles dans MLflow.
 - `index_load` peuple la table `researchers` (pgvector) ; `ge_index_load` vert.
 - `validate.sh` vert en CI ; aucun tag `:dev`/`latest` en prod.
