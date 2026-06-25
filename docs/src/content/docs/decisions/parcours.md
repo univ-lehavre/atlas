@@ -4,7 +4,7 @@ title: Parcours thématique des décisions
 
 Cette page propose un **tour cohérent des décisions** du dépôt, regroupées par
 thème plutôt que par numéro. Elle s'adresse à un **nouveau venu** : plutôt que de
-lire les 77 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
+lire les 78 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
 comprendre _pourquoi_ le dépôt est fait comme il est.
 
 Pour la liste exhaustive par numéro (et le statut de chacun), voir
@@ -234,8 +234,12 @@ Astro Starlight) et pourquoi on en a changé.
   un troisième axe (apprendre, faire, consulter, comprendre) pour ranger chaque page
   par le **besoin de lecture** qu'elle sert.
 - [0076 — Portails d'orientation et accueil par intention](/atlas/decisions/0076-portails-orientation-accueil-par-intention/) :
-  deux pages-portails (« Bonnes pratiques », « Gouvernance ») qui **lient** l'existant
-  sans le recopier, et un accueil qui met en avant le bilan vérifiable.
+  un accueil qui met en avant le bilan vérifiable (et, à l'origine, deux pages-portails
+  retirés depuis — voir 0078). Le patron « pointer, pas recopier » reste en vigueur.
+- [0078 — Barre latérale thématique, navigation Diátaxis intra-catégorie](/atlas/decisions/0078-sidebar-thematique-navigation-diataxis-intra-categorie/) :
+  la navigation revient **par thème** (le découpage par intention éclatait les sujets) ;
+  Diátaxis reste un principe de **rédaction**, matérialisé par l'**ordre** des pages dans
+  chaque catégorie. **Amende** 0076 (retire ses portails).
 - [0060 — Consignation des reconnaissances multi-agents](/atlas/decisions/0060-consignation-reconnaissances-multi-agents/) :
   le _cheminement vérifié_ qui mène à une décision — la cartographie du terrain conduite
   avant un lot structurant — est consigné sous [`docs/audit/`](/atlas/audit/), distinct de
