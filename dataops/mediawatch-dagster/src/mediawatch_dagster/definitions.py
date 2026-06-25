@@ -7,25 +7,36 @@ Lots livrés / à venir :
 - ``raw_gkg`` + ``ingestion_job`` + GE du brut (PR 2, livré) ;
 - modèles dbt (classification université) + GE curated (PR 3, livré) ;
 - ``raw_gkg`` partitionné par jour + schedule 15 min (PR 4, livré) ;
-- mart ``university_timeline`` + manifest (PR 4).
+- mart ``university_timeline`` + manifest (PR 4) ;
+- entraînement continu (CT) : schedule + sensor rejouant ``transform_job``
+  (ADR 0062, parité avec citation), STOPPED par défaut.
 
 Le câblage K8s des pods de run (run workers) est commun à tous les lots : injection
 du Secret S3 du lakehouse et des variables OpenLineage au niveau du RUN.
 """
 
+import json
 import os
+import re
+import tempfile
+from pathlib import Path
 
 from dagster import (
     AssetSelection,
     DefaultScheduleStatus,
+    DefaultSensorStatus,
     Definitions,
     RunRequest,
     ScheduleEvaluationContext,
+    SensorEvaluationContext,
+    SkipReason,
     define_asset_job,
     schedule,
+    sensor,
 )
 
 from mediawatch_dagster.assets import raw_gkg, ref_universities_snapshot, timeline_manifest
+from mediawatch_dagster.assets.manifest import _run_rclone, parse_lsjson_entries
 from mediawatch_dagster.assets.quality import (
     ge_curated_universities,
     ge_marts_timeline,
@@ -33,6 +44,7 @@ from mediawatch_dagster.assets.quality import (
 )
 from mediawatch_dagster.assets.raw_gkg import gkg_daily_partitions
 from mediawatch_dagster.dbt import dbt_components
+from mediawatch_dagster.resources import ceph_target_from_env, render_rclone_config
 
 # Le pod de run (K8sRunLauncher) doit recevoir les accès S3 du lakehouse : on
 # injecte le Secret mediawatch-s3-access via les tags k8s au niveau du RUN (et non
@@ -196,10 +208,159 @@ if _dbt_assets:
     )
     _jobs.append(transform_job)
 
+
+# ── ENTRAÎNEMENT CONTINU (CT, MLOps 1→2 — ADR 0062) ──────────────────────────
+# Le transform_job (dbt → manifest) se rejoue automatiquement, plus de re-trigger
+# 100 % manuel. À PARITÉ avec citation, mais adapté à la STRUCTURE de mediawatch :
+# le transform_job est PARTITIONNÉ par jour (gkg_daily_partitions) et il n'y a PAS
+# de watermark — la partition `dt=YYYY-MM-DD` EST le curseur. Deux déclencheurs,
+# tous deux STOPPED par défaut (le code PERMET la cadence, le déployeur l'ARME —
+# ADR 0062/0031) et enregistrés UNIQUEMENT si transform_job existe (assets dbt) :
+#   - un @schedule calendaire (transform_daily) qui rejoue la partition du JOUR ;
+#   - un @sensor par signal (avancée des partitions ingérées) — CT sur de la donnée
+#     VRAIMENT neuve, pas seulement au calendrier (même esprit qu'atlas#399).
+
+# CADENCE = VALEUR D'INSTANCE (ADR 0062 : « le code PERMET la cadence ; activer le
+# schedule et FIXER sa fréquence relèvent du DÉPLOYEUR »). On NE fige donc PAS la
+# fréquence : elle se lit de MEDIAWATCH_CT_CRON (cron 5 champs), défaut QUOTIDIEN
+# 03:00 UTC (heure creuse, décalé du 02:00 de citation pour étaler la charge) =
+# simple exemple. Le déployeur la surcharge sans toucher au code (ou à l'armement).
+_DEFAULT_CT_CRON = "0 3 * * *"
+
+
+def _ct_cron(env: dict | None = None) -> str:
+    """Cron du CT, lu de MEDIAWATCH_CT_CRON (valeur d'instance), défaut quotidien (exemple)."""
+    env = env if env is not None else os.environ
+    return env.get("MEDIAWATCH_CT_CRON") or _DEFAULT_CT_CRON
+
+
+# GARDE-FOU ANTI-RAFALE. Au 1ᵉʳ armement après un gros backfill, des CENTAINES de
+# partitions sont « nouvelles » d'un coup : sans borne, le sensor émettrait autant de
+# RunRequest simultanés. On ne déclenche que les N partitions les PLUS RÉCENTES par
+# tick (le reste suivra aux ticks d'après). N = valeur d'instance, défaut 7.
+_DEFAULT_CT_MAX_PARTITIONS = 7
+
+
+def _ct_max_partitions(env: dict | None = None) -> int:
+    """Borne de partitions déclenchées par tick, lue de MEDIAWATCH_CT_MAX_PARTITIONS_PER_TICK.
+
+    Valeur d'instance ; un défaut sain (7) ; toute valeur non entière ou ≤ 0 retombe sur
+    le défaut (pas de borne nulle/négative qui figerait ou ferait diverger le sensor).
+    """
+    env = env if env is not None else os.environ
+    raw = env.get("MEDIAWATCH_CT_MAX_PARTITIONS_PER_TICK")
+    try:
+        n = int(raw)
+    except (TypeError, ValueError):
+        return _DEFAULT_CT_MAX_PARTITIONS
+    return n if n > 0 else _DEFAULT_CT_MAX_PARTITIONS
+
+
+# Une partition ingérée = un dossier `dt=YYYY-MM-DD` sous `raw/gkg/` (cf. raw_gkg :
+# `raw/gkg/dt=<date>/run=<id>/…`). On capte le `dt=` même AVANT qu'un `run=` n'existe.
+_DT_RE = re.compile(r"(?:^|/)dt=(\d{4}-\d{2}-\d{2})(?:/|$)")
+
+
+def ingested_partitions(entries: list[dict]) -> set[str]:
+    """Extrait les dates de partition (``dt=YYYY-MM-DD``) distinctes d'un lsjson de raw/gkg.
+
+    ``entries`` = sortie ``rclone lsjson -R`` (champs ``Path`` relatif au préfixe listé).
+    Best-effort : un chemin sans ``dt=`` conforme est ignoré (ne casse pas le scan).
+    """
+    found: set[str] = set()
+    for entry in entries:
+        match = _DT_RE.search(entry.get("Path", ""))
+        if match:
+            found.add(match.group(1))
+    return found
+
+
+def evaluate_ct_partitions(
+    current: set[str], cursor: str | None, max_n: int
+) -> tuple[list[str], str]:
+    """Corps PUR (sans I/O ni Dagster) : décide quelles partitions (re)transformer.
+
+    ``current`` : partitions ingérées observées au tick. ``cursor`` : sérialisé des
+    partitions vues au dernier tick. Renvoie ``(à_lancer, new_cursor)`` :
+    - ``new_cursor`` = ``current`` sérialisé (liste triée → déterministe, dédup) ;
+    - ``à_lancer`` = partitions NOUVELLES (``current`` − ``cursor``), bornées aux ``max_n``
+      PLUS RÉCENTES (anti-rafale ; le reste suivra aux ticks d'après), rendues en ordre
+      CHRONOLOGIQUE (les plus anciennes d'abord) pour des RunRequest lisibles.
+    - vide si rien de neuf (curseur inchangé) ou aucune partition (rien à transformer).
+    """
+    previous = set(json.loads(cursor)) if cursor else set()
+    new_cursor = json.dumps(sorted(current))
+    fresh = current - previous
+    recent = sorted(fresh, reverse=True)[:max_n]
+    return sorted(recent), new_cursor
+
+
+_schedules = [ingest_current_day]
+_sensors = []
+if _dbt_assets:
+    # CT calendaire : rejoue la partition du JOUR COURANT à chaque tick du cron
+    # d'instance. Parité avec ingest_current_day (même cible : partition du jour).
+    @schedule(
+        job=transform_job,
+        cron_schedule=_ct_cron(),
+        default_status=DefaultScheduleStatus.STOPPED,
+        execution_timezone="UTC",
+        name="transform_daily",
+    )
+    def transform_daily(context: ScheduleEvaluationContext) -> RunRequest:
+        """Entraînement continu : rejoue transform_job sur la partition du jour (UTC)."""
+        partition_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
+        return RunRequest(partition_key=partition_date)
+
+    _schedules.append(transform_daily)
+
+    # CT par SIGNAL : un @sensor déclenche transform_job pour les partitions
+    # FRAÎCHEMENT INGÉRÉES — réentraîner sur de la donnée vraiment neuve, pas
+    # seulement au calendrier. Le signal est le listing des `dt=` sous `raw/gkg/` ;
+    # on compare au curseur et on déclenche les nouvelles, bornées par tick.
+    @sensor(
+        name="transform_on_ingestion_advance",
+        job=transform_job,
+        default_status=DefaultSensorStatus.STOPPED,  # le déployeur l'arme (ADR 0062/0031)
+        minimum_interval_seconds=300,  # éval 5 min max (les partitions bougent lentement)
+        description="CT par signal : déclenche transform_job sur les partitions ingérées.",
+    )
+    def transform_on_ingestion_advance(context: SensorEvaluationContext):
+        # Lecture best-effort du brut (rclone.conf temporaire, comme les assets) : sans
+        # accès S3 (dev/CI), le sensor SKIP proprement plutôt que d'échouer.
+        try:
+            target = ceph_target_from_env()
+            with tempfile.TemporaryDirectory() as tmp:
+                config_path = Path(tmp) / "rclone.conf"
+                config_path.write_text(render_rclone_config(target))
+                proc = _run_rclone(
+                    ["lsjson", "-R", "--dirs-only", f"ceph:{target.bucket}/raw/gkg"],
+                    config_path,
+                )
+            if proc.returncode != 0:
+                yield SkipReason(f"raw/gkg illisible (rclone) : {proc.stderr.strip()}")
+                return
+            current = ingested_partitions(parse_lsjson_entries(proc.stdout))
+        except Exception as exc:  # noqa: BLE001 — pas d'accès S3 : on n'échoue pas le sensor
+            yield SkipReason(f"partitions illisibles (accès S3 indisponible) : {exc}")
+            return
+        to_run, new_cursor = evaluate_ct_partitions(current, context.cursor, _ct_max_partitions())
+        context.update_cursor(new_cursor)
+        if to_run:
+            for partition_date in to_run:
+                # run_key = la partition → Dagster dédoublonne : un même jour ne relance pas.
+                yield RunRequest(partition_key=partition_date, run_key=f"ingest-{partition_date}")
+        else:
+            yield SkipReason("aucune partition neuve depuis le dernier tick (rien à réentraîner)")
+
+    _sensors.append(transform_on_ingestion_advance)
+
+
 defs = Definitions(
     assets=_assets,
     asset_checks=_asset_checks,
     jobs=_jobs,
-    schedules=[ingest_current_day],
+    schedules=_schedules,
+    sensors=_sensors,
     resources=_dbt_resources,
 )
