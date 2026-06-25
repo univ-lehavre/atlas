@@ -54,3 +54,36 @@ pnpm dataops:check      # les trois enchaînés
 
 Jobs : `ingestion_job` (partitionné), `ref_job`, `transform_job` (dbt + manifest).
 GE bloquant à chaque couche (brut, curated, mart).
+
+## Entraînement continu (CT)
+
+Le `transform_job` (dbt → manifest) se rejoue **automatiquement**, plus de re-trigger
+100 % manuel — à parité avec `citation-dagster`
+([ADR 0062](https://univ-lehavre.github.io/atlas/decisions/0062-mlops-niveau-2-tracking-drift-ct/),
+MLOps 1→2). Deux déclencheurs, **STOPPED par défaut** (le code **permet** la cadence ; le
+déployeur l'**arme**) et enregistrés seulement si les assets dbt sont packagés :
+
+- le `@schedule` `transform_daily` — CT **calendaire**, rejoue la partition du **jour
+  courant** (parité avec `ingest_current_day`) ;
+- le `@sensor` `transform_on_ingestion_advance` — CT **par signal**, rejoue les partitions
+  **fraîchement ingérées** (réentraîner sur de la donnée vraiment neuve, pas seulement au
+  calendrier). Le signal est le listing des `dt=` sous `raw/gkg/` ; sans accès S3 (dev/CI),
+  le sensor **skip** proprement.
+
+> **Différence avec citation.** Le `transform_job` mediawatch est **partitionné par jour**
+> (et il n'y a pas de watermark : la partition `dt=YYYY-MM-DD` **est** le curseur). Chaque
+> déclencheur émet donc un `RunRequest` portant une **`partition_key`** — un par partition
+> neuve côté sensor.
+
+> **Armer le CT (déployeur).** Dans l'UI Dagster, basculer `transform_daily` et/ou
+> `transform_on_ingestion_advance` sur **Running**. Deux **valeurs d'instance**, jamais
+> figées dans le code générique, posées sur le Deployment de la code-location :
+>
+> - `MEDIAWATCH_CT_CRON` (cron 5 champs) — cadence du schedule, défaut quotidien
+>   `0 3 * * *` (exemple, décalé du 02:00 de citation pour étaler la charge) ;
+> - `MEDIAWATCH_CT_MAX_PARTITIONS_PER_TICK` — **garde-fou anti-rafale** du sensor : nombre
+>   max de partitions déclenchées par tick (défaut `7`). Au 1ᵉʳ armement après un gros
+>   backfill, le sensor ne lance que les N plus récentes ; le reste suit aux ticks d'après.
+>
+> **Préalable** : chaque rejeu écrit une partition immuable `dt=…/run=<run_id>/`
+> (idempotence) — le CT ne porte que `transform_job`, jamais l'ingestion (pas de course).

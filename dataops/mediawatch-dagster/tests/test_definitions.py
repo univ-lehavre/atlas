@@ -1,9 +1,19 @@
 """Tests du point d'entrée : la code-location se charge avec raw_gkg (PR 2)."""
 
+import json
+
 from dagster import AssetKey, Definitions
 
 from mediawatch_dagster import definitions
-from mediawatch_dagster.definitions import _s3_env_from
+from mediawatch_dagster.definitions import (
+    _DEFAULT_CT_CRON,
+    _DEFAULT_CT_MAX_PARTITIONS,
+    _ct_cron,
+    _ct_max_partitions,
+    _s3_env_from,
+    evaluate_ct_partitions,
+    ingested_partitions,
+)
 
 
 def test_definitions_loads_with_raw_gkg() -> None:
@@ -106,3 +116,142 @@ def test_no_mlflow_or_postgres_env_in_v1() -> None:
     }
     assert not any(n.startswith("POSTGRES_") for n in names)
     assert "MLFLOW_TRACKING_URI" not in names
+
+
+# ── Entraînement continu (CT, ADR 0062) ──────────────────────────────────────
+
+
+def test_ingested_partitions_extracts_distinct_dates() -> None:
+    # Un dt= peut apparaître plusieurs fois (dossier + run= + fichiers) : on déduplique.
+    entries = [
+        {"Path": "dt=2026-06-23", "IsDir": True},
+        {"Path": "dt=2026-06-23/run=abc", "IsDir": True},
+        {"Path": "dt=2026-06-24/run=def", "IsDir": True},
+    ]
+    assert ingested_partitions(entries) == {"2026-06-23", "2026-06-24"}
+
+
+def test_ingested_partitions_ignores_nonconforming_paths() -> None:
+    # Un chemin sans dt= conforme (ou date malformée) est ignoré, pas une erreur.
+    entries = [
+        {"Path": "something/else"},
+        {"Path": "dt=not-a-date/run=x"},
+        {"Path": "dt=2026-06-25/run=ghi"},
+    ]
+    assert ingested_partitions(entries) == {"2026-06-25"}
+
+
+def test_evaluate_ct_partitions_bootstrap_triggers_all() -> None:
+    # Premier tick (curseur None) et partitions présentes → on lance, curseur = état trié.
+    to_run, cursor = evaluate_ct_partitions({"2026-06-24", "2026-06-23"}, None, 7)
+    assert to_run == ["2026-06-23", "2026-06-24"]  # chronologique
+    assert cursor == json.dumps(["2026-06-23", "2026-06-24"])
+
+
+def test_evaluate_ct_partitions_unchanged_skips() -> None:
+    # État identique au curseur → rien à relancer (dédup, pas de double-run).
+    cursor = json.dumps(["2026-06-23", "2026-06-24"])
+    to_run, new_cursor = evaluate_ct_partitions({"2026-06-23", "2026-06-24"}, cursor, 7)
+    assert to_run == []
+    assert new_cursor == cursor
+
+
+def test_evaluate_ct_partitions_advance_triggers_only_new() -> None:
+    # Une partition neuve apparaît → on ne lance QUE la nouvelle (pas les anciennes).
+    cursor = json.dumps(["2026-06-23", "2026-06-24"])
+    to_run, _ = evaluate_ct_partitions({"2026-06-23", "2026-06-24", "2026-06-25"}, cursor, 7)
+    assert to_run == ["2026-06-25"]
+
+
+def test_evaluate_ct_partitions_caps_to_n_most_recent() -> None:
+    # Backfill : 10 partitions neuves d'un coup, borne 3 → les 3 PLUS RÉCENTES seules,
+    # rendues en ordre chronologique. Le reste suivra aux ticks d'après (anti-rafale).
+    many = {f"2026-06-{day:02d}" for day in range(1, 11)}
+    to_run, _ = evaluate_ct_partitions(many, None, 3)
+    assert to_run == ["2026-06-08", "2026-06-09", "2026-06-10"]
+
+
+def test_evaluate_ct_partitions_empty_skips() -> None:
+    # Aucune partition ingérée (bootstrap à vide) → rien à transformer.
+    to_run, cursor = evaluate_ct_partitions(set(), None, 7)
+    assert to_run == []
+    assert cursor == json.dumps([])
+
+
+def test_evaluate_ct_partitions_cursor_is_deterministic() -> None:
+    # Le curseur est une liste TRIÉE : un même état (ordre d'itération du set quelconque)
+    # produit toujours le même sérialisé → pas de re-déclenchement parasite.
+    _, cursor_a = evaluate_ct_partitions({"2026-06-24", "2026-06-23"}, None, 7)
+    _, cursor_b = evaluate_ct_partitions({"2026-06-23", "2026-06-24"}, None, 7)
+    assert cursor_a == cursor_b
+
+
+def test_ct_cron_default_when_env_absent() -> None:
+    # Sans MEDIAWATCH_CT_CRON : défaut quotidien (exemple) — le code ne fige PAS la cadence.
+    assert _ct_cron({}) == _DEFAULT_CT_CRON
+
+
+def test_ct_cron_overridable_by_instance() -> None:
+    # Le déployeur fixe la cadence (ex. mensuel) par env, sans toucher au code générique.
+    assert _ct_cron({"MEDIAWATCH_CT_CRON": "0 3 1 * *"}) == "0 3 1 * *"
+
+
+def test_ct_cron_blank_falls_back_to_default() -> None:
+    # Une valeur vide retombe sur le défaut (pas de cron vide qui casserait le schedule).
+    assert _ct_cron({"MEDIAWATCH_CT_CRON": ""}) == _DEFAULT_CT_CRON
+
+
+def test_ct_max_partitions_default_when_env_absent() -> None:
+    assert _ct_max_partitions({}) == _DEFAULT_CT_MAX_PARTITIONS
+
+
+def test_ct_max_partitions_overridable_by_instance() -> None:
+    assert _ct_max_partitions({"MEDIAWATCH_CT_MAX_PARTITIONS_PER_TICK": "20"}) == 20
+
+
+def test_ct_max_partitions_invalid_falls_back_to_default() -> None:
+    # Valeur non entière ou ≤ 0 → défaut (pas de borne nulle/négative qui bloquerait le CT).
+    assert _ct_max_partitions({"MEDIAWATCH_CT_MAX_PARTITIONS_PER_TICK": "x"}) == (
+        _DEFAULT_CT_MAX_PARTITIONS
+    )
+    assert _ct_max_partitions({"MEDIAWATCH_CT_MAX_PARTITIONS_PER_TICK": "0"}) == (
+        _DEFAULT_CT_MAX_PARTITIONS
+    )
+
+
+def test_transform_daily_schedule_registered_and_stopped() -> None:
+    # Le CT calendaire est enregistré (manifest dbt packagé) et STOPPED par défaut
+    # (le code PERMET, le déployeur ARME — ADR 0062/0031).
+    from dagster import DefaultScheduleStatus
+
+    sched = next((s for s in definitions.defs.schedules if s.name == "transform_daily"), None)
+    assert sched is not None
+    assert sched.cron_schedule == _DEFAULT_CT_CRON  # défaut en CI (env absent)
+    assert sched.default_status == DefaultScheduleStatus.STOPPED
+
+
+def test_transform_daily_emits_partition_key() -> None:
+    # Piège ≠ citation : transform_job est PARTITIONNÉ → le RunRequest DOIT porter une
+    # partition_key (l'omettre ferait échouer le run). On vérifie qu'il en émet une.
+    from datetime import datetime, timezone
+
+    from dagster import build_schedule_context
+
+    sched = next(s for s in definitions.defs.schedules if s.name == "transform_daily")
+    ctx = build_schedule_context(
+        scheduled_execution_time=datetime(2026, 6, 25, 3, 0, tzinfo=timezone.utc)
+    )
+    run_request = sched(ctx)
+    assert run_request.partition_key == "2026-06-25"
+
+
+def test_ct_sensor_registered_and_stopped() -> None:
+    # Le CT par signal est enregistré (manifest dbt packagé) et STOPPED par défaut.
+    from dagster import DefaultSensorStatus
+
+    sensor_def = next(
+        (s for s in definitions.defs.sensors if s.name == "transform_on_ingestion_advance"),
+        None,
+    )
+    assert sensor_def is not None
+    assert sensor_def.default_status == DefaultSensorStatus.STOPPED

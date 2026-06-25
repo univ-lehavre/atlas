@@ -193,3 +193,23 @@ Dagster/Marquez côté infrastructure).
 - **Nommage** `citation`, jamais une marque, dans tout identifiant partagé
   ([ADR 0022](/atlas/decisions/0022-naming-convention/)) : bucket de l'artefact store,
   base du backend store.
+
+**Portée : généralisation aux pipelines DataOps.**
+
+La décision CT ci-dessus — un `@schedule` (et, si l'amont le justifie, un `@sensor`),
+**STOPPED par défaut**, **cadence en valeur d'instance** — n'est **pas spécifique à
+`citation`** : elle s'applique **par parité à tout pipeline `dataops/`** dont le
+`transform_job` gagne à se rejouer sans intervention. Elle est désormais portée à
+`mediawatch-dagster` (veille médiatique GKG, [ADR 0064](/atlas/decisions/0064-collecte-mediawatch-gkg/)),
+en respectant sa **structure propre** : son `transform_job` est **partitionné par jour**
+et il n'y a **pas de watermark** (la partition `dt=YYYY-MM-DD` **est** le curseur). Le
+`@sensor` y déclenche donc, par **avancée des partitions ingérées** (`raw/gkg/dt=…`), un
+`RunRequest` portant une **`partition_key`** par jour neuf — borné à **N partitions par
+tick** (valeur d'instance `MEDIAWATCH_CT_MAX_PARTITIONS_PER_TICK`) pour absorber un
+backfill sans rafale de runs. La cadence du `@schedule` reste une valeur d'instance
+(`MEDIAWATCH_CT_CRON`). **Aucune nouvelle décision** n'est prise ici (le principe est déjà
+acté), **aucun point de contact `cluster` ne change** (le contrat de données est inchangé,
+[ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/)) : c'est la
+**généralisation** d'un patron existant, pas un ADR distinct. `mediawatch` v1 (« articles
+seulement ») n'instrumente **ni MLflow ni Evidently** ; seule la brique **CT** (schedule +
+sensor) lui est portée.
