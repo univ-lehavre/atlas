@@ -81,10 +81,15 @@ export default defineConfig({
       // être ajoutée ici (le build la rattrape sinon).
       sidebar: [
         {
-          // tutorial — vide aujourd'hui (trou identifié ADR 0074). Un groupe
-          // sans items n'est pas rendu par Starlight : on réserve l'intention.
+          // tutorial — apprendre en faisant. Premier parcours learn-by-doing
+          // (le trou identifié par l'ADR 0074 est comblé).
           label: "Apprendre",
-          items: [],
+          items: [
+            {
+              label: "Première prise en main",
+              link: "/apprendre/premiere-prise-en-main/",
+            },
+          ],
         },
         {
           // how-to — accomplir une tâche.
