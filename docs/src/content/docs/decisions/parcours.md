@@ -4,7 +4,7 @@ title: Parcours thématique des décisions
 
 Cette page propose un **tour cohérent des décisions** du dépôt, regroupées par
 thème plutôt que par numéro. Elle s'adresse à un **nouveau venu** : plutôt que de
-lire les 76 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
+lire les 77 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
 comprendre _pourquoi_ le dépôt est fait comme il est.
 
 Pour la liste exhaustive par numéro (et le statut de chacun), voir
@@ -272,6 +272,9 @@ incrémentale par date), l'API REST étant reléguée aux compléments ciblés.
   la plateforme DataOps et le contrat Parquet.
 - [0033 — Contrat d'interface application ↔ cluster](/atlas/decisions/0033-contrat-interface-cluster/) :
   la frontière entre le code applicatif et l'infrastructure.
+- [0077 — Topologie : deux dépôts cluster & atlas](/atlas/decisions/0077-topologie-deux-depots-cluster-atlas/) :
+  pourquoi on garde **deux** dépôts (on ne fusionne pas, pas de 3ᵉ dépôt doc ni Python) et on
+  **outille** la frontière plutôt que de la subir.
 - [0054 — Ingestion massive par snapshot S3](/atlas/decisions/0054-ingestion-massive-snapshot-s3/) :
   toute la base OpenAlex (works + authors), incrémentale, en remplacement de l'API REST.
 - [0067 — Modèle prédictif d'uplift FWCI sur EUNICoast](/atlas/decisions/0067-modele-uplift-fwci-eunicoast/) :
