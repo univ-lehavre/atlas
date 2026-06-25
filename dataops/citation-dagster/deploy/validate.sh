@@ -117,6 +117,26 @@ for o in "${overlays[@]}"; do
         echo "✓ CITATION_S3_SECRET aligné sur l'OBC ($obc_name)"
       fi
     fi
+
+    # Contrat ADR 0075 : en prod, `atlas` ne résout PAS l'image — il n'expose que
+    # des placeholders que le seed cluster remplit par le digest immuable au
+    # déploiement. On vérifie sur les FICHIERS SOURCES (pas le rendu : kustomize
+    # concatène le digest au champ `image:`) que les deux placeholders sont
+    # présents et intacts. Les graver par une valeur d'instance (digest/tag réel)
+    # serait une régression silencieuse vers l'ancien double-couplage : on la rend
+    # bruyante ici.
+    for ph in \
+      "__CITATION_IMAGE_DIGEST__:kustomization.yaml" \
+      "__CITATION_IMAGE__:patch-s3-envfrom.yaml"; do
+      placeholder="${ph%%:*}"; src="$here/overlays/prod/${ph##*:}"
+      if ! grep -qF "$placeholder" "$src"; then
+        echo "✗ prod : placeholder $placeholder absent de $(basename "$src") — l'image" >&2
+        echo "  de prod ne doit pas être résolue côté atlas (digest injecté par cluster, ADR 0075)." >&2
+        fail=1
+      else
+        echo "✓ placeholder $placeholder intact ($(basename "$src"))"
+      fi
+    done
   fi
 done
 
