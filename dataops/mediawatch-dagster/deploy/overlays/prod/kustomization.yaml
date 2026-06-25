@@ -4,8 +4,12 @@
 # branche la code-location sur les deux via envFrom (patch-s3-envfrom).
 #
 # Image : le tag `:dev` de la base est interdit en production (contrat cluster
-# ADR 0033 : « taguées explicitement, pas `latest` »). Surcharger `newTag` par le
-# tag immuable (SHA/version) au déploiement de l'instance — valeur d'exemple ici.
+# ADR 0033 : « taguées explicitement, pas `latest` »). Déploiement par DIGEST
+# immuable (ADR 0075) : cluster (le seed) injecte le sha256 réel de l'image qu'il
+# a buildée+poussée en remplaçant le placeholder ci-dessous. atlas FOURNIT le
+# point d'injection ; cluster le REMPLIT (frontière ADR cluster 0094). Les DEUX
+# références image (ici + DAGSTER_CURRENT_IMAGE du patch-s3-envfrom) sont
+# factorisées en deux placeholders nommés — fin du double-couplage (audit #499).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
@@ -18,4 +22,6 @@ patches:
       name: mediawatch-dagster
 images:
   - name: registry:80/mediawatch-dagster
-    newTag: "0.0.0" # exemple ; remplacer par le tag immuable de l'instance
+    # Placeholder DIGEST (sha256 seul) — injecté par cluster (ADR 0075). Kustomize
+    # `digest:` réécrit la référence du conteneur en …@sha256:… (immuable).
+    digest: "__MEDIAWATCH_IMAGE_DIGEST__"

@@ -53,11 +53,37 @@ _RUN_ENV = [
     {"name": "OPENLINEAGE_ENDPOINT", "value": "api/v1/lineage"},
     {"name": "OPENLINEAGE_NAMESPACE", "value": "dagster"},
 ]
+
+
+def _s3_env_from() -> list[dict]:
+    """`env_from` des pods de run pour les creds S3 (AWS_*/BUCKET_*), par profil.
+
+    Le NOM des ressources S3 est une valeur d'INSTANCE, pas une constante : la SOURCE
+    diffère selon le profil (comme l'envFrom du Deployment, cf. overlays) :
+      - banc léger (SeaweedFS) : UN Secret unique porte AWS_* ET BUCKET_* ;
+      - prod (ObjectBucketClaim Rook) : un Secret (AWS_*) ET un ConfigMap (BUCKET_*),
+        tous deux du nom de la claim `mediawatch-datalake` (≠ `mediawatch-s3-access`).
+    On lit donc les noms de l'env du pod gRPC (posés par chaque overlay via
+    `MEDIAWATCH_S3_SECRET` / `MEDIAWATCH_S3_CONFIGMAP`) au lieu de les coder en dur :
+    `MEDIAWATCH_S3_SECRET` (défaut `mediawatch-s3-access` au banc / tests) toujours en
+    `secret_ref` ; `MEDIAWATCH_S3_CONFIGMAP` ajouté en `config_map_ref` UNIQUEMENT s'il
+    est défini (prod : ConfigMap BUCKET_* de l'OBC ; banc : absent, le Secret unique
+    porte déjà BUCKET_*). Sans ce paramétrage, le nom codé en dur ferait échouer le pod
+    de run en prod (« Secret not found » : l'OBC ne crée pas `mediawatch-s3-access`).
+    """
+    secret = os.environ.get("MEDIAWATCH_S3_SECRET", "mediawatch-s3-access")
+    env_from = [{"secret_ref": {"name": secret}}]
+    configmap = os.environ.get("MEDIAWATCH_S3_CONFIGMAP")
+    if configmap:
+        env_from.append({"config_map_ref": {"name": configmap}})
+    return env_from
+
+
 RUN_K8S_CONFIG = {
     "dagster-k8s/config": {
         "container_config": {
             "env": _RUN_ENV,
-            "env_from": [{"secret_ref": {"name": "mediawatch-s3-access"}}],
+            "env_from": _s3_env_from(),
         },
     },
 }
@@ -82,7 +108,7 @@ def _transform_run_config() -> dict:
         "dagster-k8s/config": {
             "container_config": {
                 "env": _RUN_ENV + relayed,
-                "env_from": [{"secret_ref": {"name": "mediawatch-s3-access"}}],
+                "env_from": _s3_env_from(),
             },
         },
     }

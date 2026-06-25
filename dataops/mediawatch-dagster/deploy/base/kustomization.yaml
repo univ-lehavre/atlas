@@ -9,3 +9,4 @@ kind: Kustomization
 resources:
   - code-location.yaml
   - workspace-patch.yaml
+  - pdb.yaml

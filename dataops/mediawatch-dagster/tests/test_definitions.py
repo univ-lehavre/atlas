@@ -3,6 +3,7 @@
 from dagster import AssetKey, Definitions
 
 from mediawatch_dagster import definitions
+from mediawatch_dagster.definitions import _s3_env_from
 
 
 def test_definitions_loads_with_raw_gkg() -> None:
@@ -35,7 +36,8 @@ def test_schedule_targets_current_day_partition_every_15min() -> None:
 
 def test_run_k8s_config_injects_s3_secret_and_lineage_env() -> None:
     cfg = definitions.RUN_K8S_CONFIG["dagster-k8s/config"]["container_config"]
-    # Le Secret S3 du lakehouse est injecté au niveau du RUN (pods de run).
+    # Le Secret S3 du lakehouse est injecté au niveau du RUN (pods de run). RUN_K8S_CONFIG
+    # est figé à l'import : sans MEDIAWATCH_S3_* dans l'env (tests), c'est le défaut banc.
     assert cfg["env_from"] == [{"secret_ref": {"name": "mediawatch-s3-access"}}]
     # Le lineage est réinjecté au run (piège ADR 0086 : ne se propage pas du gRPC).
     names = {e["name"] for e in cfg["env"]}
@@ -43,6 +45,36 @@ def test_run_k8s_config_injects_s3_secret_and_lineage_env() -> None:
     # Host en forme courte <svc>.<ns> (note DNS prod, cluster#458).
     url = next(e["value"] for e in cfg["env"] if e["name"] == "OPENLINEAGE_URL")
     assert url == "http://marquez.marquez:5000"
+
+
+def test_s3_env_from_default_bench_secret_only(monkeypatch) -> None:
+    # Sans MEDIAWATCH_S3_* (banc / checkout neuf / tests) : un seul secret_ref par
+    # défaut (mediawatch-s3-access), AUCUN config_map_ref (le Secret unique du banc
+    # porte déjà BUCKET_*).
+    monkeypatch.delenv("MEDIAWATCH_S3_SECRET", raising=False)
+    monkeypatch.delenv("MEDIAWATCH_S3_CONFIGMAP", raising=False)
+    assert _s3_env_from() == [{"secret_ref": {"name": "mediawatch-s3-access"}}]
+
+
+def test_s3_env_from_prod_obc_secret_and_configmap(monkeypatch) -> None:
+    # Prod (ObjectBucketClaim Rook) : le Secret AWS_* ET le ConfigMap BUCKET_* sont
+    # tous deux du nom de la claim. Les pods de RUN doivent recevoir LES DEUX (le
+    # ConfigMap est requis en prod, sinon BUCKET_* absent). C'est le bug que le nom
+    # codé en dur masquait : l'OBC ne crée pas `mediawatch-s3-access` en prod.
+    monkeypatch.setenv("MEDIAWATCH_S3_SECRET", "mediawatch-datalake")
+    monkeypatch.setenv("MEDIAWATCH_S3_CONFIGMAP", "mediawatch-datalake")
+    env_from = _s3_env_from()
+    assert {"secret_ref": {"name": "mediawatch-datalake"}} in env_from
+    assert {"config_map_ref": {"name": "mediawatch-datalake"}} in env_from
+    assert len(env_from) == 2
+
+
+def test_s3_env_from_secret_without_configmap(monkeypatch) -> None:
+    # Un overlay peut renommer le Secret sans déclarer de ConfigMap : on n'ajoute
+    # config_map_ref QUE si MEDIAWATCH_S3_CONFIGMAP existe.
+    monkeypatch.setenv("MEDIAWATCH_S3_SECRET", "custom-s3")
+    monkeypatch.delenv("MEDIAWATCH_S3_CONFIGMAP", raising=False)
+    assert _s3_env_from() == [{"secret_ref": {"name": "custom-s3"}}]
 
 
 def test_transform_run_config_relays_dbt_env(monkeypatch) -> None:
