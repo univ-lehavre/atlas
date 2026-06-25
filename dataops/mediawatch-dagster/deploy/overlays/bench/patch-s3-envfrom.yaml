@@ -1,4 +1,9 @@
 # Banc : un Secret unique (SeaweedFS) porte AWS_* ET BUCKET_*.
+#
+# MEDIAWATCH_S3_SECRET nomme ce Secret pour les pods de RUN (definitions.py les
+# branche au niveau run via dagster-k8s/config — les env du Deployment ne s'y
+# propagent pas, piège ADR 0086). Pas de MEDIAWATCH_S3_CONFIGMAP au banc : le Secret
+# unique porte déjà BUCKET_*. En prod l'OBC sépare Secret + ConfigMap (cf. prod).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -9,6 +14,9 @@ spec:
     spec:
       containers:
         - name: grpc
+          env:
+            - name: MEDIAWATCH_S3_SECRET
+              value: mediawatch-s3-access
           envFrom:
             - secretRef:
                 name: mediawatch-s3-access

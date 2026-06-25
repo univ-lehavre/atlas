@@ -3,10 +3,19 @@
 #
 # DAGSTER_CURRENT_IMAGE est l'image que le K8sRunLauncher donne aux pods de RUN
 # (run workers). kustomize `images:` ne réécrit QUE le champ `image:` du
-# conteneur, pas cette valeur d'env — on l'aligne ici explicitement sur le tag
-# de prod, sinon le serveur gRPC tournerait sur le bon tag mais les runs sur
-# `:dev` (code divergent). Tenir ce tag synchronisé avec `images[].newTag` de
-# la kustomization.
+# conteneur, pas cette valeur d'env — sinon le serveur gRPC tournerait sur la
+# bonne image mais les runs sur `:dev` (code divergent). On la factorise donc en
+# un placeholder DISTINCT, injecté par cluster avec la RÉFÉRENCE COMPLÈTE par
+# digest (registry:80/…@sha256:…, ADR 0075). Plus de tag à tenir synchronisé à la
+# main : les deux placeholders (ici + images[].digest de la kustomization) sont
+# remplis d'un seul coup par le seed — fin du double-couplage (audit #499). atlas
+# FOURNIT le trou, cluster le REMPLIT (frontière ADR cluster 0094).
+#
+# MEDIAWATCH_S3_SECRET / MEDIAWATCH_S3_CONFIGMAP nomment les ressources de l'OBC pour
+# les pods de RUN : definitions.py les branche au niveau run via dagster-k8s/config
+# (les env/envFrom du Deployment ne se propagent PAS aux pods de run, piège ADR 0086).
+# Le ConfigMap est REQUIS en prod (l'OBC sépare BUCKET_* du Secret AWS_*), à la
+# différence du banc (Secret unique). Tenir ces noms = celui de l'ObjectBucketClaim.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -19,7 +28,13 @@ spec:
         - name: grpc
           env:
             - name: DAGSTER_CURRENT_IMAGE
-              value: registry:80/mediawatch-dagster:0.0.0 # exemple ; = images[].newTag
+              # Placeholder RÉFÉRENCE COMPLÈTE — injecté par cluster (ADR 0075) :
+              # registry:80/mediawatch-dagster@sha256:… (image par digest des pods de run).
+              value: __MEDIAWATCH_IMAGE__
+            - name: MEDIAWATCH_S3_SECRET
+              value: mediawatch-datalake # = nom de l'ObjectBucketClaim (Secret AWS_*)
+            - name: MEDIAWATCH_S3_CONFIGMAP
+              value: mediawatch-datalake # = nom de l'ObjectBucketClaim (ConfigMap BUCKET_*)
             # Prod (RGW Ceph) : endpoint en TLS → dbt-duckdb doit ouvrir le S3 en https.
             - name: DBT_S3_USE_SSL
               value: "true"
