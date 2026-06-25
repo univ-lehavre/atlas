@@ -103,9 +103,11 @@ divergent sans dupliquer la logique d'injection).
 - [ ] `livenessProbe` (en plus de la `readinessProbe` TCP existante).
 - [ ] `PodDisruptionBudget` (`minAvailable: 1`) — aujourd'hui `replicas:1` sans PDB
       = SPOF lors d'un drain de nœud.
-- [ ] Tag d'image **immuable réel** dans l'overlay prod (remplacer l'exemple
-      `0.0.0`), aligné `images[].newTag` ↔ `DAGSTER_CURRENT_IMAGE` (garde `validate.sh`
-      déjà en place pour l'absence de `:dev`).
+- [x] Référence d'image de prod **par digest immuable**, factorisée en deux
+      placeholders nommés (`images[].digest: __CITATION_IMAGE_DIGEST__`,
+      `DAGSTER_CURRENT_IMAGE: __CITATION_IMAGE__`) remplis par le seed cluster au
+      déploiement (ADR [0075](/atlas/decisions/0075-deploiement-prod-par-digest-injecte-cluster/) ;
+      fin du double-couplage du tag, audit #499). `validate.sh` garde l'absence de `:dev`.
 
 ### Lot 3 — Doc : exposition L4 NodePort · [#430](https://github.com/univ-lehavre/atlas/issues/430)
 
@@ -231,12 +233,17 @@ ingestion → transform.
 > procédure pas à pas est le **runbook**
 > [`deploy/RUNBOOK.md`](https://github.com/univ-lehavre/atlas/blob/main/dataops/citation-dagster/deploy/RUNBOOK.md)
 > et le script [`deploy/install.sh`](https://github.com/univ-lehavre/atlas/blob/main/dataops/citation-dagster/deploy/install.sh)
-> — build + tag immuable, **push Gitea** (déclencheur GitOps, pas GitHub),
+> (profil **`bench`** uniquement, ADR [0075](/atlas/decisions/0075-deploiement-prod-par-digest-injecte-cluster/))
+> — build image du banc, **push Gitea** (déclencheur GitOps, pas GitHub),
 > réconciliation Argo CD, preuve `atlas`, soupape Ceph si le diff touche le S3, rollback.
+> En prod, l'image se résout **par digest injecté par cluster** dans les
+> placeholders de l'overlay (`atlas` ne fabrique ni ne résout l'image de prod).
 
 - [ ] `validate.sh` vert (build + kubeconform + invariants des deux overlays).
-- [ ] Image taguée immuable, poussée sur le registry interne (`registry:80`) ; tag
-      figé dans l'overlay prod (`newTag` + `DAGSTER_CURRENT_IMAGE` alignés).
+- [ ] Image de prod **buildée+poussée par cluster** sur le registry interne
+      (`registry:80`) ; son **digest** injecté par le seed cluster dans les deux
+      placeholders de l'overlay prod (`__CITATION_IMAGE_DIGEST__` /
+      `__CITATION_IMAGE__`) — `atlas` ne fige aucun tag (ADR 0075).
 - [ ] Manifestes (overlay `prod` + `Application` Argo CD) **poussés sur Gitea
       intra-banc** → webhook → Argo CD réconcilie — **jamais** `kubectl apply`.
 - [ ] `Application` `citation-dagster` **Synced + Healthy** ; code-location visible

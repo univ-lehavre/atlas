@@ -1,22 +1,24 @@
 #!/usr/bin/env bash
-# Installation / bascule de la code-location Dagster « citation » — banc ou prod.
+# Installation de la code-location Dagster « citation » sur le BANC — preuve
+# applicative de référence (overlays/bench, SeaweedFS local-path, ADR 0085).
 #
-# Orchestre le runbook (RUNBOOK.md) en UNE commande : build image → fige le tag →
+# Orchestre le runbook (RUNBOOK.md) en UNE commande : build image du banc →
 # checks (validate.sh + lint + tests) → push Gitea (Argo CD réconcilie). Le push est
 # le DÉCLENCHEUR GitOps (ADR cluster 0044) ; ce script va jusqu'au bout MAIS demande
 # une confirmation explicite avant — un HUMAIN le lance (aucun agent ne déclenche le
 # déploiement réel, ADR cluster 0033). `--yes` saute la confirmation (CI/scripté).
 #
-# Deux profils (ADR cluster 0085/0036) :
-#   - bench : banc `atlas` local-path (SeaweedFS, overlays/bench) — PREUVE APPLICATIVE
-#     de référence (même code qu'en prod, seul le backing S3 diffère, ADR 0085) ;
-#   - prod  : Ceph (RGW/OBC, overlays/prod) — la cible. Tag IMMUABLE (jamais
-#     :dev/latest), figé dans l'overlay. Un diff touchant le chemin S3/backing se
-#     revalide sur Ceph applicatif (soupape `cluster-dataops`, ADR 0036/0085).
+# PROD : ce script ne pilote PAS la prod (ADR 0075). En production, `atlas` ne
+# fabrique ni ne résout l'image : l'overlay prod n'expose que des placeholders
+# (`__CITATION_IMAGE_DIGEST__`, `__CITATION_IMAGE__`) que le seed cluster remplit
+# par le digest immuable de l'image qu'il a buildée+poussée. Build de l'image,
+# injection du digest et réconciliation prod sont des gestes `cluster` (frontière
+# ADR 0033). Ici, on prouve le MÊME code applicatif sur le banc ; seul le backing
+# S3 diffère (ADR 0036/0085).
 #
 # Usage :
-#   deploy/install.sh <bench|prod> [tag] [--yes] [--no-push]
-#     tag       défaut = git short SHA (prod) / "dev" (bench)
+#   deploy/install.sh bench [tag] [--yes] [--no-push]
+#     tag       défaut = "dev"
 #     --no-push : build + checks SANS pousser (prépare, ne déploie pas)
 set -euo pipefail
 
@@ -27,13 +29,17 @@ registry="${REGISTRY:-registry:80}"
 image="$registry/citation-dagster"
 
 # ── Arguments ────────────────────────────────────────────────────────────────
+# Seul le profil `bench` est piloté ici (la prod appartient à `cluster`, ADR 0075).
 profile=""
 tag=""
 assume_yes=0
 do_push=1
 for arg in "$@"; do
   case "$arg" in
-    bench | prod) profile="$arg" ;;
+    bench) profile="$arg" ;;
+    prod) echo "✗ prod n'est pas pilotée par ce script (ADR 0075) : l'image et le digest" >&2
+          echo "  de production sont fabriqués+injectés par cluster. Voir RUNBOOK.md." >&2
+          exit 2 ;;
     --yes | -y) assume_yes=1 ;;
     --no-push) do_push=0 ;;
     -*) echo "✗ option inconnue : $arg" >&2; exit 2 ;;  # ne JAMAIS prendre un flag pour un tag
@@ -41,24 +47,13 @@ for arg in "$@"; do
   esac
 done
 
-if [ "$profile" != "bench" ] && [ "$profile" != "prod" ]; then
-  echo "✗ profil requis : bench | prod  (usage: install.sh <bench|prod> [tag] [--yes] [--no-push])" >&2
+if [ "$profile" != "bench" ]; then
+  echo "✗ profil requis : bench  (usage: install.sh bench [tag] [--yes] [--no-push])" >&2
   exit 2
 fi
 
-# Tag par défaut : SHA court en prod (immuable), "dev" en banc léger.
-if [ -z "$tag" ]; then
-  if [ "$profile" = "prod" ]; then
-    tag="$(git -C "$repo_root" rev-parse --short HEAD)"
-  else
-    tag="dev"
-  fi
-fi
-
-if [ "$profile" = "prod" ] && { [ "$tag" = "dev" ] || [ "$tag" = "latest" ]; }; then
-  echo "✗ prod : tag immuable requis (ni :dev ni :latest, ADR cluster 0033)." >&2
-  exit 2
-fi
+# Tag par défaut du banc léger.
+tag="${tag:-dev}"
 
 # ── Outils requis ────────────────────────────────────────────────────────────
 for tool in docker kubectl git; do
@@ -73,19 +68,11 @@ docker buildx build --platform linux/arm64 \
   -f "$here/../Dockerfile" \
   -t "$image:$tag" --push "$dataops_ctx"
 
-# ── 2. Figer le tag dans l'overlay prod (newTag ET DAGSTER_CURRENT_IMAGE) ─────
-# Le banc léger garde l'image de base ; seul prod épingle un tag immuable.
-if [ "$profile" = "prod" ]; then
-  echo "→ fige le tag $tag dans overlays/prod"
-  kustomization="$here/overlays/prod/kustomization.yaml"
-  patch="$here/overlays/prod/patch-s3-envfrom.yaml"
-  # newTag de la kustomization (ligne `newTag: "<...>"`).
-  sed -i.bak -E "s|(newTag: )\"[^\"]*\"|\1\"$tag\"|" "$kustomization" && rm -f "$kustomization.bak"
-  # DAGSTER_CURRENT_IMAGE du patch (run workers) — aligné sur le même tag.
-  sed -i.bak -E "s|($image:)[^[:space:]]*|\1$tag|" "$patch" && rm -f "$patch.bak"
-fi
+# Le banc utilise l'overlay/bench (image de base, pas de placeholder à figer).
+# L'overlay prod n'est pas touché ici : ses placeholders d'image sont remplis par
+# le seed cluster au déploiement (ADR 0075).
 
-# ── 3. Checks : manifestes (validate.sh) + lint + tests Python ───────────────
+# ── 2. Checks : manifestes (validate.sh) + lint + tests Python ───────────────
 echo "→ checks manifestes (validate.sh)"
 bash "$here/validate.sh"
 
@@ -96,10 +83,10 @@ else
   echo "⚠ uv absent : lint/tests Python sautés (lancer 'pnpm dataops:check' séparément)."
 fi
 
-# ── 4. Push Gitea = DÉCLENCHEUR GitOps (Argo CD réconcilie) ───────────────────
+# ── 3. Push Gitea = DÉCLENCHEUR GitOps (Argo CD réconcilie) ───────────────────
 if [ "$do_push" -eq 0 ]; then
-  echo "✓ build + checks OK (profil $profile, tag $tag). --no-push : rien n'est déployé."
-  echo "  Pour déployer : commiter le tag figé puis 'git push' (cf. RUNBOOK.md)."
+  echo "✓ build + checks OK (banc, tag $tag). --no-push : rien n'est déployé."
+  echo "  Pour déployer le banc : 'git push' vers la cible Gitea (cf. RUNBOOK.md)."
   exit 0
 fi
 
@@ -116,7 +103,7 @@ env_file="$repo_root/.env.cluster.local"
 # bruyant) plutôt que de retomber sur le remote `git push` par défaut — celui-ci
 # pourrait viser la mauvaise cible (banc vs prod) sans message d'erreur franc.
 if [ -z "${GITEA_PUSH_URL:-}" ]; then
-  echo "✗ cible GitOps non confirmée : GITEA_PUSH_URL absente (profil $profile)." >&2
+  echo "✗ cible GitOps non confirmée : GITEA_PUSH_URL absente (banc)." >&2
   echo "  Atlas LIT sa cible dans $env_file (généré par l'access.sh du dépôt cluster," >&2
   echo "  contrat ADR 0033) ; il ne la devine pas. Régénérer le .env d'instance," >&2
   echo "  ou exporter GITEA_PUSH_URL explicitement, puis relancer (ADR 0073 §B)." >&2
@@ -124,7 +111,7 @@ if [ -z "${GITEA_PUSH_URL:-}" ]; then
 fi
 
 echo
-echo "⚠ Le push va DÉCLENCHER la réconciliation Argo CD (déploiement réel, profil $profile)."
+echo "⚠ Le push va DÉCLENCHER la réconciliation Argo CD (déploiement du banc)."
 if [ "$assume_yes" -ne 1 ]; then
   printf "  Confirmer le push ? [y/N] "
   read -r reply
@@ -132,12 +119,6 @@ if [ "$assume_yes" -ne 1 ]; then
     y | Y | yes | oui) ;;
     *) echo "✗ push annulé (build + checks restent faits)."; exit 0 ;;
   esac
-fi
-
-if [ "$profile" = "prod" ]; then
-  echo "→ commit du tag figé (overlays/prod)"
-  git -C "$repo_root" add "$kustomization" "$patch"
-  git -C "$repo_root" commit -m "deploy(citation-dagster): image $tag (prod)" || true
 fi
 
 echo "→ push (Gitea → Argo CD) vers la cible confirmée"
