@@ -5,9 +5,10 @@ title: Normes et pratiques appliquées
 Cette page dresse le **bilan des pratiques d'ingénierie** réellement appliquées
 dans le dépôt, discipline par discipline. Elle ne décrit que ce qui est **en
 place et vérifiable aujourd'hui** : chaque pratique renvoie à un fichier ou un
-mécanisme concret du dépôt. Les disciplines encore à l'état de conception (la
-plateforme de données et le modèle, voir le [plan pipeline](/atlas/plans/2026-06-02-pipeline-collaborations))
-ne figurent pas ici tant qu'elles ne sont pas implémentées.
+mécanisme concret du dépôt. La plateforme de données (DataOps, ingestion,
+modèle) y figure désormais, **écarts compris**, depuis sa mise en œuvre ; seules
+les disciplines restées à l'état de conception sont signalées comme telles
+(section [« Ce qui n'est pas encore appliqué »](#ce-qui-nest-pas-encore-appliqué)).
 
 ## DevSecOps
 
@@ -115,6 +116,48 @@ Les applications du dépôt sont bâties sur un socle commun et durci.
 | **Mises à jour automatisées** | Dependabot avec auto-merge des montées sûres — `.github/workflows/dependabot-auto-merge.yml`.                      |
 | **Dérogations tracées**       | Toute exception aux règles d'audit est documentée — [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit). |
 
+## Plateforme de données (DataOps)
+
+Le **DataOps** applique au cycle de vie des données les mêmes garde-fous que le
+DevSecOps applique au code : un pipeline reproductible, testé et tracé, qui
+ingère, transforme et qualifie la donnée. Il vit dans `dataops/`, **catégorie
+Python native** (uv/ruff/pytest) hors du graphe pnpm
+([ADR 0055](/atlas/decisions/0055-categorie-dataops-python/)), structurée en deux
+domaines : `citation` (collaborations OpenAlex) et `mediawatch` (veille GKG).
+
+Quelques termes : un **asset Dagster** est une donnée nommée que l'orchestrateur
+produit et suit ; un **asset check** est un contrôle de qualité rattaché à un
+asset, qui passe ou bloque sa production ; **dbt** (_data build tool_) compile des
+modèles SQL en couches (`staging` → `curated` → `marts`) ; le **lignage**
+(_lineage_) est la traçabilité de bout en bout « d'où vient cette donnée ».
+
+| Pratique                     | Comment c'est appliqué                                                                                                                                                                                                              |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Orchestration**            | Assets et jobs Dagster — `dataops/citation-dagster/src/citation_dagster/`, `dataops/mediawatch-dagster/src/mediawatch_dagster/`.                                                                                                    |
+| **Transformations**          | Modèles dbt en couches `staging`/`curated`/`marts` — `dataops/citation-dbt/models/`, `dataops/mediawatch-dbt/models/`.                                                                                                              |
+| **Ingestion massive**        | Snapshots S3 partitionnés (datalake JSONL.gz) — `assets/raw_snapshot.py` ([ADR 0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/)) ; collecte GKG mediawatch ([ADR 0064](/atlas/decisions/0064-collecte-mediawatch-gkg/)). |
+| **Qualité des données**      | Asset checks **Great Expectations** (bloquants), tests dbt, et **tests basés sur les propriétés** (Hypothesis) — [ADR 0072](/atlas/decisions/0072-property-based-testing-dataops-python/).                                          |
+| **Lignage**                  | Graphe d'assets Dagster + DAG dbt ; émission OpenLineage — `lineage.py`.                                                                                                                                                            |
+| **Reproductibilité**         | Tests hermétiques, modèle d'embedding épinglé par révision et `sha256` (`scripts/fetch_model.py`, `model_provenance.py`) — [ADR 0057](/atlas/decisions/0057-reproductibilite-tests-hermetiques/).                                   |
+| **Cache d'intégration**      | DataOps Python branchée sur le cache Turbo via `package.json` minimaux (`lint:py`, `test:py`) — [ADR 0066](/atlas/decisions/0066-cache-turbo-dataops/).                                                                             |
+| **Garde-fou de déploiement** | Build → tag **immuable** → checks → poussée GitOps, confirmation humaine requise — `deploy/install.sh`, `deploy/validate.sh` ([ADR 0073](/atlas/decisions/0073-corriger-le-code-pas-l-etat-garde-fou-cible/)).                      |
+
+### MLOps et modèle
+
+Le **MLOps** (cycle de vie d'un modèle : entraînement, suivi, détection de
+dérive, réentraînement) est en place au **niveau 1→2**
+([ADR 0062](/atlas/decisions/0062-mlops-niveau-2-tracking-drift-ct/)) :
+
+| Pratique                      | Comment c'est appliqué                                                                                                                                                               |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Suivi des runs (tracking)** | MLflow — `tracking.py`, branché dans l'asset `researcher_embeddings` (paramètres, provenance du modèle, enregistrement).                                                             |
+| **Détection de dérive**       | Evidently sur les embeddings et les prédictions d'uplift — `assets/drift.py`, `assets/drift_uplift.py` ([ADR 0068](/atlas/decisions/0068-suivi-derive-modele-uplift/)).              |
+| **Modèle prédictif**          | Modèle d'uplift FWCI avec validation croisée honnête et porte de décision — `assets/uplift.py`, `uplift_model.py` ([ADR 0067](/atlas/decisions/0067-modele-uplift-fwci-eunicoast/)). |
+
+**Écart** : le **réentraînement déclenché** (continuous training autonome) n'est
+pas encore orchestré comme un job programmé ; les signaux de dérive sont journalisés
+et alimentent une porte de décision, mais la boucle reste pilotée à la demande.
+
 ## Cloud-native : 12 facteurs + extensions
 
 Les applications et le service du dépôt sont évalués au cadre
@@ -123,39 +166,48 @@ Les applications et le service du dépôt sont évalués au cadre
 Comme partout ici, on documente le **réel**, écarts compris — passer cet audit
 n'est pas une affirmation de conformité.
 
-| Facteur                       | État        | Comment / écart                                                                                                                                                                                                                                                                                                                                                |
-| ----------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| I. **Codebase**               | Appliqué    | Un dépôt, plusieurs déploiements versionnés indépendamment (monorepo, [ADR 0002](/atlas/decisions/0002-monorepo-huit-categories/) ; changesets).                                                                                                                                                                                                               |
-| II. **Dependencies**          | Appliqué    | Déclarées et isolées (pnpm workspaces, lockfile, `~` sur les publiables — [ADR 0024](/atlas/decisions/0024-ranges-deps-publiables-tilde/)).                                                                                                                                                                                                                    |
-| III. **Config**               | Appliqué    | Dans l'environnement (`$env/static\|dynamic`, `PUBLIC_*`, `.env*.example`) ; secrets jamais commités (`.gitignore`, gitleaks).                                                                                                                                                                                                                                 |
-| IV. **Backing services**      | Appliqué    | CRF, BaaS, télémétrie référencés par URL/credentials en env, interchangeables.                                                                                                                                                                                                                                                                                 |
-| V. **Build / release / run**  | Partiel     | Build distinct du run (SvelteKit/tsup) ; image multi-stage publiée sur GHCR et fumée en CI pour `atlas-dashboard`, `crf-dashboard` et le service ([ADR 0043](/atlas/decisions/0043-publication-images-ghcr/)). **Écart** : 4 apps à secrets `static/private` restent à migrer pour être imageables ([#324](https://github.com/univ-lehavre/atlas/issues/324)). |
-| VI. **Processes** (stateless) | Partiel     | Sessions via cookie/backing service. **Écart** : quelques états en mémoire (rate-limit de log) au niveau module.                                                                                                                                                                                                                                               |
-| VII. **Port binding**         | Partiel     | Le service Hono et les apps (adapter-node) lisent `PORT`/`HOST` en env ; les images de `atlas-dashboard`, `crf-dashboard` et du service exposent leur port et déclarent un `HEALTHCHECK`. **Écart** : 4 apps pas encore imageables ([#324](https://github.com/univ-lehavre/atlas/issues/324)).                                                                 |
-| VIII. **Concurrency**         | Écart       | Caches écrits dans des **fichiers JSON locaux** sans verrou (`atlas-dashboard`, `crf-dashboard`) : non sûr en multi-instance.                                                                                                                                                                                                                                  |
-| IX. **Disposability**         | Appliqué    | Les apps SvelteKit gèrent l'arrêt ; le service Hono ferme proprement son serveur sur SIGTERM/SIGINT (`services/crf/src/server/shutdown.ts`, arrêt idempotent qui draine les connexions).                                                                                                                                                                       |
-| X. **Dev/prod parity**        | Partiel     | Sandboxes Docker reproduisent les backing services ; `.nvmrc` figé au patch (`24.15.0`), aligné sur `ARG NODE_VERSION` des images et `engines.node` des unités. **Écart** : image de prod pour 3 unités ; 4 apps en attente de migration ([#324](https://github.com/univ-lehavre/atlas/issues/324)).                                                           |
-| XI. **Logs**                  | Partiel     | Logs applicatifs vers stdout. **Écart** : `crf-logs` **persiste des logs dans des fichiers** (`.crf-stats.json`) au lieu d'un flux.                                                                                                                                                                                                                            |
-| XII. **Admin processes**      | Partiel     | Tâches one-off via les CLIs (`cli/*`) et scripts de bootstrap. **Écart** : pas de pattern explicite pour les tâches d'admin en production.                                                                                                                                                                                                                     |
-| _ext._ **API-first**          | Partiel     | Contrats OpenAPI (`services/crf`, `crf-openapi`). **Écart** : générés depuis le code, pas de politique « contrat d'abord » actée.                                                                                                                                                                                                                              |
-| _ext._ **Observabilité**      | Partiel     | OpenTelemetry sur `services/crf` (`telemetry.ts`), Sentry sur 3 apps. **Écart** : non généralisé, aucune métrique.                                                                                                                                                                                                                                             |
-| _ext._ **Sécurité / auth**    | Appliqué    | Cookies durcis, CSP (`sveltekit-csp`), en-têtes, auth des apps ; le **service CRF exige un `Bearer` sur `/api/*`** (middleware dédié, secret en env, comparaison en temps constant — [ADR 0041](/atlas/decisions/0041-strategie-auth-service-crf-hono/)).                                                                                                      |
-| _ext._ **Données stateful**   | Non applic. | Gestion stateful (Postgres/pgvector, mart Parquet ré-dérivable) **conçue** ([ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/)) mais pas encore implémentée.                                                                                                                                                                              |
+| Facteur                       | État     | Comment / écart                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ----------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I. **Codebase**               | Appliqué | Un dépôt, plusieurs déploiements versionnés indépendamment (monorepo, [ADR 0002](/atlas/decisions/0002-monorepo-huit-categories/) ; changesets).                                                                                                                                                                                                                                                                                                                                  |
+| II. **Dependencies**          | Appliqué | Déclarées et isolées (pnpm workspaces, lockfile, `~` sur les publiables — [ADR 0024](/atlas/decisions/0024-ranges-deps-publiables-tilde/)).                                                                                                                                                                                                                                                                                                                                       |
+| III. **Config**               | Appliqué | Dans l'environnement (`$env/static\|dynamic`, `PUBLIC_*`, `.env*.example`) ; secrets jamais commités (`.gitignore`, gitleaks).                                                                                                                                                                                                                                                                                                                                                    |
+| IV. **Backing services**      | Appliqué | CRF, BaaS, télémétrie référencés par URL/credentials en env, interchangeables.                                                                                                                                                                                                                                                                                                                                                                                                    |
+| V. **Build / release / run**  | Appliqué | Build distinct du run (SvelteKit/tsup) ; image multi-stage publiée sur GHCR et fumée en CI pour **les six apps et le service** (`atlas-dashboard`, `crf-dashboard`, `amarre`, `ecrin`, `find-an-expert`, `sillage`, `crf`) — `.github/workflows/images.yml` ([ADR 0043](/atlas/decisions/0043-publication-images-ghcr/)). Images **signées, scannées et attestées** ([ADR 0069](/atlas/decisions/0069-signature-scan-provenance-images-ghcr/)).                                   |
+| VI. **Processes** (stateless) | Partiel  | Sessions via cookie/backing service. **Écart** : quelques états en mémoire (rate-limit de log) au niveau module.                                                                                                                                                                                                                                                                                                                                                                  |
+| VII. **Port binding**         | Appliqué | Le service Hono et les apps (adapter-node) lisent `PORT`/`HOST` en env ; **toutes les images** (six apps + service) exposent leur port et déclarent un `HEALTHCHECK`, fumé en CI.                                                                                                                                                                                                                                                                                                 |
+| VIII. **Concurrency**         | Partiel  | Le state partagé (coordination des actualisations de cache) passe par une **interface injectable** — `apps/atlas-dashboard/src/lib/refresh-coordinator.ts`, [ADR 0040](/atlas/decisions/0040-caches-flux-backing-service-vs-fichier/) — dont le défaut en mémoire reproduit le comportement mono-instance. **Écart** : un déploiement multi-instance requiert d'injecter une implémentation adossée à un backing-service partagé (verrou + clé d'horodatage), pas encore fournie. |
+| IX. **Disposability**         | Appliqué | Les apps SvelteKit gèrent l'arrêt ; le service Hono ferme proprement son serveur sur SIGTERM/SIGINT (`services/crf/src/server/shutdown.ts`, arrêt idempotent qui draine les connexions).                                                                                                                                                                                                                                                                                          |
+| X. **Dev/prod parity**        | Appliqué | Sandboxes Docker reproduisent les backing services ; `.nvmrc` figé au patch (`24.18.0`), aligné sur `ARG NODE_VERSION` des images et `engines.node` des unités. Une image de prod existe pour **chaque app et le service**.                                                                                                                                                                                                                                                       |
+| XI. **Logs**                  | Partiel  | Logs applicatifs vers stdout. **Écart** : `crf-logs` **persiste des logs dans des fichiers** (`.crf-stats.json`) au lieu d'un flux.                                                                                                                                                                                                                                                                                                                                               |
+| XII. **Admin processes**      | Partiel  | Tâches one-off via les CLIs (`cli/*`) et scripts de bootstrap. **Écart** : pas de pattern explicite pour les tâches d'admin en production.                                                                                                                                                                                                                                                                                                                                        |
+| _ext._ **API-first**          | Partiel  | Contrats OpenAPI (`services/crf`, `crf-openapi`). **Écart** : générés depuis le code, pas de politique « contrat d'abord » actée.                                                                                                                                                                                                                                                                                                                                                 |
+| _ext._ **Observabilité**      | Partiel  | OpenTelemetry sur `services/crf` (`telemetry.ts`), Sentry sur 3 apps. **Écart** : non généralisé, aucune métrique.                                                                                                                                                                                                                                                                                                                                                                |
+| _ext._ **Sécurité / auth**    | Appliqué | Cookies durcis, CSP (`sveltekit-csp`), en-têtes, auth des apps ; le **service CRF exige un `Bearer` sur `/api/*`** (middleware dédié, secret en env, comparaison en temps constant — [ADR 0041](/atlas/decisions/0041-strategie-auth-service-crf-hono/)).                                                                                                                                                                                                                         |
+| _ext._ **Données stateful**   | Appliqué | DataOps implémentée : marts dbt ré-dérivables, embeddings `vector(384)` (pgvector), snapshots S3 et migrations versionnées ([ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/), [ADR 0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/), [ADR 0055](/atlas/decisions/0055-categorie-dataops-python/)) — voir la section [Plateforme de données (DataOps)](#plateforme-de-données-dataops).                                                          |
 
-Les écarts ci-dessus sont **tracés** comme issues de suivi (milestone
-_Transverse — Qualité applicative_) ; aucun n'est bloquant pour l'usage actuel
-sur fixtures, mais ils cadrent le durcissement avant un déploiement multi-instance.
+Les écarts restants sont **tracés** comme issues de suivi (milestone
+_Transverse — Qualité applicative_) — notamment la généralisation de la
+télémétrie ([#309](https://github.com/univ-lehavre/atlas/issues/309)) et le
+passage des logs `crf-logs` en flux stdout
+([#305](https://github.com/univ-lehavre/atlas/issues/305)). Aucun n'est bloquant
+pour l'usage actuel, mais ils cadrent le durcissement avant un déploiement
+multi-instance.
 
 ## Ce qui n'est pas encore appliqué
 
-Par souci d'honnêteté, ces disciplines sont **conçues mais pas encore
-implémentées** dans le dépôt — elles relèvent du
-[pipeline de collaborations](/atlas/decisions/0029-architecture-pipeline-collaborations)
-et de son [plan d'exécution](/atlas/plans/2026-06-02-pipeline-collaborations) :
+Le **DataOps**, le **MLOps** et le volet **IA** (embeddings, modèle d'uplift),
+naguère seulement conçus, sont désormais en place et figurent dans le bilan
+ci-dessus, écarts compris. Restent à ce jour **partiels ou hors de ce dépôt** :
 
-- **DataOps** (orchestration, transformations, qualité et lignage des données),
-- **MLOps** (entraînement, suivi et déploiement d'un modèle),
-- **GitOps** (réconciliation déclarative d'une infrastructure Kubernetes),
-- **IA** (recommandation par embeddings et modèle de langage local).
+- **GitOps** (réconciliation déclarative d'une infrastructure Kubernetes) — Atlas
+  en produit le **côté amont** : manifestes kustomize (`dataops/*/deploy/`), tags
+  d'images immuables et poussée déclenchant la réconciliation
+  ([ADR 0073](/atlas/decisions/0073-corriger-le-code-pas-l-etat-garde-fou-cible/)).
+  L'**opérateur de réconciliation** (Argo CD) et la topologie cible vivent dans le
+  dépôt `cluster`, **hors du périmètre de ce dépôt**.
+- **Continuous training autonome** — le réentraînement déclenché par dérive est
+  câblé en signaux et porte de décision, mais pas encore orchestré comme une
+  boucle programmée (cf. section [MLOps](#mlops-et-modèle)).
 
-Elles apparaîtront dans ce bilan au fur et à mesure de leur mise en œuvre.
+Ces éléments apparaîtront — ou se compléteront — dans ce bilan au fur et à mesure
+de leur mise en œuvre.
