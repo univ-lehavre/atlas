@@ -12,11 +12,10 @@ les disciplines restées à l'état de conception sont signalées comme telles
 
 ## DevSecOps
 
-Le **DevSecOps** est une approche qui intègre la sécurité à _toutes_ les étapes
-du développement (code, tests, intégration, livraison) plutôt que de la traiter
-comme un contrôle final séparé : ici, la sécurité et la qualité sont intégrées à
-la chaîne de livraison, pas ajoutées après coup. Le périmètre couvre le dépôt
-entier ([ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die)).
+Le [**DevSecOps**](/atlas/glossary/) couvre ici le dépôt
+entier ([ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die)) : la
+sécurité et la qualité sont intégrées à la chaîne de livraison, pas ajoutées après
+coup.
 
 Chaque ligne du tableau ci-dessous est une **pratique de sécurité** automatisée.
 Voici ce que chacune vérifie et pourquoi elle compte :

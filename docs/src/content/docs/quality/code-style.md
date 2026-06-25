@@ -8,7 +8,7 @@ Chaque choix ci-dessous (typage strict, style fonctionnel, Effect) a un coût au
 
 ## TypeScript strict
 
-TypeScript est un langage qui ajoute des types à JavaScript : chaque variable, paramètre et valeur de retour est annotée, et le compilateur refuse de compiler si les types ne sont pas cohérents.
+[**TypeScript**](/atlas/glossary/) ajoute des types statiques à JavaScript ; le compilateur refuse de compiler à la moindre incohérence de types.
 
 Atlas active le mode `strictTypeChecked` de `tseslint`, le plus strict disponible.
 
