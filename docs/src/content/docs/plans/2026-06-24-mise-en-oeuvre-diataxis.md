@@ -191,6 +191,12 @@ ADR, garder le plan d'exécution), pour respecter « une page = un mode dominant
 
 ## P1 — Réorganiser la barre latérale par intention
 
+> **Revenu sur (2026-06-25).** La barre latérale par intention décrite ci-dessous a été livrée
+> (#468) puis **remplacée par une barre latérale thématique** : à l'usage, le regroupement par
+> intention **éclatait les sujets**. Voir l'[ADR 0078](/atlas/decisions/0078-sidebar-thematique-navigation-diataxis-intra-categorie/),
+> qui amende le volet sidebar de l'ADR 0076 et retire ses deux portails. Diátaxis reste un principe
+> de **rédaction** (ADR 0074, intact). Le descriptif d'origine est conservé ci-dessous pour mémoire.
+
 **Objectif.** Faire passer la barre latérale (`docs/astro.config.mjs`) d'un regroupement
 **par dossier thématique** (_Architecture_, _Qualité & sécurité_, _Collaboration_,
 _Décisions_, _Audits_, _Plans_) à un regroupement **par mode** (intention), selon
