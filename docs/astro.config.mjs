@@ -59,42 +59,93 @@ export default defineConfig({
           href: "https://github.com/univ-lehavre/atlas",
         },
       ],
-      // Sidebar par INTENTION (Diátaxis — ADR 0074, mise en œuvre ADR 0076) :
-      // quatre groupes — Apprendre (tutorial), Faire (how-to), Consulter
-      // (reference), Comprendre (explanation) — au lieu d'un regroupement par
-      // dossier. Une page d'un même dossier peut atterrir dans deux groupes
-      // selon son intention (p. ex. architecture/packages en Consulter vs le
-      // reste d'architecture en Comprendre).
+      // Sidebar THÉMATIQUE par DOMAINE d'ingénierie (ADR 0078, qui amende le
+      // volet « sidebar par intention » de l'ADR 0076). Six groupes : un lecteur
+      // retrouve son SUJET d'un bloc. Diátaxis (ADR 0074) reste un principe de
+      // RÉDACTION (une page = un mode dominant) ; la navigation Diátaxis se
+      // matérialise par l'ORDRE des entrées au sein de chaque catégorie
+      // (comprendre → consulter → faire), via l'ordre des `items` ci-dessous —
+      // jamais en badge affiché au lecteur (cargo-cult écarté par l'ADR 0074).
       //
-      // Stratégie : `link:` explicites pour les pages STABLES réparties par
-      // intention (architecture, quality, collaboration) ; `autogenerate`
-      // conservé pour les COLLECTIONS DATÉES volumineuses (decisions, audit,
-      // plans), placé dans le groupe du mode dominant de leur corpus, avec un
-      // rappel de leur index en lien dans « Consulter ».
+      // Migration « config-only » (ADR 0078) : aucun fichier n'est déplacé,
+      // aucune URL ne change ; seul le rattachement de groupe évolue. D'où le
+      // décalage assumé entre l'URL (p. ex. /quality/security/) et le libellé
+      // de catégorie (« Sécurité »).
       //
       // GARDE-FOU `pnpm audit:docs` (contrôle B9, scripts/audit/documentation.mjs) :
       // une page est joignable si son dossier de 1er niveau a un
-      // `autogenerate.directory` OU si elle a un `link:` exact. Comme
-      // architecture/quality/collaboration ne sont plus autogénérés, CHACUNE de
-      // leurs pages DOIT figurer en `link:` ci-dessous — sinon B9 la déclare
-      // orpheline et l'audit casse. Toute page ajoutée à ces dossiers doit donc
-      // être ajoutée ici (le build la rattrape sinon).
+      // `autogenerate.directory` OU si elle a un `link:` exact. architecture/,
+      // quality/, collaboration/, apprendre/ sont en `link:` explicites : CHACUNE
+      // de leurs pages DOIT figurer ci-dessous. decisions/, audit/, plans/
+      // restent en `autogenerate`. Toute page ajoutée à un dossier en `link:`
+      // doit être ajoutée ici (le build la rattrape sinon).
       sidebar: [
         {
-          // tutorial — apprendre en faisant. Premier parcours learn-by-doing
-          // (le trou identifié par l'ADR 0074 est comblé).
-          label: "Apprendre",
+          // A. Architecture & code.
+          label: "Architecture & code",
+          items: [
+            { label: "Structure du monorepo", link: "/architecture/monorepo/" },
+            {
+              label: "Comprendre le code",
+              link: "/architecture/comprendre-le-code/",
+            },
+            { label: "Flux de données", link: "/architecture/data-flow/" },
+            { label: "Choix techniques", link: "/architecture/tech-choices/" },
+            { label: "Style de code", link: "/quality/code-style/" },
+            {
+              label: "Politique de documentation",
+              link: "/quality/documentation/",
+            },
+            { label: "Carte des paquets", link: "/architecture/packages/" },
+          ],
+        },
+        {
+          // B. Données, modèles & RGPD (ouverte dès maintenant — grossira).
+          label: "Données, modèles & RGPD",
+          items: [
+            {
+              label: "Modèle d'uplift FWCI",
+              link: "/architecture/modele-uplift-fwci/",
+            },
+            {
+              label: "Ré-dérivabilité mart/index",
+              link: "/architecture/re-derivabilite-mart-index/",
+            },
+          ],
+        },
+        {
+          // C. Tests & qualité.
+          label: "Tests & qualité",
+          items: [
+            { label: "Tests", link: "/quality/tests/" },
+            {
+              label: "Matrice de couverture E2E",
+              link: "/quality/matrice-e2e/",
+            },
+            { label: "Tableau de bord", link: "/quality/tableau-de-bord/" },
+            { label: "Preuves", link: "/quality/preuves/" },
+            { label: "Accessibilité", link: "/quality/accessibilite/" },
+          ],
+        },
+        {
+          // D. Sécurité.
+          label: "Sécurité",
+          items: [
+            { label: "Garde-fous et conventions", link: "/quality/security/" },
+            {
+              label: "Réponse à incident",
+              link: "/quality/incident-response/",
+            },
+          ],
+        },
+        {
+          // E. Contribuer & livrer (du tutoriel à la livraison).
+          label: "Contribuer & livrer",
           items: [
             {
               label: "Première prise en main",
               link: "/apprendre/premiere-prise-en-main/",
             },
-          ],
-        },
-        {
-          // how-to — accomplir une tâche.
-          label: "Faire",
-          items: [
             { label: "Travailler ensemble", link: "/collaboration/workflow/" },
             {
               label: "Environnement local",
@@ -108,13 +159,33 @@ export default defineConfig({
               label: "Paramétrer GitHub",
               link: "/collaboration/parametrage-github/",
             },
+            { label: "Pipeline CI", link: "/quality/ci-pipeline/" },
+            { label: "Hooks Git", link: "/quality/hooks/" },
             {
               label: "Avant une mise en service",
               link: "/collaboration/checklist-deploiement/",
             },
+            { label: "Releases", link: "/collaboration/releases/" },
+          ],
+        },
+        {
+          // F. Gouvernance : réunit Décisions + Audits + Plans (collections
+          // datées, autogenerate). Le bilan vérifiable (normes) en tête.
+          label: "Gouvernance",
+          items: [
             {
-              label: "Réponse à incident",
-              link: "/quality/incident-response/",
+              label: "Normes et pratiques appliquées",
+              link: "/quality/normes/",
+            },
+            {
+              label: "Décisions (ADR)",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "decisions" } }],
+            },
+            {
+              label: "Audits & écarts",
+              collapsed: true,
+              items: [{ autogenerate: { directory: "audit" } }],
             },
             {
               label: "Plans de résorption",
@@ -123,78 +194,8 @@ export default defineConfig({
             },
           ],
         },
-        {
-          // reference — consulter un fait.
-          label: "Consulter",
-          items: [
-            {
-              label: "Bonnes pratiques (portail)",
-              link: "/quality/bonnes-pratiques/",
-            },
-            { label: "Gouvernance (portail)", link: "/quality/gouvernance/" },
-            {
-              label: "Normes et pratiques appliquées",
-              link: "/quality/normes/",
-            },
-            { label: "Sécurité", link: "/quality/security/" },
-            { label: "Pipeline CI", link: "/quality/ci-pipeline/" },
-            { label: "Hooks Git", link: "/quality/hooks/" },
-            { label: "Accessibilité", link: "/quality/accessibilite/" },
-            { label: "Tableau de bord", link: "/quality/tableau-de-bord/" },
-            {
-              label: "Matrice de couverture E2E",
-              link: "/quality/matrice-e2e/",
-            },
-            { label: "Preuves", link: "/quality/preuves/" },
-            { label: "Carte des paquets", link: "/architecture/packages/" },
-            { label: "Releases", link: "/collaboration/releases/" },
-            { label: "Glossaire", link: "/glossary/" },
-            { label: "Index des ADR", link: "/decisions/" },
-            { label: "Index des audits", link: "/audit/" },
-            {
-              label: "Registre des drifts",
-              link: "/audit/registre-drifts/",
-            },
-            { label: "Index des plans", link: "/plans/" },
-          ],
-        },
-        {
-          // explanation — comprendre le pourquoi.
-          label: "Comprendre",
-          items: [
-            { label: "Structure du monorepo", link: "/architecture/monorepo/" },
-            {
-              label: "Comprendre le code",
-              link: "/architecture/comprendre-le-code/",
-            },
-            { label: "Flux de données", link: "/architecture/data-flow/" },
-            { label: "Choix techniques", link: "/architecture/tech-choices/" },
-            {
-              label: "Modèle d'uplift FWCI",
-              link: "/architecture/modele-uplift-fwci/",
-            },
-            {
-              label: "Ré-dérivabilité mart/index",
-              link: "/architecture/re-derivabilite-mart-index/",
-            },
-            { label: "Style de code", link: "/quality/code-style/" },
-            { label: "Tests", link: "/quality/tests/" },
-            {
-              label: "Politique de documentation",
-              link: "/quality/documentation/",
-            },
-            {
-              label: "Décisions (ADR)",
-              collapsed: true,
-              items: [{ autogenerate: { directory: "decisions" } }],
-            },
-            {
-              label: "Rapports d'audit",
-              collapsed: true,
-              items: [{ autogenerate: { directory: "audit" } }],
-            },
-          ],
-        },
+        // Transverse : outil multi-audience, hors catégorie.
+        { label: "Glossaire", link: "/glossary/" },
       ],
     }),
     mdx(),
