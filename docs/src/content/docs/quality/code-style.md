@@ -2,7 +2,7 @@
 title: Style de code
 ---
 
-Atlas applique un ensemble unique de règles de style et de typage sur tout le dépôt. Ces règles sont vérifiées automatiquement par les [_hooks Git_](/atlas/quality/hooks/) (avant chaque commit) et par la CI (à chaque pull request). [**Git**](/atlas/glossary/) est le système de contrôle de version qui enregistre l'historique du code ; voir le [glossaire](/atlas/glossary/) pour les termes Git de base.
+Atlas applique un ensemble unique de règles de style et de typage sur son **périmètre applicatif TypeScript** (les huit catégories Node : `apps`, `packages`, `services`, `cli`, `ui`, `config`, `assets`, `sandbox`). Le code _DataOps_ de `dataops/` est en Python natif et relève d'une chaîne d'outillage distincte (ruff, pytest — [ADR 0055](/atlas/decisions/0055-categorie-dataops-python/)) : il n'est soumis ni à ESLint, ni à Prettier, ni à TypeScript. Ces règles sont vérifiées automatiquement par les [_hooks Git_](/atlas/quality/hooks/) (avant chaque commit) et par la CI (à chaque pull request). [**Git**](/atlas/glossary/) est le système de contrôle de version qui enregistre l'historique du code ; voir le [glossaire](/atlas/glossary/) pour les termes Git de base.
 
 Chaque choix ci-dessous (typage strict, style fonctionnel, Effect) a un coût autant qu'un bénéfice. On les assume volontairement : cette page explique **pourquoi** Atlas les retient et **ce qu'ils coûtent**, pour qu'un contributeur sache à quoi s'attendre plutôt que de subir des règles non motivées.
 
