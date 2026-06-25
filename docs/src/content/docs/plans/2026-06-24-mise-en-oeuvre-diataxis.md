@@ -178,6 +178,10 @@ soit on **scinde** (P2), soit on acte qu'elle reste un plan-décision toléré (
 renvoi clair). **Décision par défaut** : scinder en P2 (extraire la décision vers un
 ADR, garder le plan d'exécution), pour respecter « une page = un mode dominant ».
 
+> **Fait (2026-06-25).** P2 réalisée : la décision est extraite vers
+> l'[ADR 0077](/atlas/decisions/0077-topologie-deux-depots-cluster-atlas/) ; la feuille de route
+> est conservée dans le plan (slug **inchangé** → aucune URL cassée).
+
 > _Note de péremption._ Ce classement est daté du **2026-06-24** et reflète l'état du
 > dépôt à cette date. Toute page ajoutée ensuite doit être classée à sa création (en
 > revue de rédaction), **pas** rétro-ajoutée ici : ce tableau est un instantané de
@@ -225,6 +229,11 @@ de la navigation jointe à la PR.
 ---
 
 ## P2 — Renommer / scinder les pages mal classées
+
+> **Réalisée (2026-06-25).** Décision extraite vers l'[ADR 0077](/atlas/decisions/0077-topologie-deux-depots-cluster-atlas/),
+> feuille de route conservée. **Le slug du plan a été gardé inchangé** — donc, contrairement à
+> l'anticipation ci-dessous, P2 **n'a finalement modifié aucune URL** (aucun référent à mettre à
+> jour). Le descriptif d'origine est conservé ci-dessous pour mémoire.
 
 **Objectif.** Traiter les **rares** pages que P0 a marquées « Scinder » ou « Renommer ».
 À l'état 2026-06-24, **une seule** page est concernée :

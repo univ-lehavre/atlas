@@ -103,6 +103,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0074 | [Typologie documentaire d'intention (Diátaxis)](/atlas/decisions/0074-diataxis-typologie-documentation/)                                                        | Accepted |
 | 0075 | [Déploiement prod par digest : atlas fournit les points d'injection, cluster les remplit](/atlas/decisions/0075-deploiement-prod-par-digest-injecte-cluster/)   | Accepted |
 | 0076 | [Portails d'orientation et accueil par intention](/atlas/decisions/0076-portails-orientation-accueil-par-intention/)                                            | Accepted |
+| 0077 | [Topologie : deux dépôts cluster & atlas, frontière outillée](/atlas/decisions/0077-topologie-deux-depots-cluster-atlas/)                                       | Accepted |
 
 ## Quand ouvrir un ADR
 
