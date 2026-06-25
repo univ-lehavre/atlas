@@ -321,3 +321,100 @@ vérité parmi les pages traitées.
   aucun** check `audit:docs` sur le classement ; le mode reste un critère de revue.
 - **Commit/PR** : merge commit, hooks non bypassés, sujet minuscule, pas de
   `Co-Authored-By`, scope `docs`.
+
+---
+
+## Phases additionnelles (ADR 0076 — portails d'orientation et accueil)
+
+> Ajout du **2026-06-25**. Socle décisionnel complémentaire :
+> [ADR 0076](/atlas/decisions/0076-portails-orientation-accueil-par-intention/), qui
+> **complète** l'ADR 0074. L'axe par intention **éclate** les familles « bonnes
+> pratiques » et « gouvernance » et laisse l'accueil sans lien vers la page-pivot
+> [`quality/normes`](/atlas/quality/normes/). L'ADR 0076 acte deux **portails
+> d'orientation** (reference, qui lient sans recopier — patron
+> [ADR 0070](/atlas/decisions/0070-page-preuves-vitrine-doctrine-badges/)) et un
+> **accueil par intention**. Ces phases portent leur mise en œuvre ; elles
+> **n'ajoutent aucun** déplacement de fichier ni changement d'URL (purement additives).
+
+### Recalage P0 (péremption confirmée au 2026-06-25)
+
+Le classement P0 est daté du 2026-06-24 ; quatre pages présentes sur disque y manquent
+et sont classées ici :
+
+| Page                                         | Mode        | Groupe sidebar |
+| -------------------------------------------- | ----------- | -------------- |
+| `quality/preuves.md`                         | reference   | Consulter      |
+| `quality/matrice-e2e.md`                     | reference   | Consulter      |
+| `audit/2026-06-24-best-of-cluster-atlas.md`  | explanation | Comprendre     |
+| `audit/2026-06-24-veracite-documentation.md` | explanation | Comprendre     |
+
+Aucune n'impose de travail : `audit/*` reste autogénéré (Comprendre) ; les deux pages
+`quality/*` sont à inclure dans la liste explicite « Consulter » de P1 — à ne pas
+oublier (sinon le contrôle d'orphelines B9 les rattrape au build).
+
+### Contrainte dure B9 (à respecter en P1)
+
+Le contrôle **B9** de [`scripts/audit/documentation.mjs`](https://github.com/univ-lehavre/atlas/blob/main/scripts/audit/documentation.mjs)
+(`findOrphanPages`) parse `astro.config.mjs` : une page est joignable si son **dossier
+de 1er niveau** a un `autogenerate.directory`, **ou** si la page a un **`link:` exact**
+(slug sans `/atlas/` ni extension), **ou** si c'est `index`. Passer `architecture/`,
+`quality/`, `collaboration/` en `link:` par intention **oblige à lister toutes leurs
+pages** (sinon B9 bloque `pnpm audit:docs`). Les collections datées (`decisions/`,
+`audit/`, `plans/`) restent en `autogenerate` (B9 satisfait par `directory:`).
+
+### P1 (précisé) — barre latérale : items explicites + autogénération des collections
+
+Le bloc `sidebar` de `astro.config.mjs` adopte : **`link:` explicites** pour les pages
+stables réparties par intention (architecture / quality / collaboration — une page d'un
+même dossier peut atterrir dans deux groupes) ; **`autogenerate`** pour `decisions/`
+(Comprendre), `audit/` (Comprendre), `plans/` (Faire), placé dans le groupe du mode
+**dominant du corpus** ; les **index** de ces collections (mode reference) **rappelés en
+lien** dans « Consulter » (doublon assumé = raccourci, purgeable par
+`sidebar: { hidden: true }` sur les trois `index.md`). Le groupe **« Apprendre »** reste
+`items: []` (non rendu par Starlight). Mapping page→groupe : voir le recalage P0 ci-dessus
+et le classement P0 d'origine.
+
+### P4 — portail « Bonnes pratiques » (NOUVELLE PAGE)
+
+Créer `docs/src/content/docs/quality/bonnes-pratiques.md` (mode **reference**, URL
+`/atlas/quality/bonnes-pratiques/`, groupe « Consulter », en tête). La page **lie** par
+thème les pages existantes et l'ADR qui les fonde — style (`code-style` + 0020), Effect
+(`code-style` + 0005/0045), hooks (`hooks` + 0015), commits/branches (0014/0016/0053),
+tests (`tests` + `matrice-e2e` + 0049), charte/doc (`documentation` + 0052/0028/0074),
+sécurité (`security` + `ci-pipeline` + 0001/0018), a11y (`accessibilite` + 0038),
+releases (`releases` + 0017/0022/0024) — et **renvoie** à
+[`quality/normes`](/atlas/quality/normes/) en déclarant la distinction portail↔bilan
+(anti-redite R6). **Zéro recopie** de chiffre/seuil. **Dépendance** : son `link:` doit
+être ajouté à la sidebar dans la **même PR** (sinon B9 la voit orpheline).
+
+### P5 — portail « Gouvernance » (NOUVELLE PAGE)
+
+Créer `docs/src/content/docs/quality/gouvernance.md` (mode **reference**, URL
+`/atlas/quality/gouvernance/`, groupe « Consulter »). **Liens uniquement** vers : index
+des décisions (`/atlas/decisions/`) + parcours, index des audits (`/atlas/audit/`),
+**registre des drifts** (`/atlas/audit/registre-drifts/`, entrée canonique des écarts —
+0056/0071), matrice E2E (`/atlas/quality/matrice-e2e/`), index des plans
+(`/atlas/plans/`), **issues** ouvertes (lien externe simple
+`https://github.com/univ-lehavre/atlas/issues`, **pas d'agrégateur automatique**), et la
+méta-gouvernance (0071). **N'est pas** une catégorie de 1er niveau — une page reference.
+**Dépendance** : `link:` ajouté à la sidebar dans la **même PR** (B9).
+
+### P6 — accueil par intention (`index.mdx`)
+
+Refondre uniquement le `<CardGrid>` (hero + import inchangés) en 6 cards renvoyant aux
+pivots, **Normes en tête** : (1) « Le bilan, vérifiable » → `/atlas/quality/normes/` ;
+(2) « Les bonnes pratiques, en un point » → portail Bonnes pratiques ; (3) « Qualité et
+sécurité outillées » → `code-style` · `ci-pipeline` · `security` (**fusion** de l'ancien
+« typage strict », fondu) ; (4) « Des tests à plusieurs niveaux » → `tests` ·
+`matrice-e2e` ; (5) « Une gouvernance lisible » → portail Gouvernance · `/atlas/decisions/` ;
+(6) « Une carte du code toujours à jour » → `architecture/packages`. La home reste
+**explanation** (renvoie, ne recopie pas). **Dépendance** : P4 et P5 (ses cards lient les
+portails).
+
+### Découpage en PR (additionnel)
+
+`PR-A` ADR 0076 + index/parcours (cette PR). → `PR-B` cette extension de plan. →
+**`PR-(P4+P5+P1)` fusionnée** : créer les deux portails **et** basculer la sidebar (les
+portails doivent être liés dès leur création — B9). → `PR-P6` accueil. Graphe :
+A → B → (P4+P5+P1) → P6. P2/P3 (scission de la page bicéphale, renvois inter-modes)
+restent **inchangés** ci-dessus, hors de ce lot.

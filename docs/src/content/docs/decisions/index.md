@@ -102,6 +102,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0073 | [Corriger le code, pas l'état, et garde-fou de cible de déploiement](/atlas/decisions/0073-corriger-le-code-pas-l-etat-garde-fou-cible/)                        | Accepted |
 | 0074 | [Typologie documentaire d'intention (Diátaxis)](/atlas/decisions/0074-diataxis-typologie-documentation/)                                                        | Accepted |
 | 0075 | [Déploiement prod par digest : atlas fournit les points d'injection, cluster les remplit](/atlas/decisions/0075-deploiement-prod-par-digest-injecte-cluster/)   | Accepted |
+| 0076 | [Portails d'orientation et accueil par intention](/atlas/decisions/0076-portails-orientation-accueil-par-intention/)                                            | Accepted |
 
 ## Quand ouvrir un ADR
 
