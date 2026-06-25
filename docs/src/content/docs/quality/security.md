@@ -6,7 +6,7 @@ Cette page regroupe les pratiques de sécurité applicatives et opérationnelles
 
 Pour la procédure de gestion d'incident (compromission supposée, divulgation responsable), voir [Incident response](/atlas/quality/incident-response/).
 
-> **Périmètre.** Cette page documente les contrôles de sécurité **outillés par le dépôt** (workflows CI, scripts d'audit, conventions de code). Ce qui dépend d'une organisation humaine ou d'une infrastructure d'exploitation — désigner nommément un second mainteneur ou un security champion, monter une infra de preview, contacter l'équipe ops — relève du **déployeur**, pas de ce dépôt : Atlas fournit les rôles et les procédures, mais leur **attribution à des personnes physiques** et le provisionnement de l'infra sont hors de son contrôle. Le chantier DevSecOps côté dépôt est considéré complet à ce titre ; les items qui supposent un acteur ou une infra externes sont reportés sine die. Voir [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/) pour la décision de cadrage **et le tableau de suivi des items sine die**.
+> **Périmètre.** Cette page documente les contrôles de sécurité **outillés par le dépôt** (workflows CI, scripts d'audit, conventions de code). Ce qui dépend d'une organisation humaine ou d'une infrastructure d'exploitation — désigner nommément un second mainteneur ou un security champion, monter une infra de preview, contacter l'équipe ops — relève du **déployeur**, pas de ce dépôt : Atlas fournit les rôles et les procédures, mais leur **attribution à des personnes physiques** et le provisionnement de l'infra sont hors de son contrôle. Le chantier DevSecOps côté dépôt **continue d'évoluer** — la sécurité de la chaîne d'images conteneur ([ADR 0069](/atlas/decisions/0069-signature-scan-provenance-images-ghcr/)) en est un ajout récent ; les items qui supposent un acteur ou une infra externes restent reportés sine die. Voir [ADR 0001](/atlas/decisions/0001-devsecops-perimetre-repo-sine-die/) pour la décision de cadrage **et le tableau de suivi des items sine die**.
 
 > **Sommaire.** Cette page n'embarque pas de sommaire en corps de texte : Starlight génère automatiquement une table des matières (« On this page ») dans la colonne de droite à partir des titres. Naviguer par cette colonne.
 
@@ -24,8 +24,11 @@ Le [**DevSecOps**](/atlas/glossary/) intègre la sécurité à **toutes** les é
 
     **CodeQL vs Semgrep, en une phrase :** CodeQL est plus profond (analyse de flux, vue projet entière) mais plus lourd ; Semgrep est plus superficiel (motifs syntaxiques) mais rapide et facile à étendre. Les deux ont le même angle mort : ni l'un ni l'autre ne lit le `<script>` des fichiers `.svelte` (limitation upstream), couvert en amont par des règles ESLint Svelte strictes.
 
+    **Périmètre SAST : TypeScript/JavaScript uniquement.** CodeQL n'est configuré que sur le langage `javascript-typescript`, et Semgrep sur les rulesets `p/typescript` + `p/owasp-top-ten`. Le **Python de [`dataops/`](/atlas/decisions/0055-categorie-dataops-python/)** (Dagster, dbt — hors du graphe pnpm) et ses **Dockerfiles** ne sont donc scannés par **aucun** des deux moteurs. Ce code n'est pas pour autant non outillé : sa qualité est tenue en CI par `ruff` (linter Python) et `pytest` (couverture seuil `--cov-fail-under=90`). Le choix de ne pas y ajouter un SAST Python (ex. CodeQL langage `python`, Semgrep `p/python`) tient au coût : un troisième langage CodeQL alourdit chaque run et duplique le triage, pour une surface qui ne traite à ce jour aucune entrée HTTP exposée (pipelines batch alimentés par du brut S3). Brancher un SAST Python reste une **piste connue** si `dataops/` gagne une surface réseau.
+
 - **Détection de secrets** ([gitleaks](/atlas/glossary/)) — empêche de committer (enregistrer dans l'historique git) un token ou une clé. Workflow : [`gitleaks.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/gitleaks.yml).
 - **Audit des dépendances** — recherche, dans les bibliothèques tierces qu'Atlas installe (directes et transitives), les **vulnérabilités connues** publiées sous forme de **CVE** (_Common Vulnerabilities and Exposures_, identifiant public d'une faille de sécurité référencée). Concrètement : injection via une dépendance, déni de service (ReDoS sur une regex vulnérable), prototype pollution, exécution de code à l'installation (script `postinstall` malveillant), ou une version compromise (_supply-chain_). Deux niveaux : [`dependency-review.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/dependency-review.yml) bloque toute PR introduisant une vulnérabilité `high`/`critical` ou une licence hors allowlist ; le script `audit:security` (`pnpm audit --audit-level=moderate`, en _pre-push_ et en CI) descend jusqu'au niveau `moderate`. Les mises à jour correctives sont proposées automatiquement par Dependabot ([`dependabot.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/dependabot.yml)).
+- **Sécurité des images conteneur** — le workflow [`images.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/images.yml) construit et publie les images de déploiement sur GHCR (GitHub Container Registry) en y appliquant quatre garde-fous : un **scan Trivy** (vulnérabilités `CRITICAL`/`HIGH`, résultats remontés en SARIF dans l'onglet Security, exceptions documentées dans `.trivyignore` versionné) ; une **signature cosign keyless** via OIDC (la signature est liée à l'identité du workflow, sans clé privée à gérer) ; l'attestation de **provenance SLSA** (_Supply-chain Levels for Software Artifacts_ : preuve vérifiable de qui a construit l'image et comment) ; et un **SBOM CycloneDX par image** (cf. [§ SBOM](#sbom-software-bill-of-materials)). Cf. [ADR 0069](/atlas/decisions/0069-signature-scan-provenance-images-ghcr/).
 - **Tests de sécurité** sur les endpoints (cf. [§ Tests de sécurité applicative](#tests-de-sécurité-applicative)) : contrôle d'accès (un endpoint protégé répond bien `401` sans session), résistance à l'injection (anti-XSS), et **rate-limiting** (limitation du débit de requêtes par IP) sur les endpoints publics.
 - **Scan dynamique de sécurité — DAST** ([OWASP ZAP](/atlas/glossary/)) : on sonde une application **en cours d'exécution** pour détecter ce que l'analyse statique ne voit pas. Présenté en détail au [§ DAST](#dast--dynamic-application-security-testing).
 
@@ -195,7 +198,7 @@ Un [**SLA**](/atlas/glossary/) (_Service Level Agreement_) est un engagement de 
 
 Cartographie des surfaces publiques du monorepo : URLs des apps déployées et classification public/auth des endpoints HTTP.
 
-> Mis à jour : 2026-05-19.
+> Mis à jour : 2026-06-25.
 
 ### Apps déployées (Appwrite Sites)
 
@@ -204,8 +207,15 @@ Cartographie des surfaces publiques du monorepo : URLs des apps déployées et c
 | **amarre**         | _à compléter_ | _à compléter_         | Admins infra | [apps/amarre/](https://github.com/univ-lehavre/atlas/tree/main/apps/amarre/)                 |
 | **ecrin**          | _à compléter_ | _à compléter_         | Admins infra | [apps/ecrin/](https://github.com/univ-lehavre/atlas/tree/main/apps/ecrin/)                   |
 | **find-an-expert** | _à compléter_ | _à compléter_         | Admins infra | [apps/find-an-expert/](https://github.com/univ-lehavre/atlas/tree/main/apps/find-an-expert/) |
+| **sillage**        | _à compléter_ | _à compléter_         | Admins infra | [apps/sillage/](https://github.com/univ-lehavre/atlas/tree/main/apps/sillage/)               |
 
 > Les URLs prod ne sont pas dans le repo (configuration Appwrite Sites). À renseigner par l'admin Appwrite et à figer ici pour traçabilité.
+
+**sillage** est la 6e app SvelteKit du monorepo (auth par magic link, secrets migrés — issue #324). Elle est déployée via l'image GHCR `atlas-sillage` ; ses endpoints sont classifiés au [§ Endpoints HTTP](#endpoints-http--classification).
+
+#### Service crf (microservice Hono)
+
+À distinguer des apps SvelteKit : **crf** ([`services/crf/`](https://github.com/univ-lehavre/atlas/tree/main/services/crf/)) est un **microservice Hono** (framework web léger pour runtimes JS), une **surface réseau distincte** déployée via l'image GHCR `atlas-crf`. Il expose une **API REST au-dessus de REDCap**, protégée par une **authentification Bearer** (jeton `CRF_AUTH_TOKEN`, et non une session cookie comme les apps), avec **rate-limiting** et un contrat **OpenAPI**. Cf. [ADR 0041](/atlas/decisions/0041-strategie-auth-service-crf-hono/).
 
 #### Dashboards internes (non déployés)
 
@@ -269,6 +279,21 @@ Convention : **🌐 PUBLIC** = accessible sans session ; **🔒 AUTH** = `locals
 | `/consents`                   | GET             | 🔒 AUTH                     | Liste des consentements                                                                                                                                                             |
 | `/consents/[id]`              | GET/POST/DELETE | 🔒 AUTH                     | Statut / Grant / Revoke consentement                                                                                                                                                |
 
+#### sillage — [routes/api/v1/](https://github.com/univ-lehavre/atlas/tree/main/apps/sillage/src/routes/api/v1/)
+
+| Endpoint              | Méthode | Accès     | Justification                                   |
+| --------------------- | ------- | --------- | ----------------------------------------------- |
+| `/auth/signup`        | POST    | 🌐 PUBLIC | Création de compte (allowlist domaine email)    |
+| `/auth/login`         | POST    | 🌐 PUBLIC | Complète un magic link (userId + secret en URL) |
+| `/auth/logout`        | POST    | 🔒 AUTH   | Termine la session courante                     |
+| `/me`                 | GET     | 🔒 AUTH   | Profil utilisateur courant                      |
+| `/projects/community` | GET     | 🔒 AUTH   | Projets de la communauté de l'utilisateur       |
+| `/profile/state`      | GET     | 🔒 AUTH   | État du profil utilisateur                      |
+
+#### Service crf — [services/crf/](https://github.com/univ-lehavre/atlas/tree/main/services/crf/)
+
+Surface réseau distincte des apps SvelteKit : microservice Hono, **auth Bearer** (`CRF_AUTH_TOKEN`) et non session cookie, rate-limiting, contrat OpenAPI (cf. [ADR 0041](/atlas/decisions/0041-strategie-auth-service-crf-hono/)). La convention 🔒 AUTH ci-dessus suppose une session `locals.userId` ; ici le contrôle d'accès passe par le jeton Bearer porté par chaque requête vers l'API REST exposée au-dessus de REDCap.
+
 #### atlas-dashboard — local seulement
 
 | Endpoint   | Méthode | Accès    | Notes                                         |
@@ -299,6 +324,14 @@ Trois endpoints sont publics par décision implicite ou explicite — chacun mé
 - **Validation stricte** des inputs (`record`, `q`, `id`) avant requête en aval
 - **Logs d'accès** : tracer les accès à `/graphs` et `/institutions/search` pour détecter les patterns d'abus
 - **Headers HTTP de sécurité** sur les réponses (CSP, etc.) — factorisés dans `@univ-lehavre/atlas-sveltekit-csp` (cf. [ADR 0019](/atlas/decisions/0019-derogations-workspace-audit/))
+
+### Surface conteneur et chaîne de déploiement
+
+Au-delà des endpoints HTTP, le dépôt expose une **surface supply-chain** : les images conteneur qu'il publie. Le workflow [`images.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/images.yml) construit **7 images** poussées sur GHCR (GitHub Container Registry) — 6 apps (`atlas-amarre`, `atlas-dashboard`, `atlas-crf-dashboard`, `atlas-ecrin`, `atlas-find-an-expert`, `atlas-sillage`) et 1 service (`atlas-crf`) — puis consommées par un **cluster** ([ADR 0043](/atlas/decisions/0043-publication-images-ghcr/)).
+
+Chaque image porte les garde-fous décrits au [§ DevSecOps](#devsecops--quest-ce-que-cest-) : scan Trivy `CRITICAL`/`HIGH` (SARIF), signature **cosign keyless** (OIDC), provenance **SLSA** et **SBOM CycloneDX** par image ([ADR 0069](/atlas/decisions/0069-signature-scan-provenance-images-ghcr/)). Côté livraison, un **garde-fou de cible** au déploiement (`dataops/*/deploy/validate.sh`) refuse de promouvoir une référence `:dev`/`:latest` ou un contrat manquant en production ([ADR 0073](/atlas/decisions/0073-corriger-le-code-pas-l-etat-garde-fou-cible/)).
+
+Une image publiée est un **nouveau vecteur** : une image non signée, non scannée ou tirée par un tag mutable est une porte d'entrée supply-chain. La signature + provenance permettent au consommateur de **vérifier l'origine** avant de tirer ; le scan empêche de publier une couche vulnérable connue. Ce qui suit la publication — la **réconciliation** des images dans l'environnement d'exécution, opérée par Argo CD côté dépôt `cluster` — relève de ce dépôt-là et reste **hors du périmètre** de cette page.
 
 ## Tests de sécurité applicative
 
@@ -458,5 +491,5 @@ CycloneDX 1.6, généré par [`@cyclonedx/cdxgen`](https://github.com/CycloneDX/
 ### Limitations connues
 
 - **Svelte components** : cdxgen ne parse pas les imports inline dans les fichiers `.svelte`. Les dépendances arrivent uniquement via `pnpm-lock.yaml`, donc le résultat reste correct au niveau package mais ne descend pas au niveau fichier `.svelte`.
-- **Docker** : ce SBOM couvre la chaîne npm uniquement. Les images Docker (Appwrite, REDCap dans `sandbox/`) ont leur propre SBOM à générer séparément.
+- **Docker** : ce SBOM `sbom.yml` couvre la chaîne **npm** uniquement. Pour les images conteneur, il faut distinguer deux cas. (1) Les **7 images de déploiement** publiées sur GHCR ([§ Surface conteneur](#surface-conteneur-et-chaîne-de-déploiement)) **ont déjà** un SBOM CycloneDX **par image**, généré par `images.yml` (`sbom: true`, [ADR 0069](/atlas/decisions/0069-signature-scan-provenance-images-ghcr/)) — rien à générer séparément. (2) Les **images tierces** montées en `sandbox/` (Appwrite, MySQL, PHP) ne sont **pas inventoriées par Atlas** : elles relèvent de leurs éditeurs respectifs.
 - **Privacy** : le SBOM est public (artefact GitHub Actions sur repo public). Aucun secret n'y figure — c'est de la pure métadonnée de dépendance.
