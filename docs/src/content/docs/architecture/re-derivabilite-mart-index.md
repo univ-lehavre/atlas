@@ -245,10 +245,18 @@ de valeur que si elle peut **désigner** sans ambiguïté la personne à retirer
 mart et de l'index. Or les deux mondes n'utilisent pas la même clé
 d'identification : le registre identifie un **titulaire de compte applicatif**,
 le mart identifie un **chercheur du référentiel bibliométrique** (la base
-documentaire des publications et de leurs auteurs). Sans **table de
-correspondance** entre ces deux identités, l'opposition exprimée dans
-l'application ne peut tout simplement pas être projetée sur le mart. C'est, dit
-le texte, « la dette la plus structurante de l'étape 0 ».
+documentaire des publications et de leurs auteurs). La **clé du mart**, elle,
+n'est **plus** une inconnue : [ADR 0059](/atlas/decisions/0059-mart-researchers-author-id-grain/)
+l'a **tranchée** — c'est l'**`author_id`** (l'identifiant d'auteur du référentiel,
+instanciation concrète du `researcherId` de la présente spécification), sur lequel le
+mart `researchers` et l'index sont ancrés (cf. aussi
+[ADR 0058](/atlas/decisions/0058-report-index-load/) qui pose le schéma de l'index). Ce
+qui **reste** à construire n'est donc pas la clé du mart, mais (1) une **table de
+correspondance** entre l'identité de compte et cette clé chercheur, et (2) un **attribut
+de clé chercheur sur l'enregistrement d'opposition** (l'enregistrement Appwrite ne porte
+aujourd'hui que `userId`). Tant que ces deux pièces manquent, l'opposition exprimée dans
+l'application ne peut pas être projetée sur le mart : c'est, dit le texte, « la dette la
+plus structurante de l'étape 0 ».
 
 **État réel du code** : la **seule** clé d'identification est `userId = $id du
 compte Appwrite (Appwrite Account)`. Il n'existe **aucune** autre clé matérialisée
@@ -257,32 +265,34 @@ référentiel bibliométrique (vérifié : aucune occurrence d'ORCID dans
 `apps/find-an-expert/src`, aucun identifiant d'auteur externe dans le chemin
 consentement ; le profil utilisateur ne contient que `{id, email, labels}`).
 
-**Problème** : le mart et l'index sont clés sur l'**entité chercheur**
-(`researcherId` ; les embeddings sont produits **par chercheur**, mean-pooling L2
-des œuvres — pas par publication), c.-à-d. l'identité du chercheur **dans le
-référentiel bibliométrique**. Un registre d'opposition doit pouvoir viser une
-personne réelle **même sans compte PWA** (un chercheur du référentiel qui n'a
-jamais créé de compte). **Aucune table de correspondance compte Appwrite ↔
-chercheur du référentiel n'existe dans le code.**
+**Problème** : le mart et l'index sont clés sur l'**entité chercheur** —
+concrètement l'**`author_id`** du référentiel ([ADR 0059](/atlas/decisions/0059-mart-researchers-author-id-grain/) ;
+les embeddings sont produits **par chercheur**, mean-pooling L2 des œuvres — pas par
+publication). Un registre d'opposition doit pouvoir viser une personne réelle **même sans
+compte PWA** (un chercheur du référentiel qui n'a jamais créé de compte). Or **aucune
+table de correspondance compte Appwrite ↔ `author_id` n'existe dans le code**, et
+**l'enregistrement d'opposition ne porte aucune clé chercheur**. Le côté mart est résolu
+(la clé existe) ; le côté **opposition** ne l'est pas (la clé n'y est pas projetable).
 
 **À ajouter (n'existe PAS aujourd'hui)** — la liste d'exclusion ne peut filtrer
-le mart/index que si elle est exprimée dans la **clé du mart** :
+le mart/index que si elle est exprimée dans la **clé du mart** (`author_id`) :
 
-1. Une **clé d'identification de la personne réelle** indépendante du compte
-   applicatif : `researcherId` (identifiant d'auteur du référentiel) et/ou ORCID
-   (_Open Researcher and Contributor ID_, identifiant pérenne international d'un
-   chercheur) et/ou email normalisé.
-2. Une **table de correspondance** `compte ↔ chercheur` (à matérialiser ;
-   inexistante).
-3. Un **attribut de clé chercheur** sur l'enregistrement d'opposition (le schéma
-   actuel ne porte que `userId`). À ajouter aux collections Appwrite (configurées
+1. Une **table de correspondance** `compte ↔ chercheur` (compte Appwrite →
+   `author_id`, le cas échéant via ORCID — _Open Researcher and Contributor ID_,
+   identifiant pérenne international d'un chercheur — ou email normalisé). À
+   matérialiser ; inexistante.
+2. Un **attribut de clé chercheur** (`author_id`) sur l'enregistrement d'opposition (le
+   schéma actuel ne porte que `userId`). À ajouter aux collections Appwrite (configurées
    à la main, pas de schema-as-code dans le repo).
 
-> **La liste d'exclusion utile au pipeline est `{ researcherId }`**, pas
-> `{ userId }`. Tant que la correspondance compte ↔ chercheur n'est pas
-> matérialisée, l'opposition exprimée via la PWA **ne peut pas** être projetée
-> sur le mart. C'est la **dette la plus structurante** de l'étape 0 (voir Gate,
-> §6).
+> **La liste d'exclusion utile au pipeline est `{ author_id }`** (la clé du mart,
+> tranchée par ADR 0059), pas `{ userId }`. La clé **existe côté mart** ; ce qui manque
+> est de **rattacher** une opposition exprimée via la PWA à cet `author_id`. Tant que la
+> correspondance compte ↔ chercheur et l'attribut sur l'enregistrement d'opposition ne
+> sont pas matérialisés, l'opposition **ne peut pas** être projetée sur le mart. C'est la
+> **dette la plus structurante** de l'étape 0 (voir Gate, §6). Cohérent avec l'invariant
+> **capacité ≠ décision** : le dépôt fournit le **producteur** clé sur `author_id` ;
+> **brancher** l'opposition sur cette clé relève du déployeur.
 
 ### 1.5 Manques à combler avant usage en registre d'opposition
 
@@ -293,7 +303,9 @@ réglementaire. Aucun de ces éléments n'existe aujourd'hui : ce sont tous des
 protection des données ; un **endpoint** est un point d'accès d'une API, c.-à-d.
 une URL appelable par un programme.)
 
-- **Clé chercheur + correspondance compte ↔ chercheur** (§1.4) — bloquant.
+- **Correspondance compte ↔ chercheur + attribut `author_id` sur l'opposition** (§1.4) —
+  bloquant (la clé du mart, `author_id`, existe déjà — ADR 0059 ; c'est le **rattachement**
+  de l'opposition à cette clé qui manque).
 - **Renversement opt-out** explicite (sémantique du défaut) — §1.3.
 - **Endpoint d'administration / DPO** : tout est scopé `locals.userId` (utilisateur
   courant). **Aucun** moyen pour un DPO d'inscrire une opposition au nom d'un tiers
@@ -484,35 +496,47 @@ clés sur l'**entité chercheur** : une **FTS** lexicale (_full-text search_,
 recherche plein texte par mots-clés, stockée en `tsvector`) et une **recherche
 sémantique** (par proximité de sens, via des vecteurs `vector(384)`). Ces
 vecteurs sont des **embeddings** : des représentations numériques du « sens » d'un
-texte, ici produites **par chercheur** par le modèle `all-MiniLM-L6-v2` (déjà
-calculées en amont par `researcher-profiles`).
+texte, ici produits **par chercheur** par le modèle `all-MiniLM-L6-v2`. Ils sont
+calculés **côté `dataops/` en Python** (via `onnxruntime`, le moteur d'exécution de
+modèles au format ONNX) **à partir du seul brut S3** — garantie de reproductibilité
+hermétique (même entrée → même sortie, jusqu'au `sha256` du contrat ;
+[ADR 0057](/atlas/decisions/0057-reproductibilite-tests-hermetiques/),
+[ADR 0059](/atlas/decisions/0059-mart-researchers-author-id-grain/)). Le code TypeScript
+`researcher-profiles` n'en est plus que la **référence de parité** (l'implémentation
+qu'on reproduit à l'identique), **pas** le producteur.
 
-**Schéma concret de l'index (livré en [étape 4.1](/atlas/plans/2026-06-02-pipeline-collaborations/)).**
-La purge n'est plus abstraite : le schéma `pgvector` existe (paquet
-`@univ-lehavre/atlas-citation`, migrations versionnées). Deux tables, toutes deux
-clés sur l'**entité chercheur** et porteuses des coordonnées de partition `(dt, run)` :
+**Schéma concret de l'index (livré, consommé par `index_load`).**
+La purge n'est plus abstraite : le schéma `pgvector` existe, fourni au déploiement par une
+**migration versionnée**
+(`dataops/citation-dagster/deploy/migrations/0001_researchers_index.sql`,
+[ADR 0058](/atlas/decisions/0058-report-index-load/)). Le schéma réellement chargé par
+`index_load` n'est **pas** deux tables, mais **une seule** table `researchers`, clé sur
+l'**entité chercheur** et porteuse des coordonnées de partition `(dt, run)` :
 
-- **`researchers`** `(researcher_id, embedding vector(384), dt, run)` — un vecteur par
-  chercheur (clé naturelle `(researcher_id, dt, run)`) ;
-- **`pairs`** `(author_a, author_b, cross_citations, a_to_b, b_to_a, dt, run)` — une
-  paire par couple `(author_a, author_b, dt, run)`.
+- **`researchers`** `(researcher_id text, embedding vector(384), fts tsvector, dt, run)` —
+  une ligne par chercheur servi, portant **les deux faces** : le vecteur sémantique
+  (`embedding`) et la **FTS déjà matérialisée** (`fts`, colonne `tsvector` peuplée par
+  `index_load` — pas un chantier futur) ;
+- index : **HNSW** (_Hierarchical Navigable Small World_, structure de recherche kNN
+  approximative) sur `embedding` (`vector_cosine_ops`), **GIN** (index inversé
+  PostgreSQL) sur `fts`, et un index `(dt, run)` pour les opérations par partition.
+
+(Il n'y a **pas** de table `pairs` dans l'index : les paires de collaboration vivent dans
+le mart `collab` côté S3 (§2) ; l'index servi est ancré sur le seul grain chercheur.)
 
 Propagation d'une opposition à l'index, exprimée sur ce schéma :
 
 1. **Purge ciblée** : `DELETE` direct des lignes dont l'entité chercheur ∈
    `exclusion_set(T)` — ligne par ligne, sans recalcul d'embedding (**aucun nouveau
-   modèle ni GPU**, ADR 0029). Concrètement, l'opposition d'un chercheur `R` retire :
+   modèle ni GPU**, ADR 0029). La table portant les deux faces sur la même clé, une seule
+   suppression retire à la fois le vecteur et la FTS du chercheur opposé :
 
    ```sql
    DELETE FROM researchers WHERE researcher_id = ANY($exclusion_set);
-   -- une paire est servie dès lors qu'UNE de ses deux entités est opposée :
-   DELETE FROM pairs
-     WHERE author_a = ANY($exclusion_set) OR author_b = ANY($exclusion_set);
    ```
 
-   La clé chercheur (`researcher_id` / `author_a` / `author_b`) rend la purge directe.
-   La FTS lexicale (`tsvector`, [étape 4.2](/atlas/plans/2026-06-02-pipeline-collaborations/),
-   non encore matérialisée) sera purgée de la même façon, sur la même clé.
+   La clé chercheur (`researcher_id`) rend la purge directe ; la FTS (`fts`, déjà
+   matérialisée dans la même ligne) part avec.
 
 2. **Recharge depuis la partition régénérée** : `index_load`
    ([étape 4.4](/atlas/plans/2026-06-02-pipeline-collaborations/)) recharge
@@ -529,15 +553,32 @@ Propagation d'une opposition à l'index, exprimée sur ce schéma :
 > (§3) reste la **défense en profondeur** durant la fenêtre entre l'opposition et
 > la fin de la purge/recharge.
 
+> **La vraie purge RGPD est en amont, pas un `DELETE` par chercheur.** Le `DELETE`
+> ci-dessus n'est qu'un **nettoyage de l'index dérivé** ; il n'est **jamais** la purge
+> de référence — l'index n'est pas source de vérité (§0.3) et un rechargement le
+> reconstruirait. La purge **fait foi au point unique `curated → marts`** (§2.1) :
+> [ADR 0059](/atlas/decisions/0059-mart-researchers-author-id-grain/) **disqualifie** la
+> suppression en bloc par clé chercheur (un mean-pool L2-normalisé n'est pas dé-poolable,
+> un label co-porté serait perdu à tort) au profit d'un **ANTI-JOIN dbt au grain
+> `(author_id, work_id)`** : la liste des couples opposés (variable `opposition_pairs`,
+> vide par défaut, matérialisée par la macro `opposition_pairs_cte`) est retirée **avant
+> agrégation** dans `marts_researchers` / `marts_author_profiles`, puis le `GROUP BY`
+> **re-dérive** les poids sur les couples restants. Chirurgical : un label porté par un
+> couple opposé disparaît, mais le **même** label porté par un autre couple (autre œuvre,
+> ou co-auteur non opposé) **survit**. L'index n'est ensuite que **rechargé** depuis ce
+> mart déjà filtré (étape 2 ci-dessus).
+
 > **Capacité côté index : prête ; reste à brancher l'entrée.** Le **mécanisme** de
-> purge décrit ci-dessus est réalisable sur le schéma livré (tables `researchers` /
-> `pairs` clés sur la personne, coordonnées `(dt, run)`) : le dépôt **permet** la
-> purge. Ce qui manque n'est pas côté index mais côté **entrée** — la
-> `exclusion_set(T)` exprimée en **clé chercheur** (§1.4) : tant que la correspondance
-> compte ↔ chercheur n'est pas matérialisée et que le déployeur n'a pas branché le
-> registre d'opposition, la purge n'a pas de liste à appliquer. Le code fournit la
-> mécanique ; **l'actionner** (brancher le registre, trancher la recevabilité d'une
-> opposition, fixer le SLA) relève du **déployeur** (responsable de traitement).
+> purge décrit ci-dessus est réalisable sur le schéma livré (table `researchers` clé sur
+> la personne, coordonnées `(dt, run)`, FTS + vecteur dans la même ligne) et la chaîne
+> amont (anti-join dbt, asset `index_load`) est **livrée** : le dépôt **permet** la purge.
+> Ce qui manque n'est pas la chaîne mais l'**actionnement** — la `exclusion_set(T)`
+> exprimée en **clé chercheur** (§1.4) : tant que la correspondance compte ↔ chercheur
+> n'est pas matérialisée et que le déployeur n'a pas branché le registre d'opposition, la
+> purge n'a **pas de liste à appliquer** (`opposition_pairs` reste vide → anti-join no-op).
+> Le code fournit la mécanique ; **l'actionner** (brancher le registre, trancher la
+> recevabilité d'une opposition, fixer le SLA) relève du **déployeur** (responsable de
+> traitement).
 
 ---
 
@@ -654,8 +695,9 @@ réellement opérationnel.
 
 Aucune phase manipulant des **données réelles** ne démarre tant que :
 
-1. le **registre d'opposition est branché** (avec la **clé chercheur** et la
-   **correspondance compte ↔ chercheur** — §1.4, **à construire**) ;
+1. le **registre d'opposition est branché** (avec l'**attribut `author_id` sur
+   l'opposition** et la **correspondance compte ↔ chercheur** — §1.4, **à construire** ;
+   la clé du mart, elle, existe déjà — ADR 0059) ;
 2. la **liste d'exclusion** est consommable par `marts` (régénération), `index_load`
    (purge) et `atlas-api` (masquage) ;
 3. l'**arbitrage DPO** a eu lieu pour l'instance (bases légales art. 6.1.e/f,
@@ -665,19 +707,22 @@ Aucune phase manipulant des **données réelles** ne démarre tant que :
 
 Synthèse, en un seul tableau, de tout ce qui **n'existe pas encore** et qu'il
 faut construire — avec, pour chaque manque, son statut et ce qu'il bloque. C'est
-la liste de travail de l'étape 0 ; les deux premières lignes (clé chercheur et
-table de correspondance) sont les verrous les plus structurants.
+la liste de travail de l'étape 0. Précision importante : la **chaîne de propagation**
+(mart `researchers` clé `author_id`, purge dbt par couples `(author_id, work_id)`, asset
+`index_load`) est **livrée** (ADR 0058/0059) ; les verrous restants ne portent donc plus
+sur la chaîne, mais sur l'**actionnement** de l'opposition — son rattachement à la clé
+chercheur et son interprétation opt-out.
 
-| Manque                                                                           | Statut                   | Bloque                                       |
-| -------------------------------------------------------------------------------- | ------------------------ | -------------------------------------------- |
-| Clé chercheur (`researcherId`/ORCID/email normalisé) sur l'opposition            | **À ajouter**            | Projection de l'opposition sur le mart/index |
-| Table de correspondance compte Appwrite ↔ chercheur référentiel                  | **N'existe nulle part**  | Toute la chaîne de propagation               |
-| Sémantique opt-out explicite (renommage `ConsentType`/valeurs)                   | **À ajouter**            | Interprétation correcte du défaut            |
-| Routes admin/DPO (inscription tiers, liste des opposés, requête par ORCID/email) | **À ajouter**            | Opposition de personnes sans compte          |
-| Endpoint de consultation de l'historique (`getByUserId` exposé)                  | **À ajouter**            | Auditabilité réglementaire                   |
-| Champ `status`/`supersedes` dans le manifest (obsolescence explicite)            | **À ajouter / arbitrer** | Marquage d'obsolescence (§2.3)               |
-| Index unique (`userId`/clé chercheur, type) côté Appwrite                        | **À confirmer/ajouter**  | Garantie d'unicité (anti-doublon)            |
-| Valeur chiffrée du SLA                                                           | **À arbitrer (DPO)**     | Mesurabilité du SLA                          |
+| Manque                                                                           | Statut                   | Bloque                                           |
+| -------------------------------------------------------------------------------- | ------------------------ | ------------------------------------------------ |
+| Attribut de clé chercheur (`author_id`) sur l'enregistrement d'opposition        | **À ajouter**            | Projection de l'opposition sur le mart/index     |
+| Table de correspondance compte Appwrite ↔ `author_id`                            | **N'existe nulle part**  | Actionnement de l'opposition (liste à appliquer) |
+| Sémantique opt-out explicite (renommage `ConsentType`/valeurs)                   | **À ajouter**            | Interprétation correcte du défaut                |
+| Routes admin/DPO (inscription tiers, liste des opposés, requête par ORCID/email) | **À ajouter**            | Opposition de personnes sans compte              |
+| Endpoint de consultation de l'historique (`getByUserId` exposé)                  | **À ajouter**            | Auditabilité réglementaire                       |
+| Champ `status`/`supersedes` dans le manifest (obsolescence explicite)            | **À ajouter / arbitrer** | Marquage d'obsolescence (§2.3)                   |
+| Index unique (`userId`/clé chercheur, type) côté Appwrite                        | **À confirmer/ajouter**  | Garantie d'unicité (anti-doublon)                |
+| Valeur chiffrée du SLA                                                           | **À arbitrer (DPO)**     | Mesurabilité du SLA                              |
 
 ---
 

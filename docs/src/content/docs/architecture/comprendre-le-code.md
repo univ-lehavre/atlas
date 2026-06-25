@@ -30,7 +30,7 @@ dans la carte des paquets**, cette page-ci se limite à l'itinéraire de lecture
 
 Trois lectures complémentaires :
 
-- la [structure du monorepo](/atlas/architecture/monorepo/) — les 8 catégories et leurs règles
+- la [structure du monorepo](/atlas/architecture/monorepo/) — les 9 catégories et leurs règles
   (vue d'ensemble) ;
 - le [flux de données](/atlas/architecture/data-flow/) — comment une donnée circule de bout en
   bout, et les **contrats** qui la typent (vue pour l'expert data) ;
@@ -111,6 +111,28 @@ Comment Atlas enrichit ses données avec des sources publiques.
    pagination et la récupération HTTP bas niveau.
 3. **[`researcher-profiles`](/atlas/packages/packages/researcher-profiles/)** — la
    génération de profils de chercheurs à partir de ces données.
+
+### Pipeline DataOps et MLOps (Python)
+
+Pour le data scientist : l'ingestion, la transformation et le modèle vivent dans
+`dataops/`, en **Python natif** (Dagster, dbt) hors du graphe pnpm
+([ADR 0055](/atlas/decisions/0055-categorie-dataops-python/)). Le **DataOps**
+(_Data Operations_) applique au cycle de vie des données les garde-fous que le
+DevSecOps applique au code ; le **MLOps** fait de même pour un modèle.
+
+1. **`dataops/README.md`** — la catégorie Python et sa frontière avec le code
+   Node (contrat de données, manifeste).
+2. **Ingestion** — `dataops/citation-dagster` : snapshots S3 partitionnés et
+   chargement de l'index ([ADR 0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/),
+   collecte _mediawatch_ dans `dataops/mediawatch-dagster`,
+   [ADR 0064](/atlas/decisions/0064-collecte-mediawatch-gkg/)).
+3. **Transformation** — `dataops/citation-dbt` : modèles dbt en couches
+   `staging` → `curated` → `marts`, avec tests dbt et asset checks.
+4. **Modèle (MLOps)** — `dataops/citation-dagster/.../assets/uplift.py` (modèle
+   d'uplift FWCI, [ADR 0067](/atlas/decisions/0067-modele-uplift-fwci-eunicoast/))
+   et `.../assets/drift.py` (suivi de dérive,
+   [ADR 0062](/atlas/decisions/0062-mlops-niveau-2-tracking-drift-ct/),
+   [ADR 0068](/atlas/decisions/0068-suivi-derive-modele-uplift/)).
 
 ### Outils transverses
 

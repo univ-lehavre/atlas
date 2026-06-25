@@ -2,11 +2,16 @@
 title: Carte des paquets
 ---
 
-Cette page liste **tous les paquets du monorepo** : leur rôle, leur catégorie,
-et leurs dépendances internes — qui consomme quoi. Elle répond à la question
-« pour comprendre un paquet, lesquels dois-je lire ? ». Une section dédiée
-recense les [paquets racines](#paquets-racines) — ceux qu'aucun autre paquet
-n'appelle — et explique, pour chacun, pourquoi.
+Cette page liste **tous les paquets Node/TypeScript du monorepo** (les huit
+catégories pnpm) : leur rôle, leur catégorie, et leurs dépendances internes —
+qui consomme quoi. Elle répond à la question « pour comprendre un paquet,
+lesquels dois-je lire ? ». Une section dédiée recense les
+[paquets racines](#paquets-racines) — ceux qu'aucun autre paquet n'appelle — et
+explique, pour chacun, pourquoi. La neuvième catégorie, `dataops/` (code
+Python hors du graphe pnpm —
+[ADR 0055](/atlas/decisions/0055-categorie-dataops-python/)), n'apparaît pas
+dans cette carte ; voir
+[la structure du monorepo](/atlas/architecture/monorepo/).
 
 > **Page générée.** Le contenu ci-dessous est dérivé des `package.json` par
 > `scripts/docs/generate-packages-map.mjs`. Ne l'éditez pas à la main : lancez
