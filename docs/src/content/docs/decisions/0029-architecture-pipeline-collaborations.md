@@ -18,6 +18,19 @@ title: "0029 — Pipeline de collaborations : architecture V1 (plateforme DataOp
 > Parquet + manifest sont réutilisés ; de nouveaux modèles dbt et assets Python sont
 > ajoutés à côté du mart de collaborations.
 
+> **Amendé par [0055](/atlas/decisions/0055-categorie-dataops-python/).** La couche
+> DataOps (assets Dagster, dbt) **n'est pas** logée dans `packages/citation` en
+> TypeScript/Effect : elle est en **Python natif** sous `dataops/`, hors du graphe
+> pnpm. Les passages ci-dessous décrivant les assets Dagster comme des
+> « consommateurs thins » retournant des `Effect<A, E>` aux points d'entrée ne
+> valent donc plus pour la couche d'orchestration des données.
+
+> **Amendé par [0069](/atlas/decisions/0069-signature-scan-provenance-images-ghcr/).**
+> La mention « la signature des images conteneur (cosign/SLSA) n'existe pas encore »
+> de la section « Prix à payer » est **caduque** : les images publiées sur GHCR sont
+> désormais signées (cosign keyless OIDC), scannées (Trivy) et attestées (provenance
+> SLSA + SBOM CycloneDX par image).
+
 ## Contexte
 
 Le monorepo `atlas` cherche à produire un premier service de bout en bout qui
