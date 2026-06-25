@@ -5,7 +5,7 @@ title: Structure du monorepo
 import ActivityBadge from "../../../components/kpi/ActivityBadge.vue";
 import PackagesBadge from "../../../components/kpi/PackagesBadge.vue";
 
-Un **monorepo** est un seul dépôt Git qui héberge plusieurs projets logiciels, avec des règles partagées. Atlas en est un. **Git** est le système de gestion de versions distribué qui enregistre l'historique du code (qui a modifié quoi, quand) et permet à plusieurs personnes de travailler en parallèle ; un **dépôt** est l'ensemble du projet versionné par Git.
+Un **monorepo** est un seul dépôt [**Git**](/atlas/glossary/) qui héberge plusieurs projets logiciels, avec des règles partagées. Atlas en est un.
 
 Atlas organise ses projets en **neuf catégories**. Huit relèvent du périmètre Node/TypeScript ; la neuvième, `dataops/`, héberge le code DataOps en Python (Dagster, dbt). Chaque catégorie a une responsabilité précise et des **règles propres** : framework imposé (un **framework** est un socle logiciel qui fournit une structure et des composants prêts à l'emploi, sur lesquels on bâtit son application au lieu de tout réécrire), dépendances autorisées ou interdites, présence ou absence d'un point d'entrée exécutable, etc. Le placement d'un sous-projet dans une catégorie indique d'emblée son rôle, et les règles des huit catégories Node sont vérifiées automatiquement par `pnpm audit:structure` (`dataops/`, en Python, en est exempté — voir [ADR 0055](/atlas/decisions/0055-categorie-dataops-python/)).
 
