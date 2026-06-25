@@ -84,16 +84,16 @@ _copier-coller_, c'est-à-dire les blocs dupliqués) et **size-limit** (vérifie
 que la taille des fichiers livrés au navigateur ne dépasse pas un budget) —
 servent tous à empêcher la dette technique de s'accumuler silencieusement.
 
-| Pratique                     | Comment c'est appliqué                                                                                                            |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| **Convention de commits**    | Conventional Commits à scopes restreints — [ADR 0014](/atlas/decisions/0014-conventional-commits-scopes-restreints).              |
-| **Protection de branche**    | `main` protégée, PR à jour requise — [ADR 0016](/atlas/decisions/0016-branch-protection-main).                                    |
-| **Couverture de tests**      | Mesurée par vitest, agrégée et seuillée — `audit:` + le [tableau de bord](/atlas/quality/tableau-de-bord).                        |
-| **Structure du monorepo**    | Huit catégories, règles enforcées — `audit:structure` ([ADR 0002](/atlas/decisions/0002-monorepo-huit-categories)).               |
-| **Code mort / duplication**  | knip (`audit:unused`) et jscpd (`audit:duplicates`).                                                                              |
-| **Budget de bundle**         | `size-limit` (`audit:size`) sur chaque paquet publiable.                                                                          |
-| **Documentation vérifiable** | La doc est un miroir contrôlable du code ; toute dérive casse la CI — [ADR 0028](/atlas/decisions/0028-documentation-verifiable). |
-| **CI adaptative**            | Les jobs lourds se court-circuitent sur les PR documentaires — [ADR 0034](/atlas/decisions/0034-ci-adaptative-par-chemin).        |
+| Pratique                     | Comment c'est appliqué                                                                                                                                                                                              |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Convention de commits**    | Conventional Commits à scopes restreints — [ADR 0014](/atlas/decisions/0014-conventional-commits-scopes-restreints).                                                                                                |
+| **Protection de branche**    | `main` protégée, PR à jour requise — [ADR 0016](/atlas/decisions/0016-branch-protection-main).                                                                                                                      |
+| **Couverture de tests**      | Mesurée par vitest, agrégée et seuillée — `audit:` + le [tableau de bord](/atlas/quality/tableau-de-bord).                                                                                                          |
+| **Structure du monorepo**    | Neuf catégories (huit Node enforcées par `audit:structure` + `dataops/` Python, exemptée) — [ADR 0002](/atlas/decisions/0002-monorepo-huit-categories), [ADR 0055](/atlas/decisions/0055-categorie-dataops-python). |
+| **Code mort / duplication**  | knip (`audit:unused`) et jscpd (`audit:duplicates`).                                                                                                                                                                |
+| **Budget de bundle**         | `size-limit` (`audit:size`) sur chaque paquet publiable.                                                                                                                                                            |
+| **Documentation vérifiable** | La doc est un miroir contrôlable du code ; toute dérive casse la CI — [ADR 0028](/atlas/decisions/0028-documentation-verifiable).                                                                                   |
+| **CI adaptative**            | Les jobs lourds se court-circuitent sur les PR documentaires — [ADR 0034](/atlas/decisions/0034-ci-adaptative-par-chemin).                                                                                          |
 
 ## Applications web
 
@@ -148,15 +148,18 @@ Le **MLOps** (cycle de vie d'un modèle : entraînement, suivi, détection de
 dérive, réentraînement) est en place au **niveau 1→2**
 ([ADR 0062](/atlas/decisions/0062-mlops-niveau-2-tracking-drift-ct/)) :
 
-| Pratique                      | Comment c'est appliqué                                                                                                                                                               |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Suivi des runs (tracking)** | MLflow — `tracking.py`, branché dans l'asset `researcher_embeddings` (paramètres, provenance du modèle, enregistrement).                                                             |
-| **Détection de dérive**       | Evidently sur les embeddings et les prédictions d'uplift — `assets/drift.py`, `assets/drift_uplift.py` ([ADR 0068](/atlas/decisions/0068-suivi-derive-modele-uplift/)).              |
-| **Modèle prédictif**          | Modèle d'uplift FWCI avec validation croisée honnête et porte de décision — `assets/uplift.py`, `uplift_model.py` ([ADR 0067](/atlas/decisions/0067-modele-uplift-fwci-eunicoast/)). |
+| Pratique                      | Comment c'est appliqué                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Suivi des runs (tracking)** | MLflow — `tracking.py`, branché dans l'asset `researcher_embeddings` (paramètres, provenance du modèle, enregistrement).                                                                                                                                                                                                                                     |
+| **Détection de dérive**       | Evidently sur les embeddings et les prédictions d'uplift — `assets/drift.py`, `assets/drift_uplift.py` ([ADR 0068](/atlas/decisions/0068-suivi-derive-modele-uplift/)).                                                                                                                                                                                      |
+| **Modèle prédictif**          | Modèle d'uplift FWCI avec validation croisée honnête et porte de décision — `assets/uplift.py`, `uplift_model.py` ([ADR 0067](/atlas/decisions/0067-modele-uplift-fwci-eunicoast/)).                                                                                                                                                                         |
+| **Entraînement continu (CT)** | `transform_job` (dbt → embeddings → index) re-déclenché par un **schedule** (cron `CITATION_CT_CRON`) et par un **`@sensor`** sur l'avancée du watermark d'ingestion — `definitions.py`. `STOPPED` par défaut : le déployeur l'arme et fixe la cadence (le code permet, n'impose pas — [ADR 0062](/atlas/decisions/0062-mlops-niveau-2-tracking-drift-ct/)). |
 
-**Écart** : le **réentraînement déclenché** (continuous training autonome) n'est
-pas encore orchestré comme un job programmé ; les signaux de dérive sont journalisés
-et alimentent une porte de décision, mais la boucle reste pilotée à la demande.
+**Écart** : la boucle est **orchestrée mais non autonome de bout en bout** — la
+dérive mesurée par Evidently est journalisée (MLflow) et nourrit la _décision_
+d'ajuster la cadence, mais aucun réentraînement n'est encore déclenché
+**automatiquement** par un seuil de dérive ; l'armement et le réglage du rythme
+restent à la main du déployeur.
 
 ## Cloud-native : 12 facteurs + extensions
 
@@ -205,9 +208,10 @@ ci-dessus, écarts compris. Restent à ce jour **partiels ou hors de ce dépôt*
   ([ADR 0073](/atlas/decisions/0073-corriger-le-code-pas-l-etat-garde-fou-cible/)).
   L'**opérateur de réconciliation** (Argo CD) et la topologie cible vivent dans le
   dépôt `cluster`, **hors du périmètre de ce dépôt**.
-- **Continuous training autonome** — le réentraînement déclenché par dérive est
-  câblé en signaux et porte de décision, mais pas encore orchestré comme une
-  boucle programmée (cf. section [MLOps](#mlops-et-modèle)).
+- **Continuous training _autonome_** — l'entraînement continu est orchestré
+  (schedule + sensor, cf. section [MLOps](#mlops-et-modèle)), mais la boucle
+  fermée « seuil de dérive → réentraînement automatique » n'est pas encore en
+  place : l'armement et la cadence restent à la main du déployeur.
 
 Ces éléments apparaîtront — ou se compléteront — dans ce bilan au fur et à mesure
 de leur mise en œuvre.
