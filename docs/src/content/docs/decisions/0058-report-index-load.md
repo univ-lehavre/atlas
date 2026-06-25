@@ -2,6 +2,16 @@
 title: "0058 — Chargement de l'index (mart→Postgres) : report de l'asset index_load faute de producteur researchers"
 ---
 
+> **Report levé par [0059](/atlas/decisions/0059-mart-researchers-author-id-grain/).**
+> Les deux préconditions de ce report sont désormais satisfaites : le mart
+> producteur `researchers` (ancré sur `author_id`) est livré, et l'asset Dagster
+> `index_load` est **réactivé et implémenté**
+> (`dataops/citation-dagster/src/citation_dagster/assets/index_load.py`). Le
+> schéma d'index réellement consommé a aussi évolué (une table `researchers`
+> avec `fts tsvector` déjà matérialisé, sans table `pairs` —
+> `dataops/citation-dagster/deploy/migrations/0001_researchers_index.sql`). Le
+> contexte ci-dessous décrit l'état au moment du report.
+
 ## Contexte
 
 La [Phase 4](/atlas/plans/2026-06-02-pipeline-collaborations/) indexe le mart dans

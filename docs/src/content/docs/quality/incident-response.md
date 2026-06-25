@@ -3,9 +3,15 @@ title: Incident response — atlas
 ---
 
 Procédure à appliquer en cas de **suspicion** ou de **confirmation**
-d'incident de sécurité touchant le code source atlas, les apps déployées
-(amarre, ecrin, find-an-expert), les secrets, ou les données accédées
-par ces apps (REDCap, OpenAlex, Appwrite).
+d'incident de sécurité touchant le code source atlas, les unités
+déployées — apps SvelteKit `amarre`, `ecrin`, `find-an-expert`,
+`sillage`, `atlas-dashboard`, `crf-dashboard` et le service Hono `crf`
+(API REST au-dessus de REDCap) — les secrets, ou les données accédées
+par ces unités (REDCap, OpenAlex, Appwrite). La source de vérité du
+périmètre déployé est la matrice d'images de
+[`.github/workflows/images.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/images.yml)
+(images publiées sur le registre de conteneurs GitHub, GHCR — _GitHub
+Container Registry_).
 
 > Ce document est un **runbook opérationnel**, pas une politique de
 > conformité. Il s'utilise au moment de l'incident, ouvert dans un onglet
@@ -17,12 +23,12 @@ par ces apps (REDCap, OpenAlex, Appwrite).
 Choisir la sévérité dès la détection — elle conditionne le tempo de la
 réponse et les notifications.
 
-| Niveau | Critères                                                                                                                                                                                    | Délai d'engagement                    |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| **P0** | Fuite confirmée de données personnelles ; compromission active d'un compte admin Appwrite ; exfiltration de tokens REDCap valides ; supply-chain compromise sur un package atlas publié.    | Action **immédiate**, 24/7.           |
-| **P1** | Vulnérabilité exploitable à distance non corrigée en prod ; secret commité par erreur (token, clé) ; détection d'un publish sans provenance valide ; CodeQL `error` sur une route publique. | Action sous **4 h**, heures ouvrées.  |
-| **P2** | CodeQL `warning` haute sévérité ; finding ZAP medium sans exploit immédiat ; advisory CVE moderate sur une dépendance prod ; tentative de brute-force détectée mais bloquée par rate-limit. | Action sous **48 h**, heures ouvrées. |
-| **P3** | Hygiène : alertes Dependabot low, faux positif à dismisser, finding ZAP info, hardening cosmétique.                                                                                         | Triage hebdomadaire.                  |
+| Niveau | Critères                                                                                                                                                                                                                                                                                                                                                                                                                                                  | Délai d'engagement                    |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| **P0** | Fuite confirmée de données personnelles ; compromission active d'un compte admin Appwrite ; exfiltration de tokens REDCap valides ; supply-chain compromise sur un package **ou** une image atlas publié(e).                                                                                                                                                                                                                                              | Action **immédiate**, 24/7.           |
+| **P1** | Vulnérabilité exploitable à distance non corrigée en prod ; secret commité par erreur (token, clé) ; détection d'un publish sans provenance valide ; image GHCR non signée, signée par une identité inattendue ou dont la provenance SLSA (_Supply-chain Levels for Software Artifacts_, attestation de chaîne de build) est invalide ([ADR 0069](/atlas/decisions/0069-signature-scan-provenance-images-ghcr/)) ; CodeQL `error` sur une route publique. | Action sous **4 h**, heures ouvrées.  |
+| **P2** | CodeQL `warning` haute sévérité ; finding ZAP medium sans exploit immédiat ; advisory CVE moderate sur une dépendance prod ; tentative de brute-force détectée mais bloquée par rate-limit.                                                                                                                                                                                                                                                               | Action sous **48 h**, heures ouvrées. |
+| **P3** | Hygiène : alertes Dependabot low, faux positif à dismisser, finding ZAP info, hardening cosmétique.                                                                                                                                                                                                                                                                                                                                                       | Triage hebdomadaire.                  |
 
 En cas de doute, **escalader d'un cran** par défaut.
 
@@ -30,16 +36,17 @@ En cas de doute, **escalader d'un cran** par défaut.
 
 Sources à monitorer pour repérer un incident.
 
-| Source                                                                                                      | Quoi y chercher                                               | Périodicité                                 |
-| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------- |
-| [Security → Code scanning](https://github.com/univ-lehavre/atlas/security/code-scanning)                    | Nouveaux findings CodeQL `error` ou `high warning`            | À chaque PR + post-merge                    |
-| [Security → Dependabot](https://github.com/univ-lehavre/atlas/security/dependabot)                          | Advisories `high` ou `critical`                               | Quotidien (auto-merge couvre patches)       |
-| [Security → Secret scanning](https://github.com/univ-lehavre/atlas/security/secret-scanning)                | Secrets détectés ; push protection bloqués                    | Quotidien                                   |
-| [Actions → Gitleaks](https://github.com/univ-lehavre/atlas/actions/workflows/gitleaks.yml)                  | Findings sur PR ou push main                                  | À chaque PR                                 |
-| [Actions → ZAP Baseline](https://github.com/univ-lehavre/atlas/actions/workflows/zap-baseline.yml)          | Findings High/Medium après scan                               | Sur demande (déclenchement manuel)          |
-| Logs Appwrite (console admin)                                                                               | 5xx > seuil ; tentatives auth échouées ; latence p95 anormale | À cadrer avec les admins infra (cf. § Logs) |
-| Email de divulgation publié dans [SECURITY.md](https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md) | Divulgation responsable externe                               | Surveillance quotidienne                    |
-| [GitHub Private Vulnerability Reporting](https://github.com/univ-lehavre/atlas/security/advisories/new)     | Rapport coordonné                                             | Notification GitHub                         |
+| Source                                                                                                      | Quoi y chercher                                                                                                                                                                                                                                                                | Périodicité                                 |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| [Security → Code scanning](https://github.com/univ-lehavre/atlas/security/code-scanning)                    | Nouveaux findings CodeQL `error` ou `high warning`                                                                                                                                                                                                                             | À chaque PR + post-merge                    |
+| [Security → Code scanning (Trivy SARIF)](https://github.com/univ-lehavre/atlas/security/code-scanning)      | Vulnérabilités `CRITICAL`/`HIGH` remontées par le scan Trivy des images conteneur (rapport SARIF — _Static Analysis Results Interchange Format_) ; faux positifs gérés via `.trivyignore` versionné ([ADR 0069](/atlas/decisions/0069-signature-scan-provenance-images-ghcr/)) | À chaque build d'image (`images.yml`)       |
+| [Security → Dependabot](https://github.com/univ-lehavre/atlas/security/dependabot)                          | Advisories `high` ou `critical`                                                                                                                                                                                                                                                | Quotidien (auto-merge couvre patches)       |
+| [Security → Secret scanning](https://github.com/univ-lehavre/atlas/security/secret-scanning)                | Secrets détectés ; push protection bloqués                                                                                                                                                                                                                                     | Quotidien                                   |
+| [Actions → Gitleaks](https://github.com/univ-lehavre/atlas/actions/workflows/gitleaks.yml)                  | Findings sur PR ou push main                                                                                                                                                                                                                                                   | À chaque PR                                 |
+| [Actions → ZAP Baseline](https://github.com/univ-lehavre/atlas/actions/workflows/zap-baseline.yml)          | Findings High/Medium après scan                                                                                                                                                                                                                                                | Sur demande (déclenchement manuel)          |
+| Logs Appwrite (console admin)                                                                               | 5xx > seuil ; tentatives auth échouées ; latence p95 anormale                                                                                                                                                                                                                  | À cadrer avec les admins infra (cf. § Logs) |
+| Email de divulgation publié dans [SECURITY.md](https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md) | Divulgation responsable externe                                                                                                                                                                                                                                                | Surveillance quotidienne                    |
+| [GitHub Private Vulnerability Reporting](https://github.com/univ-lehavre/atlas/security/advisories/new)     | Rapport coordonné                                                                                                                                                                                                                                                              | Notification GitHub                         |
 
 ## 3. Phases de réponse
 
@@ -65,7 +72,7 @@ Couper l'exposition sans détruire les preuves.
    l'émetteur le permet.
 3. **Mise à jour** des GitHub Secrets / Appwrite variables d'environnement.
 4. **Redéploiement** des apps qui consomment le secret (`amarre`,
-   `ecrin`, `find-an-expert`).
+   `ecrin`, `find-an-expert`, `sillage`).
 
 **Si compromission d'un compte utilisateur Appwrite** :
 
@@ -82,6 +89,27 @@ Couper l'exposition sans détruire les preuves.
 3. **Ne pas unpublish** sans coordination — `npm unpublish` est
    irréversible après 72h et casse les consommateurs en aval.
 4. Préparer une version `patch` qui surclasse la version compromise.
+
+**Si compromission d'une image conteneur publiée sur GHCR**
+([ADR 0069](/atlas/decisions/0069-signature-scan-provenance-images-ghcr/)) :
+
+1. **Vérifier la signature cosign** (signature _keyless_ via OIDC —
+   _OpenID Connect_ —, sans clé persistante) de l'image suspecte —
+   l'identité signataire attendue
+   est le workflow `images.yml` du dépôt :
+   `cosign verify ghcr.io/univ-lehavre/atlas-<name>:<tag> --certificate-identity-regexp '.../\.github/workflows/images\.yml@.*' --certificate-oidc-issuer https://token.actions.githubusercontent.com`.
+   Une identité inattendue ou une signature absente confirme l'incident.
+2. **Vérifier la provenance SLSA** (`provenance:true`) et le SBOM
+   CycloneDX (`sbom:true`, _Software Bill of Materials_) attachés à
+   l'image pour confirmer la chaîne de build.
+3. **Empêcher le pull du tag compromis** : le cluster consommateur
+   ([ADR 0043](/atlas/decisions/0043-publication-images-ghcr/)) ne doit
+   plus réconcilier ce tag ; le garde-fou de cible au déploiement
+   ([ADR 0073](/atlas/decisions/0073-corriger-le-code-pas-l-etat-garde-fou-cible/)) refuse
+   déjà `:dev`/`:latest` et un contrat manquant en prod.
+4. **Reconstruire et republier** une image saine depuis `main`
+   (build CI vert, scan Trivy propre, nouvelle signature) et basculer le
+   cluster dessus.
 
 **Si fuite de données personnelles confirmée** :
 
@@ -184,8 +212,8 @@ en attente d'arbitrage avec la Admins infra.
 
 ### 5.3 Logs d'auth
 
-Les apps amarre/ecrin/find-an-expert utilisent un magic-link Appwrite
-(cf. [packages/auth/src/](https://github.com/univ-lehavre/atlas/tree/main/packages/auth/src/)). Les événements à
+Les apps amarre/ecrin/find-an-expert/sillage utilisent un magic-link
+Appwrite (cf. [packages/auth/src/](https://github.com/univ-lehavre/atlas/tree/main/packages/auth/src/)). Les événements à
 tracer côté Appwrite :
 
 - Création de session (succès/échec)
@@ -217,10 +245,10 @@ avec la Admins infra — la politique dépend de l'hébergement Appwrite
 À fixer avec les admins infra selon la criticité applicative.
 
 - **RPO** (Recovery Point Objective — combien de données on accepte
-  de perdre) : suggérer **24 h** pour amarre/ecrin/find-an-expert.
+  de perdre) : suggérer **24 h** pour amarre/ecrin/find-an-expert/sillage.
 - **RTO** (Recovery Time Objective — délai max de rétablissement) :
   suggérer **4 h** pour amarre (formulaire de mobilité, période active
-  limitée), **24 h** pour ecrin/find-an-expert.
+  limitée), **24 h** pour ecrin/find-an-expert/sillage.
 
 _Valeurs à valider par les owners métier ; ces chiffres ne sont pas
 des engagements contractuels (cf. note SECURITY.md)._

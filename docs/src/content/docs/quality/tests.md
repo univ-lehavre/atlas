@@ -13,10 +13,15 @@ Atlas teste **tout type de code exécutable**, pas seulement les fonctions inter
 - **Fonctions et modules** des paquets (`packages/`) : logique métier, utilitaires, validateurs.
 - **Services HTTP** (`services/`) : routes, en passant par la chaîne route → service → dépôt.
 - **Composants d'interface** (`ui/`) : composants Svelte rendus et vérifiés.
-- **Applications** (`apps/`) : parcours utilisateur de bout en bout dans un vrai navigateur.
+- **Applications** (`apps/`) : tests intra-app (projets vitest unit/ui/integration) ; le parcours utilisateur de bout en bout dans un vrai navigateur vit, lui, dans les sandbox dédiées (`sandbox/<app>-sandbox/`, voir le tableau plus bas).
 - **Outils en ligne de commande** (`cli/`) : les CLI sont testées comme les paquets dont elles dépendent.
+- **Pipelines de données** (`dataops/`) : code Python (Dagster/dbt) testé avec [**pytest**](https://docs.pytest.org/) (le cadre de tests standard de Python), couverture à seuil (`--cov-fail-under=90`), property-based testing ([**Hypothesis**](https://hypothesis.readthedocs.io/), voir plus bas) et asset checks [**Great Expectations**](https://greatexpectations.io/) (validations déclaratives de qualité des données posées sur les actifs Dagster).
 
 Autrement dit, du plus petit utilitaire jusqu'à l'application complète, chaque couche a ses tests ; le tableau « [Où écrire un test](#où-écrire-un-test) » plus bas indique où chacun vit.
+
+### Pipelines de données (`dataops/`) : une chaîne d'outillage distincte
+
+Le répertoire `dataops/` est en **Python natif** ([ADR 0055](/atlas/decisions/0055-categorie-dataops-python/)) : il est **hors du graphe pnpm** et **hors du périmètre vitest/ESLint/Prettier/TypeScript**. Sa chaîne d'outillage lui est propre — `ruff` (linter et formateur Python) et `pytest`, avec un seuil de couverture **bloquant** (`--cov-fail-under=90`). Le property-based testing y est assuré par **Hypothesis** ([ADR 0072](/atlas/decisions/0072-property-based-testing-dataops-python/)) et la qualité des données par les **asset checks Great Expectations** sur les actifs Dagster. En intégration continue, le job « DataOps quality (ruff + pytest + coverage + manifests) » exécute cette chaîne indépendamment de la suite Node.
 
 ## La pyramide à cinq niveaux
 
@@ -34,7 +39,11 @@ Les niveaux 3, 4 et 5 sont dits _self-skipping_ : ils se désactivent automatiqu
 
 ### Le modèle général : la base (tests unitaires)
 
-C'est la base qui porte la pyramide : la grande majorité des tests sont **unitaires**, et ils suivent partout le **même modèle**. Une fonction est testée isolément ; ses dépendances externes (réseau, base de données, horloge…) sont remplacées par des _mocks_ (objets factices qui imitent le comportement attendu) ou, dans le code Effect, par des _layers_ de test ; on appelle la fonction avec une entrée connue et on vérifie sa sortie. Rapides (de l'ordre de la milliseconde) et sans dépendance externe, ils s'exécutent à chaque commit. Tout paquet qui s'écarte de ce modèle général — montage particulier, fixture lourde, convention propre — le documente dans le **`README.md` de son paquet**, là où vit la spécificité ; cette page ne décrit que le cas général.
+C'est la base qui porte la pyramide : la grande majorité des tests sont **unitaires**, et ils suivent partout le **même modèle**. Une fonction est testée isolément ; ses dépendances externes (réseau, base de données, horloge…) sont remplacées par des _mocks_ (objets factices qui imitent le comportement attendu) ou, dans le code Effect, par des _layers_ de test ; on appelle la fonction avec une entrée connue et on vérifie sa sortie. Rapides (de l'ordre de la milliseconde) et sans dépendance externe, ils s'exécutent à chaque commit. Ce modèle est le plus courant — un test **par l'exemple** : on choisit soi-même les cas (entrée connue → sortie attendue) — mais il n'est pas le seul ; le _property-based testing_ ci-dessous le complète au même niveau. Tout paquet qui s'écarte de ce modèle général — montage particulier, fixture lourde, convention propre — le documente dans le **`README.md` de son paquet**, là où vit la spécificité ; cette page ne décrit que le cas général.
+
+### Une technique transverse : le property-based testing
+
+Le **property-based testing** (PBT, « tests par propriétés ») n'est pas un sixième niveau de la pyramide : c'est une **technique** qui s'applique au niveau **unitaire**. Au lieu d'écrire des exemples choisis à la main, on déclare une **propriété** que la fonction doit respecter pour _toute_ entrée valide (par exemple : « décoder puis encoder redonne l'entrée d'origine »), et l'outil génère automatiquement des centaines de cas — y compris des cas-limites qu'on n'aurait pas pensé à écrire — puis réduit tout contre-exemple trouvé à sa forme minimale. C'est complémentaire des tests par l'exemple, pas un remplacement. Atlas l'emploie des deux côtés de la frontière de langage : **fast-check** côté TypeScript et **Hypothesis** côté Python ([ADR 0072](/atlas/decisions/0072-property-based-testing-dataops-python/)).
 
 ## Lancer les tests
 
@@ -80,12 +89,13 @@ Le chiffre **consolidé et vivant** n'est pas recopié ici (il deviendrait faux 
 
 ## Où écrire un test
 
-| Type de code                             | Où placer le test                                      |
-| ---------------------------------------- | ------------------------------------------------------ |
-| Fonction utilitaire dans `packages/foo/` | `packages/foo/src/<module>.test.ts`                    |
-| Route HTTP dans `services/crf/`          | `services/crf/src/<route>.test.ts`                     |
-| Composant Svelte dans `ui/atlas-ui/`     | `ui/atlas-ui/src/<component>.test.ts`                  |
-| Parcours utilisateur dans `apps/<app>/`  | `apps/<app>/tests/e2e/<scenario>.spec.ts` (Playwright) |
+| Type de code                             | Où placer le test                                                 |
+| ---------------------------------------- | ----------------------------------------------------------------- |
+| Fonction utilitaire dans `packages/foo/` | `packages/foo/src/<module>.test.ts`                               |
+| Route HTTP dans `services/crf/`          | `services/crf/src/<route>.test.ts`                                |
+| Composant Svelte dans `ui/atlas-ui/`     | `ui/atlas-ui/src/<component>.test.ts`                             |
+| Tests intra-app dans `apps/<app>/`       | `apps/<app>/tests/{unit,ui,integration}/` (projets vitest)        |
+| Smoke utilisateur de bout en bout        | `sandbox/<app>-sandbox/tests/e2e/<scenario>.spec.ts` (Playwright) |
 
 Les fichiers `*.test.ts` et `*.spec.ts` bénéficient de règles ESLint relâchées (mocks, assertions, `any` autorisé en local) — voir [Style de code → Fichiers de test](/atlas/quality/code-style/#fichiers-de-test).
 
