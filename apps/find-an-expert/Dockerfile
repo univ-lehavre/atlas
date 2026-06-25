@@ -15,10 +15,10 @@
 # `build/`, puis un `runner` léger ne garde que le runtime Node, le build et
 # un node_modules de prod élagué.
 
-# Aligné sur .nvmrc (Node 24.15.0, figé au patch — parité dev/prod,
+# Aligné sur .nvmrc (Node 24.18.0, figé au patch — parité dev/prod,
 # facteur X). Alpine pour une image runtime légère.
-ARG NODE_VERSION=24.15.0
-ARG ALPINE_VERSION=3.22
+ARG NODE_VERSION=24.18.0
+ARG ALPINE_VERSION=3.24
 
 # ──────────────────────────────────────────────────────────────────────
 # Base — active corepack/pnpm à la version pinnée dans package.json.

@@ -1,0 +1,323 @@
+---
+title: Plan — Mise en œuvre de la typologie Diátaxis
+---
+
+> Date du plan : 2026-06-24. Socle décisionnel : [ADR 0074](/atlas/decisions/0074-diataxis-typologie-documentation/)
+> (adoption de Diátaxis comme **troisième axe** — l'_intention_ — de structuration de
+> la documentation rédigée, orthogonal à l'axe _audience_
+> ([ADR 0025](/atlas/decisions/0025-documentation-multi-niveaux/)) et à l'axe _thème_
+> (R6, [ADR 0052](/atlas/decisions/0052-charte-redactionnelle-documentation/))).
+> L'ADR 0074 **adopte** la typologie ; il **disjoint** explicitement l'adoption de sa
+> **mise en œuvre** (rangement des pages, refonte de la barre latérale, ajustement des
+> renvois) et la renvoie à ce plan dédié. Ce plan porte le **comment** ; l'ADR 0074
+> porte le **pourquoi**. Il s'inscrit dans la visée non-experte de
+> [ADR 0013](/atlas/decisions/0013-documentation-public-non-expert-fr/) et reste régi
+> en exactitude par [ADR 0028](/atlas/decisions/0028-documentation-verifiable/)
+> (`pnpm audit:docs`).
+
+## Objectif
+
+Exécuter la **mise en œuvre** de la typologie Diátaxis sur la documentation publiée
+d'Atlas : confirmer le **mode dominant** de chaque page de prose (tutorial, how-to,
+reference, explanation — Diátaxis, _du grec dia-_ « à travers » _et taxis_
+« ordonnancement »), réorganiser la **barre latérale** par intention, **renommer ou
+scinder** les rares pages mal classées et **ajuster les renvois** internes en
+conséquence. Le but n'est pas d'inventer un classement — l'ADR 0074 l'a déjà
+esquissé — mais de le **consolider, arbitrer et câbler** dans le dépôt.
+
+## Ce que ce plan n'est pas
+
+- **Une re-décision de la typologie** : l'axe d'intention est **acté** par l'ADR 0074 ;
+  ce plan ne le rouvre pas. Si un arbitrage de mise en œuvre fait apparaître un besoin
+  de décision structurante (p. ex. scinder le plan-décision en un ADR + un plan), il
+  ouvre un **ADR** ou une **issue**, pas un débat dans ce fichier.
+- **Un garde-fou exécutable sur le mode** : l'ADR 0074 **désavoue** tout contrôle
+  automatique du mode (le mode est une intention, non un fait mesurable — réserve
+  reprise du dépôt `cluster`). Ce plan **n'ajoute aucun** check `audit:docs` sur le
+  classement. Le mode reste un **critère de revue de rédaction**, pas un test.
+- **Le comblement du trou _tutorial_** : l'ADR 0074 relève qu'**aucun tutorial pur**
+  n'existe (pas de parcours _learn-by-doing_). Écrire ce tutorial est un **chantier de
+  contenu distinct** (hors périmètre) ; ce plan se contente de **réserver la place**
+  (groupe « Apprendre » vide) sans rédiger la page.
+- **Une refonte du moteur de doc** ni de l'arborescence de fichiers sur disque (voir
+  P1, option B) : la réorganisation porte d'abord sur la **barre latérale** et les
+  **renvois**, pas sur un déplacement massif de fichiers (qui casserait les URLs).
+
+## Principes directeurs
+
+- **Liens d'abord** : aucune réorganisation n'est mergée tant que `pnpm docs:build`
+  (qui échoue sur lien interne cassé) et `pnpm audit:docs` ne sont pas verts. Tout
+  renommage/déplacement de page qui change une URL est accompagné de la mise à jour de
+  **tous** ses référents (renvois internes, ADR, README racine).
+- **Réversibilité** : la barre latérale (P1) est un **réordonnancement d'affichage**,
+  pas un déménagement de fichiers — réversible d'un `git revert`. Les opérations
+  risquées pour les URLs (P2) sont isolées et minimales.
+- **Une page = un mode dominant** : on vise l'**intention dominante**, pas la pureté
+  absolue (ADR 0074). Une page d'architecture qui cite des faits reste _explanation_ ;
+  on ne scinde que les pages réellement **bicéphales**.
+- **Agentique-ready** : chaque phase est exécutable par un agent Claude sans question.
+  En cas d'ambiguïté de classement irréductible : stop avec rapport de blocage (issue
+  `blocker:`), sans deviner — le classement reste un jugement humain.
+- **Non-régression** : `pnpm docs:build` et `pnpm audit:docs` verts à chaque étape ;
+  compteurs d'ADR (R8, [ADR 0052](/atlas/decisions/0052-charte-redactionnelle-documentation/))
+  et liens préservés.
+- **Commits** : Conventional Commits, sujet minuscule, scope `docs` (documentation /
+  ADR), pas de `Co-Authored-By`. Une PR par phase. Hooks lefthook **jamais** bypassés.
+
+## Vue d'ensemble des phases
+
+| Phase  | Titre                                       | Nature             | Touche les URLs ?        | Risque |
+| ------ | ------------------------------------------- | ------------------ | ------------------------ | ------ |
+| **P0** | Valider et figer le classement page→mode    | revue + ce plan    | non                      | nul    |
+| **P1** | Réorganiser la barre latérale par intention | `astro.config.mjs` | non (réordonnancement)   | faible |
+| **P2** | Renommer / scinder les pages mal classées   | fichiers + renvois | **oui** (URLs modifiées) | élevé  |
+| **P3** | Ajuster les renvois inter-modes             | prose (liens)      | non                      | faible |
+
+**Graphe de dépendances** : `P0 → P1 → P2 → P3`. P0 est le **prérequis** de tout
+(on ne réorganise pas un classement non figé). P1 (affichage) précède P2 (fichiers)
+pour exposer les regroupements et révéler tôt les pages-frontière. P3 referme la
+boucle une fois les pages à leur place. P1 et P3 sont **réversibles** ; P2 est la
+seule phase qui modifie des URLs et concentre le risque.
+
+---
+
+## P0 — Valider et figer le classement page→mode
+
+**Objectif.** Transformer la **cartographie indicative** de l'ADR 0074 (« non
+contraignante », chaque ligne « à revérifier et arbitrer ») en un **classement de
+référence** opposable, en confirmant le mode dominant page par page et en tranchant
+les pages-frontière. **On consolide ; on ne ré-invente pas.**
+
+**Dépendances.** Aucune. **Touche les URLs ?** Non.
+
+**Critère de sortie.** Le tableau ci-dessous est revérifié contre l'arborescence
+réelle (`docs/src/content/docs/`) ; toute page nouvelle depuis l'ADR 0074 y est
+ajoutée ; chaque ligne « Scinder » ou « Renommer » a une issue liée. `pnpm docs:build`
+et `pnpm audit:docs` verts (ce plan ne casse aucun lien).
+
+### Classement de référence (consolidé depuis l'ADR 0074)
+
+Reprise **fidèle** de la cartographie de l'ADR 0074, regroupée **par mode** (et non
+plus par dossier) pour préparer P1. Seules les colonnes « Action » signalent un
+mouvement ; tout le reste est « Garder ».
+
+#### explanation — _comprendre le pourquoi_
+
+| Page                                         | Justification courte                                                      | Action |
+| -------------------------------------------- | ------------------------------------------------------------------------- | ------ |
+| `index.mdx` (accueil)                        | Présente le _pourquoi_ de la chaîne de qualité, renvoie aux attestations. | Garder |
+| `architecture/monorepo.mdx`                  | Explique _ce qu'est_ un monorepo et _pourquoi_ cette structure.           | Garder |
+| `architecture/comprendre-le-code.md`         | Guide de lecture (« par où entrer »), discursif.                          | Garder |
+| `architecture/data-flow.md`                  | Décrit à haut niveau _comment_ les données circulent, pour comprendre.    | Garder |
+| `architecture/tech-choices.md`               | Récapitule les choix et le _pourquoi_ / l'alternative écartée.            | Garder |
+| `architecture/modele-uplift-fwci.md`         | Éclaire qualités, précautions et tests du modèle pour un non-développeur. | Garder |
+| `architecture/re-derivabilite-mart-index.md` | Explique le mécanisme de propagation d'une opposition RGPD.               | Garder |
+| `quality/code-style.md`                      | Justifie _pourquoi_ chaque règle de style et _ce qu'elle coûte_.          | Garder |
+| `quality/tests.md`                           | Part du _pourquoi des tests_, discursif sur la pyramide.                  | Garder |
+| `quality/documentation.mdx`                  | Expose la _politique_ de doc (langue, niveaux, ton) et son pourquoi.      | Garder |
+| `audit/2026-05-29.md`                        | Rapport d'audit discursif (constats, notes, recommandations).             | Garder |
+| `audit/2026-06-04-cloud-native.md`           | Rapport d'audit cloud-native, discursif.                                  | Garder |
+| `audit/2026-06-04-effect-socle.md`           | Rapport d'audit du socle Effect, discursif.                               | Garder |
+| `audit/2026-06-15-maturite-referentiels.md`  | Rapport de maturité (4 référentiels), discursif.                          | Garder |
+| `audit/2026-06-24-uplift-fwci-eunicoast.md`  | Reconnaissance (spike) consignée, discursive.                             | Garder |
+| `decisions/parcours.md`                      | Parcours de lecture guidé à travers les ADR — discursif.                  | Garder |
+| `decisions/00xx-*.md` (tous les ADR)         | Un ADR explique un choix, son contexte et ses conséquences.               | Garder |
+
+#### reference — _consulter un fait_
+
+| Page                                        | Justification courte                                                 | Action |
+| ------------------------------------------- | -------------------------------------------------------------------- | ------ |
+| `glossary.md`                               | Table de termes consultable, on y cherche une définition.            | Garder |
+| `architecture/packages.md`                  | Liste exhaustive des paquets (rôle, deps), consultable.              | Garder |
+| `quality/normes.md`                         | Bilan consultable des pratiques en place, discipline par discipline. | Garder |
+| `quality/security.md`                       | Inventaire des secrets, surfaces, SAST/DAST, SBOM — consultable.     | Garder |
+| `quality/ci-pipeline.md`                    | Décrit les étapes du pipeline CI, page consultée pour un fait.       | Garder |
+| `quality/hooks.md`                          | Décrit chaque hook Git et ce qu'il vérifie, consultable.             | Garder |
+| `quality/accessibilite.md`                  | Recense les pratiques a11y appliquées et leurs contrôles.            | Garder |
+| `quality/tableau-de-bord.mdx`               | Indicateurs de robustesse paquet par paquet, consultable.            | Garder |
+| `collaboration/releases.md`                 | Décrit le mécanisme Changesets et les registres de publication.      | Garder |
+| `audit/index.md`                            | Index daté des rapports d'audit (état figé à l'instant T).           | Garder |
+| `audit/registre-drifts.mdx`                 | Catalogue consultable des drifts révélés à l'exécution.              | Garder |
+| `plans/index.md`                            | Index des plans de résorption, consultable.                          | Garder |
+| `plans/2026-05-30-resorption-validation.md` | Rapport de validation d'un plan (constat figé).                      | Garder |
+
+#### how-to — _accomplir une tâche précise_
+
+| Page                                              | Justification courte                                          | Action |
+| ------------------------------------------------- | ------------------------------------------------------------- | ------ |
+| `quality/incident-response.md`                    | Procédure à appliquer en cas d'incident — orientée tâche.     | Garder |
+| `collaboration/workflow.md`                       | Décrit le flux standard de contribution branche → PR → merge. | Garder |
+| `collaboration/environnement-local.md`            | _Ce qu'il faut installer_ pour développer — orienté action.   | Garder |
+| `collaboration/installer-les-clis.md`             | Installer les CLIs depuis les registres — recette de tâche.   | Garder |
+| `collaboration/parametrage-github.md`             | Configurer le dépôt GitHub (protections, secrets) — tâche.    | Garder |
+| `collaboration/checklist-deploiement.md`          | Liste de vérifications avant mise en service d'une instance.  | Garder |
+| `plans/2026-05-30-resorption.md`                  | Plan d'action phasé, exécutable étape par étape.              | Garder |
+| `plans/2026-06-02-pipeline-collaborations.md`     | Plan d'implémentation phasé du pipeline.                      | Garder |
+| `plans/2026-06-04-resorption-cloud-native.md`     | Plan de résorption phasé.                                     | Garder |
+| `plans/2026-06-04-socle-effect.md`                | Plan de résorption du socle Effect, phasé.                    | Garder |
+| `plans/2026-06-11-producteur-researchers.md`      | Plan d'implémentation du mart `researchers`.                  | Garder |
+| `plans/2026-06-23-mise-en-production-openalex.md` | Plan de mise en production phasé.                             | Garder |
+| `plans/2026-06-24-uplift-fwci-eunicoast.md`       | Plan d'implémentation du modèle d'uplift, phasé.              | Garder |
+| `plans/2026-06-24-mise-en-oeuvre-diataxis.md`     | **Ce plan** — feuille de route exécutable, phasée.            | Garder |
+| `plans/documentation-verifiable.md`               | Plan d'action documentation vérifiable.                       | Garder |
+
+#### tutorial — _apprendre en faisant_
+
+| Page       | Justification courte                                                         | Action                                   |
+| ---------- | ---------------------------------------------------------------------------- | ---------------------------------------- |
+| _(aucune)_ | **Trou identifié** par l'ADR 0074 : aucun parcours _learn-by-doing_ de zéro. | Hors périmètre (réserver la place en P1) |
+
+#### Page-frontière à arbitrer
+
+| Page                                                 | Mode proposé (ADR 0074)  | Action proposée (ADR 0074)                                                                          |
+| ---------------------------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------- |
+| `plans/2026-06-11-topologie-depots-cluster-atlas.md` | explanation **+** how-to | **Scinder** : la part _décision_ relève d'une explanation / d'un ADR ; la part _plan_ reste how-to. |
+
+L'ADR 0074 désigne cette page comme **la seule** réellement bicéphale. P0 tranche :
+soit on **scinde** (P2), soit on acte qu'elle reste un plan-décision toléré (avec un
+renvoi clair). **Décision par défaut** : scinder en P2 (extraire la décision vers un
+ADR, garder le plan d'exécution), pour respecter « une page = un mode dominant ».
+
+> _Note de péremption._ Ce classement est daté du **2026-06-24** et reflète l'état du
+> dépôt à cette date. Toute page ajoutée ensuite doit être classée à sa création (en
+> revue de rédaction), **pas** rétro-ajoutée ici : ce tableau est un instantané de
+> départ, non un registre vivant exhaustif (cf. risque _péremption_ ci-dessous).
+
+---
+
+## P1 — Réorganiser la barre latérale par intention
+
+**Objectif.** Faire passer la barre latérale (`docs/astro.config.mjs`) d'un regroupement
+**par dossier thématique** (_Architecture_, _Qualité & sécurité_, _Collaboration_,
+_Décisions_, _Audits_, _Plans_) à un regroupement **par mode** (intention), selon
+l'esquisse de l'ADR 0074. C'est un **réordonnancement d'affichage** : aucun fichier ne
+bouge, aucune URL ne change.
+
+**Dépendances.** P0 (classement figé). **Touche les URLs ?** Non.
+
+**Barre latérale cible** (4 groupes par intention, reprise de l'ADR 0074) :
+
+- **Apprendre** (_tutorial_) — **vide aujourd'hui** ; réserve la place du futur
+  parcours de prise en main pas-à-pas (trou identifié en P0). Un groupe vide n'est pas
+  affiché par Starlight ; on documente l'intention sans rien câbler de prématuré.
+- **Faire** (_how-to_) — `collaboration/*`, `quality/incident-response`, les `plans/*`.
+- **Consulter** (_reference_) — `glossary`, `architecture/packages`,
+  `quality/{normes,security,ci-pipeline,hooks,accessibilite,tableau-de-bord}`,
+  `collaboration/releases`, les index `audit/`, `plans/` et `registre-drifts`.
+- **Comprendre** (_explanation_) — le reste d'`architecture/*`,
+  `quality/{code-style,tests,documentation}`, les rapports d'`audit/*`, les
+  `decisions/*` (ADR + `parcours`).
+
+**Point dur technique.** La config actuelle utilise `autogenerate: { directory: … }`,
+qui groupe **par dossier**. Un regroupement par mode exige soit des **groupes à `items`
+explicites** (lien par lien, au prix d'une liste à maintenir à la main), soit de
+conserver l'autogénération **par dossier en sous-groupes** sous chaque mode. **Arbitrage
+P1** : privilégier `items` explicites par mode pour les pages stables (architecture,
+quality) et garder l'autogénération pour les collections volumineuses et datées
+(`decisions/`, `audit/`, `plans/`) afin de ne pas devoir éditer la config à chaque
+nouvel ADR/audit/plan.
+
+**Critère de sortie.** `pnpm docs:build` vert ; la barre latérale rend 4 groupes
+d'intention (le groupe _Apprendre_ reste non affiché tant qu'il est vide) ; aucune page
+publiée n'est devenue inatteignable (toutes restent dans un groupe) ; capture avant/après
+de la navigation jointe à la PR.
+
+---
+
+## P2 — Renommer / scinder les pages mal classées
+
+**Objectif.** Traiter les **rares** pages que P0 a marquées « Scinder » ou « Renommer ».
+À l'état 2026-06-24, **une seule** page est concernée :
+`plans/2026-06-11-topologie-depots-cluster-atlas.md` (bicéphale explanation + how-to).
+C'est la **seule phase qui modifie des URLs** — donc la plus risquée.
+
+**Dépendances.** P0 (arbitrage de la page-frontière), P1 (groupes exposés).
+**Touche les URLs ?** **Oui** — opérations isolées et accompagnées de la mise à jour de
+tous les référents.
+
+**Opération (par défaut : scinder).**
+
+1. Extraire la **part décision** (le _pourquoi_ de la topologie cluster/atlas) vers une
+   **explanation** — un **ADR** (numéro = prochain libre, à vérifier, **ne pas
+   présumer**) dans `decisions/`, référencé dans `decisions/index.md` et
+   `decisions/parcours.md` (compteurs R8 à mettre à jour).
+2. Garder la **part plan** (le _comment_ / la feuille de route) dans le fichier
+   `plans/` existant, allégé de la prose décisionnelle, avec un **renvoi** vers le
+   nouvel ADR.
+3. Si l'URL du plan change (renommage), **recenser et mettre à jour tous les référents**
+   avant merge : renvois internes, `plans/index.md`, tout ADR ou audit qui pointe vers
+   l'ancienne URL, et — s'il existe un référent **racine** (README/CONTRIBUTING) — le
+   pointer vers l'**URL publiée** `https://univ-lehavre.github.io/atlas/plans/<slug>/`.
+
+**Garde-fou « même PR ».** Si la scission touche un point de contact avec le dépôt
+`cluster`, mettre à jour [ADR 0033](/atlas/decisions/0033-contrat-interface-cluster/)
+**dans la même PR**.
+
+**Critère de sortie.** `pnpm docs:build` (lien cassé = échec) et `pnpm audit:docs`
+(compteurs R8) verts ; `grep -rn` sur l'ancien slug ne renvoie **aucun** référent
+résiduel ; le nouvel ADR est numéroté en continu et indexé.
+
+---
+
+## P3 — Ajuster les renvois inter-modes
+
+**Objectif.** Appliquer la règle « **renvoyer, pas recopier** » de l'ADR 0074 : là où
+une page d'un mode a besoin d'un autre mode, remplacer toute **recopie** de contenu par
+un **lien Markdown** vers la page du bon mode (p. ex. un guide how-to qui recopie une
+définition du `glossary` reference → la cite ; une explanation qui détaille un _comment_
+→ renvoie vers le how-to). On supprime la **redite**, on ne crée pas de page.
+
+**Dépendances.** P0–P2 (pages à leur place et nommées). **Touche les URLs ?** Non.
+
+**Périmètre prudent.** On ne réécrit **pas** des sections entières : on retire les
+recopies **flagrantes** repérées en P0 et on pose les renvois manquants. Une page reste
+**dominante** dans son mode ; citer un fait ne la déclasse pas (ADR 0074, intention
+dominante non exclusive).
+
+**Critère de sortie.** `pnpm docs:build` + `pnpm audit:docs` verts ; les renvois ajoutés
+pointent vers des slugs **existants** ; aucun fait n'a désormais **deux** sources de
+vérité parmi les pages traitées.
+
+---
+
+## Risques
+
+- **Liens cassés à la réorganisation (P2, P1).** Le risque majeur. Tout renommage de
+  page change une URL et peut casser un renvoi interne, un lien d'ADR ou un lien
+  **racine** (README/SECURITY, rendus sur GitHub). _Parade_ : `pnpm docs:build` échoue
+  sur lien interne cassé ; recensement exhaustif des référents par `grep -rn <slug>`
+  avant merge ; liens racine pointés vers les **URLs publiées**
+  (`https://univ-lehavre.github.io/atlas/<section>/<slug>/`), plus robustes que les
+  chemins relatifs ; P1 (affichage) ne touche aucune URL et reste réversible.
+- **Péremption de la cartographie.** Le classement de P0 est un **instantané daté** ;
+  toute page créée après le 2026-06-24 n'y figure pas et risque de naître mal classée si
+  le tableau est pris pour un registre vivant. _Parade_ : la note de péremption en P0
+  rappelle que le classement se fait **à la création** en revue de rédaction (pas de
+  rétro-ajout), et que ce tableau n'est qu'un **point de départ**, pas une source de
+  vérité maintenue. Aucun garde-fou exécutable ne le vérifie (choix assumé de l'ADR 0074).
+- **Sur-application de Diátaxis (cargo-cult).** Le risque de scinder trop, d'afficher des
+  badges de mode, ou de viser une pureté irréaliste. _Parade_ : l'ADR 0074 vise
+  l'**intention dominante** (pas exclusive) et **écarte** explicitement les badges ; P2
+  ne traite que la **seule** page réellement bicéphale ; P3 retire les recopies
+  flagrantes, sans réécriture de fond.
+- **Maintenance de la barre latérale à `items` explicites (P1).** Lister les pages à la
+  main alourdit la config et risque l'oubli au prochain ajout. _Parade_ : garder
+  l'**autogénération par dossier** pour les collections datées et volumineuses
+  (`decisions/`, `audit/`, `plans/`), ne passer en `items` explicites que les groupes
+  stables (architecture, quality).
+- **Régression des compteurs d'ADR (R8).** La scission P2 crée un ADR et modifie les
+  compteurs « N ADR » des pages catalogue. _Parade_ : `pnpm audit:docs` vérifie les
+  compteurs (R8, [ADR 0052](/atlas/decisions/0052-charte-redactionnelle-documentation/)) ;
+  mettre à jour `decisions/index.md` et `decisions/parcours.md` dans la même PR.
+
+## Vérification
+
+- **Par phase** : `pnpm docs:build` (lien interne cassé = échec) et `pnpm audit:docs`
+  (compteurs R8, charte 0052) verts ; capture avant/après de la barre latérale (P1) ;
+  `grep -rn` sans référent résiduel sur tout slug modifié (P2).
+- **Transverse** : aucune page publiée rendue inatteignable ; aucun lien racine
+  (README/CONTRIBUTING/SECURITY) brisé — vérifié contre les **URLs publiées**.
+- **Pas de garde-fou exécutable sur le mode** : conforme à l'ADR 0074, on **n'ajoute
+  aucun** check `audit:docs` sur le classement ; le mode reste un critère de revue.
+- **Commit/PR** : merge commit, hooks non bypassés, sujet minuscule, pas de
+  `Co-Authored-By`, scope `docs`.

@@ -11,6 +11,8 @@ import {
   relativeMarkdownLinks,
   adrReferences,
   staleAdrCounts,
+  indexAdrNumbers,
+  adrIndexConsistency,
   navLinks,
   findOrphanPages,
 } from "./documentation.mjs";
@@ -223,6 +225,85 @@ describe("staleAdrCounts", () => {
 
   it("ignore la prose sans le motif « N ADR »", () => {
     assert.deepEqual(staleAdrCounts("les ADR du dépôt, ADR 0052", 52), []);
+  });
+});
+
+describe("indexAdrNumbers", () => {
+  const table = [
+    "| #    | Titre | Statut   |",
+    "| ---- | ----- | -------- |",
+    "| 0001 | [A](/atlas/decisions/0001-a/) | Accepted |",
+    "| 0002 | [B](/atlas/decisions/0002-b/) | Accepted |",
+  ].join("\n");
+
+  it("lit les numéros des lignes du tableau d'index", () => {
+    assert.deepEqual(indexAdrNumbers(table), ["0001", "0002"]);
+  });
+
+  it("ignore l'en-tête et le séparateur du tableau", () => {
+    // Ni `#` ni `----` ne sont des numéros à quatre chiffres.
+    assert.equal(indexAdrNumbers(table).length, 2);
+  });
+
+  it("conserve un numéro répété (pour signaler le doublon en aval)", () => {
+    const md =
+      table + "\n| 0002 | [B bis](/atlas/decisions/0002-b/) | Accepted |";
+    assert.deepEqual(indexAdrNumbers(md), ["0001", "0002", "0002"]);
+  });
+
+  it("renvoie un tableau vide sans ligne de tableau", () => {
+    assert.deepEqual(indexAdrNumbers("## Index\n\ndu texte"), []);
+  });
+});
+
+describe("adrIndexConsistency", () => {
+  it("ne signale rien quand index et fichiers concordent", () => {
+    assert.deepEqual(
+      adrIndexConsistency(["0001", "0002", "0003"], ["0001", "0002", "0003"]),
+      [],
+    );
+  });
+
+  it("signale un numéro listé dans l'index sans fichier", () => {
+    assert.deepEqual(adrIndexConsistency(["0001", "0002"], ["0001"]), [
+      "numéro 0002 listé dans l'index sans fichier NNNN-*.md",
+    ]);
+  });
+
+  it("signale un fichier sans ligne d'index", () => {
+    assert.deepEqual(adrIndexConsistency(["0001"], ["0001", "0002"]), [
+      "fichier 0002 sans ligne d'index dans decisions/index.md",
+    ]);
+  });
+
+  it("signale un doublon de ligne d'index", () => {
+    assert.deepEqual(adrIndexConsistency(["0001", "0001"], ["0001"]), [
+      "numéro 0001 listé 2 fois dans l'index",
+    ]);
+  });
+
+  it("signale un doublon de fichier", () => {
+    assert.deepEqual(adrIndexConsistency(["0001"], ["0001", "0001"]), [
+      "numéro 0001 porté par 2 fichiers",
+    ]);
+  });
+
+  it("agrège plusieurs constats hétérogènes", () => {
+    const problems = adrIndexConsistency(
+      ["0001", "0001", "0003"],
+      ["0001", "0002"],
+    );
+    assert.ok(problems.includes("numéro 0001 listé 2 fois dans l'index"));
+    assert.ok(
+      problems.includes(
+        "numéro 0003 listé dans l'index sans fichier NNNN-*.md",
+      ),
+    );
+    assert.ok(
+      problems.includes(
+        "fichier 0002 sans ligne d'index dans decisions/index.md",
+      ),
+    );
   });
 });
 

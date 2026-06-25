@@ -67,8 +67,16 @@ def _country_code(record: dict) -> str:
 
 
 def is_university(record: dict) -> bool:
-    """``True`` si l'enregistrement est un établissement d'enseignement (type education)."""
-    return EDUCATION_TYPE in (record.get("types") or [])
+    """``True`` si l'enregistrement est un établissement d'enseignement (type education).
+
+    Tolère une entrée malformée : un champ ``types`` absent, ``None`` ou non
+    itérable (scalaire injecté par une source non fiable) rend ``False`` au lieu
+    de lever — on ne fait confiance qu'à une **liste** de types (forme réelle ROR).
+    """
+    types = record.get("types")
+    if not isinstance(types, (list, tuple)):
+        return False
+    return EDUCATION_TYPE in types
 
 
 def project_record(record: dict) -> University | None:

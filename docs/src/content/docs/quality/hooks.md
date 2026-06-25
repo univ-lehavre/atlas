@@ -58,16 +58,23 @@ Un script `strip-email-line` (intégré à lefthook) supprime aussi les lignes c
 
 Déclenché à chaque `git push`, avant l'envoi au _remote_ (le dépôt distant hébergé sur GitHub). S'exécute sur **l'ensemble du dépôt**, donc plus lent (~30 s à 2 min selon la machine).
 
-| Hook             | Commande                         | Rôle                                                                            |
-| ---------------- | -------------------------------- | ------------------------------------------------------------------------------- |
-| `check-branch`   | (script intégré)                 | Interdit les push directs sur `main`                                            |
-| `check-sync`     | (script intégré)                 | Avertit si la branche n'est pas à jour avec `origin/main`                       |
-| `check-audit`    | `pnpm audit:security`            | Vulnérabilités npm connues                                                      |
-| `check-licenses` | `pnpm audit:licenses`            | Compatibilité des licences                                                      |
-| `check-lockfile` | `pnpm install --frozen-lockfile` | Cohérence entre `package.json` et `pnpm-lock.yaml` (uniquement si touchés)      |
-| `test`           | `pnpm test:coverage`             | Suite de tests complète avec couverture                                         |
-| `cpd`            | `pnpm audit:duplicates`          | Détection de duplication de code ([jscpd](https://github.com/kucherenko/jscpd)) |
-| `knip`           | `pnpm audit:unused`              | Détection de code mort ([knip](https://knip.dev/))                              |
+| Hook                 | Commande                         | Rôle                                                                                                          |
+| -------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `check-branch`       | (script intégré)                 | Interdit les push directs sur `main`                                                                          |
+| `check-sync`         | (script intégré)                 | Avertit si la branche n'est pas à jour avec `origin/main`                                                     |
+| `check-audit`        | `pnpm audit:security`            | Vulnérabilités npm connues                                                                                    |
+| `check-licenses`     | `pnpm audit:licenses`            | Compatibilité des licences                                                                                    |
+| `check-structure`    | `pnpm audit:structure`           | Respect des règles de structure du monorepo (8 catégories, nommage, dépendances interdites, cycles)           |
+| `check-dep-versions` | `pnpm audit:dep-versions`        | Cohérence des spécificateurs de version dans le workspace (seulement si un `package.json` change)             |
+| `check-lockfile`     | `pnpm install --frozen-lockfile` | Cohérence entre `package.json` et `pnpm-lock.yaml` (uniquement si touchés)                                    |
+| `test`               | `pnpm test:coverage`             | Suite de tests complète avec couverture                                                                       |
+| `coverage-report`    | `pnpm coverage:report 40`        | Vérifie que chaque paquet a un rapport de couverture présent et au-dessus de la cible (40 %)                  |
+| `test-scripts`       | `pnpm test:scripts`              | Tests des scripts d'outillage du dépôt                                                                        |
+| `dataops`            | `pnpm dataops:check`             | Qualité de la catégorie `dataops/` (Python : ruff, pytest, manifestes — seulement si `dataops/**` change)     |
+| `docs-generate`      | `pnpm docs:generate:check`       | La carte des paquets est à jour vis-à-vis du code (seulement si un `package.json` ou un `README` change)      |
+| `audit-docs`         | `pnpm audit:docs`                | Cohérence de la documentation : présence, liens internes, ADR référencés, pages orphelines (si la doc change) |
+| `cpd`                | `pnpm audit:duplicates`          | Détection de duplication de code ([jscpd](https://github.com/kucherenko/jscpd))                               |
+| `knip`               | `pnpm audit:unused`              | Détection de code mort ([knip](https://knip.dev/))                                                            |
 
 ## Contourner exceptionnellement
 

@@ -124,7 +124,9 @@ la règle « pas de xfail si bug » de l'[ADR 0057](/atlas/decisions/0057-reprod
 
 ## Statut
 
-Proposed.
+Accepted (2026-06-24). Hypothesis est intégré aux deux _code-locations_ ; la
+première campagne a déjà révélé et fait corriger une fragilité de `ror.is_university`
+(scalaire non itérable sur entrée non fiable).
 
 ## Conséquences
 

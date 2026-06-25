@@ -95,12 +95,12 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0066 | [Cache Turbo des checks dataops : package.json minimal et entrée dans le workspace](/atlas/decisions/0066-cache-turbo-dataops/)                                 | Accepted |
 | 0067 | [Modèle prédictif d'uplift FWCI sur EUNICoast (réorientation du pipeline citation)](/atlas/decisions/0067-modele-uplift-fwci-eunicoast/)                        | Accepted |
 | 0068 | [Suivi de dérive du modèle d'uplift FWCI (drift applicatif, porte de sécurité)](/atlas/decisions/0068-suivi-derive-modele-uplift/)                              | Accepted |
-| 0069 | [Scan, signature et provenance des images conteneur publiées sur GHCR](/atlas/decisions/0069-signature-scan-provenance-images-ghcr/)                            | Proposed |
-| 0070 | [Page de preuves (vitrine d'orientation) et doctrine des badges admissibles](/atlas/decisions/0070-page-preuves-vitrine-doctrine-badges/)                       | Proposed |
-| 0071 | [Méta-gouvernance documentaire exécutable et cartographie de la couverture E2E](/atlas/decisions/0071-meta-gouvernance-documentaire-et-matrice-e2e/)            | Proposed |
-| 0072 | [Tests basés sur les propriétés au dataops Python (Hypothesis)](/atlas/decisions/0072-property-based-testing-dataops-python/)                                   | Proposed |
-| 0073 | [Corriger le code, pas l'état, et garde-fou de cible de déploiement](/atlas/decisions/0073-corriger-le-code-pas-l-etat-garde-fou-cible/)                        | Proposed |
-| 0074 | [Typologie documentaire d'intention (Diátaxis)](/atlas/decisions/0074-diataxis-typologie-documentation/)                                                        | Proposed |
+| 0069 | [Scan, signature et provenance des images conteneur publiées sur GHCR](/atlas/decisions/0069-signature-scan-provenance-images-ghcr/)                            | Accepted |
+| 0070 | [Page de preuves (vitrine d'orientation) et doctrine des badges admissibles](/atlas/decisions/0070-page-preuves-vitrine-doctrine-badges/)                       | Accepted |
+| 0071 | [Méta-gouvernance documentaire exécutable et cartographie de la couverture E2E](/atlas/decisions/0071-meta-gouvernance-documentaire-et-matrice-e2e/)            | Accepted |
+| 0072 | [Tests basés sur les propriétés au dataops Python (Hypothesis)](/atlas/decisions/0072-property-based-testing-dataops-python/)                                   | Accepted |
+| 0073 | [Corriger le code, pas l'état, et garde-fou de cible de déploiement](/atlas/decisions/0073-corriger-le-code-pas-l-etat-garde-fou-cible/)                        | Accepted |
+| 0074 | [Typologie documentaire d'intention (Diátaxis)](/atlas/decisions/0074-diataxis-typologie-documentation/)                                                        | Accepted |
 
 ## Quand ouvrir un ADR
 

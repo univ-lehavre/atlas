@@ -116,8 +116,8 @@ ajoute), ce qui réduit aussi le risque de dérive entre jobs.
 - Bumper le préfixe de clé (`turbo-vN`) à chaque fois qu'on soupçonne un cache
   empoisonné ou qu'on change la sémantique des inputs Turbo.
 - **Les workflows sont du code à valider.** `actionlint` garde désormais
-  `.github/workflows/**` et `.github/actions/**` (hook lefthook pre-push + step
-  du job `Audit`) : il attrape un `needs` orphelin, un `uses` non résolvable ou
+  `.github/workflows/**` et `.github/actions/**` (step du job `Audit`) : il
+  attrape un `needs` orphelin, un `uses` non résolvable ou
   une expression `${{ }}` cassée avant qu'un workflow ne parte muet en
   production — précisément le genre d'erreur qui, sur un check requis, bloque
   tout merge (corollaire de [ADR 0016](/atlas/decisions/0016-branch-protection-main/)).

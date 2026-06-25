@@ -167,7 +167,9 @@ ne franchit jamais la frontière.
 
 ## Statut
 
-Proposed.
+Accepted (2026-06-24). Le garde-fou de cible est posé sur le premier script de
+déploiement réel (`dataops/citation-dagster/deploy/install.sh`) : push refusé si
+la cible GitOps n'est pas explicitement confirmée.
 
 ## Conséquences
 

@@ -4,17 +4,17 @@ Atlas accueille les contributions — code, documentation, signalements de bug, 
 
 ## Un dépôt généraliste et ouvert
 
-Atlas est un dépôt **généraliste** : tout ce qui y est produit — code, documentation, exemples, identifiants, et décisions d'architecture — reste **neutre vis-à-vis d'un domaine métier, d'une marque ou d'un établissement particuliers**, pour qu'un contributeur de n'importe quel horizon puisse le reprendre. Concrètement : pas de marque ni d'organisme dans un identifiant (la fonction générique, pas le produit), pas d'ancrage dans un secteur d'activité, anglais standard pour le code. Le _pourquoi_ et les règles détaillées sont dans l'[ADR 0035](docs/decisions/0035-depot-generaliste-ouvert.md).
+Atlas est un dépôt **généraliste** : tout ce qui y est produit — code, documentation, exemples, identifiants, et décisions d'architecture — reste **neutre vis-à-vis d'un domaine métier, d'une marque ou d'un établissement particuliers**, pour qu'un contributeur de n'importe quel horizon puisse le reprendre. Concrètement : pas de marque ni d'organisme dans un identifiant (la fonction générique, pas le produit), pas d'ancrage dans un secteur d'activité, anglais standard pour le code. Le _pourquoi_ et les règles détaillées sont dans l'[ADR 0035](https://univ-lehavre.github.io/atlas/decisions/0035-depot-generaliste-ouvert/).
 
 ## Pour les contributions code
 
 Avant d'ouvrir une Pull Request, lis les pages dédiées du site de documentation :
 
-- [Environnement de développement local](docs/collaboration/environnement-local.md) — Node, pnpm, dépendances et secrets
-- [Workflow de contribution](docs/collaboration/workflow.md) — branche, commits, revue, merge
-- [Style de code](docs/quality/code-style.md) — conventional commits, formatage, conventions de nommage
-- [Hooks Git](docs/quality/hooks.md) — pre-commit / pre-push automatiques
-- [Pipeline CI](docs/quality/ci-pipeline.md) — ce qui se passe quand tu pousses
+- [Environnement de développement local](https://univ-lehavre.github.io/atlas/collaboration/environnement-local/) — Node, pnpm, dépendances et secrets
+- [Workflow de contribution](https://univ-lehavre.github.io/atlas/collaboration/workflow/) — branche, commits, revue, merge
+- [Style de code](https://univ-lehavre.github.io/atlas/quality/code-style/) — conventional commits, formatage, conventions de nommage
+- [Hooks Git](https://univ-lehavre.github.io/atlas/quality/hooks/) — pre-commit / pre-push automatiques
+- [Pipeline CI](https://univ-lehavre.github.io/atlas/quality/ci-pipeline/) — ce qui se passe quand tu pousses
 
 ## Sécurité
 

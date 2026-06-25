@@ -100,7 +100,7 @@ Une **pull request** (PR) est une demande, publiée sur GitHub, d'intégrer votr
 - **Quoi** a été modifié ?
 - **Comment** vérifier que ça marche ?
 
-Si le changement modifie un paquet publiable (`packages/*`, `cli/*`, `services/*`, `ui/*`), **joindre un changeset** :
+Si le changement modifie un paquet publiable (`packages/*`, `cli/*`, `services/*`, `config/*`, `assets/*`), **joindre un changeset** :
 
 ```bash
 pnpm changeset:add
@@ -138,7 +138,7 @@ Sur `main`, la seule stratégie autorisée est le **merge commit** : les commits
 
 ## 10. Release (si publiable)
 
-Si la PR fusionnée contenait un changeset, le bot **Changesets** ouvre automatiquement une PR **« Version Packages »** qui agrège les changesets en bumps de version et met à jour les `CHANGELOG.md`. La fusion de cette PR déclenche la publication npm. Voir [Releases](/atlas/collaboration/releases/).
+Si la PR fusionnée contenait un changeset, le bot **Changesets** ouvre automatiquement une PR **« chore: version packages »** qui agrège les changesets en bumps de version et met à jour les `CHANGELOG.md`. La fusion de cette PR déclenche la publication npm. Voir [Releases](/atlas/collaboration/releases/).
 
 ## Si tu débutes
 

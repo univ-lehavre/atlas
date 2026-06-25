@@ -162,7 +162,7 @@ Chaque catégorie a une responsabilité unique. Les règles ci-dessous sont enfo
 **Règles.**
 
 - **Python natif**, outillé par **uv** (environnement et dépendances), **ruff** (lint et format) et **pytest** (tests). Le `uv.lock` est versionné.
-- **Hors du graphe pnpm** : `dataops/` n'est pas déclaré dans `pnpm-workspace.yaml`, donc pnpm, turbo et knip l'ignorent. `audit:structure` ne le contrôle pas non plus — sa discipline relève de ruff/pytest.
+- **Au workspace, mais pour le cache seulement** : les deux **code-locations Dagster** (`dataops/citation-dagster`, `dataops/mediawatch-dagster`) sont déclarées dans `pnpm-workspace.yaml` via un `package.json` privé. Cette déclaration sert **uniquement** à les faire entrer dans le cache **Turbo** ([ADR 0066](/atlas/decisions/0066-cache-turbo-dataops/)) : leurs scripts `lint:py`, `test:py` et `manifests:py` délèguent à uv/ruff/pytest, et Turbo mémorise leurs résultats. En contrepartie, knip les **exclut** explicitement et `audit:structure` **ignore** le Python — sa discipline relève de ruff/pytest.
 - **Frontière par le contrat** : `dataops/` ne dépend d'aucun paquet TypeScript et n'est dépendu par aucun. Sa seule interface avec le reste du dépôt est le **contrat Parquet + `manifest.json`** sur le stockage objet ([ADR 0029](/atlas/decisions/0029-architecture-pipeline-collaborations/) / [0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/)).
 - Pas publié sur npm.
 
