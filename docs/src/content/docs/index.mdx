@@ -23,46 +23,49 @@ partagée**, outillée et vérifiable. Voici ce qu'un contributeur y trouve — 
 point renvoie à la page qui l'atteste.
 
 <CardGrid>
-  <Card title="Typé strict, de bout en bout" icon="seti:typescript">
-    Tout le code est en TypeScript en mode **strict** : les erreurs de type
-    sont attrapées avant l'exécution, pas en production.
+  <Card title="Le bilan, vérifiable" icon="approve-check">
+    Toutes les pratiques d'ingénierie en place, **discipline par discipline**,
+    chacune rattachée à un mécanisme concret du dépôt — écarts compris. La
+    page-pivot pour savoir ce qui est réellement appliqué.
 
-    [Style de code →](/atlas/quality/code-style/)
+    [Normes et pratiques appliquées →](/atlas/quality/normes/)
 
   </Card>
-  <Card title="Qualité et sécurité outillées" icon="approve-check">
-    Chaque pull request passe une **intégration continue** (lint, types, build,
-    audits) et des contrôles de sécurité automatisés (analyse statique,
-    détection de secrets, revue de dépendances).
+  <Card title="Les bonnes pratiques, en un point" icon="open-book">
+    Un **portail d'orientation** vers chaque convention — style, hooks, commits,
+    tests, charte de rédaction, sécurité — et l'ADR qui la fonde.
 
+    [Bonnes pratiques →](/atlas/quality/bonnes-pratiques/)
+
+  </Card>
+  <Card title="Qualité et sécurité outillées" icon="seti:typescript">
+    TypeScript **strict** de bout en bout, **intégration continue** (lint,
+    types, build, audits) et contrôles de sécurité automatisés : les erreurs
+    sont attrapées avant la production, pas après.
+
+    [Style de code →](/atlas/quality/code-style/) ·
     [Pipeline CI →](/atlas/quality/ci-pipeline/) ·
     [Sécurité →](/atlas/quality/security/)
 
   </Card>
-  <Card title="Une doc qui ne ment pas" icon="open-book">
-    La documentation est **vérifiable** : les chiffres et exemples sont
-    rattachés au dépôt et contrôlés, pas affirmés à la main.
-
-    [Politique de documentation →](/atlas/quality/documentation/)
-
-  </Card>
   <Card title="Des tests à plusieurs niveaux" icon="puzzle">
-    Une **pyramide de tests à cinq niveaux** couvre tout le code exécutable,
-    du test unitaire au test de bout en bout, avec des seuils de couverture
-    chiffrés.
+    Une **pyramide de tests** couvre tout le code exécutable, du test unitaire
+    au bout-en-bout, avec une **matrice de couverture** qui nomme les trous
+    connus.
 
-    [Tests →](/atlas/quality/tests/)
-
-  </Card>
-  <Card title="Un socle fonctionnel commun" icon="setting">
-    Les briques partagées reposent sur **Effect**, un socle de programmation
-    fonctionnelle qui rend les erreurs et les effets explicites et typés.
-
-    [Programmation fonctionnelle →](/atlas/quality/code-style/) ·
-    [Décision (ADR 0005) →](/atlas/decisions/0005-effect-pour-la-pf/)
+    [Tests →](/atlas/quality/tests/) ·
+    [Matrice E2E →](/atlas/quality/matrice-e2e/)
 
   </Card>
-  <Card title="Une carte du code toujours à jour" icon="list-format">
+  <Card title="Une gouvernance lisible" icon="list-format">
+    Décisions tracées (**ADR**), audits datés, registre des **écarts** et plans
+    de résorption — le bilan se met à jour en continu, jamais affirmé à la main.
+
+    [Gouvernance →](/atlas/quality/gouvernance/) ·
+    [Décisions →](/atlas/decisions/)
+
+  </Card>
+  <Card title="Une carte du code toujours à jour" icon="setting">
     Pour chaque paquet — son rôle, ce dont il dépend, qui le consomme.
     **Générée depuis le code**, donc fidèle à la réalité.
 
