@@ -15,7 +15,12 @@
 #   symptome  : ce qu'on a vu
 #   cause     : la cause racine
 #   correctif : ce qui a été fait
-#   statut    : corrige | caduc (contexte abandonné) | ouvert
+#   statut    : corrige | caduc (contexte abandonné) | ouvert | en-cours
+#               (ouvert/en-cours = non clos → exige une issue de suivi, ADR 0071)
+#
+# Une entrée se rédige à la main, OU se promeut d'un brouillon capturé à chaud au
+# point d'échec d'un run via `pnpm drift:new` (ADR 0080). Le jugement « marquant »
+# reste humain : le run ne consigne jamais rien tout seul.
 #
 # Couverture : D1–D23 (pipeline OpenAlex/Dagster + transformations dbt, juin 2026).
 

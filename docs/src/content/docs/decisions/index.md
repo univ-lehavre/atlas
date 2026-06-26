@@ -82,7 +82,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0053 | [Merge commit imposé sur `main` (abandon du squash)](/atlas/decisions/0053-strategie-merge-commit-main/)                                                        | Accepted        |
 | 0054 | [Ingestion massive OpenAlex par snapshot S3 (works + authors)](/atlas/decisions/0054-ingestion-massive-snapshot-s3/)                                            | Accepted        |
 | 0055 | [Catégorie dataops/ : code DataOps en Python natif](/atlas/decisions/0055-categorie-dataops-python/)                                                            | Accepted        |
-| 0056 | [Registre de drifts : catalogue indexé des écarts révélés à l'exécution](/atlas/decisions/0056-registre-drifts/)                                                | Accepted        |
+| 0056 | [Registre de drifts : catalogue indexé des écarts révélés à l'exécution](/atlas/decisions/0056-registre-drifts/)                                                | Amended by 0071 |
 | 0057 | [Reproductibilité : tests hermétiques et fixtures figées](/atlas/decisions/0057-reproductibilite-tests-hermetiques/)                                            | Accepted        |
 | 0058 | [Chargement de l'index (mart→Postgres) : report de `index_load` faute de producteur researchers](/atlas/decisions/0058-report-index-load/)                      | Accepted        |
 | 0059 | [Producteur par chercheur : ancrage `author_id`, purge d'opposition au grain `(author_id, work_id)`](/atlas/decisions/0059-mart-researchers-author-id-grain/)   | Accepted        |
@@ -106,6 +106,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0077 | [Topologie : deux dépôts cluster & atlas, frontière outillée](/atlas/decisions/0077-topologie-deux-depots-cluster-atlas/)                                       | Accepted        |
 | 0078 | [Barre latérale thématique, navigation Diátaxis intra-catégorie](/atlas/decisions/0078-sidebar-thematique-navigation-diataxis-intra-categorie/)                 | Accepted        |
 | 0079 | [Boucle fermée dérive → réentraînement, active par défaut (citation)](/atlas/decisions/0079-boucle-fermee-drift-retrain-active-par-defaut/)                     | Accepted        |
+| 0080 | [Capture assistée des drifts au point d'échec](/atlas/decisions/0080-capture-assistee-drifts-point-echec/)                                                      | Accepted        |
 
 ## Quand ouvrir un ADR
 

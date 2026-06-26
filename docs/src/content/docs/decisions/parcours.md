@@ -4,7 +4,7 @@ title: Parcours thématique des décisions
 
 Cette page propose un **tour cohérent des décisions** du dépôt, regroupées par
 thème plutôt que par numéro. Elle s'adresse à un **nouveau venu** : plutôt que de
-lire les 79 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
+lire les 80 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
 comprendre _pourquoi_ le dépôt est fait comme il est.
 
 Pour la liste exhaustive par numéro (et le statut de chacun), voir
@@ -181,6 +181,11 @@ authentifier le service CRF ([0041](/atlas/decisions/0041-strategie-auth-service
 - [0056 — Registre de drifts](/atlas/decisions/0056-registre-drifts/) : capitaliser
   les **écarts révélés à l'exécution** (que le lint ne voit pas) et les pièges de
   revue, dans un catalogue indexé et citable.
+- [0080 — Capture assistée des drifts au point d'échec](/atlas/decisions/0080-capture-assistee-drifts-point-echec/) :
+  **outille** la saisie du registre 0056 sans en changer la décision — un capteur
+  (reporter Playwright, hook pytest) dépose à chaud un **brouillon gitignoré** sur
+  échec d'un run, qu'un humain **promeut** ensuite via `pnpm drift:new` (issue de
+  suivi créée, identifiant calculé). Le jugement « marquant » reste humain.
 - [0061 — Accélérer la CI](/atlas/decisions/0061-ci-acceleration-cache-parallelisation/) :
   rendre le pipeline de qualité **rapide** sans le rendre laxiste — cache de contenu,
   parallélisation des jobs, court-circuit élargi (skip des jobs sans fichier concerné),

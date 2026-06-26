@@ -9,7 +9,9 @@ volet (c). Elle complète la [pyramide de tests](/atlas/quality/tests/) — qui
 décrit les **niveaux** — d'une vue **par chaîne** : pour chacune, quels niveaux
 existent, et surtout **« a-t-elle déjà tourné en vrai ? »**. La mémoire des
 écarts E2E ne se limite plus au [registre de drifts](/atlas/decisions/0056-registre-drifts/)
-(réactif, post-mortem) : les **trous connus** sont nommés ici, d'un coup d'œil.
+(réactif, post-mortem, dont la capture est désormais **assistée au point d'échec**,
+[ADR 0080](/atlas/decisions/0080-capture-assistee-drifts-point-echec/)) : les
+**trous connus** sont nommés ici, d'un coup d'œil.
 
 Atlas **déploie sur** un cluster ([ADR 0043](/atlas/decisions/0043-publication-images-ghcr/))
 mais ne possède ni matériel ni topologie : cette matrice cartographie ses
