@@ -17,8 +17,8 @@ du Secret S3 du lakehouse et des variables OpenLineage au niveau du RUN.
 
 import json
 import os
-import re
 import tempfile
+import time
 from pathlib import Path
 
 from dagster import (
@@ -51,6 +51,7 @@ from mediawatch_dagster.assets.quality import (
 )
 from mediawatch_dagster.assets.raw_gkg import gkg_daily_partitions
 from mediawatch_dagster.dbt import dbt_components
+from mediawatch_dagster.partitions import ingested_partitions
 from mediawatch_dagster.resources import ceph_target_from_env, render_rclone_config
 
 # Le pod de run (K8sRunLauncher) doit recevoir les accès S3 du lakehouse : on
@@ -285,23 +286,10 @@ def _ct_max_partitions(env: dict | None = None) -> int:
     return n if n > 0 else _DEFAULT_CT_MAX_PARTITIONS
 
 
-# Une partition ingérée = un dossier `dt=YYYY-MM-DD` sous `raw/gkg/` (cf. raw_gkg :
-# `raw/gkg/dt=<date>/run=<id>/…`). On capte le `dt=` même AVANT qu'un `run=` n'existe.
-_DT_RE = re.compile(r"(?:^|/)dt=(\d{4}-\d{2}-\d{2})(?:/|$)")
-
-
-def ingested_partitions(entries: list[dict]) -> set[str]:
-    """Extrait les dates de partition (``dt=YYYY-MM-DD``) distinctes d'un lsjson de raw/gkg.
-
-    ``entries`` = sortie ``rclone lsjson -R`` (champs ``Path`` relatif au préfixe listé).
-    Best-effort : un chemin sans ``dt=`` conforme est ignoré (ne casse pas le scan).
-    """
-    found: set[str] = set()
-    for entry in entries:
-        match = _DT_RE.search(entry.get("Path", ""))
-        if match:
-            found.add(match.group(1))
-    return found
+# `ingested_partitions` (signal de donnée neuve = dossiers `dt=YYYY-MM-DD` sous
+# `raw/gkg/`) vit dans `partitions.py` — module neutre partagé avec drift_forecast
+# (garde-fou anti-emballement de la boucle drift→retrain), pour éviter une dépendance
+# circulaire definitions ↔ drift_forecast (ADR 0082).
 
 
 def evaluate_ct_partitions(
