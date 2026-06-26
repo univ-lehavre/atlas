@@ -57,7 +57,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0028 | [Documentation vérifiable : un miroir contrôlable du code](/atlas/decisions/0028-documentation-verifiable/)                                                     | Accepted        |
 | 0029 | [Pipeline de collaborations : architecture V1 (plateforme DataOps, contrat Parquet)](/atlas/decisions/0029-architecture-pipeline-collaborations/)               | Accepted        |
 | 0030 | [Profilage de collaborations : gate RGPD, base légale et droit d'opposition](/atlas/decisions/0030-rgpd-profilage-collaborations/)                              | Accepted        |
-| 0031 | [Outil générique open-source : contribution inter-établissements](/atlas/decisions/0031-outil-generique-open-source/)                                           | Accepted        |
+| 0031 | [Outil générique open-source : contribution inter-établissements](/atlas/decisions/0031-outil-generique-open-source/)                                           | Amended by 0079 |
 | 0032 | [KPI documentés : généré déterministe (diff-checké) vs snapshot (append-only)](/atlas/decisions/0032-kpi-determinisme-vs-snapshot/)                             | Accepted        |
 | 0033 | [Contrat d'interface entre l'application (`atlas`) et le cluster](/atlas/decisions/0033-contrat-interface-cluster/)                                             | Accepted        |
 | 0034 | [CI adaptative par chemin : court-circuit des jobs lourds](/atlas/decisions/0034-ci-adaptative-par-chemin/)                                                     | Accepted        |
@@ -88,7 +88,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0059 | [Producteur par chercheur : ancrage `author_id`, purge d'opposition au grain `(author_id, work_id)`](/atlas/decisions/0059-mart-researchers-author-id-grain/)   | Accepted        |
 | 0060 | [Consignation des reconnaissances multi-agents pré-implémentation](/atlas/decisions/0060-consignation-reconnaissances-multi-agents/)                            | Accepted        |
 | 0061 | [Accélérer la CI : cache de contenu, parallélisation des jobs, court-circuit élargi](/atlas/decisions/0061-ci-acceleration-cache-parallelisation/)              | Accepted        |
-| 0062 | [MLOps niveau 1→2 : suivi de modèles, détection de dérive, réentraînement déclenché](/atlas/decisions/0062-mlops-niveau-2-tracking-drift-ct/)                   | Accepted        |
+| 0062 | [MLOps niveau 1→2 : suivi de modèles, détection de dérive, réentraînement déclenché](/atlas/decisions/0062-mlops-niveau-2-tracking-drift-ct/)                   | Amended by 0079 |
 | 0063 | [Échantillon cohérent par construction sur les petits bancs (authors dérivés des works)](/atlas/decisions/0063-echantillon-coherent-banc/)                      | Accepted        |
 | 0064 | [Collecte « veille médiatique » (GKG v2) par pull HTTP incrémental, code-location dédié](/atlas/decisions/0064-collecte-mediawatch-gkg/)                        | Accepted        |
 | 0065 | [Qualifier une organisation comme « université » : heuristique de nom + référentiel](/atlas/decisions/0065-classification-universites-heuristique-referentiel/) | Accepted        |
@@ -105,6 +105,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0076 | [Portails d'orientation et accueil par intention](/atlas/decisions/0076-portails-orientation-accueil-par-intention/)                                            | Amended by 0078 |
 | 0077 | [Topologie : deux dépôts cluster & atlas, frontière outillée](/atlas/decisions/0077-topologie-deux-depots-cluster-atlas/)                                       | Accepted        |
 | 0078 | [Barre latérale thématique, navigation Diátaxis intra-catégorie](/atlas/decisions/0078-sidebar-thematique-navigation-diataxis-intra-categorie/)                 | Accepted        |
+| 0079 | [Boucle fermée dérive → réentraînement, active par défaut (citation)](/atlas/decisions/0079-boucle-fermee-drift-retrain-active-par-defaut/)                     | Accepted        |
 
 ## Quand ouvrir un ADR
 
