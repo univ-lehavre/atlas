@@ -4,10 +4,14 @@ import json
 
 from citation_dagster.definitions import (
     _DEFAULT_CT_CRON,
+    _DEFAULT_RETRAIN_COOLDOWN_S,
     _ct_cron,
+    _retrain_auto_enabled,
+    _retrain_cooldown_s,
     _s3_env_from,
     defs,
     evaluate_ct_sensor,
+    evaluate_drift_retrain,
     ingestion_job,
 )
 
@@ -185,3 +189,109 @@ def test_transform_daily_uses_default_cron_in_ci():
     sched = next((s for s in defs.schedules if s.name == "transform_daily"), None)
     assert sched is not None
     assert sched.cron_schedule == _DEFAULT_CT_CRON
+
+
+# ── Boucle fermée dérive → réentraînement (CT autonome, ADR 0079) ────────────────────
+
+
+def _verdict(run_id, detected, wm, schema=1):
+    return {
+        "schema_version": schema,
+        "run_id": run_id,
+        "drift_detected": detected,
+        "watermark": wm,
+    }
+
+
+_WM1 = {"works": "2024-01-05"}
+_WM2 = {"works": "2024-02-10"}
+
+
+def test_drift_retrain_bootstrap_drift_triggers():
+    # 1er verdict (curseur None), drift + watermark non vide → réentraîne.
+    should, key, _ = evaluate_drift_retrain(_verdict("run2", True, _WM1), None, True)
+    assert should is True
+    assert key == "drift-retrain:run2"
+
+
+def test_drift_retrain_same_verdict_dedup():
+    # Même verdict rejoué (même run_id) → pas de second retrain (dédup).
+    _, _, cursor = evaluate_drift_retrain(_verdict("run2", True, _WM1), None, True)
+    should, _, _ = evaluate_drift_retrain(_verdict("run2", True, _WM1), cursor, True)
+    assert should is False
+
+
+def test_drift_retrain_post_retrain_same_watermark_terminates():
+    # TERMINAISON : le run post-retrain a un nouveau run_id mais le MÊME watermark
+    # (le retrain n'a pas ré-ingéré) → SKIP. Point fixe en 1 itération (anti-emballement).
+    _, _, cursor = evaluate_drift_retrain(_verdict("run2", True, _WM1), None, True)
+    should, _, _ = evaluate_drift_retrain(_verdict("run3", True, _WM1), cursor, True)
+    assert should is False
+
+
+def test_drift_retrain_new_data_triggers_again():
+    # Après un retrain, un drift sur une donnée VRAIMENT neuve (watermark avancé) relance.
+    _, _, cursor = evaluate_drift_retrain(_verdict("run2", True, _WM1), None, True)
+    should, key, _ = evaluate_drift_retrain(_verdict("run4", True, _WM2), cursor, True)
+    assert should is True
+    assert key == "drift-retrain:run4"
+
+
+def test_drift_retrain_no_drift_skips():
+    should, _, _ = evaluate_drift_retrain(_verdict("run5", False, _WM2), None, True)
+    assert should is False
+
+
+def test_drift_retrain_cooldown_blocks():
+    # Drift + donnée neuve mais cooldown KO → SKIP (anti-flapping).
+    should, _, _ = evaluate_drift_retrain(_verdict("run6", True, _WM1), None, False)
+    assert should is False
+
+
+def test_drift_retrain_unknown_schema_skips():
+    # Verdict sans schema_version=1 (ancien/corrompu) → SKIP prudent.
+    bad = {"run_id": "x", "drift_detected": True, "watermark": _WM1}
+    should, _, _ = evaluate_drift_retrain(bad, None, True)
+    assert should is False
+
+
+def test_drift_retrain_empty_verdict_skips():
+    # Verdict vide (bootstrap, pas encore de mesure) → SKIP.
+    should, _, _ = evaluate_drift_retrain({}, None, True)
+    assert should is False
+
+
+def test_drift_retrain_cursor_advances_run_on_skip():
+    # Sur un SKIP (pas de drift), le curseur mémorise quand même le run_id vu (dédup futur),
+    # sans avancer last_retrain_watermark (seul un retrain effectif l'avance).
+    _, _, cursor = evaluate_drift_retrain(_verdict("run5", False, _WM2), None, True)
+    state = json.loads(cursor)
+    assert state["last_verdict_run"] == "run5"
+    assert state["last_retrain_watermark"] is None
+
+
+def test_retrain_auto_enabled_default_on():
+    assert _retrain_auto_enabled({}) is True
+
+
+def test_retrain_auto_opt_out_values():
+    for v in ("off", "0", "false", "no", "OFF", " Off "):
+        assert _retrain_auto_enabled({"CITATION_RETRAIN_AUTO": v}) is False
+    assert _retrain_auto_enabled({"CITATION_RETRAIN_AUTO": "on"}) is True
+
+
+def test_retrain_cooldown_default_and_override():
+    assert _retrain_cooldown_s({}) == _DEFAULT_RETRAIN_COOLDOWN_S
+    assert _retrain_cooldown_s({"CITATION_RETRAIN_COOLDOWN_S": "120"}) == 120
+    assert _retrain_cooldown_s({"CITATION_RETRAIN_COOLDOWN_S": "x"}) == _DEFAULT_RETRAIN_COOLDOWN_S
+    assert _retrain_cooldown_s({"CITATION_RETRAIN_COOLDOWN_S": "-5"}) == _DEFAULT_RETRAIN_COOLDOWN_S
+
+
+def test_retrain_sensor_running_by_default():
+    # Le sensor de boucle est ACTIF par défaut (rupture ADR 0079) ; le watermark-sensor
+    # reste STOPPED. (defs est construit avec CITATION_RETRAIN_AUTO non posé → défaut on.)
+    from dagster import DefaultSensorStatus
+
+    by_name = {s.name: s.default_status for s in defs.sensors}
+    assert by_name.get("retrain_on_drift") == DefaultSensorStatus.RUNNING
+    assert by_name.get("transform_on_watermark_advance") == DefaultSensorStatus.STOPPED
