@@ -16,15 +16,28 @@ colonnes denses) ; les métriques sont loguées dans MLflow (serveur du socle,
 NB : pas de ``from __future__ import annotations`` (Dagster introspecte, drift D9).
 """
 
+import json
 import os
+import subprocess
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
 
 from dagster import AssetCheckExecutionContext, AssetCheckResult, AssetKey, asset_check
 
-from citation_dagster import embedding, lakehouse
+from citation_dagster import embedding, lakehouse, watermark
 from citation_dagster.dbt import CURATED_DT
-from citation_dagster.resources import ceph_target_from_env
+from citation_dagster.resources import ceph_target_from_env, render_rclone_config
 
 _VECTORS_SUBDIR = "marts/researcher_vectors"
+
+# Clé S3 du VERDICT de dérive (signal de contrôle, hors marts/curated immuables — comme
+# raw/_watermark.json). Écrasée à chaque run ; l'historique reste dans MLflow. C'est la
+# SOURCE LISIBLE par le sensor de boucle fermée (definitions.py) : le verdict journalisé
+# en MLflow est best-effort et non atomique, illisible d'un sensor — on persiste donc un
+# document JSON dédié, lu via rclone comme le watermark.
+DRIFT_VERDICT_KEY = "drift/researcher_embeddings/_drift_verdict.json"
+DRIFT_VERDICT_SCHEMA_VERSION = 1
 # Le verdict de drift est celui d'Evidently (`drift_detected`), PAS un seuil maison :
 # EmbeddingsDriftMetric entraîne par défaut un classifieur ref↔cur et mesure son ROC AUC
 # (`drift_score`). AUC ≈ 0.5 = indiscernables (pas de drift) ; AUC → 1 = distribution
@@ -110,6 +123,76 @@ def _log_to_mlflow(run_id: str, drift: dict) -> bool:
     return True
 
 
+def build_drift_verdict(run_id: str, dt: str, baseline_run: str, drift: dict, wm: dict) -> dict:
+    """Document de verdict de dérive (PUR, sans I/O). Source lisible par le sensor de
+    boucle fermée. Le champ ``watermark`` (état d'ingestion vu au moment de la mesure)
+    est la clé du garde-fou anti-emballement : la boucle ne réentraîne que si ce
+    watermark a AVANCÉ depuis le dernier retrain (réentraîner sur la même donnée ne fait
+    pas disparaître le drift). ``produced_at`` injecté par l'appelant (horloge hors du pur)."""
+    return {
+        "schema_version": DRIFT_VERDICT_SCHEMA_VERSION,
+        "run_id": run_id,
+        "dt": dt,
+        "baseline_run": baseline_run,
+        "drift_detected": bool(drift["drift_detected"]),
+        "drift_score": round(float(drift["drift_score"]), 4),
+        "watermark": wm,
+    }
+
+
+def _verdict_path(bucket: str) -> str:
+    return f"ceph:{bucket}/{DRIFT_VERDICT_KEY}"
+
+
+def write_drift_verdict(verdict: dict, bucket: str, config_path: Path) -> bool:
+    """Écrit le verdict en S3 (rclone rcat, clé unique écrasée). Best-effort : renvoie
+    True si écrit, False sinon — la persistance ne doit jamais casser le check (informatif)."""
+    payload = json.dumps(verdict, sort_keys=True)
+    result = subprocess.run(
+        ["rclone", "--config", str(config_path), "rcat", _verdict_path(bucket)],
+        input=payload,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode == 0
+
+
+def read_drift_verdict(bucket: str, config_path: Path) -> dict:
+    """Lit le verdict de dérive (``{}`` si absent ou illisible — bootstrap/dev). Lu par le
+    sensor de boucle fermée (definitions.py), à la manière de ``watermark.read_all``."""
+    result = subprocess.run(
+        ["rclone", "--config", str(config_path), "cat", _verdict_path(bucket)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    raw = result.stdout.lstrip("﻿").strip()
+    if result.returncode != 0 or not raw:
+        return {}
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _persist_verdict(bucket: str, run_id: str, baseline_run: str, drift: dict) -> bool:
+    """Lit le watermark d'ingestion courant et écrit le verdict en S3 (best-effort).
+    Réutilise rclone.conf temporaire (comme les assets). Sans accès S3 (dev/CI), no-op."""
+    try:
+        target = ceph_target_from_env()
+        with tempfile.TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "rclone.conf"
+            config_path.write_text(render_rclone_config(target))
+            wm = watermark.read_all(target.bucket, config_path)
+            verdict = build_drift_verdict(run_id, CURATED_DT, baseline_run, drift, wm)
+            verdict["produced_at"] = datetime.now(timezone.utc).isoformat()
+            return write_drift_verdict(verdict, target.bucket, config_path)
+    except Exception:  # noqa: BLE001 — best-effort : la persistance ne casse jamais le check
+        return False
+
+
 def check_embedding_drift(bucket: str, run_id: str) -> AssetCheckResult:
     """Mesure le drift des vecteurs du run courant vs le run PRÉCÉDENT (N vs N-1).
 
@@ -132,6 +215,9 @@ def check_embedding_drift(bucket: str, run_id: str) -> AssetCheckResult:
     current_df = _load_vectors_df(con, bucket, run_id)
     drift = compute_drift(reference_df, current_df)
     logged = _log_to_mlflow(run_id, drift)
+    # Persiste le verdict en S3 (avec le watermark d'ingestion vu) : source lisible par le
+    # sensor de boucle fermée drift→retrain (definitions.py). Best-effort, ne casse pas le check.
+    persisted = _persist_verdict(bucket, run_id, baseline_run, drift)
     detected = drift["drift_detected"]  # verdict statistique d'Evidently (pas un seuil maison)
     return AssetCheckResult(
         passed=not detected,
@@ -141,6 +227,7 @@ def check_embedding_drift(bucket: str, run_id: str) -> AssetCheckResult:
             "drift_detected": detected,
             "method": drift["method"],
             "mlflow_logged": logged,
+            "verdict_persisted": persisted,
             "verdict": "drift détecté — envisager un ré-entraînement" if detected else "stable",
         },
     )

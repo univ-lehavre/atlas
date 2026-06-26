@@ -9,6 +9,8 @@ monkeypatché (pas d'I/O S3, pas de Dagster). Couvre :
 Le vrai bout-en-bout (drift sur le Parquet servi) viendrait du smoke MinIO, comme GE.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -27,6 +29,7 @@ def _no_mlflow(monkeypatch):
 
 _DIM = embedding.EMBEDDING_DIM
 _COLS = [f"e{i}" for i in range(_DIM)]
+_DUMMY_CONF = Path("/tmp/rclone.conf")  # jamais lu (subprocess monkeypatché)
 
 
 def _emb_df(n, loc, seed):
@@ -215,3 +218,82 @@ def test_log_to_mlflow_skips_html_when_absent(monkeypatch):
     monkeypatch.setattr(mlflow, "log_text", lambda text, path: called.__setitem__("log_text", 1))
     assert d._log_to_mlflow("runN", {"drift_score": 0.1, "drift_detected": False}) is True
     assert called["log_text"] == 0
+
+
+# ── Persistance du verdict de dérive (source lisible par le sensor de boucle) ─────────
+
+
+def test_build_drift_verdict_is_deterministic_and_embeds_watermark():
+    # Le verdict embarque le watermark d'ingestion VU (clé du garde-fou anti-emballement)
+    # et arrondit le score ; pas de produced_at (injecté par l'appelant, hors du pur).
+    wm = {"works": "2024-01-05", "authors": "2024-01-04"}
+    v = d.build_drift_verdict(
+        "run2", "2024-01-05", "run1", {"drift_detected": True, "drift_score": 0.876543}, wm
+    )
+    assert v["run_id"] == "run2"
+    assert v["baseline_run"] == "run1"
+    assert v["drift_detected"] is True
+    assert v["drift_score"] == 0.8765
+    assert v["watermark"] == wm
+    assert v["schema_version"] == d.DRIFT_VERDICT_SCHEMA_VERSION
+    assert "produced_at" not in v  # injecté par l'I/O, pas par le corps pur
+
+
+def test_read_drift_verdict_absent_returns_empty(monkeypatch):
+    # rclone cat d'un objet absent : code 0, sortie vide → {} (bootstrap, comme le watermark).
+    import subprocess
+
+    def _fake_run(*a, **k):
+        return subprocess.CompletedProcess(a, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+    assert d.read_drift_verdict("citation", _DUMMY_CONF) == {}
+
+
+def test_read_drift_verdict_parses_json(monkeypatch):
+    import subprocess
+
+    doc = '{"run_id": "run2", "drift_detected": true, "watermark": {"works": "2024-01-05"}}'
+
+    def _fake_run(*a, **k):
+        return subprocess.CompletedProcess(a, 0, stdout=doc, stderr="")
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+    out = d.read_drift_verdict("citation", _DUMMY_CONF)
+    assert out["run_id"] == "run2"
+    assert out["drift_detected"] is True
+
+
+def test_read_drift_verdict_malformed_returns_empty(monkeypatch):
+    import subprocess
+
+    def _fake_run(*a, **k):
+        return subprocess.CompletedProcess(a, 0, stdout="{pas du json", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+    assert d.read_drift_verdict("citation", _DUMMY_CONF) == {}
+
+
+def test_write_drift_verdict_returns_true_on_success(monkeypatch):
+    import subprocess
+
+    captured = {}
+
+    def _fake_run(args, input=None, **k):
+        captured["input"] = input
+        return subprocess.CompletedProcess(args, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+    ok = d.write_drift_verdict({"run_id": "run2"}, "citation", _DUMMY_CONF)
+    assert ok is True
+    assert '"run_id"' in captured["input"]
+
+
+def test_write_drift_verdict_returns_false_on_failure(monkeypatch):
+    import subprocess
+
+    def _fake_run(*a, **k):
+        return subprocess.CompletedProcess(a, 1, stdout="", stderr="boom")
+
+    monkeypatch.setattr(subprocess, "run", _fake_run)
+    assert d.write_drift_verdict({"run_id": "run2"}, "citation", _DUMMY_CONF) is False
