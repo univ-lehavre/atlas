@@ -14,7 +14,13 @@ export default defineConfig({
   forbidOnly: Boolean(process.env["CI"]),
   retries: process.env["CI"] ? 1 : 0,
   workers: 1,
-  reporter: process.env["CI"] ? "list" : "html",
+  // Reporter par défaut + capture d'un brouillon de drift sur échec (ADR 0080,
+  // volet a) : sur `failed`/`timedOut`, le greffon dépose un `.drift.json`
+  // gitignoré avec le message d'erreur à chaud, sans changer le verdict du run.
+  reporter: [
+    [process.env["CI"] ? "list" : "html"],
+    ["../../scripts/drifts/playwright-reporter.mjs", { label: "amarre-smoke" }],
+  ],
   use: {
     baseURL: process.env["PUBLIC_LOGIN_URL"] ?? "http://localhost:5173",
     trace: "retain-on-failure",

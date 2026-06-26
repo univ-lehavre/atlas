@@ -86,6 +86,11 @@ registre est alimenté par **l'auteur de la PR qui corrige** un drift ou un piè
 
 Accepted (2026-06-10). Inspiré des ADR cluster 0034 et 0042 (registre de drifts
 côté infrastructure). N'amende aucun ADR atlas — c'est un nouveau dispositif.
+**Amended by [0071](/atlas/decisions/0071-meta-gouvernance-documentaire-et-matrice-e2e/)**
+(le registre devient _vivant_ : un drift non clos doit lier une issue, durci au
+build) ; **outillé par [0080](/atlas/decisions/0080-capture-assistee-drifts-point-echec/)**
+(capture assistée du brouillon au point d'échec, promotion par CLI) sans
+changement de décision.
 
 ## Conséquences
 

@@ -27,7 +27,7 @@
     "test:coverage": "turbo test:coverage",
     "coverage:report": "node scripts/audit/coverage-report.mjs",
     "coverage:report:strict": "node scripts/audit/coverage-report.mjs --strict",
-    "test:scripts": "node --test scripts/audit/*.test.mjs scripts/docs/*.test.mjs",
+    "test:scripts": "node --test scripts/audit/*.test.mjs scripts/docs/*.test.mjs scripts/drifts/*.test.mjs",
     "ci:checks": "turbo run format:check check lint typecheck test:coverage build && pnpm dataops:check",
     "lint:python": "turbo run lint:py --filter='./dataops/*'",
     "test:python": "turbo run test:py --filter='./dataops/*'",
@@ -58,6 +58,7 @@
     "release:deprecate-renamed": "./scripts/release/deprecate-renamed-packages.sh",
     "crf:dictionaries:export": "tsx scripts/crf-trame/export-data-dictionaries.ts",
     "crf:fixtures:generate": "tsx scripts/crf-trame/generate-test-fixtures.ts",
+    "drift:new": "node scripts/drifts/promote-draft.mjs",
     "others": "git -C . ls-files --others | grep -v -e 'node_modules' -e '.svelte-kit' ",
     "clean": "pnpm dlx rimraf --glob '**/node_modules' '**/dist' '**/build' '**/.svelte-kit' '**/.turbo' '**/coverage' '**/*.traineddata' '**/.hypothesis' 'docs/api' 'docs/.astro' 'docs/src/data/repo-stats.json' '**/upstream/versions' '**/.DS_Store'",
     "prepare": "command -v git >/dev/null 2>&1 && git rev-parse --git-dir >/dev/null 2>&1 && lefthook install || true"

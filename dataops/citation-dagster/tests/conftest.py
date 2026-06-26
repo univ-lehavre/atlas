@@ -27,6 +27,38 @@ from pathlib import Path
 
 import pytest
 
+# `drift_draft` vit à côté de ce conftest ; on garantit que son dossier est sur
+# `sys.path` (selon le rootdir pytest, il ne l'est pas toujours) avant l'import.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from drift_draft import write_draft  # noqa: E402
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    """Capture un brouillon de drift au point d'échec (ADR 0080, volet a).
+
+    *Wrapper* du hook qui produit le rapport de chaque phase d'un test : on laisse
+    pytest construire le ``report`` (``yield``), puis on l'observe **sans le
+    modifier**. On n'agit qu'à la phase ``call`` (l'exécution du test, là où vit
+    l'erreur réelle) et uniquement sur un **échec** (``report.failed``) — jamais
+    sur un *skip* (le *self-skip* sans Docker est un état assumé, ADR 0057, pas un
+    drift). Le brouillon capture le message à chaud ; le verdict du test est
+    inchangé. Un *hook* d'observation, rien de plus.
+    """
+    outcome = yield
+    report = outcome.get_result()
+    if report.when != "call" or not report.failed:
+        return
+    config = item.session.config
+    discriminator = str(config.workerinput["workerid"]) if hasattr(config, "workerinput") else ""
+    write_draft(
+        source="pytest:citation-dagster",
+        symptome=report.longreprtext or f"{item.nodeid} : échec sans détail.",
+        campagne=item.nodeid,
+        discriminator=discriminator,
+    )
+
+
 # Racine des fixtures synthétiques (works/authors/merged_ids), figées et commitées
 # (ADR 0057). parents[3] depuis tests/conftest.py → dataops/citation-dagster/../.. →
 # racine du dépôt.
