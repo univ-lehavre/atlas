@@ -40,6 +40,21 @@ dependencies = [
   # permissives ; épinglé (la résolution multi-arch vérifiée en dépend).
   "great-expectations==1.18.1",
   "numpy",
+  # Modèle de PRÉVISION du volume d'articles (ADR 0080) — instrumentation MLOps
+  # alignée sur citation (mêmes versions pour la cohérence inter-pipelines, toutes
+  # licences permissives) :
+  #   - scikit-learn : HistGradientBoostingRegressor (modèle GLOBAL, gère la
+  #     catégorielle univ_code nativement). 1.6.1 = dernière série compat Python
+  #     3.10 (1.7+ exige 3.11). BSD-3. scipy/pandas arrivent en transitive (déjà
+  #     tirés par GE/Evidently).
+  #   - evidently : drift de la distribution prédite (ColumnDriftMetric), asset
+  #     check N vs N-1. Apache-2.0. Épinglé (résolution multi-arch).
+  #   - mlflow-skinny : CLIENT de tracking seul (pas de serveur/UI), best-effort —
+  #     le serveur MLflow est fourni par le socle (MLFLOW_TRACKING_URI, ADR 0086).
+  #     Apache-2.0.
+  "scikit-learn==1.6.1",
+  "evidently==0.4.40",
+  "mlflow-skinny==2.22.5",
 ]
 # NB : dagster-postgres tire psycopg2-binary (LGPL) en transitive. Cette image
 # l'embarque NÉCESSAIREMENT pour rehydrater l'instance dans le run worker (voir

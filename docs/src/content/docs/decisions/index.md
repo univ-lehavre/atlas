@@ -107,6 +107,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0078 | [Barre latérale thématique, navigation Diátaxis intra-catégorie](/atlas/decisions/0078-sidebar-thematique-navigation-diataxis-intra-categorie/)                 | Accepted        |
 | 0079 | [Boucle fermée dérive → réentraînement, active par défaut (citation)](/atlas/decisions/0079-boucle-fermee-drift-retrain-active-par-defaut/)                     | Accepted        |
 | 0080 | [Capture assistée des drifts au point d'échec](/atlas/decisions/0080-capture-assistee-drifts-point-echec/)                                                      | Accepted        |
+| 0081 | [Modèle de prévision du volume d'articles par université (mediawatch)](/atlas/decisions/0081-modele-prevision-volume-articles-mediawatch/)                      | Accepted        |
 
 ## Quand ouvrir un ADR
 

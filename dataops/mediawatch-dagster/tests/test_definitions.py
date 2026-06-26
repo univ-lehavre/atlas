@@ -108,14 +108,16 @@ def test_transform_run_config_omits_absent_env(monkeypatch) -> None:
     assert "MEDIAWATCH_REF_SOURCE" not in names
 
 
-def test_no_mlflow_or_postgres_env_in_v1() -> None:
-    # Périmètre v1 « articles seulement » : pas de MLflow ni d'index Postgres.
+def test_mlflow_present_but_no_postgres_in_run_env() -> None:
+    # Depuis le modèle de prévision (ADR 0081), mediawatch a une instrumentation MLflow :
+    # MLFLOW_TRACKING_URI DOIT atteindre le pod de run (sinon suivi no-op silencieux). En
+    # revanche, pas d'index Postgres/pgvector côté mediawatch (≠ citation) → aucun POSTGRES_*.
     names = {
         e["name"]
         for e in definitions.RUN_K8S_CONFIG["dagster-k8s/config"]["container_config"]["env"]
     }
+    assert "MLFLOW_TRACKING_URI" in names
     assert not any(n.startswith("POSTGRES_") for n in names)
-    assert "MLFLOW_TRACKING_URI" not in names
 
 
 # ── Entraînement continu (CT, ADR 0062) ──────────────────────────────────────
@@ -255,3 +257,26 @@ def test_ct_sensor_registered_and_stopped() -> None:
     )
     assert sensor_def is not None
     assert sensor_def.default_status == DefaultSensorStatus.STOPPED
+
+
+# ── Modèle de prévision (ADR 0081) ───────────────────────────────────────────
+
+
+def test_forecast_assets_registered() -> None:
+    # L'asset de prévision et son manifest sont enregistrés dans la code-location.
+    keys = {k.to_user_string() for k in definitions.defs.resolve_asset_graph().get_all_asset_keys()}
+    assert "forecast_university_timeline" in keys
+    assert "forecast_manifest" in keys
+
+
+def test_forecast_drift_check_registered() -> None:
+    # L'asset check de drift du modèle est enregistré (porte de sécurité bloquante).
+    names = {k.name for c in definitions.defs.asset_checks for k in c.check_keys}
+    assert "evidently_forecast_drift" in names
+
+
+def test_mlflow_tracking_uri_in_run_env() -> None:
+    # Piège contrat cluster : MLFLOW_TRACKING_URI doit atteindre le POD DE RUN (ADR 0081),
+    # sinon le suivi MLflow du modèle de prévision tombe en no-op silencieux.
+    names = {e["name"] for e in definitions._RUN_ENV}
+    assert "MLFLOW_TRACKING_URI" in names

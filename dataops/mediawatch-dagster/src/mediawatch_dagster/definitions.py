@@ -35,7 +35,14 @@ from dagster import (
     sensor,
 )
 
-from mediawatch_dagster.assets import raw_gkg, ref_universities_snapshot, timeline_manifest
+from mediawatch_dagster.assets import (
+    forecast_manifest,
+    forecast_university_timeline,
+    raw_gkg,
+    ref_universities_snapshot,
+    timeline_manifest,
+)
+from mediawatch_dagster.assets.drift_forecast import evidently_forecast_drift
 from mediawatch_dagster.assets.manifest import _run_rclone, parse_lsjson_entries
 from mediawatch_dagster.assets.quality import (
     ge_curated_universities,
@@ -64,6 +71,11 @@ _RUN_ENV = [
     {"name": "OPENLINEAGE_URL", "value": "http://marquez.marquez:5000"},
     {"name": "OPENLINEAGE_ENDPOINT", "value": "api/v1/lineage"},
     {"name": "OPENLINEAGE_NAMESPACE", "value": "dagster"},
+    # Suivi MLflow du modèle de prévision (ADR 0081) : comme OPENLINEAGE_URL, cette var
+    # posée sur le Deployment gRPC NE se propage PAS aux pods de run (piège contrat
+    # cluster) — on la réinjecte ICI au niveau du run, sinon le tracking tombe en no-op
+    # silencieux dans le pod de run. Host en forme COURTE <svc>.<ns> (note DNS prod).
+    {"name": "MLFLOW_TRACKING_URI", "value": "http://mlflow.mlflow:5000"},
 ]
 
 
@@ -182,13 +194,27 @@ _dbt_assets, _dbt_resources = dbt_components()
 # dt=…/run=…). Ajouté inconditionnellement comme l'asset dbt : en mode dégradé (dbt
 # absent), sa dépendance pend sur une clé externe non exécutable et la code-location
 # reste chargeable (asset orphelin).
-_assets = [raw_gkg, ref_universities_snapshot, timeline_manifest, *_dbt_assets]
+# forecast_university_timeline (ADR 0081) dépend du mart dbt marts_university_timeline ;
+# forecast_manifest dépend de l'asset forecast. Ajoutés inconditionnellement comme
+# timeline_manifest : en mode dégradé (dbt absent), leurs dépendances pendent et la
+# code-location reste chargeable (assets orphelins).
+_assets = [
+    raw_gkg,
+    ref_universities_snapshot,
+    timeline_manifest,
+    forecast_university_timeline,
+    forecast_manifest,
+    *_dbt_assets,
+]
 _jobs = [ingestion_job, ref_job]
 
 # Le check GE du curated cible les modèles dbt (clé curated_university_mentions) :
 # enregistré UNIQUEMENT si les assets dbt existent, sinon sa cible n'est pas résolue
 # en mode dégradé (dbt indisponible). Le check du brut, lui, est inconditionnel.
-_asset_checks = [ge_raw_gkg]
+# evidently_forecast_drift cible l'asset Python forecast_university_timeline (toujours
+# enregistré) → INCONDITIONNEL. Porte de sécurité bloquante sur la bascule served_mode
+# (ADR 0081/0068).
+_asset_checks = [ge_raw_gkg, evidently_forecast_drift]
 if _dbt_assets:
     _asset_checks += [ge_curated_universities, ge_marts_timeline]
 
@@ -200,7 +226,10 @@ if _dbt_assets:
     transform_job = define_asset_job(
         "transform_job",
         selection=(
-            AssetSelection.assets(*_dbt_assets) | AssetSelection.assets("timeline_manifest")
+            AssetSelection.assets(*_dbt_assets)
+            | AssetSelection.assets("timeline_manifest")
+            | AssetSelection.assets("forecast_university_timeline")
+            | AssetSelection.assets("forecast_manifest")
         ),
         partitions_def=gkg_daily_partitions,
         # Relaie DBT_S3_USE_SSL / MEDIAWATCH_REF_SOURCE aux pods de run (piège ADR 0086).
