@@ -4,7 +4,7 @@
     ".": {
       "project": ["*.{js,ts}"],
       "ignoreDependencies": ["eslint", "prettier-plugin-svelte"],
-      "ignoreBinaries": ["uv"]
+      "ignoreBinaries": ["uv", "gh"]
     },
     "docs": {
       "ignore": ["src/components/kpi/kpi-card.css"],

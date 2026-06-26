@@ -36,6 +36,10 @@ docs/src/data/repo-stats.json
 .hypothesis/
 apps/*/tests/baselines/*.json
 
+# Brouillons de drifts (ADR 0080, volet a) — capturés à chaud au point d'échec
+# d'un run, JAMAIS commités : un humain les promeut via `pnpm drift:new`.
+.drifts-drafts/
+
 # Assets
 assets/source/
 
