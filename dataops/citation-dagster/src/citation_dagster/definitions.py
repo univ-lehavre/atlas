@@ -12,6 +12,7 @@ Deux familles d'assets :
 import json
 import os
 import tempfile
+import time
 from pathlib import Path
 
 from dagster import (
@@ -40,7 +41,7 @@ from citation_dagster.assets import (
     researchers_manifest,
     work_vectors_manifest,
 )
-from citation_dagster.assets.drift import evidently_embedding_drift
+from citation_dagster.assets.drift import evidently_embedding_drift, read_drift_verdict
 from citation_dagster.assets.drift_uplift import evidently_uplift_drift
 from citation_dagster.assets.quality import (
     ge_author_recommendations,
@@ -342,6 +343,134 @@ if _dbt_assets:
             )
 
     _sensors.append(transform_on_watermark_advance)
+
+
+# ── BOUCLE FERMÉE DÉRIVE → RÉENTRAÎNEMENT (CT autonome, ADR 0079) ─────────────
+# Ferme la boucle MLOps niveau 2 : la DÉRIVE mesurée (evidently_embedding_drift,
+# verdict persisté en S3 par assets/drift.py) déclenche AUTOMATIQUEMENT un
+# réentraînement (transform_job). RUPTURE ASSUMÉE avec « le déployeur arme » : ce
+# sensor est ACTIF PAR DÉFAUT (RUNNING), le déployeur OPT-OUT (≠ les autres sensors,
+# STOPPED, qu'il arme). Vraie autonomie — actée par l'ADR 0079 (amende 0062/0031).
+#
+# GARDE-FOU ANTI-EMBALLEMENT (terminaison prouvée). Le drift est mesuré N vs N-1 EN
+# AVAL de transform_job ; réentraîner sur la MÊME donnée ne le fait pas disparaître
+# (le drift vient de la donnée NEUVE, pas du modèle). On ne réentraîne donc QUE si le
+# watermark d'INGESTION a AVANCÉ depuis le dernier retrain. Comme le retrain ne
+# ré-ingère pas (le watermark ne bouge pas), le run post-retrain re-mesure un drift
+# sur le MÊME watermark → SKIP : POINT FIXE en 1 itération. Plus : dédup par run_id du
+# verdict, et cooldown (ceinture-bretelles anti-flapping Evidently).
+
+
+def _retrain_auto_enabled(env: dict | None = None) -> bool:
+    """La boucle est-elle armée ? ACTIVE PAR DÉFAUT ; le déployeur DÉSARME via
+    CITATION_RETRAIN_AUTO ∈ {off,0,false,no} (opt-out, ADR 0079)."""
+    env = env if env is not None else os.environ
+    return (env.get("CITATION_RETRAIN_AUTO") or "on").strip().lower() not in {
+        "off",
+        "0",
+        "false",
+        "no",
+    }
+
+
+_DEFAULT_RETRAIN_COOLDOWN_S = 6 * 3600  # 6 h — anti-flapping, valeur d'instance
+
+
+def _retrain_cooldown_s(env: dict | None = None) -> int:
+    """Cooldown minimal entre deux retrains auto, lu de CITATION_RETRAIN_COOLDOWN_S
+    (valeur d'instance) ; défaut 6 h ; valeur invalide/négative → défaut."""
+    env = env if env is not None else os.environ
+    try:
+        n = int(env.get("CITATION_RETRAIN_COOLDOWN_S"))
+    except (TypeError, ValueError):
+        return _DEFAULT_RETRAIN_COOLDOWN_S
+    return n if n >= 0 else _DEFAULT_RETRAIN_COOLDOWN_S
+
+
+def evaluate_drift_retrain(
+    verdict: dict, cursor: str | None, cooldown_ok: bool
+) -> tuple[bool, str, str]:
+    """Corps PUR (sans I/O ni Dagster ni horloge) : décide si un verdict de dérive
+    déclenche un réentraînement. Garantit la TERMINAISON (pas de boucle infinie).
+
+    ``verdict`` : document lu en S3 (``read_drift_verdict``) — ``{run_id, drift_detected,
+    watermark, …}``. ``cursor`` : sérialisé de ``{last_verdict_run, last_retrain_watermark}``
+    vu au dernier tick. ``cooldown_ok`` : l'horloge autorise-t-elle un retrain (calculé hors
+    du pur). Renvoie ``(should_retrain, run_key, new_cursor)``.
+
+    SKIP (dans l'ordre) si : verdict vide/schéma inconnu ; même run_id que la dernière fois
+    (dédup) ; pas de drift ; le watermark vu == celui du dernier retrain (ANTI-EMBALLEMENT :
+    réentraîner sur la même donnée est inutile — c'est ce qui borne la boucle) ; cooldown KO.
+    Sinon RETRAIN : ``run_key = drift-retrain:<run_id>`` (dédup Dagster), curseur mémorise le
+    run_id et le watermark déclencheur."""
+    prev = json.loads(cursor) if cursor else {}
+    last_run = prev.get("last_verdict_run")
+    last_wm = prev.get("last_retrain_watermark")
+
+    run_id = verdict.get("run_id")
+    seen_wm = json.dumps(verdict.get("watermark", {}), sort_keys=True)
+
+    # Curseur inchangé tant qu'on ne retraine pas : on mémorise le dernier run vu pour la
+    # dédup, mais on NE touche PAS last_retrain_watermark (seul un retrain effectif l'avance).
+    def _cursor(retrain_wm: str | None) -> str:
+        return json.dumps(
+            {
+                "last_verdict_run": run_id if run_id else last_run,
+                "last_retrain_watermark": retrain_wm if retrain_wm is not None else last_wm,
+            },
+            sort_keys=True,
+        )
+
+    if not run_id or verdict.get("schema_version") != 1:
+        return False, "", _cursor(None)
+    if run_id == last_run:  # dédup : verdict déjà traité
+        return False, "", _cursor(None)
+    if not verdict.get("drift_detected"):  # pas de drift → rien à réentraîner
+        return False, "", _cursor(None)
+    if seen_wm == last_wm:  # ANTI-EMBALLEMENT : pas de donnée neuve depuis le dernier retrain
+        return False, "", _cursor(None)
+    if not cooldown_ok:  # ceinture-bretelles anti-flapping
+        return False, "", _cursor(None)
+    # Retrain : on avance last_retrain_watermark au watermark déclencheur (terminaison).
+    return True, f"drift-retrain:{run_id}", _cursor(seen_wm)
+
+
+if _dbt_assets and _retrain_auto_enabled():
+    _retrain_cooldown = _retrain_cooldown_s()
+    _last_retrain_at = {"ts": 0.0}  # horloge du cooldown, hors de la fonction pure
+
+    @sensor(
+        name="retrain_on_drift",
+        job=transform_job,
+        default_status=DefaultSensorStatus.RUNNING,  # ACTIF par défaut (ADR 0079, opt-out)
+        minimum_interval_seconds=300,
+        description="CT autonome : réentraîne quand la dérive est confirmée ET la donnée a avancé.",
+    )
+    def retrain_on_drift(context: SensorEvaluationContext):
+        # Lecture best-effort du verdict de dérive persisté en S3 (rclone.conf temporaire,
+        # comme les assets) : sans accès S3 (dev/CI), le sensor SKIP proprement.
+        try:
+            target = ceph_target_from_env()
+            with tempfile.TemporaryDirectory() as tmp:
+                config_path = Path(tmp) / "rclone.conf"
+                config_path.write_text(render_rclone_config(target))
+                verdict = read_drift_verdict(target.bucket, config_path)
+        except Exception as exc:  # noqa: BLE001 — pas d'accès S3 : on n'échoue pas le sensor
+            yield SkipReason(f"verdict de dérive illisible (accès S3 indisponible) : {exc}")
+            return
+        cooldown_ok = (time.monotonic() - _last_retrain_at["ts"]) >= _retrain_cooldown
+        should_retrain, run_key, new_cursor = evaluate_drift_retrain(
+            verdict, context.cursor, cooldown_ok
+        )
+        context.update_cursor(new_cursor)
+        if should_retrain:
+            _last_retrain_at["ts"] = time.monotonic()
+            # run_key = drift-retrain:<run_id> → Dagster dédoublonne sur le verdict.
+            yield RunRequest(run_key=run_key)
+        else:
+            yield SkipReason("pas de dérive confirmée sur de la donnée neuve (rien à réentraîner)")
+
+    _sensors.append(retrain_on_drift)
 
 defs = Definitions(
     assets=_assets,

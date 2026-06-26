@@ -4,7 +4,7 @@ title: Parcours thématique des décisions
 
 Cette page propose un **tour cohérent des décisions** du dépôt, regroupées par
 thème plutôt que par numéro. Elle s'adresse à un **nouveau venu** : plutôt que de
-lire les 78 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
+lire les 79 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
 comprendre _pourquoi_ le dépôt est fait comme il est.
 
 Pour la liste exhaustive par numéro (et le statut de chacun), voir
@@ -289,6 +289,11 @@ incrémentale par date), l'API REST étant reléguée aux compléments ciblés.
   surveille la **dérive du modèle** (distribution des uplift, R²/MAE honnêtes, couverture
   embedding) — **informatif**, sauf la bascule `predictive → descriptive` qui **bloque**
   (perte totale de pouvoir prédictif). Réutilise le drift d'embeddings (ADR 0062).
+- [0079 — Boucle fermée dérive → réentraînement, active par défaut](/atlas/decisions/0079-boucle-fermee-drift-retrain-active-par-defaut/) :
+  **ferme** la boucle MLOps de `citation` — la dérive mesurée **déclenche** le réentraînement,
+  **automatiquement et par défaut** (le déployeur _désarme_, ne _arme_ plus). Borné par une
+  condition de **donnée neuve** (terminaison prouvée). **Amende** 0062 (STOPPED → RUNNING pour
+  ce seul sensor) et 0031 (autonomie par défaut, opt-out).
 - [0064 — Collecte « veille médiatique » (GKG v2)](/atlas/decisions/0064-collecte-mediawatch-gkg/) :
   une **seconde source** dans un code-location dédié (`mediawatch`) — pull HTTP incrémental
   des fichiers 15 minutes de GDELT, sans dépendance Google Cloud, multilingue natif.
