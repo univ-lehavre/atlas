@@ -5,6 +5,26 @@ vi.mock("node:fs/promises", () => ({
   writeFile: vi.fn(),
 }));
 
+// Back-end Postgres mocké : on teste l'AIGUILLAGE (DSN → délègue au package),
+// pas le SQL réel (couvert par l'intégration hermétique de @univ-lehavre/atlas-cache).
+const storeGet = vi.fn();
+const storeSet = vi.fn();
+vi.mock("@univ-lehavre/atlas-cache", async () => {
+  const { Effect, Context, Layer } = await import("effect");
+  const Tag = Context.GenericTag<{
+    readonly get: (k: string) => unknown;
+    readonly set: (k: string, d: unknown) => unknown;
+  }>("test/CacheStore");
+  return {
+    CacheStore: Tag,
+    PostgresCacheLayer: () =>
+      Layer.succeed(Tag, {
+        get: (k: string) => Effect.sync(() => storeGet(k)),
+        set: (k: string, d: unknown) => Effect.sync(() => storeSet(k, d)),
+      }),
+  };
+});
+
 import { readFile, writeFile } from "node:fs/promises";
 import { readCache, writeCache, isCacheStale } from "./cache.js";
 import type { RawLog } from "./api.js";
@@ -134,5 +154,41 @@ describe("isCacheStale", () => {
   it("returns true when cache is older than TTL", () => {
     const cache = { savedAt: Date.now() - 24 * 60 * 60 * 1000 - 1, logs: [] };
     expect(isCacheStale(cache)).toBe(true);
+  });
+});
+
+describe("postgres backend (DSN dans CRF_LOGS_CACHE_PATH)", () => {
+  const dsn = "postgres://u:p@pg-rw.postgres:5432/cache";
+  const originalEnv = process.env["CRF_LOGS_CACHE_PATH"];
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    process.env["CRF_LOGS_CACHE_PATH"] = dsn;
+  });
+
+  afterEach(() => {
+    if (originalEnv === undefined) delete process.env["CRF_LOGS_CACHE_PATH"];
+    else process.env["CRF_LOGS_CACHE_PATH"] = originalEnv;
+  });
+
+  it("readCache reconstruit CacheFile depuis l'entrée Postgres", async () => {
+    storeGet.mockReturnValue({ savedAt: 5, data: [sampleLog] });
+    await expect(readCache()).resolves.toEqual({
+      savedAt: 5,
+      logs: [sampleLog],
+    });
+    expect(storeGet).toHaveBeenCalledWith("crf-logs");
+    expect(mockReadFile).not.toHaveBeenCalled();
+  });
+
+  it("readCache retourne null quand l'entrée Postgres est absente", async () => {
+    storeGet.mockReturnValue(null);
+    await expect(readCache()).resolves.toBeNull();
+  });
+
+  it("writeCache délègue le payload logs au store Postgres", async () => {
+    await writeCache([sampleLog]);
+    expect(storeSet).toHaveBeenCalledWith("crf-logs", [sampleLog]);
+    expect(mockWriteFile).not.toHaveBeenCalled();
   });
 });

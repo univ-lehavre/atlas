@@ -22,6 +22,10 @@
   "files": [
     "dist"
   ],
+  "dependencies": {
+    "@univ-lehavre/atlas-cache": "workspace:*",
+    "effect": "~3.21.4"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

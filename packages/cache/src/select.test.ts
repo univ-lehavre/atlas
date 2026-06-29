@@ -58,7 +58,7 @@ describe("dsnFromEnv", () => {
   });
 
   it("returns null when any variable is missing", () => {
-    const { POSTGRES_CACHE_PASSWORD: _omit, ...partial } = full;
+    const partial = { ...full, POSTGRES_CACHE_PASSWORD: undefined };
     expect(dsnFromEnv(partial)).toBeNull();
   });
 

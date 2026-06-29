@@ -5,7 +5,7 @@ import { FileCacheLayer } from "./file.js";
 import { PostgresCacheLayer } from "./postgres.js";
 import type { CacheStore } from "./store.js";
 
-const POSTGRES_DSN = /^postgres(ql)?:\/\//;
+const POSTGRES_DSN = /^postgres(?:ql)?:\/\//;
 
 /**
  * Sélection **explicite** du back-end (ADR 0040/0083 : jamais de détection

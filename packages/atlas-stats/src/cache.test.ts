@@ -19,6 +19,26 @@ vi.mock("node:fs", () => ({
   existsSync: (...args: unknown[]) => existsSync(...args),
 }));
 
+// Back-end Postgres mocké : on teste l'AIGUILLAGE (DSN → délègue au package),
+// pas le SQL réel (couvert par l'intégration hermétique de @univ-lehavre/atlas-cache).
+const storeGet = vi.fn();
+const storeSet = vi.fn();
+vi.mock("@univ-lehavre/atlas-cache", async () => {
+  const { Effect, Context, Layer } = await import("effect");
+  const Tag = Context.GenericTag<{
+    readonly get: (k: string) => unknown;
+    readonly set: (k: string, d: unknown) => unknown;
+  }>("test/CacheStore");
+  return {
+    CacheStore: Tag,
+    PostgresCacheLayer: () =>
+      Layer.succeed(Tag, {
+        get: (k: string) => Effect.sync(() => storeGet(k)),
+        set: (k: string, d: unknown) => Effect.sync(() => storeSet(k, d)),
+      }),
+  };
+});
+
 // Always re-import after resetting modules so mocks are wired.
 const importCache = async () => {
   vi.resetModules();
@@ -227,6 +247,36 @@ describe("cache", () => {
       });
       const [, renameTo] = rename.mock.calls[0] as [string, string];
       expect(renameTo).toMatch(/\.atlas-stats\.json$/);
+    });
+  });
+
+  describe("postgres backend (DSN dans ATLAS_STATS_CACHE_PATH)", () => {
+    const dsn = "postgres://u:p@pg-rw.postgres:5432/cache";
+
+    it("readCache délègue au store Postgres et retourne son data", async () => {
+      process.env["ATLAS_STATS_CACHE_PATH"] = dsn;
+      const cached = { savedAt: 7, releases: [], packages: [], downloads: {} };
+      storeGet.mockReturnValue({ savedAt: 7, data: cached });
+      const { readCache } = await importCache();
+      await expect(readCache()).resolves.toEqual(cached);
+      expect(storeGet).toHaveBeenCalledWith("atlas-stats");
+      expect(readFile).not.toHaveBeenCalled();
+    });
+
+    it("readCache retourne null quand l'entrée Postgres est absente", async () => {
+      process.env["ATLAS_STATS_CACHE_PATH"] = dsn;
+      storeGet.mockReturnValue(null);
+      const { readCache } = await importCache();
+      await expect(readCache()).resolves.toBeNull();
+    });
+
+    it("writeCache délègue au store Postgres (pas d'écriture fichier)", async () => {
+      process.env["ATLAS_STATS_CACHE_PATH"] = dsn;
+      const data = { savedAt: 9, releases: [], packages: [], downloads: {} };
+      const { writeCache } = await importCache();
+      await writeCache(data);
+      expect(storeSet).toHaveBeenCalledWith("atlas-stats", data);
+      expect(writeFile).not.toHaveBeenCalled();
     });
   });
 });
