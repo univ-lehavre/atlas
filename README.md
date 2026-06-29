@@ -5,7 +5,10 @@ Le badge le plus structurant — OpenSSF Scorecard, score supply-chain /10 recal
 continu — est mis en avant SOUS LE TITRE, seul (exception réservée à ce signal
 transverse, ADR 0083). Les autres sont GROUPÉS par famille dans « Qualité revendiquée » ;
 l'ordre des familles est une règle. Ne jamais ajouter un badge dont l'outil n'est pas
-câblé : un badge à vide ment. -->
+câblé : un badge à vide ment. Exception tracée : le Best Practices Badge (projet
+bestpractices.dev/13440 créé) est affiché alors que le questionnaire est en cours de
+remplissage ; il passera de « in progress » à « passing » une fois la feuille de
+réponses saisie. -->
 
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/univ-lehavre/atlas/badge)](https://scorecard.dev/viewer/?uri=github.com/univ-lehavre/atlas)
 
@@ -192,6 +195,12 @@ Aucune régression n'atteint `main` sans passer les contrôles : chaque PR doit 
 
 [![CI](https://github.com/univ-lehavre/atlas/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/univ-lehavre/atlas/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/univ-lehavre/atlas/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/univ-lehavre/atlas/actions/workflows/codeql.yml)
+
+### Sécurité & chaîne d'approvisionnement
+
+Au-delà du score Scorecard mis en avant sous le titre, le dépôt vise les **bonnes pratiques OSS** de l'OpenSSF : le **Best Practices Badge** atteste, après questionnaire, la couverture des critères de santé projet (change control, tests, rapport de vulnérabilités, analyse statique). La feuille de réponses justifie chaque critère par une preuve réelle ([answer-sheet](https://univ-lehavre.github.io/atlas/audit/2026-06-29-best-practices-badge-answer-sheet/)).
+
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/13440/badge)](https://www.bestpractices.dev/projects/13440)
 
 ## Responsabilité & conformité
 

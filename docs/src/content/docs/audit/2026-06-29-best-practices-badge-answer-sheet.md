@@ -33,6 +33,23 @@ title: "OpenSSF Best Practices Badge — feuille de réponses « passing » (202
 4. Tous les critères sont **Met ou N/A** : recopier directement les réponses
    ci-dessous dans le BadgeApp pour obtenir le badge `passing`.
 
+## URL prêtes à coller
+
+Le BadgeApp ne réclame une **URL** que pour un sous-ensemble de critères (champ
+`*_url` obligatoire ou attendu). Voici ces seuls critères, avec le lien réel
+vérifié à coller — les autres critères se cochent sans URL.
+
+| Critère                        | URL à coller                                                                     |
+| ------------------------------ | -------------------------------------------------------------------------------- |
+| `contribution`                 | <https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md>                |
+| `contribution_requirements`    | <https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md>                |
+| `documentation_basics`         | <https://univ-lehavre.github.io/atlas/>                                          |
+| `documentation_interface`      | <https://univ-lehavre.github.io/atlas/decisions/0033-contrat-interface-cluster/> |
+| `vulnerability_report_process` | <https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md>                    |
+| `report_process`               | <https://github.com/univ-lehavre/atlas/tree/main/.github/ISSUE_TEMPLATE>         |
+| `static_analysis`              | <https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/codeql.yml>   |
+| `test_policy`                  | <https://univ-lehavre.github.io/atlas/quality/tests/>                            |
+
 ## Basics
 
 | Critère                     | Réponse | Justification / preuve                                                                                                                                                                                 |
@@ -40,13 +57,13 @@ title: "OpenSSF Best Practices Badge — feuille de réponses « passing » (202
 | `description_good`          | Met     | Description GitHub : « Monorepo généraliste : apps web, bibliothèques, services, CLIs et chaîne DataOps Python, sous une chaîne de qualité commune » + README détaillé.                                |
 | `interact`                  | Met     | README « Démarrage rapide », `CONTRIBUTING.md`, GitHub Discussions activées.                                                                                                                           |
 | `contribution`              | Met     | `CONTRIBUTING.md` : branches, Conventional Commits, hooks, merge commit ([ADR 0053](/atlas/decisions/0053-strategie-merge-commit-main/)).                                                              |
-| `contribution_requirements` | Met     | Exigences d'acceptation dans `CONTRIBUTING.md` (sujet minuscule, scope-enum, hooks pre-push, merge commit propre). **URL** : `CONTRIBUTING.md`                                                         |
+| `contribution_requirements` | Met     | Exigences d'acceptation dans `CONTRIBUTING.md` (sujet minuscule, scope-enum, hooks pre-push, merge commit propre). **URL** : <https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md>         |
 | `floss_license`             | Met     | `LICENSE` = MIT (FLOSS).                                                                                                                                                                               |
 | `floss_license_osi`         | Met     | MIT = OSI-approved.                                                                                                                                                                                    |
 | `license_location`          | Met     | `LICENSE` à la racine.                                                                                                                                                                                 |
 | `documentation_basics`      | Met     | Site doc Astro Starlight ([univ-lehavre.github.io/atlas](https://univ-lehavre.github.io/atlas/)) : architecture, qualité, collaboration, glossaire.                                                    |
 | `documentation_interface`   | Met     | Contrat d'interface `atlas`↔`cluster` ([ADR 0033](/atlas/decisions/0033-contrat-interface-cluster/)) + doc d'architecture du monorepo.                                                                 |
-| `sites_https`               | Met     | Site doc HTTPS (GitHub Pages) ; dépôt GitHub HTTPS. **URL** : `https://univ-lehavre.github.io/atlas/`                                                                                                  |
+| `sites_https`               | Met     | Site doc HTTPS (GitHub Pages) ; dépôt GitHub HTTPS. **URL** : <https://univ-lehavre.github.io/atlas/>                                                                                                  |
 | `discussion`                | Met     | **GitHub Discussions activées** (`has_discussions: true`) + issue tracker public searchable.                                                                                                           |
 | `english`                   | Met     | Encart « English summary » / « In English » dans `README.md`, `CONTRIBUTING.md` et `SECURITY.md` : issues, PR et rapports de sécurité **en anglais acceptés**. Doc de fond en FR (langue de l'équipe). |
 | `maintained`                | Met     | Activité quotidienne (PR/merges réguliers, releases par paquet, issues traitées).                                                                                                                      |
@@ -74,7 +91,7 @@ title: "OpenSSF Best Practices Badge — feuille de réponses « passing » (202
 | `report_responses`              | Met     | Mainteneur réactif (issues ouvertes/fermées sous quelques jours).                                                                                |
 | `enhancement_responses`         | Met     | Issues `enhancement`/`tech-debt` ouvertes depuis les audits ([ADR 0052](/atlas/decisions/0052-charte-redactionnelle-documentation/) R-findings). |
 | `report_archive`                | Met     | Issues GitHub publiques et searchable.                                                                                                           |
-| `vulnerability_report_process`  | Met     | `SECURITY.md` publié, lié au repo. **URL** : `SECURITY.md`                                                                                       |
+| `vulnerability_report_process`  | Met     | `SECURITY.md` publié, lié au repo. **URL** : <https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md>                                       |
 | `vulnerability_report_private`  | Met     | GitHub **Private Vulnerability Reporting** documenté dans `SECURITY.md` (advisories privées).                                                    |
 | `vulnerability_report_response` | Met     | Délais cibles documentés (`SECURITY.md` : évaluation initiale 7 jours).                                                                          |
 
@@ -119,16 +136,16 @@ title: "OpenSSF Best Practices Badge — feuille de réponses « passing » (202
 
 ## Analysis
 
-| Critère                                  | Réponse | Justification / preuve                                                                                                              |
-| ---------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `static_analysis`                        | Met     | **CodeQL** (`codeql.yml`) + **Semgrep** + ESLint sécu + ruff. **URL** : `.github/workflows/codeql.yml`                              |
-| `static_analysis_common_vulnerabilities` | Met     | CodeQL `security-extended,security-and-quality` + Semgrep + gitleaks + dependency-review.                                           |
-| `static_analysis_fixed`                  | Met     | Alertes CodeQL/Semgrep triées (onglet Security) ; SLA de remédiation ([ADR 0018](/atlas/decisions/0018-sla-remediation-findings/)). |
-| `static_analysis_often`                  | Met     | À chaque push/PR + cron hebdo (CodeQL, Scorecard).                                                                                  |
-| `dynamic_analysis`                       | Met     | **OWASP ZAP** baseline (DAST) sur les apps déployées + e2e Playwright.                                                              |
-| `dynamic_analysis_unsafe`                | N/A     | Pas de langage memory-unsafe (TypeScript/Python).                                                                                   |
-| `dynamic_analysis_enable_assertions`     | Met     | Assertions des suites e2e/intégration ; gates de qualité bloquants en CI.                                                           |
-| `dynamic_analysis_fixed`                 | Met     | Écarts e2e indexés (registre des drifts) puis corrigés.                                                                             |
+| Critère                                  | Réponse | Justification / preuve                                                                                                                                 |
+| ---------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `static_analysis`                        | Met     | **CodeQL** (`codeql.yml`) + **Semgrep** + ESLint sécu + ruff. **URL** : <https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/codeql.yml> |
+| `static_analysis_common_vulnerabilities` | Met     | CodeQL `security-extended,security-and-quality` + Semgrep + gitleaks + dependency-review.                                                              |
+| `static_analysis_fixed`                  | Met     | Alertes CodeQL/Semgrep triées (onglet Security) ; SLA de remédiation ([ADR 0018](/atlas/decisions/0018-sla-remediation-findings/)).                    |
+| `static_analysis_often`                  | Met     | À chaque push/PR + cron hebdo (CodeQL, Scorecard).                                                                                                     |
+| `dynamic_analysis`                       | Met     | **OWASP ZAP** baseline (DAST) sur les apps déployées + e2e Playwright.                                                                                 |
+| `dynamic_analysis_unsafe`                | N/A     | Pas de langage memory-unsafe (TypeScript/Python).                                                                                                      |
+| `dynamic_analysis_enable_assertions`     | Met     | Assertions des suites e2e/intégration ; gates de qualité bloquants en CI.                                                                              |
+| `dynamic_analysis_fixed`                 | Met     | Écarts e2e indexés (registre des drifts) puis corrigés.                                                                                                |
 
 ## Synthèse
 
