@@ -52,6 +52,13 @@ const PACKAGE_LICENSE_KNOWN_UNDECLARED = new Set([
   // ADR 0036). Son package.json omet le champ `license`, mais son fichier
   // `license` indique « MIT © Fabio Spampinato ». Dépendance build-only.
   "khroma",
+  // satteri : processeur Markdown/MDX haute performance tiré par
+  // `@astrojs/markdown-satteri` → `@astrojs/mdx` (build de la doc Astro,
+  // ADR 0036). Son package.json omet le champ `license`, mais son fichier
+  // `LICENSE` est une MIT standard (© 2026 Bruits, github.com/bruits/satteri)
+  // et son wrapper `@astrojs/markdown-satteri` déclare bien MIT. Dépendance
+  // build-only, jamais embarquée dans un paquet publié.
+  "satteri",
 ]);
 
 function extractLicenseTokens(value) {
