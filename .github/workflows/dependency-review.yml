@@ -42,17 +42,14 @@ jobs:
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: high
-          # Advisories exemptées (risque résiduel documenté). deepdiff est
-          # tiré transitivement par dbt-common (chaîne dagster-dbt==0.29.7 ↔
-          # dagster 1.13.7), qui l'épingle deepdiff<8 ; monter à 8.0.0 (la
-          # version corrigée) rétrograde dbt-core 1.10→1.7 et rompt
-          # l'alignement de version requis par dagster-dbt. Les deux CVE
-          # n'exploitent que la désérialisation d'un Delta deepdiff non fiable
-          # (GHSA-mw26 : Class Pollution dans Delta → RCE/DoS ; GHSA-54jj :
-          # DoS mémoire via SAFE_TO_IMPORT) — dbt n'utilise deepdiff que pour
-          # differ des manifests/configs locaux et fiables, jamais pour
-          # désérialiser une entrée externe. À lever dès que dagster-dbt
-          # acceptera deepdiff>=8.
+          # Advisories exemptées (risque résiduel documenté). Les CVE deepdiff
+          # (GHSA-mw26-5g2v-hqw3 critical, GHSA-54jj-px8x-5w5q high) ne sont PLUS
+          # exemptées : elles sont CORRIGÉES via un override uv `deepdiff>=8,<9`
+          # dans les deux pyproject.toml dataops (deepdiff 7.0.1 → 8.6.2). dbt
+          # n'utilise deepdiff que pour differ des manifests locaux fiables
+          # (`DeepDiff`, jamais `Delta`/`SAFE_TO_IMPORT`, la seule surface des
+          # CVE), donc forcer 8.x est sûr ; la chaîne dagster/dbt et la parité
+          # Dagster 1.13.7 du cluster (ADR 0006/0033) restent inchangées.
           #
           # nltk est tiré transitivement par evidently==0.4.40 (détection de
           # drift). GHSA-p4gq-832x-fm9v (path traversal dans nltk.data.load()
@@ -63,7 +60,6 @@ jobs:
           # vecteurs numériques (384-dim) et n'appelle jamais cette API. À
           # lever dès qu'upstream publie un correctif.
           allow-ghsas: >-
-            GHSA-mw26-5g2v-hqw3, GHSA-54jj-px8x-5w5q,
             GHSA-p4gq-832x-fm9v
           allow-licenses: >-
             MIT, MIT-0, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD,
