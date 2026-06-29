@@ -153,7 +153,7 @@ dérive, réentraînement) est en place au **niveau 1→2**
 | **Détection de dérive**         | Evidently sur les embeddings et les prédictions d'uplift — `assets/drift.py`, `assets/drift_uplift.py` ([ADR 0068](/atlas/decisions/0068-suivi-derive-modele-uplift/)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | **Modèle prédictif**            | **`citation`** : modèle d'uplift FWCI (validation croisée honnête, porte de décision) — `assets/uplift.py`, `uplift_model.py` ([ADR 0067](/atlas/decisions/0067-modele-uplift-fwci-eunicoast/)). **`mediawatch`** : modèle **global** de prévision du volume d'articles (semaine/mois/trimestre), validation honnête **temporelle** (anti-fuite, baseline saisonnier naïf) et porte prédictif/descriptif — `forecast_model.py`, `assets/forecast.py` ([ADR 0081](/atlas/decisions/0081-modele-prevision-volume-articles-mediawatch/)).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **Entraînement continu (CT)**   | `transform_job` re-déclenché sans intervention par un **`@schedule`** (cron d'instance) et un **`@sensor`** sur l'avancée de l'ingestion, **les deux `STOPPED` par défaut** (le déployeur arme et fixe la cadence ; le code permet, n'impose pas). Porté **à parité aux deux pipelines `dataops/`** en respectant leur structure ([ADR 0062](/atlas/decisions/0062-mlops-niveau-2-tracking-drift-ct/), section « généralisation aux pipelines DataOps ») : **`citation`** (non partitionné) rejoue `transform_job` (dbt → embeddings → index) — schedule `transform_daily` (cron `CITATION_CT_CRON`) + sensor `transform_on_watermark_advance` (avancée du watermark `raw/_watermark.json`) ; **`mediawatch`** (partitionné par jour, **sans embeddings ni watermark** : la partition `dt=YYYY-MM-DD` **est** le curseur) rejoue la partition du jour — schedule `transform_daily` (cron `MEDIAWATCH_CT_CRON`) + sensor `transform_on_ingestion_advance` sur les partitions fraîchement ingérées (`raw/gkg/dt=…`), borné à N par tick (`MEDIAWATCH_CT_MAX_PARTITIONS_PER_TICK`). |
-| **CT autonome (boucle fermée)** | **`citation`** : la dérive mesurée déclenche **automatiquement** le réentraînement — sensor `retrain_on_drift` **`RUNNING` par défaut** (le déployeur _désarme_ via `CITATION_RETRAIN_AUTO=off`, ne _arme_ plus). Borné par une condition de **donnée neuve** (le watermark d'ingestion doit avoir avancé depuis le dernier retrain → terminaison prouvée, pas d'emballement) + dédup + cooldown. Verdict de dérive persisté en S3, lu par le sensor ([ADR 0079](/atlas/decisions/0079-boucle-fermee-drift-retrain-active-par-defaut/) ; RGPD honoré par re-dérivation depuis `curated` filtré).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **CT autonome (boucle fermée)** | **Les deux pipelines** : la dérive mesurée déclenche **automatiquement** le réentraînement — sensor `retrain_on_drift` **`RUNNING` par défaut** (le déployeur _désarme_ par env, ne _arme_ plus). Borné par une condition de **donnée neuve** (→ terminaison prouvée, pas d'emballement) + dédup + cooldown ; verdict de dérive persisté en S3, lu par le sensor. **`citation`** : signal de donnée neuve = watermark d'ingestion ; RGPD honoré par re-dérivation depuis `curated` filtré ([ADR 0079](/atlas/decisions/0079-boucle-fermee-drift-retrain-active-par-defaut/)). **`mediawatch`** : signal = partitions GKG ingérées ([ADR 0082](/atlas/decisions/0082-boucle-fermee-drift-retrain-mediawatch/)).                                                                                                                                                                                                                                                                                                                                                                   |
 
 **Les deux pipelines sont désormais instrumentés** : `citation` (embeddings +
 modèle d'uplift) et `mediawatch` (modèle de prévision, [ADR 0081](/atlas/decisions/0081-modele-prevision-volume-articles-mediawatch/))
@@ -161,13 +161,13 @@ tracent leurs runs dans MLflow et mesurent une dérive Evidently. La brique **CT
 (schedule + sensor) est portée à parité aux deux
 ([ADR 0062](/atlas/decisions/0062-mlops-niveau-2-tracking-drift-ct/)).
 
-**État.** Côté **`citation`**, la boucle est **fermée et autonome** : la dérive
-mesurée déclenche automatiquement le réentraînement, active par défaut, bornée par la
-condition de donnée neuve ([ADR 0079](/atlas/decisions/0079-boucle-fermee-drift-retrain-active-par-defaut/)).
-**Côté `mediawatch`** : depuis son modèle de prévision, il existe **enfin un signal de
-dérive** (Evidently sur les prévisions, porte bloquante sur la bascule
-predictive→descriptive) — la boucle fermée y devient **possible** ; elle n'est pas
-encore câblée (le CT y reste orchestré + armé par le déployeur). C'est l'écart restant.
+**État.** La boucle est **fermée et autonome sur les deux pipelines** : la dérive
+mesurée déclenche automatiquement le réentraînement, active par défaut, bornée par une
+condition de donnée neuve qui garantit la terminaison. `citation` se borne sur l'avancée
+du watermark ([ADR 0079](/atlas/decisions/0079-boucle-fermee-drift-retrain-active-par-defaut/)),
+`mediawatch` sur l'avancée des partitions GKG ingérées
+([ADR 0082](/atlas/decisions/0082-boucle-fermee-drift-retrain-mediawatch/)). Le MLOps
+niveau 2 _autonome_ est désormais atteint à parité.
 
 ## Cloud-native : 12 facteurs + extensions
 
@@ -216,14 +216,6 @@ ci-dessus, écarts compris. Restent à ce jour **partiels ou hors de ce dépôt*
   ([ADR 0073](/atlas/decisions/0073-corriger-le-code-pas-l-etat-garde-fou-cible/)).
   L'**opérateur de réconciliation** (Argo CD) et la topologie cible vivent dans le
   dépôt `cluster`, **hors du périmètre de ce dépôt**.
-- **Continuous training _autonome_ de `mediawatch` — boucle à câbler.** Côté
-  **`citation`**, la boucle fermée « dérive → réentraînement automatique » **est en
-  place** (active par défaut, [ADR 0079](/atlas/decisions/0079-boucle-fermee-drift-retrain-active-par-defaut/)).
-  Côté **`mediawatch`**, le verrou est levé : son modèle de prévision
-  ([ADR 0081](/atlas/decisions/0081-modele-prevision-volume-articles-mediawatch/))
-  fournit **désormais un signal de dérive** (Evidently). Le CT y reste **orchestré +
-  armé par le déployeur** ; il **reste à câbler** la boucle fermée (un sensor
-  drift→retrain, sur le patron de l'ADR 0079) — c'est l'écart restant.
 
 Ces éléments apparaîtront — ou se compléteront — dans ce bilan au fur et à mesure
 de leur mise en œuvre.

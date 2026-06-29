@@ -280,3 +280,91 @@ def test_mlflow_tracking_uri_in_run_env() -> None:
     # sinon le suivi MLflow du modèle de prévision tombe en no-op silencieux.
     names = {e["name"] for e in definitions._RUN_ENV}
     assert "MLFLOW_TRACKING_URI" in names
+
+
+# ── Boucle fermée dérive → réentraînement (CT autonome mediawatch, ADR 0082) ──
+
+
+def _verdict(run_id, detected, parts, schema=1):
+    return {
+        "schema_version": schema,
+        "run_id": run_id,
+        "drift_detected": detected,
+        "partitions": parts,
+    }
+
+
+_P1 = ["2024-06-01", "2024-06-02"]
+_P2 = ["2024-06-01", "2024-06-02", "2024-06-03"]
+
+
+def test_drift_retrain_bootstrap_triggers():
+    should, key, _ = definitions.evaluate_drift_retrain(_verdict("run2", True, _P1), None, True)
+    assert should is True
+    assert key == "drift-retrain:run2"
+
+
+def test_drift_retrain_same_verdict_dedup():
+    _, _, c = definitions.evaluate_drift_retrain(_verdict("run2", True, _P1), None, True)
+    should, _, _ = definitions.evaluate_drift_retrain(_verdict("run2", True, _P1), c, True)
+    assert should is False
+
+
+def test_drift_retrain_post_retrain_same_partitions_terminates():
+    # TERMINAISON : run post-retrain (nouveau run_id) mais MÊMES partitions → SKIP.
+    _, _, c = definitions.evaluate_drift_retrain(_verdict("run2", True, _P1), None, True)
+    should, _, _ = definitions.evaluate_drift_retrain(_verdict("run3", True, _P1), c, True)
+    assert should is False
+
+
+def test_drift_retrain_new_partitions_trigger_again():
+    _, _, c = definitions.evaluate_drift_retrain(_verdict("run2", True, _P1), None, True)
+    should, key, _ = definitions.evaluate_drift_retrain(_verdict("run4", True, _P2), c, True)
+    assert should is True and key == "drift-retrain:run4"
+
+
+def test_drift_retrain_no_drift_skips():
+    should, _, _ = definitions.evaluate_drift_retrain(_verdict("run5", False, _P2), None, True)
+    assert should is False
+
+
+def test_drift_retrain_cooldown_blocks():
+    should, _, _ = definitions.evaluate_drift_retrain(_verdict("run6", True, _P1), None, False)
+    assert should is False
+
+
+def test_drift_retrain_unknown_schema_skips():
+    bad = {"run_id": "x", "drift_detected": True, "partitions": _P1}
+    should, _, _ = definitions.evaluate_drift_retrain(bad, None, True)
+    assert should is False
+
+
+def test_drift_retrain_partition_order_insensitive():
+    # Les partitions sont triées avant comparaison → l'ordre d'entrée ne re-déclenche pas.
+    _, _, c = definitions.evaluate_drift_retrain(_verdict("run2", True, _P1), None, True)
+    shuffled = _verdict("run3", True, list(reversed(_P1)))
+    should, _, _ = definitions.evaluate_drift_retrain(shuffled, c, True)
+    assert should is False  # mêmes partitions (ordre différent) → anti-emballement
+
+
+def test_retrain_auto_default_on_and_opt_out():
+    assert definitions._retrain_auto_enabled({}) is True
+    for v in ("off", "0", "false", "no", "OFF", " Off "):
+        assert definitions._retrain_auto_enabled({"MEDIAWATCH_RETRAIN_AUTO": v}) is False
+
+
+def test_retrain_cooldown_default_and_override():
+    assert definitions._retrain_cooldown_s({}) == definitions._DEFAULT_RETRAIN_COOLDOWN_S
+    assert definitions._retrain_cooldown_s({"MEDIAWATCH_RETRAIN_COOLDOWN_S": "120"}) == 120
+    assert (
+        definitions._retrain_cooldown_s({"MEDIAWATCH_RETRAIN_COOLDOWN_S": "x"})
+        == definitions._DEFAULT_RETRAIN_COOLDOWN_S
+    )
+
+
+def test_retrain_sensor_running_by_default():
+    from dagster import DefaultSensorStatus
+
+    by_name = {s.name: s.default_status for s in definitions.defs.sensors}
+    assert by_name.get("retrain_on_drift") == DefaultSensorStatus.RUNNING
+    assert by_name.get("transform_on_ingestion_advance") == DefaultSensorStatus.STOPPED
