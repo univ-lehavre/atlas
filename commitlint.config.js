@@ -27,6 +27,7 @@ export default {
         "baas",
         "auth",
         "biblio-cli",
+        "cache",
         "ci",
         "config",
         "crf",
