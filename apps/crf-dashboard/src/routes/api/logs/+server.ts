@@ -15,11 +15,7 @@ import type { RawLog, ProjectToken } from '@univ-lehavre/atlas-crf-logs';
 
 type CacheFile = Awaited<ReturnType<typeof readCache>>;
 type RefreshStage =
-  | 'read_cache'
-  | 'read_tokens'
-  | 'validate_config'
-  | 'fetch_logs'
-  | 'persist_cache';
+  'read_cache' | 'read_tokens' | 'validate_config' | 'fetch_logs' | 'persist_cache';
 
 const TOKENS_PATH = path.resolve(import.meta.dirname, '../../../../../../redcap-token.csv');
 const BATCH_SIZE = 3;

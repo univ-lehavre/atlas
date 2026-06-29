@@ -88,21 +88,18 @@ const probeTcp = (
   const socket = createTcpSocket(host, port, timeoutMs);
 
   return Promise.race<TcpProbeResult>([
-    once(socket, "connect").then(
-      (): TcpProbeResult => ({ ok: true, durationMs: Date.now() - startedAt }),
-    ),
-    once(socket, "timeout").then(
-      (): TcpProbeResult => ({
-        ok: false,
-        error: `timeout_${String(timeoutMs)}ms`,
-      }),
-    ),
-    once(socket, "error").then(
-      (values: unknown[]): TcpProbeResult => ({
-        ok: false,
-        error: toErrorMessage(values[0]),
-      }),
-    ),
+    once(socket, "connect").then((): TcpProbeResult => ({
+      ok: true,
+      durationMs: Date.now() - startedAt,
+    })),
+    once(socket, "timeout").then((): TcpProbeResult => ({
+      ok: false,
+      error: `timeout_${String(timeoutMs)}ms`,
+    })),
+    once(socket, "error").then((values: unknown[]): TcpProbeResult => ({
+      ok: false,
+      error: toErrorMessage(values[0]),
+    })),
   ]).finally((): undefined => destroySocket(socket));
 };
 
@@ -142,22 +139,18 @@ const probeTls = (
   const socket = createTlsSocket(host, port, timeoutMs);
 
   return Promise.race<TlsProbeResult>([
-    once(socket, "secureConnect").then(
-      (): TlsProbeResult => toTlsSuccessResult(socket, host, startedAt),
+    once(socket, "secureConnect").then((): TlsProbeResult =>
+      toTlsSuccessResult(socket, host, startedAt),
     ),
-    once(socket, "timeout").then(
-      (): TlsProbeResult => ({
-        ok: false,
-        error: `timeout_${String(timeoutMs)}ms`,
-      }),
-    ),
-    once(socket, "error").then(
-      (values: unknown[]): TlsProbeResult => ({
-        ok: false,
-        error: toErrorMessage(values[0]),
-        servername: host,
-      }),
-    ),
+    once(socket, "timeout").then((): TlsProbeResult => ({
+      ok: false,
+      error: `timeout_${String(timeoutMs)}ms`,
+    })),
+    once(socket, "error").then((values: unknown[]): TlsProbeResult => ({
+      ok: false,
+      error: toErrorMessage(values[0]),
+      servername: host,
+    })),
   ]).finally((): undefined => destroySocket(socket));
 };
 
@@ -204,8 +197,6 @@ export const diagnoseEndpointNetwork = async (
           ),
         );
     })
-    .catch(
-      (error: unknown): EndpointNetworkDiagnostics => ({
-        parseError: toErrorMessage(error),
-      }),
-    );
+    .catch((error: unknown): EndpointNetworkDiagnostics => ({
+      parseError: toErrorMessage(error),
+    }));

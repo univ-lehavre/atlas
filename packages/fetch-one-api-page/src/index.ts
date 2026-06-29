@@ -3,11 +3,7 @@ import { Effect, Data, Either, Schema, Context, Layer } from "effect";
 import type { ParseResult } from "effect";
 
 type QueryValue =
-  | string
-  | number
-  | boolean
-  | (string | number | boolean)[]
-  | undefined;
+  string | number | boolean | (string | number | boolean)[] | undefined;
 type Query = Record<string, QueryValue>;
 
 /**

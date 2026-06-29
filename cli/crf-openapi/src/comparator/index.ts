@@ -36,8 +36,7 @@ export function loadSpec(path: string): Record<string, unknown> {
 
 function getSchemaNames(spec: Record<string, unknown>): Set<string> {
   const schemas = (spec.components as Record<string, unknown>)?.schemas as
-    | Record<string, unknown>
-    | undefined;
+    Record<string, unknown> | undefined;
   return new Set(schemas ? Object.keys(schemas) : []);
 }
 

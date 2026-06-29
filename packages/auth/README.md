@@ -146,9 +146,7 @@ import { createAuthHook } from '@univ-lehavre/atlas-auth/hooks';
 
 export const handle = sequence(
   createAuthHook({
-    baas: {
-      /* ... */
-    },
+    baas: {/* ... */},
   })
   // autres hooks...
 );

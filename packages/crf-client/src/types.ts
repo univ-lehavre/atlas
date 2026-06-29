@@ -65,11 +65,7 @@ export interface ImportRecordsOptions {
  * All possible errors from the REDCap client.
  */
 export type CrfClientError =
-  | CrfHttpError
-  | CrfApiError
-  | CrfNetworkError
-  | VersionParseError
-  | UnsupportedVersionError;
+  CrfHttpError | CrfApiError | CrfNetworkError | VersionParseError | UnsupportedVersionError;
 
 // ============================================================================
 // Client Interface
