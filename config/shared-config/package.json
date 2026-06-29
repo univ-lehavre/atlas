@@ -52,16 +52,16 @@
     "eslint-config-prettier": "~10.1.8",
     "eslint-plugin-barrel-files": "~3.0.1",
     "eslint-plugin-functional": "~9.0.5",
-    "eslint-plugin-import-x": "~4.16.2",
-    "eslint-plugin-n": "~18.1.0",
+    "eslint-plugin-import-x": "~4.17.1",
+    "eslint-plugin-n": "~18.2.1",
     "eslint-plugin-no-secrets": "~2.3.3",
-    "eslint-plugin-regexp": "~3.1.0",
+    "eslint-plugin-regexp": "~3.1.1",
     "eslint-plugin-security": "~4.0.1",
-    "eslint-plugin-svelte": "~3.19.0",
-    "eslint-plugin-turbo": "~2.9.18",
+    "eslint-plugin-svelte": "~3.20.0",
+    "eslint-plugin-turbo": "~2.10.0",
     "eslint-plugin-unicorn": "~64.0.0",
-    "globals": "~17.6.0",
-    "typescript-eslint": "~8.61.1"
+    "globals": "~17.7.0",
+    "typescript-eslint": "~8.62.0"
   },
   "peerDependencies": {
     "eslint": "^10.0.0",
