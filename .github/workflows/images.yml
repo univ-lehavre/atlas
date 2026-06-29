@@ -352,7 +352,7 @@ jobs:
       # scan couplés »).
       - name: Install cosign
         if: env.RUN == 'true' && github.event_name == 'push'
-        uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da # v3.7.0
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       # Signe le DIGEST sha256 de l'image (immuable), pas un tag mutable, en
       # mode keyless : `cosign` obtient un jeton OIDC GitHub Actions
