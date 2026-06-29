@@ -44,6 +44,7 @@ vérifié à coller — les autres critères se cochent sans URL.
 | `contribution`                 | <https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md>                |
 | `contribution_requirements`    | <https://github.com/univ-lehavre/atlas/blob/main/CONTRIBUTING.md>                |
 | `documentation_basics`         | <https://univ-lehavre.github.io/atlas/>                                          |
+| `release_notes`                | <https://github.com/univ-lehavre/atlas/releases>                                 |
 | `documentation_interface`      | <https://univ-lehavre.github.io/atlas/decisions/0033-contrat-interface-cluster/> |
 | `vulnerability_report_process` | <https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md>                    |
 | `report_process`               | <https://github.com/univ-lehavre/atlas/tree/main/.github/ISSUE_TEMPLATE>         |
@@ -70,17 +71,17 @@ vérifié à coller — les autres critères se cochent sans URL.
 
 ## Change Control
 
-| Critère               | Réponse | Justification / preuve                                                                                                      |
-| --------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `repo_public`         | Met     | Dépôt public versionné git.                                                                                                 |
-| `repo_track`          | Met     | Git suit changements, auteurs, horodatages.                                                                                 |
-| `repo_interim`        | Met     | Branches PR + **merge commit** ([ADR 0053](/atlas/decisions/0053-strategie-merge-commit-main/)) préservent l'intermédiaire. |
-| `repo_distributed`    | Met     | Git (distribué).                                                                                                            |
-| `version_unique`      | Met     | Tags SemVer uniques par paquet (`@univ-lehavre/atlas-…@X.Y.Z`).                                                             |
-| `version_semver`      | Met     | SemVer dérivé des commits par **Changesets**.                                                                               |
-| `version_tags`        | Met     | Releases identifiées par tags ; GitHub Releases par paquet.                                                                 |
-| `release_notes`       | Met     | `CHANGELOG.md` (Keep a Changelog) par paquet, généré par Changesets ; GitHub Releases.                                      |
-| `release_notes_vulns` | Met     | Pas de CVE publique propre corrigée à ce jour ; les correctifs de sécurité passent en `fix:` au changelog.                  |
+| Critère               | Réponse | Justification / preuve                                                                                                                            |
+| --------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `repo_public`         | Met     | Dépôt public versionné git.                                                                                                                       |
+| `repo_track`          | Met     | Git suit changements, auteurs, horodatages.                                                                                                       |
+| `repo_interim`        | Met     | Branches PR + **merge commit** ([ADR 0053](/atlas/decisions/0053-strategie-merge-commit-main/)) préservent l'intermédiaire.                       |
+| `repo_distributed`    | Met     | Git (distribué).                                                                                                                                  |
+| `version_unique`      | Met     | Tags SemVer uniques par paquet (`@univ-lehavre/atlas-…@X.Y.Z`).                                                                                   |
+| `version_semver`      | Met     | SemVer dérivé des commits par **Changesets**.                                                                                                     |
+| `version_tags`        | Met     | Releases identifiées par tags ; GitHub Releases par paquet.                                                                                       |
+| `release_notes`       | Met     | `CHANGELOG.md` (Keep a Changelog) par paquet, généré par Changesets ; GitHub Releases. **URL** : <https://github.com/univ-lehavre/atlas/releases> |
+| `release_notes_vulns` | Met     | Pas de CVE publique propre corrigée à ce jour ; les correctifs de sécurité passent en `fix:` au changelog.                                        |
 
 ## Reporting
 
