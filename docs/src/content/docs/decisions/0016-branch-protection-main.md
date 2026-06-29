@@ -113,6 +113,21 @@ signaux ([ADR 0070](/atlas/decisions/0070-page-preuves-vitrine-doctrine-badges/)
 Branch-Protection ne sera pas maximal tant que le projet reste à un seul
 mainteneur, et c'est un **choix tracé**, pas un oubli.
 
+**Deux autres checks Scorecard découlent du même bus-factor = 1** et relèvent du
+même arbitrage — ils sont nommés ici pour que la trace soit complète :
+
+- **Code-Review** (« 0/N changesets approuvés ») mesure la part de PR ayant reçu
+  une **revue approuvée**. À mainteneur unique, elle est structurellement à zéro :
+  on ne peut pas approuver sa propre PR. Le score remontera **mécaniquement** dès
+  qu'un second contributeur revoit les PR — pas avant, et sans qu'on puisse (ni
+  doive) le forcer en solo.
+- **Contributors** (« 1 organisation ») récompense les contributions de
+  **plusieurs organisations**. Le dépôt n'en a qu'une aujourd'hui ; ce n'est pas
+  un défaut à corriger mais un **fait** sur l'état du projet, qui évoluera s'il
+  s'ouvre à d'autres établissements — cohérent avec sa vocation
+  **généraliste et ouverte** ([ADR 0035](/atlas/decisions/0035-depot-generaliste-ouvert/)),
+  sans être garanti.
+
 Le check **Signed-Releases** signalé au même passage (« no releases found ») est
 un **faux négatif** : les paquets sont publiés avec **provenance OIDC npm**
 (attestation in-toto signée, [ADR 0017](/atlas/decisions/0017-releases-npm-oidc-deux-registres/)),
