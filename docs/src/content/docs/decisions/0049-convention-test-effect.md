@@ -81,8 +81,8 @@ dogme.
 ### Alternative écartée : statu quo `runPromise` + `vi.mock` par test
 
 Laisser chaque test exécuter son Effect et mocker à la main « marche » mais
-reproduit le faux-vert, duplique le setup, sur-mocke (l'audit le relève comme
-risque qualité, `scripts/audit/daily-target.mjs`) et empêche `TestClock`. Écartée.
+reproduit le faux-vert, duplique le setup, sur-mocke (un risque qualité) et
+empêche `TestClock`. Écartée.
 
 ## Statut
 
