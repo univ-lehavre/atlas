@@ -108,6 +108,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0080 | [Capture assistée des drifts au point d'échec](/atlas/decisions/0080-capture-assistee-drifts-point-echec/)                                                      | Accepted        |
 | 0081 | [Modèle de prévision du volume d'articles par université (mediawatch)](/atlas/decisions/0081-modele-prevision-volume-articles-mediawatch/)                      | Accepted        |
 | 0082 | [Boucle fermée dérive → réentraînement, active par défaut (mediawatch)](/atlas/decisions/0082-boucle-fermee-drift-retrain-mediawatch/)                          | Accepted        |
+| 0083 | [Câblage d'OpenSSF Scorecard (note supply-chain et badge en tête)](/atlas/decisions/0083-openssf-scorecard-cable/)                                              | Accepted        |
 
 ## Quand ouvrir un ADR
 
