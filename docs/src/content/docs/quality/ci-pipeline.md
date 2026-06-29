@@ -19,7 +19,7 @@ Le dépôt compte **quatorze _workflows_** qui se répartissent selon **quand** 
 
 1. **À l'ouverture (ou à la mise à jour) d'une pull request**, plusieurs _workflows_ démarrent **en parallèle** : la chaîne qualité (`ci.yml`), les analyses de sécurité du code (`codeql.yml`, `semgrep.yml`), la détection de secrets (`gitleaks.yml`) et la revue des dépendances ajoutées (`dependency-review.yml`). Certains ne se réveillent **que si la PR touche les fichiers concernés** : `images.yml` (construction des images Docker, sur tout changement de code applicatif ou de `Dockerfile`) et `e2e.yml` (tests de bout en bout, seulement si la PR touche les apps ou _sandboxes_ ciblées). **Toutes ces vérifications doivent passer** pour que la PR soit fusionnable.
 2. **À la fusion sur `main`** (après revue), d'autres _workflows_ prennent le relais : publication de la documentation (`docs.yml`), publication des paquets (`release.yml`), construction et publication des images Docker (`images.yml`), génération du SBOM (`sbom.yml`) et analyse de référence CodeQL (`codeql.yml` tourne aussi sur `main`).
-3. **Sur déclencheur programmé (_cron_) ou manuel**, indépendamment des PR : la revue quotidienne (`daily-review.yml`), le rappel d'audit trimestriel (`audit-reminder.yml`), les tests de bout en bout nocturnes (`e2e.yml`), l'analyse CodeQL hebdomadaire et le scan dynamique ZAP (`zap-baseline.yml`, **manuel uniquement**). En continu, `dependabot-auto-merge.yml` réagit aux pull requests ouvertes par le robot Dependabot.
+3. **Sur déclencheur programmé (_cron_) ou manuel**, indépendamment des PR : le rappel d'audit trimestriel (`audit-reminder.yml`), les tests de bout en bout nocturnes (`e2e.yml`), l'analyse CodeQL hebdomadaire et le scan dynamique ZAP (`zap-baseline.yml`, **manuel uniquement**). En continu, `dependabot-auto-merge.yml` réagit aux pull requests ouvertes par le robot Dependabot.
 
 Le diagramme suivant résume **quels _workflows_ se déclenchent à chaque moment** ; chaque case est détaillée plus bas.
 
@@ -39,8 +39,7 @@ flowchart TD
     Merge --> Release[release.yml<br/>publication paquets]
     Merge --> ImagesMain[images.yml<br/>push GHCR]
     Merge --> SBOM[sbom.yml<br/>SBOM]
-    Cron([Cron / manuel]) --> Daily[daily-review.yml]
-    Cron --> Audit[audit-reminder.yml]
+    Cron([Cron / manuel]) --> Audit[audit-reminder.yml]
     Cron --> E2Enight[e2e.yml nightly]
     Cron --> ZAP[zap-baseline.yml manuel]
 ```
@@ -72,7 +71,6 @@ Le tableau ci-dessous récapitule le rôle de chaque _workflow_. Les sections su
 
 | Workflow                                                                                                                   | Rôle                                                                |
 | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| [`daily-review.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/daily-review.yml)                   | Ouvre une issue de revue quotidienne d'une dimension du dépôt       |
 | [`audit-reminder.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/audit-reminder.yml)               | Ouvre une issue de rappel d'audit transverse trimestriel            |
 | [`zap-baseline.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/zap-baseline.yml)                   | Scan dynamique OWASP ZAP (DAST) — déclenchement manuel              |
 | [`dependabot-auto-merge.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/dependabot-auto-merge.yml) | Auto-merge des montées de dépendances sûres ouvertes par Dependabot |
@@ -186,9 +184,8 @@ Sur `main`, ce _job_ est suivi du déploiement sur GitHub Pages via le _workflow
 
 ### Rappels programmés (n'exécutent aucune analyse eux-mêmes)
 
-Ces deux _workflows_ **n'auditent rien directement** : ils ouvrent une **issue de rappel** parce que le travail correspondant repose sur un outillage qui ne peut pas tourner sur un runner GitHub.
+Ce _workflow_ **n'audite rien directement** : il ouvre une **issue de rappel** parce que le travail correspondant repose sur un outillage qui ne peut pas tourner sur un runner GitHub.
 
-- **`daily-review.yml` — revue quotidienne.** Du lundi au vendredi (06:00 UTC), désigne de façon déterministe une cible du jour (un fichier, un test, une doc, une dette) et ouvre une **issue-support** pré-remplie pour une revue **manuelle** ([ADR 0044](/atlas/decisions/0044-revue-quotidienne-dimension/)).
 - **`audit-reminder.yml` — rappel d'audit trimestriel.** Chaque trimestre (1ᵉʳ janvier / avril / juillet / octobre, 06:00 UTC), ouvre une **issue de rappel** pour conduire l'audit transverse du dépôt ([ADR 0039](/atlas/decisions/0039-cadence-audit-transverse/)).
 
 ## Reproduire la CI en local
