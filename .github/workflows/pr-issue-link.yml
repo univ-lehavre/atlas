@@ -1,0 +1,99 @@
+name: PR issue link
+
+# Garde-fou de liaison PR <-> issue (NON bloquant).
+#
+# Problème adressé : une PR qui écrit « Implémente #123 » (ou « Suit #123 »)
+# au lieu d'un mot-clé de fermeture reconnu par GitHub (`Closes`/`Fixes`/
+# `Resolves`) NE ferme PAS l'issue au merge. Avec la stratégie merge commit
+# (ADR 0053), seul un mot-clé dans la DESCRIPTION de la PR ferme l'issue.
+# Résultat observé : des issues déjà réalisées restent ouvertes et faussent
+# le backlog.
+#
+# Ce workflow lit le corps de la PR ; s'il référence une issue (`#N`) SANS
+# aucun mot-clé de fermeture, il pose un avertissement (annotation + commentaire
+# idempotent). Il N'ÉCHOUE PAS : référencer une issue sans la fermer est
+# légitime (PR partielle, simple lien). Le but est de rappeler, pas de bloquer.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-issue-link-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check-issue-link:
+    name: Check issue closing keyword
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const body = context.payload.pull_request.body || "";
+
+            // Issues référencées (#123). On ignore les blocs de code/commentaires
+            // HTML pour ne pas réagir au gabarit lui-même.
+            const stripped = body
+              .replace(/```[\s\S]*?```/g, "")
+              .replace(/<!--[\s\S]*?-->/g, "");
+
+            const referencesIssue = /(^|\s)#\d+\b/.test(stripped);
+            const hasClosingKeyword =
+              /\b(close[sd]?|fix(e[sd])?|resolve[sd]?)\b\s+#\d+/i.test(stripped);
+
+            const MARKER = "<!-- pr-issue-link-bot -->";
+
+            // Retrouver un éventuel commentaire précédent du bot (idempotence).
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+            const previous = comments.find((c) => c.body.includes(MARKER));
+
+            if (referencesIssue && !hasClosingKeyword) {
+              core.warning(
+                "Cette PR référence une issue (#N) sans mot-clé de fermeture " +
+                  "(Closes/Fixes/Resolves). L'issue ne se fermera PAS au merge.",
+              );
+              const message =
+                `${MARKER}\n` +
+                "⚠️ **Liaison d'issue** — cette PR référence une issue (`#N`) " +
+                "mais **aucun mot-clé de fermeture** (`Closes`/`Fixes`/`Resolves`) " +
+                "n'a été détecté dans sa description.\n\n" +
+                "Avec la stratégie *merge commit* ([ADR 0053](https://univ-lehavre.github.io/atlas/decisions/0053-strategie-merge-commit-main/)), " +
+                "l'issue **ne se fermera pas automatiquement** au merge. Si cette PR " +
+                "résout l'issue, ajoute `Closes #N` à la description. Sinon, ignore " +
+                "cet avertissement (non bloquant).";
+              if (previous) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: previous.id,
+                  body: message,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.pull_request.number,
+                  body: message,
+                });
+              }
+            } else if (previous) {
+              // L'avertissement n'a plus lieu d'être : on le neutralise.
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: previous.id,
+                body:
+                  `${MARKER}\n` +
+                  "✅ Liaison d'issue OK (mot-clé de fermeture présent, ou aucune " +
+                  "issue référencée).",
+              });
+            }

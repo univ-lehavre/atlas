@@ -100,6 +100,8 @@ Une **pull request** (PR) est une demande, publiée sur GitHub, d'intégrer votr
 - **Quoi** a été modifié ?
 - **Comment** vérifier que ça marche ?
 
+**Lier l'issue résolue avec un mot-clé de fermeture.** Si la PR résout une issue, la section _Issue liée_ du modèle attend un **mot-clé reconnu par GitHub** — `Closes #123`, `Fixes #123` ou `Resolves #123` — pour que l'issue se ferme **automatiquement** au merge. C'est un point d'attention propre à ce dépôt : la stratégie **merge commit** ([ADR 0053](/atlas/decisions/0053-strategie-merge-commit-main/)) ne ferme l'issue **que** si le mot-clé est présent dans la **description de la PR** (un mot-clé enfoui dans un message de commit de la branche ne suffit pas). Écrire « Implémente #123 » ou « Suit #123 » **lie** l'issue mais ne la **ferme pas** : c'est ainsi que des issues déjà réalisées restent ouvertes et faussent le backlog. Une ligne par issue ; plusieurs `Closes` pour plusieurs issues.
+
 Si le changement modifie un paquet publiable (`packages/*`, `cli/*`, `services/*`, `config/*`, `assets/*`), **joindre un changeset** :
 
 ```bash
