@@ -176,10 +176,12 @@ détecter).
   domaine ou un établissement est signalé au titre de
   [ADR 0035](/atlas/decisions/0035-depot-generaliste-ouvert/).
 - **OpenSSF Scorecard** (note automatisée de bonnes pratiques de sécurité, projet de l'_Open Source
-  Security Foundation_) reste **hors périmètre tant qu'il n'est pas câblé** : il pourra **revenir un
-  jour** comme conséquence de cette doctrine — une famille « sécurité » avec une place réservée pour
-  quand le workflow `scorecard.yml` tournera —, **sans être requis** ici. Il n'est mentionné que comme
-  illustration de la règle 2 (badge seulement si câblé), pas comme engagement.
+  Security Foundation_) restait **hors périmètre tant qu'il n'était pas câblé** : il pouvait **revenir un
+  jour** comme conséquence de cette doctrine — une place réservée pour quand le workflow `scorecard.yml`
+  tournerait —, **sans être requis** ici. Il n'était mentionné que comme illustration de la règle 2
+  (badge seulement si câblé), pas comme engagement. **Depuis [ADR 0083](/atlas/decisions/0083-openssf-scorecard-cable/),
+  cette place réservée est honorée** : `scorecard.yml` est câblé et le badge est affiché en tête du
+  `README.md` — l'application directe de la règle 2 une fois l'outil réellement branché.
 
 ```
 

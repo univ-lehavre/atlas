@@ -1,10 +1,13 @@
 # Atlas
 
-<!-- Badges (ADR 0070) : uniquement des badges à état VRAI et vérifiable, GROUPÉS par
-famille dans la section « Qualité revendiquée » pour rendre visibles les familles de
-qualité revendiquées. L'ordre des familles est une règle. Ne pas ajouter de badge dont
-l'outil n'est pas câblé (ex. OpenSSF Scorecard, tant que scorecard.yml ne tourne pas) :
-un badge à vide ment. -->
+<!-- Badges (ADR 0070, ADR 0083) : uniquement des badges à état VRAI et vérifiable.
+Le badge le plus structurant — OpenSSF Scorecard, score supply-chain /10 recalculé en
+continu — est mis en avant SOUS LE TITRE, seul (exception réservée à ce signal
+transverse, ADR 0083). Les autres sont GROUPÉS par famille dans « Qualité revendiquée » ;
+l'ordre des familles est une règle. Ne jamais ajouter un badge dont l'outil n'est pas
+câblé : un badge à vide ment. -->
+
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/univ-lehavre/atlas/badge)](https://scorecard.dev/viewer/?uri=github.com/univ-lehavre/atlas)
 
 **Atlas** est un dépôt unique qui rassemble plusieurs projets logiciels — applications web, bibliothèques, serveurs, outils en ligne de commande et une chaîne DataOps en Python — sous une chaîne de qualité commune. Cette organisation s'appelle un _monorepo_ : un seul dépôt Git pour tous les projets, avec des règles partagées.
 
@@ -161,7 +164,7 @@ Pour contribuer, lire [CONTRIBUTING.md](CONTRIBUTING.md). Pour signaler une vuln
 
 ## Qualité revendiquée
 
-Les badges ci-dessous ne sont pas décoratifs : chacun reflète un état **vrai et vérifiable** (recalculé en continu, ou fait stable). Regroupés par famille, ils disent **quelles familles de qualité le dépôt revendique** — un badge n'est posé que s'il est honnête ([ADR 0070](https://univ-lehavre.github.io/atlas/decisions/0070-page-preuves-vitrine-doctrine-badges/)).
+Les badges ne sont pas décoratifs : chacun reflète un état **vrai et vérifiable** (recalculé en continu, ou fait stable). Le plus structurant — [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/univ-lehavre/atlas), santé de la chaîne d'approvisionnement notée /10 — est mis en avant **sous le titre**, seul ([ADR 0083](https://univ-lehavre.github.io/atlas/decisions/0083-openssf-scorecard-cable/)). Regroupés ci-dessous par famille, les autres disent **quelles familles de qualité le dépôt revendique** — un badge n'est posé que s'il est honnête ([ADR 0070](https://univ-lehavre.github.io/atlas/decisions/0070-page-preuves-vitrine-doctrine-badges/)).
 
 <!-- Doctrine ADR 0070 : n'afficher QUE ce qui mesure un état VRAI (dynamique câblé, ou
 statique factuel stable) ; grouper par famille. Un référentiel noté non câblé reste un

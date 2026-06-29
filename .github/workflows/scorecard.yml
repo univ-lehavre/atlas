@@ -1,0 +1,78 @@
+name: Scorecard
+
+# OpenSSF Scorecard — note automatisée (/10) des bonnes pratiques de sécurité de
+# la chaîne d'approvisionnement (branch protection, pinning des dépendances,
+# tokens à privilèges minimaux, présence de CI/SAST/fuzzing, politique de
+# sécurité…). Le résultat alimente :
+#  - l'onglet Security du dépôt (SARIF remonté via upload-sarif) ;
+#  - le badge public du README, recalculé en continu (publish_results: true).
+#
+# Décision et périmètre : ADR 0083. Doctrine des badges : ADR 0070.
+#
+# Triggers :
+#  - branch_protection_rule : recalcule dès qu'une règle de protection change,
+#    car c'est l'un des critères les plus lourds du score.
+#  - push sur main : analyse de référence après chaque merge.
+#  - schedule hebdomadaire : capture l'évolution des critères Scorecard et des
+#    dépendances, indépendamment de l'activité de merge.
+#  - workflow_dispatch : exécution ponctuelle manuelle.
+#
+# Note : pas d'exécution sur pull_request. Le score est une mesure de l'état de
+# `main` ; `publish_results` exige de toute façon un déclencheur sur la branche
+# par défaut, et un PR de fork n'aurait pas les permissions `id-token`.
+
+on:
+  branch_protection_rule:
+  push:
+    branches: [main]
+  schedule:
+    # Lundi 04:23 UTC — décalé des autres jobs planifiés (CodeQL 03:17) et de la
+    # fenêtre Dependabot (lundi 06:00 Europe/Paris) pour lisser la charge runners.
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+# Permissions minimales au niveau du workflow ; le job élève uniquement ce qu'il
+# lui faut (ADR 0070 — tokens à privilèges minimaux, l'un des critères mesurés).
+permissions: read-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analysis:
+    name: Scorecard analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      # Remonter le SARIF dans l'onglet Security (code scanning).
+      security-events: write
+      # Publier le résultat pour le badge public, via attestation OIDC.
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          # Publie le résultat sur l'API publique OpenSSF — condition du badge.
+          publish_results: true
+
+      # Conserve le SARIF en artefact (debug / audit hors onglet Security).
+      - name: Upload artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: SARIF file
+          path: results.sarif
+          retention-days: 5
+
+      # Alimente le code scanning (onglet Security) à partir du même SARIF.
+      - name: Upload to code-scanning
+        uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        with:
+          sarif_file: results.sarif
