@@ -1,7 +1,7 @@
 # @univ-lehavre/atlas-cache
 
 Cache de flux partagé : une interface unique, deux back-ends sélectionnés à
-l'exécution. Acté par [ADR 0083](https://univ-lehavre.github.io/atlas/decisions/0083-cache-flux-postgres-package-partage/)
+l'exécution. Acté par [ADR 0085](https://univ-lehavre.github.io/atlas/decisions/0085-cache-flux-postgres-package-partage/)
 (exécution de [ADR 0040](https://univ-lehavre.github.io/atlas/decisions/0040-caches-flux-backing-service-vs-fichier/)).
 
 ## Interface

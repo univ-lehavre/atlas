@@ -1,7 +1,7 @@
 {
   "name": "@univ-lehavre/atlas-cache",
   "version": "0.0.0",
-  "description": "Cache de flux partagé : interface unique, back-ends fichier et Postgres (ADR 0083)",
+  "description": "Cache de flux partagé : interface unique, back-ends fichier et Postgres (ADR 0085)",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
   "repository": {

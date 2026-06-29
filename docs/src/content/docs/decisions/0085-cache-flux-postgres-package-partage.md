@@ -1,5 +1,5 @@
 ---
-title: "0083 — Cache de flux : package partagé Effect adossé à Postgres (CNPG)"
+title: "0085 — Cache de flux : package partagé Effect adossé à Postgres (CNPG)"
 ---
 
 ## Contexte
