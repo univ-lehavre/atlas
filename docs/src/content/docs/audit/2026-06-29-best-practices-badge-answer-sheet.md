@@ -10,13 +10,13 @@ title: "OpenSSF Best Practices Badge — feuille de réponses « passing » (202
 > [ADR 0083](/atlas/decisions/0083-openssf-scorecard-cable/)). Aucun critère n'est
 > coché « pour le badge ».
 
-> **Verdict.** `passing` **atteignable**. Cette PR ferme **2 des 4** manques en
-> code (encart anglais ajouté à README/CONTRIBUTING/SECURITY ; `.github/ISSUE_TEMPLATE/`
-> créé) ; il reste **2 réglages GitHub** à activer côté dépôt (description
-> enrichie, Discussions activées). Bilan : ~50 Met, ~12 N/A légitimes, **2 Unmet**
-> — tous deux des réglages, pas du code. Les critères release/test/CI sont **plus
-> forts** qu'au dépôt jumeau `cluster` (vrai build TS, 316 fichiers de test,
-> provenance OIDC npm).
+> **Verdict.** `passing` **atteignable — 0 Unmet.** Les 4 manques initiaux sont
+> fermés : 2 en code (encart anglais dans README/CONTRIBUTING/SECURITY ;
+> `.github/ISSUE_TEMPLATE/`) et 2 par réglage GitHub, **faits le 2026-06-29**
+> (description du dépôt enrichie ; **Discussions activées**, `has_discussions: true`).
+> Bilan : **~52 Met, ~12 N/A légitimes, 0 Unmet**. Les critères release/test/CI
+> sont **plus forts** qu'au dépôt jumeau `cluster` (vrai build TS, 316 fichiers de
+> test, provenance OIDC npm).
 
 ## Comment s'en servir
 
@@ -30,26 +30,26 @@ title: "OpenSSF Best Practices Badge — feuille de réponses « passing » (202
 3. Les critères **N/A** sont légitimement non applicables (pas de cryptographie
    maison) — le badge les compte comme satisfaits dès lors que la justification
    est fournie.
-4. **Traiter les 2 Unmet restants** (réglages GitHub, section finale) : tant
-   qu'ils tiennent, le badge `passing` n'est pas délivré.
+4. Tous les critères sont **Met ou N/A** : recopier directement les réponses
+   ci-dessous dans le BadgeApp pour obtenir le badge `passing`.
 
 ## Basics
 
-| Critère                     | Réponse   | Justification / preuve                                                                                                                                                                                 |
-| --------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `description_good`          | **Unmet** | La description GitHub du dépôt est « Dépôt de code centralisé » — pauvre. À remplacer (voir actions). Le README, lui, décrit bien le projet.                                                           |
-| `interact`                  | Met       | README « Démarrage rapide », `CONTRIBUTING.md`. _(Discussions à activer — cf. `discussion`.)_                                                                                                          |
-| `contribution`              | Met       | `CONTRIBUTING.md` : branches, Conventional Commits, hooks, merge commit ([ADR 0053](/atlas/decisions/0053-strategie-merge-commit-main/)).                                                              |
-| `contribution_requirements` | Met       | Exigences d'acceptation dans `CONTRIBUTING.md` (sujet minuscule, scope-enum, hooks pre-push, merge commit propre). **URL** : `CONTRIBUTING.md`                                                         |
-| `floss_license`             | Met       | `LICENSE` = MIT (FLOSS).                                                                                                                                                                               |
-| `floss_license_osi`         | Met       | MIT = OSI-approved.                                                                                                                                                                                    |
-| `license_location`          | Met       | `LICENSE` à la racine.                                                                                                                                                                                 |
-| `documentation_basics`      | Met       | Site doc Astro Starlight ([univ-lehavre.github.io/atlas](https://univ-lehavre.github.io/atlas/)) : architecture, qualité, collaboration, glossaire.                                                    |
-| `documentation_interface`   | Met       | Contrat d'interface `atlas`↔`cluster` ([ADR 0033](/atlas/decisions/0033-contrat-interface-cluster/)) + doc d'architecture du monorepo.                                                                 |
-| `sites_https`               | Met       | Site doc HTTPS (GitHub Pages) ; dépôt GitHub HTTPS. **URL** : `https://univ-lehavre.github.io/atlas/`                                                                                                  |
-| `discussion`                | **Unmet** | **GitHub Discussions désactivées** (`has_discussions: false`). À activer (voir actions). L'issue tracker public reste searchable.                                                                      |
-| `english`                   | Met       | Encart « English summary » / « In English » dans `README.md`, `CONTRIBUTING.md` et `SECURITY.md` : issues, PR et rapports de sécurité **en anglais acceptés**. Doc de fond en FR (langue de l'équipe). |
-| `maintained`                | Met       | Activité quotidienne (PR/merges réguliers, releases par paquet, issues traitées).                                                                                                                      |
+| Critère                     | Réponse | Justification / preuve                                                                                                                                                                                 |
+| --------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `description_good`          | Met     | Description GitHub : « Monorepo généraliste : apps web, bibliothèques, services, CLIs et chaîne DataOps Python, sous une chaîne de qualité commune » + README détaillé.                                |
+| `interact`                  | Met     | README « Démarrage rapide », `CONTRIBUTING.md`, GitHub Discussions activées.                                                                                                                           |
+| `contribution`              | Met     | `CONTRIBUTING.md` : branches, Conventional Commits, hooks, merge commit ([ADR 0053](/atlas/decisions/0053-strategie-merge-commit-main/)).                                                              |
+| `contribution_requirements` | Met     | Exigences d'acceptation dans `CONTRIBUTING.md` (sujet minuscule, scope-enum, hooks pre-push, merge commit propre). **URL** : `CONTRIBUTING.md`                                                         |
+| `floss_license`             | Met     | `LICENSE` = MIT (FLOSS).                                                                                                                                                                               |
+| `floss_license_osi`         | Met     | MIT = OSI-approved.                                                                                                                                                                                    |
+| `license_location`          | Met     | `LICENSE` à la racine.                                                                                                                                                                                 |
+| `documentation_basics`      | Met     | Site doc Astro Starlight ([univ-lehavre.github.io/atlas](https://univ-lehavre.github.io/atlas/)) : architecture, qualité, collaboration, glossaire.                                                    |
+| `documentation_interface`   | Met     | Contrat d'interface `atlas`↔`cluster` ([ADR 0033](/atlas/decisions/0033-contrat-interface-cluster/)) + doc d'architecture du monorepo.                                                                 |
+| `sites_https`               | Met     | Site doc HTTPS (GitHub Pages) ; dépôt GitHub HTTPS. **URL** : `https://univ-lehavre.github.io/atlas/`                                                                                                  |
+| `discussion`                | Met     | **GitHub Discussions activées** (`has_discussions: true`) + issue tracker public searchable.                                                                                                           |
+| `english`                   | Met     | Encart « English summary » / « In English » dans `README.md`, `CONTRIBUTING.md` et `SECURITY.md` : issues, PR et rapports de sécurité **en anglais acceptés**. Doc de fond en FR (langue de l'équipe). |
+| `maintained`                | Met     | Activité quotidienne (PR/merges réguliers, releases par paquet, issues traitées).                                                                                                                      |
 
 ## Change Control
 
@@ -130,27 +130,22 @@ title: "OpenSSF Best Practices Badge — feuille de réponses « passing » (202
 | `dynamic_analysis_enable_assertions`     | Met     | Assertions des suites e2e/intégration ; gates de qualité bloquants en CI.                                                           |
 | `dynamic_analysis_fixed`                 | Met     | Écarts e2e indexés (registre des drifts) puis corrigés.                                                                             |
 
-## Synthèse & actions restantes
+## Synthèse
 
-**Met : ~50 · N/A : ~12 · Unmet : 2.** Le badge `passing` ignore les N/A
-justifiés.
+**Met : ~52 · N/A : ~12 · Unmet : 0.** Le badge `passing` ignore les N/A
+justifiés : **tous les critères sont satisfaits**, plus aucune action requise.
 
-**Fermé dans cette PR (code) :**
+Les 4 manques initiaux ont été fermés :
 
-- ✅ **`english`** — encart « English summary » / « In English » ajouté à
+- ✅ **`english`** — encart « English summary » / « In English » dans
   `README.md`, `CONTRIBUTING.md`, `SECURITY.md`.
-- ✅ **`report_process`** — `.github/ISSUE_TEMPLATE/` créé (`bug_report.yml`,
+- ✅ **`report_process`** — `.github/ISSUE_TEMPLATE/` (`bug_report.yml`,
   `feature_request.yml`, `config.yml`).
+- ✅ **`description_good`** — description GitHub du dépôt enrichie (2026-06-29).
+- ✅ **`discussion`** — GitHub Discussions activées (2026-06-29).
 
-**Reste 2 réglages GitHub (côté dépôt, pas du code) :**
-
-1. **`description_good`** — remplacer la description GitHub « Dépôt de code
-   centralisé » par une phrase descriptive (ex. « Monorepo généraliste : apps
-   web, bibliothèques, services, CLIs et chaîne DataOps Python, sous une chaîne
-   de qualité commune »). Settings → en haut de la page repo, champ
-   « Description ». _~2 min._
-2. **`discussion`** — activer **GitHub Discussions** : Settings → General →
-   Features → cocher **Discussions**. _~1 min._
+Prochaine étape : créer le projet sur [bestpractices.dev](https://www.bestpractices.dev/)
+et **recopier les réponses ci-dessus** pour obtenir le badge `passing`.
 
 > **Au-delà de passing** (pistes silver/gold, déjà partiellement acquises) :
 > `enforce_admins` actif, CodeQL + Semgrep + ZAP + gitleaks + Scorecard,
