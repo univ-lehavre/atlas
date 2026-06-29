@@ -61,5 +61,14 @@ Les écarts actionnables sont tracés comme issues (label `enhancement` /
 - Images de déploiement (5 apps + service) — facteurs V / VII / X.
 - Généralisation de l'observabilité — extension observabilité.
 
+> **Requalification a posteriori (2026-06-30).** Le finding « facteur XI » ci-dessus
+> (`crf-logs` persiste des logs en fichier) reposait sur une **mauvaise
+> qualification** : `crf-logs` n'est pas un journal applicatif mais un **cache de
+> données externes** (audit logs REDCap _fetchés_ par HTTP, puis analytics). Le
+> facteur XI ne s'y applique pas ; le sujet relève des facteurs IV/VIII (backing
+> service), traités par [#443](https://github.com/univ-lehavre/atlas/issues/443).
+> Détail dans la _Requalification_ de l'[ADR 0040](/atlas/decisions/0040-caches-flux-backing-service-vs-fichier/)
+> ([#305](https://github.com/univ-lehavre/atlas/issues/305)).
+
 Conformément à la convention des audits, ce rapport est **figé** : il décrit
 l'état au 2026-06-04. Un futur audit produira un nouveau rapport daté.

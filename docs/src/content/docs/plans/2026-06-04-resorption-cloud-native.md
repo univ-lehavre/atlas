@@ -121,6 +121,13 @@ title: Plan de résorption — audit cloud-native 2026-06-04
 
 ### Étape 2.1 — Refondre `crf-logs` : logs en flux + backing-service injectable
 
+> **Note (2026-06-30) — partiellement caduque.** Le volet **backing-service
+> injectable** est **fait** (#443/[ADR 0085](/atlas/decisions/0085-cache-flux-postgres-package-partage/) :
+> `crf-logs` consomme `@univ-lehavre/atlas-cache`, back-end fichier/Postgres par
+> DSN). Le volet **« logs en flux »** est **sans objet** : `crf-logs` n'est pas un
+> journal applicatif mais un **cache d'audit logs REDCap externes** — le facteur XI
+> ne s'y applique pas ([requalification ADR 0040](/atlas/decisions/0040-caches-flux-backing-service-vs-fichier/), #305).
+
 - **Goal:** Conformément à l'ADR 0040, refactorer `packages/crf-logs/src/cache.ts` pour émettre les logs en flux/événements plutôt qu'en fichier `.crf-stats.json` codé en dur (`path.resolve(process.cwd(), ".crf-stats.json")`, ligne 5), et rendre le backing-service **injectable par environnement** (à la manière d'`atlas-stats` qui lit déjà `ATLAS_STATS_CACHE_PATH`). Préserver la sémantique de cache (TTL 24 h via `isCacheStale`, fraîcheur).
 - **Files (read):** `packages/crf-logs/src/cache.ts`, `packages/crf-logs/src/index.ts` (exports publics `readCache`/`writeCache`), `packages/atlas-stats/src/cache.ts` (référence d'indirection par env).
 - **Files (write):** `packages/crf-logs/src/cache.ts`, tests associés ; `packages/crf-logs/src/index.ts` si l'API publique évolue.
