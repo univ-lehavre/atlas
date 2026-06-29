@@ -23,7 +23,7 @@
 # réseau) et packagé dans l'image : `@dbt_assets` le lit à l'import sans parse runtime.
 # Image de base épinglée par digest (immuable), tag conservé pour la lisibilité.
 # Maintenu par Dependabot (écosystème docker). ADR 0084.
-FROM python:3.10-slim@sha256:5f9928ea39771e8ddf4fb9a96ab24f65f087793635614405a1dc9384f040852e
+FROM python:3.14-slim@sha256:b877e50bd90de10af8d82c57a022fc2e0dc731c5320d762a27986facfc3355c1
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends rclone ca-certificates \

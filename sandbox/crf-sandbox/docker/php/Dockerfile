@@ -1,6 +1,6 @@
 # Image de base épinglée par digest (immuable), tag conservé pour la lisibilité.
 # Maintenu par Dependabot (écosystème docker). ADR 0084.
-FROM php:8.2-apache@sha256:a90a8c57defa80ecea1c405d6a6a74a7870e65aebcd003e04afdb86bbda63ee7
+FROM php:8.5-apache@sha256:098cbb56b025956f6aec60e35c4e4c8c8dc15359b6a215de4868a9aec2092dce
 
 # Install required PHP extensions for REDCap
 RUN apt-get update && apt-get install -y \
