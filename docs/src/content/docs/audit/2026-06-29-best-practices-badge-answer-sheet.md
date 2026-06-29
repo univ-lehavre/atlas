@@ -48,6 +48,7 @@ vérifié à coller — les autres critères se cochent sans URL.
 | `documentation_interface`      | <https://univ-lehavre.github.io/atlas/decisions/0033-contrat-interface-cluster/> |
 | `vulnerability_report_process` | <https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md>                    |
 | `report_process`               | <https://github.com/univ-lehavre/atlas/tree/main/.github/ISSUE_TEMPLATE>         |
+| `report_archive`               | <https://github.com/univ-lehavre/atlas/issues?q=is%3Aissue>                      |
 | `static_analysis`              | <https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/codeql.yml>   |
 | `test_policy`                  | <https://univ-lehavre.github.io/atlas/quality/tests/>                            |
 
@@ -85,16 +86,16 @@ vérifié à coller — les autres critères se cochent sans URL.
 
 ## Reporting
 
-| Critère                         | Réponse | Justification / preuve                                                                                                                           |
-| ------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `report_process`                | Met     | `.github/ISSUE_TEMPLATE/` : formulaires `bug_report.yml`, `feature_request.yml` + `config.yml` (lien sécurité vers signalement privé).           |
-| `report_tracker`                | Met     | GitHub Issues utilisé activement (milestones `Transverse — …`).                                                                                  |
-| `report_responses`              | Met     | Mainteneur réactif (issues ouvertes/fermées sous quelques jours).                                                                                |
-| `enhancement_responses`         | Met     | Issues `enhancement`/`tech-debt` ouvertes depuis les audits ([ADR 0052](/atlas/decisions/0052-charte-redactionnelle-documentation/) R-findings). |
-| `report_archive`                | Met     | Issues GitHub publiques et searchable.                                                                                                           |
-| `vulnerability_report_process`  | Met     | `SECURITY.md` publié, lié au repo. **URL** : <https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md>                                       |
-| `vulnerability_report_private`  | Met     | GitHub **Private Vulnerability Reporting** documenté dans `SECURITY.md` (advisories privées).                                                    |
-| `vulnerability_report_response` | Met     | Délais cibles documentés (`SECURITY.md` : évaluation initiale 7 jours).                                                                          |
+| Critère                         | Réponse | Justification / preuve                                                                                                                                                                                |
+| ------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `report_process`                | Met     | `.github/ISSUE_TEMPLATE/` : formulaires `bug_report.yml`, `feature_request.yml` + `config.yml` (lien sécurité vers signalement privé).                                                                |
+| `report_tracker`                | Met     | GitHub Issues utilisé activement (milestones `Transverse — …`).                                                                                                                                       |
+| `report_responses`              | Met     | Mainteneur réactif (issues ouvertes/fermées sous quelques jours).                                                                                                                                     |
+| `enhancement_responses`         | Met     | Issues `enhancement`/`tech-debt` ouvertes depuis les audits ([ADR 0052](/atlas/decisions/0052-charte-redactionnelle-documentation/) R-findings).                                                      |
+| `report_archive`                | Met     | Archive publique et cherchable des signalements et réponses : issues GitHub ouvertes **et** fermées, indexées par la recherche. **URL** : <https://github.com/univ-lehavre/atlas/issues?q=is%3Aissue> |
+| `vulnerability_report_process`  | Met     | `SECURITY.md` publié, lié au repo. **URL** : <https://github.com/univ-lehavre/atlas/blob/main/SECURITY.md>                                                                                            |
+| `vulnerability_report_private`  | Met     | GitHub **Private Vulnerability Reporting** documenté dans `SECURITY.md` (advisories privées).                                                                                                         |
+| `vulnerability_report_response` | Met     | Délais cibles documentés (`SECURITY.md` : évaluation initiale 7 jours).                                                                                                                               |
 
 ## Quality
 
