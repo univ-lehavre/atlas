@@ -11,6 +11,8 @@ câblé : un badge à vide ment. -->
 
 **Atlas** est un dépôt unique qui rassemble plusieurs projets logiciels — applications web, bibliothèques, serveurs, outils en ligne de commande et une chaîne DataOps en Python — sous une chaîne de qualité commune. Cette organisation s'appelle un _monorepo_ : un seul dépôt Git pour tous les projets, avec des règles partagées.
 
+> 🇬🇧 **English summary.** Atlas is a monorepo bundling several software projects — web apps, libraries, services, command-line tools and a Python DataOps chain — under a shared quality pipeline. The documentation is written in French (the maintaining team's language), but **issues, pull requests and security reports written in English are welcome** — see [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+
 > Documentation complète, illustrée et rédigée pour un public non-expert : voir le dossier [`docs/`](docs/).
 
 ## Démarrage rapide

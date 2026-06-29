@@ -1,0 +1,31 @@
+name: "✨ Amélioration / Enhancement"
+description: "Proposer une fonctionnalité ou une amélioration (FR ou EN). Suggest a feature or improvement."
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci pour la proposition. Réponds en **français ou en anglais**. Rappel :
+        Atlas est un dépôt **généraliste et ouvert** — les identifiants restent
+        neutres de domaine et de marque ([ADR 0035](https://univ-lehavre.github.io/atlas/decisions/0035-depot-generaliste-ouvert/)).
+        Une décision structurante passera par un **ADR**, pas par cette issue.
+  - type: textarea
+    id: problem
+    attributes:
+      label: "Problème / Problem"
+      description: "Le besoin ou la gêne, pas (encore) la solution. The need or pain point, not (yet) the solution."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "Proposition / Proposed change"
+      description: "Ce que tu suggères. What you suggest."
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Alternatives envisagées / Alternatives considered"
+    validations:
+      required: false
