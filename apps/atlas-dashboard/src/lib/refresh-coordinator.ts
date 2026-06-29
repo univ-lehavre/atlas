@@ -26,6 +26,8 @@
  * @module
  */
 
+import { createPgRefreshState } from '@univ-lehavre/atlas-cache';
+
 /**
  * État de coordination partagé entre les requêtes d'actualisation.
  *
@@ -41,14 +43,22 @@ export interface RefreshCoordinator {
   /**
    * L'actualisation actuellement en vol, ou `null`. Une requête concurrente
    * qui voit une promesse non nulle l'attend au lieu d'en relancer une.
+   *
+   * La promesse en vol reste **locale au processus** (on ne sérialise pas une
+   * promesse) : la déduplication inter-instances repose, elle, sur l'horodatage
+   * partagé `lastRefreshAt` + le bridage `minIntervalMs`, pas sur ce champ.
    */
   getInFlight(): Promise<number> | null;
   /** Enregistre la promesse en vol (ou la libère avec `null` une fois finie). */
   setInFlight(promise: Promise<number> | null): void;
-  /** Horodatage (ms) de la dernière actualisation aboutie. */
-  getLastRefreshAt(): number;
+  /**
+   * Horodatage (ms) de la dernière actualisation aboutie. **Asynchrone** : une
+   * implémentation partagée (Postgres) le lit depuis le backing-service ;
+   * l'implémentation en mémoire résout immédiatement.
+   */
+  getLastRefreshAt(): Promise<number>;
   /** Mémorise l'horodatage de la dernière actualisation aboutie. */
-  setLastRefreshAt(at: number): void;
+  setLastRefreshAt(at: number): Promise<void>;
 }
 
 const DEFAULT_MIN_INTERVAL_MS = 60_000;
@@ -74,19 +84,53 @@ export const createInMemoryRefreshCoordinator = (
     setInFlight: (promise) => {
       inFlight = promise;
     },
-    getLastRefreshAt: () => lastRefreshAt,
+    getLastRefreshAt: () => Promise.resolve(lastRefreshAt),
     setLastRefreshAt: (at) => {
       lastRefreshAt = at;
+      return Promise.resolve();
     },
   };
 };
 
 /**
- * Coordinateur partagé par défaut du processus.
- *
- * Point d'injection : pour un déploiement multi-instance, remplacer cette
- * valeur par une implémentation adossée à un backing-service partagé (cf. la
- * note de module et l'ADR 0040). L'endpoint `/api/refresh` n'a alors aucune
- * ligne à changer.
+ * Implémentation **Postgres** (multi-instance) : le bridage `lastRefreshAt` est
+ * porté par le backing-service partagé (table `flux_cache`, ADR 0083), donc vu
+ * par toutes les répliques. La promesse `inFlight` reste locale au processus
+ * (non sérialisable) ; la déduplication inter-instances repose sur le bridage
+ * global `lastRefreshAt` + `minIntervalMs`. Sélectionnée quand
+ * `ATLAS_STATS_CACHE_PATH` est une DSN `postgres://…`.
  */
-export const defaultRefreshCoordinator: RefreshCoordinator = createInMemoryRefreshCoordinator();
+const createPgRefreshCoordinator = (
+  dsn: string,
+  minIntervalMs: number = DEFAULT_MIN_INTERVAL_MS
+): RefreshCoordinator => {
+  const shared = createPgRefreshState(dsn, 'atlas-stats:lastRefreshAt');
+  let inFlight: Promise<number> | null = null;
+  return {
+    minIntervalMs,
+    getInFlight: () => inFlight,
+    setInFlight: (promise) => {
+      inFlight = promise;
+    },
+    getLastRefreshAt: () => shared.getLastRefreshAt(),
+    setLastRefreshAt: (at) => shared.setLastRefreshAt(at),
+  };
+};
+
+const POSTGRES_DSN = /^postgres(?:ql)?:\/\//;
+
+/**
+ * Coordinateur partagé par défaut du processus, **sélectionné explicitement par
+ * l'environnement** (ADR 0083, jamais magique) : si `ATLAS_STATS_CACHE_PATH` est
+ * une DSN `postgres://…`, le bridage `lastRefreshAt` est partagé via Postgres
+ * (multi-instance) ; sinon, l'implémentation en mémoire mono-instance. L'endpoint
+ * `/api/refresh` n'a aucune ligne à changer — il passe par l'interface.
+ */
+const selectDefaultCoordinator = (): RefreshCoordinator => {
+  const resource = process.env.ATLAS_STATS_CACHE_PATH;
+  return resource !== undefined && POSTGRES_DSN.test(resource)
+    ? createPgRefreshCoordinator(resource)
+    : createInMemoryRefreshCoordinator();
+};
+
+export const defaultRefreshCoordinator: RefreshCoordinator = selectDefaultCoordinator();

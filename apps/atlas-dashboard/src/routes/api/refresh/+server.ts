@@ -72,7 +72,10 @@ export const GET = ({ url }: { url: URL }): Response => {
         }
 
         const now = Date.now();
-        if (!forceRefresh && now - coordinator.getLastRefreshAt() < coordinator.minIntervalMs) {
+        if (
+          !forceRefresh &&
+          now - (await coordinator.getLastRefreshAt()) < coordinator.minIntervalMs
+        ) {
           send({
             type: 'error',
             message: 'Actualisation récente détectée, réessaie dans moins d’une minute.',
@@ -84,7 +87,7 @@ export const GET = ({ url }: { url: URL }): Response => {
         const refresh = fetchAndCache(send);
         coordinator.setInFlight(refresh);
         const savedAt = await refresh;
-        coordinator.setLastRefreshAt(savedAt);
+        await coordinator.setLastRefreshAt(savedAt);
         send({ type: 'done', cachedAt: savedAt });
         controller.close();
       };

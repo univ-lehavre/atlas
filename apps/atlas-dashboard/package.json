@@ -35,6 +35,7 @@
   },
   "dependencies": {
     "@observablehq/plot": "^0.6.17",
+    "@univ-lehavre/atlas-cache": "workspace:*",
     "@univ-lehavre/atlas-stats": "workspace:*",
     "@univ-lehavre/atlas-sveltekit-csp": "workspace:*"
   },

@@ -13,10 +13,10 @@ describe('createInMemoryRefreshCoordinator', () => {
     expect(createInMemoryRefreshCoordinator(5000).minIntervalMs).toBe(5000);
   });
 
-  it('starts with no in-flight refresh and a zero last-refresh timestamp', () => {
+  it('starts with no in-flight refresh and a zero last-refresh timestamp', async () => {
     const coordinator = createInMemoryRefreshCoordinator();
     expect(coordinator.getInFlight()).toBeNull();
-    expect(coordinator.getLastRefreshAt()).toBe(0);
+    await expect(coordinator.getLastRefreshAt()).resolves.toBe(0);
   });
 
   it('stores and clears the in-flight refresh promise', async () => {
@@ -29,17 +29,17 @@ describe('createInMemoryRefreshCoordinator', () => {
     expect(coordinator.getInFlight()).toBeNull();
   });
 
-  it('remembers the last successful refresh timestamp', () => {
+  it('remembers the last successful refresh timestamp', async () => {
     const coordinator = createInMemoryRefreshCoordinator();
-    coordinator.setLastRefreshAt(1_700_000_000_000);
-    expect(coordinator.getLastRefreshAt()).toBe(1_700_000_000_000);
+    await coordinator.setLastRefreshAt(1_700_000_000_000);
+    await expect(coordinator.getLastRefreshAt()).resolves.toBe(1_700_000_000_000);
   });
 
-  it('keeps two coordinators independent (no shared module state)', () => {
+  it('keeps two coordinators independent (no shared module state)', async () => {
     const a = createInMemoryRefreshCoordinator();
     const b = createInMemoryRefreshCoordinator();
-    a.setLastRefreshAt(42);
-    expect(b.getLastRefreshAt()).toBe(0);
+    await a.setLastRefreshAt(42);
+    await expect(b.getLastRefreshAt()).resolves.toBe(0);
   });
 });
 

@@ -129,9 +129,33 @@ Redis ni de base. Trois acquis concrets :
 Le **branchement effectif** d'un backing service partagé (et son test en
 conditions réelles) relève du dépôt cluster, pas de celui-ci.
 
+## Évolution (2026-06-29) — Le back-end Postgres réel, derrière un paquet partagé
+
+Le branchement annoncé est livré. Le cluster a fourni l'infra
+([ADR cluster 0093](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0093-cache-flux-cnpg.md) :
+base logique `cache` sur le CloudNativePG existant, rôle, Secret, variables
+`POSTGRES_CACHE_*`), et `atlas` ajoute l'**adaptateur** — c'est l'objet de
+l'[ADR 0085](/atlas/decisions/0085-cache-flux-postgres-package-partage/). Quatre points
+prolongent la posture posée ici, sans la contredire :
+
+- **Le back-end Postgres existe** (4ᵉ acquis après l'écriture atomique, le
+  `RefreshCoordinator` et l'indirection `crf-logs`) : table `cache(key, value JSONB,
+saved_at)`, UPSERT atomique `ON CONFLICT`, `pg_advisory_lock` pour la déduplication —
+  l'atomicité native attendue ci-dessus, fournie par le back-end et non par le code.
+- **La sélection par DSN concrétise « la variable désigne une ressource, pas un
+  chemin »** : une valeur `postgres://…` arme le back-end Postgres ; sinon, fichier
+  inchangé. Toujours **explicite**, jamais magique.
+- **Le TTL passe côté `saved_at`** : le back-end horodate, `isCacheStale` juge sur le
+  `saved_at` relu — une seule source, pas de double-vérité.
+- **L'interface est extraite dans un paquet partagé** `@univ-lehavre/atlas-cache`
+  (Effect), consommé par `atlas-stats` et `crf-logs` : fin des deux implémentations
+  parallèles. Détail et arbitrages dans l'[ADR 0085](/atlas/decisions/0085-cache-flux-postgres-package-partage/).
+
 ## Statut
 
-Accepted (2026-06-04).
+Accepted (2026-06-04). **Étendu** le 2026-06-29 (section _Évolution_ ci-dessus) :
+back-end Postgres réel + paquet partagé, acté par
+l'[ADR 0085](/atlas/decisions/0085-cache-flux-postgres-package-partage/).
 
 ## Conséquences
 

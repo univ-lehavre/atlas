@@ -110,6 +110,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0082 | [Boucle fermée dérive → réentraînement, active par défaut (mediawatch)](/atlas/decisions/0082-boucle-fermee-drift-retrain-mediawatch/)                          | Accepted        |
 | 0083 | [Câblage d'OpenSSF Scorecard (note supply-chain et badge en tête)](/atlas/decisions/0083-openssf-scorecard-cable/)                                              | Accepted        |
 | 0084 | [Épinglage des images de base par digest (Pinned-Dependencies)](/atlas/decisions/0084-pinning-images-base-par-digest/)                                          | Accepted        |
+| 0085 | [Cache de flux : package partagé Effect adossé à Postgres (CNPG)](/atlas/decisions/0085-cache-flux-postgres-package-partage/)                                   | Accepted        |
 
 ## Quand ouvrir un ADR
 

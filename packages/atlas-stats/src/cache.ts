@@ -1,11 +1,53 @@
-import { readFile, writeFile, rename } from "node:fs/promises";
+import { readFile, open, rename } from "node:fs/promises";
 import { existsSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import path from "node:path";
+
+import { Effect } from "effect";
+import {
+  CacheStore,
+  PostgresCacheLayer,
+  type CacheEntry,
+} from "@univ-lehavre/atlas-cache";
+
 import type { AtlasStatsCache } from "./types.js";
 
 const CACHE_FILE = ".atlas-stats.json";
 const WORKSPACE_MARKER = "pnpm-workspace.yaml";
 const TTL_MS = 24 * 60 * 60 * 1000;
+const CACHE_KEY = "atlas-stats";
+const POSTGRES_DSN = /^postgres(?:ql)?:\/\//;
+
+/**
+ * Back-end Postgres si `ATLAS_STATS_CACHE_PATH` est une DSN `postgres://…`
+ * (ADR 0083, sélection explicite) ; sinon `null` → comportement fichier inchangé.
+ */
+const postgresDsn = (): string | null => {
+  const fromEnv = process.env["ATLAS_STATS_CACHE_PATH"];
+  return fromEnv !== undefined && POSTGRES_DSN.test(fromEnv) ? fromEnv : null;
+};
+
+const readFromPostgres = (dsn: string): Promise<AtlasStatsCache | null> => {
+  const program = Effect.gen(function* () {
+    const store = yield* CacheStore;
+    const entry: CacheEntry<AtlasStatsCache> | null =
+      yield* store.get<AtlasStatsCache>(CACHE_KEY);
+    return entry === null ? null : entry.data;
+  });
+  return Effect.runPromise(
+    program.pipe(Effect.scoped, Effect.provide(PostgresCacheLayer(dsn))),
+  );
+};
+
+const writeToPostgres = (dsn: string, data: AtlasStatsCache): Promise<void> => {
+  const program = Effect.gen(function* () {
+    const store = yield* CacheStore;
+    yield* store.set<AtlasStatsCache>(CACHE_KEY, data);
+  });
+  return Effect.runPromise(
+    program.pipe(Effect.scoped, Effect.provide(PostgresCacheLayer(dsn))),
+  );
+};
 
 const resolveWorkspaceRoot = (): string => {
   let cursor = process.cwd();
@@ -45,8 +87,11 @@ const readCacheFile = (): Promise<string | null> =>
     () => null,
   );
 
-export const readCache = (): Promise<AtlasStatsCache | null> =>
-  readCacheFile().then((raw) => (raw === null ? null : parseCache(raw)));
+export const readCache = (): Promise<AtlasStatsCache | null> => {
+  const dsn = postgresDsn();
+  if (dsn !== null) return readFromPostgres(dsn);
+  return readCacheFile().then((raw) => (raw === null ? null : parseCache(raw)));
+};
 
 /**
  * Écrit le cache de façon **atomique** : on écrit dans un fichier temporaire
@@ -59,9 +104,20 @@ export const readCache = (): Promise<AtlasStatsCache | null> =>
  * multi-instance réel injectera une ressource partagée via l'environnement).
  */
 export const writeCache = async (data: AtlasStatsCache): Promise<void> => {
+  const dsn = postgresDsn();
+  if (dsn !== null) return writeToPostgres(dsn, data);
   const target = resolveCachePath();
-  const tmp = `${target}.${String(process.pid)}.tmp`;
-  await writeFile(tmp, JSON.stringify(data, null, 2), "utf8");
+  // Écriture atomique sûre : ouverture d'un descripteur en mode EXCLUSIF
+  // (`"wx"` → `O_CREAT | O_EXCL`) sur un nom intermédiaire IMPRÉVISIBLE, puis
+  // `rename`. Un symlink/fichier pré-créé ne peut pas détourner l'écriture
+  // (anti-TOCTOU, CodeQL js/insecure-temporary-file).
+  const tmp = `${target}.${randomBytes(8).toString("hex")}`;
+  const handle = await open(tmp, "wx");
+  try {
+    await handle.writeFile(JSON.stringify(data, null, 2), "utf8");
+  } finally {
+    await handle.close();
+  }
   await rename(tmp, target);
 };
 
