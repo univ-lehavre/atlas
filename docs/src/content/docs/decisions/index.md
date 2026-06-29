@@ -111,6 +111,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0083 | [Câblage d'OpenSSF Scorecard (note supply-chain et badge en tête)](/atlas/decisions/0083-openssf-scorecard-cable/)                                              | Accepted        |
 | 0084 | [Épinglage des images de base par digest (Pinned-Dependencies)](/atlas/decisions/0084-pinning-images-base-par-digest/)                                          | Accepted        |
 | 0085 | [Cache de flux : package partagé Effect adossé à Postgres (CNPG)](/atlas/decisions/0085-cache-flux-postgres-package-partage/)                                   | Accepted        |
+| 0086 | [Posture vis-à-vis des paliers Best Practices (silver visé, gold exclu)](/atlas/decisions/0086-posture-paliers-best-practices/)                                 | Accepted        |
 
 ## Quand ouvrir un ADR
 
