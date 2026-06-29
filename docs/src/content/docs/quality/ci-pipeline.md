@@ -48,15 +48,16 @@ Le tableau ci-dessous récapitule le rôle de chaque _workflow_. Les sections su
 
 **Sur pull request** (et la plupart aussi sur `main`) :
 
-| Workflow                                                                                                           | Rôle                                                                      |
-| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| [`ci.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/ci.yml)                               | Chaîne qualité : lint, typecheck, tests, build, documentation, audits     |
-| [`codeql.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/codeql.yml)                       | Analyse statique de sécurité (SAST) avec CodeQL                           |
-| [`semgrep.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/semgrep.yml)                     | Analyse statique de sécurité (SAST) avec Semgrep, complémentaire à CodeQL |
-| [`gitleaks.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/gitleaks.yml)                   | Détection de secrets committés                                            |
-| [`dependency-review.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/dependency-review.yml) | Revue des nouvelles dépendances (vulnérabilités, licences)                |
-| [`images.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/images.yml)                       | Construction des images Docker + test de démarrage (_smoke_)              |
-| [`e2e.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/e2e.yml)                             | Tests de bout en bout (Playwright) sur les _sandboxes_                    |
+| Workflow                                                                                                           | Rôle                                                                           |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| [`ci.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/ci.yml)                               | Chaîne qualité : lint, typecheck, tests, build, documentation, audits          |
+| [`codeql.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/codeql.yml)                       | Analyse statique de sécurité (SAST) avec CodeQL                                |
+| [`semgrep.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/semgrep.yml)                     | Analyse statique de sécurité (SAST) avec Semgrep, complémentaire à CodeQL      |
+| [`gitleaks.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/gitleaks.yml)                   | Détection de secrets committés                                                 |
+| [`dependency-review.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/dependency-review.yml) | Revue des nouvelles dépendances (vulnérabilités, licences)                     |
+| [`images.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/images.yml)                       | Construction des images Docker + test de démarrage (_smoke_)                   |
+| [`e2e.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/e2e.yml)                             | Tests de bout en bout (Playwright) sur les _sandboxes_                         |
+| [`pr-issue-link.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/pr-issue-link.yml)         | Avertit (non bloquant) si une PR référence une issue sans mot-clé de fermeture |
 
 **Sur `main` (après fusion)** :
 
