@@ -33,7 +33,7 @@ dependencies = [
   # in-process sur DataFrame pandas (contexte éphémère, hermétique). GE 1.18 tire
   # numpy/scipy/pandas/cryptography (image plus lourde, ~200 Mo) — toutes licences
   # permissives ; épinglé (la résolution multi-arch vérifiée en dépend).
-  "great-expectations==1.18.1",
+  "great-expectations==1.18.2",
   # Embedding sémantique par publication (étape 4, lot 3) : le vecteur(384) est
   # calculé en Python natif sur le MÊME model_quantized.onnx (all-MiniLM-L6-v2,
   # vendoré sous src/.../models/) que le code TS — sans torch, modèle cuit
@@ -58,7 +58,7 @@ dependencies = [
   # numpy/scipy (déjà présents via GE) — surcoût d'image limité. Déterminisme par graine
   # figée (ADR 0057). Épinglé en 1.6.x : dernière série compatible Python 3.10 (1.7+
   # exige 3.11 ; le code-location est figé en 3.10, parité Dagster cluster ADR 0006).
-  "scikit-learn==1.6.1",
+  "scikit-learn==1.7.2",
 ]
 # NB : dagster-postgres tire psycopg2-binary (LGPL) en transitive. Cette image
 # l'embarque NÉCESSAIREMENT pour rehydrater l'instance dans le run worker (voir
@@ -72,7 +72,7 @@ dependencies = [
 # les dérivations bornées pures (uplift_model.py : symétrie, bornes, déterminisme).
 # Dev-dépendance de test uniquement (zéro empreinte runtime) ; épinglée et verrouillée
 # par uv.lock.
-dev = ["ruff==0.15.18", "pytest", "pytest-cov", "hypothesis==6.155.7"]
+dev = ["ruff==0.15.20", "pytest", "pytest-cov", "hypothesis==6.155.7"]
 
 [build-system]
 requires = ["hatchling"]
