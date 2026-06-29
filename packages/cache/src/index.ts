@@ -8,3 +8,4 @@ export {
 export { FileCacheLayer } from "./file.js";
 export { PostgresCacheLayer, dsnFromEnv } from "./postgres.js";
 export { selectCacheLayer } from "./select.js";
+export { createPgRefreshState, type PgRefreshState } from "./refresh.js";

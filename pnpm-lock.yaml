@@ -217,6 +217,9 @@ importers:
       '@observablehq/plot':
         specifier: ^0.6.17
         version: 0.6.17
+      '@univ-lehavre/atlas-cache':
+        specifier: workspace:*
+        version: link:../../packages/cache
       '@univ-lehavre/atlas-stats':
         specifier: workspace:*
         version: link:../../packages/atlas-stats

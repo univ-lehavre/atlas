@@ -7,6 +7,7 @@ import postgres from "postgres";
 
 import { CacheStore } from "./store.js";
 import { PostgresCacheLayer } from "./postgres.js";
+import { createPgRefreshState } from "./refresh.js";
 
 /**
  * Test d'intégration HERMÉTIQUE du back-end Postgres du cache (ADR 0083).
@@ -115,6 +116,15 @@ describeOrSkip(
       await Effect.runPromise(
         program.pipe(Effect.scoped, Effect.provide(PostgresCacheLayer(dsn))),
       );
+    });
+
+    it("partage lastRefreshAt via createPgRefreshState (bridage multi-instance)", async () => {
+      const state = createPgRefreshState(dsn, "test:lastRefreshAt");
+      // Jamais écrit → 0.
+      expect(await state.getLastRefreshAt()).toBe(0);
+      // Écrit puis relu (visible par toute instance partageant la table).
+      await state.setLastRefreshAt(1_700_000_000_000);
+      expect(await state.getLastRefreshAt()).toBe(1_700_000_000_000);
     });
   },
 );
