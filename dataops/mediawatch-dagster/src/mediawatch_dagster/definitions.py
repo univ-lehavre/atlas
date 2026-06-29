@@ -17,8 +17,8 @@ du Secret S3 du lakehouse et des variables OpenLineage au niveau du RUN.
 
 import json
 import os
-import re
 import tempfile
+import time
 from pathlib import Path
 
 from dagster import (
@@ -42,7 +42,10 @@ from mediawatch_dagster.assets import (
     ref_universities_snapshot,
     timeline_manifest,
 )
-from mediawatch_dagster.assets.drift_forecast import evidently_forecast_drift
+from mediawatch_dagster.assets.drift_forecast import (
+    evidently_forecast_drift,
+    read_drift_verdict,
+)
 from mediawatch_dagster.assets.manifest import _run_rclone, parse_lsjson_entries
 from mediawatch_dagster.assets.quality import (
     ge_curated_universities,
@@ -51,6 +54,7 @@ from mediawatch_dagster.assets.quality import (
 )
 from mediawatch_dagster.assets.raw_gkg import gkg_daily_partitions
 from mediawatch_dagster.dbt import dbt_components
+from mediawatch_dagster.partitions import ingested_partitions
 from mediawatch_dagster.resources import ceph_target_from_env, render_rclone_config
 
 # Le pod de run (K8sRunLauncher) doit recevoir les accès S3 du lakehouse : on
@@ -285,23 +289,10 @@ def _ct_max_partitions(env: dict | None = None) -> int:
     return n if n > 0 else _DEFAULT_CT_MAX_PARTITIONS
 
 
-# Une partition ingérée = un dossier `dt=YYYY-MM-DD` sous `raw/gkg/` (cf. raw_gkg :
-# `raw/gkg/dt=<date>/run=<id>/…`). On capte le `dt=` même AVANT qu'un `run=` n'existe.
-_DT_RE = re.compile(r"(?:^|/)dt=(\d{4}-\d{2}-\d{2})(?:/|$)")
-
-
-def ingested_partitions(entries: list[dict]) -> set[str]:
-    """Extrait les dates de partition (``dt=YYYY-MM-DD``) distinctes d'un lsjson de raw/gkg.
-
-    ``entries`` = sortie ``rclone lsjson -R`` (champs ``Path`` relatif au préfixe listé).
-    Best-effort : un chemin sans ``dt=`` conforme est ignoré (ne casse pas le scan).
-    """
-    found: set[str] = set()
-    for entry in entries:
-        match = _DT_RE.search(entry.get("Path", ""))
-        if match:
-            found.add(match.group(1))
-    return found
+# `ingested_partitions` (signal de donnée neuve = dossiers `dt=YYYY-MM-DD` sous
+# `raw/gkg/`) vit dans `partitions.py` — module neutre partagé avec drift_forecast
+# (garde-fou anti-emballement de la boucle drift→retrain), pour éviter une dépendance
+# circulaire definitions ↔ drift_forecast (ADR 0082).
 
 
 def evaluate_ct_partitions(
@@ -383,6 +374,128 @@ if _dbt_assets:
             yield SkipReason("aucune partition neuve depuis le dernier tick (rien à réentraîner)")
 
     _sensors.append(transform_on_ingestion_advance)
+
+
+# ── BOUCLE FERMÉE DÉRIVE → RÉENTRAÎNEMENT (CT autonome mediawatch, ADR 0082) ──
+# Généralise à mediawatch le patron de l'ADR 0079 (citation), maintenant que le modèle
+# de prévision (ADR 0081) fournit un signal de dérive. La dérive mesurée par
+# evidently_forecast_drift (verdict persisté en S3) déclenche AUTOMATIQUEMENT un
+# réentraînement (transform_job). RUNNING par défaut (le déployeur OPT-OUT via
+# MEDIAWATCH_RETRAIN_AUTO=off), comme citation — rupture avec « le déployeur arme ».
+#
+# GARDE-FOU ANTI-EMBALLEMENT (terminaison prouvée). Réentraîner sur la MÊME donnée ne
+# dissipe pas la dérive (elle vient de la donnée neuve). On ne réentraîne donc QUE si
+# les PARTITIONS GKG ingérées ont AVANCÉ depuis le dernier retrain. Le retrain ne
+# ré-ingère pas → le run post-retrain re-mesure la dérive sur les MÊMES partitions →
+# SKIP : point fixe en 1 itération. Plus : dédup par run_id du verdict, et cooldown.
+
+
+def _retrain_auto_enabled(env: dict | None = None) -> bool:
+    """La boucle est-elle armée ? ACTIVE PAR DÉFAUT ; le déployeur DÉSARME via
+    MEDIAWATCH_RETRAIN_AUTO ∈ {off,0,false,no} (opt-out, ADR 0082)."""
+    env = env if env is not None else os.environ
+    return (env.get("MEDIAWATCH_RETRAIN_AUTO") or "on").strip().lower() not in {
+        "off",
+        "0",
+        "false",
+        "no",
+    }
+
+
+_DEFAULT_RETRAIN_COOLDOWN_S = 6 * 3600  # 6 h — anti-flapping, valeur d'instance
+
+
+def _retrain_cooldown_s(env: dict | None = None) -> int:
+    """Cooldown minimal entre deux retrains auto, lu de MEDIAWATCH_RETRAIN_COOLDOWN_S
+    (valeur d'instance) ; défaut 6 h ; valeur invalide/négative → défaut."""
+    env = env if env is not None else os.environ
+    try:
+        n = int(env.get("MEDIAWATCH_RETRAIN_COOLDOWN_S"))
+    except (TypeError, ValueError):
+        return _DEFAULT_RETRAIN_COOLDOWN_S
+    return n if n >= 0 else _DEFAULT_RETRAIN_COOLDOWN_S
+
+
+def evaluate_drift_retrain(
+    verdict: dict, cursor: str | None, cooldown_ok: bool
+) -> tuple[bool, str, str]:
+    """Corps PUR (sans I/O ni Dagster ni horloge) : décide si un verdict de dérive du
+    modèle de prévision déclenche un réentraînement. Garantit la TERMINAISON.
+
+    ``verdict`` : document lu en S3 (``read_drift_verdict``) — ``{run_id, drift_detected,
+    partitions, …}``. ``cursor`` : sérialisé de ``{last_verdict_run, last_retrain_parts}``.
+    ``cooldown_ok`` : l'horloge autorise-t-elle un retrain. Renvoie
+    ``(should_retrain, run_key, new_cursor)``.
+
+    SKIP (dans l'ordre) : verdict vide/schéma inconnu ; même run_id (dédup) ; pas de dérive ;
+    partitions vues == celles du dernier retrain (ANTI-EMBALLEMENT — pas de donnée neuve) ;
+    cooldown KO. Sinon RETRAIN : ``run_key = drift-retrain:<run_id>``, curseur mémorise le
+    run_id et les partitions déclencheuses."""
+    prev = json.loads(cursor) if cursor else {}
+    last_run = prev.get("last_verdict_run")
+    last_parts = prev.get("last_retrain_parts")
+
+    run_id = verdict.get("run_id")
+    seen_parts = json.dumps(sorted(verdict.get("partitions", [])))
+
+    def _cursor(retrain_parts: str | None) -> str:
+        return json.dumps(
+            {
+                "last_verdict_run": run_id if run_id else last_run,
+                "last_retrain_parts": retrain_parts if retrain_parts is not None else last_parts,
+            },
+            sort_keys=True,
+        )
+
+    if not run_id or verdict.get("schema_version") != 1:
+        return False, "", _cursor(None)
+    if run_id == last_run:  # dédup : verdict déjà traité
+        return False, "", _cursor(None)
+    if not verdict.get("drift_detected"):  # pas de dérive → rien à réentraîner
+        return False, "", _cursor(None)
+    if seen_parts == last_parts:  # ANTI-EMBALLEMENT : pas de donnée neuve depuis le dernier retrain
+        return False, "", _cursor(None)
+    if not cooldown_ok:  # ceinture-bretelles anti-flapping
+        return False, "", _cursor(None)
+    # Retrain : on avance last_retrain_parts aux partitions déclencheuses (terminaison).
+    return True, f"drift-retrain:{run_id}", _cursor(seen_parts)
+
+
+if _dbt_assets and _retrain_auto_enabled():
+    _retrain_cooldown = _retrain_cooldown_s()
+    _last_retrain_at = {"ts": 0.0}  # horloge du cooldown, hors de la fonction pure
+
+    @sensor(
+        name="retrain_on_drift",
+        job=transform_job,
+        default_status=DefaultSensorStatus.RUNNING,  # ACTIF par défaut (ADR 0082, opt-out)
+        minimum_interval_seconds=300,
+        description="CT autonome : réentraîne quand la dérive est confirmée ET la donnée a avancé.",
+    )
+    def retrain_on_drift(context: SensorEvaluationContext):
+        # Lecture best-effort du verdict de dérive persisté en S3 (rclone.conf temporaire) :
+        # sans accès S3 (dev/CI), le sensor SKIP proprement.
+        try:
+            target = ceph_target_from_env()
+            with tempfile.TemporaryDirectory() as tmp:
+                config_path = Path(tmp) / "rclone.conf"
+                config_path.write_text(render_rclone_config(target))
+                verdict = read_drift_verdict(target.bucket, config_path)
+        except Exception as exc:  # noqa: BLE001 — pas d'accès S3 : on n'échoue pas le sensor
+            yield SkipReason(f"verdict de dérive illisible (accès S3 indisponible) : {exc}")
+            return
+        cooldown_ok = (time.monotonic() - _last_retrain_at["ts"]) >= _retrain_cooldown
+        should_retrain, run_key, new_cursor = evaluate_drift_retrain(
+            verdict, context.cursor, cooldown_ok
+        )
+        context.update_cursor(new_cursor)
+        if should_retrain:
+            _last_retrain_at["ts"] = time.monotonic()
+            yield RunRequest(run_key=run_key)
+        else:
+            yield SkipReason("pas de dérive confirmée sur de la donnée neuve (rien à réentraîner)")
+
+    _sensors.append(retrain_on_drift)
 
 
 defs = Definitions(

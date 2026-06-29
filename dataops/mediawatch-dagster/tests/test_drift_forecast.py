@@ -5,10 +5,14 @@ Pattern calqué sur citation test_drift_uplift : on teste la porte de sécurité
 (compute_distribution_drift : stable vs décalé) sans I/O S3.
 """
 
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 
 from mediawatch_dagster.assets import drift_forecast as d
+
+_DUMMY_CONF = Path("/tmp/rclone.conf")  # jamais lu (subprocess monkeypatché)
 
 
 def _summary(mode):
@@ -154,3 +158,68 @@ def test_baseline_is_previous_run(monkeypatch):
     _patch(monkeypatch, runs=["run1", "run2", "run3"], by_run=by_run)
     res = d.check_forecast_drift("mediawatch", "run3")
     assert res.metadata["baseline_run"].value == "run2"  # le précédent, pas le plus ancien
+
+
+# ── Persistance du verdict (source lisible par le sensor, ADR 0082) ──────────
+
+
+def test_build_drift_verdict_is_deterministic_and_embeds_partitions():
+    # Le verdict embarque les partitions GKG ingérées (clé du garde-fou anti-emballement),
+    # triées ; drift_detected = décalage de distribution OU bascule de mode.
+    v = d.build_drift_verdict(
+        "run2",
+        "run1",
+        {"drift_detected": True, "drift_score": 0.87654},
+        {"regressed": False},
+        ["2024-06-03", "2024-06-01", "2024-06-02"],
+    )
+    assert v["run_id"] == "run2"
+    assert v["baseline_run"] == "run1"
+    assert v["drift_detected"] is True
+    assert v["drift_score"] == 0.8765
+    assert v["partitions"] == ["2024-06-01", "2024-06-02", "2024-06-03"]  # trié
+    assert v["schema_version"] == d.DRIFT_VERDICT_SCHEMA_VERSION
+    assert "produced_at" not in v  # injecté par l'I/O, pas par le pur
+
+
+def test_build_drift_verdict_detects_on_mode_switch():
+    # Bascule de mode SANS décalage de distribution → drift_detected quand même (régime changé).
+    v = d.build_drift_verdict(
+        "run2", "run1", {"drift_detected": False, "drift_score": 0.5}, {"regressed": True}, []
+    )
+    assert v["drift_detected"] is True
+    assert v["served_mode_regressed"] is True
+
+
+def test_read_drift_verdict_absent_returns_empty(monkeypatch):
+    import subprocess as sp
+
+    monkeypatch.setattr(sp, "run", lambda *a, **k: sp.CompletedProcess(a, 0, stdout="", stderr=""))
+    assert d.read_drift_verdict("mediawatch", _DUMMY_CONF) == {}
+
+
+def test_read_drift_verdict_parses_json(monkeypatch):
+    import subprocess as sp
+
+    doc = '{"run_id": "run2", "drift_detected": true, "partitions": ["2024-06-01"]}'
+    monkeypatch.setattr(sp, "run", lambda *a, **k: sp.CompletedProcess(a, 0, stdout=doc, stderr=""))
+    out = d.read_drift_verdict("mediawatch", _DUMMY_CONF)
+    assert out["run_id"] == "run2" and out["drift_detected"] is True
+
+
+def test_read_drift_verdict_malformed_returns_empty(monkeypatch):
+    import subprocess as sp
+
+    monkeypatch.setattr(
+        sp, "run", lambda *a, **k: sp.CompletedProcess(a, 0, stdout="{bad", stderr="")
+    )
+    assert d.read_drift_verdict("mediawatch", _DUMMY_CONF) == {}
+
+
+def test_write_drift_verdict_returns_status(monkeypatch):
+    import subprocess as sp
+
+    monkeypatch.setattr(sp, "run", lambda *a, **k: sp.CompletedProcess(a, 0, stdout="", stderr=""))
+    assert d.write_drift_verdict({"run_id": "r"}, "mediawatch", _DUMMY_CONF) is True
+    monkeypatch.setattr(sp, "run", lambda *a, **k: sp.CompletedProcess(a, 1, stdout="", stderr="x"))
+    assert d.write_drift_verdict({"run_id": "r"}, "mediawatch", _DUMMY_CONF) is False

@@ -20,14 +20,29 @@ d'exécution (``dt=``), donc ``_list_runs`` parcourt toutes les partitions.
 NB : pas de ``from __future__ import annotations`` (Dagster introspecte, drift D9).
 """
 
+import json
 import os
+import subprocess
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
 
 from dagster import AssetCheckExecutionContext, AssetCheckResult, AssetKey, asset_check
 
 from mediawatch_dagster import lakehouse
-from mediawatch_dagster.resources import ceph_target_from_env
+from mediawatch_dagster.assets.manifest import _run_rclone, parse_lsjson_entries
+from mediawatch_dagster.partitions import ingested_partitions
+from mediawatch_dagster.resources import ceph_target_from_env, render_rclone_config
 
 _FORECAST_SUBDIR = "marts/university_timeline_forecast"
+
+# Clé S3 du VERDICT de dérive du modèle de prévision (signal de contrôle, hors marts
+# immuables — comme citation). Écrasée à chaque run ; l'historique reste dans MLflow.
+# C'est la SOURCE LISIBLE par le sensor de boucle fermée (definitions.py) : le verdict
+# n'était jusqu'ici qu'un AssetCheckResult (illisible d'un sensor externe). On persiste
+# donc un document JSON dédié, lu via rclone comme le verdict d'embeddings de citation.
+DRIFT_VERDICT_KEY = "drift/university_timeline_forecast/_drift_verdict.json"
+DRIFT_VERDICT_SCHEMA_VERSION = 1
 
 
 def _list_runs(con, bucket: str) -> list[str]:
@@ -119,6 +134,88 @@ def _log_to_mlflow(run_id: str, payload: dict) -> bool:
     return True
 
 
+def build_drift_verdict(
+    run_id: str, baseline_run: str, dist: dict, reg: dict, partitions: list
+) -> dict:
+    """Document de verdict de dérive (PUR, sans I/O). Source lisible par le sensor de boucle
+    fermée (ADR 0082). Le champ ``partitions`` (dates GKG ingérées vues au moment de la
+    mesure) est la clé du garde-fou anti-emballement : la boucle ne réentraîne que si ces
+    partitions ont AVANCÉ depuis le dernier retrain (réentraîner sur la même donnée ne fait
+    pas disparaître le drift). ``produced_at`` injecté par l'appelant (horloge hors du pur).
+
+    ``drift_detected`` combine le décalage de distribution OU la bascule de mode : la boucle
+    se déclenche sur l'un ou l'autre (un changement de régime du modèle justifie un retrain)."""
+    return {
+        "schema_version": DRIFT_VERDICT_SCHEMA_VERSION,
+        "run_id": run_id,
+        "baseline_run": baseline_run,
+        "drift_detected": bool(dist["drift_detected"]) or bool(reg["regressed"]),
+        "drift_score": round(float(dist["drift_score"]), 4),
+        "served_mode_regressed": bool(reg["regressed"]),
+        "partitions": sorted(partitions),
+    }
+
+
+def _verdict_path(bucket: str) -> str:
+    return f"ceph:{bucket}/{DRIFT_VERDICT_KEY}"
+
+
+def write_drift_verdict(verdict: dict, bucket: str, config_path: Path) -> bool:
+    """Écrit le verdict en S3 (rclone rcat, clé unique écrasée). Best-effort : True si écrit,
+    False sinon — la persistance ne doit jamais casser le check (informatif)."""
+    payload = json.dumps(verdict, sort_keys=True)
+    result = subprocess.run(
+        ["rclone", "--config", str(config_path), "rcat", _verdict_path(bucket)],
+        input=payload,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.returncode == 0
+
+
+def read_drift_verdict(bucket: str, config_path: Path) -> dict:
+    """Lit le verdict de dérive (``{}`` si absent ou illisible — bootstrap/dev). Lu par le
+    sensor de boucle fermée (definitions.py), à la manière de citation."""
+    result = subprocess.run(
+        ["rclone", "--config", str(config_path), "cat", _verdict_path(bucket)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    raw = result.stdout.lstrip("﻿").strip()
+    if result.returncode != 0 or not raw:
+        return {}
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _persist_verdict(bucket: str, run_id: str, baseline_run: str, dist: dict, reg: dict) -> bool:
+    """Liste les partitions GKG ingérées (signal de donnée neuve) et écrit le verdict en S3
+    (best-effort). Réutilise rclone.conf temporaire (comme les assets). Sans accès S3, no-op."""
+    try:
+        target = ceph_target_from_env()
+        with tempfile.TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "rclone.conf"
+            config_path.write_text(render_rclone_config(target))
+            proc = _run_rclone(
+                ["lsjson", "-R", "--dirs-only", f"ceph:{target.bucket}/raw/gkg"], config_path
+            )
+            partitions = (
+                ingested_partitions(parse_lsjson_entries(proc.stdout))
+                if proc.returncode == 0
+                else set()
+            )
+            verdict = build_drift_verdict(run_id, baseline_run, dist, reg, list(partitions))
+            verdict["produced_at"] = datetime.now(timezone.utc).isoformat()
+            return write_drift_verdict(verdict, target.bucket, config_path)
+    except Exception:  # noqa: BLE001 — best-effort : la persistance ne casse jamais le check
+        return False
+
+
 def check_forecast_drift(bucket: str, run_id: str) -> AssetCheckResult:
     """Mesure la dérive du modèle de prévision (N vs N-1) — porte de sécurité (ADR 0068).
 
@@ -142,6 +239,9 @@ def check_forecast_drift(bucket: str, run_id: str) -> AssetCheckResult:
 
     payload = {**dist, **reg}
     logged = _log_to_mlflow(run_id, payload)
+    # Persiste le verdict en S3 (avec les partitions GKG ingérées) : source lisible par le
+    # sensor de boucle fermée drift→retrain (definitions.py, ADR 0082). Best-effort.
+    persisted = _persist_verdict(bucket, run_id, baseline_run, dist, reg)
 
     return AssetCheckResult(
         # Porte de sécurité : seule la bascule predictive→descriptive bloque (ADR 0068).
@@ -155,6 +255,7 @@ def check_forecast_drift(bucket: str, run_id: str) -> AssetCheckResult:
             "forecast_distribution_drift": dist["drift_detected"],
             "method": dist["method"],
             "mlflow_logged": logged,
+            "verdict_persisted": persisted,
             "verdict": reg["verdict"],
         },
     )

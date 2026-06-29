@@ -108,6 +108,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0079 | [Boucle fermée dérive → réentraînement, active par défaut (citation)](/atlas/decisions/0079-boucle-fermee-drift-retrain-active-par-defaut/)                     | Accepted        |
 | 0080 | [Capture assistée des drifts au point d'échec](/atlas/decisions/0080-capture-assistee-drifts-point-echec/)                                                      | Accepted        |
 | 0081 | [Modèle de prévision du volume d'articles par université (mediawatch)](/atlas/decisions/0081-modele-prevision-volume-articles-mediawatch/)                      | Accepted        |
+| 0082 | [Boucle fermée dérive → réentraînement, active par défaut (mediawatch)](/atlas/decisions/0082-boucle-fermee-drift-retrain-mediawatch/)                          | Accepted        |
 
 ## Quand ouvrir un ADR
 
