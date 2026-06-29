@@ -9,14 +9,7 @@ import { isVersionAtLeast, createVersion } from '../version/compare.js';
 
 /** API action types */
 export type ApiAction =
-  | 'export'
-  | 'import'
-  | 'delete'
-  | 'switch'
-  | 'list'
-  | 'createFolder'
-  | 'rename'
-  | 'display';
+  'export' | 'import' | 'delete' | 'switch' | 'list' | 'createFolder' | 'rename' | 'display';
 
 /** Content types available in all supported versions */
 export const CORE_CONTENT_TYPES: readonly string[] = [

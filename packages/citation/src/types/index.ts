@@ -6,11 +6,7 @@ import type {
 } from "./citation.js";
 
 type QueryValue =
-  | string
-  | number
-  | boolean
-  | Array<string | number | boolean>
-  | undefined;
+  string | number | boolean | Array<string | number | boolean> | undefined;
 
 type Query = Record<string, QueryValue>;
 
