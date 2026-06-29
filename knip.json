@@ -3,12 +3,11 @@
   "workspaces": {
     ".": {
       "project": ["*.{js,ts}"],
-      "ignoreDependencies": ["eslint", "prettier-plugin-svelte"],
-      "ignoreBinaries": ["uv", "gh"]
+      "ignoreDependencies": ["prettier-plugin-svelte"],
+      "ignoreBinaries": ["gh"]
     },
     "docs": {
-      "ignore": ["src/components/kpi/kpi-card.css"],
-      "ignoreDependencies": ["astro-mermaid"]
+      "ignore": ["src/components/kpi/kpi-card.css"]
     },
     "packages/net": {
       "project": ["src/**/*.ts"]
@@ -113,10 +112,7 @@
     },
     "ui/atlas-ui": {
       "project": ["src/**/*.{ts,svelte}", ".storybook/**/*.ts"],
-      "ignore": [
-        ".storybook/stubs/app-forms.ts",
-        ".storybook/stubs/app-paths.ts"
-      ]
+      "ignore": [".storybook/stubs/app-paths.ts"]
     }
   },
   "ignoreWorkspaces": [
