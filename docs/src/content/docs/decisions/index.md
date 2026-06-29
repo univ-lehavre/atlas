@@ -109,6 +109,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0081 | [Modèle de prévision du volume d'articles par université (mediawatch)](/atlas/decisions/0081-modele-prevision-volume-articles-mediawatch/)                      | Accepted        |
 | 0082 | [Boucle fermée dérive → réentraînement, active par défaut (mediawatch)](/atlas/decisions/0082-boucle-fermee-drift-retrain-mediawatch/)                          | Accepted        |
 | 0083 | [Câblage d'OpenSSF Scorecard (note supply-chain et badge en tête)](/atlas/decisions/0083-openssf-scorecard-cable/)                                              | Accepted        |
+| 0084 | [Épinglage des images de base par digest (Pinned-Dependencies)](/atlas/decisions/0084-pinning-images-base-par-digest/)                                          | Accepted        |
 
 ## Quand ouvrir un ADR
 
