@@ -5,13 +5,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const readFile = vi.fn();
-const writeFile = vi.fn();
+// `writeFile` est appelé sur le FileHandle retourné par `open` (écriture
+// atomique par descripteur exclusif). On capture ses arguments via le handle.
+const handleWriteFile = vi.fn();
+const handleClose = vi.fn();
+const open = vi.fn(() => ({ writeFile: handleWriteFile, close: handleClose }));
 const rename = vi.fn();
 const existsSync = vi.fn();
 
 vi.mock("node:fs/promises", () => ({
   readFile: (...args: unknown[]) => readFile(...args),
-  writeFile: (...args: unknown[]) => writeFile(...args),
+  open: (...args: unknown[]) => open(...args),
   rename: (...args: unknown[]) => rename(...args),
 }));
 
@@ -110,7 +114,7 @@ describe("cache", () => {
   describe("writeCache", () => {
     it("writes JSON-serialised cache to disk", async () => {
       existsSync.mockReturnValue(true);
-      writeFile.mockResolvedValue();
+      handleWriteFile.mockResolvedValue();
       rename.mockResolvedValue();
       const { writeCache } = await importCache();
       await writeCache({
@@ -119,9 +123,8 @@ describe("cache", () => {
         packages: [],
         downloads: {},
       });
-      expect(writeFile).toHaveBeenCalledTimes(1);
-      const [, payload, encoding] = writeFile.mock.calls[0] as [
-        string,
+      expect(handleWriteFile).toHaveBeenCalledTimes(1);
+      const [payload, encoding] = handleWriteFile.mock.calls[0] as [
         string,
         string,
       ];
@@ -131,13 +134,12 @@ describe("cache", () => {
         packages: [],
         downloads: {},
       });
-      // Écriture exclusive (`flag: "wx"`) anti-TOCTOU + encodage utf8.
-      expect(encoding).toEqual({ encoding: "utf8", flag: "wx" });
+      expect(encoding).toBe("utf8");
     });
 
-    it("writes atomically: a temp file then renames it onto the target", async () => {
+    it("writes atomically: an exclusive temp handle then renames onto the target", async () => {
       existsSync.mockReturnValue(true);
-      writeFile.mockResolvedValue();
+      handleWriteFile.mockResolvedValue();
       rename.mockResolvedValue();
       const { writeCache } = await importCache();
       await writeCache({
@@ -146,12 +148,13 @@ describe("cache", () => {
         packages: [],
         downloads: {},
       });
-      const [tmpPath] = writeFile.mock.calls[0] as [string];
-      const [renameFrom, renameTo] = rename.mock.calls[0] as [string, string];
-      // The bytes land in a process-scoped temp file, never the target directly.
-      expect(tmpPath).toMatch(/\.tmp$/);
+      // Ouverture EXCLUSIVE (`"wx"`) d'un nom intermédiaire, jamais la cible.
+      const [tmpPath, flag] = open.mock.calls[0] as [string, string];
+      expect(flag).toBe("wx");
       expect(tmpPath).not.toMatch(/\.atlas-stats\.json$/);
-      // The temp file is then renamed onto the real cache path (atomic swap).
+      // Le handle est refermé puis le fichier renommé sur la cible (swap atomique).
+      expect(handleClose).toHaveBeenCalledTimes(1);
+      const [renameFrom, renameTo] = rename.mock.calls[0] as [string, string];
       expect(renameFrom).toBe(tmpPath);
       expect(renameTo).toMatch(/\.atlas-stats\.json$/);
     });
@@ -187,7 +190,7 @@ describe("cache", () => {
     it("uses ATLAS_STATS_CACHE_PATH when set", async () => {
       process.env["ATLAS_STATS_CACHE_PATH"] = "/tmp/foo.json";
       existsSync.mockReturnValue(true);
-      writeFile.mockResolvedValue();
+      handleWriteFile.mockResolvedValue();
       rename.mockResolvedValue();
       const { writeCache } = await importCache();
       await writeCache({
@@ -202,7 +205,7 @@ describe("cache", () => {
 
     it("falls back to cwd when no workspace marker is found", async () => {
       existsSync.mockReturnValue(false);
-      writeFile.mockResolvedValue();
+      handleWriteFile.mockResolvedValue();
       rename.mockResolvedValue();
       const { writeCache } = await importCache();
       await writeCache({
@@ -221,7 +224,7 @@ describe("cache", () => {
         const s = String(p);
         return s === "/workspace/pnpm-workspace.yaml";
       });
-      writeFile.mockResolvedValue();
+      handleWriteFile.mockResolvedValue();
       rename.mockResolvedValue();
       const { writeCache } = await importCache();
       await writeCache({
@@ -237,7 +240,7 @@ describe("cache", () => {
     it("treats an empty ATLAS_STATS_CACHE_PATH like unset", async () => {
       process.env["ATLAS_STATS_CACHE_PATH"] = "   ";
       existsSync.mockReturnValue(false);
-      writeFile.mockResolvedValue();
+      handleWriteFile.mockResolvedValue();
       rename.mockResolvedValue();
       const { writeCache } = await importCache();
       await writeCache({
@@ -277,7 +280,7 @@ describe("cache", () => {
       const { writeCache } = await importCache();
       await writeCache(data);
       expect(storeSet).toHaveBeenCalledWith("atlas-stats", data);
-      expect(writeFile).not.toHaveBeenCalled();
+      expect(open).not.toHaveBeenCalled();
     });
   });
 });

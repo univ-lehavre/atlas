@@ -1,4 +1,4 @@
-import { readFile, writeFile, rename, mkdir } from "node:fs/promises";
+import { readFile, open, rename, mkdir } from "node:fs/promises";
 import { randomBytes } from "node:crypto";
 import path from "node:path";
 
@@ -60,15 +60,19 @@ const makeFileStore = (baseDir: string): CacheStore => ({
         await mkdir(baseDir, { recursive: true });
         const entry: CacheEntry<T> = { savedAt: Date.now(), data };
         const target = entryPath(baseDir, key);
-        // Nom temporaire IMPRÉVISIBLE (suffixe aléatoire, pas le `pid`) + écriture
-        // EXCLUSIVE (`flag: "wx"` → échoue si le fichier existe). Un autre
-        // utilisateur ne peut donc pas pré-créer un symlink à cet emplacement
-        // pour détourner l'écriture (anti-TOCTOU, CodeQL js/insecure-temporary-file).
-        const tmp = `${target}.${randomBytes(8).toString("hex")}.tmp`;
-        await writeFile(tmp, JSON.stringify(entry, null, 2), {
-          encoding: "utf8",
-          flag: "wx",
-        });
+        // Écriture atomique sûre : on OUVRE un descripteur en mode EXCLUSIF
+        // (`"wx"` → `O_CREAT | O_EXCL`, échoue si le chemin existe), avec un nom
+        // intermédiaire IMPRÉVISIBLE (suffixe aléatoire). L'ouverture par
+        // descripteur exclusif interdit qu'un symlink/fichier pré-créé détourne
+        // l'écriture (anti-TOCTOU) ; le `rename` final publie le contenu d'un
+        // bloc. Le fichier vit dans `baseDir` (cible), pas dans le `os` temp dir.
+        const tmp = `${target}.${randomBytes(8).toString("hex")}`;
+        const handle = await open(tmp, "wx");
+        try {
+          await handle.writeFile(JSON.stringify(entry, null, 2), "utf8");
+        } finally {
+          await handle.close();
+        }
         await rename(tmp, target);
       },
       catch: cacheError("write failed"),

@@ -1,4 +1,4 @@
-import { readFile, writeFile, rename } from "node:fs/promises";
+import { readFile, open, rename } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import path from "node:path";
@@ -107,14 +107,17 @@ export const writeCache = async (data: AtlasStatsCache): Promise<void> => {
   const dsn = postgresDsn();
   if (dsn !== null) return writeToPostgres(dsn, data);
   const target = resolveCachePath();
-  // Nom temporaire IMPRÉVISIBLE + écriture EXCLUSIVE (`flag: "wx"`) : un autre
-  // utilisateur ne peut pas pré-créer un symlink pour détourner l'écriture
+  // Écriture atomique sûre : ouverture d'un descripteur en mode EXCLUSIF
+  // (`"wx"` → `O_CREAT | O_EXCL`) sur un nom intermédiaire IMPRÉVISIBLE, puis
+  // `rename`. Un symlink/fichier pré-créé ne peut pas détourner l'écriture
   // (anti-TOCTOU, CodeQL js/insecure-temporary-file).
-  const tmp = `${target}.${randomBytes(8).toString("hex")}.tmp`;
-  await writeFile(tmp, JSON.stringify(data, null, 2), {
-    encoding: "utf8",
-    flag: "wx",
-  });
+  const tmp = `${target}.${randomBytes(8).toString("hex")}`;
+  const handle = await open(tmp, "wx");
+  try {
+    await handle.writeFile(JSON.stringify(data, null, 2), "utf8");
+  } finally {
+    await handle.close();
+  }
   await rename(tmp, target);
 };
 
