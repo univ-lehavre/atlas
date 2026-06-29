@@ -4,7 +4,7 @@ title: Parcours thématique des décisions
 
 Cette page propose un **tour cohérent des décisions** du dépôt, regroupées par
 thème plutôt que par numéro. Elle s'adresse à un **nouveau venu** : plutôt que de
-lire les 81 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
+lire les 82 ADR dans l'ordre chronologique, suis le fil ci-dessous pour
 comprendre _pourquoi_ le dépôt est fait comme il est.
 
 Pour la liste exhaustive par numéro (et le statut de chacun), voir
@@ -311,6 +311,11 @@ incrémentale par date), l'API REST étant reléguée aux compléments ciblés.
   semaine/mois/trimestre, validé **honnêtement dans le temps** (pas de fuite) avec la porte
   prédictif/descriptif de 0067. Donne à mediawatch sa première instrumentation MLOps (MLflow +
   drift), donc un **signal de dérive** — la porte vers son CT autonome (0079).
+- [0082 — Boucle fermée dérive → réentraînement (mediawatch)](/atlas/decisions/0082-boucle-fermee-drift-retrain-mediawatch/) :
+  **généralise 0079 à mediawatch**, maintenant qu'il a un signal de dérive (0081). Même patron
+  (sensor actif par défaut, opt-out, terminaison prouvée), mais le garde-fou « donnée neuve » se
+  fonde sur l'avancée des **partitions GKG ingérées** (≠ le watermark de citation). Les deux
+  pipelines ont désormais un CT autonome homogène.
 
 ## 7. Données personnelles et conformité
 
