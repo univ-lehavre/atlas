@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: "🔒 Faille de sécurité / Security vulnerability"
+    url: https://github.com/univ-lehavre/atlas/security/advisories/new
+    about: "Ne pas ouvrir d'issue publique. Signalement privé (FR/EN). Do not open a public issue — report privately. Cf. SECURITY.md."
+  - name: "💬 Question / Discussion"
+    url: https://github.com/univ-lehavre/atlas/issues
+    about: "Pour une question ouverte, ouvre une issue (les Discussions seront activées). For an open question, open an issue."
