@@ -1,8 +1,8 @@
 # @univ-lehavre/atlas-cache
 
 Cache de flux partagé : une interface unique, deux back-ends sélectionnés à
-l'exécution. Acté par [ADR 0083](../../docs/src/content/docs/decisions/0083-cache-flux-postgres-package-partage.md)
-(exécution de [ADR 0040](../../docs/src/content/docs/decisions/0040-caches-flux-backing-service-vs-fichier.md)).
+l'exécution. Acté par [ADR 0083](https://univ-lehavre.github.io/atlas/decisions/0083-cache-flux-postgres-package-partage/)
+(exécution de [ADR 0040](https://univ-lehavre.github.io/atlas/decisions/0040-caches-flux-backing-service-vs-fichier/)).
 
 ## Interface
 
@@ -49,4 +49,4 @@ saved_at)`, UPSERT atomique `ON CONFLICT`, DDL idempotente sous
 
 `pnpm test` couvre le back-end fichier et le sélecteur sans dépendance externe.
 Le back-end Postgres a un **test d'intégration hermétique** (image PostgreSQL
-épinglée par digest, _self-skip_ si Docker est absent — [ADR 0057](../../docs/src/content/docs/decisions/0057-reproductibilite-tests-hermetiques.md)).
+épinglée par digest, _self-skip_ si Docker est absent — [ADR 0057](https://univ-lehavre.github.io/atlas/decisions/0057-reproductibilite-tests-hermetiques/)).
