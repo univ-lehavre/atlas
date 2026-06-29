@@ -18,6 +18,19 @@ Avant d'ouvrir une Pull Request, lis les pages dédiées du site de documentatio
 - [Hooks Git](https://univ-lehavre.github.io/atlas/quality/hooks/) — pre-commit / pre-push automatiques
 - [Pipeline CI](https://univ-lehavre.github.io/atlas/quality/ci-pipeline/) — ce qui se passe quand tu pousses
 
+### Politique de tests
+
+- **Tout correctif de bug** doit embarquer un **test de non-régression** qui échoue
+  sans le correctif et passe avec — c'est ce qui garantit que le bug ne revient pas.
+- **Toute fonctionnalité notable** doit ajouter des tests couvrant son comportement
+  (cas nominal + bords).
+- Les tests sont **hermétiques et reproductibles** ([ADR 0057](https://univ-lehavre.github.io/atlas/decisions/0057-reproductibilite-tests-hermetiques/)) ;
+  côté Python, les invariants sont éprouvés par des tests basés sur les propriétés
+  ([ADR 0072](https://univ-lehavre.github.io/atlas/decisions/0072-property-based-testing-dataops-python/)).
+- La couverture est mesurée en CI ; l'objectif est de la **faire monter** (jamais
+  de relâcher le seuil) — cf. la posture sur les paliers de qualité
+  ([ADR 0086](https://univ-lehavre.github.io/atlas/decisions/0086-posture-paliers-best-practices/)).
+
 ## Sécurité
 
 Pour signaler une **vulnérabilité**, n'ouvre pas d'issue publique. Suis la procédure de [SECURITY.md](SECURITY.md).
