@@ -14,6 +14,13 @@ on:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
+# Plancher restrictif au niveau workflow (principe du moindre privilège,
+# critère Token-Permissions d'OpenSSF Scorecard — ADR 0083). Le job `release`
+# élève explicitement ce dont il a besoin (contents/packages/id-token write
+# pour publier avec provenance) ; tout autre job hériterait de ce read seul.
+permissions:
+  contents: read
+
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
