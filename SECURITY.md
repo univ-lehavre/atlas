@@ -1,5 +1,7 @@
 # Security Policy
 
+> 🇬🇧 **In English.** This policy is written in French (the maintaining team's language), but **security reports written in English are welcome**. Prefer [GitHub Private Vulnerability Reporting](https://github.com/univ-lehavre/atlas/security/advisories/new); please **do not open a public issue** for a vulnerability.
+
 > **Nature de ce document.** Cette politique décrit, sur la base du meilleur effort, la manière dont les vulnérabilités sont traitées dans le projet Atlas. Elle **ne constitue ni un contrat, ni une garantie, ni un engagement juridique opposable**. Le logiciel est diffusé sous licence MIT, sans garantie d'aucune sorte (cf. [LICENSE](LICENSE)). Les délais et procédures indiqués ci-dessous sont des objectifs indicatifs, pas des obligations contractuelles. Les obligations légales applicables par ailleurs (RGPD, conventions, marchés publics…) restent régies par leurs propres textes et prévalent en cas de conflit.
 
 ## Signaler une vulnérabilité
