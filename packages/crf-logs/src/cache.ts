@@ -1,16 +1,57 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
+
+import { Effect } from "effect";
+import {
+  CacheStore,
+  PostgresCacheLayer,
+  type CacheEntry,
+} from "@univ-lehavre/atlas-cache";
+
 import type { RawLog } from "./api.js";
 
 const CACHE_FILE = ".crf-stats.json";
 const WORKSPACE_MARKER = "pnpm-workspace.yaml";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const CACHE_KEY = "crf-logs";
+const POSTGRES_DSN = /^postgres(?:ql)?:\/\//;
 
 export interface CacheFile {
   readonly savedAt: number;
   readonly logs: RawLog[];
 }
+
+/**
+ * Back-end Postgres si `CRF_LOGS_CACHE_PATH` est une DSN `postgres://…`
+ * (ADR 0083, sélection explicite) ; sinon `null` → comportement fichier inchangé.
+ */
+const postgresDsn = (): string | null => {
+  const fromEnv = process.env["CRF_LOGS_CACHE_PATH"];
+  return fromEnv !== undefined && POSTGRES_DSN.test(fromEnv) ? fromEnv : null;
+};
+
+const readFromPostgres = (dsn: string): Promise<CacheFile | null> => {
+  const program = Effect.gen(function* () {
+    const store = yield* CacheStore;
+    const entry: CacheEntry<RawLog[]> | null =
+      yield* store.get<RawLog[]>(CACHE_KEY);
+    return entry === null ? null : { savedAt: entry.savedAt, logs: entry.data };
+  });
+  return Effect.runPromise(
+    program.pipe(Effect.scoped, Effect.provide(PostgresCacheLayer(dsn))),
+  );
+};
+
+const writeToPostgres = (dsn: string, logs: RawLog[]): Promise<void> => {
+  const program = Effect.gen(function* () {
+    const store = yield* CacheStore;
+    yield* store.set<RawLog[]>(CACHE_KEY, logs);
+  });
+  return Effect.runPromise(
+    program.pipe(Effect.scoped, Effect.provide(PostgresCacheLayer(dsn))),
+  );
+};
 
 /**
  * Remonte jusqu'à la racine du workspace (marqueur `pnpm-workspace.yaml`) pour
@@ -64,15 +105,21 @@ const readCacheFile = (): Promise<string | null> =>
     () => null,
   );
 
-export const readCache = (): Promise<CacheFile | null> =>
-  readCacheFile().then((raw) => (raw === null ? null : parseCache(raw)));
+export const readCache = (): Promise<CacheFile | null> => {
+  const dsn = postgresDsn();
+  if (dsn !== null) return readFromPostgres(dsn);
+  return readCacheFile().then((raw) => (raw === null ? null : parseCache(raw)));
+};
 
-export const writeCache = (logs: RawLog[]): Promise<void> =>
-  writeFile(
+export const writeCache = (logs: RawLog[]): Promise<void> => {
+  const dsn = postgresDsn();
+  if (dsn !== null) return writeToPostgres(dsn, logs);
+  return writeFile(
     resolveCachePath(),
     `${JSON.stringify({ savedAt: Date.now(), logs }, null, 2)}\n`,
     "utf8",
   );
+};
 
 export const isCacheStale = (cache: CacheFile): boolean =>
   Date.now() - cache.savedAt > CACHE_TTL_MS;
