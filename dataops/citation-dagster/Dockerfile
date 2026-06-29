@@ -21,7 +21,9 @@
 # duckdb/dbt-duckdb/dagster-dbt sont tirés par le pyproject (wheels arm64 dispo, dont
 # duckdb manylinux aarch64). Le manifest dbt est généré AU BUILD (`dbt parse`, sans
 # réseau) et packagé dans l'image : `@dbt_assets` le lit à l'import sans parse runtime.
-FROM python:3.10-slim
+# Image de base épinglée par digest (immuable), tag conservé pour la lisibilité.
+# Maintenu par Dependabot (écosystème docker). ADR 0084.
+FROM python:3.10-slim@sha256:5f9928ea39771e8ddf4fb9a96ab24f65f087793635614405a1dc9384f040852e
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends rclone ca-certificates \

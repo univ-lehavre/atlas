@@ -32,11 +32,15 @@
 # facteur X). Alpine pour une image runtime légère.
 ARG NODE_VERSION=24.18.0
 ARG ALPINE_VERSION=3.24
+# Digest de node:24.18.0-alpine3.24 — épingle l'image de base par empreinte de
+# contenu (immuable), tag conservé pour la lisibilité. Maintenu par Dependabot
+# (écosystème docker). ADR 0084.
+ARG NODE_DIGEST=sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd
 
 # ──────────────────────────────────────────────────────────────────────
 # Base — active corepack/pnpm à la version pinnée dans package.json.
 # ──────────────────────────────────────────────────────────────────────
-FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS base
+FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION}@${NODE_DIGEST} AS base
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME:$PATH
 # corepack lit `packageManager` du package.json racine (pnpm@10.x).
@@ -91,7 +95,7 @@ RUN pnpm --filter=@univ-lehavre/atlas-sillage --prod --legacy deploy /prod
 # Runner — image finale minimale : runtime Node, build/ et node_modules
 # de prod élagué. Pas de pnpm, pas de sources, pas de devDeps.
 # ──────────────────────────────────────────────────────────────────────
-FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION} AS runner
+FROM node:${NODE_VERSION}-alpine${ALPINE_VERSION}@${NODE_DIGEST} AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production

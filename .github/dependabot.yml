@@ -127,3 +127,40 @@ updates:
       # minor/patch des autres paquets restent suivis et groupés.
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+
+  # ---------------------------------------------------------------------------
+  # docker — images de base épinglées par digest (ADR 0084)
+  # ---------------------------------------------------------------------------
+  # Les `FROM` des Dockerfile sont épinglés par `@sha256:…` : sans cette boucle,
+  # un digest figé ne recevrait plus les correctifs de l'image de base. Dependabot
+  # rouvre une PR quand un digest prend du retard sur son tag (node, python, php).
+  # On groupe tous les bumps d'images dans une PR unique par run.
+  - package-ecosystem: "docker"
+    directories:
+      - "/apps/amarre"
+      - "/apps/atlas-dashboard"
+      - "/apps/crf-dashboard"
+      - "/apps/ecrin"
+      - "/apps/find-an-expert"
+      - "/apps/sillage"
+      - "/services/crf"
+      - "/dataops/citation-dagster"
+      - "/dataops/mediawatch-dagster"
+      - "/sandbox/crf-sandbox/docker/php"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Paris"
+    open-pull-requests-limit: 1
+    labels:
+      - "dependencies"
+      - "automation"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    groups:
+      # Tous les bumps de digests d'images dans une seule PR par run.
+      docker-images:
+        patterns:
+          - "*"
