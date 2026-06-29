@@ -1,0 +1,120 @@
+name: PR issue link
+
+# Garde-fou de liaison PR <-> issue (NON bloquant).
+#
+# Problème adressé : une PR qui écrit « Implémente #123 » (ou « Suit #123 »)
+# au lieu d'un mot-clé de fermeture reconnu par GitHub (`Closes`/`Fixes`/
+# `Resolves`) NE ferme PAS l'issue au merge. Avec la stratégie merge commit
+# (ADR 0053), seul un mot-clé dans la DESCRIPTION de la PR ferme l'issue.
+# Résultat observé : des issues déjà réalisées restent ouvertes et faussent
+# le backlog.
+#
+# Ce workflow lit le corps de la PR. Pour ÉVITER le bruit, il ne réagit PAS au
+# texte narratif (« voir #378-382 », « comme #399 ») : il cible UNIQUEMENT un
+# verbe de liaison FAIBLE non reconnu par GitHub (« Implémente/Suit/Ref #N »)
+# sans mot-clé de fermeture par ailleurs — exactement le cas qui laisse l'issue
+# ouverte. Un opt-out explicite (« Issue liée : Aucune ») le neutralise. Il pose
+# alors un avertissement (annotation + commentaire idempotent) et N'ÉCHOUE PAS :
+# le but est de rappeler, pas de bloquer.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: pr-issue-link-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check-issue-link:
+    name: Check issue closing keyword
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const body = context.payload.pull_request.body || "";
+
+            // On ignore les blocs de code et les commentaires HTML (gabarit).
+            const stripped = body
+              .replace(/```[\s\S]*?```/g, "")
+              .replace(/<!--[\s\S]*?-->/g, "");
+
+            const hasClosingKeyword =
+              /\b(close[sd]?|fix(e[sd])?|resolve[sd]?)\b\s+#\d+/i.test(stripped);
+
+            // Opt-out explicite : la section « Issue liée » dit « Aucune »
+            // (ou « N/A »), ou la PR ne prétend lier aucune issue.
+            const optedOut = /issue\s+li[ée]e[\s\S]{0,80}?\b(aucune|n\/a|none)\b/i.test(
+              stripped,
+            );
+
+            // On NE veut PAS réagir au texte narratif (« voir #378-382 »,
+            // « comme #398, #399 »). On cible UNIQUEMENT le bug observé : un
+            // verbe de liaison FAIBLE (non reconnu par GitHub) suivi d'un #N —
+            // « Implémente #123 », « Implements #123 », « Suit #123 », « Ref #123 ».
+            // C'est exactement ce qui laissait des issues ouvertes au merge.
+            const weakLink =
+              /\b(impl[ée]mente[nrz]?|implements?|suit|ref(?:s|ers?)?|addresse[sz]?|adresse|part of|pour)\b\s+#\d+/i.test(
+                stripped,
+              );
+
+            const shouldWarn = weakLink && !hasClosingKeyword && !optedOut;
+
+            const MARKER = "<!-- pr-issue-link-bot -->";
+
+            // Retrouver un éventuel commentaire précédent du bot (idempotence).
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+            const previous = comments.find((c) => c.body.includes(MARKER));
+
+            if (shouldWarn) {
+              core.warning(
+                "Cette PR lie une issue avec un verbe non reconnu (Implémente/Suit/" +
+                  "Ref…) au lieu d'un mot-clé de fermeture (Closes/Fixes/Resolves). " +
+                  "L'issue ne se fermera PAS au merge.",
+              );
+              const message =
+                `${MARKER}\n` +
+                "⚠️ **Liaison d'issue** — cette PR semble lier une issue avec un " +
+                "verbe **non reconnu par GitHub** (« Implémente #N », « Suit #N », " +
+                "« Ref #N »…) plutôt qu'un **mot-clé de fermeture** " +
+                "(`Closes`/`Fixes`/`Resolves`).\n\n" +
+                "Avec la stratégie *merge commit* ([ADR 0053](https://univ-lehavre.github.io/atlas/decisions/0053-strategie-merge-commit-main/)), " +
+                "l'issue **ne se fermera pas automatiquement** au merge. Si cette PR " +
+                "résout l'issue, remplace par `Closes #N` dans la description. Sinon, " +
+                "ignore cet avertissement (non bloquant).";
+              if (previous) {
+                await github.rest.issues.updateComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: previous.id,
+                  body: message,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.pull_request.number,
+                  body: message,
+                });
+              }
+            } else if (previous) {
+              // L'avertissement n'a plus lieu d'être : on le neutralise.
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: previous.id,
+                body:
+                  `${MARKER}\n` +
+                  "✅ Liaison d'issue OK (mot-clé de fermeture présent, ou aucune " +
+                  "issue référencée).",
+              });
+            }
