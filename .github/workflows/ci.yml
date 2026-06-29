@@ -337,7 +337,7 @@ jobs:
       # vecteur et la couverture chute sous le seuil. Caché par révision (clé =
       # fetch_model.py) pour ne pas retélécharger à chaque run.
       - name: Cache embedding model
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: dataops/citation-dagster/src/citation_dagster/models/all-MiniLM-L6-v2
           key: onnx-model-${{ hashFiles('dataops/citation-dagster/scripts/fetch_model.py') }}
