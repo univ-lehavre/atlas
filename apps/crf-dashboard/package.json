@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@observablehq/plot": "^0.6.17",
+    "@sentry/sveltekit": "~10.62.0",
     "@univ-lehavre/atlas-crf-logs": "workspace:*",
     "@univ-lehavre/atlas-sveltekit-csp": "workspace:*"
   },

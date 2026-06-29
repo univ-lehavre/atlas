@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { handle } from './hooks.server';
+import { securityHeaders } from './hooks.server';
 
 /**
  * Vitest sets `process.cwd()` to the package root. See
@@ -16,11 +16,11 @@ const buildEvent = (url: string) =>
     cookies: { get: () => null },
     locals: {},
     url: new URL(url),
-  }) as unknown as Parameters<typeof handle>[0]['event'];
+  }) as unknown as Parameters<typeof securityHeaders>[0]['event'];
 
 describe('crf-dashboard hooks.server.ts handle', () => {
   it('applies the shared static security headers on every response (Phase 9.2)', async () => {
-    const res = await handle({
+    const res = await securityHeaders({
       event: buildEvent('https://dashboard.example.org/'),
       resolve: async () => new Response('ok'),
     });
@@ -35,7 +35,7 @@ describe('crf-dashboard hooks.server.ts handle', () => {
   });
 
   it('omits Strict-Transport-Security on plain http:// (dev traffic)', async () => {
-    const res = await handle({
+    const res = await securityHeaders({
       event: buildEvent('http://localhost:5173/'),
       resolve: async () => new Response('ok'),
     });

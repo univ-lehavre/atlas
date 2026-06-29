@@ -27,16 +27,16 @@ vi.mock('$lib/server/baas', () => ({
   createSessionClient: mocks.createSessionClient,
 }));
 
-import { handle } from '../../src/hooks.server';
+import { session } from '../../src/hooks.server';
 
 const makeEvent = (url = 'https://example.com/') =>
   ({
     cookies: {} as never,
     locals: {} as { userId?: string },
     url: new URL(url),
-  }) as unknown as Parameters<typeof handle>[0]['event'];
+  }) as unknown as Parameters<typeof session>[0]['event'];
 
-const resolve: Parameters<typeof handle>[0]['resolve'] = async () =>
+const resolve: Parameters<typeof session>[0]['resolve'] = async () =>
   new Response('ok', { status: 200 });
 
 describe('hooks.server.handle', () => {
@@ -50,7 +50,7 @@ describe('hooks.server.handle', () => {
   it('populates locals.userId when the session is valid', async () => {
     mocks.accountGet.mockResolvedValueOnce({ $id: 'user-from-session' });
     const event = makeEvent();
-    const res = await handle({ event, resolve });
+    const res = await session({ event, resolve });
     expect(res.status).toBe(200);
     expect((event.locals as { userId?: string }).userId).toBe('user-from-session');
   });
@@ -60,7 +60,7 @@ describe('hooks.server.handle', () => {
     mocks.accountGet.mockRejectedValueOnce(err);
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const event = makeEvent();
-    const res = await handle({ event, resolve });
+    const res = await session({ event, resolve });
     expect(res.status).toBe(200);
     expect((event.locals as { userId?: string }).userId).toBeUndefined();
     expect(consoleErrorSpy).not.toHaveBeenCalled();
@@ -71,14 +71,14 @@ describe('hooks.server.handle', () => {
     mocks.accountGet.mockRejectedValueOnce(err);
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     const event = makeEvent();
-    const res = await handle({ event, resolve });
+    const res = await session({ event, resolve });
     expect(res.status).toBe(200);
     expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
   it('applies the shared static security headers on every response (Phase 9.2)', async () => {
     mocks.accountGet.mockRejectedValueOnce(new Error('no session'));
-    const res = await handle({ event: makeEvent('https://app.example.org/'), resolve });
+    const res = await session({ event: makeEvent('https://app.example.org/'), resolve });
     expect(res.headers.get('x-content-type-options')).toBe('nosniff');
     expect(res.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin');
     expect(res.headers.get('permissions-policy')).toContain('camera=()');
@@ -90,7 +90,7 @@ describe('hooks.server.handle', () => {
 
   it('omits Strict-Transport-Security on plain http:// (dev traffic)', async () => {
     mocks.accountGet.mockRejectedValueOnce(new Error('no session'));
-    const res = await handle({
+    const res = await session({
       event: makeEvent('http://localhost:5173/'),
       resolve,
     });
