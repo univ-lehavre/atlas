@@ -66,6 +66,21 @@ dependencies = [
 # 0055). Le code applicatif, lui, n'utilise jamais psycopg2 directement : l'index
 # (index_load) passe par DuckDB `ATTACH ... TYPE postgres`, pas par psycopg2.
 
+[tool.uv]
+# Override sécurité (homologue uv des overrides pnpm de pnpm-workspace.yaml) :
+# deepdiff est tiré en TRANSITIF par dbt-common (chaîne dagster-dbt==0.29.7), qui
+# l'épingle `deepdiff<8,>=7` → résolution en 7.0.1, vulnérable à GHSA-mw26-5g2v-hqw3
+# (critical, Class Pollution dans Delta) et GHSA-54jj-px8x-5w5q (high, DoS mémoire
+# SAFE_TO_IMPORT). Les deux CVE n'exploitent QUE la désérialisation d'un `Delta`
+# non fiable. Or l'UNIQUE usage de deepdiff dans toute la chaîne dbt est
+# `DeepDiff(ignore_order=…, exclude_paths=…)` sur des manifests LOCAUX fiables
+# (dbt_common/record.py) — jamais `Delta` ni `SAFE_TO_IMPORT`. On force donc
+# deepdiff>=8,<9 (versions corrigées, API DeepDiff stable 7→8) SANS toucher la
+# chaîne dagster/dbt ni la parité Dagster 1.13.7 du cluster (ADR 0006/0033 :
+# deepdiff n'est pas un point d'interface cluster). À relever quand dbt-common
+# acceptera nativement deepdiff>=8 (dès 1.29.0, mais hors parité 0.29.7 actuelle).
+override-dependencies = ["deepdiff>=8,<9"]
+
 [dependency-groups]
 # hypothesis : tests basés sur les propriétés (PBT, ADR 0072) — homologue Python de
 # fast-check, branché DANS pytest via @given (pas un framework concurrent). Ciblé sur

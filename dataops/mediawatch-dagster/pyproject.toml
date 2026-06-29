@@ -61,6 +61,18 @@ dependencies = [
 # plus haut) ; on l'assume dans dataops/ (Python, hors gate licences Node — ADR
 # 0055). Le code applicatif, lui, n'utilise jamais psycopg2 directement.
 
+[tool.uv]
+# Override sécurité DÉFENSIF (homologue uv des overrides pnpm) — symétrique de
+# citation-dagster. Ici la résolution tire déjà dbt-common 1.38.0 (deepdiff<9),
+# donc deepdiff 8.x corrigé NATIVEMENT : l'override est aujourd'hui un no-op. Il
+# VERROUILLE la protection contre une régression amont — dbt-common 2.0.0
+# RÉ-épingle `deepdiff<8` : sans cette borne, un futur bump réintroduirait
+# silencieusement GHSA-mw26-5g2v-hqw3 (critical) / GHSA-54jj-px8x-5w5q (high). Les
+# deux CVE n'exploitent que la désérialisation d'un `Delta` non fiable, jamais
+# atteinte (dbt n'utilise que `DeepDiff` sur des manifests locaux). API DeepDiff
+# stable 7→8. N'impacte ni la chaîne dagster/dbt ni la parité cluster (ADR 0006/0033).
+override-dependencies = ["deepdiff>=8,<9"]
+
 [dependency-groups]
 # hypothesis : tests basés sur les propriétés (PBT, ADR 0072) — homologue Python de
 # fast-check, branché DANS pytest via @given (pas un framework concurrent). Ciblé sur

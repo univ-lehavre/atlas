@@ -2,6 +2,9 @@ version = 1
 revision = 3
 requires-python = "==3.10.*"
 
+[manifest]
+overrides = [{ name = "deepdiff", specifier = ">=8,<9" }]
+
 [[package]]
 name = "agate"
 version = "1.9.1"
