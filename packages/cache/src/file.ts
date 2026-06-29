@@ -1,4 +1,5 @@
 import { readFile, writeFile, rename, mkdir } from "node:fs/promises";
+import { randomBytes } from "node:crypto";
 import path from "node:path";
 
 import { Effect, Layer } from "effect";
@@ -59,8 +60,15 @@ const makeFileStore = (baseDir: string): CacheStore => ({
         await mkdir(baseDir, { recursive: true });
         const entry: CacheEntry<T> = { savedAt: Date.now(), data };
         const target = entryPath(baseDir, key);
-        const tmp = `${target}.${String(process.pid)}.tmp`;
-        await writeFile(tmp, JSON.stringify(entry, null, 2), "utf8");
+        // Nom temporaire IMPRÉVISIBLE (suffixe aléatoire, pas le `pid`) + écriture
+        // EXCLUSIVE (`flag: "wx"` → échoue si le fichier existe). Un autre
+        // utilisateur ne peut donc pas pré-créer un symlink à cet emplacement
+        // pour détourner l'écriture (anti-TOCTOU, CodeQL js/insecure-temporary-file).
+        const tmp = `${target}.${randomBytes(8).toString("hex")}.tmp`;
+        await writeFile(tmp, JSON.stringify(entry, null, 2), {
+          encoding: "utf8",
+          flag: "wx",
+        });
         await rename(tmp, target);
       },
       catch: cacheError("write failed"),

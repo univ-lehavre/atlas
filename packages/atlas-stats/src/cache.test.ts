@@ -131,7 +131,8 @@ describe("cache", () => {
         packages: [],
         downloads: {},
       });
-      expect(encoding).toBe("utf8");
+      // Écriture exclusive (`flag: "wx"`) anti-TOCTOU + encodage utf8.
+      expect(encoding).toEqual({ encoding: "utf8", flag: "wx" });
     });
 
     it("writes atomically: a temp file then renames it onto the target", async () => {
