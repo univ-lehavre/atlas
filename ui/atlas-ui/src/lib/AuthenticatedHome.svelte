@@ -19,7 +19,7 @@
       <span class="text-primary">, {greetingName}</span>
     {/if}
   </h1>
-  <p class="lead text-secondary m-0 mx-auto">
+  <p class="lead text-body-secondary m-0 mx-auto">
     Three community projects caught our eye today — be inspired before sharing
     your own.
   </p>
