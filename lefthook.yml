@@ -123,12 +123,14 @@ pre-push:
       priority: 3
 
     coverage-report:
-      # Phase 1.2 + 3.8 : vérifie que chaque paquet vitest a bien un
-      # rapport de coverage (échec si « missing ») et que la couverture
-      # de chaque métrique reste au-dessus de la cible. Passée de 0 à 40
-      # en Phase 3.8 — sera remontée à 80 quand les paquets exemptés
-      # (cli/net, find-an-expert) auront été renforcés.
-      run: pnpm coverage:report 40
+      # Vérifie que chaque paquet vitest a bien un rapport de coverage (échec si
+      # « missing ») et reste au-dessus de son seuil. Cible générale 80 % (ADR
+      # 0019) ; les paquets exemptés qui déclarent un seuil INFÉRIEUR dans leur
+      # `vitest.config.ts` sont jugés sur CE seuil (le script le lit) — donc 80
+      # ne bloque pas les apps SvelteKit/UI légitimement sous la cible, tout en
+      # exigeant 80 des paquets publiés/déployés. Garde-fou anti-régression :
+      # un exempté qui descend sous son propre seuil déclaré échoue aussi.
+      run: pnpm coverage:report 80
       priority: 4
 
     test-scripts:

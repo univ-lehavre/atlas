@@ -134,6 +134,50 @@ const summarizeRows = (rows) => {
 const SHORT_PREFIX = "@univ-lehavre/atlas-";
 const shortName = (name) => name.replace(SHORT_PREFIX, "");
 
+// Lit le seuil de couverture DÉCLARÉ par un paquet (le plus bas des 4 métriques
+// d'un bloc `thresholds: { statements, branches, functions, lines }`). Sert à
+// respecter les dérogations actées (ADR 0019) : un paquet légitimement sous la
+// cible globale (ex. app SvelteKit avec routes non testables en unit) déclare un
+// seuil inférieur et ne doit être jugé que sur CE seuil, pas sur le plancher
+// global. Cherche dans `vitest.config.ts` PUIS `vite.config.ts` (les apps
+// SvelteKit y mettent leur config test). Best-effort par regex (pas de
+// transpilation TS) ; tolère le format multi-lignes. Un seuil absent/illisible
+// retombe sur la cible globale (paquet jugé à 80 %). Exporté pour les tests.
+export const readDeclaredThreshold = (configPaths, readFile = readFileSync) => {
+  const paths = Array.isArray(configPaths) ? configPaths : [configPaths];
+  for (const path of paths) {
+    let src;
+    try {
+      src = readFile(path, "utf8");
+    } catch {
+      continue;
+    }
+    // Isole le bloc `thresholds: { … }` en tolérant les sauts de ligne (le `s`
+    // rend `.` multi-ligne ; `?` non gourmand pour s'arrêter au premier `}`).
+    const block = src.match(/thresholds\s*:\s*\{(.*?)\}/s);
+    if (block === null) continue;
+    const values = [];
+    for (const key of ["statements", "branches", "functions", "lines"]) {
+      const m = block[1].match(new RegExp(`${key}\\s*:\\s*(\\d+(?:\\.\\d+)?)`));
+      if (m !== null) values.push(Number(m[1]));
+    }
+    if (values.length > 0) return Math.min(...values);
+  }
+  return null;
+};
+
+// Seuil effectif d'un paquet, en respectant les dérogations ADR 0019 :
+//   - seuil déclaré SOUS la cible globale → on juge sur ce seuil (exempté) ;
+//   - aucun seuil déclaré (null) ET paquet `private` (non publié, ex. ui/atlas-ui
+//     ou un dashboard) → exempté du plancher (retourne 0) : il se renforce au fil
+//     des migrations, l'ADR 0019 ne lui impose pas de seuil global ;
+//   - aucun seuil déclaré mais paquet PUBLIÉ → cible globale (force à déclarer) ;
+//   - seuil déclaré ≥ cible → cible globale (pas d'auto-exemption au-dessus).
+export const effectiveTarget = (declared, globalTarget, isPrivate = false) => {
+  if (declared === null) return isPrivate ? 0 : globalTarget;
+  return declared < globalTarget ? declared : globalTarget;
+};
+
 // Try to read the file directly rather than stat-then-read. Avoids a
 // TOCTOU (time-of-check to time-of-use) gap that CodeQL flags as a
 // potential file-system race condition.
@@ -190,10 +234,21 @@ const main = () => {
     .map((workspace) => {
       const rel = relative(root, workspace.path);
       const dir = rel.split("/")[0] ?? "";
+      // `private: true` (ADR 0011) = paquet non publié : sans seuil déclaré, il
+      // est exempté du plancher global (renforcement au fil des migrations).
+      let isPrivate = false;
+      try {
+        isPrivate =
+          JSON.parse(readFileSync(`${workspace.path}/package.json`, "utf8"))
+            .private === true;
+      } catch {
+        // package.json illisible : on reste sur isPrivate=false (jugé à la cible).
+      }
       return {
         name: workspace.name,
         path: workspace.path,
         dir,
+        isPrivate,
         coveragePath: `${workspace.path}/${coverageFile}`,
         hasVitest: existsSync(`${workspace.path}/vitest.config.ts`),
         hasCoverage: existsSync(`${workspace.path}/${coverageFile}`),
@@ -214,9 +269,20 @@ const main = () => {
   const noVitestPackages = allWorkspaces.filter((w) => !w.hasVitest);
 
   const rows = vitestPackages.map((workspace) => {
-    if (!workspace.hasCoverage) return { ...workspace, missing: true };
+    const declaredThreshold = readDeclaredThreshold([
+      `${workspace.path}/vitest.config.ts`,
+      `${workspace.path}/vite.config.ts`,
+    ]);
+    if (!workspace.hasCoverage) {
+      return { ...workspace, missing: true, declaredThreshold };
+    }
     const coverage = JSON.parse(readFileSync(workspace.coveragePath, "utf8"));
-    return { ...workspace, missing: false, ...summarize(coverage) };
+    return {
+      ...workspace,
+      missing: false,
+      declaredThreshold,
+      ...summarize(coverage),
+    };
   });
 
   rows.sort((a, b) => {
@@ -332,10 +398,34 @@ const main = () => {
     }
   }
 
+  // Un paquet échoue s'il tombe sous SON seuil effectif : la cible globale
+  // pour les paquets publiés/déployés, ou leur dérogation déclarée (ADR 0019)
+  // pour les exemptés. Le plancher global reste un garde-fou anti-régression
+  // (un paquet exempté qui descend SOUS son propre seuil déclaré échoue aussi).
   const belowTarget = covered.filter(
-    (r) => Math.min(r.statements, r.branches, r.functions, r.lines) < target,
+    (r) =>
+      Math.min(r.statements, r.branches, r.functions, r.lines) <
+      effectiveTarget(r.declaredThreshold, target, r.isPrivate),
   );
   const overSkipped = findOverSkippedPackages(covered, maxSkipped);
+
+  if (belowTarget.length > 0) {
+    console.log("");
+    console.log(red(`Paquets sous leur seuil de couverture :`));
+    for (const r of belowTarget) {
+      const eff = effectiveTarget(r.declaredThreshold, target, r.isPrivate);
+      const lowest = Math.min(r.statements, r.branches, r.functions, r.lines);
+      const why =
+        r.declaredThreshold !== null && r.declaredThreshold < target
+          ? `dérogation déclarée ${r.declaredThreshold}%`
+          : `cible ${target}%`;
+      console.log(
+        red(
+          `  ${shortName(r.name)} : ${lowest.toFixed(1)}% < ${eff}% (${why})`,
+        ),
+      );
+    }
+  }
 
   if (overSkipped.length > 0) {
     console.log("");

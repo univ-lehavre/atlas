@@ -125,9 +125,26 @@ règle. Toute dérogation **doit** être enregistrée :
 
 ### Seuils de couverture de tests
 
-Cible générale : `pnpm coverage:report` exécuté en CI et pre-push exige
-qu'un paquet **publié ou déployé** atteigne **80% de statements** (voir
+Cible générale : `pnpm coverage:report 80` exécuté en CI et pre-push exige
+qu'un paquet **publié ou déployé** atteigne **80%** sur les quatre métriques
+(statements/branches/functions/lines ; voir
 [`scripts/audit/coverage-report.mjs`](https://github.com/univ-lehavre/atlas/blob/main/scripts/audit/coverage-report.mjs)).
+
+**Comment les dérogations sont respectées par le garde-fou** (pour qu'un seuil
+global à 80 ne bloque pas les paquets légitimement en dessous) : le script lit
+le **seuil déclaré** par chaque paquet dans son `vitest.config.ts` (ou
+`vite.config.ts` pour les apps SvelteKit) et applique le **seuil effectif**
+suivant — un paquet n'est en échec que s'il tombe sous CE seuil :
+
+- seuil déclaré **sous** la cible globale → jugé sur son seuil (dérogation
+  active ci-dessous) ; reste un garde-fou anti-régression (descendre sous son
+  propre seuil échoue) ;
+- aucun seuil déclaré **et** paquet `private` (non publié, [ADR 0011](/atlas/decisions/0011-paquets-internes-private/)) →
+  exempté du plancher (se renforce au fil des migrations, ex. `ui/atlas-ui`) ;
+- aucun seuil déclaré mais paquet **publié** → tenu à la cible globale (force à
+  déclarer un seuil) ;
+- seuil déclaré **au-dessus** de la cible → pas d'auto-exemption, la cible prime.
+
 Les paquets ci-dessous sont **explicitement exemptés** ou autorisés à
 déclarer un seuil inférieur, avec la raison.
 
@@ -147,8 +164,6 @@ résorption 2026-05-30](https://github.com/univ-lehavre/atlas/blob/main/docs/pla
 | `apps/amarre`                   | 50/48/32/53              | Phase ultérieure     | Phase 9.1 (réel 52.36/56/34.37/55.55, migration `atlas-sveltekit-handler`) puis Phase 13.3 : branches 54 → 48 car l'init Sentry opt-in (`if (dsn)` dans hooks.server/client) ajoute des branches non couvertes en unit. UI Svelte et services métier restent à couvrir. |
 | `apps/ecrin`                    | 52/32/37/53              | Phase ultérieure     | Phase 4.3 (réel 54.18/36.56/39.81/55.78) puis Phase 13.3 : branches 34 → 32 car l'init Sentry opt-in (`if (dsn)` dans hooks.server/client) ajoute des branches non couvertes en unit. 14 endpoints API couverts ; UI Svelte et services à couvrir.                      |
 | `apps/find-an-expert`           | 22/12/15/25              | Phase ultérieure     | Seuils resserrés en Phase 4.4 (réel 24.80/14.58/17.89/27.38). 17 endpoints API couverts ; routes Svelte et content dominent encore le dénominateur.                                                                                                                     |
-| `cli/crf`                       | 62/62/76/60              | Phase ultérieure     | Seuils resserrés en Phase 2.6 au réel (64.59/64.70/78.43/62.71). Les bin entry points (api/index, server/index) ont un setup `@effect/cli` lourd.                                                                                                                       |
-| `cli/net`                       | 48/42/38/49              | Phase ultérieure     | Seuils resserrés en Phase 2.6 au réel (50.48/44.11/40.00/51.51). Renforcement à 80%+ à planifier.                                                                                                                                                                       |
 | `packages/test-utils-sveltekit` | 80/95/35/80              | Stable               | Helper paquet créé en Phase 4.2. `functions` à 35 parce que `noopCookies.{get,set,…}` (stubs requis par le type `RequestEvent['cookies']`) ne sont jamais appelés.                                                                                                      |
 
 **Renforcés en Phase 3 — historique** : la Phase 3 du plan de résorption a fait passer 6 paquets de 0–17% à 93–100% statements ; ils sortent donc de ce tableau et passent à la cible générale 80% :
@@ -166,6 +181,26 @@ résorption 2026-05-30](https://github.com/univ-lehavre/atlas/blob/main/docs/pla
 - `apps/amarre` : 50.92% → **54.27%** (9/9 endpoints couverts ; 4 nouveaux fichiers test + 3 complétés).
 - `apps/ecrin` : 40.14% → **54.18%** (14/14 endpoints couverts ; 10 nouveaux fichiers test).
 - `apps/find-an-expert` : 19.34% → **24.80%** (17/17 endpoints couverts ; 14 nouveaux fichiers test, dont 8 utilisant `assertNoXss`).
+
+**Renforcés par exclusion des bin entry points** : les CLI `@effect/cli` ont un
+point d'entrée fait d'**orchestration pure** (`Command.make` + `Command.run` +
+`serve()`/flux interactif `@clack/prompts`), non instrumentable en test unitaire
+— seul un e2e via `process.argv` le couvrirait. La logique métier, elle, est
+extraite dans des modules dédiés (déjà couverts). On **exclut** donc ces entry
+points du dénominateur de couverture (même posture que `services/crf` qui exclut
+`src/server/index.ts`), ce qui ramène les deux paquets **au-dessus de 80% sur les
+quatre métriques** sans test artificiel :
+
+- `cli/crf` : 64.59% → **90.21%** statements. Exclus :
+  `src/commands/api/index.ts` et `src/commands/server/index.ts` (déclaration
+  `@effect/cli` + `serve()`). Le code testable (`commands.ts`) était déjà couvert.
+  Seuils relevés à `88/80/95/88`.
+- `cli/net` : 50.48% → **100%** statements. Le mode interactif (« human ») de
+  `runDiagnostics` (spinner `@clack/prompts`) est désormais **testé** ; le bloc
+  d'orchestration `command`/`main` est marqué `/* v8 ignore */` (assemblage
+  `@effect/cli`) et le bin `src/bin/atlas-net.ts` exclu ; la branche
+  `!process.stdout.isTTY` de `detectCi` (tautologie sans TTY sous vitest) est
+  ignorée. Seuils relevés à `95/85/95/95`.
 
 Toute exemption supplémentaire doit être ajoutée à ce tableau dans la
 PR qui l'introduit. Tout seuil temporairement abaissé doit pointer la

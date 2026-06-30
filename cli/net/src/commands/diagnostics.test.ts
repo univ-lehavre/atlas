@@ -14,10 +14,12 @@ vi.mock('@univ-lehavre/atlas-net', () => ({
   checkInternet: vi.fn(),
 }));
 
+const spinnerStart = vi.fn();
+const spinnerStop = vi.fn();
 vi.mock('@clack/prompts', () => ({
   spinner: vi.fn(() => ({
-    start: vi.fn(),
-    stop: vi.fn(),
+    start: spinnerStart,
+    stop: spinnerStop,
   })),
 }));
 
@@ -150,5 +152,42 @@ describe('runDiagnostics', () => {
     await runDiagnostics('https://example.com', ciCtx({ json: true }));
 
     expect(consoleLog).not.toHaveBeenCalled();
+  });
+
+  // ── Mode human (interactif) : `runStep` passe par le spinner clack au lieu du
+  //    chemin CI/JSON. C'était le trou de couverture principal (lignes 87-93).
+  describe('human mode (non-CI, non-JSON)', () => {
+    const humanCtx = ciCtx({ ci: false });
+
+    it('drives a clack spinner per step (start + stop) instead of plain logs', async () => {
+      vi.mocked(net.dnsResolve).mockReturnValue(Effect.succeed(step({ name: 'DNS Resolution' })));
+      vi.mocked(net.tcpPing).mockReturnValue(Effect.succeed(step({ name: 'TCP Connect' })));
+      vi.mocked(net.tlsHandshake).mockReturnValue(Effect.succeed(step({ name: 'TLS Handshake' })));
+
+      const result = await runDiagnostics('https://example.com', humanCtx);
+
+      expect(result.success).toBe(true);
+      expect(result.steps).toHaveLength(3);
+      // 3 steps → 3 spinner cycles ; aucun console.log direct en mode human.
+      expect(spinnerStart).toHaveBeenCalledTimes(3);
+      expect(spinnerStop).toHaveBeenCalledTimes(3);
+      expect(consoleLog).not.toHaveBeenCalled();
+    });
+
+    it('flags an errored step via the spinner and reports success=false', async () => {
+      vi.mocked(net.dnsResolve).mockReturnValue(
+        Effect.succeed(step({ name: 'DNS Resolution', status: 'error' }))
+      );
+      vi.mocked(net.checkInternet).mockReturnValue(
+        Effect.succeed(step({ name: 'Internet Check' }))
+      );
+
+      const result = await runDiagnostics('https://example.com', humanCtx);
+
+      expect(result.success).toBe(false);
+      expect(result.steps.map((s) => s.name)).toEqual(['DNS Resolution', 'Internet Check']);
+      expect(spinnerStart).toHaveBeenCalledTimes(2);
+      expect(spinnerStop).toHaveBeenCalledTimes(2);
+    });
   });
 });

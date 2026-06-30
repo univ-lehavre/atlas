@@ -157,6 +157,12 @@ const quietOption = Options.boolean('quiet').pipe(
 // Command Definition
 // ─────────────────────────────────────────────────────────────────────────────
 
+/* v8 ignore start */
+// Orchestration @effect/cli : assemblage de la commande (parsing des options,
+// flux interactif `p.text()`, intro/outro clack) et point d'entrée `main`. Pur
+// câblage non instrumentable en unit — même posture que les bin entry points
+// exclus (ADR 0019). La logique métier testable est `runDiagnostics` ci-dessus
+// (couverte par diagnostics.test.ts).
 const command = Command.make(
   'atlas-net',
   {
@@ -279,3 +285,4 @@ const cli = Command.run(command, {
 export const main = async (): Promise<void> => {
   await runEffectCli(cli(process.argv), { fallbackExitCode: ExitCode.Error });
 };
+/* v8 ignore stop */
