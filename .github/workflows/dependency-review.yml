@@ -1,11 +1,14 @@
 name: Dependency review
 
 # Vérifie chaque PR contre la GitHub Dependency Graph :
-#  - bloque toute nouvelle vulnérabilité de sévérité `high` ou `critical`.
-#    Les `moderate` et `low` ne bloquent pas — le script `audit:security`
-#    (lancé en pre-push et en CI sur le job Audit) garde la couverture
-#    pour ces niveaux et peut être durci à `--audit-level=moderate` si
-#    on le souhaite (cf. Phase 3.3).
+#  - bloque toute nouvelle vulnérabilité de sévérité `moderate`, `high` ou
+#    `critical`. Le seuil `moderate` (et non `high`) couvre un TROU réel : les
+#    dépendances PyPI de `dataops/` sont hors du graphe pnpm (ADR 0055), donc
+#    `audit:security` (qui n'audite que l'arbre npm via `pnpm audit`) ne les
+#    voit jamais — cette action est leur SEUL gate de vulnérabilité sur PR. Au
+#    seuil `high`, un advisory `moderate` sur une dep Python passait inaperçu.
+#    Aligné sur `audit:security --audit-level=moderate` côté npm. Les faux
+#    positifs / risques résiduels assumés se consignent dans `allow-ghsas`.
 #  - bloque toute nouvelle dépendance avec une licence hors allowlist.
 #    L'allowlist est alignée sur `scripts/audit/licenses.mjs` — SPDX
 #    canoniques uniquement (les exceptions par package du script local,
@@ -41,7 +44,7 @@ jobs:
 
       - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
-          fail-on-severity: high
+          fail-on-severity: moderate
           # Advisories exemptées (risque résiduel documenté). Les CVE deepdiff
           # (GHSA-mw26-5g2v-hqw3 critical, GHSA-54jj-px8x-5w5q high) ne sont PLUS
           # exemptées : elles sont CORRIGÉES via un override uv `deepdiff>=8,<9`
