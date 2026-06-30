@@ -132,11 +132,19 @@ jobs:
           done
 
       - name: Merge Release PR
-        # --auto queues the merge until the 9 required checks finish on the
-        # PR (CI typically takes ~3 min). Without it, this step races the
-        # CI and fails with "the base branch policy prohibits the merge"
-        # every time main protection requires status checks.
+        # --auto queues the merge until the required checks finish on the PR
+        # (CI typically takes ~3 min). Without it, this step races the CI and
+        # fails with "the base branch policy prohibits the merge" every time
+        # main protection requires status checks.
+        #
+        # --merge (PAS --squash) : la ruleset `main` restreint
+        # `allowed_merge_methods` à `["merge"]` et le dépôt désactive le squash
+        # (ADR 0053). Un `gh pr merge --squash` est rejeté par la policy → la PR
+        # « chore: version packages » ne s'auto-mergeait jamais, donc le publish
+        # (déclenché par le merge de cette PR) ne partait pas. Changesets produit
+        # déjà un commit unique propre (`commit: "chore: version packages"`),
+        # l'objectif « un seul commit de version » est préservé sans squash.
         if: steps.changesets.outputs.pullRequestNumber
-        run: gh pr merge ${{ steps.changesets.outputs.pullRequestNumber }} --squash --delete-branch --auto
+        run: gh pr merge ${{ steps.changesets.outputs.pullRequestNumber }} --merge --delete-branch --auto
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
