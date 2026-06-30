@@ -5,7 +5,15 @@
  * and generate a detailed OpenAPI 3.1.0 specification.
  */
 
-import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+} from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { stringify } from 'yaml';
@@ -53,8 +61,10 @@ export function extractZip(
     throw new Error(`ZIP not found: ${zipPath}`);
   }
 
-  const tmpRoot = join(tmpdir(), `redcap-openapi-${version}-${Date.now()}`);
-  mkdirSync(tmpRoot, { recursive: true });
+  // `mkdtempSync` crée un répertoire au suffixe aléatoire, atomiquement et en
+  // 0700 : pas de nom prévisible (sinon un tiers local pourrait pré-créer le
+  // chemin / poser un symlink avant l'écriture — CWE-377).
+  const tmpRoot = mkdtempSync(join(tmpdir(), `redcap-openapi-${version}-`));
 
   // Décompression en pur JS (fflate) plutôt qu'un sous-processus `unzip` : le
   // binaire `unzip` est absent de Windows et hors du PATH des images de base
