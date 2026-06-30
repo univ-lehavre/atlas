@@ -22,6 +22,10 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 > **Nouveau venu ?** Le [parcours thématique](/atlas/decisions/parcours/) regroupe ces
 > décisions par sujet et propose un tour cohérent — par où commencer, comment
 > elles s'articulent. L'index ci-dessous reste la référence par numéro.
+>
+> **Frontière avec le cluster ?** L'[index des décisions système](/atlas/decisions/index-systeme/)
+> recense les ADR qui décrivent la frontière `cluster ↔ atlas` (préfixés `CL-`/`AT-`
+> pour lever la collision des numéros entre les deux dépôts).
 
 ## Index
 

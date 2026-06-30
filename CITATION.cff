@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "Si vous utilisez ce logiciel, merci de le citer comme ci-dessous."
+title: "Atlas"
+abstract: >-
+  Monorepo applicatif et métier de l'écosystème univ-lehavre : applications
+  SvelteKit, paquets TypeScript, services Hono, CLI et pipelines DataOps
+  (Python). Le socle d'infrastructure générique vit dans le dépôt cluster
+  (DOI 10.5281/zenodo.20287209) ; la frontière entre les deux est outillée
+  (ADR 0077).
+type: software
+authors:
+  - family-names: "Chasset"
+    given-names: "Pierre-Olivier"
+    affiliation: "Université Le Havre Normandie"
+repository-code: "https://github.com/univ-lehavre/atlas"
+license: MIT
+doi: 10.5281/zenodo.18310357
