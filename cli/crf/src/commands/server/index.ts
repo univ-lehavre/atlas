@@ -123,7 +123,7 @@ const command = Command.make(
 
       // Build the central Effect runtime (logger + CrfClientService) from the
       // validated env, then create the Hono app on it (écart E10, ADR 0045).
-      const runtime = makeCrfRuntime({
+      const { runtime, metrics } = makeCrfRuntime({
         port: args.port,
         crfApiUrl: crfUrl,
         crfApiToken: crfToken,
@@ -136,6 +136,7 @@ const command = Command.make(
         disableRateLimit: args.noRateLimit,
         authToken,
         runtime,
+        renderMetrics: metrics.render,
       });
 
       // Start the server

@@ -73,11 +73,35 @@ afterEach(() => {
 
 describe('makeAppLayer / makeCrfRuntime', () => {
   it('builds a runtime whose layer provides CrfClientService', async () => {
-    const runtime = makeCrfRuntime(VALID);
+    const { runtime } = makeCrfRuntime(VALID);
     try {
       const client = await runtime.runPromise(CrfClientService);
       expect(typeof client.getVersion).toBe('function');
       expect(typeof client.exportRecords).toBe('function');
+    } finally {
+      await runtime.dispose();
+    }
+  });
+
+  it('returns a no-op metrics handle when metrics are disabled', () => {
+    const { metrics } = makeCrfRuntime(VALID, {});
+    expect(metrics.enabled).toBe(false);
+    expect(metrics.render).toBeUndefined();
+  });
+
+  it('forces the runtime build at boot so /metrics is non-empty before any request', async () => {
+    // Regression guard for the lazy-binding bug: makeCrfRuntime must run an effect
+    // at boot so the metrics reader is bound to its provider. Without the forced
+    // build, render() here would throw "not bound" and return '' until traffic.
+    const { runtime, metrics } = makeCrfRuntime(VALID, { OTEL_METRICS_ENABLED: '1' });
+    try {
+      expect(metrics.enabled).toBe(true);
+      // Let the boot-time runPromise(Effect.void) settle, then scrape with NO
+      // prior request through the runtime.
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const body = await metrics.render!();
+      expect(body.length).toBeGreaterThan(0);
+      expect(body).toContain('target_info');
     } finally {
       await runtime.dispose();
     }

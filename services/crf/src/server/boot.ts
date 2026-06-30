@@ -19,10 +19,15 @@
  */
 
 import { Config, Effect, Layer } from 'effect';
-import { makeLoggerLayer, makeRuntime, type AppRuntime } from '@univ-lehavre/atlas-effect-socle';
+import {
+  makeLoggerLayer,
+  makeRuntimeWithShutdown,
+  type AppRuntime,
+} from '@univ-lehavre/atlas-effect-socle';
 import { CrfUrl, CrfToken, makeCrfClientLayer } from '@univ-lehavre/atlas-crf-client';
 import type { CrfClientService } from '@univ-lehavre/atlas-crf-client';
 import { makeTracerLayer } from './telemetry.js';
+import { makeMetrics, type MetricsHandle } from './metrics.js';
 
 /** Environment configuration of the CRF service, read once at boot. */
 export const AppConfig = Config.all({
@@ -48,13 +53,22 @@ export const loadConfig = (): AppConfigType => Effect.runSync(AppConfig);
 /**
  * Builds the service `AppLayer`: the logger (level from `LOG_LEVEL`), the
  * Effect↔OTel tracer bridge (so `Effect.withSpan` business spans correlate with
- * the HTTP spans — écart E9), and the REDCap client mounted as
+ * the HTTP spans — écart E9), the Effect↔OTel **metrics** bridge (ADR 0089;
+ * `Layer.empty` when metrics are disabled), and the REDCap client mounted as
  * `CrfClientService`. Composed once per process.
+ *
+ * @param config - Boot-time configuration.
+ * @param metricsLayer - The metrics bridge from {@link makeMetrics}; defaults to
+ *   `Layer.empty` so callers that don't wire metrics keep the prior behaviour.
  */
-export const makeAppLayer = (config: AppConfigType): Layer.Layer<CrfClientService> =>
+export const makeAppLayer = (
+  config: AppConfigType,
+  metricsLayer: Layer.Layer<never> = Layer.empty
+): Layer.Layer<CrfClientService> =>
   Layer.mergeAll(
     makeLoggerLayer(),
     makeTracerLayer(),
+    metricsLayer,
     makeCrfClientLayer({
       url: CrfUrl(config.crfApiUrl),
       token: CrfToken(config.crfApiToken),
@@ -64,6 +78,37 @@ export const makeAppLayer = (config: AppConfigType): Layer.Layer<CrfClientServic
 /** The runtime type carried through the service handlers. */
 export type CrfRuntime = AppRuntime<CrfClientService>;
 
-/** Builds the central runtime for the CRF service from its `AppLayer`. */
-export const makeCrfRuntime = (config: AppConfigType): CrfRuntime =>
-  makeRuntime(makeAppLayer(config));
+/**
+ * Builds the central runtime for the CRF service from its `AppLayer`, plus the
+ * metrics handle whose `render` feeds the `/metrics` route (ADR 0089). The
+ * handle's `layer` is merged into the `AppLayer` so Effect `Metric.*` values are
+ * exported through the Prometheus reader; its `render` is returned for the route.
+ *
+ * The runtime is built with `makeRuntimeWithShutdown` so its layer finalizers —
+ * including the metrics reader's `shutdown()` (`Metrics.layer` is scoped) — run
+ * on `SIGTERM`/`SIGINT`, symmetric with `telemetry.ts`.
+ *
+ * **Eager build when metrics are on.** `ManagedRuntime` builds its layer lazily,
+ * on the first effect run; the metrics reader is bound to its `MeterProvider`
+ * only at that build. A Prometheus scrape arriving before any runtime-backed
+ * request would otherwise see an empty `/metrics` indefinitely. So when metrics
+ * are enabled we force the build once at boot by running `Effect.void` — after
+ * which the reader is bound and `/metrics` reports the live registry.
+ *
+ * @param config - Boot-time configuration.
+ * @param env - Environment to inspect for metrics enablement (defaults to
+ *   `process.env`); injectable for tests.
+ */
+export const makeCrfRuntime = (
+  config: AppConfigType,
+  env: NodeJS.ProcessEnv = process.env
+): { readonly runtime: CrfRuntime; readonly metrics: MetricsHandle } => {
+  const metrics = makeMetrics(env);
+  const runtime = makeRuntimeWithShutdown(makeAppLayer(config, metrics.layer));
+  if (metrics.enabled) {
+    // Force the lazy ManagedRuntime to build now, binding the metrics reader to
+    // its provider (otherwise /metrics is empty until the first request).
+    void runtime.runPromise(Effect.void);
+  }
+  return { runtime, metrics };
+};

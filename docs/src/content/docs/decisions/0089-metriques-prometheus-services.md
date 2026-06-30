@@ -36,7 +36,9 @@ existant**, pas une seconde pile d'observabilité.
    ses métriques avec l'API `Metric` native d'Effect (compteurs/jauges/histogrammes),
    homogène avec le runtime Effect du dépôt
    ([ADR 0045](/atlas/decisions/0045-runtime-central-effect/)). Pas de
-   `prom-client` parallèle.
+   `prom-client` parallèle. Première métrique livrée : un compteur
+   `crf_http_requests_total{method,route,status}` (middleware Hono), où `route`
+   est la **route _templatée_** (`/api/v1/records/:id`) — jamais l'URL réelle.
 
 2. **Export via le pont OTel → Prometheus.** Un `MeterProvider` OpenTelemetry
    (`@opentelemetry/sdk-metrics`) équipé du `PrometheusExporter`
@@ -96,8 +98,16 @@ Accepted.
   déploiement — cohérent avec la posture « le code permet, le déployeur décide »
   ([ADR 0035](/atlas/decisions/0035-depot-generaliste-ouvert/)).
 - **Test de non-régression.** Le `/metrics` activé doit répondre `200` avec un
-  corps au format d'exposition Prometheus, et `404`/`503` quand désactivé — couvert
-  par un test du service, sur le modèle de `telemetry.test.ts`.
+  corps au format d'exposition Prometheus, et `503` quand désactivé — couvert par
+  des tests du service (unité + intégration via `createApp`).
+- **Forçage du build au boot (piège `ManagedRuntime`).** Le runtime Effect
+  construit son `Layer` _paresseusement_, au premier effet exécuté ; or le pont
+  `Metrics.layer` ne lie le reader Prometheus à son `MeterProvider` qu'à ce
+  moment-là. Un scrape arrivant avant tout trafic verrait donc `/metrics` **vide
+  indéfiniment**. `makeCrfRuntime` force donc le build une fois au démarrage
+  (exécution d'`Effect.void`) quand les métriques sont actives. Le runtime est
+  par ailleurs construit avec `makeRuntimeWithShutdown` pour que le finalizer du
+  reader tourne à l'arrêt (`SIGTERM`/`SIGINT`), symétrique avec les traces.
 - **Met à jour l'ADR 0033 « même PR » le jour du `ServiceMonitor`.** Quand le scrape
   sera câblé, le point de contact cluster sera reflété dans l'ADR 0033 dans la même
   PR (garde-fou existant).
