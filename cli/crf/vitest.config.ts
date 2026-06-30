@@ -5,12 +5,16 @@ export default defineConfig({
   test: {
     passWithNoTests: true,
     coverage: coverageConfig({
-      // Phase 2.6 — Seuils resserrés depuis 0 vers le réel mesuré le
-      // 2026-05-30 (64.59/64.70/78.43/62.71) moins 2 pts de marge.
-      // Renforcement Phase 3 reporté : les bin entry points (api/index,
-      // server/index) ont un setup @effect/cli plus lourd qui n'a pas
-      // pu être instrumenté dans le scope de la PR Phase 3.
-      thresholds: { statements: 62, branches: 62, functions: 76, lines: 60 },
+      // Seuils ≥ 80 % (objectif global) après exclusion des bin entry points :
+      // réel mesuré 2026-06-30 sur le code métier seul = 90.21/80.48/97.56/89.69.
+      // Marge ~1-2 pts pour absorber la volatilité du mock client REDCap.
+      thresholds: { statements: 88, branches: 80, functions: 95, lines: 88 },
+      // Bin entry points @effect/cli : orchestration pure (Command.make +
+      // Command.run + serve()/Effect.never), non instrumentable en unit — la
+      // logique testable est extraite dans `commands.ts` (couverte). Même
+      // posture que `services/crf` (exclut `src/server/index.ts`). Dérogation
+      // actée dans l'ADR 0019.
+      exclude: ['src/commands/api/index.ts', 'src/commands/server/index.ts'],
     }),
   },
 });

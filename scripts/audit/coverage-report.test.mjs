@@ -5,6 +5,8 @@ import {
   parseArgs,
   summarize,
   findOverSkippedPackages,
+  readDeclaredThreshold,
+  effectiveTarget,
 } from "./coverage-report.mjs";
 
 describe("parseArgs", () => {
@@ -141,5 +143,82 @@ describe("findOverSkippedPackages", () => {
   it("ignores packages flagged as missing coverage data", () => {
     const out = findOverSkippedPackages(rows, 0);
     assert.ok(!out.find((r) => r.name === "@univ-lehavre/atlas-d"));
+  });
+});
+
+describe("readDeclaredThreshold", () => {
+  // Faux lecteur : map chemin → contenu, lève si absent (comme readFileSync).
+  const reader = (files) => (path) => {
+    if (!(path in files)) throw new Error("ENOENT");
+    return files[path];
+  };
+
+  it("reads the lowest of the four declared thresholds (single line)", () => {
+    const src = `thresholds: { statements: 88, branches: 80, functions: 95, lines: 88 },`;
+    const t = readDeclaredThreshold(
+      "vitest.config.ts",
+      reader({ "vitest.config.ts": src }),
+    );
+    assert.equal(t, 80);
+  });
+
+  it("tolerates a multi-line thresholds block", () => {
+    const src = [
+      "thresholds: {",
+      "  statements: 22,",
+      "  branches: 12,",
+      "  functions: 15,",
+      "  lines: 25,",
+      "},",
+    ].join("\n");
+    const t = readDeclaredThreshold(
+      "vite.config.ts",
+      reader({ "vite.config.ts": src }),
+    );
+    assert.equal(t, 12);
+  });
+
+  it("falls back to the second path (vite.config) when the first is absent", () => {
+    const t = readDeclaredThreshold(
+      ["vitest.config.ts", "vite.config.ts"],
+      reader({
+        "vite.config.ts":
+          "thresholds: { statements: 50, branches: 48, functions: 32, lines: 53 }",
+      }),
+    );
+    assert.equal(t, 32);
+  });
+
+  it("returns null when no config declares a thresholds block", () => {
+    const src = `coverage: coverageConfig({ reporter: ['json'] })`;
+    const t = readDeclaredThreshold(
+      "vitest.config.ts",
+      reader({ "vitest.config.ts": src }),
+    );
+    assert.equal(t, null);
+  });
+
+  it("returns null when every config path is unreadable", () => {
+    const t = readDeclaredThreshold(["a.ts", "b.ts"], reader({}));
+    assert.equal(t, null);
+  });
+});
+
+describe("effectiveTarget", () => {
+  it("uses the declared threshold when it is below the global target", () => {
+    assert.equal(effectiveTarget(32, 80), 32);
+  });
+
+  it("uses the global target when the declared threshold is at or above it", () => {
+    assert.equal(effectiveTarget(85, 80), 80);
+    assert.equal(effectiveTarget(80, 80), 80);
+  });
+
+  it("exempts a private package with no declared threshold (returns 0)", () => {
+    assert.equal(effectiveTarget(null, 80, true), 0);
+  });
+
+  it("holds a PUBLISHED package with no declared threshold to the global target", () => {
+    assert.equal(effectiveTarget(null, 80, false), 80);
   });
 });
