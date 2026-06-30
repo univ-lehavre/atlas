@@ -72,6 +72,12 @@ jobs:
     needs: [changes]
     env:
       RUN: ${{ needs.changes.outputs.run == 'true' }}
+      # Version de Trivy + checksum sha256 de l'archive Linux-64bit, au niveau
+      # job pour être lisibles à la fois par le step d'installation (vérification
+      # d'intégrité) et par la clé de cache de la DB de vulnérabilités. Mettre à
+      # jour les deux ensemble (cf. trivy_<ver>_checksums.txt amont).
+      TRIVY_VERSION: "0.71.2"
+      TRIVY_SHA256: "0510e71e2fd39bf863856d499c8dc19feb4e7336546394c502a8f5cc7ab27460"
     permissions:
       contents: read
       # Nécessaire pour pousser sur GHCR depuis `main` (no-op sur PR).
@@ -235,18 +241,13 @@ jobs:
       # `Set up job` même derrière un `if`, la seconde échoue à l'installation.
       # Le script officiel, épinglé à une version, va dans `/usr/local/bin`
       # (déjà dans le PATH) et ne dépend d'aucun tag d'action.
+      # Installe Trivy depuis l'archive de release versionnée + vérification du
+      # checksum sha256 (TRIVY_VERSION / TRIVY_SHA256 au niveau job), même
+      # garde-fou que kubeconform (ci.yml). On évite ainsi `install.sh | sudo sh`
+      # (script amont mutable, exécuté en root dans un job à `packages:write` +
+      # `id-token:write`).
       - name: Install Trivy
         if: env.RUN == 'true'
-        env:
-          TRIVY_VERSION: "0.71.2"
-          # Checksum sha256 de l'archive Linux-64bit, épinglé EN DUR (même
-          # garde-fou que kubeconform dans ci.yml). On télécharge l'archive de
-          # release versionnée et on vérifie son intégrité AVANT extraction,
-          # plutôt que de piper `install.sh | sudo sh` (script amont mutable,
-          # exécuté en root dans un job à `packages:write` + `id-token:write`).
-          # Mettre à jour ce SHA en même temps que TRIVY_VERSION (cf.
-          # trivy_<ver>_checksums.txt amont).
-          TRIVY_SHA256: "0510e71e2fd39bf863856d499c8dc19feb4e7336546394c502a8f5cc7ab27460"
         run: |
           set -euo pipefail
           url="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
@@ -260,9 +261,35 @@ jobs:
       # Comportement défini par l'ADR 0069 : rapport SARIF, blocage sur
       # CRITICAL/HIGH, vulnérabilités sans correctif ignorées, exceptions amont
       # consignées dans `.trivyignore` versionné.
+      # Cache la base de vulnérabilités Trivy (~/.cache/trivy) entre les jobs de
+      # la matrice et entre les runs. Sans cache, CHACUN des 7 jobs re-télécharge
+      # la DB complète depuis ghcr.io/aquasecurity/trivy-db à chaque run — coût
+      # réseau répété et exposition au rate-limit GHCR (cause classique de
+      # `failed to download vulnerability DB`). Clé datée : la DB se rafraîchit au
+      # plus une fois par jour, mais est partagée intra-journée. `restore-keys`
+      # dégrade vers la dernière DB du même OS si la clé exacte manque (mieux
+      # qu'un cold start). `today` est calculé par un step (l'horloge du runner
+      # est réelle).
+      - name: Compute cache date
+        id: date
+        if: env.RUN == 'true'
+        run: echo "today=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Trivy vulnerability DB
+        if: env.RUN == 'true'
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ env.TRIVY_VERSION }}-${{ steps.date.outputs.today }}
+          restore-keys: |
+            trivy-db-${{ env.TRIVY_VERSION }}-
+
       - name: Scan image for vulnerabilities
         id: scan
         if: env.RUN == 'true'
+        env:
+          # Pointe Trivy vers le répertoire mis en cache ci-dessus.
+          TRIVY_CACHE_DIR: ~/.cache/trivy
         run: |
           trivy image \
             --format sarif \
