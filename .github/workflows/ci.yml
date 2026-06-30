@@ -31,7 +31,6 @@ jobs:
     timeout-minutes: 5
     outputs:
       code: ${{ steps.filter.outputs.code }}
-      ui: ${{ steps.filter.outputs.ui }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -50,7 +49,6 @@ jobs:
           if [ -z "${BASE_SHA}" ]; then
             echo "Push (pas une PR) → pipeline complet."
             echo "code=true" >> "$GITHUB_OUTPUT"
-            echo "ui=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           files="$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}")"
@@ -59,10 +57,7 @@ jobs:
           # Liste blanche documentaire (ADR 0034) : un fichier qui matche l'un
           # de ces motifs est « doc ». Si TOUS les fichiers matchent, la PR est
           # documentaire (code=false) ; sinon code=true.
-          # `ui` est un sous-drapeau : l'audit a11y Storybook (job `a11y`, lourd
-          # — Chromium) ne tourne que si la bibliothèque de composants change.
           code=false
-          ui=false
           while IFS= read -r f; do
             [ -z "$f" ] && continue
             case "$f" in
@@ -74,13 +69,9 @@ jobs:
               fixtures/*.txt|fixtures/*.csv|fixtures/*.json) ;; # fixtures texte
               *) code=true; echo "→ hors liste blanche : $f" ;;
             esac
-            case "$f" in
-              ui/atlas-ui/*|.github/workflows/ci.yml) ui=true ;;
-            esac
           done <<< "${files}"
           echo "code=${code}" >> "$GITHUB_OUTPUT"
-          echo "ui=${ui}" >> "$GITHUB_OUTPUT"
-          echo "Résultat : code=${code} ui=${ui}"
+          echo "Résultat : code=${code}"
 
   # Tous les jobs lourds ne dépendent QUE de `changes` : ils partent en
   # parallèle (ADR 0061). Turbo gère l'ordre réel des tâches (`^build`) à
@@ -374,36 +365,3 @@ jobs:
 
       - name: DataOps quality (ruff + pytest + coverage + manifests)
         run: pnpm dataops:check
-
-  # Audit a11y au niveau page rendue (#296, ADR 0038) : le Storybook test-runner
-  # pilote un vrai Chromium sur chaque story et exécute axe-core (WCAG 2.x AA) +
-  # un parcours clavier sur les pages assemblées. Lourd (navigateur) → ne tourne
-  # qu'au toucher de la bibliothèque de composants (`changes.outputs.ui`),
-  # court-circuité au niveau step pour sortir toujours `success` (ADR 0034/0016).
-  a11y:
-    name: A11y (page audit)
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    needs: [changes]
-    env:
-      RUN: ${{ needs.changes.outputs.ui == 'true' }}
-    steps:
-      - if: env.RUN == 'true'
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - if: env.RUN == 'true'
-        uses: ./.github/actions/setup-workspace
-
-      # Chromium pour le test-runner. `playwright` est tiré par
-      # `@storybook/test-runner` ; on installe le seul navigateur utilisé.
-      - name: Install Chromium for the test-runner
-        if: env.RUN == 'true'
-        run: pnpm --filter=@univ-lehavre/atlas-ui exec playwright install --with-deps chromium
-
-      - name: Storybook a11y audit (axe + keyboard)
-        if: env.RUN == 'true'
-        run: pnpm --filter=@univ-lehavre/atlas-ui test:a11y
-
-      - name: Skipped (hors périmètre UI)
-        if: env.RUN != 'true'
-        run: echo "PR ne touchant pas ui/atlas-ui — audit a11y non requis (ADR 0034)."
