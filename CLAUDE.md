@@ -41,8 +41,11 @@ chore, revert`.
   une **branche dédiée partant de `main`**, puis **PR**.
 - **Merge commit** imposé sur `main` (pas de squash,
   [ADR 0053](docs/src/content/docs/decisions/0053-strategie-merge-commit-main.md)) :
-  **chaque commit** d'une PR doit être propre (la CI valide commitlint sur toute
-  la plage). Soigner/regrouper ses commits avant le merge.
+  comme aucun écrasement ne nettoie l'historique, **chaque commit** d'une PR doit
+  être propre. commitlint est appliqué par le **hook local `commit-msg`** (ADR
+  0014/0015), pas rejoué en CI sur la plage de la PR — soigner/regrouper ses
+  commits avant le merge reste donc à la charge de l'auteur (mitigé par la revue
+  de code et la branch protection).
 
 ## Décisions structurantes — via ADR
 

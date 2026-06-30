@@ -26,15 +26,21 @@ qui sert de **mirror** et de fallback.
 ## Décision
 
 Toutes les releases (paquets `packages/*` et `cli/*` non `private`)
-sont publiées **avec provenance OIDC** sur **deux registres** :
+sont publiées sur **deux registres** :
 
-- **npm public** (`registry.npmjs.org`), registre primaire ;
-- **GitHub Packages** (`npm.pkg.github.com`), registre secondaire.
+- **npm public** (`registry.npmjs.org`), registre primaire, **avec
+  provenance OIDC** ;
+- **GitHub Packages** (`npm.pkg.github.com`), registre secondaire, en
+  **mirror de disponibilité, sans provenance**.
 
-L'option `--provenance` est activée des deux côtés. Aucun `NPM_TOKEN`
-long-terme n'est stocké côté GitHub Actions : la publication utilise
-`id-token: write` (OIDC) côté GitHub Actions et un trust npm
-préalablement configuré.
+**La provenance npm n'est attachée qu'au registre primaire.** L'attestation
+in-toto signée OIDC (`npm audit signatures`) n'est honorée que par
+`registry.npmjs.org` ; sur GitHub Packages, `--provenance` n'apporte rien et
+peut faire **échouer** la publication côté serveur. La boucle GitHub Packages
+de [`publish-packages.sh`](https://github.com/univ-lehavre/atlas/blob/main/scripts/release/publish-packages.sh)
+force donc `NPM_CONFIG_PROVENANCE=false`. Aucun `NPM_TOKEN` long-terme n'est
+stocké côté GitHub Actions : la publication utilise `id-token: write` (OIDC) et
+un trust npm préalablement configuré.
 
 Le consommateur vérifie la chaîne avec :
 
@@ -79,3 +85,10 @@ ne vérifient pas encore la provenance.
   (`packages/`, `cli/`, `services/`, `config/`, `assets/`) — un bug
   antérieur n'itérait que sur `packages/`, laissant les CLIs hors de
   GitHub Packages.
+- La boucle GitHub Packages **ne masque plus tout échec** : elle tolère le seul
+  cas bénin (version déjà publiée → « cannot publish over ») et **propage** les
+  vraies erreurs (token invalide, scope manquant, réseau) via un code de sortie
+  agrégé — au lieu de l'ancien `|| true` global qui sortait un faux « ✅ » même
+  quand un paquet n'avait jamais atteint le mirror. La boucle tourne dans le
+  shell courant (`done < <(find …)`, pas `find … | while`) pour que ce code de
+  sortie **survive** au sous-shell.
