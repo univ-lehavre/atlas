@@ -198,11 +198,17 @@ jobs:
           version="$(node -p "require('./${dir}/package.json').version")"
           echo "version=${version}" >> "$GITHUB_OUTPUT"
 
-      # Build. Sur PR : `load` l'image localement (pour le smoke), pas de push.
-      # Sur `main` : push avec tags SHA + version.
-      - name: Build image (load for smoke)
-        id: build-pr
-        if: env.RUN == 'true' && github.event_name == 'pull_request'
+      # Build local pour le scan + le smoke, sur PR ET main. `load: true` charge
+      # l'image dans le démon, ce qui EXIGE un build mono-plateforme SANS
+      # attestation : `provenance`/`sbom` produiraient une manifest-list, que
+      # l'exporteur `docker` (load) ne sait pas exporter — `docker exporter does
+      # not currently support exporting manifest lists`. Les attestations sont
+      # donc portées par le build de push (ci-dessous), pas par celui-ci.
+      # L'ordre est imposé par l'ADR 0069 : on construit en local, on SCANNE,
+      # et seulement ensuite (sur main) on pousse — jamais l'inverse.
+      - name: Build image (load for scan + smoke)
+        id: build-local
+        if: env.RUN == 'true'
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
@@ -212,44 +218,6 @@ jobs:
           tags: ${{ matrix.image }}:smoke
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
-
-      - name: Build and push image
-        id: build
-        if: env.RUN == 'true' && github.event_name == 'push'
-        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
-        with:
-          context: .
-          file: ${{ matrix.dockerfile }}
-          load: true
-          push: true
-          # SEULEMENT des tags GHCR (registre où l'on est loggé). Le tag local
-          # `${{ matrix.image }}:smoke` ne doit PAS figurer ici : sans préfixe de
-          # registre, Docker le résout en `docker.io/library/<image>` et tente de le
-          # pousser sur Docker Hub → 401 (insufficient scopes). Il est recréé en
-          # local par un `docker tag` juste avant le smoke (étape suivante).
-          tags: |
-            ${{ steps.meta.outputs.tags }}
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${{ steps.ver.outputs.version }}
-          labels: ${{ steps.meta.outputs.labels }}
-          # Provenance SLSA (attestation in-toto) + SBOM CycloneDX attachés à
-          # l'image, adressés par son digest (ADR 0069). C'est le volet
-          # « provenance/SBOM par image » : build-push-action les rattache au
-          # manifeste poussé sur GHCR au moment du push.
-          provenance: true
-          sbom: true
-          cache-from: type=gha,scope=${{ matrix.name }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
-
-      # Tag local `:smoke` pour l'étape de healthcheck (commune PR/main). Sur main,
-      # l'image vient d'être `load`ée sous ses tags GHCR ; on retague le tag SHA
-      # (toujours présent, déterministe) en `:smoke` localement, sans le repousser. Sur
-      # PR, `:smoke` est déjà produit par le build PR (load, push:false) → step sauté.
-      - name: Tag image for smoke (push only)
-        if: env.RUN == 'true' && github.event_name == 'push'
-        run: |
-          docker tag \
-            "ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:sha-${{ github.sha }}" \
-            "${{ matrix.image }}:smoke"
 
       # Scan de vulnérabilité de l'image (ADR 0069 — geste à plus fort retour
       # sur effort, livré EN PREMIER, avant toute signature). Tourne sur PR
@@ -343,6 +311,32 @@ jobs:
             exit 1
           fi
           docker rm -f "${cid}" >/dev/null 2>&1 || true
+
+      # Push ENSUITE (ADR 0069 — ordre imposé : scan + smoke d'abord, registre
+      # ensuite). UNIQUEMENT sur `main`. Ce build-ci porte les attestations
+      # (`provenance`/`sbom` → manifest-list), incompatibles avec le `load` du
+      # build local plus haut : c'est pour cela qu'ils sont sur DEUX builds
+      # distincts. Le cache GHA (couches partagées avec le build local) rend ce
+      # second build quasi gratuit. Il expose le `digest` que cosign signe.
+      # Tags : SEULEMENT des tags GHCR (registre où l'on est loggé) — pas le tag
+      # local `:smoke`, que Docker résoudrait en `docker.io/library/<image>`
+      # (push Docker Hub → 401).
+      - name: Push image (attested)
+        id: build
+        if: env.RUN == 'true' && github.event_name == 'push'
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}:${{ steps.ver.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: true
+          sbom: true
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
 
       # Signature ENSUITE (ADR 0069 — ordre imposé : le scan d'abord, la
       # signature ensuite). UNIQUEMENT sur `main` : aucun jeton OIDC de
