@@ -42,30 +42,18 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
+          # Historique complet requis : `docs:build` dérive les statistiques du
+          # dépôt de `git log` (un checkout superficiel fausserait les stats).
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
-
-      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version-file: .nvmrc
-          cache: pnpm
-
-      - name: Create SvelteKit env files
-        run: |
-          for app in apps/amarre apps/ecrin apps/find-an-expert apps/sillage; do
-            cp "$app/.env.example" "$app/.env" 2>/dev/null || true
-          done
-
-      - run: pnpm install --frozen-lockfile
-
-      - name: Turbo cache
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
-        with:
-          path: .turbo
-          key: turbo-v2-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            turbo-v2-${{ runner.os }}-
+      # Réutilise l'action composite (pnpm + Node + .env SvelteKit + install +
+      # cache Turbo) au lieu de réimplémenter le préambule. Évite la dérive
+      # observée ici : pin pnpm divergent (v6.0.8/v6.0.9) et surtout une clé de
+      # cache Turbo `turbo-v2-…-${{ github.sha }}` JAMAIS réutilisée (un SHA est
+      # unique par commit — anti-pattern documenté dans l'action composite). La
+      # composite porte la clé de contenu `turbo-v3-…-hashFiles(…)`, partagée et
+      # cohérente avec ci.yml.
+      - uses: ./.github/actions/setup-workspace
 
       # Pipeline Astro Starlight (ADR 0036) : génère les statistiques et la carte
       # des paquets, puis construit le site. Ne lit que les sources (README,

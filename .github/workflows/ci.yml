@@ -153,6 +153,12 @@ jobs:
       # services/crf, packages/atlas-stats) ; sera remontée vers 80
       # quand les exemptions résiduelles (cli/net, find-an-expert)
       # seront renforcées à leur tour.
+      #
+      # DIVERGENCE ASSUMÉE avec le pre-push (lefthook.yml : `coverage:report 80`).
+      # Le 40 est un plancher CI TRANSITOIRE (cf. ci-dessus) ; le pre-push exige
+      # déjà 80 pour ne pas relâcher l'anti-régression locale des ~30 paquets
+      # ≥ 80. Les deux convergeront vers 80 ensemble — toute modification d'un
+      # seuil doit mettre à jour L'AUTRE (garder ce repère croisé).
       - if: env.RUN == 'true'
         run: pnpm coverage:report 40
 
