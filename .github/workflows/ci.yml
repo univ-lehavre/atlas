@@ -207,18 +207,32 @@ jobs:
     # stats) — aucun artefact buildé du workspace n'est requis (cf. step
     # ci-dessous). Il peut donc tourner en parallèle de Build.
     needs: [changes]
+    # Ce job VALIDE que le site de doc se construit avant merge (sur PR). Sur un
+    # push `main`, le workflow `docs.yml` reconstruit ET déploie le même site :
+    # le rebuild ici serait une double construction pure (≈1-2 min, `docs:build`
+    # n'étant pas mis en cache par Turbo). On court-circuite donc au niveau du
+    # STEP en `push` (le job reste présent et sort `success`), pas au niveau job.
+    env:
+      RUN: ${{ github.event_name == 'pull_request' }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - if: env.RUN == 'true'
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
 
-      - uses: ./.github/actions/setup-workspace
+      - if: env.RUN == 'true'
+        uses: ./.github/actions/setup-workspace
 
       # `docs:build` ne lit que les sources (README de paquets, package.json
       # pour la carte, historique git pour les stats) — aucun artefact buildé.
       # Pas de build workspace préalable nécessaire.
       - name: Build Astro Starlight site
+        if: env.RUN == 'true'
         run: pnpm docs:build
+
+      - name: Skipped (push main — docs.yml reconstruit et déploie déjà)
+        if: env.RUN != 'true'
+        run: echo "Push main, build de doc délégué à docs.yml (déploiement) — pas de rebuild ici."
 
   audit:
     name: Audit
@@ -295,10 +309,12 @@ jobs:
         name: Code duplication
         run: pnpm audit:duplicates
 
-      - if: env.RUN == 'true'
-        name: Outdated dependencies
-        run: pnpm audit:versions
-
+      # `audit:versions` (taze) retiré du gate : il interroge le réseau pour
+      # lister les deps obsolètes mais NE BLOQUE PAS (pas de `--fail-on-outdated`,
+      # sortie 0 même sur deps en retard) — c'est de l'information, redondante
+      # avec Dependabot (PR hebdomadaire groupée par écosystème). On épargne le
+      # coût réseau par run sans perdre aucun garde-fou. La commande reste
+      # disponible en local (`pnpm audit:versions`) pour un audit ponctuel.
       - if: env.RUN == 'true'
         name: Dependency specifier coherence
         run: pnpm audit:dep-versions
