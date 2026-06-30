@@ -38,10 +38,16 @@ des vérifications statiques ou un smoke-test au banc pourront être ajoutés
 
 ## Décision
 
-> **Cette page est la source de vérité unique du contrat d'interface entre
-> l'application `atlas` et le cluster qui l'exploite.** Les deux côtés s'y
-> conforment ; tout changement d'un point de contact se reflète ici **dans la
-> même PR** que le changement de code ou d'infrastructure.
+> **Cette page est la _vue applicative dérivée_ du contrat d'interface entre
+> l'application `atlas` et le cluster qui l'exploite.** La source de vérité du
+> contrat est **publiée par le dépôt `cluster`**
+> ([ADR cluster 0043](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0043-contrat-interface-cluster-atlas.md),
+> fichiers machine-lisibles `contract/*.example.yaml`) ; cette page en est le
+> **miroir côté atlas** — elle énonce les mêmes points de contact, du point de
+> vue de ce que l'application _attend_ et _fournit_. Les deux côtés s'y conforment ;
+> tout changement d'un point de contact se reflète ici **dans la même PR** que le
+> changement de code, et l'alignement avec la source `cluster` est tenu par
+> discipline (la frontière est outillée, [ADR 0077](/atlas/decisions/0077-topologie-deux-depots-cluster-atlas/)).
 
 Les valeurs concrètes (noms d'hôtes, plages d'IP, tailles) sont **propres à
 chaque instance** et relèvent de sa **configuration**, pas du code générique
