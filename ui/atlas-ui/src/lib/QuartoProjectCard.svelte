@@ -40,14 +40,16 @@
       {project.title}
     </h3>
     <p class="card-subtitle fst-italic text-body small m-0">{project.lead}</p>
-    <p class="card-text text-secondary small m-0">{project.abstract}</p>
+    <p class="card-text text-body-secondary small m-0">{project.abstract}</p>
     <ul
       class="list-unstyled d-flex flex-wrap gap-1 m-0 mt-1"
       aria-label="Disciplines"
     >
       {#each project.tags as tag (tag)}
         <li>
-          <span class="badge bg-light text-secondary text-uppercase fw-normal">
+          <span
+            class="badge bg-light text-body-secondary text-uppercase fw-normal"
+          >
             {tag}
           </span>
         </li>

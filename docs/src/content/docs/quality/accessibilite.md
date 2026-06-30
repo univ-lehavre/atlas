@@ -35,13 +35,14 @@ l'EN 301 549 ([ADR 0038](/atlas/decisions/0038-epingler-niveau-wcag-tests-a11y/)
 L'accessibilité n'est pas laissée à l'appréciation : elle est **contrôlée par la
 chaîne de qualité**, comme le reste.
 
-| Pratique                        | Comment c'est appliqué                                                                                                                                                                                                                |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Règles a11y au lint**         | Le preset Svelte strict active les règles d'accessibilité de Svelte (`a11y-*`) via `eslint-plugin-svelte` (`flat/recommended`) — `config/shared-config/eslint/svelte.js`, [ADR 0020](/atlas/decisions/0020-svelte-eslint-strict/).    |
-| **Type explicite des boutons**  | `svelte/button-has-type` en `error` : tout `<button>` déclare son `type`, ce qui évite les soumissions de formulaire implicites et clarifie le rôle de l'élément.                                                                     |
-| **Tests d'accessibilité (axe)** | Des tests dédiés `*.a11y.test.ts` exécutent **axe-core** (via `vitest-axe`) sur les composants rendus et échouent en cas de violation — `ui/atlas-ui/tests/`, `apps/find-an-expert/`.                                                 |
-| **Niveau WCAG épinglé**         | Les tests ciblent explicitement le **WCAG 2.x niveau AA** (config `runOnly` partagée `@univ-lehavre/atlas-shared-config/a11y`, importée par les deux codebases) — [ADR 0038](/atlas/decisions/0038-epingler-niveau-wcag-tests-a11y/). |
-| **Projet de test isolé**        | Les tests a11y tournent dans un projet vitest séparé (`a11y`), pour les lancer et les suivre indépendamment des tests unitaires — `apps/find-an-expert/vite.config.ts`.                                                               |
+| Pratique                        | Comment c'est appliqué                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Règles a11y au lint**         | Le preset Svelte strict active les règles d'accessibilité de Svelte (`a11y-*`) via `eslint-plugin-svelte` (`flat/recommended`) — `config/shared-config/eslint/svelte.js`, [ADR 0020](/atlas/decisions/0020-svelte-eslint-strict/).                                                                                                                                                                                              |
+| **Type explicite des boutons**  | `svelte/button-has-type` en `error` : tout `<button>` déclare son `type`, ce qui évite les soumissions de formulaire implicites et clarifie le rôle de l'élément.                                                                                                                                                                                                                                                               |
+| **Tests d'accessibilité (axe)** | Des tests dédiés `*.a11y.test.ts` exécutent **axe-core** (via `vitest-axe`) sur les composants rendus et échouent en cas de violation — `ui/atlas-ui/tests/`, `apps/find-an-expert/`.                                                                                                                                                                                                                                           |
+| **Niveau WCAG épinglé**         | Les tests ciblent explicitement le **WCAG 2.x niveau AA** (config `runOnly` partagée `@univ-lehavre/atlas-shared-config/a11y`, importée par les deux codebases) — [ADR 0038](/atlas/decisions/0038-epingler-niveau-wcag-tests-a11y/).                                                                                                                                                                                           |
+| **Projet de test isolé**        | Les tests a11y tournent dans un projet vitest séparé (`a11y`), pour les lancer et les suivre indépendamment des tests unitaires — `apps/find-an-expert/vite.config.ts`.                                                                                                                                                                                                                                                         |
+| **Audit a11y page rendue**      | Le Storybook test-runner pilote un **vrai Chromium** sur chaque story et exécute **axe-core** (même cible WCAG 2.x AA) ; sur les **pages assemblées** (`Pages/…`) il ajoute un **parcours clavier** (focus atteignable et visible). Ce que JSDOM ne voit pas : contraste effectif, focus, page complète — `ui/atlas-ui/.storybook/test-runner.ts`, job CI `a11y` ([ADR 0034](/atlas/decisions/0034-ci-adaptative-par-chemin/)). |
 
 ## Appliqué dans les composants
 
@@ -64,11 +65,16 @@ attributs d'accessibilité directement dans le balisage.
 
 Par souci d'honnêteté, ces points sont **connus et tracés**, pas résolus :
 
-- **Audit des pages assemblées.** Les tests axe couvrent les **composants** ;
-  un audit au niveau **page rendue** (parcours clavier complet, contraste global)
-  n'est pas encore systématisé.
-- **Aucun outil de mesure externe** (Lighthouse, pa11y) n'est branché en CI : la
-  couverture repose aujourd'hui sur axe-core au niveau composant.
+- **Couverture par composant encore partielle.** L'audit page-rendue et les
+  tests par composant existent, mais tous les composants ne sont pas encore
+  couverts un par un (suivi : couverture `atlas-ui` et `find-an-expert`).
+- **Pas d'outil de mesure externe** (Lighthouse, pa11y) — **choix assumé** : ces
+  outils reposent sur le même moteur `axe-core` que le dépôt exécute déjà (un
+  spike l'a tranché, [note 2026-06-30](/atlas/audit/2026-06-30-spike-outil-a11y-externe/)).
+  La couverture page-rendue passe par `@axe-core`/le test-runner, pas par un
+  second scanner.
+- **Tests manuels.** L'automatique ne couvre qu'une part des critères WCAG ;
+  l'audit humain (lecteurs d'écran, navigation réelle) reste nécessaire.
 
 Ces éléments rejoindront cette page au fur et à mesure de leur mise en œuvre.
 Leur avancement est suivi dans le milestone

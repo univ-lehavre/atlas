@@ -121,10 +121,17 @@
     bottom: 0;
     margin: 0;
   }
+  /* Pastille visuelle de 0.5rem, mais zone tactile portée à 1.5rem (24px) pour
+     satisfaire WCAG 2.5.8 « Target Size (Minimum) » (axe `target-size`) : un
+     padding transparent agrandit la cible cliquable sans grossir le point.
+     `background-clip: content-box` confine la couleur de fond à la pastille. */
   .carousel-indicators :global(button) {
+    box-sizing: border-box;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0.5rem;
     background-color: rgba(255, 255, 255, 0.8);
-    width: 0.5rem;
-    height: 0.5rem;
+    background-clip: content-box;
     border-radius: 50%;
     border: none;
   }

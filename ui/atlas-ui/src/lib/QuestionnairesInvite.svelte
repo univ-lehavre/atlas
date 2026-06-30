@@ -18,19 +18,23 @@
   <div class="container">
     <header class="text-center mb-4">
       <h2 class="h4 mb-1 text-primary-emphasis">{heading}</h2>
-      <p class="text-secondary m-0 small">{intro}</p>
+      <p class="text-body-secondary m-0 small">{intro}</p>
     </header>
     <ul class="row row-cols-1 row-cols-md-2 g-3 list-unstyled m-0 invite-grid">
       {#each entries as entry (entry.id)}
         <li class="col">
           {#if entry.disabled}
-            <div class="card h-100 shadow-sm opacity-75">
+            <!-- `bg-body-secondary` plutôt que `opacity-75` pour signifier l'état
+                 « à venir » : l'opacité réduisait le contraste du texte sous le
+                 seuil WCAG AA (axe `color-contrast`) ; un fond grisé garde le
+                 texte lisible tout en distinguant la carte désactivée. -->
+            <div class="card h-100 shadow-sm bg-body-secondary">
               <div class="card-body">
                 <h3 class="card-title h6 fw-bold">{entry.label}</h3>
-                <p class="card-text small text-secondary">
+                <p class="card-text small text-body-secondary">
                   {entry.description}
                 </p>
-                <p class="card-text small fst-italic text-muted m-0">
+                <p class="card-text small fst-italic text-body-secondary m-0">
                   Coming soon
                 </p>
               </div>
@@ -42,7 +46,7 @@
             >
               <div class="card-body">
                 <h3 class="card-title h6 fw-bold">{entry.label}</h3>
-                <p class="card-text small text-secondary">
+                <p class="card-text small text-body-secondary">
                   {entry.description}
                 </p>
                 <p

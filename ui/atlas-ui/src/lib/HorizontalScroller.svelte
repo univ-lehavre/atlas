@@ -91,9 +91,14 @@
     {/if}
 
     <div class="position-relative hs-root">
+      <!-- role="group" : un <div> générique ne peut pas porter `aria-label`
+           (axe `aria-prohibited-attr`). Le scroller est un regroupement nommé
+           d'éléments, navigable au clavier via les flèches → `group` est le rôle
+           correct et autorise le nom accessible. -->
       <div
         class={`overflow-auto ${snap === "none" ? "" : "snap-x"}`}
         style={`scroll-padding-inline: ${snapPadding}`}
+        role="group"
         aria-label={ariaLabel}
         bind:this={scroller}
         onscroll={updateArrows}
