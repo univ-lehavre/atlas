@@ -121,7 +121,8 @@ jobs:
             # Un seul tarball par itération : on vide la zone de travail avant.
             rm -f "$work"/*.tgz "$work"/*.tgz.* 2>/dev/null || true
             pnpm pack --filter "${name}" --pack-destination "$work" >/dev/null
-            tgz="$(ls "$work"/*.tgz | head -1)"
+            # `find` plutôt que `ls` (SC2012) : un seul tarball dans la zone vidée.
+            tgz="$(find "$work" -maxdepth 1 -name '*.tgz' | head -1)"
             sha256sum "$tgz" > "${tgz}.sha256"
             # Signature keyless : .sig (signature) + .pem (certificat éphémère).
             cosign sign-blob --output-signature "${tgz}.sig" --output-certificate "${tgz}.pem" "$tgz"
