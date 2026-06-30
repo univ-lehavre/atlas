@@ -22,9 +22,11 @@ startTelemetry();
 
 // Read config and build the central Effect runtime once, at boot (écart
 // E10/E8/E7, ADR 0045): the AppLayer wires the logger + CrfClientService that
-// the routes depend on by injection.
+// the routes depend on by injection. The runtime also carries the metrics
+// pipeline (ADR 0089): its bridge layer is already merged into the AppLayer, and
+// its `render` feeds the /metrics route below. No-op safe when metrics are off.
 const env = loadConfig();
-const runtime = makeCrfRuntime(env);
+const { runtime, metrics } = makeCrfRuntime(env);
 
 // Create and start the server
 const app = createApp({
@@ -32,6 +34,7 @@ const app = createApp({
   disableRateLimit: env.disableRateLimit,
   authToken: env.authToken,
   runtime,
+  renderMetrics: metrics.render,
 });
 
 console.warn(`Starting CRF service on port ${String(env.port)}...`);

@@ -73,7 +73,7 @@ afterEach(() => {
 
 describe('makeAppLayer / makeCrfRuntime', () => {
   it('builds a runtime whose layer provides CrfClientService', async () => {
-    const runtime = makeCrfRuntime(VALID);
+    const { runtime } = makeCrfRuntime(VALID);
     try {
       const client = await runtime.runPromise(CrfClientService);
       expect(typeof client.getVersion).toBe('function');
@@ -81,6 +81,11 @@ describe('makeAppLayer / makeCrfRuntime', () => {
     } finally {
       await runtime.dispose();
     }
+  });
+
+  it('returns a no-op metrics handle when metrics are disabled', () => {
+    const { metrics } = makeCrfRuntime(VALID, {});
+    expect(metrics.enabled).toBe(false);
   });
 
   it('makeAppLayer does not throw for a valid config', () => {

@@ -15,6 +15,8 @@ import { Scalar } from '@scalar/hono-api-reference';
 import { apiRateLimiter } from './middleware/rate-limit.js';
 import { bearerAuth } from './middleware/auth.js';
 import { makeHealthRoutes } from './routes/health.js';
+import { makeMetricsRoutes } from './routes/metrics.js';
+import type { RenderMetrics } from './metrics.js';
 import { makeProjectRoutes } from './routes/project.js';
 import { makeRecordsRoutes } from './routes/records.js';
 import { makeUsersRoutes } from './routes/users.js';
@@ -41,6 +43,13 @@ export interface CreateAppOptions {
    * handlers run their Effects through it (écart E10, ADR 0045).
    */
   readonly runtime: CrfRuntime;
+  /**
+   * Renders the Prometheus exposition text for `GET /metrics`, or `undefined`
+   * when metrics are disabled (the route then answers `503`). Built at boot by
+   * `makeMetrics` ([metrics.ts](./metrics.ts), ADR 0089). Optional: when omitted
+   * (tests, tooling) the `/metrics` route reports metrics as disabled.
+   */
+  readonly renderMetrics?: RenderMetrics;
 }
 
 const apiRoutes = [
@@ -104,7 +113,7 @@ const errorHandler: Parameters<Hono['onError']>[0] = (err, c) => {
  * @returns Configured Hono application
  */
 export const createApp = (options: CreateAppOptions): Hono => {
-  const { port, disableRateLimit = false, authToken, runtime } = options;
+  const { port, disableRateLimit = false, authToken, runtime, renderMetrics } = options;
 
   const app = new Hono();
 
@@ -123,6 +132,9 @@ export const createApp = (options: CreateAppOptions): Hono => {
   app.use('*', traceBlocker);
 
   app.route('/health', makeHealthRoutes(runtime));
+  // Public, unauthenticated, like /health (ADR 0089): Prometheus scrapes it
+  // without a Bearer token. `undefined` render (metrics disabled) → 503.
+  app.route('/metrics', makeMetricsRoutes(renderMetrics));
   app.route('/api/v1/project', makeProjectRoutes(runtime));
   app.route('/api/v1/records', makeRecordsRoutes(runtime));
   app.route('/api/v1/users', makeUsersRoutes(runtime));
