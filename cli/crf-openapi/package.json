@@ -63,6 +63,7 @@
   "dependencies": {
     "@clack/prompts": "~1.6.0",
     "@univ-lehavre/atlas-crf-core": "workspace:*",
+    "fflate": "~0.8.3",
     "picocolors": "~1.1.1",
     "yaml": "~2.9.0"
   },
