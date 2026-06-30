@@ -90,9 +90,12 @@ Accepted.
 
 ## Conséquences
 
-- **Garde-fou « même PR » Python.** Toute mise à jour des `Dockerfile` de `dataops/`
-  doit conserver `python:3.10-slim` ; le commentaire au-dessus du `FROM` porte
-  désormais cette consigne pour le relecteur (humain ou Dependabot).
+- **Garde-fou Python à deux niveaux.** _Mécanique_ : `dependabot.yml` ignore les
+  bumps **major et minor** de version pour les images `python` et `php` (écosystème
+  `docker`) — seul le digest (patch sécurité du même tag) est proposé ; un
+  `3.10` → `3.14` ne peut plus être ouvert automatiquement. _Documentaire_ : le
+  commentaire au-dessus du `FROM` rappelle la consigne au relecteur. (`node` n'a pas
+  besoin de règle : son tag est interpolé par `ARG`, non bumpé par Dependabot.)
 - **Surface CVE 3.10 assumée.** `python:3.10-slim` traîne des vulnérabilités sans
   correctif amont ; elles relèvent du `.trivyignore` tracé (ADR 0069), **pas** d'un
   changement de _minor_. Les images `dataops/` ne passent pas le gate Trivy de

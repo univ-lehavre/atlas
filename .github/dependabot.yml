@@ -159,6 +159,25 @@ updates:
     commit-message:
       prefix: "ci"
       include: "scope"
+    ignore:
+      # Garde de portabilité (ADR 0088). Les `FROM python:` / `php:` portent un
+      # tag LITTÉRAL (`python:3.10-slim@sha256:…`) : Dependabot en parse la
+      # version et peut proposer un bump de tag — c'est ainsi que les images
+      # dataops sont passées à tort de `3.10` à `3.14`, cassant la parité Dagster
+      # (verrou chart Helm 1:1, ADR cluster 0006) et `requires-python <3.11`. On
+      # NE veut QUE les patches de sécurité du MÊME tag (mise à jour du digest,
+      # toujours autorisée) : on ignore donc tout bump major ET minor de version.
+      # `php` est aligné sur l'upstream REDCap, même logique de verrou amont.
+      # `node` n'a pas besoin de règle : son tag est interpolé par ARG
+      # (`node:${NODE_VERSION}-…`), que Dependabot ne bumpe pas (seul le digest).
+      - dependency-name: "python"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+      - dependency-name: "php"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
     groups:
       # Tous les bumps de digests d'images dans une seule PR par run.
       docker-images:
