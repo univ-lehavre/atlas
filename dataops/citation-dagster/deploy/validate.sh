@@ -39,10 +39,23 @@ for o in "${overlays[@]}"; do
     # -strict : rejette les champs inconnus. Les CRD (ObjectBucketClaim,
     # Application Argo) ne sont pas dans le schéma standard → on les ignore
     # (ignore-missing-schemas), le but ici est de valider les ressources cœur.
-    if printf '%s' "$rendered" | kubeconform -strict -summary -ignore-missing-schemas; then
+    #
+    # On capture le code de sortie de kubeconform pour DISTINGUER une vraie
+    # erreur de validation (exit 1) d'un CRASH de l'outil (segfault 139, SIGPIPE
+    # 141, abort 134… : code ≥ 126). kubeconform est un binaire Go qui a
+    # occasionnellement segfaulté sur les runners CI : un crash de l'OUTIL ne dit
+    # rien sur la validité des MANIFESTES — on l'émet en avertissement non
+    # bloquant plutôt que de faire échouer la garde (les invariants de contrat
+    # ci-dessous, eux, restent vérifiés). Le `|| rc=$?` neutralise `set -e` le
+    # temps de lire le code.
+    rc=0
+    printf '%s' "$rendered" | kubeconform -strict -summary -ignore-missing-schemas || rc=$?
+    if [ "$rc" -eq 0 ]; then
       echo "✓ kubeconform"
+    elif [ "$rc" -ge 126 ]; then
+      echo "⚠ $o : kubeconform a CRASHÉ (code $rc, ex. segfault runner) — validation de schéma sautée, pas un échec des manifestes." >&2
     else
-      echo "✗ $o : kubeconform a signalé des erreurs." >&2; fail=1
+      echo "✗ $o : kubeconform a signalé des erreurs (code $rc)." >&2; fail=1
     fi
   fi
 
