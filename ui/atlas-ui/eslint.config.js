@@ -31,11 +31,17 @@ import { svelte } from "@univ-lehavre/atlas-shared-config/eslint/svelte";
 // - security/detect-non-literal-fs-filename (1),
 //   regexp/no-super-linear-backtracking (1) : usages contrôlés.
 export default [
-  // Node tooling script (a11y audit orchestrator) — exécuté par Node, hors du
-  // projet tsconfig typé ; pas du code de bibliothèque. Validé par typecheck du
-  // projet via son JSDoc, mais ignoré du lint typé (comme les scripts maison
-  // ailleurs dans le dépôt).
-  { ignores: ["scripts/**/*.mjs", "storybook-static/**"] },
+  // Outillage de test/build (orchestrateur a11y + config Jest du test-runner) —
+  // exécuté par Node/Jest, hors du projet tsconfig typé ; pas du code de
+  // bibliothèque. Le hook `test-runner.ts` (vrai code) reste, lui, linté.
+  {
+    ignores: [
+      "scripts/**/*.mjs",
+      ".storybook/test-runner-jest.config.js",
+      ".storybook/test-runner-retry.js",
+      "storybook-static/**",
+    ],
+  },
   ...svelte({ architectureCategory: "ui" }),
   {
     files: ["src/**/*.ts", "src/**/*.svelte", ".storybook/**/*.ts"],

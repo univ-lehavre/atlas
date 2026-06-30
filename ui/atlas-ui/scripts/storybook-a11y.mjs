@@ -71,9 +71,56 @@ if (!ready) {
   process.exit(1);
 }
 
+// Warm-up : le dev server Vite transforme les modules de story À LA DEMANDE.
+// Sous la charge du test-runner (workers parallèles) la toute première
+// transformation peut perdre la course → « Failed to fetch dynamically imported
+// module » sur le runner CI. On pré-charge chaque story (son iframe) une fois,
+// séquentiellement, pour forcer la transformation AVANT que le test-runner ne
+// tourne. Best-effort : un échec de warm-up n'arrête pas le run.
+const warmUpStories = async () => {
+  try {
+    const index = await (await fetch(`${STORYBOOK_URL}/index.json`)).json();
+    // Chaque entrée porte son `importPath` (`./src/lib/X.stories.ts`) : le
+    // fetcher force Vite à transformer le module maintenant (réponse 200), pas
+    // sous la course des workers. Dédupliqués (plusieurs stories par module).
+    const modules = [
+      ...new Set(
+        Object.values(index.entries ?? {})
+          .map((entry) => entry.importPath)
+          .filter((path) => typeof path === "string"),
+      ),
+    ];
+    for (const importPath of modules) {
+      try {
+        await fetch(`${STORYBOOK_URL}/${importPath.replace(/^\.\//, "")}`, {
+          signal: AbortSignal.timeout(15_000),
+        });
+      } catch {
+        // un module lent sera retenté par le test-runner
+      }
+    }
+    console.log(
+      `Warm-up: ${String(modules.length)} modules de story compilés.`,
+    );
+  } catch (error) {
+    console.warn("Warm-up ignoré (index indisponible):", error);
+  }
+};
+
+await warmUpStories();
+
 const result = spawnSync(
   "pnpm",
-  ["exec", "test-storybook", "--url", STORYBOOK_URL, "--maxWorkers", "2"],
+  [
+    "exec",
+    "test-storybook",
+    "--url",
+    STORYBOOK_URL,
+    "--maxWorkers",
+    "2",
+    "--testTimeout",
+    "30000",
+  ],
   { cwd: ROOT, stdio: "inherit" },
 );
 

@@ -18,5 +18,11 @@
     "isolatedModules": true
   },
   "include": ["src/**/*", ".storybook/**/*"],
-  "exclude": ["node_modules", "storybook-static"]
+  "// exclude": "Config Jest du test-runner (outillage exécuté par Jest, pas du code typé du paquet ; importe @jest/globals, transitif du test-runner).",
+  "exclude": [
+    "node_modules",
+    "storybook-static",
+    ".storybook/test-runner-jest.config.js",
+    ".storybook/test-runner-retry.js"
+  ]
 }
