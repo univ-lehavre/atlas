@@ -19,8 +19,11 @@
 # lakehouse l'invoque en sous-processus. ca-certificates est requis pour le pull
 # HTTPS de la source GDELT (httpx).
 # Image de base épinglée par digest (immuable), tag conservé pour la lisibilité.
-# Maintenu par Dependabot (écosystème docker). ADR 0084.
-FROM python:3.14-slim@sha256:b877e50bd90de10af8d82c57a022fc2e0dc731c5320d762a27986facfc3355c1
+# Maintenu par Dependabot (écosystème docker), ADR 0084 — MAIS la *minor* Python
+# est verrouillée sur 3.10 (parité cluster, ADR cluster 0006 ; `requires-python
+# >=3.10,<3.11`). Un bump Dependabot qui change le tag (3.10 -> 3.x) DOIT être
+# refusé : ne mettre à jour que le digest d'un `python:3.10-slim`.
+FROM python:3.10-slim@sha256:5f9928ea39771e8ddf4fb9a96ab24f65f087793635614405a1dc9384f040852e
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends rclone ca-certificates \

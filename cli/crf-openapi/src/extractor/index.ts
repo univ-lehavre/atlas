@@ -5,11 +5,19 @@
  * and generate a detailed OpenAPI 3.1.0 specification.
  */
 
-import { existsSync, readdirSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
+import {
+  existsSync,
+  readFileSync,
+  readdirSync,
+  writeFileSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+} from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { execFileSync } from 'node:child_process';
 import { stringify } from 'yaml';
+import { unzipSync } from 'fflate';
 
 import {
   parseIndexPhp,
@@ -53,10 +61,23 @@ export function extractZip(
     throw new Error(`ZIP not found: ${zipPath}`);
   }
 
-  const tmpRoot = join(tmpdir(), `redcap-openapi-${version}-${Date.now()}`);
-  mkdirSync(tmpRoot, { recursive: true });
+  // `mkdtempSync` crée un répertoire au suffixe aléatoire, atomiquement et en
+  // 0700 : pas de nom prévisible (sinon un tiers local pourrait pré-créer le
+  // chemin / poser un symlink avant l'écriture — CWE-377).
+  const tmpRoot = mkdtempSync(join(tmpdir(), `redcap-openapi-${version}-`));
 
-  execFileSync('unzip', ['-q', '-o', zipPath, '-d', tmpRoot]);
+  // Décompression en pur JS (fflate) plutôt qu'un sous-processus `unzip` : le
+  // binaire `unzip` est absent de Windows et hors du PATH des images de base
+  // (node:alpine, python:slim), ce qui rendait ce CLI non portable.
+  const entries = unzipSync(readFileSync(zipPath));
+  for (const [entryPath, bytes] of Object.entries(entries)) {
+    // fflate liste aussi les répertoires (chemin terminé par `/`, contenu vide) :
+    // on ne crée que via les fichiers, en recréant l'arborescence parente.
+    if (entryPath.endsWith('/')) continue;
+    const dest = join(tmpRoot, entryPath);
+    mkdirSync(dirname(dest), { recursive: true });
+    writeFileSync(dest, bytes);
+  }
 
   const sourcePath = join(tmpRoot, 'redcap', `redcap_v${version}`);
   if (!existsSync(sourcePath)) {
