@@ -37,6 +37,19 @@ jobs:
     timeout-minutes: 5
     outputs:
       run: ${{ steps.filter.outputs.run }}
+      # Drapeaux PAR IMAGE. Chaque job de matrice lit le sien (env BUILD) pour ne
+      # builder/scanner/smoke QUE si son périmètre a changé. La matrice reste
+      # STATIQUE à 7 entrées (on ne la réduit JAMAIS via fromJSON : les noms
+      # atlas-dashboard/crf-dashboard/crf sont des checks requis → une entrée
+      # absente laisse le check « Expected »/Pending et bloque le merge, ADR
+      # 0034). On court-circuite donc au niveau STEP, pas matrice.
+      build_atlas_dashboard: ${{ steps.filter.outputs.build_atlas_dashboard }}
+      build_crf_dashboard: ${{ steps.filter.outputs.build_crf_dashboard }}
+      build_crf: ${{ steps.filter.outputs.build_crf }}
+      build_amarre: ${{ steps.filter.outputs.build_amarre }}
+      build_ecrin: ${{ steps.filter.outputs.build_ecrin }}
+      build_find_an_expert: ${{ steps.filter.outputs.build_find_an_expert }}
+      build_sillage: ${{ steps.filter.outputs.build_sillage }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -48,21 +61,64 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
+          # Liste des images (clé de sortie = nom de matrice, `-` → `_`).
+          all_images="atlas_dashboard crf_dashboard crf amarre ecrin find_an_expert sillage"
+
+          emit_all() {
+            # Active toutes les images (push main, ou changement transverse).
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            for img in $all_images; do echo "build_${img}=true" >> "$GITHUB_OUTPUT"; done
+          }
+
           if [ -z "${BASE_SHA}" ]; then
             echo "Push (pas une PR) → build complet."
-            echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
+            emit_all
+            exit 0
           fi
+
           files="$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}")"
           echo "Fichiers modifiés :"; echo "${files}"
+
           run=false
+          # Un changement TRANSVERSE (dépendance partagée, lockfile, config de
+          # build, ce workflow) peut affecter n'importe quelle image → on les
+          # rebuild toutes. Un changement spécifique à une app/au service crf
+          # n'active QUE l'image correspondante.
+          transverse=false
+          b_atlas_dashboard=false; b_crf_dashboard=false; b_crf=false
+          b_amarre=false; b_ecrin=false; b_find_an_expert=false; b_sillage=false
           while IFS= read -r f; do
             [ -z "$f" ] && continue
             case "$f" in
-              apps/*|services/crf/*|packages/*|ui/*|config/*) run=true ;;
-              pnpm-lock.yaml|.nvmrc|.dockerignore|.github/workflows/images.yml) run=true ;;
+              packages/*|ui/*|config/*) transverse=true; run=true ;;
+              pnpm-lock.yaml|.nvmrc|.dockerignore|.github/workflows/images.yml) transverse=true; run=true ;;
+              apps/atlas-dashboard/*) b_atlas_dashboard=true; run=true ;;
+              apps/crf-dashboard/*) b_crf_dashboard=true; run=true ;;
+              services/crf/*) b_crf=true; run=true ;;
+              apps/amarre/*) b_amarre=true; run=true ;;
+              apps/ecrin/*) b_ecrin=true; run=true ;;
+              apps/find-an-expert/*) b_find_an_expert=true; run=true ;;
+              apps/sillage/*) b_sillage=true; run=true ;;
             esac
           done <<< "${files}"
-          echo "run=${run}" >> "$GITHUB_OUTPUT"
+
+          if [ "$transverse" = "true" ]; then
+            echo "Changement transverse détecté → toutes les images."
+            emit_all
+            echo "Résultat : run=true (toutes)"
+            exit 0
+          fi
+
+          {
+            echo "run=${run}"
+            echo "build_atlas_dashboard=${b_atlas_dashboard}"
+            echo "build_crf_dashboard=${b_crf_dashboard}"
+            echo "build_crf=${b_crf}"
+            echo "build_amarre=${b_amarre}"
+            echo "build_ecrin=${b_ecrin}"
+            echo "build_find_an_expert=${b_find_an_expert}"
+            echo "build_sillage=${b_sillage}"
+          } >> "$GITHUB_OUTPUT"
           echo "Résultat : run=${run} (false → checks requis émis en succès sans build)"
 
   images:
@@ -71,7 +127,12 @@ jobs:
     timeout-minutes: 30
     needs: [changes]
     env:
+      # RUN : le périmètre images est-il concerné du tout (sinon job = no-op
+      # success, ADR 0034). BUILD : CETTE image est-elle concernée (drapeau par
+      # matrice via `matrix.flag`) ? Les steps coûteux (build/scan/smoke/push)
+      # exigent les DEUX → une PR mono-app ne rebuild plus les 6 autres images.
       RUN: ${{ needs.changes.outputs.run == 'true' }}
+      BUILD: ${{ needs.changes.outputs[matrix.flag] == 'true' }}
       # Version de Trivy + checksum sha256 de l'archive Linux-64bit, au niveau
       # job pour être lisibles à la fois par le step d'installation (vérification
       # d'intégrité) et par la clé de cache de la DB de vulnérabilités. Mettre à
@@ -101,14 +162,17 @@ jobs:
         # documentent les secrets requis au déploiement réel).
         include:
           - name: atlas-dashboard
+            flag: build_atlas_dashboard
             dockerfile: apps/atlas-dashboard/Dockerfile
             image: atlas-dashboard
             health_path: /
           - name: crf-dashboard
+            flag: build_crf_dashboard
             dockerfile: apps/crf-dashboard/Dockerfile
             image: atlas-crf-dashboard
             health_path: /
           - name: crf
+            flag: build_crf
             dockerfile: services/crf/Dockerfile
             image: atlas-crf
             health_path: /health
@@ -122,6 +186,7 @@ jobs:
           # secrets lus au runtime via `$lib/server/env`, valeurs au format attendu
           # pour le smoke seul (aucune connexion réelle).
           - name: amarre
+            flag: build_amarre
             dockerfile: apps/amarre/Dockerfile
             image: atlas-amarre
             health_path: /
@@ -130,6 +195,7 @@ jobs:
               -e REDCAP_API_TOKEN=ABCDEF0123456789ABCDEF0123456789
               -e ALLOWED_DOMAINS_REGEXP=@example\.org
           - name: ecrin
+            flag: build_ecrin
             dockerfile: apps/ecrin/Dockerfile
             image: atlas-ecrin
             health_path: /
@@ -140,6 +206,7 @@ jobs:
               -e REDCAP_API_TOKEN=ABCDEF0123456789ABCDEF0123456789
               -e REDCAP_URL=https://redcap.example.com/api/
           - name: find-an-expert
+            flag: build_find_an_expert
             dockerfile: apps/find-an-expert/Dockerfile
             image: atlas-find-an-expert
             health_path: /
@@ -152,6 +219,7 @@ jobs:
               -e APPWRITE_CURRENT_CONSENTS_COLLECTION_ID=smoke-current-consents
               -e ALLOWED_DOMAINS_REGEXP=@example\.org
           - name: sillage
+            flag: build_sillage
             dockerfile: apps/sillage/Dockerfile
             image: atlas-sillage
             health_path: /
@@ -163,17 +231,17 @@ jobs:
       # Court-circuit (ADR 0034/0016) : si le diff ne touche pas le périmètre
       # images (PR dataops-only…), tous les steps sont sautés et le job sort
       # `success` → le check requis est satisfait sans build.
-      - if: env.RUN == 'true'
+      - if: env.RUN == 'true' && env.BUILD == 'true'
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
-      - if: env.RUN == 'true'
+      - if: env.RUN == 'true' && env.BUILD == 'true'
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
       # Métadonnées (tags/labels). Sur PR, le push est désactivé plus bas ;
       # les tags ne servent alors qu'au build local pour le smoke.
       - name: Compute image metadata
         id: meta
-        if: env.RUN == 'true'
+        if: env.RUN == 'true' && env.BUILD == 'true'
         uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
@@ -186,7 +254,7 @@ jobs:
 
       # Login GHCR uniquement sur `main` (les PR ne publient pas).
       - name: Log in to GHCR
-        if: env.RUN == 'true' && github.event_name == 'push'
+        if: env.RUN == 'true' && env.BUILD == 'true' && github.event_name == 'push'
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
           registry: ghcr.io
@@ -196,7 +264,7 @@ jobs:
       # Tag sémver lisible (la version du package.json de l'unité). Ajouté en
       # plus du tag SHA immuable, sur `main` seulement.
       - name: Read package version
-        if: env.RUN == 'true' && github.event_name == 'push'
+        if: env.RUN == 'true' && env.BUILD == 'true' && github.event_name == 'push'
         id: ver
         run: |
           set -euo pipefail
@@ -214,7 +282,7 @@ jobs:
       # et seulement ensuite (sur main) on pousse — jamais l'inverse.
       - name: Build image (load for scan + smoke)
         id: build-local
-        if: env.RUN == 'true'
+        if: env.RUN == 'true' && env.BUILD == 'true'
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
@@ -247,7 +315,7 @@ jobs:
       # (script amont mutable, exécuté en root dans un job à `packages:write` +
       # `id-token:write`).
       - name: Install Trivy
-        if: env.RUN == 'true'
+        if: env.RUN == 'true' && env.BUILD == 'true'
         run: |
           set -euo pipefail
           url="https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
@@ -272,11 +340,11 @@ jobs:
       # est réelle).
       - name: Compute cache date
         id: date
-        if: env.RUN == 'true'
+        if: env.RUN == 'true' && env.BUILD == 'true'
         run: echo "today=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
       - name: Cache Trivy vulnerability DB
-        if: env.RUN == 'true'
+        if: env.RUN == 'true' && env.BUILD == 'true'
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         with:
           path: ~/.cache/trivy
@@ -286,7 +354,7 @@ jobs:
 
       - name: Scan image for vulnerabilities
         id: scan
-        if: env.RUN == 'true'
+        if: env.RUN == 'true' && env.BUILD == 'true'
         env:
           # Pointe Trivy vers le répertoire mis en cache ci-dessus.
           TRIVY_CACHE_DIR: ~/.cache/trivy
@@ -304,7 +372,7 @@ jobs:
       # codeql.yml). `if: always()` : on veut le rapport même quand le scan a
       # échoué sur une CVE bloquante (sinon l'alerte ne serait jamais visible).
       - name: Upload Trivy scan results to Security tab
-        if: env.RUN == 'true' && always()
+        if: env.RUN == 'true' && env.BUILD == 'true' && always()
         # Même action (épinglée par SHA) et même mécanisme que codeql.yml.
         uses: github/codeql-action/upload-sarif@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
         with:
@@ -315,7 +383,7 @@ jobs:
       # (l'app/le service répond sur son endpoint de santé). Build cassé,
       # dépendance runtime manquante, mauvais port → échec ici.
       - name: Smoke test (start + healthcheck)
-        if: env.RUN == 'true'
+        if: env.RUN == 'true' && env.BUILD == 'true'
         shell: bash
         env:
           # Les trois unités exposent 3000 (adapter-node SvelteKit + service
@@ -363,7 +431,7 @@ jobs:
       # (push Docker Hub → 401).
       - name: Push image (attested)
         id: build
-        if: env.RUN == 'true' && github.event_name == 'push'
+        if: env.RUN == 'true' && env.BUILD == 'true' && github.event_name == 'push'
         uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
           context: .
@@ -385,7 +453,7 @@ jobs:
       # signe jamais une image qu'on n'a pas scannée (garde-fou « digest et
       # scan couplés »).
       - name: Install cosign
-        if: env.RUN == 'true' && github.event_name == 'push'
+        if: env.RUN == 'true' && env.BUILD == 'true' && github.event_name == 'push'
         uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       # Signe le DIGEST sha256 de l'image (immuable), pas un tag mutable, en
@@ -395,7 +463,7 @@ jobs:
       # provenance SLSA et le SBOM CycloneDX par image sont déjà rattachés au
       # même digest par build-push-action (provenance:true / sbom:true).
       - name: Sign image digest (cosign keyless)
-        if: env.RUN == 'true' && github.event_name == 'push'
+        if: env.RUN == 'true' && env.BUILD == 'true' && github.event_name == 'push'
         env:
           COSIGN_EXPERIMENTAL: "1"
           IMAGE: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
@@ -403,3 +471,11 @@ jobs:
         run: |
           set -euo pipefail
           cosign sign --yes "${IMAGE}@${DIGEST}"
+
+      # Court-circuit par image (ADR 0034) : cette image n'est pas concernée par
+      # le diff (PR qui ne touche qu'une autre app, sans changement transverse).
+      # Tous les steps coûteux sont sautés et le job sort `success` → le check
+      # requis `${{ matrix.name }}` est satisfait sans rien builder.
+      - name: Skipped (image hors périmètre du diff)
+        if: env.RUN != 'true' || env.BUILD != 'true'
+        run: echo "Image ${{ matrix.name }} non impactée par ce diff — build/scan/smoke sautés (ADR 0034)."
