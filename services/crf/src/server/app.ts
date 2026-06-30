@@ -16,6 +16,7 @@ import { apiRateLimiter } from './middleware/rate-limit.js';
 import { bearerAuth } from './middleware/auth.js';
 import { makeHealthRoutes } from './routes/health.js';
 import { makeMetricsRoutes } from './routes/metrics.js';
+import { httpMetricsMiddleware } from './middleware/metrics-http.js';
 import type { RenderMetrics } from './metrics.js';
 import { makeProjectRoutes } from './routes/project.js';
 import { makeRecordsRoutes } from './routes/records.js';
@@ -121,6 +122,10 @@ export const createApp = (options: CreateAppOptions): Hono => {
   // No-op unless the OTel SDK is started — see ./telemetry.ts. When the SDK is
   // off the OTel API resolves to no-op tracers, so this middleware is cheap.
   app.use('*', httpInstrumentationMiddleware());
+  // HTTP request counter exported to /metrics (ADR 0089). Mounted only when
+  // metrics are enabled (renderMetrics provided) so the disabled path stays
+  // zero-cost. Labels are bounded/non-identifying (templated route, no URL/id).
+  if (renderMetrics !== undefined) app.use('*', httpMetricsMiddleware(runtime));
   app.use('*', logger());
   app.use('*', cors());
   if (!disableRateLimit) app.use('/api/*', apiRateLimiter);

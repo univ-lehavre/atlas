@@ -170,4 +170,39 @@ describe('createApp', () => {
       expect(res.status).toBe(200);
     });
   });
+
+  // /metrics integration through the full createApp (ADR 0089): the route must be
+  // reachable at its prefix, stay public under auth, and report 503 when no
+  // renderer is wired (metrics disabled).
+  describe('/metrics route', () => {
+    it('serves 200 with Prometheus text when a renderer is wired', async () => {
+      const app = createApp({
+        ...DEFAULT_OPTIONS,
+        runtime: makeTestRuntime(clientMock),
+        renderMetrics: () => Promise.resolve('# HELP up\nup 1\n'),
+      });
+      const res = await app.request('/metrics');
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('text/plain; version=0.0.4');
+      expect(await res.text()).toContain('up 1');
+    });
+
+    it('answers 503 when metrics are disabled (no renderer)', async () => {
+      const app = loadApp();
+      const res = await app.request('/metrics');
+      expect(res.status).toBe(503);
+    });
+
+    it('stays public (no 401) even when auth is enabled', async () => {
+      const app = createApp({
+        port: 3001,
+        disableRateLimit: true,
+        authToken: 'svc-secret',
+        runtime: makeTestRuntime(clientMock),
+        renderMetrics: () => Promise.resolve('up 1\n'),
+      });
+      const res = await app.request('/metrics');
+      expect(res.status).toBe(200);
+    });
+  });
 });

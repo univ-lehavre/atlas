@@ -19,7 +19,11 @@
  */
 
 import { Config, Effect, Layer } from 'effect';
-import { makeLoggerLayer, makeRuntime, type AppRuntime } from '@univ-lehavre/atlas-effect-socle';
+import {
+  makeLoggerLayer,
+  makeRuntimeWithShutdown,
+  type AppRuntime,
+} from '@univ-lehavre/atlas-effect-socle';
 import { CrfUrl, CrfToken, makeCrfClientLayer } from '@univ-lehavre/atlas-crf-client';
 import type { CrfClientService } from '@univ-lehavre/atlas-crf-client';
 import { makeTracerLayer } from './telemetry.js';
@@ -80,6 +84,17 @@ export type CrfRuntime = AppRuntime<CrfClientService>;
  * handle's `layer` is merged into the `AppLayer` so Effect `Metric.*` values are
  * exported through the Prometheus reader; its `render` is returned for the route.
  *
+ * The runtime is built with `makeRuntimeWithShutdown` so its layer finalizers —
+ * including the metrics reader's `shutdown()` (`Metrics.layer` is scoped) — run
+ * on `SIGTERM`/`SIGINT`, symmetric with `telemetry.ts`.
+ *
+ * **Eager build when metrics are on.** `ManagedRuntime` builds its layer lazily,
+ * on the first effect run; the metrics reader is bound to its `MeterProvider`
+ * only at that build. A Prometheus scrape arriving before any runtime-backed
+ * request would otherwise see an empty `/metrics` indefinitely. So when metrics
+ * are enabled we force the build once at boot by running `Effect.void` — after
+ * which the reader is bound and `/metrics` reports the live registry.
+ *
  * @param config - Boot-time configuration.
  * @param env - Environment to inspect for metrics enablement (defaults to
  *   `process.env`); injectable for tests.
@@ -89,5 +104,11 @@ export const makeCrfRuntime = (
   env: NodeJS.ProcessEnv = process.env
 ): { readonly runtime: CrfRuntime; readonly metrics: MetricsHandle } => {
   const metrics = makeMetrics(env);
-  return { runtime: makeRuntime(makeAppLayer(config, metrics.layer)), metrics };
+  const runtime = makeRuntimeWithShutdown(makeAppLayer(config, metrics.layer));
+  if (metrics.enabled) {
+    // Force the lazy ManagedRuntime to build now, binding the metrics reader to
+    // its provider (otherwise /metrics is empty until the first request).
+    void runtime.runPromise(Effect.void);
+  }
+  return { runtime, metrics };
 };
