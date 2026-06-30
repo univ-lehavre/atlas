@@ -38,6 +38,16 @@ soit le contexte** (urgence, refactoring massif, blocage temporaire).
 Si un hook bloque, la solution est de **corriger le problème**, pas
 de le contourner.
 
+**Unique exception, bornée et documentée — le bot de release en CI.**
+Le job `release` de [`release.yml`](https://github.com/univ-lehavre/atlas/blob/main/.github/workflows/release.yml)
+pose `LEFTHOOK: 0` (hooks désactivés) parce que l'action Changesets commit
+elle-même la PR « chore: version packages » **sur `main`** depuis un runner :
+le hook `check-branch` (« commit direct sur `main` interdit ») et le hook
+`strip-email-line` (`commit-msg`) casseraient ce commit machine légitime. Cette
+exception ne s'applique **qu'à ce bot CI**, jamais à un humain ni à une autre
+branche, et reste lisible dans le workflow. Elle ne relâche aucune garantie :
+le contenu publié a déjà traversé la CI complète de la PR d'origine.
+
 ## Statut
 
 Accepted.
