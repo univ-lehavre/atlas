@@ -117,6 +117,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0085 | [Cache de flux : package partagé Effect adossé à Postgres (CNPG)](/atlas/decisions/0085-cache-flux-postgres-package-partage/)                                   | Accepted        |
 | 0086 | [Posture vis-à-vis des paliers Best Practices (silver visé, gold exclu)](/atlas/decisions/0086-posture-paliers-best-practices/)                                 | Accepted        |
 | 0087 | [Signature cosign des artefacts de Release GitHub](/atlas/decisions/0087-signature-cosign-assets-release/)                                                      | Accepted        |
+| 0088 | [Portabilité : architectures (arm64/x86_64), OS et libc](/atlas/decisions/0088-portabilite-os-architecture/)                                                    | Accepted        |
 
 ## Quand ouvrir un ADR
 
