@@ -115,6 +115,10 @@ Détails : [docs/quality/hooks.md](https://univ-lehavre.github.io/atlas/quality/
 - **[uv](https://docs.astral.sh/uv/)** : gestionnaire de paquets et d'environnements Python pour [dataops/](dataops/), hors graphe pnpm ([ADR 0055](https://univ-lehavre.github.io/atlas/decisions/0055-categorie-dataops-python/))
 - **[Astro Starlight](https://starlight.astro.build/)** : génère le site de documentation à partir des fichiers Markdown de [`docs/`](docs/)
 
+### Portabilité
+
+Cible **Linux x86-64 et arm64** pour les conteneurs déployés, **macOS et Linux** pour le développement ; les images de base sont des manifestes multi-architectures épinglés par empreinte. Les dépendances natives sans variante musl restent cantonnées aux CLI exécutés sur l'hôte, hors des images Alpine. Posture et invariants : [ADR 0088](https://univ-lehavre.github.io/atlas/decisions/0088-portabilite-os-architecture/).
+
 ## Culture d'ingénierie
 
 Au-delà des garde-fous transverses, le dépôt revendique trois cultures d'ingénierie — chacune câblée dans le code et tracée par des décisions d'architecture (_ADR_, _Architecture Decision Record_, dans [`docs/decisions/`](docs/src/content/docs/decisions/)), pas seulement déclarée. Chaque affirmation ci-dessous **pointe vers sa preuve** (la décision, le workflow, le test) sans la recopier ([ADR 0070](https://univ-lehavre.github.io/atlas/decisions/0070-page-preuves-vitrine-doctrine-badges/)).
