@@ -151,11 +151,36 @@ saved_at)`, UPSERT atomique `ON CONFLICT`, `pg_advisory_lock` pour la déduplica
   (Effect), consommé par `atlas-stats` et `crf-logs` : fin des deux implémentations
   parallèles. Détail et arbitrages dans l'[ADR 0085](/atlas/decisions/0085-cache-flux-postgres-package-partage/).
 
+## Requalification (2026-06-30) — `crf-logs` est un cache, pas un journal applicatif (facteur XI)
+
+Le _Contexte_ ci-dessus invoquait le **facteur XI (Logs)** pour `crf-logs` : son
+nom et l'audit cloud-native du 2026-06-04 laissaient croire à un **journal
+applicatif** persisté en fichier au lieu d'un flux stdout. **C'était une erreur de
+qualification**, levée à la lecture du code ([#305](https://github.com/univ-lehavre/atlas/issues/305)).
+
+`crf-logs` ne journalise **rien** du processus `atlas`. Il **récupère par HTTP**
+les _audit logs_ d'une plateforme **REDCap externe** (`fetchProjectLogs` →
+`{ project_id, username, action, timestamp }`) et les agrège en analytics à
+fenêtre glissante (description du paquet : « CRF audit log fetching, enrichment and
+rolling-window analytics »). C'est de la **donnée métier externe mise en cache** —
+exactement le facteur **IV/VIII (backing service, concurrence)**, déjà traité ici
+et parachevé par le back-end Postgres (#443/[ADR 0085](/atlas/decisions/0085-cache-flux-postgres-package-partage/)).
+
+Le **facteur XI ne s'applique donc pas** à `crf-logs` : émettre ces données sur
+stdout serait un anti-pattern (déverser de la donnée métier dans le flux de logs du
+conteneur). La sous-section _« `crf-logs` acquiert l'indirection, et traite ses logs
+en flux »_ ci-dessus est à lire **uniquement** pour sa première moitié (l'indirection
+du cache, faite) ; la seconde moitié (« traiter les logs en flux ») **tombe** — il
+n'y a pas de logs applicatifs à mettre en flux ici. La ligne « XI. Logs » des
+[Normes](/atlas/quality/normes/) passe de _Partiel/écart_ à **Appliqué**.
+
 ## Statut
 
-Accepted (2026-06-04). **Étendu** le 2026-06-29 (section _Évolution_ ci-dessus) :
-back-end Postgres réel + paquet partagé, acté par
+Accepted (2026-06-04). **Étendu** le 2026-06-29 (section _Évolution_) : back-end
+Postgres réel + paquet partagé, acté par
 l'[ADR 0085](/atlas/decisions/0085-cache-flux-postgres-package-partage/).
+**Requalifié** le 2026-06-30 (section ci-dessus) : `crf-logs` est un cache de données
+externes, hors facteur XI ([#305](https://github.com/univ-lehavre/atlas/issues/305)).
 
 ## Conséquences
 
