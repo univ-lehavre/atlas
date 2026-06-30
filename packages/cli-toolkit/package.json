@@ -70,7 +70,7 @@
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "effect": "~3.21.4",
     "eslint": "^10.6.0",
-    "prettier": "^3.9.3",
+    "prettier": "^3.9.4",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
