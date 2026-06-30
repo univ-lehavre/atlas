@@ -65,9 +65,16 @@ pre-commit:
       run: node scripts/lint-staged.mjs {staged_files}
 
     typecheck:
+      # Glob-gate comme lint/format : un commit qui ne stage aucune source
+      # TS/JS/Svelte (doc, yaml, json…) ne réveille pas Turbo pour rien. Le
+      # cache de contenu Turbo rend de toute façon le typecheck quasi-instantané
+      # quand rien n'a changé, mais sauter le hook évite même ce coût.
+      glob: "*.{js,jsx,ts,tsx,svelte}"
       run: pnpm typecheck
 
     svelte:check:
+      # Idem : `svelte:check` (turbo check) ne concerne que le code Svelte/TS.
+      glob: "*.{ts,tsx,svelte}"
       run: pnpm svelte:check
 
 pre-push:
