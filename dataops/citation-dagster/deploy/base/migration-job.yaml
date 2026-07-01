@@ -1,0 +1,124 @@
+# Migration du schéma d'index « researchers » en hook PreSync Argo CD (ADR cluster 0094 §5).
+#
+# POURQUOI : l'asset index_load CONSOMME le schéma (table researchers, vecteur(384)
+# HNSW + fts GIN) mais ne le CRÉE pas (frontière capacité/décision, ADR 0058 §4.1).
+# La migration versionnée migrations/0001_researchers_index.sql doit donc être
+# appliquée contre la base `pgvector` AVANT que la code-location démarre — sinon
+# index_load échoue « relation researchers does not exist ». Le hook **PreSync**
+# garantit cet ordre : Argo CD exécute ce Job et attend sa réussite AVANT de
+# synchroniser le Deployment de la code-location.
+#
+# FRONTIÈRE (ADR cluster 0094 §1/§5) : atlas **FOURNIT** le .sql (schéma métier) ET
+# ce manifeste Job ; cluster **ORCHESTRE** (l'Application fille réconcilie cet
+# overlay → déclenche le hook). Le .sql est embarqué par le configMapGenerator de
+# la base (kustomization.yaml) : son hash change quand le SQL change → nouveau Job
+# au prochain sync (idempotence GitOps), pas de git clone runtime.
+#
+# CONNEXION : base `pgvector` sur le primary CNPG via le Service `pg-rw.postgres`
+# (nom COURT, pas le FQDN complet — le drift DNS prod L58 fait timeouter un nom à
+# 4 points avec ndots:5). Auth par le Secret dérivé `pgvector-pg-auth` (ns dagster),
+# posé par le rôle cluster platform-dagster (clés username/password du rôle CNPG
+# pgvector). DÉPENDANCE : ce Secret doit exister en prod (rejeu --tags
+# pgvector-secret) — déclaré dans dependsOn.secrets du code-location.manifest.yaml.
+#
+# IDEMPOTENCE : le .sql est `CREATE ... IF NOT EXISTS` → rejeu sans effet de bord.
+# hook-delete-policy BeforeHookCreation : le Job du sync précédent est supprimé
+# avant d'en recréer un (pas d'accumulation). psql -v ON_ERROR_STOP=1 → échec dur
+# à la première erreur SQL (le hook PreSync échoue → Argo CD stoppe le sync).
+#
+# DURCISSEMENT : psql est un client réseau pur (pas d'accès local privilégié) → on
+# durcit complètement (non-root, rootfs RO, drop ALL, seccomp), comme reload-hook.
+# HOME=/tmp (emptyDir) : libpq/psql y écrit .psql_history / fichiers temporaires.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: citation-migrate-schema
+  namespace: dagster
+  labels:
+    app.kubernetes.io/part-of: atlas
+    app.kubernetes.io/component: migration
+  annotations:
+    # PreSync : tourne AVANT la synchro des workloads (la code-location).
+    argocd.argoproj.io/hook: PreSync
+    # Supprime le Job du sync précédent avant d'en recréer un (pas d'accumulation).
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 300
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: atlas
+        app.kubernetes.io/component: migration
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        # Le .sql versionné, embarqué en ConfigMap par le configMapGenerator (base).
+        - name: sql
+          configMap:
+            name: citation-migrations
+        # HOME inscriptible (rootfs RO) : psql/libpq y écrit fichiers temporaires.
+        - name: home
+          emptyDir: {}
+      containers:
+        - name: migrate
+          # postgres OFFICIEL épinglé par digest d'index multi-arch (ADR cluster 0006) —
+          # MÊME digest que celui déjà utilisé par le socle (platform/dagster,marquez,
+          # mlflow). Fournit le client `psql`. Client libpq rétro-compatible avec le
+          # serveur PG18 CNPG (à confirmer au banc).
+          image: postgres:14.6@sha256:f565573d74aedc9b218e1d191b04ec75bdd50c33b2d44d91bcd3db5f2fcea647
+          command: ['psql']
+          args:
+            - '-v'
+            - 'ON_ERROR_STOP=1'
+            - '--no-psqlrc'
+            - '-f'
+            - '/sql/0001_researchers_index.sql'
+          env:
+            - name: HOME
+              value: /tmp
+            # Nom COURT (pas le FQDN) : évite le timeout DNS ndots:5 en prod (drift L58).
+            - name: PGHOST
+              value: pg-rw.postgres
+            - name: PGPORT
+              value: '5432'
+            - name: PGDATABASE
+              value: pgvector
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: pgvector-pg-auth
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pgvector-pg-auth
+                  key: password
+          volumeMounts:
+            - name: sql
+              mountPath: /sql
+              readOnly: true
+            - name: home
+              mountPath: /tmp
+          # QoS Burstable (pas BestEffort) : un client psql éphémère est frugal.
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1001
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ['ALL']
+            seccompProfile:
+              type: RuntimeDefault
