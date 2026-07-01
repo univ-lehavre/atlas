@@ -248,3 +248,31 @@ l'**adaptateur** (table clé-valeur + UPSERT + `pg_advisory_lock`,
 **nom court** `pg-rw.postgres` (le FQDN `*.svc.cluster.local` _timeout_ en prod). Cet ajout
 **ne modifie aucun point de contact existant** : il en **crée un nouveau**, sur le même
 CloudNativePG que `pgvector`.
+
+## Évolution (2026-07-01) — Plancher `dbt-core` de la chaîne dbt (deepdiff)
+
+La chaîne dbt des code-locations (`dagster-dbt==0.29.7`) tire `deepdiff` en
+transitif via `dbt-common`. Une résolution ancienne figeait `citation-dagster`
+sur `dbt-common 1.27.1` (`deepdiff<8` → GHSA-mw26-5g2v-hqw3 _critical_ /
+GHSA-54jj-px8x-5w5q _high_), neutralisées par un override `deepdiff>=8,<9`
+**porteur** ; `mediawatch-dagster` résolvait déjà `dbt-common 1.38.0`
+(`deepdiff<9`), override **no-op**.
+
+Le côté cluster a tranché le point d'interface ([ADR cluster
+0006](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0006-matrice-de-versions-et-politique-de-bump.md),
+[cluster#536](https://github.com/univ-lehavre/cluster/pull/536)) : **l'image
+Dagster du cluster n'installe aucun dbt** — la chaîne vit entièrement côté
+`atlas`. Le levier est donc le **plancher `dbt-core`**, pas l'image. Contrainte
+figée : `dbt-common ≥ 1.34.2` (accepte `deepdiff<9`), obtenu via `dbt-core ≥
+1.10.22` — **sans casser la parité `dagster-dbt 0.29.7 ↔ dagster 1.13.7`**
+(inchangée) ni sortir de Python 3.10. `dbt-common 2.0.0` **interdit** (ré-épingle
+`deepdiff<8`).
+
+Application côté `atlas` (cette PR, garde-fou « même PR ») : `citation-dagster`
+déclare un plancher **`dbt-core>=1.10.22`** explicite → re-lock en `dbt-core
+1.11.11` / `dbt-common 1.38.0` / `deepdiff 8.6.2`, **aligné sur
+`mediawatch-dagster`**. L'override `deepdiff>=8,<9` y devient un **no-op
+défensif** (borne anti-`2.0.0`), conservé, symétrique des deux code-locations.
+Aucun point de contact du contrat n'est modifié — c'est une **contrainte de
+version d'un composant fourni**, tenue à jour ici comme l'exige le garde-fou
+ci-dessus.
