@@ -10,3 +10,21 @@ resources:
   - code-location.yaml
   - workspace-patch.yaml
   - pdb.yaml
+  # Migration du schéma « researchers » en hook PreSync (ADR cluster 0094 §5) :
+  # appliquée AVANT la code-location. atlas FOURNIT (.sql + Job), cluster ORCHESTRE.
+  - migration-job.yaml
+
+# Le .sql versionné est embarqué en ConfigMap monté par le Job de migration.
+# disableNameSuffixHash : le Job (hook PreSync) référence le ConfigMap par son nom
+# FIXE `citation-migrations` dans ses volumes ; le transformer de noms de kustomize
+# ne réécrit PAS les références à l'intérieur d'un pod-template de Job → un suffixe
+# de hash casserait le montage (ConfigMap introuvable au runtime). Le hash est
+# inutile ici de toute façon : le hook PreSync REJOUE le Job à CHAQUE sync et le
+# SQL est idempotent (CREATE ... IF NOT EXISTS) — la migration se réapplique sans
+# dépendre d'un changement de nom.
+configMapGenerator:
+  - name: citation-migrations
+    files:
+      - migrations/0001_researchers_index.sql
+generatorOptions:
+  disableNameSuffixHash: true
