@@ -14,8 +14,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  # Cache Turbo : remote cache adossé au cache GitHub Actions, activé par
+  # `caching-for-turbo` dans la composite `setup-workspace` (ADR 0090). L'action
+  # pose elle-même TURBO_API/TOKEN/TEAM vers son serveur local — ne PAS remettre
+  # de TURBO_TOKEN/TEAM ici (ils pointeraient vers un remote Vercel inexistant).
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:

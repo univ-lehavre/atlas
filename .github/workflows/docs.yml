@@ -30,8 +30,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  # Cache Turbo remote via `caching-for-turbo` dans la composite (ADR 0090) —
+  # pas de TURBO_TOKEN/TEAM ici (l'action les gère ; un reliquat pointerait vers
+  # un remote Vercel inexistant).
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
