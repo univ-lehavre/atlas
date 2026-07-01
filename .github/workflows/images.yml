@@ -128,11 +128,17 @@ jobs:
     needs: [changes]
     env:
       # RUN : le périmètre images est-il concerné du tout (sinon job = no-op
-      # success, ADR 0034). BUILD : CETTE image est-elle concernée (drapeau par
-      # matrice via `matrix.flag`) ? Les steps coûteux (build/scan/smoke/push)
-      # exigent les DEUX → une PR mono-app ne rebuild plus les 6 autres images.
+      # success, ADR 0034). BUILD : CETTE image doit-elle réellement être
+      # construite ? Trois conditions ET :
+      #   1. l'image est concernée par le diff (`matrix.flag`), ET
+      #   2. soit c'est un push sur `main` (on builde/pousse toujours tout ce qui
+      #      a changé), soit c'est une image REQUISE (check bloquant → on la
+      #      builde aussi sur PR pour attraper un Dockerfile cassé avant merge).
+      # Conséquence : les 4 apps NON requises (amarre/ecrin/find-an-expert/
+      # sillage) ne sont PAS buildées sur PR (elles sortent `success` sans rien
+      # faire) ; elles le sont sur `main`. Les 3 requises restent buildées sur PR.
       RUN: ${{ needs.changes.outputs.run == 'true' }}
-      BUILD: ${{ needs.changes.outputs[matrix.flag] == 'true' }}
+      BUILD: ${{ needs.changes.outputs[matrix.flag] == 'true' && (github.event_name == 'push' || matrix.required) }}
       # Version de Trivy + checksum sha256 de l'archive Linux-64bit, au niveau
       # job pour être lisibles à la fois par le step d'installation (vérification
       # d'intégrité) et par la clé de cache de la DB de vulnérabilités. Mettre à
@@ -160,19 +166,28 @@ jobs:
         # (getters), donc le smoke (GET sur l'endpoint de santé) ne les touche pas ;
         # les `run_env` factices ci-dessous sont une ceinture-bretelles (et
         # documentent les secrets requis au déploiement réel).
+        # `required` = ce job est un CHECK REQUIS (ruleset `main`). Seuls
+        # atlas-dashboard, crf-dashboard et crf le sont. Les 4 autres apps ne
+        # bloquent pas le merge : on ne les builde/scanne/smoke QUE sur `main`
+        # (push), pas sur PR — sur PR elles sortent `success` sans rien faire.
+        # Les 3 requises, elles, restent buildées sur PR (détection Dockerfile
+        # cassé avant merge). Voir le gate `env.BUILD` du job.
         include:
           - name: atlas-dashboard
             flag: build_atlas_dashboard
+            required: true
             dockerfile: apps/atlas-dashboard/Dockerfile
             image: atlas-dashboard
             health_path: /
           - name: crf-dashboard
             flag: build_crf_dashboard
+            required: true
             dockerfile: apps/crf-dashboard/Dockerfile
             image: atlas-crf-dashboard
             health_path: /
           - name: crf
             flag: build_crf
+            required: true
             dockerfile: services/crf/Dockerfile
             image: atlas-crf
             health_path: /health
@@ -187,6 +202,7 @@ jobs:
           # pour le smoke seul (aucune connexion réelle).
           - name: amarre
             flag: build_amarre
+            required: false
             dockerfile: apps/amarre/Dockerfile
             image: atlas-amarre
             health_path: /
@@ -196,6 +212,7 @@ jobs:
               -e ALLOWED_DOMAINS_REGEXP=@example\.org
           - name: ecrin
             flag: build_ecrin
+            required: false
             dockerfile: apps/ecrin/Dockerfile
             image: atlas-ecrin
             health_path: /
@@ -207,6 +224,7 @@ jobs:
               -e REDCAP_URL=https://redcap.example.com/api/
           - name: find-an-expert
             flag: build_find_an_expert
+            required: false
             dockerfile: apps/find-an-expert/Dockerfile
             image: atlas-find-an-expert
             health_path: /
@@ -220,6 +238,7 @@ jobs:
               -e ALLOWED_DOMAINS_REGEXP=@example\.org
           - name: sillage
             flag: build_sillage
+            required: false
             dockerfile: apps/sillage/Dockerfile
             image: atlas-sillage
             health_path: /
