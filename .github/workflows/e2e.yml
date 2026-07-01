@@ -50,8 +50,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+  # (e2e n'invoque pas turbo ; anciens TURBO_TOKEN/TEAM dormants retirés — cache
+  # Turbo géré par `caching-for-turbo` là où turbo tourne, ADR 0090.)
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   REDCAP_VERSION: "16.1.9"
 

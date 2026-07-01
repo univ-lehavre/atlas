@@ -35,6 +35,12 @@ existait déjà pour `Test`/`Typecheck`/`Build`, mais `Lint` et `Audit` tournaie
 
 ### Pourquoi pas de remote cache Turbo
 
+> **Amendé par l'[ADR 0090](/atlas/decisions/0090-remote-cache-turbo-github/).**
+> Le « pour l'instant » ci-dessous a été levé : une **troisième voie** (remote
+> cache Turbo adossé au **cache GitHub Actions**, ni Vercel ni self-host) permet
+> les hits intra-run **et** inter-run sans tiers ni infra. Le cache `actions/cache`
+> décrit ici est remplacé, et les jetons `TURBO_TOKEN`/`TURBO_TEAM` retirés.
+
 Un remote cache Turbo (Vercel ou self-hosté) aurait donné les meilleurs hits,
 mais : Vercel envoie les hashs/artefacts chez un tiers, et un self-hosté ajoute
 une infrastructure à exploiter et sécuriser. Décision : **on ne dépend d'aucun
