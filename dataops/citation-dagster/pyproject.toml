@@ -28,6 +28,16 @@ dependencies = [
   "duckdb",
   "dbt-duckdb",
   "dagster-dbt==0.29.7",
+  # Plancher dbt-core EXPLICITE (contrat cluster ADR 0006, débloqué par
+  # cluster#536) : la chaîne dagster-dbt==0.29.7 autorise dbt-core<1.12,>=1.7,
+  # mais une résolution ancienne fige dbt-core 1.10.8 → dbt-common 1.27.1, qui
+  # épingle deepdiff<8 (2 CVE). dbt-core>=1.10.22 tire dbt-common>=1.34.2, qui
+  # accepte deepdiff<9 NATIVEMENT (donc 8.x corrigé) — compatible python 3.10
+  # (dbt-core 1.11/dbt-common 1.37.2+ exigent >=3.10) et parité 0.29.7 ↔ dagster
+  # 1.13.7 INCHANGÉE (l'image cluster n'installe aucun dbt). Aligne citation sur
+  # mediawatch (déjà en dbt-core 1.11.x). dbt-common 2.0.0 INTERDIT (ré-épingle
+  # deepdiff<8 : régression) — borné par l'override défensif ci-dessous.
+  "dbt-core>=1.10.22",
   # Qualité des données (étape 3.5a) : suites Great Expectations exécutées en
   # asset checks Dagster BLOQUANTS (en complément des tests dbt). Validation
   # in-process sur DataFrame pandas (contexte éphémère, hermétique). GE 1.18 tire
@@ -67,18 +77,18 @@ dependencies = [
 # (index_load) passe par DuckDB `ATTACH ... TYPE postgres`, pas par psycopg2.
 
 [tool.uv]
-# Override sécurité (homologue uv des overrides pnpm de pnpm-workspace.yaml) :
-# deepdiff est tiré en TRANSITIF par dbt-common (chaîne dagster-dbt==0.29.7), qui
-# l'épingle `deepdiff<8,>=7` → résolution en 7.0.1, vulnérable à GHSA-mw26-5g2v-hqw3
-# (critical, Class Pollution dans Delta) et GHSA-54jj-px8x-5w5q (high, DoS mémoire
+# Override sécurité DÉFENSIF (homologue uv des overrides pnpm) — désormais
+# SYMÉTRIQUE de mediawatch-dagster. Depuis le plancher dbt-core>=1.10.22
+# ci-dessus (contrat cluster ADR 0006, cluster#536), la résolution tire
+# dbt-common>=1.34.2 (deepdiff<9), donc deepdiff 8.x corrigé NATIVEMENT :
+# l'override est aujourd'hui un NO-OP. Il VERROUILLE la protection contre une
+# régression amont — dbt-common 2.0.0 RÉ-épingle `deepdiff<8` : sans cette
+# borne, un futur bump réintroduirait silencieusement GHSA-mw26-5g2v-hqw3
+# (critical, Class Pollution dans Delta) / GHSA-54jj-px8x-5w5q (high, DoS mémoire
 # SAFE_TO_IMPORT). Les deux CVE n'exploitent QUE la désérialisation d'un `Delta`
-# non fiable. Or l'UNIQUE usage de deepdiff dans toute la chaîne dbt est
-# `DeepDiff(ignore_order=…, exclude_paths=…)` sur des manifests LOCAUX fiables
-# (dbt_common/record.py) — jamais `Delta` ni `SAFE_TO_IMPORT`. On force donc
-# deepdiff>=8,<9 (versions corrigées, API DeepDiff stable 7→8) SANS toucher la
-# chaîne dagster/dbt ni la parité Dagster 1.13.7 du cluster (ADR 0006/0033 :
-# deepdiff n'est pas un point d'interface cluster). À relever quand dbt-common
-# acceptera nativement deepdiff>=8 (dès 1.29.0, mais hors parité 0.29.7 actuelle).
+# non fiable, jamais atteinte (dbt n'utilise que `DeepDiff` sur des manifests
+# LOCAUX fiables, dbt_common/record.py). API DeepDiff stable 7→8. N'impacte ni la
+# chaîne dagster/dbt ni la parité Dagster 1.13.7 du cluster (ADR 0006/0033).
 override-dependencies = ["deepdiff>=8,<9"]
 
 [dependency-groups]
