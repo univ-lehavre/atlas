@@ -31,6 +31,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       code: ${{ steps.filter.outputs.code }}
+      py: ${{ steps.filter.outputs.py }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -49,6 +50,7 @@ jobs:
           if [ -z "${BASE_SHA}" ]; then
             echo "Push (pas une PR) → pipeline complet."
             echo "code=true" >> "$GITHUB_OUTPUT"
+            echo "py=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           files="$(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}")"
@@ -57,7 +59,11 @@ jobs:
           # Liste blanche documentaire (ADR 0034) : un fichier qui matche l'un
           # de ces motifs est « doc ». Si TOUS les fichiers matchent, la PR est
           # documentaire (code=false) ; sinon code=true.
+          # `py` est un sous-drapeau : le job DataOps (Python) est lourd (uv +
+          # download modèle HF + kubeconform + pytest, ~5 min) et n'a de sens que
+          # si le périmètre dataops/ change — ou ce workflow lui-même.
           code=false
+          py=false
           while IFS= read -r f; do
             [ -z "$f" ] && continue
             case "$f" in
@@ -69,9 +75,13 @@ jobs:
               fixtures/*.txt|fixtures/*.csv|fixtures/*.json) ;; # fixtures texte
               *) code=true; echo "→ hors liste blanche : $f" ;;
             esac
+            case "$f" in
+              dataops/*|.github/workflows/ci.yml) py=true ;;
+            esac
           done <<< "${files}"
           echo "code=${code}" >> "$GITHUB_OUTPUT"
-          echo "Résultat : code=${code}"
+          echo "py=${py}" >> "$GITHUB_OUTPUT"
+          echo "Résultat : code=${code} py=${py}"
 
   # Tous les jobs lourds ne dépendent QUE de `changes` : ils partent en
   # parallèle (ADR 0061). Turbo gère l'ordre réel des tâches (`^build`) à
@@ -335,8 +345,17 @@ jobs:
     name: DataOps (Python)
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Court-circuit ADR 0034 : DataOps (Python) est un check REQUIS (ruleset), il
+    # doit donc TOUJOURS être rapporté — jamais `skipped`. On garde le job mais on
+    # court-circuite ses steps coûteux (install + uv + download modèle HF +
+    # kubeconform + pytest, ~5 min) quand le diff ne touche pas dataops/. Une PR
+    # sans Python sort ainsi `success` sans rien exécuter.
+    needs: [changes]
+    env:
+      RUN: ${{ needs.changes.outputs.py == 'true' }}
     steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - if: env.RUN == 'true'
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       # Catégorie dataops/ (Python, ADR 0055) : mêmes exigences de qualité que le
       # code Node (ruff + pytest + couverture à seuil). pnpm orchestre (scripts
@@ -344,12 +363,14 @@ jobs:
       # Python. setup-workspace fournit pnpm + Node + install + CACHE TURBO : les
       # checks dataops (lint:py/test:py/manifests:py) bénéficient ainsi du cache de
       # contenu inter-runs (ADR 0066) — un contenu déjà validé tombe en FULL TURBO.
-      - uses: ./.github/actions/setup-workspace
+      - if: env.RUN == 'true'
+        uses: ./.github/actions/setup-workspace
 
       # ADR 0061 : cache de l'environnement uv (téléchargements + venv résolu),
       # invalidé sur changement des lockfiles Python. Sans cache, chaque run
       # re-télécharge et re-résout l'environnement Dagster.
-      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+      - if: env.RUN == 'true'
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
         with:
           enable-cache: true
           cache-dependency-glob: "dataops/**/uv.lock"
@@ -359,12 +380,14 @@ jobs:
       # vecteur et la couverture chute sous le seuil. Caché par révision (clé =
       # fetch_model.py) pour ne pas retélécharger à chaque run.
       - name: Cache embedding model
+        if: env.RUN == 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v5
         with:
           path: dataops/citation-dagster/src/citation_dagster/models/all-MiniLM-L6-v2
           key: onnx-model-${{ hashFiles('dataops/citation-dagster/scripts/fetch_model.py') }}
 
       - name: Fetch embedding model
+        if: env.RUN == 'true'
         run: >-
           uv --project dataops/citation-dagster run python
           dataops/citation-dagster/scripts/fetch_model.py
@@ -374,6 +397,7 @@ jobs:
       # kustomize (kubectl est préinstallé sur les runners). Version pinnée
       # (cohérent avec le pin par SHA des actions) ; checksum vérifié.
       - name: Install kubeconform
+        if: env.RUN == 'true'
         run: |
           set -euo pipefail
           ver=v0.6.7
@@ -386,4 +410,9 @@ jobs:
           rm -f kubeconform.tar.gz kubeconform
 
       - name: DataOps quality (ruff + pytest + coverage + manifests)
+        if: env.RUN == 'true'
         run: pnpm dataops:check
+
+      - name: Skipped (hors périmètre dataops)
+        if: env.RUN != 'true'
+        run: echo "PR ne touchant pas dataops/ — checks Python non requis (ADR 0034)."
