@@ -143,7 +143,6 @@ pnpm audit:security      # Vulnérabilités npm connues (CVE)
 pnpm audit:licenses      # Compatibilité des licences des dépendances
 pnpm audit:unused        # Exports, imports et fichiers jamais utilisés (knip)
 pnpm audit:duplicates    # Blocs de code dupliqués (jscpd)
-pnpm audit:versions      # Dépendances avec une mise à jour disponible (taze)
 pnpm audit:dep-versions  # Cohérence des spécificateurs de version entre paquets
 pnpm docs:generate:check # La carte des paquets est à jour vis-à-vis du code
 pnpm audit:docs          # Cohérence de la documentation (compteurs, liens…)

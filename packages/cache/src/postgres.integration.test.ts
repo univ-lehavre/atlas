@@ -15,15 +15,35 @@ import { createPgRefreshState } from "./refresh.js";
  * Démarre un PostgreSQL épinglé PAR DIGEST (jamais un tag mobile, ADR 0057),
  * et vérifie : la DDL idempotente (deux Layers successifs ne cassent pas), le
  * round-trip JSONB, l'UPSERT (dernier écrivain gagne), l'horodatage `saved_at`,
- * et l'absence (clé non écrite → null). S'auto-saute si Docker est absent (un
- * contributeur sans Docker n'est pas bloqué). Le cache n'a pas besoin de
- * pgvector : une image Postgres standard suffit.
+ * et l'absence (clé non écrite → null). S'auto-saute si Docker est absent OU si
+ * l'image ne peut être obtenue (un contributeur sans Docker, ou un runner CI
+ * dont le pull Docker Hub échoue, ne sont pas bloqués). Le cache n'a pas besoin
+ * de pgvector : une image Postgres standard suffit.
  */
 const PG_IMAGE =
   "postgres:18-alpine@sha256:3f0182f7f06d949972a1d1901ff774e6d0b7c03ca95a27a12958d713fe5ea153";
 
-const dockerAvailable = spawnSync("docker", ["--version"]).status === 0;
-const describeOrSkip = dockerAvailable ? describe : describe.skip;
+/**
+ * Le test ne tourne que si Docker est là ET l'image est réellement disponible
+ * localement. On tente un `docker pull` (borné en temps) : un échec RÉSEAU (pull
+ * Docker Hub qui `context deadline exceeded` sur un runner) doit SKIP la suite,
+ * pas la faire échouer — c'était la cause n°1 de flakiness CI (#519). Le pull est
+ * fait ici UNE fois ; `beforeAll` peut ensuite `docker run` sans re-télécharger.
+ */
+const pgImageReady = (): boolean => {
+  if (spawnSync("docker", ["--version"]).status !== 0) return false;
+  const pull = spawnSync("docker", ["pull", PG_IMAGE], { timeout: 120_000 });
+  if (pull.status !== 0) {
+    console.warn(
+      `[cache] image Postgres indisponible (pull échoué) — test d'intégration sauté.\n` +
+        (pull.stderr?.toString().trim() || pull.error?.message || ""),
+    );
+    return false;
+  }
+  return true;
+};
+
+const describeOrSkip = pgImageReady() ? describe : describe.skip;
 
 function freePort(): Promise<number> {
   return new Promise((resolve) => {

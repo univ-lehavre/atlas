@@ -81,9 +81,9 @@ jobs:
 
           run=false
           # Un changement TRANSVERSE (dépendance partagée, lockfile, config de
-          # build, ce workflow) peut affecter n'importe quelle image → on les
-          # rebuild toutes. Un changement spécifique à une app/au service crf
-          # n'active QUE l'image correspondante.
+          # build, override/patch de sécurité, ce workflow) peut affecter
+          # n'importe quelle image → on les rebuild toutes. Un changement
+          # spécifique à une app/au service crf n'active QUE l'image correspondante.
           transverse=false
           b_atlas_dashboard=false; b_crf_dashboard=false; b_crf=false
           b_amarre=false; b_ecrin=false; b_find_an_expert=false; b_sillage=false
@@ -91,7 +91,12 @@ jobs:
             [ -z "$f" ] && continue
             case "$f" in
               packages/*|ui/*|config/*) transverse=true; run=true ;;
-              pnpm-lock.yaml|.nvmrc|.dockerignore|.github/workflows/images.yml) transverse=true; run=true ;;
+              # Fichiers RACINE qui pilotent l'install/build de TOUTES les images
+              # (chaque Dockerfile fait `COPY . .`). `pnpm-workspace.yaml` porte
+              # les overrides + patchedDependencies de SÉCURITÉ, `patches/*` leur
+              # contenu : sans eux ici, un correctif de sécurité par override/patch
+              # ne rebuildait aucune image (faux-négatif, #520).
+              pnpm-lock.yaml|pnpm-workspace.yaml|patches/*|turbo.json|.npmrc|.nvmrc|.dockerignore|.github/workflows/images.yml) transverse=true; run=true ;;
               apps/atlas-dashboard/*) b_atlas_dashboard=true; run=true ;;
               apps/crf-dashboard/*) b_crf_dashboard=true; run=true ;;
               services/crf/*) b_crf=true; run=true ;;
