@@ -8,11 +8,15 @@
 # valide. Toute dérive (version inconnue, dépendance absente) échoue bruyamment.
 #
 # `revision` est le SIGNAL CANONIQUE d'évolution : un nouveau SHA poussé = nouvelle version
-# à réconcilier ; l'image registry:80/citation-dagster:<revision> en DÉRIVE (même tag).
+# à réconcilier. Le tag lisible `registry:80/citation-dagster:<revision>` trace le lien
+# commit→image, mais le DÉPLOIEMENT se fait PAR DIGEST `@sha256` (ancre d'immuabilité, jamais
+# par tag mutable — ADR cluster 0095 §2 + cluster 0006, ADR atlas 0075). cluster build à ce `revision`, lit
+# le digest produit et l'injecte dans `apps/citation.yaml` (write-back @sha256) ; le tag ne
+# sert qu'à la traçabilité humaine, l'immuabilité tient au digest.
 
 codeLocation: citation
 ready: true # code mergé sur main (#449/#451/#452), testé (180 tests, 92 % couv), validate.sh OK
-revision: c98feea9 # SHA git court de main ; l'image en dérive (même tag)
+revision: c98feea9 # SHA git court de main ; tag lisible de l'image, mais déploiement PAR DIGEST @sha256
 contractVersion: "1.0" # contract_version ciblé (cluster/contract/endpoints.example.yaml)
 
 # Besoins déclarés → cluster valide la capacité AVANT de déployer.

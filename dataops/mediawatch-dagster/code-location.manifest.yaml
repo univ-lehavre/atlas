@@ -8,11 +8,15 @@
 # valide. Toute dérive (version inconnue, dépendance absente) échoue bruyamment.
 #
 # `revision` est le SIGNAL CANONIQUE d'évolution : un nouveau SHA poussé = nouvelle version
-# à réconcilier ; l'image registry:80/mediawatch-dagster:<revision> en DÉRIVE (même tag).
+# à réconcilier. Le tag lisible `registry:80/mediawatch-dagster:<revision>` trace le lien
+# commit→image, mais le DÉPLOIEMENT se fait PAR DIGEST `@sha256` (ancre d'immuabilité, jamais
+# par tag mutable — ADR cluster 0095 §2 + cluster 0006, ADR atlas 0075). cluster build à ce `revision`, lit
+# le digest produit et l'injecte dans `apps/mediawatch.yaml` (write-back @sha256) ; le tag ne
+# sert qu'à la traçabilité humaine, l'immuabilité tient au digest.
 
 codeLocation: mediawatch
 ready: true # code mergé sur main, testé (102 tests, 96 % couv), validate.sh OK (bench + prod)
-revision: fe6b0793 # SHA git court de main ; l'image en dérive (même tag)
+revision: fe6b0793 # SHA git court de main ; tag lisible de l'image, mais déploiement PAR DIGEST @sha256
 contractVersion: "1.0" # contract_version ciblé (cluster/contract/endpoints.example.yaml)
 
 # Besoins déclarés → cluster valide la capacité AVANT de déployer.
