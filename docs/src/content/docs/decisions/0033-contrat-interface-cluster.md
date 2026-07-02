@@ -86,7 +86,10 @@ donnée.
   propres services, assets Dagster, schéma de l'index).
 - **`cluster`** : tout ce qui est _infrastructure_ (addons `platform/<addon>/`,
   Ansible, opérateurs, exposition, observabilité), **et le déploiement réel**,
-  qui reste une action humaine validée sur le banc avant la prod.
+  désormais **déclenché par le push de code** (chaîne événementielle GitOps, zéro
+  geste) — l'intervention humaine subsiste comme **revue de PR**, pas comme geste
+  de déploiement (cf. l'Évolution du 2026-07-02 en bas de page ; le « comment »
+  vit côté cluster, [ADR cluster 0095 §1.b](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0095-build-applicatif-evenementiel-in-cluster.md)).
 - **Aucun manifeste d'infrastructure ne vit dans `atlas` ; aucun code applicatif
   ne vit dans `cluster`.**
 
@@ -128,8 +131,13 @@ déployeur via sa configuration.
 - Si une dérive silencieuse cause une panne malgré le contrat, on **promeut** la
   vérification au niveau supérieur (checks statiques inter-dépôts, puis
   smoke-test au banc) — pas avant qu'une douleur réelle ne le justifie.
-- Le **déploiement réel** reste une action **humaine** validée sur le banc
-  Vagrant ; aucun agent ne le déclenche automatiquement.
+- Le **déploiement réel** est **déclenché par le push de code** (le webhook de
+  build atlas amorce la chaîne événementielle GitOps, zéro geste manuel) ; le
+  **garde-fou humain** est la **revue de PR** en amont du merge, pas un geste de
+  déploiement. Le mécanisme détaillé vit côté cluster
+  ([ADR cluster 0095 §1.b](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0095-build-applicatif-evenementiel-in-cluster.md))
+  — atlas ne le duplique pas (neutralité de domaine) ; cf. l'Évolution du
+  2026-07-02 ci-dessous.
 
 ## Évolution (2026-06-04) — Stratégie d'images de déploiement
 
@@ -276,3 +284,40 @@ défensif** (borne anti-`2.0.0`), conservé, symétrique des deux code-locations
 Aucun point de contact du contrat n'est modifié — c'est une **contrainte de
 version d'un composant fourni**, tenue à jour ici comme l'exige le garde-fou
 ci-dessus.
+
+## Évolution (2026-07-02) — Déploiement événementiel (le push de code déclenche)
+
+Le contrat disait, jusqu'ici, que le **déploiement réel** reste une action
+_humaine_ validée sur le banc avant la prod (« Frontière de responsabilité » et
+« Garde-fous » ci-dessus). Cette formulation est **amendée** : côté cluster, la
+chaîne de déploiement est **événementielle** — un **push de code sur `atlas`**
+est le **déclencheur automatique** (zéro geste manuel), et l'intervention
+humaine se recentre sur la **revue de PR** (garde-fou GitOps en amont du merge),
+plus sur un geste de déploiement.
+
+**Ce qui ne change pas — la frontière ([ADR cluster 0094](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0094-frontiere-deploiement-applicatif.md)).**
+`atlas` **déclare et fournit** (manifeste montant `code-location.manifest.yaml`,
+placeholders `__CITATION_IMAGE__` / `__CITATION_IMAGE_DIGEST__` dans ses
+manifestes) ; `cluster` **valide, instancie et remplit** (lit le manifeste,
+build l'image, lit le digest, crée l'`Application` Argo CD). Le point « Images »
+du contrat (taguées explicitement, jamais `latest`) tient toujours : le **tag
+`:<revision>`** trace le lien commit→image (lisible), mais le **déploiement se
+fait par digest `@sha256`** (ancre d'immuabilité — cf. les manifestes montants et
+[ADR 0075](/atlas/decisions/0075-deploiement-prod-par-digest-injecte-cluster/)).
+
+**Le « comment » vit côté cluster** ([ADR cluster 0095 §1.b](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0095-build-applicatif-evenementiel-in-cluster.md)),
+qu'atlas ne duplique pas (neutralité de domaine). En bref : un `git push` sur le
+repo `atlas` frappe un **webhook Gitea de build** (distinct du webhook de
+déploiement qui alimente déjà Argo CD sur `cluster/apps`) → Argo Events dérive la
+code-location du **chemin modifié** et la `revision` du commit → un build in-pod
+pousse l'image au registry, en lit le **digest**, puis **écrit en retour** le
+`@sha256` dans le repo GitOps `cluster/apps` → Argo CD réconcilie. Un filet
+anti-perte d'événement compare périodiquement l'état déployé au dernier commit.
+
+**Statut — mise en place.** Le **design** ci-dessus est le fonctionnement cible
+de la chaîne ; la **preuve banc de bout en bout** (run from-scratch : push →
+build → write-back digest → réconciliation) **est en cours** et n'est pas encore
+établie. Cet amendement décrit l'architecture, pas un run validé. Aucun point de
+contact du contrat n'est modifié — seule la **nature du déclencheur** (push
+automatique vs geste humain) est corrigée, tenue à jour ici comme l'exige le
+garde-fou « même PR ».
