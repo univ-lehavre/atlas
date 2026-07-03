@@ -1,0 +1,28 @@
+# Fragment de workspace Dagster de la code-location `mediawatch` (ADR cluster 0103).
+#
+# ConfigMap DISJOINT `dagster-workspace-mediawatch` (aucune collision avec citation), agrégé
+# dans le `load_from:` central par le reconciler côté cluster (CronJob ns dagster, découverte
+# par label `dagster.io/role: code-location`). Voir le fragment citation
+# (`../../../citation-dagster/deploy/base/workspace-fragment.yaml`) pour le rationale complet
+# (pourquoi un ConfigMap par CL et non un patch du ConfigMap partagé : deux Applications Argo
+# CD ne peuvent PAS co-éditer une clé de ConfigMap → écrasement, bug constaté au banc).
+#
+# host: nom COURT `mediawatch-dagster` (PAS le FQDN) — résolveur gRPC/c-ares + resolv.conf
+# ndots:5 fait timeouter le FQDN en prod (univ-lehavre/cluster#458). Le webserver et cette
+# code-location sont dans le même ns `dagster` → le nom court nu suffit.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dagster-workspace-mediawatch
+  namespace: dagster
+  labels:
+    # Le reconciler découvre les fragments par CE label (ADR cluster 0103).
+    dagster.io/role: code-location
+    app.kubernetes.io/part-of: atlas
+    app.kubernetes.io/name: mediawatch-dagster
+data:
+  fragment.yaml: |
+    - grpc_server:
+        host: mediawatch-dagster
+        port: 4000
+        location_name: mediawatch
