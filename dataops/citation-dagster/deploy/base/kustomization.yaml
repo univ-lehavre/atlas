@@ -1,14 +1,15 @@
 # Base commune de la code-location Dagster « citation ».
 #
 # Manifestes indépendants du profil (banc léger / prod Ceph) : le Deployment +
-# Service gRPC et le patch du ConfigMap dagster-workspace. L'accès S3 (Secret au
-# banc, ObjectBucketClaim en prod) est ajouté par chaque overlay, car sa SOURCE
-# diffère — voir overlays/{bench,prod}.
+# Service gRPC et le FRAGMENT de workspace (ConfigMap disjoint `dagster-workspace-citation`,
+# agrégé par le reconciler cluster — ADR cluster 0103). L'accès S3 (Secret au banc,
+# ObjectBucketClaim en prod) est ajouté par chaque overlay, car sa SOURCE diffère —
+# voir overlays/{bench,prod}.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - code-location.yaml
-  - workspace-patch.yaml
+  - workspace-fragment.yaml
   - pdb.yaml
   # Migration du schéma « researchers » en hook PreSync (ADR cluster 0094 §5) :
   # appliquée AVANT la code-location. atlas FOURNIT (.sql + Job), cluster ORCHESTRE.

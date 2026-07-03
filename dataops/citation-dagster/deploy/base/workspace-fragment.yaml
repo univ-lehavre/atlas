@@ -1,0 +1,42 @@
+# Fragment de workspace Dagster de la code-location `citation` (ADR cluster 0103).
+#
+# ── POURQUOI un ConfigMap DISJOINT (et non plus un patch du ConfigMap partagé) ──
+# Chaque code-location est déployée par une Application Argo CD DISTINCTE. Deux
+# Applications NE PEUVENT PAS co-éditer la même clé d'un ConfigMap partagé : chacune
+# applique le manifeste COMPLET → elles s'écrasent (la dernière synchronisée gagne, la
+# précédente devient invisible dans le webserver). C'est le bug constaté au banc
+# (mediawatch tournait mais absente de l'UI, citation « gagnait » le ConfigMap partagé).
+#
+# La solution (ADR cluster 0103) : chaque CL pose SON PROPRE ConfigMap disjoint
+# `dagster-workspace-<nom>` (aucune collision), labellisé `dagster.io/role: code-location`.
+# Un RECONCILER côté cluster (CronJob ns dagster) DÉCOUVRE ces ConfigMaps par label,
+# AGRÈGE leurs fragments dans le `load_from:` du ConfigMap central `dagster-workspace`,
+# et redémarre le webserver + daemon SI le workspace a changé. Zéro énumération centrale :
+# une code-location neuve = juste son Application (son fragment), le reconciler l'ajoute.
+#
+# `fragment.yaml` = l'entrée `grpc_server` de CETTE code-location, telle qu'elle sera
+# concaténée sous `load_from:` (le reconciler l'indente de 2 espaces). La CL reste
+# PROPRIÉTAIRE de son host/port/location_name.
+#
+# host: nom COURT `citation-dagster` (PAS le FQDN `…svc.cluster.local`). Le résolveur
+# gRPC/c-ares du webserver/daemon Dagster suit `resolv.conf` (ndots:5) ; en prod, un
+# search domain externe (DNS de l'organisation) fait TIMEOUTER la résolution du FQDN
+# complet → « DagsterUserCodeUnreachableError: gRPC UNAVAILABLE » alors que le pod gRPC
+# est sain. Le nom court résout via le 1er search domain (`dagster.svc.cluster.local`).
+# Constaté sur la prod côté cluster (univ-lehavre/cluster#458).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dagster-workspace-citation
+  namespace: dagster
+  labels:
+    # Le reconciler découvre les fragments par CE label (ADR cluster 0103).
+    dagster.io/role: code-location
+    app.kubernetes.io/part-of: atlas
+    app.kubernetes.io/name: citation-dagster
+data:
+  fragment.yaml: |
+    - grpc_server:
+        host: citation-dagster
+        port: 4000
+        location_name: citation
