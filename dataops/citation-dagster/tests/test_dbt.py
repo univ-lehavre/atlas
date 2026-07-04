@@ -9,20 +9,55 @@ from pathlib import Path
 
 from citation_dagster import dbt as dbt_mod
 
+# Variables S3/OBC minimales du contrat de run (mêmes clés que ceph_target_from_env) :
+# BUCKET_NAME est le nom RÉEL choisi par l'OBC (jamais `citation` en prod), d'où le fait
+# de dériver les racines dbt de lui plutôt que des défauts `s3://citation/…`.
+_RUN_ENV = {
+    "AWS_ACCESS_KEY_ID": "x",
+    "AWS_SECRET_ACCESS_KEY": "x",
+    "BUCKET_HOST": "rgw.ceph",
+    "BUCKET_NAME": "citation-datalake-abc123",
+}
+
+
+def _set_run_env(monkeypatch):
+    for key, value in _RUN_ENV.items():
+        monkeypatch.setenv(key, value)
+
 
 def test_build_dbt_vars_uses_run_id_as_immutable_run(monkeypatch):
     # Défaut : opposition vide (capacité de purge non actionnée, lot 5).
+    _set_run_env(monkeypatch)
     monkeypatch.delenv("OPPOSITION_PAIRS", raising=False)
     vars_ = dbt_mod.build_dbt_vars(run_id="run-abc", curated_dt="2026-06")
     assert vars_ == {
+        "raw_root": "s3://citation-datalake-abc123/raw",
+        "curated_root": "s3://citation-datalake-abc123/curated",
+        "marts_root": "s3://citation-datalake-abc123/marts",
         "curated_dt": "2026-06",
         "curated_run": "run-abc",
         "opposition_pairs": "[]",
     }
 
 
+def test_build_dbt_vars_derives_s3_roots_from_bucket_name(monkeypatch):
+    """CONTRAT prod : les racines dbt suivent BUCKET_NAME (OBC), jamais le défaut `citation`.
+
+    Le bucket OBC prod est nommé `citation-datalake-<uuid>` (pas `citation`) : sans cette
+    dérivation, dbt écrirait/lirait `s3://citation/…` inexistant en prod (404). Ce test
+    franchit l'écart banc/prod que le smoke hermétique (bucket `citation`) ne voit pas.
+    """
+    _set_run_env(monkeypatch)
+    monkeypatch.setenv("BUCKET_NAME", "citation-datalake-prod-9f2c")
+    vars_ = dbt_mod.build_dbt_vars(run_id="r", curated_dt="2026-06")
+    assert vars_["raw_root"] == "s3://citation-datalake-prod-9f2c/raw"
+    assert vars_["curated_root"] == "s3://citation-datalake-prod-9f2c/curated"
+    assert vars_["marts_root"] == "s3://citation-datalake-prod-9f2c/marts"
+
+
 def test_build_dbt_vars_relays_opposition_env(monkeypatch):
     """build_dbt_vars relaie l'env OPPOSITION_PAIRS vers dbt (source unique, lot 5)."""
+    _set_run_env(monkeypatch)
     payload = '[{"author_id": "A1", "work_id": "W1"}]'
     monkeypatch.setenv("OPPOSITION_PAIRS", payload)
     vars_ = dbt_mod.build_dbt_vars(run_id="r", curated_dt="2026-06")
