@@ -120,6 +120,8 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0088 | [Portabilité : architectures (arm64/x86_64), OS et libc](/atlas/decisions/0088-portabilite-os-architecture/)                                                    | Accepted        |
 | 0089 | [Métriques Prometheus des services applicatifs (/metrics via Effect)](/atlas/decisions/0089-metriques-prometheus-services/)                                     | Accepted        |
 | 0090 | [Remote cache Turbo adossé au cache GitHub Actions](/atlas/decisions/0090-remote-cache-turbo-github/)                                                           | Accepted        |
+| 0091 | [Release de dépôt (release-please) + changesets automatiques, cadence quotidienne](/atlas/decisions/0091-release-depot-et-changesets-automatiques/)             | Accepted        |
+| 0092 | [Scope-enum dérivé du workspace (exhaustif, non ambigu)](/atlas/decisions/0092-scope-enum-derive-du-workspace/)                                                 | Accepted        |
 
 ## Quand ouvrir un ADR
 
