@@ -34,7 +34,10 @@ monorepo, pas des étiquettes inventées au coup par coup.
 
 ## Statut
 
-Accepted.
+Accepted. Le **mécanisme** de restriction (liste `scope-enum` fermée, maintenue à la main) est
+**superseded par l'[ADR 0092](/atlas/decisions/0092-scope-enum-derive-du-workspace/)** (enum
+DÉRIVÉ du workspace, exhaustif et non ambigu). Le reste de cet ADR — Conventional Commits
+obligatoires, scopes contraints, vérifiés par hook `commit-msg` — tient.
 
 ## Conséquences
 
