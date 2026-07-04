@@ -107,6 +107,14 @@ jobs:
             echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}"
           } >> .npmrc
 
+      # Génère les changesets à partir des Conventional Commits SCOPÉS depuis la dernière release
+      # (scope → package, type → bump ; scripts/release/generate-changesets.mjs). L'action
+      # Changesets ci-dessous les CONSOMME (`changeset version`). Idempotent : rejoué à chaque run,
+      # il réécrit les mêmes fichiers `auto-<pkg>.md` (slug déterministe) tant que la PR de version
+      # n'est pas mergée. Le checkout `fetch-depth: 0` fournit l'historique nécessaire.
+      - name: Generate changesets from conventional commits
+        run: node scripts/release/generate-changesets.mjs
+
       - name: Create Release Pull Request or Publish to registries
         id: changesets
         uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1
