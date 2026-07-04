@@ -4,11 +4,10 @@ title: "0091 — Release de dépôt (release-please) + changesets automatiques, 
 
 ## Contexte
 
-Le monorepo publie ses **paquets** individuellement via **Changesets** (npm public
-
-- GitHub Packages, provenance OIDC — [ADR 0017](/atlas/decisions/0017-releases-npm-oidc-deux-registres/) ;
-  assets signés cosign — [ADR 0087](/atlas/decisions/0087-signature-cosign-assets-release/)).
-  Trois manques structurels sont apparus :
+Le monorepo publie ses **paquets** individuellement via **Changesets** (npm public et GitHub
+Packages, provenance OIDC — [ADR 0017](/atlas/decisions/0017-releases-npm-oidc-deux-registres/) ;
+assets signés cosign — [ADR 0087](/atlas/decisions/0087-signature-cosign-assets-release/)). Trois
+manques structurels sont apparus :
 
 1. **Pas de version de DÉPÔT.** Chaque paquet a sa version npm, mais le monorepo
    lui-même n'a plus de version depuis `v1.2.1` (janvier 2026). `CITATION.cff` n'avait
