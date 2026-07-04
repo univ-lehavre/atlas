@@ -110,6 +110,10 @@ def render_rclone_config(target: CephTarget) -> str:
             f"secret_access_key = {target.secret_access_key}",
             f"endpoint = {target.endpoint}",
             "force_path_style = true",
+            # Le bucket OBC est PRÉ-provisionné par Rook et l'utilisateur S3 a un quota
+            # `max_buckets` : le check/create de bucket que rclone tente par défaut (rcat,
+            # copy) le dépasse → `TooManyBuckets` (400). On le saute (le bucket existe déjà).
+            "no_check_bucket = true",
             "",
         ]
     )
