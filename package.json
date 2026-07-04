@@ -1,5 +1,7 @@
 {
   "name": "atlas",
+  "version": "1.2.1",
+  "private": true,
   "description": "Generalist monorepo bundling several software projects under a shared quality pipeline",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
