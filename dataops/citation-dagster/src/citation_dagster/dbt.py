@@ -26,6 +26,7 @@ from dagster_dbt import DbtCliResource, DbtProject, dbt_assets
 from openlineage.client.event_v2 import RunState
 
 from citation_dagster import lineage
+from citation_dagster.resources import ceph_target_from_env
 
 # Racine du projet dbt. En dépôt : frère de ``citation-dagster`` sous ``dataops/``
 # (depuis src/citation_dagster/dbt.py → parents[3] == dataops/). Dans l'image, le
@@ -60,7 +61,14 @@ CURATED_DT = "0000-00"
 
 
 def build_dbt_vars(run_id: str, curated_dt: str) -> dict[str, str]:
-    """Variables dbt injectées au run : période + id de run IMMUABLE + opposition RGPD.
+    """Variables dbt injectées au run : racines S3 + période + id de run + opposition RGPD.
+
+    ``raw_root`` / ``curated_root`` / ``marts_root`` sont **dérivées du bucket réel**
+    (``BUCKET_NAME`` de l'OBC, via ``ceph_target_from_env``). Les défauts de
+    ``dbt_project.yml`` (``s3://citation/…``) ne valent QUE pour le banc, où le bucket
+    est fixé à ``citation`` ; en prod l'OBC nomme le bucket ``citation-datalake-<uuid>``
+    → sans surcharge, dbt écrirait/lirait un bucket inexistant (404). On les injecte au
+    run, comme le fait déjà l'harnais de test d'intégration (``test_dbt_models``).
 
     ``curated_run`` vient de ``context.run_id`` → un rejeu écrit un nouveau
     préfixe ``run=<id>/`` (immutabilité, jamais d'écriture en place).
@@ -71,7 +79,11 @@ def build_dbt_vars(run_id: str, curated_dt: str) -> dict[str, str]:
     que le filtrage lexical (dbt) et vecteur (Python) restent cohérents. On relaie
     sans décider — la liste vient du déployeur (ADR 0059).
     """
+    bucket = ceph_target_from_env().bucket
     return {
+        "raw_root": f"s3://{bucket}/raw",
+        "curated_root": f"s3://{bucket}/curated",
+        "marts_root": f"s3://{bucket}/marts",
         "curated_dt": curated_dt,
         "curated_run": run_id,
         "opposition_pairs": os.environ.get("OPPOSITION_PAIRS", "[]"),
