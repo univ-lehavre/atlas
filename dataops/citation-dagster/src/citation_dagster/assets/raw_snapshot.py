@@ -1,7 +1,7 @@
 """Asset d'ingestion : sync borné du snapshot OpenAlex vers le lakehouse.
 
 Synchronise les fichiers JSONL gzippés du snapshot public OpenAlex
-(``s3://openalex/data/{works,authors}``) vers le lakehouse interne
+(``s3://openalex/data/jsonl/{works,authors}``) vers le lakehouse interne
 (``s3://<bucket>/raw/{works,authors}``, RGW Ceph) à l'aide de ``rclone``.
 
 Le transfert passe par **deux endpoints S3 distincts** (AWS public → RGW interne),
@@ -44,6 +44,11 @@ _COHERENT_AUTHORS_PARTITION = "updated_date=coherent-sample"
 
 # Bucket source externe (en prose uniquement ; jamais dans un identifiant interne).
 _SOURCE_BUCKET = "openalex"
+# OpenAlex a introduit (2024+) un split de format sous `data/` : `data/jsonl/<entity>` (JSONL.gz,
+# le format historique) et `data/parquet/<entity>` (colonnaire). Les entités ne sont PLUS sous
+# `data/<entity>` directement → `rclone lsf` y renvoyait 0 partition. On lit le JSONL (l'aval dbt
+# `read_json_auto` reste inchangé) ; passer à parquet = chantier suivi (réécriture des staging).
+_SOURCE_PREFIX = "data/jsonl"
 _PRODUCER = "https://github.com/univ-lehavre/atlas/dataops/citation-dagster"
 
 
@@ -108,7 +113,7 @@ def _list_partitions(entity: str, config_path: Path) -> list[str]:
     coïncide avec le tri chronologique.
     """
     listing = _run_rclone(
-        ["lsf", "--dirs-only", f"openalex:{_SOURCE_BUCKET}/data/{entity}"],
+        ["lsf", "--dirs-only", f"openalex:{_SOURCE_BUCKET}/{_SOURCE_PREFIX}/{entity}"],
         config_path,
     )
     if listing.returncode != 0:
@@ -200,7 +205,7 @@ def _copy_partition(
     entity: str, partition: str, sample_size: int, target: CephTarget, config_path: Path
 ) -> int:
     """Copie ≤ ``sample_size`` ``.gz`` d'une partition vers ``raw/`` ; renvoie le nb copié."""
-    src = f"openalex:{_SOURCE_BUCKET}/data/{entity}/{partition}"
+    src = f"openalex:{_SOURCE_BUCKET}/{_SOURCE_PREFIX}/{entity}/{partition}"
     listing = _run_rclone(["lsf", "--include", "*.gz", src], config_path)
     if listing.returncode != 0:
         raise Failure(
@@ -289,7 +294,9 @@ def _emit_lineage(state: RunState, run_id: str, entities: list[str], bucket: str
         return
     namespace = os.environ.get("OPENLINEAGE_NAMESPACE", "dagster")
     client = OpenLineageClient.from_environment()
-    inputs = [Dataset(namespace=_SOURCE_BUCKET, name=f"data/{entity}") for entity in entities]
+    inputs = [
+        Dataset(namespace=_SOURCE_BUCKET, name=f"{_SOURCE_PREFIX}/{entity}") for entity in entities
+    ]
     inputs += [
         Dataset(namespace=_SOURCE_BUCKET, name=f"legacy-data/merged_ids/{e}") for e in entities
     ]
