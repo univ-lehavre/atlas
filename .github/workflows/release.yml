@@ -7,10 +7,13 @@ name: Release
 # provenance OIDC. `workflow_dispatch` reste disponible pour les runs
 # manuels (re-publication, rejouage post-incident).
 on:
+  # Releases QUOTIDIENNES à 03:00 UTC (dépôt via release-please + packages via Changesets) :
+  # les changements s'accumulent dans la journée, une seule release nocturne les publie. Plus
+  # de trigger `push: main` (releases continues à chaque merge) → cadence maîtrisée. Contrepartie
+  # assumée : le PUBLISH/tag suit d'un run le merge de la PR de version (auto-merge → run suivant).
+  schedule:
+    - cron: "0 3 * * *"
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -33,6 +36,33 @@ env:
   NPM_CONFIG_PROVENANCE: "true"
 
 jobs:
+  # Release du DÉPÔT (version unique monorepo, distincte des packages npm) via release-please :
+  # pilotée par les Conventional Commits, elle bumpe la `version` du package.json racine (privé,
+  # jamais publié) + `CITATION.cff` (extra-files) et tague `vX.Y.Z` (reprend après v1.2.1).
+  # Coexiste avec le job `release` (Changesets, versions par-package) — artefacts DISJOINTS.
+  release-please:
+    name: Release Please (version dépôt)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # tag + release GitHub du dépôt
+      pull-requests: write # création/maj de la PR de release
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+      - name: Enable auto-merge on the release PR
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          RELEASE_PR: ${{ steps.release.outputs.pr }}
+        run: |
+          PR_NUMBER=$(echo "$RELEASE_PR" | jq -r '.number')
+          gh pr merge "$PR_NUMBER" --auto --merge --repo "$GITHUB_REPOSITORY"
+
   release:
     name: Release
     runs-on: ubuntu-latest
