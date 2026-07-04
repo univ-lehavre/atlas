@@ -12,6 +12,7 @@ authors:
   - family-names: "Chasset"
     given-names: "Pierre-Olivier"
     affiliation: "Université Le Havre Normandie"
+    orcid: "https://orcid.org/0000-0002-0177-0387"
 repository-code: "https://github.com/univ-lehavre/atlas"
 license: MIT
 doi: 10.5281/zenodo.18310357
