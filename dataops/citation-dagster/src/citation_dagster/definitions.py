@@ -275,7 +275,34 @@ def _ct_cron(env: dict | None = None) -> str:
     return env.get("CITATION_CT_CRON") or _DEFAULT_CT_CRON
 
 
-_schedules = []
+# INGESTION PÉRIODIQUE (étape 2) : rapatrie le snapshot OpenAlex vers raw/ et AVANCE le
+# watermark. STOPPED par défaut (comme transform_daily) — le déployeur l'arme (ADR 0062).
+# Armée AVEC le sensor transform_on_watermark_advance (ci-dessous), elle donne une chaîne
+# MENSUELLE bout-en-bout : ingestion → watermark avancé → transform (dbt → embeddings →
+# index). Inconditionnelle : ingestion_job existe toujours (raw_snapshot est un asset
+# Python, sans dépendance dbt) — contrairement à transform_daily (gardé par _dbt_assets).
+# CADENCE = VALEUR D'INSTANCE (ADR 0062) : lue de CITATION_INGEST_CRON, défaut MENSUEL
+# (« 0 2 1 * * ») = rythme naturel des snapshots OpenAlex (ré-surchargeable par le déployeur).
+_DEFAULT_INGEST_CRON = "0 2 1 * *"
+
+
+def _ingest_cron(env: dict | None = None) -> str:
+    """Cron de l'ingestion, lu de CITATION_INGEST_CRON (valeur d'instance), défaut mensuel."""
+    env = env if env is not None else os.environ
+    return env.get("CITATION_INGEST_CRON") or _DEFAULT_INGEST_CRON
+
+
+_schedules = [
+    # Ingestion périodique du snapshot OpenAlex (raw/ + avance le watermark). Inconditionnelle
+    # (ingestion_job existe toujours) ; STOPPED par défaut, armée par le déployeur.
+    ScheduleDefinition(
+        name="ingest_snapshot",
+        job=ingestion_job,
+        cron_schedule=_ingest_cron(),
+        execution_timezone="UTC",
+        description="Ingestion périodique du snapshot OpenAlex (raw/ + avance le watermark).",
+    )
+]
 if _dbt_assets:
     transform_daily = ScheduleDefinition(
         name="transform_daily",
