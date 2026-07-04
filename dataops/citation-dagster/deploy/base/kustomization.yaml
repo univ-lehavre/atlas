@@ -29,3 +29,12 @@ configMapGenerator:
       - migrations/0001_researchers_index.sql
 generatorOptions:
   disableNameSuffixHash: true
+  # Le ConfigMap DOIT être un hook PreSync (comme le Job qui le monte) : sans cette
+  # annotation, Argo CD le crée au sync PRINCIPAL, soit APRÈS la phase PreSync → le Job
+  # PreSync `citation-migrate-schema` démarre avant et échoue « MountVolume.SetUp failed …
+  # configmap citation-migrations not found » (constaté prod dirqual 2026-07-04). En hook
+  # PreSync, le ConfigMap est posé AVANT le Job dans la même phase. hook-delete-policy aligné
+  # sur le Job (BeforeHookCreation : recréé à chaque sync, SQL idempotent CREATE IF NOT EXISTS).
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
