@@ -4,8 +4,10 @@ import json
 
 from citation_dagster.definitions import (
     _DEFAULT_CT_CRON,
+    _DEFAULT_INGEST_CRON,
     _DEFAULT_RETRAIN_COOLDOWN_S,
     _ct_cron,
+    _ingest_cron,
     _retrain_auto_enabled,
     _retrain_cooldown_s,
     _s3_env_from,
@@ -189,6 +191,30 @@ def test_transform_daily_uses_default_cron_in_ci():
     sched = next((s for s in defs.schedules if s.name == "transform_daily"), None)
     assert sched is not None
     assert sched.cron_schedule == _DEFAULT_CT_CRON
+
+
+def test_ingest_cron_default_when_env_absent():
+    # Sans CITATION_INGEST_CRON : défaut mensuel (rythme OpenAlex) — cadence non figée.
+    assert _ingest_cron({}) == _DEFAULT_INGEST_CRON
+
+
+def test_ingest_cron_overridable_by_instance():
+    # Le déployeur change la cadence d'ingestion par env, sans toucher au code générique.
+    assert _ingest_cron({"CITATION_INGEST_CRON": "0 3 15 * *"}) == "0 3 15 * *"
+
+
+def test_ingest_cron_blank_falls_back_to_default():
+    # Une valeur vide retombe sur le défaut (pas de cron vide qui casserait le schedule).
+    assert _ingest_cron({"CITATION_INGEST_CRON": ""}) == _DEFAULT_INGEST_CRON
+
+
+def test_ingest_snapshot_registered_unconditionally_and_targets_ingestion_job():
+    # Le schedule d'ingestion existe INCONDITIONNELLEMENT (pas gardé par _dbt_assets),
+    # cible ingestion_job et porte le cron par défaut en CI.
+    sched = next((s for s in defs.schedules if s.name == "ingest_snapshot"), None)
+    assert sched is not None
+    assert sched.cron_schedule == _DEFAULT_INGEST_CRON
+    assert sched.job_name == ingestion_job.name
 
 
 # ── Boucle fermée dérive → réentraînement (CT autonome, ADR 0079) ────────────────────
