@@ -1,0 +1,93 @@
+name: Resign Releases
+
+# Utilitaire PONCTUEL (workflow_dispatch uniquement) : re-signe et attache les assets
+# cosign (.tgz + .sig + .pem + .sha256) à des GitHub Releases de paquets DÉJÀ publiées
+# mais dont l'étape de signature du workflow Release avait échoué (ex. incident
+# cosign v4 du 2026-07-05 — flags --output-signature/--output-certificate retirés,
+# cf. ADR 0093). Ne publie RIEN sur les registres : les paquets sont déjà en ligne,
+# on ne fait qu'ajouter les artefacts de vérification (ADR 0087).
+#
+# La signature keyless s'appuie sur l'identité OIDC du runner GitHub Actions
+# (certificat identity = https://github.com/univ-lehavre/atlas/...), reproduisant à
+# l'identique le contrat de vérification du workflow Release — ce qu'un run local ne
+# pourrait pas faire (il porterait l'identité personnelle du mainteneur).
+on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: >-
+          Liste d'étiquettes de Release à re-signer, séparées par des espaces
+          (ex. « @univ-lehavre/atlas-cache@0.1.0 @univ-lehavre/atlas-citation@2.1.0 »).
+        required: true
+        type: string
+
+concurrency: ${{ github.workflow }}-${{ github.ref }}
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  resign:
+    name: Resign and attach assets
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write # upload d'assets sur les Releases
+      # OIDC keyless cosign (mêmes scopes que le job Release / ADR 0087 / ADR 0069).
+      id-token: write
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version-file: .nvmrc
+          cache: "pnpm"
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      # cosign v3.x : contrat de vérification sur le couple .sig/.pem (ADR 0087) —
+      # PAS le bundle .sigstore.json de cosign v4 (cf. ADR 0093).
+      - name: Install cosign
+        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+
+      # Pour chaque tag fourni : on retrouve le paquet à partir du tag `@scope/name@version`,
+      # on reconstruit le tarball (`pnpm pack` à la version courante du workspace — les paquets
+      # ré-empaquetés doivent correspondre aux versions publiées, ce que garantit le checkout de
+      # `main` à jour), on signe et on attache. `--clobber` rend l'opération réentrante.
+      - name: Resign and attach assets
+        env:
+          COSIGN_YES: "true"
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          TAGS: ${{ inputs.tags }}
+        run: |
+          set -euo pipefail
+          work="$(mktemp -d)"
+          for tag in $TAGS; do
+            # tag = @scope/name@version → name = tout avant le dernier '@', version = après.
+            version="${tag##*@}"
+            name="${tag%@*}"
+            echo "::group::Resigning ${tag} (name=${name}, version=${version})"
+            rm -f "$work"/*.tgz "$work"/*.tgz.* 2>/dev/null || true
+            pnpm pack --filter "${name}" --pack-destination "$work" >/dev/null
+            tgz="$(find "$work" -maxdepth 1 -name '*.tgz' | head -1)"
+            if [ -z "$tgz" ]; then
+              echo "::error::Aucun tarball produit pour ${name} (paquet introuvable dans le workspace ?)"
+              exit 1
+            fi
+            sha256sum "$tgz" > "${tgz}.sha256"
+            cosign sign-blob --output-signature "${tgz}.sig" --output-certificate "${tgz}.pem" "$tgz"
+            gh release upload "$tag" "$tgz" "${tgz}.sig" "${tgz}.pem" "${tgz}.sha256" --clobber
+            echo "::endgroup::"
+          done
+          echo "✅ Re-signature terminée."
