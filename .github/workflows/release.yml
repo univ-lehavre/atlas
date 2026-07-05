@@ -65,6 +65,39 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+      # release-please (extra-files générique) ne synchronise que le `version:` de
+      # CITATION.cff (marqueur x-release-please-version), PAS `date-released`. On
+      # l'estampille ICI dans la PR de version (avant l'auto-merge), à la date du
+      # jour : le champ suit la date de release, dans le MÊME commit série que le
+      # bump de version. Guillemets DOUBLES (style prettier du dépôt).
+      - name: Estampiller date-released dans la PR de version (CITATION.cff)
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ fromJSON(steps.release.outputs.pr).headBranchName }}
+          token: ${{ secrets.PAT_TOKEN }}
+      - name: Écrire date-released
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        env:
+          RELEASE_PR: ${{ steps.release.outputs.pr }}
+        run: |
+          set -euo pipefail
+          BRANCH=$(echo "$RELEASE_PR" | jq -r '.headBranchName')
+          TODAY=$(date -u +%Y-%m-%d)
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # Remplace `date-released:` si présent, sinon l'insère après `version:`.
+          if grep -qE '^date-released:' CITATION.cff; then
+            sed -i -E "s/^date-released:.*/date-released: \"${TODAY}\"/" CITATION.cff
+          else
+            sed -i -E "s/^(version:.*)$/\1\ndate-released: \"${TODAY}\"/" CITATION.cff
+          fi
+          if ! git diff --quiet CITATION.cff; then
+            git add CITATION.cff
+            git commit --quiet -m "chore: estampille date-released ${TODAY} (release-please)"
+            git push --quiet origin "HEAD:${BRANCH}"
+          fi
+
       # Auto-merge de la PR de version puis ATTENTE de son merge effectif (l'auto-merge
       # est asynchrone : il patiente jusqu'au vert de la CI de la PR, ~3-5 min). Sans cette
       # attente, la passe 2 ci-dessous re-tournerait avant que le commit de version soit sur
