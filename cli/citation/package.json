@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-citation-cli",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "CLI for OpenAlex citation graph researcher data curation",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",

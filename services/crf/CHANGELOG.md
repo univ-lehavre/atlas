@@ -1,5 +1,14 @@
 # @univ-lehavre/atlas-crf
 
+## 3.1.0
+
+### Minor Changes
+
+- [#536](https://github.com/univ-lehavre/atlas/pull/536) [`2cbb5f0`](https://github.com/univ-lehavre/atlas/commit/2cbb5f02195c408f15d79a13db888e304c6ba54c) Thanks [@chasset](https://github.com/chasset)! - - fix: corriger le binding lazy, l'attribution et instrumenter /metrics (revue adr 0089)
+  - feat: exposer /metrics prometheus via effect (adr 0089, [#400](https://github.com/univ-lehavre/atlas/issues/400))
+  - feat: middleware d'authentification Bearer sur le service Hono ([#307](https://github.com/univ-lehavre/atlas/issues/307)) ([#321](https://github.com/univ-lehavre/atlas/issues/321))
+  - fix: graceful shutdown on sigterm/sigint ([#318](https://github.com/univ-lehavre/atlas/issues/318))
+
 ## 3.0.2
 
 ### Patch Changes

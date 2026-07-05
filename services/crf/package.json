@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-crf",
-  "version": "3.0.2",
+  "version": "3.1.0",
   "description": "CRF Service - HTTP microservice for complex reporting forms",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
