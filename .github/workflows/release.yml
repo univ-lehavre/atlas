@@ -1,16 +1,21 @@
 name: Release
 
-# Phase 4.3 DevSecOps : releases automatiques. Chaque merge sur `main`
-# qui consomme un changeset déclenche soit l'ouverture (ou la mise à
-# jour) de la PR « chore: version packages », soit — si cette PR est
-# déjà mergée — le publish vers npm public + GitHub Packages avec
-# provenance OIDC. `workflow_dispatch` reste disponible pour les runs
-# manuels (re-publication, rejouage post-incident).
+# Phase 4.3 DevSecOps : releases automatiques, CYCLE COMPLET EN UNE NUIT.
+# Un seul run nocturne (ou `workflow_dispatch`) exécute de bout en bout :
+#   1. génération des changesets depuis les Conventional Commits scopés ;
+#   2. ouverture + AUTO-MERGE des PR de version (dépôt via release-please,
+#      packages via Changesets) ;
+#   3. attente du merge effectif de ces PR sur `main` ;
+#   4. SECONDE PASSE : re-checkout `main`, release-please tague/release le
+#      dépôt, Changesets publie les packages (npm public + GitHub Packages
+#      avec provenance OIDC) et crée les GitHub Releases signées (cosign).
+# Voir ADR 0093 (cycle complet en une nuit) — lève le décalage « publish au
+# run suivant » des ADR 0017/0053.
 on:
-  # Releases QUOTIDIENNES à 03:00 UTC (dépôt via release-please + packages via Changesets) :
-  # les changements s'accumulent dans la journée, une seule release nocturne les publie. Plus
-  # de trigger `push: main` (releases continues à chaque merge) → cadence maîtrisée. Contrepartie
-  # assumée : le PUBLISH/tag suit d'un run le merge de la PR de version (auto-merge → run suivant).
+  # Release QUOTIDIENNE à 03:00 UTC. Les changements s'accumulent dans la
+  # journée ; une seule release nocturne les versionne ET les publie (cycle
+  # complet, cf. ADR 0093). `workflow_dispatch` reste disponible pour les runs
+  # manuels (re-publication, rejouage post-incident).
   schedule:
     - cron: "0 3 * * *"
   workflow_dispatch:
@@ -18,9 +23,9 @@ on:
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
 # Plancher restrictif au niveau workflow (principe du moindre privilège,
-# critère Token-Permissions d'OpenSSF Scorecard — ADR 0083). Le job `release`
-# élève explicitement ce dont il a besoin (contents/packages/id-token write
-# pour publier avec provenance) ; tout autre job hériterait de ce read seul.
+# critère Token-Permissions d'OpenSSF Scorecard — ADR 0083). Chaque job
+# élève explicitement ce dont il a besoin ; tout autre hériterait de ce
+# read seul.
 permissions:
   contents: read
 
@@ -40,6 +45,11 @@ jobs:
   # pilotée par les Conventional Commits, elle bumpe la `version` du package.json racine (privé,
   # jamais publié) + `CITATION.cff` (extra-files) et tague `vX.Y.Z` (reprend après v1.2.1).
   # Coexiste avec le job `release` (Changesets, versions par-package) — artefacts DISJOINTS.
+  #
+  # Cycle complet (ADR 0093) : release-please est idempotent. À la 1re passe il OUVRE la PR de
+  # version (qu'on auto-merge), à la 2de passe — le commit de version étant sur `main` — il TAGUE
+  # et crée la GitHub Release. On enchaîne donc : passe 1 → attente du merge → passe 2, dans le
+  # même run, pour que le tag `vX.Y.Z` et la Release sortent la nuit même.
   release-please:
     name: Release Please (version dépôt)
     runs-on: ubuntu-latest
@@ -47,6 +57,7 @@ jobs:
       contents: write # tag + release GitHub du dépôt
       pull-requests: write # création/maj de la PR de release
     steps:
+      # --- Passe 1 : ouvre (ou met à jour) la PR de version, ou tague si déjà mergée.
       - id: release
         uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
         with:
@@ -54,19 +65,45 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
-      - name: Enable auto-merge on the release PR
+      # Auto-merge de la PR de version puis ATTENTE de son merge effectif (l'auto-merge
+      # est asynchrone : il patiente jusqu'au vert de la CI de la PR, ~3-5 min). Sans cette
+      # attente, la passe 2 ci-dessous re-tournerait avant que le commit de version soit sur
+      # `main` et ne taguerait rien (décalage d'un run — ce qu'on supprime, ADR 0093).
+      - name: Auto-merge and await the release PR
         if: ${{ steps.release.outputs.prs_created == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
           RELEASE_PR: ${{ steps.release.outputs.pr }}
         run: |
+          set -euo pipefail
           PR_NUMBER=$(echo "$RELEASE_PR" | jq -r '.number')
+          echo "PR de version dépôt : #${PR_NUMBER}"
           gh pr merge "$PR_NUMBER" --auto --merge --repo "$GITHUB_REPOSITORY"
+          # Poll jusqu'au MERGED (timeout ~20 min : marge au-dessus de la CI requise).
+          for i in $(seq 1 80); do
+            state=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json state --jq '.state')
+            echo "  [$i/80] PR #${PR_NUMBER} → ${state}"
+            if [ "$state" = "MERGED" ]; then echo "✅ PR de version mergée." && exit 0; fi
+            if [ "$state" = "CLOSED" ]; then echo "::error::PR #${PR_NUMBER} fermée sans merge." && exit 1; fi
+            sleep 15
+          done
+          echo "::error::Timeout : PR #${PR_NUMBER} non mergée à temps (CI bloquée ?)."
+          exit 1
+
+      # --- Passe 2 : le commit de version est sur `main` ; release-please pose le tag `vX.Y.Z`
+      # et crée la GitHub Release. No-op si la passe 1 n'avait rien à releaser.
+      - name: Release Please (tag + GitHub Release)
+        if: ${{ steps.release.outputs.prs_created == 'true' }}
+        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
 
   release:
     name: Release
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 60
     env:
       LEFTHOOK: 0
     permissions:
@@ -107,6 +144,7 @@ jobs:
             echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}"
           } >> .npmrc
 
+      # ============================ PASSE 1 ============================
       # Génère les changesets à partir des Conventional Commits SCOPÉS depuis la dernière release
       # (scope → package, type → bump ; scripts/release/generate-changesets.mjs). L'action
       # Changesets ci-dessous les CONSOMME (`changeset version`). Idempotent : rejoué à chaque run,
@@ -129,6 +167,69 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Auto-merge de la PR « chore: version packages » puis ATTENTE de son merge effectif.
+      # --merge (PAS --squash) : la ruleset `main` restreint `allowed_merge_methods` à
+      # `["merge"]` et le dépôt désactive le squash (ADR 0053). Changesets produit déjà un
+      # commit unique propre (`commit: "chore: version packages"`) : l'objectif « un seul
+      # commit de version » est préservé sans squash. L'attente (poll jusqu'au MERGED) est
+      # ce qui permet à la passe 2 ci-dessous de publier dans le MÊME run (ADR 0093).
+      - name: Auto-merge and await the version PR
+        id: await_version_pr
+        if: steps.changesets.outputs.pullRequestNumber
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+          PR_NUMBER: ${{ steps.changesets.outputs.pullRequestNumber }}
+        run: |
+          set -euo pipefail
+          echo "PR de version packages : #${PR_NUMBER}"
+          gh pr merge "$PR_NUMBER" --merge --delete-branch --auto
+          for i in $(seq 1 80); do
+            state=$(gh pr view "$PR_NUMBER" --json state --jq '.state')
+            echo "  [$i/80] PR #${PR_NUMBER} → ${state}"
+            if [ "$state" = "MERGED" ]; then echo "✅ PR de version mergée." && exit 0; fi
+            if [ "$state" = "CLOSED" ]; then echo "::error::PR #${PR_NUMBER} fermée sans merge." && exit 1; fi
+            sleep 15
+          done
+          echo "::error::Timeout : PR #${PR_NUMBER} non mergée à temps (CI bloquée ?)."
+          exit 1
+
+      # ============================ PASSE 2 ============================
+      # La PR de version vient d'être mergée : on rapatrie `main` (qui porte désormais le commit
+      # de version, les changesets consommés et supprimés), et on rejoue la génération +
+      # `changesets/action`. Cette fois il n'y a PLUS de changeset en attente → l'action bascule
+      # en mode PUBLISH (npm + GitHub Packages) et crée les GitHub Releases. No-op si aucune PR de
+      # version n'avait été ouverte en passe 1 (rien à releaser cette nuit).
+      - name: Sync main after version PR merge
+        if: steps.changesets.outputs.pullRequestNumber
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main
+
+      - name: Reinstall after sync
+        if: steps.changesets.outputs.pullRequestNumber
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerate changesets (idempotent) on updated main
+        if: steps.changesets.outputs.pullRequestNumber
+        run: node scripts/release/generate-changesets.mjs
+
+      - name: Publish to registries (second pass)
+        id: publish
+        if: steps.changesets.outputs.pullRequestNumber
+        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1
+        with:
+          version: pnpm run changeset:version
+          publish: pnpm run release
+          title: "chore: version packages"
+          commit: "chore: version packages"
+          createGithubReleases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       # Signature des artefacts de Release GitHub (ADR 0087). En complément de la
       # provenance OIDC npm (qui couvre le REGISTRE), on attache à CHAQUE GitHub
       # Release créée par Changesets le tarball du paquet, sa signature cosign
@@ -136,18 +237,23 @@ jobs:
       #   cosign verify-blob --certificate <pkg>.pem --signature <pkg>.sig \
       #     --certificate-identity-regexp '^https://github.com/univ-lehavre/atlas/' \
       #     --certificate-oidc-issuer https://token.actions.githubusercontent.com <pkg>.tgz
-      # Ne tourne que si Changesets a réellement publié (sinon : no-op).
+      # Ne tourne que si la passe 2 a réellement publié (sinon : no-op).
+      # cosign v3.x : les flags `--output-signature`/`--output-certificate` (utilisés
+      # ci-dessous, contrat de vérification ADR 0087) sont RETIRÉS en cosign v4 au profit
+      # d'un bundle `.sigstore.json` unique — un `cosign-installer@v4` fait échouer sign-blob
+      # avec « create bundle file: open : no such file or directory ». On épingle donc v3.x
+      # tant que la doc de vérification reste sur le couple .sig/.pem.
       - name: Install cosign
-        if: steps.changesets.outputs.published == 'true'
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+        if: steps.publish.outputs.published == 'true'
+        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
 
       - name: Sign and attach release assets
-        if: steps.changesets.outputs.published == 'true'
+        if: steps.publish.outputs.published == 'true'
         env:
           # Identité OIDC keyless (pas de clé à stocker) — comme images.yml / ADR 0069.
           COSIGN_YES: "true"
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
-          PUBLISHED: ${{ steps.changesets.outputs.publishedPackages }}
+          PUBLISHED: ${{ steps.publish.outputs.publishedPackages }}
         run: |
           set -euo pipefail
           work="$(mktemp -d)"
@@ -169,21 +275,3 @@ jobs:
             gh release upload "$tag" "$tgz" "${tgz}.sig" "${tgz}.pem" "${tgz}.sha256" --clobber
             echo "::endgroup::"
           done
-
-      - name: Merge Release PR
-        # --auto queues the merge until the required checks finish on the PR
-        # (CI typically takes ~3 min). Without it, this step races the CI and
-        # fails with "the base branch policy prohibits the merge" every time
-        # main protection requires status checks.
-        #
-        # --merge (PAS --squash) : la ruleset `main` restreint
-        # `allowed_merge_methods` à `["merge"]` et le dépôt désactive le squash
-        # (ADR 0053). Un `gh pr merge --squash` est rejeté par la policy → la PR
-        # « chore: version packages » ne s'auto-mergeait jamais, donc le publish
-        # (déclenché par le merge de cette PR) ne partait pas. Changesets produit
-        # déjà un commit unique propre (`commit: "chore: version packages"`),
-        # l'objectif « un seul commit de version » est préservé sans squash.
-        if: steps.changesets.outputs.pullRequestNumber
-        run: gh pr merge ${{ steps.changesets.outputs.pullRequestNumber }} --merge --delete-branch --auto
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
