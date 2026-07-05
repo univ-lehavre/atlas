@@ -7,6 +7,13 @@
 #
 # USE_SSL : http au banc/MinIO (port 8333/9000), https en prod si l'endpoint l'est.
 # Ici on cible le banc (use_ssl false) ; la prod surchargera via DBT_S3_USE_SSL.
+#
+# ENDPOINT : le httpfs de DuckDB (c-ares) BUTE sur la forme QUASI-FQDN que le ConfigMap
+# de l'OBC Rook expose en prod (`rook-ceph-rgw-datalake.rook-ceph.svc`) — avec un search
+# domain externe (ndots:5), la résolution du FQDN complet timeoute (piège FQDN prod,
+# cf. cluster#458 ; parité `resources._short_incluster_host`). On retire donc le suffixe
+# de cluster (`.svc.cluster.local` / `.svc`) → nom COURT ns-qualifié qui résout fiablement.
+# Inoffensif au banc (SeaweedFS `seaweedfs` n'a pas ces suffixes).
 citation:
   target: dev
   outputs:
@@ -20,6 +27,6 @@ citation:
           key_id: "{{ env_var('AWS_ACCESS_KEY_ID') }}"
           secret: "{{ env_var('AWS_SECRET_ACCESS_KEY') }}"
           region: us-east-1
-          endpoint: "{{ env_var('BUCKET_HOST') }}:{{ env_var('BUCKET_PORT', '8333') }}"
+          endpoint: "{{ env_var('BUCKET_HOST') | replace('.svc.cluster.local', '') | replace('.svc', '') }}:{{ env_var('BUCKET_PORT', '8333') }}"
           url_style: path
           use_ssl: "{{ env_var('DBT_S3_USE_SSL', 'false') }}"

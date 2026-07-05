@@ -31,7 +31,9 @@ _ENV = {
 
 def test_config_from_env_strips_scheme_and_detects_ssl():
     cfg = duckdb_s3_config_from_env(_ENV)
-    assert cfg.endpoint == "seaweedfs.s3.svc.cluster.local:8333"  # sans schéma
+    # Sans schéma ET nom court : le suffixe de cluster (.svc.cluster.local) est retiré
+    # pour l'endpoint DuckDB (piège FQDN prod, cf. resources._short_incluster_host).
+    assert cfg.endpoint == "seaweedfs.s3:8333"
     assert cfg.use_ssl is False  # http → pas de SSL
     assert cfg.key_id == "AK" and cfg.bucket == "citation"
 
