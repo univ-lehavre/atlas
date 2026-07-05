@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-stats-cli
 
+## 1.0.5
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @univ-lehavre/atlas-stats@1.0.3
+
 ## 1.0.4
 
 ### Patch Changes

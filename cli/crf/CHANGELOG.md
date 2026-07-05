@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-crf-cli
 
+## 3.0.4
+
+### Patch Changes
+
+- Updated dependencies [[`2cbb5f0`](https://github.com/univ-lehavre/atlas/commit/2cbb5f02195c408f15d79a13db888e304c6ba54c)]:
+  - @univ-lehavre/atlas-crf@3.1.0
+
 ## 3.0.3
 
 ### Patch Changes
