@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.1](https://github.com/univ-lehavre/atlas/compare/v1.3.0...v1.3.1) (2026-07-05)
+
+
+### Bug Fixes
+
+* **citation-dagster:** ingestion prod complète par défaut, le banc borne (inversion de polarité) ([62104cd](https://github.com/univ-lehavre/atlas/commit/62104cdde92df7bd4e1011e46af78caf6d59459d))
+* **citation-dagster:** ingestion prod complète par défaut, le banc borne (inversion de polarité) ([#545](https://github.com/univ-lehavre/atlas/issues/545)) ([739a19c](https://github.com/univ-lehavre/atlas/commit/739a19ce958f79e8427b4ef415e0e2f830a5aad5))
+
 ## [1.3.0](https://github.com/univ-lehavre/atlas/compare/v1.2.1...v1.3.0) (2026-07-05)
 
 
