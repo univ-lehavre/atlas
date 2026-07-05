@@ -8,6 +8,7 @@ from citation_dagster.definitions import (
     _DEFAULT_RETRAIN_COOLDOWN_S,
     _ct_cron,
     _ingest_cron,
+    _ingest_run_config,
     _retrain_auto_enabled,
     _retrain_cooldown_s,
     _s3_env_from,
@@ -77,6 +78,45 @@ def test_ingestion_job_injects_lineage_and_mlflow_env_into_run_pod():
     names = {e["name"] for e in env}
     assert "OPENLINEAGE_URL" in names
     assert "MLFLOW_TRACKING_URI" in names
+
+
+def test_ingest_run_config_prod_default_is_unbounded():
+    """PROD : aucune variable de bornage posée → pas de run_config → défaut CODE complet.
+
+    C'est le cœur de la révision : la prod ne borne PAS l'ingestion (elle rapatrie tout),
+    et c'est le banc qui pose les variables. Sans env → None (aucune surcharge)."""
+    assert _ingest_run_config({}) is None
+
+
+def test_ingest_run_config_bench_bounds_from_env():
+    """BANC : les variables d'overlay bornent l'ingestion via le run_config de la Schedule."""
+    env = {
+        "CITATION_INGEST_SAMPLE_SIZE": "4",
+        "CITATION_INGEST_MAX_PARTITIONS": "1",
+        "CITATION_INGEST_COHERENT": "on",
+    }
+    rc = _ingest_run_config(env)
+    assert rc is not None
+    cfg = rc.ops["raw_snapshot"]
+    assert cfg.sample_size == 4
+    assert cfg.max_partitions == 1
+    assert cfg.coherent_sample is True
+
+
+def test_ingest_run_config_ignores_malformed_env():
+    """Parse défensif : une valeur invalide n'écrase PAS le défaut complet (pas de crash)."""
+    rc = _ingest_run_config({"CITATION_INGEST_MAX_PARTITIONS": "pas-un-entier"})
+    # rien de valide → aucune surcharge → None (défaut complet préservé).
+    assert rc is None
+
+
+def test_ingest_schedule_registered_on_ingestion_job():
+    """La Schedule ingest_snapshot existe et cible ingestion_job. Son run_config (câblé
+    via _ingest_run_config, testé ci-dessus) borne le banc et laisse la prod complète."""
+    from citation_dagster import definitions as d
+
+    sched = next(s for s in d._schedules if s.name == "ingest_snapshot")
+    assert sched.job_name == "ingestion_job"
 
 
 def _job_by_name(name):

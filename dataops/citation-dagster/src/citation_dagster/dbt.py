@@ -78,9 +78,16 @@ def build_dbt_vars(run_id: str, curated_dt: str) -> dict[str, str]:
     SOURCE UNIQUE de la purge : le MÊME env est lu par l'asset vecteur Python, pour
     que le filtrage lexical (dbt) et vecteur (Python) restent cohérents. On relaie
     sans décider — la liste vient du déployeur (ADR 0059).
+
+    ``eunicoast_min_year`` (fenêtre temporelle du périmètre EUNICoast) : FIGE la borne
+    « moins de N ans » du mart2 au run, relayée de l'env ``CITATION_EUNICOAST_MIN_YEAR``
+    (valeur d'instance, déployeur). Sans elle, ``curated_eunicoast_works`` retombe sur
+    ``current_date − 10`` qui **glisse** d'un run à l'autre → corpus d'entraînement
+    non reproductible (ADR 0057). On ne l'injecte QUE si l'env est posé (sinon on laisse
+    le défaut glissant de la macro dbt), pour ne pas figer une valeur arbitraire.
     """
     bucket = ceph_target_from_env().bucket
-    return {
+    vars_: dict[str, str] = {
         "raw_root": f"s3://{bucket}/raw",
         "curated_root": f"s3://{bucket}/curated",
         "marts_root": f"s3://{bucket}/marts",
@@ -88,6 +95,10 @@ def build_dbt_vars(run_id: str, curated_dt: str) -> dict[str, str]:
         "curated_run": run_id,
         "opposition_pairs": os.environ.get("OPPOSITION_PAIRS", "[]"),
     }
+    min_year = os.environ.get("CITATION_EUNICOAST_MIN_YEAR")
+    if min_year:
+        vars_["eunicoast_min_year"] = min_year
+    return vars_
 
 
 def ensure_manifest() -> Path:
