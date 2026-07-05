@@ -109,12 +109,29 @@ def _s3_env_from() -> list[dict]:
     return env_from
 
 
+# dnsConfig ndots:1 sur les pods de RUN (piège FQDN prod sous charge, univ-lehavre/cluster#458).
+# Le résolveur k8s pose `ndots:5` par défaut : un host intra-cluster à < 5 points (ex.
+# `rook-ceph-rgw-datalake.rook-ceph`, 1 point) est traité comme RELATIF → glibc `getaddrinfo`
+# parcourt TOUTE la search-list (dagster.svc…, svc…, cluster.local, PUIS les domaines EXTERNES
+# du resolv.conf) avant la forme absolue = 5-6 lookups par résolution. Le contrat GE
+# (`ge_raw_contract` → DuckDB httpfs, qui résout via cpp-httplib/getaddrinfo, PAS c-ares) fait un
+# HTTP HEAD PAR FICHIER sur des milliers de `part_*.gz` du datalake → l'amplification ×5-6 sature
+# le DNS et fait remonter des `EAI_AGAIN` transitoires (« Could not resolve hostname », prod
+# dirqual 2026-07-05, run c1d30af4). `ndots:1` fait tenter tout nom ≥ 1 point en ABSOLU d'abord →
+# 1 seul lookup, aucune search-list. Bénéficie à TOUS les accès DNS du pod (DuckDB, S3, Postgres),
+# pas seulement DuckDB. Posé via `pod_spec_config` du tag `dagster-k8s/config` (le K8sRunLauncher
+# ne porte pas le pod-spec des runs — il vient d'ici). rclone (ingestion, glibc aussi) réutilise
+# ses connexions → peu de lookups → n'était pas affecté (687 GiB ingérés OK).
+_DNS_NDOTS_1 = {"dns_config": {"options": [{"name": "ndots", "value": "1"}]}}
+
+
 _RUN_K8S_CONFIG = {
     "dagster-k8s/config": {
         "container_config": {
             "env": _RUN_ENV,
             "env_from": _s3_env_from(),
         },
+        "pod_spec_config": _DNS_NDOTS_1,
     },
 }
 
@@ -153,6 +170,9 @@ _TRANSFORM_K8S_CONFIG = {
             # Même source S3 paramétrée par profil que le run d'ingestion.
             "env_from": _s3_env_from(),
         },
+        # Même dnsConfig ndots:1 que le run d'ingestion (cf. _DNS_NDOTS_1) : le transform
+        # (dbt-duckdb + index_load) résout aussi le RGW S3 et pg-rw.postgres par nom court.
+        "pod_spec_config": _DNS_NDOTS_1,
     },
 }
 

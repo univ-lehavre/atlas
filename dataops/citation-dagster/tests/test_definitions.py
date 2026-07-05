@@ -6,6 +6,8 @@ from citation_dagster.definitions import (
     _DEFAULT_CT_CRON,
     _DEFAULT_INGEST_CRON,
     _DEFAULT_RETRAIN_COOLDOWN_S,
+    _DNS_NDOTS_1,
+    _TRANSFORM_K8S_CONFIG,
     _ct_cron,
     _ingest_cron,
     _ingest_run_config,
@@ -24,6 +26,35 @@ def _run_container_config(job):
     raw = job.tags["dagster-k8s/config"]
     config = raw if isinstance(raw, dict) else json.loads(raw)
     return config["container_config"]
+
+
+def _run_pod_spec_config(job):
+    """pod_spec_config des tags dagster-k8s/config d'un job (valeur dict ou JSON)."""
+    raw = job.tags["dagster-k8s/config"]
+    config = raw if isinstance(raw, dict) else json.loads(raw)
+    return config["pod_spec_config"]
+
+
+def test_ingestion_run_pod_sets_ndots_1():
+    # ndots:1 sur le pod de run tue le fan-out de search-list (piège FQDN prod sous charge,
+    # cluster#458) : sans lui, un host intra-cluster à < 5 points déclenche 5-6 lookups par
+    # HEAD → EAI_AGAIN transitoires sur les milliers de HEAD du contrat GE.
+    dns = _run_pod_spec_config(ingestion_job)["dns_config"]
+    assert {"name": "ndots", "value": "1"} in dns["options"]
+
+
+def test_transform_run_pod_sets_ndots_1():
+    # Même dnsConfig sur le transform (dbt-duckdb + index_load résolvent RGW et pg par nom court).
+    dns = _TRANSFORM_K8S_CONFIG["dagster-k8s/config"]["pod_spec_config"]["dns_config"]
+    assert {"name": "ndots", "value": "1"} in dns["options"]
+
+
+def test_dns_ndots_config_is_consistent_across_jobs():
+    # Parité : ingestion et transform portent le MÊME dnsConfig (Dagster sérialise le tag en
+    # JSON → on compare l'ÉGALITÉ de contenu, pas l'identité). Une divergence ferait retomber
+    # l'un des deux runs dans le fan-out DNS.
+    assert _run_pod_spec_config(ingestion_job) == _DNS_NDOTS_1
+    assert _TRANSFORM_K8S_CONFIG["dagster-k8s/config"]["pod_spec_config"] == _DNS_NDOTS_1
 
 
 def test_defs_exposes_raw_snapshot_asset():
