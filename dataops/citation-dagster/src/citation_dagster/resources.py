@@ -135,16 +135,36 @@ class DuckDBS3Config:
     bucket: str
 
 
+def _short_incluster_host(host_port: str) -> str:
+    """Raccourcit un host de Service k8s en retirant le suffixe DNS de cluster.
+
+    Le ConfigMap de l'OBC Rook expose ``BUCKET_HOST`` en forme QUASI-FQDN
+    (``rook-ceph-rgw-datalake.rook-ceph.svc``). rclone (résolveur glibc) tolère cette
+    forme, mais le httpfs de DuckDB (c-ares) BUTE en prod : avec un search domain externe
+    (resolv.conf, ndots:5), la résolution du FQDN complet **timeoute**
+    (« Could not resolve hostname », piège FQDN prod, cf. univ-lehavre/cluster#458). On
+    retire donc le suffixe de cluster (``.svc.cluster.local`` / ``.svc``) pour retomber sur
+    le nom COURT ns-qualifié (``<svc>.<ns>``), qui résout de façon fiable. N'affecte QUE les
+    hosts k8s (banc SeaweedFS ``seaweedfs:8333`` / MinIO / host externe = inchangés)."""
+    host, _, port = host_port.partition(":")
+    for suffix in (".svc.cluster.local", ".svc"):
+        if host.endswith(suffix):
+            host = host[: -len(suffix)]
+            break
+    return f"{host}:{port}" if port else host
+
+
 def duckdb_s3_config_from_env(env: dict[str, str] | None = None) -> DuckDBS3Config:
     """Construit la config S3 DuckDB depuis l'environnement.
 
     Réutilise ``ceph_target_from_env`` (mêmes variables ``AWS_*``/``BUCKET_*``),
     puis dérive le format DuckDB : ``host:port`` sans schéma, ``use_ssl`` selon
-    que l'endpoint est en ``https`` (RGW prod) ou ``http`` (SeaweedFS/MinIO).
+    que l'endpoint est en ``https`` (RGW prod) ou ``http`` (SeaweedFS/MinIO). Le host
+    est raccourci au nom court ns-qualifié (piège FQDN prod, cf. ``_short_incluster_host``).
     """
     target = ceph_target_from_env(env)
     use_ssl = target.endpoint.startswith("https://")
-    host_port = target.endpoint.split("://", 1)[-1]
+    host_port = _short_incluster_host(target.endpoint.split("://", 1)[-1])
     return DuckDBS3Config(
         key_id=target.access_key_id,
         secret=target.secret_access_key,
