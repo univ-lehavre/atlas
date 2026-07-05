@@ -76,25 +76,75 @@ def _result(passed: bool, metadata: dict) -> AssetCheckResult:
 # ── Corps purs (chargement + validation), testables sans Dagster ─────────────
 
 
+# Nombre de fichiers .gz échantillonnés par entité pour le contrat de FORME du brut.
+# Borne de contrat (valeur-exemple stable, ADR 0023) — dérivable de l'env : le banc peut
+# la baisser, la prod l'ajuster. `raw/` est append-only cumulatif (chaque ingestion empile
+# des .gz jamais purgés) → sans borne, check_raw matérialiserait TOUT le lac (261k fichiers
+# post-ingestion complète, des milliards de lignes) et gèlerait (~10-19 s/fichier ; le run
+# timeoute à ~73s et httpfs déguise le timeout HTTP en « Could not resolve hostname » — ce
+# n'est PAS un bug DNS, cf. drift + audit ndots). curated/marts ne sont PAS concernés : ils
+# lisent le Parquet du `run={run_id}` courant, borné par nature.
+# Défaut 4 : chaque .gz OpenAlex ≈ 150-290k lignes → 4 fichiers ≈ 1,4M lignes réparties sur
+# 4 partitions updated_date, largement assez pour un contrat de forme, en ~60 s (le format
+# est un invariant homogène). PROUVÉ sur le RGW prod : works 725k lignes/41s + authors
+# 751k/19s, 0 id mal formé, sans OOM. Ne PAS remonter sans raison — un asset check BLOQUANT
+# ne doit pas prendre des minutes×N.
+_RAW_SAMPLE_FILES = int(os.environ.get("CITATION_GE_RAW_SAMPLE_FILES", "4"))
+
+
+def _sample_raw_files(con, bucket: str, prefix: str, n: int) -> list[str]:
+    """Échantillon DÉTERMINISTE et RÉPARTI de N fichiers .gz d'un préfixe brut.
+
+    `glob()` LISTE les clés sans les LIRE (I/O = un LIST S3, pas des GET) → on borne la
+    lecture lourde en AMONT en passant une liste explicite de N fichiers à read_json_auto
+    (robuste quel que soit le pushdown du LIMIT, incertain avec union_by_name). Tri (rejeu
+    identique) puis pas régulier `files[::step]` pour COUVRIR toutes les partitions
+    `updated_date=…` (récentes ET anciennes), pas seulement les premières lexicographiques —
+    un régresseur de format sur une partition récente reste ainsi couvert. Réserve : le glob
+    s'appuie sur le listing RGW (tronqué, cf. drift index RGW) → check_raw est un contrat de
+    FORME, PAS une preuve d'exhaustivité. Retombe sur la liste entière si < N fichiers."""
+    rows = con.sql(
+        "SELECT file FROM glob($glob) ORDER BY file",
+        params={"glob": f"s3://{bucket}/{prefix}/**/*.gz"},
+    ).fetchall()
+    files = [r[0] for r in rows]
+    if len(files) <= n:
+        return files
+    step = len(files) // n
+    return files[::step][:n]
+
+
 def check_raw(bucket: str) -> AssetCheckResult:
-    """Valide le brut works + authors (contrat structurel + format des ids)."""
+    """Valide le brut works + authors (contrat structurel + format des ids).
+
+    Contrat de FORME, PAS audit exhaustif : la lecture est bornée à un ÉCHANTILLON de
+    fichiers (`_sample_raw_files`). La forme (colonnes présentes, ids au bon préfixe) est un
+    invariant par-fichier homogène — un échantillon la prouve aussi bien que les milliards de
+    lignes du lac. L'audit ligne-à-ligne exhaustif vit en aval (tests dbt not_null/unique/
+    relationships sur le staging, suites curated/marts par run)."""
     con = lakehouse.connect()
-    # On PROJETTE les seules colonnes que les suites GE valident (cf. ge_suites :
-    # raw_works → id/referenced_works/authorships ; raw_authors → id) au lieu d'un
-    # SELECT * : sur le brut OpenAlex réel, l'inférence de schéma complète de
-    # read_json_auto bute sur des objets JSON à clés dupliquées (p. ex.
-    # abstract_inverted_index converti en MAP) → DuckDB lève « Map keys must be
-    # unique » et fait échouer ce check pourtant satisfait. Projeter évite de
-    # parser ces champs non validés (plus robuste, plus léger). hive_partitioning
-    # =false : neutralise la colonne fantôme updated_date (cf. staging).
+    w_files = _sample_raw_files(con, bucket, "raw/works", _RAW_SAMPLE_FILES)
+    a_files = _sample_raw_files(con, bucket, "raw/authors", _RAW_SAMPLE_FILES)
+    # `read_json` + `columns={}` EXPLICITES (pas read_json_auto) : on impose le type des SEULES
+    # colonnes que les suites GE valident (raw_works → id/referenced_works/authorships ;
+    # raw_authors → id). Décisif sur le brut OpenAlex réel : read_json_auto INFÈRE et parse le
+    # JSON complet de chaque work (abstract_inverted_index imbriqué, ~200k works/fichier) →
+    # explosion mémoire (OOM prouvé même sur peu de fichiers) ET échec « Map keys must be
+    # unique ». En figeant les colonnes, DuckDB ne parse QUE ces 3 champs (referenced_works/
+    # authorships en JSON opaque, non matérialisé) : lecture légère et bornée. `ignore_errors`
+    # tolère une ligne malformée isolée. La liste de fichiers passe en bind ($files) →
+    # read_json accepte une LISTE. Mesuré sur le RGW prod (N=4) : works 725k lignes/41s +
+    # authors 751k/19s, 0 id mal formé, sans OOM (cf. audit ge_raw_contract non-scalable).
     works = con.sql(
-        f"SELECT id, referenced_works, authorships "
-        f"FROM read_json_auto('s3://{bucket}/raw/works/**/*.gz', "
-        "hive_partitioning=false, union_by_name=true)"
+        "SELECT id, referenced_works, authorships FROM read_json($files, "
+        "columns={'id': 'VARCHAR', 'referenced_works': 'JSON', 'authorships': 'JSON'}, "
+        "format='newline_delimited', hive_partitioning=false, ignore_errors=true)",
+        params={"files": w_files},
     ).df()
     authors = con.sql(
-        f"SELECT id FROM read_json_auto('s3://{bucket}/raw/authors/**/*.gz', "
-        "hive_partitioning=false, union_by_name=true)"
+        "SELECT id FROM read_json($files, columns={'id': 'VARCHAR'}, "
+        "format='newline_delimited', hive_partitioning=false, ignore_errors=true)",
+        params={"files": a_files},
     ).df()
     ok_w, meta_w = ge_suites.validate_df(works, "raw_works", ge_suites.raw_works_expectations())
     ok_a, meta_a = ge_suites.validate_df(
@@ -107,6 +157,7 @@ def check_raw(bucket: str) -> AssetCheckResult:
             "suite": "raw_works+raw_authors",
             "evaluated": meta_w["evaluated"] + meta_a["evaluated"],
             "failed": failed,
+            "sampled_files": len(w_files) + len(a_files),
         },
     )
 

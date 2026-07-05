@@ -30,18 +30,25 @@ _GOOD_MARTS = pd.DataFrame(
 
 
 class _FakeRel:
-    def __init__(self, df):
+    def __init__(self, df, rows=None):
         self._df = df
+        self._rows = rows
 
     def df(self):
         return self._df
+
+    def fetchall(self):
+        # Le glob() de _sample_raw_files renvoie des lignes (file,) via fetchall().
+        return self._rows or []
 
 
 class _FakeCon:
     """Connexion DuckDB factice : renvoie un DataFrame selon le contenu du SELECT.
 
-    Distingue works / authors / autre via une sous-chaîne de la requête, pour que
-    ``check_raw`` (deux SELECT distincts) reçoive la bonne table.
+    Distingue works / authors / autre via une sous-chaîne de la requête. ``check_raw``
+    échantillonne : il fait d'abord un ``glob(...)`` (identifié par le param ``glob`` qui
+    porte ``raw/works``/``raw/authors``) puis un ``read_json_auto($files)`` (identifié par
+    le param ``files`` = la liste échantillonnée). On route sur ces deux paramètres.
     """
 
     def __init__(self, df, works=None, authors=None):
@@ -49,10 +56,20 @@ class _FakeCon:
         self._works = works
         self._authors = authors
 
-    def sql(self, query):
-        if self._works is not None and "raw/works" in query:
+    def sql(self, query, params=None):
+        params = params or {}
+        glob = params.get("glob", "")
+        files = params.get("files", [])
+        # 1) glob() de l'échantillonneur : renvoie des fichiers factices (déterministes).
+        if "glob(" in query:
+            entity = "works" if "raw/works" in glob else "authors"
+            rows = [(f"s3://b/raw/{entity}/part_{i:04d}.gz",) for i in range(3)]
+            return _FakeRel(None, rows=rows)
+        # 2) read_json_auto($files) : route works/authors via le contenu de la liste bindée.
+        joined = " ".join(files) if isinstance(files, list) else str(files)
+        if self._works is not None and ("raw/works" in query or "raw/works" in joined):
             return _FakeRel(self._works)
-        if self._authors is not None and "raw/authors" in query:
+        if self._authors is not None and ("raw/authors" in query or "raw/authors" in joined):
             return _FakeRel(self._authors)
         return _FakeRel(self._df)
 
@@ -177,6 +194,35 @@ def test_check_raw_passes(monkeypatch):
     authors = pd.DataFrame({"id": ["https://openalex.org/A1"]})
     _patch_loader(monkeypatch, works=works, authors=authors)
     assert q.check_raw("citation").passed is True
+
+
+def _raw_key(i):
+    return f"s3://b/raw/works/updated_date=2020-{i:02d}-01/part.gz"
+
+
+class _GlobCon:
+    """Con factice qui ne sert QUE le glob() de _sample_raw_files (N fichiers en entrée)."""
+
+    def __init__(self, n_files):
+        self._files = [_raw_key(i) for i in range(n_files)]
+
+    def sql(self, query, params=None):
+        return _FakeRel(None, rows=[(f,) for f in self._files])
+
+
+def test_sample_raw_files_is_bounded_deterministic_and_spread():
+    # < N fichiers : renvoie tout (rien à échantillonner).
+    assert len(q._sample_raw_files(_GlobCon(5), "b", "raw/works", 24)) == 5
+    # > N fichiers : borné à N, déterministe (2 appels identiques), et RÉPARTI (pas les N
+    # premiers lexicographiques — un pas régulier couvre toute la plage de partitions).
+    con = _GlobCon(240)
+    s1 = q._sample_raw_files(con, "b", "raw/works", 24)
+    s2 = q._sample_raw_files(con, "b", "raw/works", 24)
+    assert len(s1) == 24
+    assert s1 == s2  # déterministe
+    assert s1 != sorted(_raw_key(i) for i in range(24))  # pas les 24 premiers
+    # le dernier échantillon vient de la fin de la plage (répartition, pas les 24 premiers)
+    assert int(s1[-1].split("2020-")[1][:2]) >= 20
 
 
 def test_check_raw_fails_on_bad_author_id(monkeypatch):
