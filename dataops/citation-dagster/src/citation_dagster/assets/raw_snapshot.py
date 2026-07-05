@@ -53,22 +53,35 @@ _PRODUCER = "https://github.com/univ-lehavre/atlas/dataops/citation-dagster"
 
 
 class RawSnapshotConfig(Config):
-    """Paramètres du sync incrémental borné."""
+    """Paramètres du sync du snapshot OpenAlex — **COMPLET par défaut** (prod).
 
-    sample_size: int = 4
-    """Nombre maximal de fichiers ``.gz`` à copier **par partition** (borne le volume)."""
+    Défaut = **non borné** : la prod rapatrie tout le snapshot (aucune valeur de
+    bridage figée versionnée, ADR 0023). C'est le **banc** qui BORNE, via son overlay
+    (``CITATION_INGEST_SAMPLE_SIZE`` / ``CITATION_INGEST_MAX_PARTITIONS``, injectés en
+    run_config par la ScheduleDefinition — cf. ``definitions.py``). Inversion de polarité
+    (le défaut était mini-banc et bridait silencieusement la prod : famine du datalake
+    → 0 paire collab → modèle uplift descriptif au lieu de prédictif).
+    """
+
+    sample_size: int = 0
+    """Nombre maximal de fichiers ``.gz`` à copier **par partition**. ``0`` = **illimité**
+    (tous les fichiers de la partition). Le banc pose une petite valeur pour ne pas se
+    congestionner."""
 
     entities: list[str] = Field(default_factory=lambda: ["works", "authors"])
     """Entités OpenAlex à ingérer."""
 
-    max_partitions: int = 1
+    max_partitions: int = 0
     """Nombre maximal de partitions ``updated_date`` à traiter **par entité et par run**.
 
-    Borne le volume sur le petit banc (défaut petit). La prod relève cette limite.
+    ``0`` = **illimité** (toutes les partitions postérieures au watermark — bootstrap
+    complet). Le banc pose une petite valeur (overlay) pour rester léger.
     """
 
-    max_merged_files: int = 1
-    """Nombre maximal de fichiers ``merged_ids`` (CSV.gz) à rapatrier par entité et run."""
+    max_merged_files: int = 0
+    """Nombre maximal de fichiers ``merged_ids`` (CSV.gz) à rapatrier par entité et run.
+    ``0`` = **illimité** (défaut prod ; le watermark ``next_after`` reste exact même sans
+    troncature). Le banc borne via l'overlay."""
 
     partition: str | None = None
     """Partition ``updated_date=…`` ciblée explicitement. Si fournie, **ignore le
@@ -143,7 +156,8 @@ def _partitions_to_sync(
     if not partitions:
         raise Failure(description=f"Aucune partition trouvée pour l'entité « {entity} »")
     candidates = [p for p in partitions if after is None or _partition_date(p) > after]
-    return candidates[:max_partitions]
+    # ``max_partitions == 0`` (défaut prod) = illimité : toutes les partitions candidates.
+    return candidates if max_partitions <= 0 else candidates[:max_partitions]
 
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -212,7 +226,9 @@ def _copy_partition(
             description=f"rclone lsf a échoué pour « {entity}/{partition} »",
             metadata={"stderr": MetadataValue.text(listing.stderr[-2000:])},
         )
-    keys = [line for line in listing.stdout.splitlines() if line.strip()][:sample_size]
+    all_keys = [line for line in listing.stdout.splitlines() if line.strip()]
+    # ``sample_size == 0`` (défaut prod) = illimité : tous les .gz de la partition.
+    keys = all_keys if sample_size <= 0 else all_keys[:sample_size]
     if not keys:
         raise Failure(description=f"Aucun .gz dans « {entity}/{partition} »")
     _copy_files(
@@ -269,7 +285,8 @@ def _sync_merged_ids(
         line.strip() for line in listing.stdout.splitlines() if _MERGED_NAME_RE.match(line.strip())
     )
     candidates = [n for n in names if after is None or _merged_date(n) > after]
-    fresh = candidates[:max_files]
+    # ``max_files == 0`` (défaut prod) = illimité : tous les merged_ids postérieurs.
+    fresh = candidates if max_files <= 0 else candidates[:max_files]
     if fresh:
         _copy_files(
             src,

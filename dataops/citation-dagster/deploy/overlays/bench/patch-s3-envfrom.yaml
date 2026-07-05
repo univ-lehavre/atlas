@@ -4,6 +4,12 @@
 # branche au niveau run via dagster-k8s/config — les env du Deployment ne s'y
 # propagent pas, piège ADR 0086). Pas de CITATION_S3_CONFIGMAP au banc : le Secret
 # unique porte déjà BUCKET_*. En prod l'OBC sépare Secret + ConfigMap (cf. prod).
+#
+# BORNAGE DE L'INGESTION — RÉSERVÉ AU BANC. Le défaut CODE de RawSnapshotConfig est
+# prod-complet (0 = illimité) ; c'est le banc qui BORNE, ici : la ScheduleDefinition
+# ingest_snapshot lit ces variables au chargement de la code-location (_ingest_run_config)
+# et pose le run_config. CITATION_INGEST_COHERENT=on active l'échantillon cohérent
+# banc (ADR 0063). La PROD ne pose AUCUNE de ces variables (défaut complet, ADR 0023).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,6 +23,12 @@ spec:
           env:
             - name: CITATION_S3_SECRET
               value: citation-s3-access
+            - name: CITATION_INGEST_SAMPLE_SIZE
+              value: "4"
+            - name: CITATION_INGEST_MAX_PARTITIONS
+              value: "1"
+            - name: CITATION_INGEST_COHERENT
+              value: "on"
           envFrom:
             - secretRef:
                 name: citation-s3-access

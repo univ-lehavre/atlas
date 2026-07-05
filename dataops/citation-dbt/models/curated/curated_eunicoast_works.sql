@@ -31,7 +31,9 @@ select
     w.fwci,
     w.title,
     w.work_type
-from {{ ref('stg_citation_works') }} w
+-- Dérivé de curated_works (works CANONIQUES dédupliqués), PAS de stg : le mart2 EUNICoast
+-- est ainsi STRICTEMENT inclus dans le mart1 « tout OpenAlex » (même dédup, traçable).
+from {{ ref('curated_works') }} w
 join eunicoast_works ew on ew.work_id = w.work_id
 cross join min_year my
 where w.publication_year >= my.y

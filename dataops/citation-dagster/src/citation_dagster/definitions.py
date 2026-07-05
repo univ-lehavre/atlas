@@ -19,6 +19,7 @@ from dagster import (
     AssetSelection,
     DefaultSensorStatus,
     Definitions,
+    RunConfig,
     RunRequest,
     ScheduleDefinition,
     SensorEvaluationContext,
@@ -53,6 +54,7 @@ from citation_dagster.assets.quality import (
     ge_raw_contract,
     ge_researcher_vectors,
 )
+from citation_dagster.assets.raw_snapshot import RawSnapshotConfig
 from citation_dagster.dbt import dbt_components
 from citation_dagster.resources import ceph_target_from_env, render_rclone_config
 
@@ -292,14 +294,52 @@ def _ingest_cron(env: dict | None = None) -> str:
     return env.get("CITATION_INGEST_CRON") or _DEFAULT_INGEST_CRON
 
 
+def _ingest_run_config(env: dict | None = None) -> RunConfig | None:
+    """RunConfig de bornage de l'ingestion — VALEUR D'INSTANCE (ADR 0023).
+
+    Le défaut CODE de ``RawSnapshotConfig`` est **prod-complet** (0 = illimité) : la prod
+    ne pose donc AUCUNE de ces variables et rapatrie tout. C'est le **banc** qui borne, via
+    son overlay (``CITATION_INGEST_SAMPLE_SIZE`` / ``CITATION_INGEST_MAX_PARTITIONS`` /
+    ``CITATION_INGEST_COHERENT``). Sans variable posée → ``None`` (pas de surcharge → défaut
+    complet). Parse défensif : une valeur absente/invalide n'est simplement pas surchargée
+    (jamais de crash de l'ingestion pour un env mal formé)."""
+    env = env if env is not None else os.environ
+    overrides: dict[str, object] = {}
+
+    def _int(key: str) -> None:
+        raw = env.get(key)
+        if raw is None:
+            return
+        try:
+            overrides[_ENV_TO_FIELD[key]] = int(raw)
+        except (TypeError, ValueError):
+            return  # env mal formé → on n'écrase pas le défaut complet
+
+    _ENV_TO_FIELD = {
+        "CITATION_INGEST_SAMPLE_SIZE": "sample_size",
+        "CITATION_INGEST_MAX_PARTITIONS": "max_partitions",
+    }
+    for key in _ENV_TO_FIELD:
+        _int(key)
+    coherent = env.get("CITATION_INGEST_COHERENT")
+    if coherent is not None:
+        overrides["coherent_sample"] = coherent.strip().lower() in ("1", "true", "on", "yes")
+    if not overrides:
+        return None
+    return RunConfig(ops={"raw_snapshot": RawSnapshotConfig(**overrides)})
+
+
 _schedules = [
     # Ingestion périodique du snapshot OpenAlex (raw/ + avance le watermark). Inconditionnelle
     # (ingestion_job existe toujours) ; STOPPED par défaut, armée par le déployeur.
+    # `run_config` = bornage d'INSTANCE : None en prod (défaut complet), borné au banc via
+    # l'overlay. C'était la ligne MANQUANTE qui laissait la prod hériter des mini-défauts banc.
     ScheduleDefinition(
         name="ingest_snapshot",
         job=ingestion_job,
         cron_schedule=_ingest_cron(),
         execution_timezone="UTC",
+        run_config=_ingest_run_config(),
         description="Ingestion périodique du snapshot OpenAlex (raw/ + avance le watermark).",
     )
 ]

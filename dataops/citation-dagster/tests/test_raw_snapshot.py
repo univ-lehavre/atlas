@@ -92,6 +92,28 @@ def test_incremental_filters_after_watermark(env):
     assert result.metadata["total_files"].value == 4
 
 
+def test_unbounded_defaults_sync_all_partitions_and_files(env):
+    """DÉFAUT PROD : sans bornage (max_partitions=0, sample_size=0 = illimité), traite TOUTES
+    les partitions candidates et TOUS les fichiers de chaque partition (pas de troncature)."""
+    fake = FakeRclone(watermark_json="")  # bootstrap, pas de watermark
+    # Défauts de RawSnapshotConfig = 0 (illimité) : on ne passe explicitement rien.
+    result = _run(env, fake)
+    # 4 partitions candidates × 2 fichiers listés = 8 (aucune troncature).
+    assert result.metadata["total_files"].value == 8
+    copies = [c for c in fake.calls if "copy" in c and "merged_ids" not in c[-1]]
+    assert len(copies) == 4  # les 4 partitions
+
+
+def test_sample_size_zero_copies_all_files_of_partition(env):
+    """sample_size=0 (illimité) copie tous les .gz listés ; une petite valeur borne (banc)."""
+    fake = FakeRclone(watermark_json='{"works": "2021-06-15"}')  # 1 partition postérieure
+    result = _run(env, fake, sample_size=0)  # illimité
+    assert result.metadata["total_files"].value == 2  # les 2 fichiers listés
+    fake_bounded = FakeRclone(watermark_json='{"works": "2021-06-15"}')
+    result_bounded = _run(env, fake_bounded, sample_size=1)  # borné banc
+    assert result_bounded.metadata["total_files"].value == 1  # tronqué à 1
+
+
 def test_watermark_advances_after_success(env):
     """Le watermark partition est réécrit à la date de la partition la plus récente."""
     fake = FakeRclone(watermark_json='{"works": "2020-01-01"}')
