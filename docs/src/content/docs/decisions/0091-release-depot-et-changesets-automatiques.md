@@ -54,7 +54,9 @@ nocturne les publie (dépôt + paquets).
 
 ## Statut
 
-Accepted.
+Accepted. Partiellement superseded par l'[ADR 0093](/atlas/decisions/0093-release-cycle-complet-une-nuit/)
+sur deux points : la « latence de publish d'un run » (supprimée — cycle complet en un seul run
+nocturne) et la relecture manuelle de la PR de version (remplacée par un auto-merge total).
 
 ## Conséquences
 

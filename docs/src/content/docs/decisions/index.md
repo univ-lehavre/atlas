@@ -122,6 +122,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0090 | [Remote cache Turbo adossé au cache GitHub Actions](/atlas/decisions/0090-remote-cache-turbo-github/)                                                           | Accepted        |
 | 0091 | [Release de dépôt (release-please) + changesets automatiques, cadence quotidienne](/atlas/decisions/0091-release-depot-et-changesets-automatiques/)             | Accepted        |
 | 0092 | [Scope-enum dérivé du workspace (exhaustif, non ambigu)](/atlas/decisions/0092-scope-enum-derive-du-workspace/)                                                 | Accepted        |
+| 0093 | [Release en cycle complet sur un seul run nocturne (auto-merge total)](/atlas/decisions/0093-release-cycle-complet-une-nuit/)                                   | Accepted        |
 
 ## Quand ouvrir un ADR
 
