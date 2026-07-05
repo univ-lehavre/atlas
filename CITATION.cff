@@ -19,5 +19,5 @@ license: MIT
 # AUTOMATIQUEMENT par release-please à chaque release (marqueur `x-release-please-version`
 # + entrée `extra-files` de release-please-config.json). NE PAS éditer à la main — elle suit
 # `package.json` racine / `.release-please-manifest.json`.
-version: 1.3.0 # x-release-please-version
+version: 1.3.1 # x-release-please-version
 doi: 10.5281/zenodo.18310357
