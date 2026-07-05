@@ -1,10 +1,18 @@
 version: 2
 
 # Tests dbt sur la couche curated (Parquet external relu pour exécuter les tests).
-# Tous vrais à TOUTE échelle. Pour curated_edges, `relationships` est posé sur
-# `citing_work_id` UNIQUEMENT : `cited_work_id` référence couramment des œuvres
-# HORS snapshot (referenced_works pointe au-delà du périmètre ingéré), donc un
-# `relationships cited→curated_works` produirait de faux échecs à l'échelle réelle.
+# Invariants vrais à TOUTE échelle, SAUF les deux relationships sciemment omis
+# ci-dessous — deux frontières de périmètre de données où un côté `to:` n'est jamais
+# garanti sur-ensemble du côté référençant à l'échelle réelle :
+#   - `curated_edges.cited_work_id` : referenced_works pointe HORS snapshot (au-delà du
+#     périmètre ingéré) → seul `citing_work_id` porte un relationships→curated_works.
+#   - `curated_authorships.author_id` (et les marts qui en dérivent) : l'entité `authors`
+#     d'OpenAlex n'est PAS un sur-ensemble des author_id référencés par les works
+#     (fusions/redirections OpenAlex non réconciliées — merged_ids ne couvre pas les
+#     auteurs, ADR 0059) → 1133+ orphelins prouvés en prod. Contrairement à
+#     cited_work_id (hors échantillon temporel), ceci persiste même à snapshot complet :
+#     l'hypothèse « prod complète ⇒ author_id cohérents » (ADR 0063) est falsifiée par le
+#     run. On garde not_null ; le relationships author_id→authors est omis (faux échecs).
 models:
   - name: curated_works
     description: "Œuvres canoniques (dédupliquées), Parquet external immuable."
@@ -29,12 +37,7 @@ models:
                 to: ref('curated_works')
                 field: work_id
       - name: author_id
-        data_tests:
-          - not_null
-          - relationships:
-              arguments:
-                to: ref('curated_authors')
-                field: author_id
+        data_tests: [not_null]
 
   - name: curated_edges
     description: "Arêtes article→référence dédupliquées (couple citant→cité unique)."
