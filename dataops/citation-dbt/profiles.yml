@@ -20,6 +20,19 @@ citation:
     dev:
       type: duckdb
       path: ":memory:"
+      # Scalabilité au datalake complet (691 GiB) : DuckDB tournait en `:memory:` SANS
+      # borne → un modèle curated qui matérialise en lisant tout le brut (ex. curated_edges :
+      # DISTINCT + ORDER BY sur ~8M arêtes) faisait OOM-killer le pod de run. On BORNE la
+      # RAM et on autorise le SPILLING sur disque : au-delà de memory_limit, DuckDB déborde
+      # ses tris/jointures dans temp_directory au lieu de saturer. memory_limit dérivable de
+      # l'env (ADR 0023 : le banc léger baisse via DBT_DUCKDB_MEMORY_LIMIT ; défaut prod
+      # généreux, nœuds à ~235 GiB libres). temp_directory = emptyDir monté sur le pod de run
+      # (cf. definitions._RUN_SPILL_DIR). preserve_insertion_order=false : moins de buffering.
+      settings:
+        memory_limit: "{{ env_var('DBT_DUCKDB_MEMORY_LIMIT', '24GB') }}"
+        temp_directory: "{{ env_var('DBT_DUCKDB_TEMP_DIR', '/tmp/duckdb-spill') }}"
+        threads: "{{ env_var('DBT_DUCKDB_THREADS', '4') }}"
+        preserve_insertion_order: false
       extensions:
         - httpfs
       secrets:

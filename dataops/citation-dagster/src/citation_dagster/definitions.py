@@ -124,16 +124,35 @@ def _s3_env_from() -> list[dict]:
 # ses connexions → peu de lookups → n'était pas affecté (687 GiB ingérés OK).
 _DNS_NDOTS_1 = {"dns_config": {"options": [{"name": "ndots", "value": "1"}]}}
 
+# Volume de SPILLING DuckDB (scalabilité au datalake complet). DuckDB borne sa RAM
+# (memory_limit, cf. lakehouse.connect / profiles.yml) et déborde ses tris/jointures dans
+# `temp_directory` — sans disque monté, ce spilling écrirait dans l'overlay du conteneur
+# (petit, peu perf). On monte un emptyDir dédié (`/tmp/duckdb-spill`, = DBT_DUCKDB_TEMP_DIR)
+# → gros modèles curated (ex. curated_edges : DISTINCT+ORDER BY sur ~8M arêtes) débordent sur
+# disque au lieu d'OOM-killer le pod. emptyDir = éphémère par run (nettoyé à la fin), taille
+# bornée par l'espace du nœud (kubelet évince si dépassement — accepté : le spill est
+# transitoire). `medium: ""` = disque du nœud (pas la RAM ; `Memory` compterait dans la RAM).
+_SPILL_VOLUME = {"name": "duckdb-spill", "empty_dir": {}}
+_SPILL_MOUNT = {"name": "duckdb-spill", "mount_path": "/tmp/duckdb-spill"}
 
-_RUN_K8S_CONFIG = {
-    "dagster-k8s/config": {
-        "container_config": {
-            "env": _RUN_ENV,
-            "env_from": _s3_env_from(),
-        },
-        "pod_spec_config": _DNS_NDOTS_1,
-    },
-}
+
+def _k8s_config(env):
+    """Tag `dagster-k8s/config` d'un pod de run : env + S3 + dnsConfig ndots:1 + volume de
+    spilling DuckDB. Partagé par l'ingestion et le transform (DRY, jscpd) — seul `env` diffère
+    (le transform ajoute les POSTGRES_* d'index_load)."""
+    return {
+        "dagster-k8s/config": {
+            "container_config": {
+                "env": env,
+                "env_from": _s3_env_from(),
+                "volume_mounts": [_SPILL_MOUNT],
+            },
+            "pod_spec_config": {**_DNS_NDOTS_1, "volumes": [_SPILL_VOLUME]},
+        }
+    }
+
+
+_RUN_K8S_CONFIG = _k8s_config(_RUN_ENV)
 
 # index_load (transform_job, étape 4) écrit l'index pgvector → son pod de run a besoin
 # de POSTGRES_HOST/PORT/DB/USER/PASSWORD (resources.postgres_target_from_env, qui LÈVE
@@ -162,19 +181,10 @@ _TRANSFORM_ENV = [
     _pg_secret_env("POSTGRES_USER", "username"),
     _pg_secret_env("POSTGRES_PASSWORD", "password"),
 ]
-_TRANSFORM_K8S_CONFIG = {
-    "dagster-k8s/config": {
-        "container_config": {
-            # Lineage + MLflow (piège ADR 0086) ET les POSTGRES_* d'index_load.
-            "env": _TRANSFORM_ENV,
-            # Même source S3 paramétrée par profil que le run d'ingestion.
-            "env_from": _s3_env_from(),
-        },
-        # Même dnsConfig ndots:1 que le run d'ingestion (cf. _DNS_NDOTS_1) : le transform
-        # (dbt-duckdb + index_load) résout aussi le RGW S3 et pg-rw.postgres par nom court.
-        "pod_spec_config": _DNS_NDOTS_1,
-    },
-}
+# Transform : mêmes ndots:1 + volume de spilling que l'ingestion (via _k8s_config), mais
+# _TRANSFORM_ENV ajoute les POSTGRES_* d'index_load. Le transform fait le gros du DuckDB
+# (dbt curated/marts + embeddings + uplift) → le spilling y est le plus critique.
+_TRANSFORM_K8S_CONFIG = _k8s_config(_TRANSFORM_ENV)
 
 ingestion_job = define_asset_job(
     "ingestion_job",
