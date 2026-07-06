@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.3.2](https://github.com/univ-lehavre/atlas/compare/v1.3.1...v1.3.2) (2026-07-06)
+
+
+### Bug Fixes
+
+* **citation-dagster:** ge_raw_contract échantillonne le brut (ne lit plus tout le lac) ([71c9e70](https://github.com/univ-lehavre/atlas/commit/71c9e70bc4a2625828b905d0d1ddfdbadfcb9398))
+* **citation-dagster:** ge_raw_contract échantillonne le brut (ne lit plus tout le lac) ([#552](https://github.com/univ-lehavre/atlas/issues/552)) ([ebedaf4](https://github.com/univ-lehavre/atlas/commit/ebedaf43a0041aab5b6fd69c02971551b69d62ca))
+* **citation-dagster:** ndots:1 sur les pods de run (tue le fan-out dns sous charge) ([8518e11](https://github.com/univ-lehavre/atlas/commit/8518e11a544478c998211296c7fb2d100e509311))
+* **citation-dagster:** ndots:1 sur les pods de run (tue le fan-out dns sous charge) ([#551](https://github.com/univ-lehavre/atlas/issues/551)) ([253cdd4](https://github.com/univ-lehavre/atlas/commit/253cdd4517a630f1299b8886577af63b945aa292))
+* **citation-dagster:** raccourcit l'endpoint duckdb au nom court (piège fqdn prod) ([c0fd16e](https://github.com/univ-lehavre/atlas/commit/c0fd16ece2f96d00b4bcc13a86ae3da907867d52))
+* **citation-dagster:** raccourcit l'endpoint duckdb au nom court (piège fqdn prod) ([#550](https://github.com/univ-lehavre/atlas/issues/550)) ([129b9ec](https://github.com/univ-lehavre/atlas/commit/129b9ecf5dc516d76b0f4c28818365b07c8687e2))
+
 ## [1.3.1](https://github.com/univ-lehavre/atlas/compare/v1.3.0...v1.3.1) (2026-07-05)
 
 
