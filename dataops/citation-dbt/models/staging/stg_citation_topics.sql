@@ -1,11 +1,12 @@
--- Liens œuvre↔topic : une ligne par (œuvre, topic). `topics` est un array de
--- structs ; UNNEST l'explose, puis accès en notation point (`t.id`, `t.subfield.id`).
--- On projette la hiérarchie complète (subfield/field/domain, chacun {id, display_name})
--- telle quelle : aucun filtre de score ici (provenance complète, le seuil ≥ 0,3 est
--- une décision d'agrégation du mart par author_id — lot 2, cf. ADR 0059).
+-- Liens œuvre↔topic : une ligne par (œuvre, topic). `topics` est un array de structs
+-- (schéma OpenAlex réel du mart) ; UNNEST l'explose, puis accès en notation point
+-- (`t.id`, `t.subfield.id`). On projette la hiérarchie complète (subfield/field/domain,
+-- chacun {id, display_name}) telle quelle : aucun filtre de score ici (provenance
+-- complète, le seuil est une décision d'agrégation du mart par author_id — lot 2).
+-- Le mart est déjà filtré au périmètre EUNICoast (ADR 0105) : plus de scope ici.
 with exploded as (
     select
-        id            as work_id,
+        work_id,
         unnest(topics) as t
     from {{ source('citation_raw', 'works') }}
 )

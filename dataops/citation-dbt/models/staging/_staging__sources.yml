@@ -1,32 +1,26 @@
 version: 2
 
-# Sources du brut JSONL.gz / CSV.gz synchronisé par `raw_snapshot` (étapes 2/3.1)
-# vers `s3://citation/raw/`. dbt-duckdb résout `meta.external_location` en un reader
-# DuckDB (`read_json_auto`/`read_csv_auto`) ; le secret S3 du profil (path-style,
-# depuis l'environnement) s'y applique. Déclarer les sources ici (plutôt qu'un
-# `read_json_auto` en dur dans chaque modèle) centralise les chemins et rend le
-# lineage source→staging visible dans le manifest (Marquez, étape 3.5).
+# Source de la chaîne dbt : le **mart EUNICoast** (Parquet), produit EN AMONT par
+# l'asset Python `mart_eunicoast` (ADR 0105). Le mart contient déjà le périmètre
+# filtré (works ayant ≥1 auteur EUNICoast, publiés depuis 2016), en projection stricte
+# (work_id, publication_year, title, authorships, topics, keywords, fwci, cited_by_count).
+# dbt lit ce Parquet colonnaire — plus le brut JSONL.gz (qui faisait OOM au datalake
+# complet, drifts L76/L77 ; le filtre EUNICoast vit maintenant dans l'asset, pas dbt).
 #
-# `hive_partitioning=false` : le brut est rangé sous `updated_date=YYYY-MM-DD/`, mais
-# cette date vient du CHEMIN, pas du JSON. Sans ce drapeau, DuckDB injecterait une
-# colonne fantôme `updated_date` (drift connu) ; la période de la partition curated
-# vient des vars Dagster (`curated_dt`), pas du chemin brut.
+# dbt-duckdb résout `meta.external_location` en un `read_parquet` ; le secret S3 du profil
+# (path-style, depuis l'environnement) s'y applique. Centraliser le chemin ici (plutôt
+# qu'un `read_parquet` en dur dans chaque modèle) rend le lineage mart→staging visible
+# dans le manifest (Marquez, étape 3.5).
 #
-# `raw_root` est une var (défaut `s3://citation/raw`, surchargée en test → bucket
-# MinIO épinglé). Le glob `**/*.gz` couvre toutes les partitions `updated_date`.
+# `mart_root` est une var (défaut `s3://citation/mart_eunicoast`, surchargée en test →
+# bucket MinIO épinglé). Le glob `run=*/**.parquet` couvre les fragments du dernier run.
+# Le grain reste le work (le mart NE déroule PAS authorships/topics — c'est le staging
+# qui unnest). `work_id` y remplace `id` (déjà renommé par l'asset).
 sources:
   - name: citation_raw
-    description: "Snapshot OpenAlex brut (JSONL.gz / CSV.gz), synchronisé dans le lakehouse."
+    description: "Mart EUNICoast (Parquet) : works du périmètre, filtrés en amont par l'asset."
     tables:
       - name: works
-        description: "Œuvres : id, année, références, authorships, FWCI, compteurs."
+        description: "Œuvres du périmètre EUNICoast : work_id, année, title, authorships, topics, keywords, FWCI, compteurs."
         meta:
-          external_location: "read_json_auto('{{ var('raw_root') }}/works/**/*.gz', hive_partitioning=false)"
-      - name: authors
-        description: "Auteurs : id, orcid (nullable), display_name, compteurs."
-        meta:
-          external_location: "read_json_auto('{{ var('raw_root') }}/authors/**/*.gz', hive_partitioning=false)"
-      - name: merged_ids_works
-        description: "Œuvres fusionnées (merge_date,id,merge_into_id) — CSV gzippé."
-        meta:
-          external_location: "read_csv_auto('{{ var('raw_root') }}/merged_ids/works/*.gz', header=true)"
+          external_location: "read_parquet('{{ var('mart_root') }}/run=*/*.parquet')"

@@ -7,6 +7,7 @@ from citation_dagster.definitions import (
     _DEFAULT_INGEST_CRON,
     _DEFAULT_RETRAIN_COOLDOWN_S,
     _DNS_NDOTS_1,
+    _RUN_K8S_CONFIG,
     _TRANSFORM_K8S_CONFIG,
     _ct_cron,
     _ingest_cron,
@@ -50,11 +51,35 @@ def test_transform_run_pod_sets_ndots_1():
 
 
 def test_dns_ndots_config_is_consistent_across_jobs():
-    # Parité : ingestion et transform portent le MÊME dnsConfig (Dagster sérialise le tag en
-    # JSON → on compare l'ÉGALITÉ de contenu, pas l'identité). Une divergence ferait retomber
-    # l'un des deux runs dans le fan-out DNS.
-    assert _run_pod_spec_config(ingestion_job) == _DNS_NDOTS_1
-    assert _TRANSFORM_K8S_CONFIG["dagster-k8s/config"]["pod_spec_config"] == _DNS_NDOTS_1
+    # Parité : ingestion et transform portent le MÊME dnsConfig (le pod_spec_config contient
+    # AUSSI le volume de spilling → on compare le sous-dict dns_config, pas l'égalité totale).
+    ing = _run_pod_spec_config(ingestion_job)
+    tr = _TRANSFORM_K8S_CONFIG["dagster-k8s/config"]["pod_spec_config"]
+    assert ing["dns_config"] == _DNS_NDOTS_1["dns_config"]
+    assert tr["dns_config"] == _DNS_NDOTS_1["dns_config"]
+
+
+def test_run_pod_mounts_duckdb_spill_volume():
+    # Scalabilité : un emptyDir de spilling DuckDB est monté sur les pods de run (ingestion ET
+    # transform) → les gros tris/jointures curated débordent sur disque au lieu d'OOM.
+    for cfg in (_RUN_K8S_CONFIG, _TRANSFORM_K8S_CONFIG):
+        k = cfg["dagster-k8s/config"]
+        vols = k["pod_spec_config"]["volumes"]
+        mounts = k["container_config"]["volume_mounts"]
+        assert any(v.get("empty_dir") is not None and v["name"] == "duckdb-spill" for v in vols)
+        assert any(m["mount_path"] == "/tmp/duckdb-spill" for m in mounts)
+
+
+def test_run_pod_declares_resources_coherent_with_duckdb():
+    # Le pod de run RÉSERVE des resources cohérentes avec DuckDB (fin du BestEffort qui OOMait).
+    # Invariant CRITIQUE : la limite mémoire pod (28Gi) doit être > memory_limit DuckDB (24GB)
+    # → DuckDB spille sur disque AVANT que le cgroup ne tue le pod.
+    for cfg in (_RUN_K8S_CONFIG, _TRANSFORM_K8S_CONFIG):
+        res = cfg["dagster-k8s/config"]["container_config"]["resources"]
+        assert res["requests"]["cpu"] and res["requests"]["memory"]
+        assert res["limits"]["cpu"] == "32"  # = threads DuckDB (ADR 0094 : lots ~5M works)
+        # 28Gi (limit pod) > 24GB (memory_limit DuckDB) : le spill précède l'OOM cgroup.
+        assert res["limits"]["memory"] == "28Gi"
 
 
 def test_defs_exposes_raw_snapshot_asset():
@@ -124,14 +149,12 @@ def test_ingest_run_config_bench_bounds_from_env():
     env = {
         "CITATION_INGEST_SAMPLE_SIZE": "4",
         "CITATION_INGEST_MAX_PARTITIONS": "1",
-        "CITATION_INGEST_COHERENT": "on",
     }
     rc = _ingest_run_config(env)
     assert rc is not None
     cfg = rc.ops["raw_snapshot"]
     assert cfg.sample_size == 4
     assert cfg.max_partitions == 1
-    assert cfg.coherent_sample is True
 
 
 def test_ingest_run_config_ignores_malformed_env():

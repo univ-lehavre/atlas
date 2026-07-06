@@ -1,29 +1,21 @@
 version: 2
 
 # Tests dbt sur les couches staging. Invariants vrais à TOUTE échelle (pas de test
-# « fixture-only » ici : le golden chiffré vit côté pytest). orcid n'a PAS de
-# not_null (nullable par nature).
+# « fixture-only » ici : le golden chiffré vit côté pytest). Le staging lit désormais le
+# MART EUNICoast (Parquet déjà filtré au périmètre, ADR 0105) : plus de modèle de scope,
+# plus de staging authors/referenced_works/author_institutions.
 #
-# PAS de relationships author_id→stg_citation_authors : l'entité `authors` d'OpenAlex
-# n'est PAS un sur-ensemble des author_id référencés par les `works` (les authorships
-# sont dérivées de l'entité works ; les fusions/redirections OpenAlex ne sont pas
-# réconciliées — merged_ids ne couvre pas les auteurs, cf. ADR 0059). Un relationships
-# author_id produirait donc de FAUX échecs à l'échelle réelle (1133+ orphelins prouvés
-# en prod), exactement comme le cited_work_id de curated_edges (cf. _curated__models.yml).
-# On garde not_null (author_id est toujours présent côté works).
+# PAS de relationships author_id→auteurs : l'entité `authors` d'OpenAlex n'est PAS un
+# sur-ensemble des author_id référencés par les `works` (les authorships sont dérivées de
+# l'entité works ; les fusions/redirections OpenAlex ne sont pas réconciliées, ADR 0059).
+# Un relationships author_id produirait donc de FAUX échecs à l'échelle réelle (1133+
+# orphelins prouvés en prod). On garde not_null (author_id est toujours présent côté works).
 models:
   - name: stg_citation_works
-    description: "Œuvres typées depuis le brut (vue de session)."
+    description: "Œuvres typées depuis le mart EUNICoast (vue de session)."
     columns:
       - name: work_id
         description: "URL OpenAlex de l'œuvre (clé)."
-        data_tests: [not_null, unique]
-
-  - name: stg_citation_authors
-    description: "Auteurs typés depuis le brut (vue de session)."
-    columns:
-      - name: author_id
-        description: "URL OpenAlex de l'auteur (clé)."
         data_tests: [not_null, unique]
 
   - name: stg_citation_authorships
@@ -32,14 +24,6 @@ models:
       - name: work_id
         data_tests: [not_null]
       - name: author_id
-        data_tests: [not_null]
-
-  - name: stg_citation_referenced_works
-    description: "Arêtes brutes œuvre→référence (UNNEST des referenced_works)."
-    columns:
-      - name: citing_work_id
-        data_tests: [not_null]
-      - name: cited_work_id
         data_tests: [not_null]
 
   - name: stg_citation_topics
@@ -58,20 +42,9 @@ models:
       - name: keyword_id
         data_tests: [not_null]
 
-  - name: stg_citation_author_institutions
-    description: "Affiliations (work_id, author_id, ror) — double UNNEST authorships/institutions (ADR 0067)."
-    columns:
-      - name: work_id
-        data_tests: [not_null]
-      - name: author_id
-        data_tests: [not_null]
-      - name: ror
-        description: "ROR de l'établissement (URL OpenAlex complète) — jointure au seed EUNICoast."
-        data_tests: [not_null]
-
 seeds:
   - name: ref_eunicoast
-    description: "Référentiel des 13 ROR EUNICoast (+ alias legacy Antilles) — autorité du filtre périmètre (ADR 0067)."
+    description: "Référentiel des ROR EUNICoast — autorité du filtre périmètre appliqué en amont dans l'asset mart_eunicoast (ADR 0105)."
     columns:
       - name: ror
         description: "ROR (URL complète) d'un établissement membre EUNICoast."

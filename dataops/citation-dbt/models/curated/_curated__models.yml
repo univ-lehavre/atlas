@@ -1,29 +1,17 @@
 version: 2
 
 # Tests dbt sur la couche curated (Parquet external relu pour exécuter les tests).
-# Invariants vrais à TOUTE échelle, SAUF les deux relationships sciemment omis
-# ci-dessous — deux frontières de périmètre de données où un côté `to:` n'est jamais
-# garanti sur-ensemble du côté référençant à l'échelle réelle :
-#   - `curated_edges.cited_work_id` : referenced_works pointe HORS snapshot (au-delà du
-#     périmètre ingéré) → seul `citing_work_id` porte un relationships→curated_works.
-#   - `curated_authorships.author_id` (et les marts qui en dérivent) : l'entité `authors`
-#     d'OpenAlex n'est PAS un sur-ensemble des author_id référencés par les works
-#     (fusions/redirections OpenAlex non réconciliées — merged_ids ne couvre pas les
-#     auteurs, ADR 0059) → 1133+ orphelins prouvés en prod. Contrairement à
-#     cited_work_id (hors échantillon temporel), ceci persiste même à snapshot complet :
-#     l'hypothèse « prod complète ⇒ author_id cohérents » (ADR 0063) est falsifiée par le
-#     run. On garde not_null ; le relationships author_id→authors est omis (faux échecs).
+# Invariants vrais à TOUTE échelle, SAUF le relationships author_id sciemment omis :
+# l'entité `authors` d'OpenAlex n'est PAS un sur-ensemble des author_id référencés par les
+# works (fusions/redirections OpenAlex non réconciliées — merged_ids ne couvre pas les
+# auteurs, ADR 0059) → 1133+ orphelins prouvés en prod. On garde not_null ; le
+# relationships author_id→authors est omis (faux échecs). Le volet citations (curated_edges)
+# a été retiré : le mart EUNICoast ne porte plus referenced_works (ADR 0105).
 models:
   - name: curated_works
     description: "Œuvres canoniques (dédupliquées), Parquet external immuable."
     columns:
       - name: work_id
-        data_tests: [not_null, unique]
-
-  - name: curated_authors
-    description: "Auteurs canoniques (dédupliqués), Parquet external immuable."
-    columns:
-      - name: author_id
         data_tests: [not_null, unique]
 
   - name: curated_authorships
@@ -37,19 +25,6 @@ models:
                 to: ref('curated_works')
                 field: work_id
       - name: author_id
-        data_tests: [not_null]
-
-  - name: curated_edges
-    description: "Arêtes article→référence dédupliquées (couple citant→cité unique)."
-    columns:
-      - name: citing_work_id
-        data_tests:
-          - not_null
-          - relationships:
-              arguments:
-                to: ref('curated_works')
-                field: work_id
-      - name: cited_work_id
         data_tests: [not_null]
 
   - name: curated_work_topics
@@ -79,7 +54,7 @@ models:
         data_tests: [not_null]
 
   - name: curated_eunicoast_works
-    description: "Périmètre EUNICoast : works avec ≥1 auteur affilié EUNICoast ∩ <10 ans, porte le FWCI (ADR 0067)."
+    description: "Périmètre EUNICoast (projection de curated_works), porte le FWCI (ADR 0105)."
     columns:
       - name: work_id
         data_tests: [not_null, unique]

@@ -1,21 +1,21 @@
 version: 2
 
 # Tests dbt du mart (Parquet external relu pour exécuter les tests). Invariants
-# vrais à TOUTE échelle ; les valeurs chiffrées golden (cross_citations=3 sur les
+# vrais à TOUTE échelle ; les valeurs chiffrées golden (co_publications par paire sur les
 # fixtures) sont vérifiées côté pytest. La paire (author_a, author_b) est la clé.
 #
-# PAS de relationships author_id→curated_authors (author_a/author_b, marts_researchers,
+# PAS de relationships author_id→auteurs (author_a/author_b, marts_researchers,
 # marts_researchers_fts) : les author_id dérivent des works (authorships), et l'entité
 # `authors` d'OpenAlex n'en est pas un sur-ensemble (fusions/redirections non
 # réconciliées, ADR 0059) → faux échecs à l'échelle réelle (cf. _curated__models.yml).
 # Un orphelin reste un auteur RÉEL, correctement indexé (index_load/embeddings dérivent
-# author_id des works, jamais de curated_authors) ; le filtrer jetterait de la donnée
+# author_id des works, jamais d'une entité authors) ; le filtrer jetterait de la donnée
 # valide. On garde not_null (et unique sur fts).
 models:
   - name: marts_collab_pairs
     description: >-
-      Citations croisées article↔article par paire de chercheurs. Une ligne par
-      paire non orientée (author_a < author_b). cross_citations = a_to_b + b_to_a.
+      Co-autorat par paire de chercheurs. Une ligne par paire non orientée
+      (author_a < author_b). co_publications = nombre de works co-signés par les deux.
     columns:
       - name: author_a
         description: "Auteur de la paire, id le plus petit (forme canonique)."
@@ -23,14 +23,8 @@ models:
       - name: author_b
         description: "Auteur de la paire, id le plus grand (forme canonique)."
         data_tests: [not_null]
-      - name: cross_citations
-        description: "Total des citations croisées entre les deux chercheurs (>= 1)."
-        data_tests: [not_null]
-      - name: a_to_b
-        description: "Citations où author_a cite author_b."
-        data_tests: [not_null]
-      - name: b_to_a
-        description: "Citations où author_b cite author_a."
+      - name: co_publications
+        description: "Nombre de publications co-signées par les deux chercheurs (>= 1)."
         data_tests: [not_null]
 
   - name: marts_researchers

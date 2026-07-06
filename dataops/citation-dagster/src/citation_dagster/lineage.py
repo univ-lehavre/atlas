@@ -92,17 +92,16 @@ def emit(
 
 
 def dbt_lineage_io() -> tuple[list, list]:
-    """Datasets d'entrée/sortie du job dbt (connecte raw → curated/mart).
+    """Datasets d'entrée/sortie du job dbt (connecte mart EUNICoast → curated/mart).
 
-    Entrées : la couche brute (sorties de raw_snapshot). Sorties : les modèles curated
-    et le mart servi (entrée de collab_manifest). Noms purement techniques (pas de PII).
+    Entrée : le **mart EUNICoast** (sortie de l'asset mart_eunicoast, ADR 0105) — dbt ne
+    lit plus le brut mais le périmètre déjà filtré. Sorties : les modèles curated et le
+    mart servi (entrée de collab_manifest). Noms purement techniques (pas de PII).
     """
-    inputs = [raw_dataset("works"), raw_dataset("authors")]
+    inputs = [mart_dataset("mart_eunicoast")]
     outputs = [
         curated_dataset("curated_works"),
-        curated_dataset("curated_authors"),
         curated_dataset("curated_authorships"),
-        curated_dataset("curated_edges"),
         # Provenance lexicale du producteur researchers (lot 1, modèles dbt).
         curated_dataset("curated_work_topics"),
         curated_dataset("curated_work_keywords"),
