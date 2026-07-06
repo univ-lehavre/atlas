@@ -11,14 +11,25 @@ briques ci-dessous reposent sur un POC vérifié sur les API/données publiques
 
 ## Phase 0 — Cadrage & couverture réelle (avant tout code de prod)
 
-- Mesurer le taux de jointure sur **tirage uniforme** des ~24 761 établissements
-  (pas la pagination biaisée vers les notoires). Livrable : % ROR→Wikidata,
-  % avec ≥ 1 page Wikipédia, distribution du nombre de langues. Dimensionne la
-  couverture réelle.
-- Décider le **seuil de périmètre** : tout `type:education`, ou un sous-ensemble
-  (≥ N works, pays cible). Amender l'ADR 0095 si le périmètre bouge.
+- **[fait]** Taux mesuré sur **tirage uniforme** (`sample=` OpenAlex, 4 seeds,
+  793 établissements, works médian 438, 122 pays) : **jointure ROR→Wikidata
+  100 %**, **couverture ≥ 1 page Wikipédia 78,1 %** (IC 95 % [75 ; 81]),
+  **langues médiane 3 / moyenne 5,6 / max 107** (24 % monolingues). Gradient de
+  taille : **54,3 %** (< 100 works) → **98,8 %** (≥ 10 000). Volume extrapolé :
+  **~19 330 établissements couverts, ~1,1 × 10⁵ séries** (grain × langue).
+- **[tranché] Seuil de périmètre : aucun au niveau source.** On matérialise tout
+  `type:education` (neutralité [ADR 0035] ; un seuil `works` rejouerait un proxy de
+  notoriété). Le filtrage `works_count ≥ 100 ∧ n_langues ≥ 2` est reporté à
+  l'**échantillon d'estimation** du modèle (inclusion analytique réversible ; porte
+  la couverture à ~89 %). Colonnes `has_wp` / `works_band` ajoutées à la dimension
+  pour la segmentation.
 - Valider l'accès **dumps** (`pageview_complete`, `pagelinks`/`page`/`redirect`,
   Wikidata) et la cible S3 (`rclone`), cohérent avec le pattern OpenAlex/mediawatch.
+- **Action tech-debt (issue, charte [ADR 0052])** : (i) persister/versionner le
+  script de tirage et comparer la distribution (works, pays) de l'échantillon aux
+  24 761 pour **objectiver l'uniformité** de `sample=` ; (ii) étape légère de
+  réconciliation nom + pays pour rattraper le cas « item Wikidata dupliqué sans
+  ROR » (~+0,2 à +1,7 pt de couverture).
 
 ## Phase 1 — Référentiel (dimension établissement)
 
@@ -69,7 +80,9 @@ backlinks, images, sections, refs, qualite)`.
 ## Phase 5 — Industrialisation
 
 - Cron **mensuel** (post-publication `pageview_complete`, ~J+3–5).
-- Contrats GE en gate ; alerte si le taux de jointure ou la couverture chute.
+- Contrats GE en gate. **Seuil d'alerte couverture ~75 %** (borne basse de l'IC
+  observé 78,1 %), calé **par strate `works_band`** — pas un chiffre agrégé unique,
+  vu le gradient 54 % → 99 %.
 - Si le snapshot est consommé côté `cluster` → mettre à jour l'
   [ADR 0033](/atlas/decisions/0033-contrat-interface-cluster/) dans la même PR.
 
@@ -84,8 +97,11 @@ backlinks, images, sections, refs, qualite)`.
    (marche observée fin 2020 sur Le Havre).
 4. **Cause ≠ symptôme** : le nombre de langues est un **contrôle** de notoriété,
    pas un levier (ADR 0096).
-5. **Biais d'échantillon** : le taux de jointure de 100 % est mesuré sur les
-   établissements notoires ; la longue traîne sera plus basse — Phase 0 le quantifie.
+5. **Biais d'échantillon — quantifié en Phase 0** : la couverture exploitable est
+   de **78,1 % sur tirage uniforme** (vs 99,8 % sur l'échantillon biaisé notoire),
+   avec un gradient de taille marqué. Le modèle est **muet sur les ~46 % de petits
+   établissements sans page** ; ne pas transporter ses coefficients vers eux
+   (validité externe, [ADR 0096]).
 
 ## Séquencement
 

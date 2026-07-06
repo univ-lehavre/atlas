@@ -83,6 +83,15 @@ brute entre pages — ce qui neutralise une large part du biais de notoriété. 
 version **within-page** (features datées) est le prolongement naturel si l'historique
 des features est snapshoté (cf. dumps `pagelinks`/`page` par run, [ADR 0095]).
 
+**Nuance sur les effets fixes langue** (mesurée en Phase 0) : la médiane est de
+**3 langues** par établissement et **44 % des établissements couverts ont ≤ 2
+langues**. L'identification par variation **inter-langue intra-établissement** ne
+concerne donc réellement que les ~40 % d'établissements à > 3 langues (qui portent
+~80 % du volume de séries) ; pour le reste, le panel repose sur la **seule variation
+temporelle within-page**. Ce n'est pas un défaut du grain × langue (requis par les
+features par page et le trafic non-francophone massif, [ADR 0095]), mais une borne
+d'identification à connaître.
+
 ### Prérequis de données (bloquants)
 
 - **Redirections résolues** en amont ([ADR 0095]) : sinon un renommage crée une
@@ -96,9 +105,26 @@ des features est snapshoté (cf. dumps `pagelinks`/`page` par run, [ADR 0095]).
   cadre extensible vers du within-page/causal si besoin.
 - **Coût** : modèle panel plus lourd qu'une régression naïve ; nécessite
   l'historique des features pour la version within-page.
-- **Limite assumée** : données observationnelles → **associations conditionnelles**,
-  jamais preuve d'un levier. Toute restitution le dit. Cohérent avec la posture du
-  dépôt (le code **permet** l'analyse, il ne garantit pas le résultat — analogue à
-  la logique RGPD « capacité, pas garantie »).
+- **Limite assumée (causale)** : données observationnelles → **associations
+  conditionnelles**, jamais preuve d'un levier. Toute restitution le dit. Cohérent
+  avec la posture du dépôt (le code **permet** l'analyse, il ne garantit pas le
+  résultat — analogue à la logique RGPD « capacité, pas garantie »).
+- **Limite assumée (validité externe — biais de sélection)** : la population
+  réellement estimable est celle des **établissements dotés d'une page Wikipédia**,
+  pas « toutes les universités ». La couverture n'est que de **78 %** et suit un
+  gradient fort (**54 %** sous 100 works, **99 %** au-delà de 10 000, Phase 0). Trois
+  conséquences opposables :
+  1. Le modèle est **structurellement muet sur les ~46 % de petits établissements
+     sans page** — pour eux, le seul « levier » est _créer une page_, ce qui relève
+     d'un **régime distinct**, hors du panel (à ne pas traiter comme donnée
+     manquante ignorée).
+  2. Les coefficients seront estimés à ~47 % sur les deux tranches de taille hautes :
+     **ne pas transporter l'élasticité vues↔features vers la tranche 0–99 sans
+     validation de support** (effets plancher/plafond, dynamique de découverte
+     différente). Prévoir une interaction taille × levier, ou un refus explicite
+     d'extrapoler.
+  3. L'existence d'une page étant elle-même un proxy de notoriété (le confondeur
+     central), l'entrée dans le panel n'est **pas aléatoire** : toute restitution
+     doit interdire de laisser croire à une couverture universelle.
 
 [ADR 0095]: /atlas/decisions/0095-source-pageviews-universites/
