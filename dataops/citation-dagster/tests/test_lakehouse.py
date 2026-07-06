@@ -12,6 +12,8 @@ import json
 import subprocess
 from pathlib import Path
 
+import duckdb
+
 from citation_dagster import lakehouse
 from citation_dagster.resources import DuckDBS3Config, duckdb_s3_config_from_env
 
@@ -148,3 +150,57 @@ def test_fixtures_are_valid_jsonl_gz():
         works = [json.loads(line) for line in fh if line.strip()]
     assert len(works) == 5
     assert all("referenced_works" in w for w in works)
+
+
+# ── Footer Parquet & manifest (hermétique, DuckDB in-memory, sans MinIO) ─────
+#
+# Ces tests valident le NOM RÉEL de la fonction DuckDB (`parquet_file_metadata`) et
+# de ses colonnes (`file_name`, `num_rows`) sur des Parquet écrits localement : c'est
+# le point de fragilité du contrat manifest (ADR 0105). Aucun réseau, aucun Docker →
+# toujours exécutés (pas de skip). Le glob multi-fichiers doit être accepté par
+# `parquet_file_metadata` (sinon fallback à revoir).
+
+
+def _write_local_parquet(con, path, n_rows):
+    """Écrit un Parquet local de ``n_rows`` lignes triviales (range) à ``path``."""
+    con.execute(f"COPY (SELECT range AS id FROM range({n_rows})) TO '{path}' (FORMAT PARQUET)")
+
+
+def test_read_parquet_footer_num_rows_sans_scan(tmp_path):
+    """``read_parquet_footer`` renvoie ``num_rows`` par fichier depuis le footer."""
+    con = duckdb.connect()
+    _write_local_parquet(con, tmp_path / "a.parquet", 7)
+    _write_local_parquet(con, tmp_path / "b.parquet", 13)
+    rel = lakehouse.read_parquet_footer(con, f"{tmp_path}/*.parquet")
+    con.register("footer", rel)
+    rows = dict(con.sql("SELECT file, num_rows FROM footer").fetchall())
+    # Le glob multi-fichiers est accepté ; chaque footer porte son propre num_rows.
+    assert sorted(rows.values()) == [7, 13]
+    assert all(f.endswith(".parquet") for f in rows)
+
+
+def test_read_parquet_projette_une_colonne(tmp_path):
+    """``read_parquet`` lit bien les Parquet (projection colonnaire côté appelant)."""
+    con = duckdb.connect()
+    _write_local_parquet(con, tmp_path / "x.parquet", 5)
+    rel = lakehouse.read_parquet(con, f"{tmp_path}/*.parquet")
+    con.register("px", rel)
+    assert con.sql("SELECT count(*) FROM px").fetchone()[0] == 5
+
+
+def test_parquet_file_metadata_leve_sur_glob_vide(tmp_path):
+    """Contrat DuckDB : ``parquet_file_metadata`` LÈVE (IOException) sur un glob vide.
+
+    Documente et verrouille le comportement que ``write_works_manifest`` doit rattraper
+    (un ``raw/works/`` vide n'est pas une erreur mais un no-op). Si une version future de
+    DuckDB renvoyait 0 lignes au lieu de lever, ce test le signalerait → revue du garde-fou.
+    """
+    con = duckdb.connect()
+    try:
+        con.sql(
+            f"SELECT count(*) FROM parquet_file_metadata('{tmp_path}/none/**/*.parquet')"
+        ).fetchone()
+        raised = False
+    except duckdb.IOException:
+        raised = True
+    assert raised, "parquet_file_metadata devrait lever sur un glob sans fichier"
