@@ -38,13 +38,13 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@napi-rs/canvas": "~1.0.1",
+    "@napi-rs/canvas": "~1.0.2",
     "@univ-lehavre/atlas-citation-fetch": "workspace:*",
     "@univ-lehavre/atlas-citation-types": "workspace:*",
     "@univ-lehavre/atlas-crf-client": "workspace:*",
     "@xenova/transformers": "~2.17.2",
     "@xmldom/xmldom": ">=0.9.10",
-    "csv-parse": "~7.0.0",
+    "csv-parse": "~7.0.1",
     "effect": "~3.21.4",
     "fuse.js": "~7.4.2",
     "mammoth": "~1.12.0",
