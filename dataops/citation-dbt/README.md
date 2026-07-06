@@ -4,9 +4,12 @@
 
 C'est le **projet de transformation** du pipeline de citations, écrit en
 [dbt](https://www.getdbt.com/) sur moteur [DuckDB](https://duckdb.org/). Il prend le
-**brut** ingéré (JSONL gzippé d'OpenAlex, déposé sur S3 par la code-location
-[`../citation-dagster/`](../citation-dagster/)) et le **raffine** en jeux de données
-propres et exploitables, écrits en fichiers **Parquet** sur le même stockage objet.
+**mart EUNICoast** (Parquet, produit en amont par l'asset `mart_eunicoast` de la
+code-location [`../citation-dagster/`](../citation-dagster/) : le périmètre des works
+ayant ≥1 auteur affilié EUNICoast et publiés depuis 2016, déjà filtré) et le **raffine**
+en jeux de données propres et exploitables, écrits en fichiers **Parquet** sur le même
+stockage objet. Le filtre de périmètre vit dans l'asset (lecture Parquet colonnaire
+bornée), pas dans dbt — voir [ADR 0105](https://univ-lehavre.github.io/atlas/decisions/0105-modele-citation-parquet-mart-eunicoast/).
 
 > **Parquet** = le **format de fichier** [Apache Parquet](https://parquet.apache.org/)
 > (format colonne pour données tabulaires), jamais autre chose dans ce dépôt.
@@ -19,23 +22,26 @@ sont exposés comme assets Dagster via `dagster-dbt`, voir
 
 Le pipeline va du brut vers le raffiné, par couches successives :
 
-- **`staging`** (`models/staging/`) — nettoyage/typage **un-pour-un** du brut. Des vues
+- **`staging`** (`models/staging/`) — nettoyage/typage **un-pour-un** du mart. Des vues
   éphémères (rien n'est écrit sur S3) : on type les colonnes, on déplie les listes
-  imbriquées (les auteurs et les références de chaque article) en lignes.
-  - `stg_citation_works` / `stg_citation_authors` — articles / auteurs typés.
-  - `stg_citation_authorships` — un lien (article ↔ auteur) par ligne.
-  - `stg_citation_referenced_works` — un lien (article citant → article cité) par ligne.
+  imbriquées (les auteurs, topics et mots-clés de chaque article) en lignes.
+  - `stg_citation_works` — articles typés (work_id, année, titre, FWCI, compteur de citations).
+  - `stg_citation_authorships` — un lien (article ↔ auteur) par ligne. L'affiliation est lue
+    **dans le work** (les authorships portent l'auteur et son institution) — pas d'entité
+    `authors` séparée (le work est auto-suffisant, ADR 0105).
+  - `stg_citation_topics` / `stg_citation_keywords` — un lien (article ↔ topic/mot-clé) par ligne.
 - **`curated`** (`models/curated/`) — données **canoniques, dédupliquées**, matérialisées
   en **Parquet sur S3** (le contrat de sortie). Chaque sortie est immuable : un nouveau
   run écrit sous un chemin `dt=AAAA-MM/run=<id>/` distinct, jamais en écrasant l'ancien.
-  - `curated_works` / `curated_authors` / `curated_authorships`.
-  - `curated_edges` — les arêtes article→référence, dédupliquées. C'est ce graphe de
-    citations qui sert ensuite à mesurer les citations croisées entre chercheurs.
+  - `curated_works` / `curated_authorships` — œuvres et liens œuvre↔auteur canoniques.
+  - `curated_work_topics` / `curated_work_keywords` — provenance thématique/lexicale.
+  - `curated_pair_uplift_labels` — la **cible d'entraînement** : par paire de co-auteurs, le
+    gain de FWCI obtenu ensemble vs la baseline solo antérieure (anti-fuite temporelle).
 - **`marts`** (`models/marts/`) — le **signal métier** final (le mart « servi »), Parquet
   immuable sous `s3://citation/marts/collab/dt=AAAA-MM/run=<id>/` — le **contrat de sortie**
   du pipeline ([ADR 0029](https://univ-lehavre.github.io/atlas/decisions/0029-architecture-pipeline-collaborations/)).
   - `marts_collab_pairs` — **le cœur** : pour chaque **paire de chercheurs**, le nombre de
-    **citations croisées** article↔article (cf. ci-dessous).
+    **co-publications** (articles co-signés) — le signal de collaboration (cf. ci-dessous).
 
   > **Contrat & manifest.** dbt **produit** le Parquet ; un asset Dagster
   > (`collab_manifest`, côté [`../citation-dagster/`](../citation-dagster/)) écrit **en
@@ -45,26 +51,24 @@ Le pipeline va du brut vers le raffiné, par couches successives :
   > le manifest est la **sentinelle de complétude** : un run coupé avant lui ne laisse
   > aucun manifest → la partition n'est pas servie.
 
-### `marts_collab_pairs` — sémantique des citations croisées
+### `marts_collab_pairs` — sémantique du co-autorat
 
-Pour une paire de chercheurs (A, B), une **citation croisée** = une arête entre un article
-de A et un article de B, **dans un sens ou l'autre**. Le modèle joint chaque arête
-`curated_edges` (œuvre→œuvre) aux auteurs des deux œuvres (`curated_authorships`), écarte
-les **auto-citations** (un auteur se citant lui-même n'est pas un signal de collaboration),
-puis **canonicalise** la paire en `(author_a, author_b)` avec `author_a < author_b` (ordre
-des ids) — ainsi (A,B) et (B,A) fusionnent en **une ligne**.
-
-Trois colonnes exposent le détail :
+Pour une paire de chercheurs (A, B), la collaboration se mesure par le **co-autorat** :
+le nombre d'articles qu'ils ont **co-signés**. Le modèle **auto-joint** `curated_authorships`
+sur `work_id` (deux auteurs distincts d'un même article), **canonicalise** la paire en
+`(author_a, author_b)` avec `author_a < author_b` (ordre des ids) — ainsi (A,B) et (B,A)
+fusionnent en **une ligne** — puis compte les works distincts.
 
 | Colonne | Sens |
 | --- | --- |
-| `a_to_b` | nombre de fois où **author_a cite author_b** (sens orienté) |
-| `b_to_a` | nombre de fois où **author_b cite author_a** (sens orienté) |
-| `cross_citations` | total **non orienté** = `a_to_b + b_to_a` |
+| `author_a` | premier auteur de la paire (ordre canonique `author_a < author_b`) |
+| `author_b` | second auteur de la paire |
+| `co_publications` | nombre d'articles **co-signés** par les deux (`count(distinct work_id)`) |
 
-L'**asymétrie** est donc conservée (`a_to_b` ≠ `b_to_a` possible : qui cite qui), tandis que
-`cross_citations` est **symétrique** (la paire, pas le sens). Exemple golden (fixtures) : la
-paire (Alice, Bob) a `a_to_b = 2`, `b_to_a = 1`, `cross_citations = 3`.
+Le signal est **symétrique** (la paire, pas un sens). Les citations (`referenced_works`) sont
+**hors périmètre** (ADR 0105) : on ne travaille que sur les métadonnées du work (année,
+authorships, topics). Exemple golden (fixtures) : (Alice, Bob) `co_publications = 3`,
+(Alice, Carol) `= 2`, (Bob, Carol) `= 1`.
 
 ## Conventions & garanties
 

@@ -213,9 +213,9 @@ def test_index_load_e2e_fts_and_knn(embedding_model, pgvector, minio, monkeypatc
     run_id, dt = _build_index(minio, monkeypatch)
 
     res = index_load(build_asset_context())
-    # 2 chercheurs (Alice, Bob), tous deux avec vecteur (fixtures).
-    assert res.metadata["researchers_loaded"].value == 2
-    assert res.metadata["vectors_present"].value == 2
+    # 3 chercheurs (Alice, Bob, Carol), tous avec vecteur (fixtures).
+    assert res.metadata["researchers_loaded"].value == 3
+    assert res.metadata["vectors_present"].value == 3
 
     # Vérif en base via le conteneur pgvector.
     def psql(sql):
@@ -239,25 +239,34 @@ def test_index_load_e2e_fts_and_knn(embedding_model, pgvector, minio, monkeypatc
         )
         return out.stdout.strip()
 
-    # count == 2, et researcher_id porte bien l'author_id (mapping).
-    assert psql(f"SELECT count(*) FROM researchers WHERE dt='{dt}' AND run='{run_id}'") == "2"
+    # count == 3, et researcher_id porte bien l'author_id (mapping).
+    assert psql(f"SELECT count(*) FROM researchers WHERE dt='{dt}' AND run='{run_id}'") == "3"
     assert (
         psql(
             "SELECT count(*) FROM researchers WHERE researcher_id = 'https://openalex.org/A1000000001'"
         )
         == "1"
     )
-    # FTS discriminant : 'shield' (label de W101) ne concerne QU'Alice ; 'chemistry'
-    # QUE Bob. ('plasma' serait non discriminant : "Tokamak plasma diagnostics" de W303
-    # le donne aussi à Bob — le FTS tokenise bien le mot, c'est correct.)
-    assert (
-        psql("SELECT researcher_id FROM researchers WHERE fts @@ to_tsquery('simple','shield')")
-        == "https://openalex.org/A1000000001"
-    )
-    assert (
-        psql("SELECT researcher_id FROM researchers WHERE fts @@ to_tsquery('simple','chemistry')")
-        == "https://openalex.org/A1000000002"
-    )
+
+    def fts_ids(query):
+        """Ensemble des researcher_id matchant une requête FTS (ordre non garanti)."""
+        out = psql(
+            f"SELECT string_agg(researcher_id, ',' ORDER BY researcher_id) FROM researchers "
+            f"WHERE fts @@ to_tsquery('simple','{query}')"
+        )
+        return set(out.split(",")) if out else set()
+
+    _ALICE = "https://openalex.org/A1000000001"
+    _BOB = "https://openalex.org/A1000000002"
+    _CAROL = "https://openalex.org/A1000000003"
+    # FTS discriminant sur le graphe 3 auteurs (GOLDEN.md, doc_text) :
+    # - 'muscle' (W5 solo) ne concerne QU'Alice ;
+    # - 'glycosylation' (T20003 : W3 Alice+Carol, W10 Carol) → Alice ET Carol ;
+    # - 'materials' (T20002 : W1 Alice+Bob, W7 Alice) → Alice ET Bob.
+    assert fts_ids("muscle") == {_ALICE}
+    assert fts_ids("glycosylation") == {_ALICE, _CAROL}
+    assert fts_ids("materials") == {_ALICE, _BOB}
+
     # kNN : la requête la plus proche du vecteur d'Alice renvoie Alice en tête.
     knn = psql(
         "SELECT researcher_id FROM researchers WHERE embedding IS NOT NULL "
@@ -268,4 +277,4 @@ def test_index_load_e2e_fts_and_knn(embedding_model, pgvector, minio, monkeypatc
 
     # Idempotence : recharger le MÊME run ne duplique pas (DELETE+INSERT).
     index_load(build_asset_context())
-    assert psql(f"SELECT count(*) FROM researchers WHERE dt='{dt}' AND run='{run_id}'") == "2"
+    assert psql(f"SELECT count(*) FROM researchers WHERE dt='{dt}' AND run='{run_id}'") == "3"

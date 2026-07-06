@@ -1,5 +1,6 @@
 """Assets DataOps du pipeline de citations."""
 
+from citation_dagster.assets.batch_eunicoast import mart_eunicoast
 from citation_dagster.assets.index_load import index_load
 from citation_dagster.assets.manifest import (
     MANIFEST_SCHEMA_VERSION,
@@ -20,6 +21,7 @@ __all__ = [
     "author_recommendations_manifest",
     "collab_manifest",
     "index_load",
+    "mart_eunicoast",
     "pair_uplift_model",
     "pair_uplift_predictions_manifest",
     "raw_snapshot",

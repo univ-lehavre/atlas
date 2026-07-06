@@ -134,10 +134,12 @@ def _canonical_sha256(rows, ndigits=6):
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
-# Les 4 works des fixtures portent tous topics+keywords → 4 vecteurs publication.
-# Alice (A1000000001) a W101+W102, Bob (A1000000002) a W201+W202 → 2 vecteurs auteur.
+# Les 10 works des fixtures portent tous topics+keywords → 10 vecteurs publication.
+# Trois auteurs EUNICoast → 3 vecteurs auteur. Alice (A1000000001) agrège
+# W1,W2,W3,W4,W5,W6,W7 ; Bob (A1000000002) W1,W2,W4,W8,W9 ; Carol (A1000000003) W3,W4,W10.
 _ALICE = "https://openalex.org/A1000000001"
 _BOB = "https://openalex.org/A1000000002"
+_CAROL = "https://openalex.org/A1000000003"
 _W = "https://openalex.org/W"
 
 
@@ -155,16 +157,16 @@ def test_asset_researcher_embeddings_golden_and_deterministic(embedding_model, m
     assert r.returncode == 0, f"dbt build a échoué :\n{r.stdout}\n{r.stderr}"
 
     res = researcher_embeddings(build_asset_context())
-    assert res.metadata["work_vectors"].value == 5  # W101, W102, W201, W202, W303
-    assert res.metadata["author_vectors"].value == 2  # Alice, Bob
+    assert res.metadata["work_vectors"].value == 10  # W1..W10
+    assert res.metadata["author_vectors"].value == 3  # Alice, Bob, Carol
 
     con = _connect(minio)
     works = _read_vectors(con, minio.bucket, "curated/curated_work_vectors", "work_id", run_id)
     authors = _read_vectors(con, minio.bucket, "marts/researcher_vectors", "author_id", run_id)
 
     # Grain & dimension.
-    assert len(works) == 5
-    assert len(authors) == 2
+    assert len(works) == 10
+    assert len(authors) == 3
     assert all(len(v) == embedding.EMBEDDING_DIM for _id, v in works)
     assert all(len(v) == embedding.EMBEDDING_DIM for _id, v in authors)
 
@@ -172,9 +174,9 @@ def test_asset_researcher_embeddings_golden_and_deterministic(embedding_model, m
     for _wid, v in works:
         assert abs(float(np.linalg.norm(v)) - 1.0) > 1e-3
 
-    # Agrégat PAR author_id : L2-normalisé (norme ≈ 1), Alice puis Bob (ordre id).
+    # Agrégat PAR author_id : L2-normalisé (norme ≈ 1), Alice, Bob, Carol (ordre id).
     author_ids = [a[0] for a in authors]
-    assert author_ids == [_ALICE, _BOB]
+    assert author_ids == [_ALICE, _BOB, _CAROL]
     for _aid, v in authors:
         assert float(np.linalg.norm(v)) == pytest.approx(1.0, abs=1e-5)
 
@@ -191,8 +193,9 @@ def test_asset_researcher_embeddings_golden_and_deterministic(embedding_model, m
 
 
 def test_vector_opposition_rgpd(embedding_model, minio, monkeypatch):
-    """PURGE CHIRURGICALE RGPD du VECTEUR (lot 5) : opposition (Alice, W303) re-dérive
-    le vecteur d'Alice sans W303, laisse Bob INCHANGÉ, et garde la provenance COMPLÈTE."""
+    """PURGE CHIRURGICALE RGPD du VECTEUR (lot 5) : opposition (Alice, W1) re-dérive le
+    vecteur d'Alice sans W1, laisse Bob INCHANGÉ (co-auteur de W1, non opposé), et garde
+    la provenance COMPLÈTE."""
     requires_rclone()
     load_raw_fixtures(minio)
     _set_minio_env(monkeypatch, minio)
@@ -209,26 +212,26 @@ def test_vector_opposition_rgpd(embedding_model, minio, monkeypatch):
     )
     works_ref = _read_vectors(con, minio.bucket, "curated/curated_work_vectors", "work_id", run_id)
 
-    # 2) Run AVEC opposition (Alice, W303) — MÊME source env que dbt (cohérence).
-    monkeypatch.setenv(
-        "OPPOSITION_PAIRS", json.dumps([{"author_id": _ALICE, "work_id": _W + "303"}])
-    )
+    # 2) Run AVEC opposition (Alice, W1) — MÊME source env que dbt (cohérence). W1 est
+    # co-écrit Alice+Bob : Alice s'oppose à SA participation, celle de Bob est intacte.
+    monkeypatch.setenv("OPPOSITION_PAIRS", json.dumps([{"author_id": _ALICE, "work_id": _W + "1"}]))
     researcher_embeddings(build_asset_context())
     authors_opp = dict(
         _read_vectors(con, minio.bucket, "marts/researcher_vectors", "author_id", run_id)
     )
     works_opp = _read_vectors(con, minio.bucket, "curated/curated_work_vectors", "work_id", run_id)
 
-    # Provenance INCHANGÉE : la couche curated reste complète (5 works, non filtrée).
+    # Provenance INCHANGÉE : la couche curated reste complète (10 works, non filtrée).
     assert _canonical_sha256(works_opp) == _canonical_sha256(works_ref)
-    assert len(works_opp) == 5
+    assert len(works_opp) == 10
 
-    # Bob INCHANGÉ : son vecteur (agrégé sur W201, W202, W303) est byte-identique.
+    # Bob INCHANGÉ : son vecteur (agrégé sur W1,W2,W4,W8,W9) est byte-identique — sa
+    # participation à W1 n'est PAS opposée.
     # PREUVE anti-sur-effacement : l'opposition d'Alice ne touche pas le co-auteur.
     assert _canonical_sha256([(_BOB, authors_opp[_BOB])]) == _canonical_sha256(
         [(_BOB, authors_ref[_BOB])]
     )
-    # Alice TOUJOURS présente (garde W101, W102), re-dérivée → vecteur différent de la réf.
+    # Alice TOUJOURS présente (garde W2..W7), re-dérivée → vecteur différent de la réf.
     assert _ALICE in authors_opp
     assert float(np.linalg.norm(authors_opp[_ALICE])) == pytest.approx(1.0, abs=1e-5)
     assert _canonical_sha256([(_ALICE, authors_opp[_ALICE])]) != _canonical_sha256(
@@ -249,11 +252,11 @@ def test_vector_manifests_and_ge_check(embedding_model, minio, monkeypatch):
     assert r.returncode == 0, f"dbt build a échoué :\n{r.stdout}\n{r.stderr}"
     researcher_embeddings(build_asset_context())  # écrit les deux Parquet vecteur
 
-    # Manifests : agrégat author_id (2 lignes) + provenance work_id (4 lignes).
+    # Manifests : agrégat author_id (3 lignes) + provenance work_id (10 lignes).
     res_agg = cm.researcher_vectors_manifest(build_asset_context())
-    assert res_agg.metadata["row_count"].value == 2  # Alice, Bob
+    assert res_agg.metadata["row_count"].value == 3  # Alice, Bob, Carol
     res_prov = cm.work_vectors_manifest(build_asset_context())
-    assert res_prov.metadata["row_count"].value == 5  # W101, W102, W201, W202, W303
+    assert res_prov.metadata["row_count"].value == 10  # W1..W10
 
     cfg = DuckDBS3Config(
         key_id=minio.access_key,
@@ -264,7 +267,7 @@ def test_vector_manifests_and_ge_check(embedding_model, minio, monkeypatch):
         bucket=minio.bucket,
     )
     con = lakehouse.connect(cfg)
-    for subdir, n in [("marts/researcher_vectors", 2), ("curated/curated_work_vectors", 5)]:
+    for subdir, n in [("marts/researcher_vectors", 3), ("curated/curated_work_vectors", 10)]:
         man = json.loads(
             con.sql(
                 f"SELECT content FROM read_text("

@@ -65,6 +65,21 @@ def connect(cfg: DuckDBS3Config | None = None) -> duckdb.DuckDBPyConnection:
     con.execute("SET http_keep_alive=true;")
     con.execute("SET http_timeout=120000;")
     con.execute("SET http_retries=5;")
+    # Scalabilité (parité avec le profil dbt) : borne la RAM, autorise le SPILLING disque et
+    # PARALLÉLISE. Le gros consommateur est l'asset mart_eunicoast, qui lit le lac PAR LOTS
+    # (~5M works PROJETÉS/lot = quelques Go — jamais les colonnes lourdes, ADR 0094) ; l'aval
+    # dbt (~70k works) est petit. `memory_limit=24GB` borne la RAM ; au-delà, DuckDB déborde ses
+    # opérateurs dans temp_directory (emptyDir monté, cf. definitions._SPILL_MOUNT) au lieu d'OOM
+    # — filet, quasi gratuit. `threads=32` parallélise le filtrage d'un lot sans réserver tous
+    # les cœurs du nœud au repos (dimensionnement révisé depuis l'ancienne approche « tout
+    # OpenAlex en RAM » qui exigeait 60 threads / 64GB). Le pod de run RÉSERVE ces ressources
+    # (requests/limits, cf. definitions._RUN_RESOURCES) → le scheduler place et cadre. Tout
+    # dérivé de l'env (ADR 0023 : le banc léger baisse encore).
+    con.execute(f"SET memory_limit='{os.environ.get('DBT_DUCKDB_MEMORY_LIMIT', '24GB')}';")
+    con.execute(
+        f"SET temp_directory='{os.environ.get('DBT_DUCKDB_TEMP_DIR', '/tmp/duckdb-spill')}';"
+    )
+    con.execute(f"SET threads={os.environ.get('DBT_DUCKDB_THREADS', '32')};")
     con.execute(_create_secret_sql(cfg))
     return con
 
@@ -105,6 +120,59 @@ def read_jsonl_gz(con: duckdb.DuckDBPyConnection, s3_glob: str) -> duckdb.DuckDB
     et décompresse le gzip de façon transparente.
     """
     return con.sql(f"SELECT * FROM read_json_auto('{s3_glob}')")
+
+
+def read_parquet(con: duckdb.DuckDBPyConnection, s3_glob: str) -> duckdb.DuckDBPyRelation:
+    """Lit un (ou des) Parquet du lakehouse en relation DuckDB (colonnaire natif).
+
+    ``s3_glob`` ex. : ``s3://citation/raw/works/**/*.parquet``. Contrairement à
+    ``read_jsonl_gz`` (qui parse tout le JSON imbriqué → OOM au datalake complet),
+    ``read_parquet`` lit **par colonne** depuis le footer : projeter un sous-ensemble
+    de colonnes (``SELECT id, publication_year, …``) ne désérialise JAMAIS les
+    colonnes lourdes non demandées (``abstract_inverted_index``, ``referenced_works``).
+    C'est le socle de la lecture bornée du snapshot Parquet OpenAlex (ADR 0105).
+    """
+    return con.sql(f"SELECT * FROM read_parquet('{s3_glob}')")
+
+
+def read_parquet_footer(con: duckdb.DuckDBPyConnection, s3_glob: str) -> duckdb.DuckDBPyRelation:
+    """Relation ``(file, num_rows)`` lue des **footers** Parquet (aucun scan de données).
+
+    ``parquet_file_metadata`` lit uniquement le pied de page de chaque fichier : le
+    nombre de lignes (``num_rows``) y est **déjà** inscrit par le producteur (OpenAlex),
+    donc ce comptage est quasi gratuit (~0,2 s/fichier, mesuré sur le lac). Sert à
+    dimensionner les lots homogènes du batch EUNICoast (cumul de ``num_rows``, ADR 0105)
+    sans jamais ouvrir le corps des fichiers.
+    """
+    return con.sql(f"SELECT file_name AS file, num_rows FROM parquet_file_metadata('{s3_glob}')")
+
+
+def write_works_manifest(con: duckdb.DuckDBPyConnection, bucket: str) -> int:
+    """Écrit ``raw/manifest_works.parquet`` (``file, num_rows``) depuis les footers.
+
+    Recense chaque Parquet de ``raw/works/`` et son nombre de works (footer). Le
+    manifest est relu par l'asset de batch pour composer des lots ~homogènes en nombre
+    de works (les fichiers OpenAlex vont de quelques dizaines à ~360k works chacun →
+    un découpage par nombre de fichiers serait très déséquilibré). Renvoie le nombre de
+    fichiers recensés (0 si ``raw/works/`` est vide → manifest non écrit).
+    """
+    src = f"s3://{bucket}/raw/works/**/*.parquet"
+    dest = f"s3://{bucket}/raw/manifest_works.parquet"
+    # `parquet_file_metadata` LÈVE une IOException si le glob ne matche AUCUN fichier
+    # (elle ne renvoie pas 0 lignes) : on traite « raw/works/ vide » comme un no-op
+    # explicite plutôt que de laisser l'exception remonter (ingestion sans works = rien
+    # à recenser, pas une erreur).
+    try:
+        n = con.sql(f"SELECT count(*) FROM parquet_file_metadata('{src}')").fetchone()[0]
+    except duckdb.IOException:
+        return 0
+    if n == 0:
+        return 0
+    con.execute(
+        f"COPY (SELECT file_name AS file, num_rows FROM parquet_file_metadata('{src}')) "
+        f"TO '{dest}' (FORMAT PARQUET)"
+    )
+    return n
 
 
 def copy_to_parquet(

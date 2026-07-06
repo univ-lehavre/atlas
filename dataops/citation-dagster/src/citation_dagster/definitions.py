@@ -33,6 +33,7 @@ from citation_dagster.assets import (
     author_recommendations_manifest,
     collab_manifest,
     index_load,
+    mart_eunicoast,
     pair_uplift_model,
     pair_uplift_predictions_manifest,
     raw_snapshot,
@@ -46,7 +47,6 @@ from citation_dagster.assets.drift import evidently_embedding_drift, read_drift_
 from citation_dagster.assets.drift_uplift import evidently_uplift_drift
 from citation_dagster.assets.quality import (
     ge_author_recommendations,
-    ge_curated_edges,
     ge_index_load,
     ge_marts_collab,
     ge_marts_researchers,
@@ -124,16 +124,57 @@ def _s3_env_from() -> list[dict]:
 # ses connexions → peu de lookups → n'était pas affecté (687 GiB ingérés OK).
 _DNS_NDOTS_1 = {"dns_config": {"options": [{"name": "ndots", "value": "1"}]}}
 
+# Volume de SPILLING DuckDB (scalabilité au datalake complet). DuckDB borne sa RAM
+# (memory_limit, cf. lakehouse.connect / profiles.yml) et déborde ses tris/jointures dans
+# `temp_directory` — sans disque monté, ce spilling écrirait dans l'overlay du conteneur
+# (petit, peu perf). On monte un emptyDir dédié (`/tmp/duckdb-spill`, = DBT_DUCKDB_TEMP_DIR)
+# → un tri/jointure volumineux (ex. self-join de co-autorat, agrégats uplift) déborde sur
+# disque au lieu d'OOM-killer le pod. emptyDir = éphémère par run (nettoyé à la fin), taille
+# bornée par l'espace du nœud (kubelet évince si dépassement — accepté : le spill est
+# transitoire). `medium: ""` = disque du nœud (pas la RAM ; `Memory` compterait dans la RAM).
+_SPILL_VOLUME = {"name": "duckdb-spill", "empty_dir": {}}
+_SPILL_MOUNT = {"name": "duckdb-spill", "mount_path": "/tmp/duckdb-spill"}
 
-_RUN_K8S_CONFIG = {
-    "dagster-k8s/config": {
-        "container_config": {
-            "env": _RUN_ENV,
-            "env_from": _s3_env_from(),
-        },
-        "pod_spec_config": _DNS_NDOTS_1,
-    },
+# requests/limits du pod de run, COHÉRENTS avec les réglages DuckDB (memory_limit=24GB,
+# threads=32 — cf. lakehouse.connect / profiles.yml). Sans resources explicites, le pod de
+# run tournait en BestEffort : le scheduler ne réservait rien → DuckDB allouait « à l'aveugle »
+# et le pod était OOM-killé. On DÉCLARE donc :
+#   - requests : placement garanti — 8 cœurs / 8Gi (ce que le run prend a minima) ;
+#   - limits : plafond aligné sur DuckDB (memory_limit 24GB + marge pandas/python/arrow →
+#     28Gi) + 32 cœurs (= threads).
+# Dimensionnement révisé pour le modèle de données ADR 0094 (mart EUNICoast) : le gros du
+# DuckDB est l'asset mart_eunicoast, qui lit le lac PAR LOTS (~5M works PROJETÉS/lot =
+# quelques Go, jamais les colonnes lourdes) — plus la matérialisation de tout OpenAlex en RAM.
+# L'aval dbt (~70k works) est petit. On n'a donc plus besoin de réserver 60 cœurs / 72Gi au
+# repos : 32 cœurs / 28Gi couvrent largement un lot, en gardant le spilling comme filet.
+# Dérivable par l'env (ADR 0023) : le banc léger baisse encore.
+# NB CRITIQUE : le memory_limit DuckDB (24GB ≈ 25,8Gi) reste SOUS la limite pod (28Gi) → DuckDB
+# spille sur disque AVANT que le cgroup ne tue le pod (l'ordre est essentiel : sinon OOM avant
+# spill). L'écart (28Gi − 24GB) absorbe la RAM hors-DuckDB (pandas/arrow des assets Python).
+_RUN_RESOURCES = {
+    "requests": {"cpu": "8", "memory": "8Gi"},
+    "limits": {"cpu": "32", "memory": "28Gi"},
 }
+
+
+def _k8s_config(env):
+    """Tag `dagster-k8s/config` d'un pod de run : env + S3 + dnsConfig ndots:1 + volume de
+    spilling DuckDB + resources (cohérentes avec memory_limit/threads DuckDB). Partagé par
+    l'ingestion et le transform (DRY, jscpd) — seul `env` diffère (POSTGRES_* d'index_load)."""
+    return {
+        "dagster-k8s/config": {
+            "container_config": {
+                "env": env,
+                "env_from": _s3_env_from(),
+                "volume_mounts": [_SPILL_MOUNT],
+                "resources": _RUN_RESOURCES,
+            },
+            "pod_spec_config": {**_DNS_NDOTS_1, "volumes": [_SPILL_VOLUME]},
+        }
+    }
+
+
+_RUN_K8S_CONFIG = _k8s_config(_RUN_ENV)
 
 # index_load (transform_job, étape 4) écrit l'index pgvector → son pod de run a besoin
 # de POSTGRES_HOST/PORT/DB/USER/PASSWORD (resources.postgres_target_from_env, qui LÈVE
@@ -162,23 +203,16 @@ _TRANSFORM_ENV = [
     _pg_secret_env("POSTGRES_USER", "username"),
     _pg_secret_env("POSTGRES_PASSWORD", "password"),
 ]
-_TRANSFORM_K8S_CONFIG = {
-    "dagster-k8s/config": {
-        "container_config": {
-            # Lineage + MLflow (piège ADR 0086) ET les POSTGRES_* d'index_load.
-            "env": _TRANSFORM_ENV,
-            # Même source S3 paramétrée par profil que le run d'ingestion.
-            "env_from": _s3_env_from(),
-        },
-        # Même dnsConfig ndots:1 que le run d'ingestion (cf. _DNS_NDOTS_1) : le transform
-        # (dbt-duckdb + index_load) résout aussi le RGW S3 et pg-rw.postgres par nom court.
-        "pod_spec_config": _DNS_NDOTS_1,
-    },
-}
+# Transform : mêmes ndots:1 + volume de spilling que l'ingestion (via _k8s_config), mais
+# _TRANSFORM_ENV ajoute les POSTGRES_* d'index_load. Le transform fait le gros du DuckDB
+# (dbt curated/marts + embeddings + uplift) → le spilling y est le plus critique.
+_TRANSFORM_K8S_CONFIG = _k8s_config(_TRANSFORM_ENV)
 
 ingestion_job = define_asset_job(
     "ingestion_job",
-    selection=AssetSelection.assets("raw_snapshot"),
+    # raw_snapshot (rapatrie le Parquet + manifest) PUIS mart_eunicoast (filtre le
+    # périmètre par lots) — même run, mêmes ressources/spilling (ADR 0105).
+    selection=AssetSelection.assets("raw_snapshot", "mart_eunicoast"),
     tags=_RUN_K8S_CONFIG,
 )
 
@@ -206,6 +240,9 @@ _dbt_assets, _dbt_resources = dbt_components()
 # mode dégradé et la code-location reste chargeable (asset orphelin).
 _assets = [
     raw_snapshot,
+    # Filtre EUNICoast par lots colonnaires (mart_eunicoast) : 2ᵉ étage d'ingestion,
+    # après raw_snapshot, source de la chaîne dbt aval (ADR 0105).
+    mart_eunicoast,
     collab_manifest,
     researcher_embeddings,
     researchers_manifest,
@@ -224,8 +261,8 @@ _assets = [
 _jobs = [ingestion_job]
 
 # Asset checks Great Expectations bloquants (étape 3.5a). Le check du brut s'applique
-# à raw_snapshot (toujours présent) ; ceux des couches dbt (curated_edges,
-# marts_collab_pairs) ne sont enregistrés QUE si les assets dbt existent — sinon leur
+# à raw_snapshot (toujours présent) ; ceux des couches dbt (marts_collab_pairs,
+# marts_researchers) ne sont enregistrés QUE si les assets dbt existent — sinon leur
 # clé cible n'est pas résolue en mode dégradé (dbt indisponible : lint/checkout neuf).
 # ge_researcher_vectors cible l'asset PYTHON researcher_embeddings (toujours enregistré)
 # → INCONDITIONNEL (ne pas copier le pattern conditionnel-dbt, sinon le check du vecteur
@@ -249,7 +286,7 @@ _asset_checks = [
     ge_author_recommendations,
 ]
 if _dbt_assets:
-    _asset_checks += [ge_curated_edges, ge_marts_collab, ge_marts_researchers]
+    _asset_checks += [ge_marts_collab, ge_marts_researchers]
 
 # Le job de transformation n'est enregistré QUE si les assets dbt existent : un
 # job dont la sélection ne résout aucun asset ferait échouer la construction des
@@ -319,10 +356,10 @@ def _ingest_run_config(env: dict | None = None) -> RunConfig | None:
 
     Le défaut CODE de ``RawSnapshotConfig`` est **prod-complet** (0 = illimité) : la prod
     ne pose donc AUCUNE de ces variables et rapatrie tout. C'est le **banc** qui borne, via
-    son overlay (``CITATION_INGEST_SAMPLE_SIZE`` / ``CITATION_INGEST_MAX_PARTITIONS`` /
-    ``CITATION_INGEST_COHERENT``). Sans variable posée → ``None`` (pas de surcharge → défaut
-    complet). Parse défensif : une valeur absente/invalide n'est simplement pas surchargée
-    (jamais de crash de l'ingestion pour un env mal formé)."""
+    son overlay (``CITATION_INGEST_SAMPLE_SIZE`` / ``CITATION_INGEST_MAX_PARTITIONS``). Sans
+    variable posée → ``None`` (pas de surcharge → défaut complet). Parse défensif : une valeur
+    absente/invalide n'est simplement pas surchargée (jamais de crash de l'ingestion pour un
+    env mal formé)."""
     env = env if env is not None else os.environ
     overrides: dict[str, object] = {}
 
@@ -341,9 +378,6 @@ def _ingest_run_config(env: dict | None = None) -> RunConfig | None:
     }
     for key in _ENV_TO_FIELD:
         _int(key)
-    coherent = env.get("CITATION_INGEST_COHERENT")
-    if coherent is not None:
-        overrides["coherent_sample"] = coherent.strip().lower() in ("1", "true", "on", "yes")
     if not overrides:
         return None
     return RunConfig(ops={"raw_snapshot": RawSnapshotConfig(**overrides)})

@@ -1,14 +1,20 @@
 """Asset d'ingestion : sync borné du snapshot OpenAlex vers le lakehouse.
 
-Synchronise les fichiers JSONL gzippés du snapshot public OpenAlex
-(``s3://openalex/data/jsonl/{works,authors}``) vers le lakehouse interne
-(``s3://<bucket>/raw/{works,authors}``, RGW Ceph) à l'aide de ``rclone``.
+Synchronise les fichiers **Parquet** du snapshot public OpenAlex
+(``s3://openalex/data/parquet/works``) vers le lakehouse interne
+(``s3://<bucket>/raw/works``, RGW Ceph) à l'aide de ``rclone``.
 
 Le transfert passe par **deux endpoints S3 distincts** (AWS public → RGW interne),
 d'où ``rclone`` (qui gère le transfert inter-endpoints) plutôt qu'un ``aws s3 sync``
 mono-endpoint. Le volume est **borné** par configuration (``sample_size`` fichiers
-``.gz`` par entité) : sur le banc local, on ne rapatrie jamais le snapshot complet
-(~1,6 To). La donnée brute est copiée **telle quelle** (gzippée, immuable).
+``.parquet`` par partition) : sur le banc local, on ne rapatrie jamais le snapshot
+complet (~1,2 To). La donnée brute est copiée **telle quelle** (Parquet, immuable).
+
+Format **Parquet colonnaire** (ADR 0105, remplace le JSONL.gz historique) : l'aval lit
+par colonne (année, authorships, topics…) sans jamais désérialiser les champs lourds
+(``abstract_inverted_index``, ``referenced_works``) → lecture bornée du datalake complet.
+Après le sync, un **manifest** (``raw/manifest_works.parquet`` : ``file, num_rows``) est
+écrit depuis les footers Parquet — il dimensionne les lots homogènes du batch EUNICoast.
 
 Un événement OpenLineage (START + COMPLETE) est émis vers Marquez, prouvant la
 chaîne de lineage dès cette première étape.
@@ -38,17 +44,13 @@ from citation_dagster.resources import (
 )
 from citation_dagster.watermark import read_watermark, write_watermark
 
-# Partition RÉSERVÉE des authors dérivés (mode échantillon cohérent, ADR 0063). Valeur
-# non-date pour ne JAMAIS entrer en collision avec une partition réelle updated_date=YYYY-MM-DD.
-_COHERENT_AUTHORS_PARTITION = "updated_date=coherent-sample"
-
 # Bucket source externe (en prose uniquement ; jamais dans un identifiant interne).
 _SOURCE_BUCKET = "openalex"
-# OpenAlex a introduit (2024+) un split de format sous `data/` : `data/jsonl/<entity>` (JSONL.gz,
-# le format historique) et `data/parquet/<entity>` (colonnaire). Les entités ne sont PLUS sous
-# `data/<entity>` directement → `rclone lsf` y renvoyait 0 partition. On lit le JSONL (l'aval dbt
-# `read_json_auto` reste inchangé) ; passer à parquet = chantier suivi (réécriture des staging).
-_SOURCE_PREFIX = "data/jsonl"
+# OpenAlex publie (2024+) `data/parquet/<entity>` (colonnaire) à côté du legacy
+# `data/jsonl/<entity>` (JSONL.gz). On ingère le **Parquet** (ADR 0105) : lecture par
+# colonne en aval, filtre EUNICoast borné en mémoire (le JSON de forme faisait OOM,
+# drifts L76/L77). Les partitions restent `updated_date=YYYY-MM-DD`.
+_SOURCE_PREFIX = "data/parquet"
 _PRODUCER = "https://github.com/univ-lehavre/atlas/dataops/citation-dagster"
 
 
@@ -64,12 +66,14 @@ class RawSnapshotConfig(Config):
     """
 
     sample_size: int = 0
-    """Nombre maximal de fichiers ``.gz`` à copier **par partition**. ``0`` = **illimité**
-    (tous les fichiers de la partition). Le banc pose une petite valeur pour ne pas se
-    congestionner."""
+    """Nombre maximal de fichiers ``.parquet`` à copier **par partition**. ``0`` =
+    **illimité** (tous les fichiers de la partition). Le banc pose une petite valeur pour
+    ne pas se congestionner."""
 
-    entities: list[str] = Field(default_factory=lambda: ["works", "authors"])
-    """Entités OpenAlex à ingérer."""
+    entities: list[str] = Field(default_factory=lambda: ["works"])
+    """Entités OpenAlex à ingérer. Défaut ``["works"]`` : le work est **auto-suffisant**
+    pour le périmètre EUNICoast (ADR 0105) — l'affiliation (``authorships[].institutions[].ror``),
+    l'``author_id`` et l'ORCID sont portés par le work lui-même, sans l'entité ``authors``."""
 
     max_partitions: int = 0
     """Nombre maximal de partitions ``updated_date`` à traiter **par entité et par run**.
@@ -89,21 +93,6 @@ class RawSnapshotConfig(Config):
 
     ``None`` (cas normal) : l'incrémental traite les partitions postérieures au
     watermark (bornées par ``max_partitions``).
-    """
-
-    coherent_sample: bool = False
-    """Mode « échantillon cohérent » pour les **petits bancs** (ADR 0063 ; OFF par défaut).
-
-    Sur un petit banc, les tranches ``works`` et ``authors`` ingérées par date sont
-    **disjointes** : les ``author_id`` cités par les works échantillonnés sont quasi
-    absents de l'échantillon d'``authors`` → clés étrangères pendantes (tests dbt
-    ``relationships``). Activé, ce mode **dérive** après le sync des works une tranche
-    ``authors`` contenant EXACTEMENT les auteurs cités, depuis les objets ``author``
-    inline (``id``/``display_name``/``orcid``) de ``works.authorships``. Écrite sous la
-    partition réservée ``updated_date=coherent-sample``. N'altère aucune tranche réelle.
-
-    **Banc uniquement** : en prod, laisser ``False`` (snapshot complet = cohérence native,
-    ADR 0054). Requiert ``works`` dans ``entities``.
     """
 
 
@@ -218,19 +207,19 @@ def _copy_files(src: str, keys: list[str], dest: str, config_path: Path, what: s
 def _copy_partition(
     entity: str, partition: str, sample_size: int, target: CephTarget, config_path: Path
 ) -> int:
-    """Copie ≤ ``sample_size`` ``.gz`` d'une partition vers ``raw/`` ; renvoie le nb copié."""
+    """Copie ≤ ``sample_size`` ``.parquet`` d'une partition vers ``raw/`` ; renvoie le nb copié."""
     src = f"openalex:{_SOURCE_BUCKET}/{_SOURCE_PREFIX}/{entity}/{partition}"
-    listing = _run_rclone(["lsf", "--include", "*.gz", src], config_path)
+    listing = _run_rclone(["lsf", "--include", "*.parquet", src], config_path)
     if listing.returncode != 0:
         raise Failure(
             description=f"rclone lsf a échoué pour « {entity}/{partition} »",
             metadata={"stderr": MetadataValue.text(listing.stderr[-2000:])},
         )
     all_keys = [line for line in listing.stdout.splitlines() if line.strip()]
-    # ``sample_size == 0`` (défaut prod) = illimité : tous les .gz de la partition.
+    # ``sample_size == 0`` (défaut prod) = illimité : tous les .parquet de la partition.
     keys = all_keys if sample_size <= 0 else all_keys[:sample_size]
     if not keys:
-        raise Failure(description=f"Aucun .gz dans « {entity}/{partition} »")
+        raise Failure(description=f"Aucun .parquet dans « {entity}/{partition} »")
     _copy_files(
         src,
         keys,
@@ -319,6 +308,9 @@ def _emit_lineage(state: RunState, run_id: str, entities: list[str], bucket: str
     ]
     outputs = [Dataset(namespace="citation", name=f"raw/{entity}") for entity in entities]
     outputs += [Dataset(namespace="citation", name=f"raw/merged_ids/{e}") for e in entities]
+    if "works" in entities:
+        # Le manifest des footers (raw/manifest_works.parquet) est un output du sync works.
+        outputs.append(Dataset(namespace="citation", name="raw/manifest_works"))
     client.emit(
         RunEvent(
             eventType=state,
@@ -390,47 +382,23 @@ def _sync_one_entity(
     }
 
 
-def _derive_coherent_authors(bucket: str) -> int:
-    """Dérive une tranche ``authors`` cohérente depuis les works (mode banc, ADR 0063).
+def _write_works_manifest(bucket: str) -> int:
+    """Écrit ``raw/manifest_works.parquet`` (footers) après le sync ; renvoie le nb de fichiers.
 
-    Écrit sous ``raw/authors/<partition réservée>/`` un JSONL.gz contenant EXACTEMENT
-    les auteurs cités par les works déjà synchronisés, depuis les objets ``author`` inline
-    (``id``/``display_name``/``orcid``) de ``works.authorships``. ``works_count`` et
-    ``cited_by_count`` (absents de l'inline, non contraints par les suites GE / tests
-    ``relationships``) sont mis à ``0``. Renvoie le nombre d'auteurs dérivés.
-
-    Lecture/écriture via DuckDB↔S3 (backend lakehouse, ADR 0055) : ``COPY … (FORMAT JSON,
-    COMPRESSION gzip)`` produit le même JSONL.gz que la source, relu par dbt à l'identique.
-    """
+    Recense chaque Parquet de ``raw/works/`` et son ``num_rows`` (lu du footer, aucun scan) —
+    l'asset de batch EUNICoast s'en sert pour composer des lots homogènes en nombre de works
+    (ADR 0105). Délégué à ``lakehouse.write_works_manifest`` (connexion DuckDB↔RGW, extensions
+    cuites). Best-effort au niveau appelant : monkeypatchable en test (pas de vrai S3)."""
     con = lakehouse.connect()
-    src = f"s3://{bucket}/raw/works/**/*.gz"
-    dest = f"s3://{bucket}/raw/authors/{_COHERENT_AUTHORS_PARTITION}/part_0000.gz"
-    # DISTINCT sur author.id ; un auteur peut être cité par plusieurs works.
-    con.execute(
-        f"""
-        COPY (
-            SELECT DISTINCT
-                ash.author.id           AS id,
-                ash.author.orcid        AS orcid,
-                ash.author.display_name AS display_name,
-                0                       AS works_count,
-                0                       AS cited_by_count
-            FROM (
-                SELECT unnest(authorships) AS ash
-                FROM read_json_auto('{src}', hive_partitioning=false, union_by_name=true)
-            ) t
-            WHERE ash.author.id IS NOT NULL
-        ) TO '{dest}' (FORMAT JSON, COMPRESSION gzip)
-        """
-    )
-    return con.sql(
-        f"SELECT count(*) FROM read_json_auto('{dest}', hive_partitioning=false)"
-    ).fetchone()[0]
+    return lakehouse.write_works_manifest(con, bucket)
 
 
 @asset(name="raw_snapshot", group_name="ingestion")
 def raw_snapshot(config: RawSnapshotConfig) -> MaterializeResult:
-    """Sync incrémental borné du snapshot OpenAlex (works + authors + merged_ids) vers ``raw/``."""
+    """Sync incrémental borné du snapshot Parquet OpenAlex (works + merged_ids) vers ``raw/``.
+
+    Après le sync des works, écrit le **manifest** (``raw/manifest_works.parquet``) qui
+    dimensionne les lots du batch EUNICoast (ADR 0105)."""
     target = ceph_target_from_env()
     run_id = str(generate_new_uuid())
 
@@ -442,13 +410,12 @@ def raw_snapshot(config: RawSnapshotConfig) -> MaterializeResult:
         results = [_sync_one_entity(e, config, target, config_path) for e in config.entities]
         _emit_lineage(RunState.COMPLETE, run_id, config.entities, target.bucket)
 
-    # Mode banc (ADR 0063) : rendre l'échantillon cohérent (authors cités par les works)
-    # APRÈS le sync, pour que les tests dbt relationships passent sur un petit banc.
-    coherent_authors = 0
-    if config.coherent_sample:
-        if "works" not in config.entities:
-            raise Failure(description="coherent_sample exige « works » dans entities (ADR 0063)")
-        coherent_authors = _derive_coherent_authors(target.bucket)
+    # Manifest des works (footers Parquet) : recense `file, num_rows` pour le batch aval.
+    # Écrit seulement si des works ont été (ou avaient déjà été) synchronisés — sinon no-op
+    # (0 fichier). Ne s'exécute pas en mode ciblé sur une entité sans works.
+    manifest_files = 0
+    if "works" in config.entities:
+        manifest_files = _write_works_manifest(target.bucket)
 
     total_files = sum(r["files"] for r in results)
     total_merged = sum(r["merged_files"] for r in results)
@@ -460,6 +427,6 @@ def raw_snapshot(config: RawSnapshotConfig) -> MaterializeResult:
             "watermarks": MetadataValue.text(watermarks),
             "entities": MetadataValue.text(", ".join(config.entities)),
             "bucket": MetadataValue.text(f"{target.bucket}/raw"),
-            "coherent_authors": MetadataValue.int(coherent_authors),
+            "manifest_files": MetadataValue.int(manifest_files),
         }
     )

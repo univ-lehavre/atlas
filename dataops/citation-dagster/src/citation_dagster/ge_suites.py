@@ -33,14 +33,13 @@ os.environ.setdefault("GX_ANALYTICS_ENABLED", "false")
 
 # Format d'id OpenAlex (en prose la marque est tolérée ; ici c'est le format réel).
 _WORK_ID_RE = r"^https://openalex\.org/W"
-_AUTHOR_ID_RE = r"^https://openalex\.org/A"
 
-# Borne haute de sanité pour cross_citations : un nombre absurde signalerait une
+# Borne haute de sanité pour co_publications : un nombre absurde signalerait une
 # explosion de jointure (pas une vraie collaboration). Large mais fini.
-_CROSS_CITATIONS_MAX = 1_000_000
+_CO_PUBLICATIONS_MAX = 1_000_000
 
-# Colonnes du mart servi (contrat 3.4).
-_MARTS_COLS = ("author_a", "author_b", "cross_citations", "a_to_b", "b_to_a")
+# Colonnes du mart servi (contrat 3.4) : co-autorat par paire (ADR 0105).
+_MARTS_COLS = ("author_a", "author_b", "co_publications")
 
 # Colonnes du mart lexical researchers (lot 2) et borne haute de sanité du poids.
 _RESEARCHERS_COLS = ("author_id", "kind", "label_id", "label", "weight", "freq")
@@ -53,57 +52,36 @@ _WEIGHT_MAX = 1_000_000.0
 
 
 def raw_works_expectations() -> list:
-    """Contrat structurel du brut works (colonnes consommées par le staging + format id)."""
+    """Contrat structurel du brut works Parquet (colonnes consommées en aval + format id).
+
+    Le brut est désormais le **Parquet** OpenAlex (ADR 0105) : on valide les colonnes que
+    le mart EUNICoast projette (id, publication_year, title, authorships, topics) — plus de
+    `referenced_works` (hors périmètre) ni d'entité `authors` (le work est auto-suffisant)."""
     return [
         gxe.ExpectColumnToExist(column="id"),
-        gxe.ExpectColumnToExist(column="referenced_works"),
+        gxe.ExpectColumnToExist(column="publication_year"),
+        gxe.ExpectColumnToExist(column="title"),
         gxe.ExpectColumnToExist(column="authorships"),
+        gxe.ExpectColumnToExist(column="topics"),
         gxe.ExpectColumnValuesToNotBeNull(column="id"),
         gxe.ExpectColumnValuesToMatchRegex(column="id", regex=_WORK_ID_RE),
         gxe.ExpectTableRowCountToBeBetween(min_value=1),
     ]
 
 
-def raw_authors_expectations() -> list:
-    """Contrat structurel du brut authors (id présent + format)."""
-    return [
-        gxe.ExpectColumnToExist(column="id"),
-        gxe.ExpectColumnValuesToNotBeNull(column="id"),
-        gxe.ExpectColumnValuesToMatchRegex(column="id", regex=_AUTHOR_ID_RE),
-        gxe.ExpectTableRowCountToBeBetween(min_value=1),
-    ]
-
-
-def curated_edges_expectations() -> list:
-    """Format des ids + invariant « pas d'auto-citation » sur le Parquet servi.
-
-    Le DataFrame doit porter la colonne dérivée booléenne ``_no_self_edge`` (calculée
-    par le loader : ``citing_work_id <> cited_work_id``).
-    """
-    return [
-        gxe.ExpectColumnValuesToNotBeNull(column="citing_work_id"),
-        gxe.ExpectColumnValuesToNotBeNull(column="cited_work_id"),
-        gxe.ExpectColumnValuesToMatchRegex(column="citing_work_id", regex=_WORK_ID_RE),
-        gxe.ExpectColumnValuesToMatchRegex(column="cited_work_id", regex=_WORK_ID_RE),
-        gxe.ExpectColumnValuesToBeInSet(column="_no_self_edge", value_set=[True]),
-    ]
-
-
 def marts_collab_expectations() -> list:
-    """Contrat de colonnes + bornes de sanité du mart servi (+ défense en profondeur).
+    """Contrat de colonnes + bornes de sanité du mart de co-autorat servi (ADR 0105).
 
-    Le DataFrame doit porter la colonne dérivée ``_sum_ok`` (calculée par le loader :
-    ``a_to_b + b_to_a == cross_citations``) — l'invariant somme, déjà bloqué par dbt,
-    redoublé ici au niveau du stockage servi.
+    Le mart `marts_collab_pairs` porte désormais le CO-AUTORAT (author_a, author_b,
+    co_publications) — plus les citations croisées. Défense en profondeur sur le Parquet
+    servi : not_null sur les clés + co_publications borné (>= 1, borne haute de sanité).
+    La paire canonique (author_a < author_b) est déjà bloquée par le test dbt singulier.
     """
     exps = [gxe.ExpectColumnValuesToNotBeNull(column=c) for c in _MARTS_COLS]
     exps += [
         gxe.ExpectColumnValuesToBeBetween(
-            column="cross_citations", min_value=1, max_value=_CROSS_CITATIONS_MAX
+            column="co_publications", min_value=1, max_value=_CO_PUBLICATIONS_MAX
         ),
-        gxe.ExpectColumnValuesToBeBetween(column="a_to_b", min_value=0),
-        gxe.ExpectColumnValuesToBeBetween(column="b_to_a", min_value=0),
-        gxe.ExpectColumnValuesToBeInSet(column="_sum_ok", value_set=[True]),
     ]
     return exps
 

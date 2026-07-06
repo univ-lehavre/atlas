@@ -49,10 +49,10 @@ tenue à la même exigence de qualité que le reste du dépôt (lint, tests, cou
 
 Le code Python vit sous [`src/citation_dagster/`](src/citation_dagster/). Objectif :
 définir les **assets** du pipeline et leur câblage à Dagster. Où en est-on : l'**ingestion**
-(étape 2), l'**accès lakehouse + transformation dbt** (étapes 3.1/3.2), la **feature
-citations croisées** (étape 3.3), le **mart servi + manifest atomique** (étape 3.4), la
-**qualité Great Expectations** (étape 3.5a) et le **lineage OpenLineage→Marquez** (étape 3.5b)
-sont en place.
+(étape 2 : Parquet OpenAlex → mart EUNICoast filtré par lots, ADR 0105), l'**accès lakehouse
++ transformation dbt** (étapes 3.1/3.2), la **feature co-autorat** (étape 3.3), le **mart
+servi + manifest atomique** (étape 3.4), la **qualité Great Expectations** (étape 3.5a) et le
+**lineage OpenLineage→Marquez** (étape 3.5b) sont en place.
 
 | Module | Rôle | Étape |
 | --- | --- | --- |
@@ -116,9 +116,9 @@ lignage. Nos assets, du brut vers le raffiné :
   vers Marquez (traçabilité). Le binaire `rclone` est fourni par l'image.
 - **modèles dbt** (`citation_dbt_models`) — **produisent** le raffiné : les couches
   `staging` → `curated` → `marts` du projet dbt frère [`../citation-dbt/`](../citation-dbt/)
-  transforment le brut en Parquet propre sur S3 (le graphe de citations `curated_edges`,
-  puis le signal `marts_collab_pairs` = citations croisées par paire de chercheurs).
-  Exposées comme assets via `dagster-dbt` ; le job `transform_job` les exécute
+  transforment le mart EUNICoast en Parquet propre sur S3 (le signal `marts_collab_pairs`
+  = **co-publications par paire de chercheurs**, et les labels d'uplift pour le modèle
+  prédictif). Exposées comme assets via `dagster-dbt` ; le job `transform_job` les exécute
   (`dbt build`). Voir [`src/citation_dagster/dbt.py`](src/citation_dagster/dbt.py).
 
 **À quoi servent ces produits ensuite ?** Le Parquet `curated` (puis le `mart` des étapes

@@ -26,13 +26,15 @@ def test_dbt_lineage_io_inputs_outputs():
     inputs, outputs = lineage.dbt_lineage_io()
     in_names = {d.name for d in inputs}
     out_names = {d.name for d in outputs}
-    # Entrées = couche brute (connecte raw_snapshot → dbt).
-    assert in_names == {"raw/works", "raw/authors"}
-    # Sorties = curated + mart (connecte dbt → collab_manifest).
+    # Entrée = le mart EUNICoast (connecte l'asset mart_eunicoast → dbt, ADR 0105).
+    assert in_names == {"mart_eunicoast"}
+    # Sorties = curated + mart de co-autorat (connecte dbt → collab_manifest).
     assert "marts/collab" in out_names
-    assert "curated/curated_edges" in out_names
-    # Pas de PII : uniquement des noms techniques (préfixes de couche).
-    assert all(d.name.startswith(("raw/", "curated/", "marts/")) for d in inputs + outputs)
+    assert "curated/curated_authorships" in out_names
+    # Le volet citations a disparu : plus de curated_edges dans le lineage.
+    assert "curated/curated_edges" not in out_names
+    # Pas de PII : uniquement des noms techniques (préfixes de couche / mart).
+    assert all(d.name.startswith(("raw/", "curated/", "marts/", "mart_")) for d in inputs + outputs)
 
 
 def test_emit_is_noop_without_url(monkeypatch):
@@ -72,5 +74,5 @@ def test_emit_sends_event_with_url(monkeypatch):
     assert event.run.runId == run_id
     assert event.job.name == "citation_dbt_models"
     assert event.eventType == RunState.COMPLETE
-    assert {d.name for d in event.inputs} == {"raw/works", "raw/authors"}
+    assert {d.name for d in event.inputs} == {"mart_eunicoast"}
     assert "marts/collab" in {d.name for d in event.outputs}

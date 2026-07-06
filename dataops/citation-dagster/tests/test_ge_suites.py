@@ -14,14 +14,21 @@ import pandas as pd
 from citation_dagster import ge_suites as g
 
 
-def test_raw_works_pass_and_fail():
-    good = pd.DataFrame(
+def _good_raw_works():
+    """Works au schéma Parquet du contrat (id/year/title/authorships/topics, ADR 0105)."""
+    return pd.DataFrame(
         {
             "id": ["https://openalex.org/W1"],
-            "referenced_works": [[]],
+            "publication_year": [2018],
+            "title": ["T"],
             "authorships": [[]],
+            "topics": [[]],
         }
     )
+
+
+def test_raw_works_pass_and_fail():
+    good = _good_raw_works()
     ok, meta = g.validate_df(good, "raw_works", g.raw_works_expectations())
     assert ok and meta["failed"] == []
 
@@ -34,36 +41,11 @@ def test_raw_works_pass_and_fail():
 
 
 def test_raw_works_fail_on_missing_column():
-    # Colonne attendue absente (le staging la consomme) → ExpectColumnToExist échoue.
+    # Colonne attendue absente (le mart la projette) → ExpectColumnToExist échoue.
     df = pd.DataFrame({"id": ["https://openalex.org/W1"]})
     ok, meta = g.validate_df(df, "raw_works", g.raw_works_expectations())
     assert not ok
     assert "expect_column_to_exist" in meta["failed"]
-
-
-def test_raw_authors_pass_and_fail():
-    good = pd.DataFrame({"id": ["https://openalex.org/A1"]})
-    assert g.validate_df(good, "raw_authors", g.raw_authors_expectations())[0]
-    bad = pd.DataFrame({"id": ["https://openalex.org/W1"]})  # W au lieu de A
-    assert not g.validate_df(bad, "raw_authors", g.raw_authors_expectations())[0]
-
-
-def test_curated_edges_pass_and_self_edge_fails():
-    good = pd.DataFrame(
-        {
-            "citing_work_id": ["https://openalex.org/W101"],
-            "cited_work_id": ["https://openalex.org/W201"],
-            "_no_self_edge": [True],
-        }
-    )
-    assert g.validate_df(good, "curated_edges", g.curated_edges_expectations())[0]
-
-    # Auto-citation (citing == cited) → _no_self_edge False → échec.
-    bad = good.copy()
-    bad["_no_self_edge"] = [False]
-    ok, meta = g.validate_df(bad, "curated_edges", g.curated_edges_expectations())
-    assert not ok
-    assert "expect_column_values_to_be_in_set" in meta["failed"]
 
 
 def test_marts_pass_and_invariants_fail():
@@ -71,29 +53,24 @@ def test_marts_pass_and_invariants_fail():
         {
             "author_a": ["https://openalex.org/A1000000001"],
             "author_b": ["https://openalex.org/A1000000002"],
-            "cross_citations": [3],
-            "a_to_b": [2],
-            "b_to_a": [1],
-            "_sum_ok": [True],
+            "co_publications": [3],
         }
     )
     assert g.validate_df(good, "marts_collab", g.marts_collab_expectations())[0]
 
-    # cross_citations=0 (borne >=1) ET somme incohérente → deux attentes échouent.
+    # co_publications=0 (borne >=1) → l'attente de borne échoue.
     bad = good.copy()
-    bad["cross_citations"] = [0]
-    bad["_sum_ok"] = [False]
+    bad["co_publications"] = [0]
     ok, meta = g.validate_df(bad, "marts_collab", g.marts_collab_expectations())
     assert not ok
     assert "expect_column_values_to_be_between" in meta["failed"]
-    assert "expect_column_values_to_be_in_set" in meta["failed"]
 
 
 def test_validate_df_does_not_leak_progress_bar_to_stdout():
-    df = pd.DataFrame({"id": ["https://openalex.org/A1"]})
+    df = _good_raw_works()
     buf = io.StringIO()
     with contextlib.redirect_stdout(buf):
-        g.validate_df(df, "raw_authors", g.raw_authors_expectations())
+        g.validate_df(df, "raw_works", g.raw_works_expectations())
     # La barre « Calculating Metrics » de GE ne doit pas polluer stdout (logs Dagster).
     assert "Calculating Metrics" not in buf.getvalue()
 
