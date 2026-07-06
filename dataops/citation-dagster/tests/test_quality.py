@@ -21,10 +21,7 @@ _GOOD_MARTS = pd.DataFrame(
     {
         "author_a": ["https://openalex.org/A1000000001"],
         "author_b": ["https://openalex.org/A1000000002"],
-        "cross_citations": [3],
-        "a_to_b": [2],
-        "b_to_a": [1],
-        "_sum_ok": [True],
+        "co_publications": [3],
     }
 )
 
@@ -81,8 +78,7 @@ def test_check_marts_passes_on_good_df(monkeypatch):
 
 def test_check_marts_fails_on_bad_df(monkeypatch):
     bad = _GOOD_MARTS.copy()
-    bad["cross_citations"] = [0]
-    bad["_sum_ok"] = [False]
+    bad["co_publications"] = [0]  # borne >= 1 exigée
     _patch_loader(monkeypatch, bad)
     res = q.check_marts("citation", "run1")
     assert res.passed is False
@@ -162,18 +158,6 @@ def test_check_researcher_vectors_fails_on_wrong_dim(monkeypatch):
     )
     _patch_loader(monkeypatch, df)
     assert q.check_researcher_vectors("citation", "run1").passed is False
-
-
-def test_check_curated_edges_passes(monkeypatch):
-    df = pd.DataFrame(
-        {
-            "citing_work_id": ["https://openalex.org/W101"],
-            "cited_work_id": ["https://openalex.org/W201"],
-            "_no_self_edge": [True],
-        }
-    )
-    _patch_loader(monkeypatch, df)
-    assert q.check_curated_edges("citation", "run1").passed is True
 
 
 def _raw_works_df(work_id="https://openalex.org/W1"):

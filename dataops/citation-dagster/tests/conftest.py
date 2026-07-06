@@ -59,9 +59,9 @@ def pytest_runtest_makereport(item, call):
     )
 
 
-# Racine des fixtures synthétiques (works/authors/merged_ids), figées et commitées
-# (ADR 0057). parents[3] depuis tests/conftest.py → dataops/citation-dagster/../.. →
-# racine du dépôt.
+# Racine des fixtures synthétiques : le MART EUNICoast (Parquet), figé et commité
+# (ADR 0057, ADR 0105). parents[3] depuis tests/conftest.py → dataops/citation-dagster/../..
+# → racine du dépôt.
 FIXTURES_DIR = Path(__file__).resolve().parents[3] / "fixtures" / "openalex-sample"
 
 # Image MinIO épinglée par DIGEST (manifest list multi-arch) — jamais ``latest``.
@@ -178,21 +178,22 @@ def requires_rclone() -> None:
         pytest.skip("rclone indisponible sur l'hôte — test sauté (self-skipping).")
 
 
-# Mapping fixture local → clé S3 sous `raw/` (layout écrit par `raw_snapshot`).
-_PART = "updated_date=2020-01-01/part_000.gz"
+# Mapping fixture local → clé S3 : le MART EUNICoast Parquet (déjà filtré au périmètre,
+# ADR 0105), sous `mart_eunicoast/run=fixture/` (layout écrit par l'asset `mart_eunicoast`).
+# Le test dbt passe `mart_root` = `s3://<bucket>/mart_eunicoast` → la source `citation_raw.works`
+# résout `read_parquet(mart_root/run=*/*.parquet)`.
 _RAW_FIXTURES = {
-    f"data/works/{_PART}": f"raw/works/{_PART}",
-    f"data/authors/{_PART}": f"raw/authors/{_PART}",
-    "legacy-data/merged_ids/works/2022-07-15.gz": "raw/merged_ids/works/2022-07-15.gz",
+    "data/mart_eunicoast/run=fixture/part_000.parquet": (
+        "mart_eunicoast/run=fixture/part_000.parquet"
+    ),
 }
 
 
 def load_raw_fixtures(minio: "MinioHandle") -> None:
-    """Charge works + authors + merged_ids synthétiques sous `raw/` du bucket MinIO.
+    """Charge le MART EUNICoast synthétique (Parquet) dans le bucket MinIO.
 
-    Reproduit le layout écrit par l'asset `raw_snapshot`
-    (`raw/<entity>/updated_date=…/…gz`, `raw/merged_ids/works/…gz`) pour que les
-    sources dbt (globs `raw_root/<entity>/**/*.gz`) matchent la réalité. Upload via
+    Reproduit le layout écrit par l'asset `mart_eunicoast` (`mart_eunicoast/run=<id>/*.parquet`)
+    pour que la source dbt (glob `mart_root/run=*/*.parquet`) matche la réalité. Upload via
     un client `mc` jetable (même image épinglée, hermétique).
     """
     mounts: list[str] = []
@@ -201,8 +202,8 @@ def load_raw_fixtures(minio: "MinioHandle") -> None:
     ]
     for i, (local, key) in enumerate(_RAW_FIXTURES.items()):
         src = FIXTURES_DIR / local
-        mounts += ["-v", f"{src}:/fix/{i}.gz:ro"]
-        cmds.append(f"mc cp /fix/{i}.gz t/{minio.bucket}/{key}")
+        mounts += ["-v", f"{src}:/fix/{i}.parquet:ro"]
+        cmds.append(f"mc cp /fix/{i}.parquet t/{minio.bucket}/{key}")
     subprocess.run(
         [
             "docker",

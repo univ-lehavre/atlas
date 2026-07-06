@@ -47,7 +47,6 @@ from citation_dagster.assets.drift import evidently_embedding_drift, read_drift_
 from citation_dagster.assets.drift_uplift import evidently_uplift_drift
 from citation_dagster.assets.quality import (
     ge_author_recommendations,
-    ge_curated_edges,
     ge_index_load,
     ge_marts_collab,
     ge_marts_researchers,
@@ -282,7 +281,7 @@ _asset_checks = [
     ge_author_recommendations,
 ]
 if _dbt_assets:
-    _asset_checks += [ge_curated_edges, ge_marts_collab, ge_marts_researchers]
+    _asset_checks += [ge_marts_collab, ge_marts_researchers]
 
 # Le job de transformation n'est enregistré QUE si les assets dbt existent : un
 # job dont la sélection ne résout aucun asset ferait échouer la construction des

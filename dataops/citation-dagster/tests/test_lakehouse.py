@@ -3,21 +3,22 @@
 - Tests **unitaires** purs (génération du SQL ``CREATE SECRET``, config depuis
   l'env) — toujours exécutés, couvrent la logique sans I/O.
 - Test **d'intégration hermétique** : round-trip réel JSONL.gz → Parquet Hive →
-  relecture, contre le MinIO épinglé (fixture ``minio``, ADR 0057) chargé avec les
-  fixtures synthétiques OpenAlex. S'auto-saute si Docker est absent.
+  relecture, contre le MinIO épinglé (fixture ``minio``, ADR 0057). Le JSONL.gz brut est
+  fabriqué INLINE (le primitif ``read_jsonl_gz`` reste le chemin d'ingestion du brut ;
+  la fixture openalex-sample est désormais le MART Parquet, pas le brut). S'auto-saute
+  si Docker est absent.
 """
 
 import gzip
 import json
 import subprocess
+import tempfile
 from pathlib import Path
 
 import duckdb
 
 from citation_dagster import lakehouse
 from citation_dagster.resources import DuckDBS3Config, duckdb_s3_config_from_env
-
-_FIXTURES = Path(__file__).resolve().parents[3] / "fixtures" / "openalex-sample"
 
 _ENV = {
     "AWS_ACCESS_KEY_ID": "AK",
@@ -26,6 +27,22 @@ _ENV = {
     "BUCKET_PORT": "8333",
     "BUCKET_NAME": "citation",
 }
+
+# Brut JSONL synthétique minimal (5 works, années 2017–2021), fabriqué inline pour
+# exercer le primitif d'ingestion ``read_jsonl_gz`` sans dépendre d'une fixture externe.
+_RAW_WORKS = [
+    {"id": f"https://openalex.org/W{i}", "publication_year": year, "referenced_works": []}
+    for i, year in enumerate((2017, 2018, 2019, 2020, 2021), start=1)
+]
+
+
+def _write_raw_gz() -> Path:
+    """Écrit un JSONL.gz brut déterministe (mtime=0) dans un fichier temporaire."""
+    text = "".join(json.dumps(r, sort_keys=True) + "\n" for r in _RAW_WORKS)
+    path = Path(tempfile.mkdtemp()) / "part_000.gz"
+    with gzip.GzipFile(str(path), "wb", mtime=0) as gz:
+        gz.write(text.encode("utf-8"))
+    return path
 
 
 # ── Unitaires (purs) ─────────────────────────────────────────────────────────
@@ -68,8 +85,8 @@ def test_create_secret_sql_is_path_style():
 
 
 def _load_fixtures_to_minio(minio):
-    """Charge les .gz synthétiques (works + merged_ids) dans le bucket MinIO de test."""
-    works_gz = _FIXTURES / "data" / "works" / "updated_date=2020-01-01" / "part_000.gz"
+    """Charge un JSONL.gz brut synthétique (fabriqué inline) dans le bucket MinIO de test."""
+    works_gz = _write_raw_gz()
     # Copie via un client mc jetable (même image épinglée, hermétique).
     script = (
         f"mc alias set t http://{minio.endpoint} {minio.access_key} {minio.secret_key} && "
@@ -116,7 +133,7 @@ def test_roundtrip_jsonl_gz_to_parquet_hive(minio):
     )
     con = lakehouse.connect(cfg)
 
-    # 1) Lecture du brut JSONL.gz synthétique (5 works attendus, cf. GOLDEN.md).
+    # 1) Lecture du brut JSONL.gz synthétique (5 works fabriqués inline).
     rel = lakehouse.read_jsonl_gz(con, f"s3://{minio.bucket}/raw/works/**/*.gz")
     con.register("works_raw", rel)
     n = con.sql("SELECT count(*) FROM works_raw").fetchone()[0]
@@ -140,12 +157,12 @@ def test_roundtrip_jsonl_gz_to_parquet_hive(minio):
         f"read_parquet('s3://{minio.bucket}/curated/works/**/*.parquet')"
     ).fetchall()
     years = sorted(r[0] for r in keys)
-    assert years == [2017, 2018, 2019, 2020, 2021]  # les 5 années (W303 = 2021)
+    assert years == [2017, 2018, 2019, 2020, 2021]  # les 5 années synthétiques
 
 
-def test_fixtures_are_valid_jsonl_gz():
-    """Garde-fou : les fixtures synthétiques sont du JSONL gzippé lisible (hors-ligne)."""
-    works_gz = _FIXTURES / "data" / "works" / "updated_date=2020-01-01" / "part_000.gz"
+def test_raw_gz_is_valid_jsonl_gz():
+    """Garde-fou : le brut synthétique inline est du JSONL gzippé lisible (hors-ligne)."""
+    works_gz = _write_raw_gz()
     with gzip.open(works_gz, "rt", encoding="utf-8") as fh:
         works = [json.loads(line) for line in fh if line.strip()]
     assert len(works) == 5

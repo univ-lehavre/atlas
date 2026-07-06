@@ -25,10 +25,18 @@ macro-paths: ["macros"]
 #   - curated_run : identifiant de run IMMUABLE (rejeu = nouveau run=<id>), de
 #     context.run_id côté Dagster. Garantit qu'un rejeu n'écrase jamais en place.
 #   - raw_root    : racine du brut (surchargée en test vers le bucket MinIO).
+#   - mart_root   : racine du mart EUNICoast (Parquet), SOURCE de la chaîne dbt.
 vars:
   curated_dt: "0000-00"
   curated_run: "dev"
   raw_root: "s3://citation/raw"
+  # Racine du MART EUNICoast (Parquet), source de la chaîne dbt (ADR 0105). Le mart est
+  # produit EN AMONT par l'asset `mart_eunicoast` : il contient déjà le périmètre filtré
+  # (works ayant ≥1 auteur affilié EUNICoast ET publiés depuis 2016). Le filtre ROR/année
+  # ne vit PLUS dans dbt — dbt lit ce Parquet colonnaire (plus le brut JSONL.gz, qui faisait
+  # OOM au datalake complet). Défaut `s3://citation/mart_eunicoast` ; surchargé en test vers
+  # le bucket MinIO épinglé (le glob `run=*/**.parquet` couvre les fragments du dernier run).
+  mart_root: "s3://citation/mart_eunicoast"
   # Racine du mart « servi » (étape 3.4, contrat ADR 0029) ; surchargée en test.
   marts_root: "s3://citation/marts"
   # Seuils de score minimaux pour qu'un label entre dans l'agrégat lexical par

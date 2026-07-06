@@ -48,45 +48,22 @@ def test_raw_works_fail_on_missing_column():
     assert "expect_column_to_exist" in meta["failed"]
 
 
-def test_curated_edges_pass_and_self_edge_fails():
-    good = pd.DataFrame(
-        {
-            "citing_work_id": ["https://openalex.org/W101"],
-            "cited_work_id": ["https://openalex.org/W201"],
-            "_no_self_edge": [True],
-        }
-    )
-    assert g.validate_df(good, "curated_edges", g.curated_edges_expectations())[0]
-
-    # Auto-citation (citing == cited) → _no_self_edge False → échec.
-    bad = good.copy()
-    bad["_no_self_edge"] = [False]
-    ok, meta = g.validate_df(bad, "curated_edges", g.curated_edges_expectations())
-    assert not ok
-    assert "expect_column_values_to_be_in_set" in meta["failed"]
-
-
 def test_marts_pass_and_invariants_fail():
     good = pd.DataFrame(
         {
             "author_a": ["https://openalex.org/A1000000001"],
             "author_b": ["https://openalex.org/A1000000002"],
-            "cross_citations": [3],
-            "a_to_b": [2],
-            "b_to_a": [1],
-            "_sum_ok": [True],
+            "co_publications": [3],
         }
     )
     assert g.validate_df(good, "marts_collab", g.marts_collab_expectations())[0]
 
-    # cross_citations=0 (borne >=1) ET somme incohérente → deux attentes échouent.
+    # co_publications=0 (borne >=1) → l'attente de borne échoue.
     bad = good.copy()
-    bad["cross_citations"] = [0]
-    bad["_sum_ok"] = [False]
+    bad["co_publications"] = [0]
     ok, meta = g.validate_df(bad, "marts_collab", g.marts_collab_expectations())
     assert not ok
     assert "expect_column_values_to_be_between" in meta["failed"]
-    assert "expect_column_values_to_be_in_set" in meta["failed"]
 
 
 def test_validate_df_does_not_leak_progress_bar_to_stdout():

@@ -1,40 +1,18 @@
--- Périmètre EUNICoast (ADR 0067, lot 1) : les works ayant AU MOINS UN auteur affilié
--- à un établissement EUNICoast (jointure des affiliations au seed sur le ROR) ET datant
--- de MOINS DE 10 ANS (`publication_year >= année courante − 10`). Porte le FWCI pour
--- l'aval (labels d'uplift, lot 3). Matérialisé en Parquet external immuable.
---
--- Grain : work_id (un work retenu une fois, quel que soit le nombre d'auteurs EUNICoast).
--- `min_year` est une var (défaut dérivé de 10 ans glissants) ; surchargeable au run et
--- en test pour figer la fenêtre (déterminisme, ADR 0057).
+-- Périmètre EUNICoast : simple PROJECTION de curated_works (ADR 0105). Le mart source est
+-- DÉJÀ filtré en amont par l'asset `mart_eunicoast` (works ayant ≥1 auteur affilié EUNICoast
+-- ET publiés depuis 2016) : la sélection de périmètre et la borne d'année vivent désormais
+-- dans l'asset, plus dans dbt. Ce modèle reste une ANCRE nommée pour l'aval (labels d'uplift
+-- `curated_pair_uplift_labels`, profils `marts_author_profiles`) qui le référencent. Porte le
+-- FWCI. Matérialisé en Parquet external immuable ; ORDER BY stable (déterminisme, ADR 0057).
 {{ config(
     materialized='external',
     location=curated_location('curated_eunicoast_works'),
     options={'format': 'parquet'}
 ) }}
-with eunicoast_works as (
-    -- work_id ayant ≥1 auteur affilié EUNICoast.
-    select distinct ai.work_id
-    from {{ ref('stg_citation_author_institutions') }} ai
-    join {{ ref('ref_eunicoast') }} ref
-        on ai.ror = ref.ror
-),
-min_year as (
-    -- Borne « moins de 10 ans » : var explicite si fournie, sinon (année courante − 10).
-    select coalesce(
-        try_cast('{{ var("eunicoast_min_year", "") }}' as integer),
-        cast(extract(year from current_date) as integer) - 10
-    ) as y
-)
 select
-    w.work_id,
-    w.publication_year,
-    w.fwci,
-    w.title,
-    w.work_type
--- Dérivé de curated_works (works CANONIQUES dédupliqués), PAS de stg : le mart2 EUNICoast
--- est ainsi STRICTEMENT inclus dans le mart1 « tout OpenAlex » (même dédup, traçable).
-from {{ ref('curated_works') }} w
-join eunicoast_works ew on ew.work_id = w.work_id
-cross join min_year my
-where w.publication_year >= my.y
-order by w.work_id
+    work_id,
+    publication_year,
+    fwci,
+    title
+from {{ ref('curated_works') }}
+order by work_id

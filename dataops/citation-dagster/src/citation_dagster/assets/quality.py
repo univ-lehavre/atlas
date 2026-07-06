@@ -5,8 +5,7 @@ un échec d'attente fait échouer le run et empêche l'aval (p. ex. l'écriture 
 manifest sentinelle après le mart). Ils s'appliquent à trois couches :
 
 - ``ge_raw_contract`` sur ``raw_snapshot`` — le brut Parquet works (aucun test dbt ici) ;
-- ``ge_curated_edges`` sur ``curated_edges`` — format des ids + pas d'auto-citation ;
-- ``ge_marts_collab`` sur ``marts_collab_pairs`` — contrat de colonnes + bornes.
+- ``ge_marts_collab`` sur ``marts_collab_pairs`` — contrat de colonnes co-autorat + bornes.
 
 Ils **complètent** les *asset checks* que dagster-dbt génère automatiquement à partir
 des tests dbt (noms distincts ``ge_*`` → aucune collision). La donnée est chargée via
@@ -143,32 +142,18 @@ def check_raw(bucket: str) -> AssetCheckResult:
     )
 
 
-def check_curated_edges(bucket: str, run_id: str) -> AssetCheckResult:
-    """Valide curated_edges (format ids + invariant pas d'auto-citation, colonne dérivée)."""
-    con = lakehouse.connect()
-    glob = f"s3://{bucket}/curated/curated_edges/dt={CURATED_DT}/run={run_id}/*.parquet"
-    df = con.sql(
-        f"SELECT citing_work_id, cited_work_id, "
-        f"(citing_work_id <> cited_work_id) AS _no_self_edge "
-        f"FROM read_parquet('{glob}')"
-    ).df()
-    ok, meta = ge_suites.validate_df(df, "curated_edges", ge_suites.curated_edges_expectations())
-    return _result(ok, meta)
-
-
 def check_marts(bucket: str, run_id: str) -> AssetCheckResult:
-    """Valide le mart servi (contrat de colonnes + bornes + invariant somme dérivé)."""
+    """Valide le mart de co-autorat servi (contrat de colonnes + bornes, ADR 0105)."""
     con = lakehouse.connect()
     glob = f"s3://{bucket}/{_MART_GLOB}/dt={CURATED_DT}/run={run_id}/*.parquet"
     # WHERE author_a IS NOT NULL : un mart vide (aucune paire de collaboration sur
     # le jeu courant) reste un état VALIDE. La matérialisation `external` de
     # dbt-duckdb écrit alors une ligne fantôme à clés NULL (placeholder de schéma
     # sur relation vide) ; on l'écarte ici pour que le contrat not_null porte sur
-    # les paires RÉELLES (zéro ou plus), pas sur ce placeholder. Mêmes clés non
-    # nulles par construction côté modèle (least()/greatest() sur author_id non nuls).
+    # les paires RÉELLES (zéro ou plus), pas sur ce placeholder. Clés non nulles par
+    # construction côté modèle (self-join d'authorships sur author_id non nuls).
     df = con.sql(
-        f"SELECT author_a, author_b, cross_citations, a_to_b, b_to_a, "
-        f"(a_to_b + b_to_a = cross_citations) AS _sum_ok "
+        f"SELECT author_a, author_b, co_publications "
         f"FROM read_parquet('{glob}') WHERE author_a IS NOT NULL"
     ).df()
     ok, meta = ge_suites.validate_df(df, "marts_collab", ge_suites.marts_collab_expectations())
@@ -290,13 +275,6 @@ def check_index_load(bucket: str, run_id: str) -> AssetCheckResult:
 def ge_raw_contract(context: AssetCheckExecutionContext) -> AssetCheckResult:
     result = check_raw(ceph_target_from_env().bucket)
     _log_ge_to_mlflow("ge_raw_contract", context.run.run_id, result)
-    return result
-
-
-@asset_check(asset=AssetKey(["curated_edges"]), name="ge_curated_edges", blocking=True)
-def ge_curated_edges(context: AssetCheckExecutionContext) -> AssetCheckResult:
-    result = check_curated_edges(ceph_target_from_env().bucket, context.run.run_id)
-    _log_ge_to_mlflow("ge_curated_edges", context.run.run_id, result)
     return result
 
 
