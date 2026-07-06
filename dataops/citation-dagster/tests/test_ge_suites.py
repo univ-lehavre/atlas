@@ -40,9 +40,11 @@ def test_raw_works_pass_and_fail():
     assert "expect_column_values_to_match_regex" in meta2["failed"]
 
 
-def test_raw_works_fail_on_missing_column():
-    # Colonne attendue absente (le mart la projette) → ExpectColumnToExist échoue.
-    df = pd.DataFrame({"id": ["https://openalex.org/W1"]})
+def test_raw_works_fail_on_missing_id_column():
+    # `id` absent → ExpectColumnToExist(id) échoue. (L'existence des colonnes LOURDES
+    # authorships/topics est vérifiée par check_raw sur le SCHÉMA, plus dans cette suite —
+    # elles ne sont plus matérialisées en pandas, drift OOM prod 2026-07-06.)
+    df = pd.DataFrame({"publication_year": [2018]})
     ok, meta = g.validate_df(df, "raw_works", g.raw_works_expectations())
     assert not ok
     assert "expect_column_to_exist" in meta["failed"]

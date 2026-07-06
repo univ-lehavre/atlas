@@ -42,9 +42,9 @@ class _FakeRel:
 class _FakeCon:
     """Connexion DuckDB factice : renvoie un DataFrame selon le contenu du SELECT.
 
-    ``check_raw`` (works-only, ADR 0105) échantillonne : d'abord un ``glob(...)`` (param
-    ``glob`` portant ``raw/works``), puis un ``read_parquet($files)`` (param ``files`` =
-    liste échantillonnée). On route sur ces deux paramètres."""
+    ``check_raw`` (works-only, ADR 0105) : d'abord un ``glob(...)`` (échantillon), puis un
+    ``DESCRIBE`` (schéma → existence des colonnes lourdes, sans données) et enfin un
+    ``SELECT id`` (valeurs de la SEULE colonne id, légère). On route sur ces trois formes."""
 
     def __init__(self, df, works=None):
         self._df = df
@@ -56,9 +56,12 @@ class _FakeCon:
         if "glob(" in query:
             rows = [(f"s3://b/raw/works/part_{i:04d}.parquet",) for i in range(3)]
             return _FakeRel(None, rows=rows)
-        # 2) read_parquet($files) : le brut works.
+        # 2) DESCRIBE → schéma : une ligne (col, type…) par colonne du df works.
+        if "DESCRIBE" in query and self._works is not None:
+            return _FakeRel(None, rows=[(c,) for c in self._works.columns])
+        # 3) SELECT id → valeurs de la colonne id uniquement (projection légère).
         if self._works is not None:
-            return _FakeRel(self._works)
+            return _FakeRel(self._works[["id"]] if "id" in self._works.columns else self._works)
         return _FakeRel(self._df)
 
 
