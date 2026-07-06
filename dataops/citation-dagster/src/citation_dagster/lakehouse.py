@@ -57,6 +57,14 @@ def connect(cfg: DuckDBS3Config | None = None) -> duckdb.DuckDBPyConnection:
     cfg = cfg or duckdb_s3_config_from_env()
     con = _new_connection()
     con.execute("INSTALL httpfs; LOAD httpfs;")
+    # Robustesse HTTP sur RGW en prod : keep-alive réutilise TCP/TLS entre fichiers ;
+    # timeout élargi + retries absorbent la latence d'un .gz lourd (works OpenAlex ~10-19 s
+    # par fichier) et les erreurs transitoires RGW. NB : ces réglages ne SUBSTITUENT PAS le
+    # bornage de la lecture (check_raw échantillonne) — un http_timeout seul masquerait le
+    # symptôme (le faux « Could not resolve hostname » de httpfs) sans réduire le volume.
+    con.execute("SET http_keep_alive=true;")
+    con.execute("SET http_timeout=120000;")
+    con.execute("SET http_retries=5;")
     con.execute(_create_secret_sql(cfg))
     return con
 
