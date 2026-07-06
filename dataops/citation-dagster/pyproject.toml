@@ -97,7 +97,7 @@ override-dependencies = ["deepdiff>=8,<9"]
 # les dérivations bornées pures (uplift_model.py : symétrie, bornes, déterminisme).
 # Dev-dépendance de test uniquement (zéro empreinte runtime) ; épinglée et verrouillée
 # par uv.lock.
-dev = ["ruff==0.15.20", "pytest", "pytest-cov", "hypothesis==6.155.7"]
+dev = ["ruff==0.15.20", "pytest", "pytest-cov", "hypothesis==6.156.1"]
 
 [build-system]
 requires = ["hatchling"]
