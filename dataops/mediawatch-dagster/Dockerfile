@@ -33,11 +33,20 @@ RUN pip install --no-cache-dir -U uv
 
 WORKDIR /opt/dagster/app
 
-# Installe les dépendances + le paquet (chemin reproductible via uv.lock).
+# Installe les dépendances + le paquet en HONORANT le lock (chemin reproductible).
 # Contexte = dataops/ → les chemins sont préfixés par `mediawatch-dagster/`.
 COPY mediawatch-dagster/pyproject.toml mediawatch-dagster/uv.lock mediawatch-dagster/README.md ./
 COPY mediawatch-dagster/src ./src
-RUN python -m uv pip install --system .
+# `uv pip install .` (sans lock) RÉSOUT À NEUF depuis pyproject → il ignore uv.lock et prend
+# les dernières versions compatibles des transitives NON épinglées. Constaté en prod : comme
+# pour citation, grpcio-health-checking a floté (1.81→1.82), dont le gencode protobuf 7.35.0
+# est INCOMPATIBLE avec le runtime protobuf 6.33.6 → le serveur gRPC dagster crashe au
+# démarrage (VersionError, CrashLoopBackOff). On installe donc d'abord les dépendances EXACTES
+# du lock (`uv export --frozen`), PUIS le paquet sans re-résoudre ses deps (`--no-deps`) : le
+# build reflète EXACTEMENT uv.lock. `--frozen` échoue si le lock est périmé vs pyproject.
+RUN python -m uv export --frozen --no-dev --no-emit-project -o /tmp/requirements.txt \
+    && python -m uv pip install --system -r /tmp/requirements.txt \
+    && python -m uv pip install --system --no-deps .
 
 # Extensions DuckDB cuites HORS-LIGNE dans l'image (ADR 0055/0059 : aucune I/O
 # réseau au runtime). DuckDB télécharge sinon ses extensions au premier usage →
