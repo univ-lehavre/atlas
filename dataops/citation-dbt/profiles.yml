@@ -30,9 +30,21 @@ citation:
       # emptyDir monté sur le pod de run (cf. definitions._SPILL_MOUNT). memory_limit (24GB) <
       # limit pod (28Gi) → DuckDB spille sur disque AVANT que le cgroup ne tue le pod.
       # preserve_insertion_order=false : moins de buffering. Triplet dérivable de l'env.
+      #
+      # temp_directory est en `config_options` (config de CONNEXION, appliquée UNE fois via
+      # duckdb.connect(config=…) à l'init de la base), PAS en `settings`. Raison : dbt-duckdb
+      # ré-émet chaque entrée de `settings` en `SET k=v` sur le curseur de CHAQUE modèle
+      # (base `:memory:` partagée sur toute l'invocation), or DuckDB REFUSE de changer
+      # temp_directory dès qu'un spill a eu lieu — MÊME vers la valeur identique (booléen
+      # HasTemporaryDirectory, aucune comparaison) → « Cannot switch temporary directory after
+      # the current one has been used ». Constaté prod 2026-07-06 (drift L86) : marts_collab_pairs
+      # (co-autorat, lourd) spille en 50 s, puis marts_researchers et TOUT l'aval échouent (18×).
+      # Invisible au banc (données trop petites pour spiller). En config_options : posé une fois,
+      # jamais re-SET → le spilling vers l'emptyDir survit à N modèles lourds (dbt-duckdb #600).
+      config_options:
+        temp_directory: "{{ env_var('DBT_DUCKDB_TEMP_DIR', '/tmp/duckdb-spill') }}"
       settings:
         memory_limit: "{{ env_var('DBT_DUCKDB_MEMORY_LIMIT', '24GB') }}"
-        temp_directory: "{{ env_var('DBT_DUCKDB_TEMP_DIR', '/tmp/duckdb-spill') }}"
         threads: "{{ env_var('DBT_DUCKDB_THREADS', '32') }}"
         preserve_insertion_order: false
       extensions:
