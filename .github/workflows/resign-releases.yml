@@ -59,7 +59,7 @@ jobs:
       # cosign v3.x : contrat de vérification sur le couple .sig/.pem (ADR 0087) —
       # PAS le bundle .sigstore.json de cosign v4 (cf. ADR 0093).
       - name: Install cosign
-        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       # Pour chaque tag fourni : on retrouve le paquet à partir du tag `@scope/name@version`,
       # on reconstruit le tarball (`pnpm pack` à la version courante du workspace — les paquets

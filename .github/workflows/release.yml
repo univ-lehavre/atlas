@@ -59,7 +59,7 @@ jobs:
     steps:
       # --- Passe 1 : ouvre (ou met à jour) la PR de version, ou tague si déjà mergée.
       - id: release
-        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           token: ${{ secrets.PAT_TOKEN }}
           config-file: release-please-config.json
@@ -127,7 +127,7 @@ jobs:
       # et crée la GitHub Release. No-op si la passe 1 n'avait rien à releaser.
       - name: Release Please (tag + GitHub Release)
         if: ${{ steps.release.outputs.prs_created == 'true' }}
-        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         with:
           token: ${{ secrets.PAT_TOKEN }}
           config-file: release-please-config.json
@@ -278,7 +278,7 @@ jobs:
       # tant que la doc de vérification reste sur le couple .sig/.pem.
       - name: Install cosign
         if: steps.publish.outputs.published == 'true'
-        uses: sigstore/cosign-installer@7e8b541eb2e61bf99390e1afd4be13a184e9ebc5 # v3.10.1
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       - name: Sign and attach release assets
         if: steps.publish.outputs.published == 'true'
