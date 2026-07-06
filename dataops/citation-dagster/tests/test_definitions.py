@@ -70,6 +70,18 @@ def test_run_pod_mounts_duckdb_spill_volume():
         assert any(m["mount_path"] == "/tmp/duckdb-spill" for m in mounts)
 
 
+def test_run_pod_declares_resources_coherent_with_duckdb():
+    # Le pod de run RÉSERVE des resources cohérentes avec DuckDB (fin du BestEffort qui OOMait).
+    # Invariant CRITIQUE : la limite mémoire pod (28Gi) doit être > memory_limit DuckDB (24GB)
+    # → DuckDB spille sur disque AVANT que le cgroup ne tue le pod.
+    for cfg in (_RUN_K8S_CONFIG, _TRANSFORM_K8S_CONFIG):
+        res = cfg["dagster-k8s/config"]["container_config"]["resources"]
+        assert res["requests"]["cpu"] and res["requests"]["memory"]
+        assert res["limits"]["cpu"] == "60"  # = threads DuckDB
+        # 72Gi (limit pod) > 64GB (memory_limit DuckDB) : le spill précède l'OOM cgroup.
+        assert res["limits"]["memory"] == "72Gi"
+
+
 def test_defs_exposes_raw_snapshot_asset():
     keys = {k.to_user_string() for k in defs.resolve_asset_graph().get_all_asset_keys()}
     assert "raw_snapshot" in keys

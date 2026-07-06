@@ -135,17 +135,34 @@ _DNS_NDOTS_1 = {"dns_config": {"options": [{"name": "ndots", "value": "1"}]}}
 _SPILL_VOLUME = {"name": "duckdb-spill", "empty_dir": {}}
 _SPILL_MOUNT = {"name": "duckdb-spill", "mount_path": "/tmp/duckdb-spill"}
 
+# requests/limits du pod de run, COHÉRENTS avec les réglages DuckDB (memory_limit=64GB,
+# threads=60 — cf. lakehouse.connect / profiles.yml). Sans resources explicites, le pod de
+# run tournait en BestEffort : le scheduler ne réservait rien → DuckDB parallélisait/allouait
+# « à l'aveugle » et le pod était OOM-killé au 1er gros modèle curated. On DÉCLARE donc :
+#   - requests : placement garanti — 16 cœurs / 16Gi (ce que le run prend a minima) ;
+#   - limits : plafond aligné sur DuckDB (memory_limit 64GB + marge pandas/python/arrow →
+#     72Gi) + 60 cœurs (= threads). Les nœuds ont 80 cœurs / ~251 GiB → confortable (< 30 %).
+# Dérivable par l'env (ADR 0023) : le banc léger baisse DBT_DUCKDB_MEMORY_LIMIT + ces valeurs.
+# NB CRITIQUE : le memory_limit DuckDB (64GB ≈ 68,7Gi) reste SOUS la limite pod (72Gi) → DuckDB
+# spille sur disque AVANT que le cgroup ne tue le pod (l'ordre est essentiel : sinon OOM avant
+# spill). L'écart (72Gi − 64GB) absorbe la RAM hors-DuckDB (pandas/arrow des assets Python).
+_RUN_RESOURCES = {
+    "requests": {"cpu": "16", "memory": "16Gi"},
+    "limits": {"cpu": "60", "memory": "72Gi"},
+}
+
 
 def _k8s_config(env):
     """Tag `dagster-k8s/config` d'un pod de run : env + S3 + dnsConfig ndots:1 + volume de
-    spilling DuckDB. Partagé par l'ingestion et le transform (DRY, jscpd) — seul `env` diffère
-    (le transform ajoute les POSTGRES_* d'index_load)."""
+    spilling DuckDB + resources (cohérentes avec memory_limit/threads DuckDB). Partagé par
+    l'ingestion et le transform (DRY, jscpd) — seul `env` diffère (POSTGRES_* d'index_load)."""
     return {
         "dagster-k8s/config": {
             "container_config": {
                 "env": env,
                 "env_from": _s3_env_from(),
                 "volume_mounts": [_SPILL_MOUNT],
+                "resources": _RUN_RESOURCES,
             },
             "pod_spec_config": {**_DNS_NDOTS_1, "volumes": [_SPILL_VOLUME]},
         }
