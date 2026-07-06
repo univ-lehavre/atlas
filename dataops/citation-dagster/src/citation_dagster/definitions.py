@@ -33,6 +33,7 @@ from citation_dagster.assets import (
     author_recommendations_manifest,
     collab_manifest,
     index_load,
+    mart_eunicoast,
     pair_uplift_model,
     pair_uplift_predictions_manifest,
     raw_snapshot,
@@ -205,7 +206,9 @@ _TRANSFORM_K8S_CONFIG = _k8s_config(_TRANSFORM_ENV)
 
 ingestion_job = define_asset_job(
     "ingestion_job",
-    selection=AssetSelection.assets("raw_snapshot"),
+    # raw_snapshot (rapatrie le Parquet + manifest) PUIS mart_eunicoast (filtre le
+    # périmètre par lots) — même run, mêmes ressources/spilling (ADR 0105).
+    selection=AssetSelection.assets("raw_snapshot", "mart_eunicoast"),
     tags=_RUN_K8S_CONFIG,
 )
 
@@ -233,6 +236,9 @@ _dbt_assets, _dbt_resources = dbt_components()
 # mode dégradé et la code-location reste chargeable (asset orphelin).
 _assets = [
     raw_snapshot,
+    # Filtre EUNICoast par lots colonnaires (mart_eunicoast) : 2ᵉ étage d'ingestion,
+    # après raw_snapshot, source de la chaîne dbt aval (ADR 0105).
+    mart_eunicoast,
     collab_manifest,
     researcher_embeddings,
     researchers_manifest,
