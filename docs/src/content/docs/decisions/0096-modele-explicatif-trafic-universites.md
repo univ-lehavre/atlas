@@ -92,6 +92,28 @@ temporelle within-page**. Ce n'est pas un défaut du grain × langue (requis par
 features par page et le trafic non-francophone massif, [ADR 0095]), mais une borne
 d'identification à connaître.
 
+### Validation empirique du levier « longueur » (proto, juillet 2026)
+
+Le levier le plus actionnable (longueur de page) a été **testé** sur un échantillon
+borné, avec son historique versionné (`prop=revisions`), et **passé au crible de la
+robustesse** (dont une revue adversariale). Ce qui en ressort **conforte la posture
+associative** et fixe la formulation opposable :
+
+- **Un test placebo mal spécifié peut tromper.** Un placebo « longueur _future_ →
+  vues présentes » **en niveaux** semble réfuter l'effet — mais c'est un artefact :
+  la longueur est quasi constante (AR(1) ≈ 0,97), donc future ≈ présente
+  mécaniquement. **Ne jamais citer ce test comme réfutation.**
+- **En premières différences**, le placebo s'effondre proprement (Δlongueur future
+  → Δvues nul) et l'effet contemporain survit (**≈ +0,14**). Un **event-study** sur
+  les éditions réelles montre une **pré-tendance plate, un saut net (~+0,22) au mois
+  d'édition, puis un retour partiel** — effet réel mais **transitoire**.
+- **Formulation opposable** : enrichir une page est **associé** à une hausse
+  contemporaine des vues (**~+10-15 %, en partie transitoire**), **sans garantie
+  causale** (simultanéité idiosyncratique page×mois non levée, puissance au plancher).
+  Restituer comme **piste plausible et peu risquée**, jamais comme promesse de gain
+  durable chiffré. Un vrai test causal exigerait une **variation exogène** (campagnes
+  d'édition en instrument) — hors périmètre proto.
+
 ### Prérequis de données (bloquants)
 
 - **Redirections résolues** en amont ([ADR 0095]) : sinon un renommage crée une
