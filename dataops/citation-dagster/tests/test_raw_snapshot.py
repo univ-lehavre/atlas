@@ -55,10 +55,15 @@ class FakeRclone:
             return _completed(cmd, stdout="\n".join(_PARTITIONS))
         if "lsf" in cmd and any("csv.gz" in a for a in cmd):
             return _completed(cmd, stdout="2024-01-05.csv.gz\n2026-03-29.csv.gz")
-        if "lsf" in cmd:  # fichiers .gz d'une partition
-            return _completed(cmd, stdout="part_000.gz\npart_001.gz")
+        if "lsf" in cmd:  # fichiers .parquet d'une partition
+            return _completed(cmd, stdout="part_000.parquet\npart_001.parquet")
         # copy
         return _completed(cmd, returncode=self.copy_returncode, stderr="boom")
+
+
+# Le module est ombré dans le namespace `assets` par l'asset homonyme (assets/__init__
+# ré-exporte `raw_snapshot`) : on récupère le VRAI module via sys.modules pour patcher.
+_RS_MODULE = sys.modules["citation_dagster.assets.raw_snapshot"]
 
 
 @pytest.fixture
@@ -66,6 +71,9 @@ def env(monkeypatch):
     for k, v in _ENV.items():
         monkeypatch.setenv(k, v)
     monkeypatch.delenv("OPENLINEAGE_URL", raising=False)
+    # Le manifest des footers touche un vrai S3 (lakehouse.connect) : neutralisé par défaut
+    # dans les tests rclone-mockés (pas de bucket). Un test dédié valide son câblage.
+    monkeypatch.setattr(_RS_MODULE, "_write_works_manifest", lambda bucket: 0)
     return monkeypatch
 
 
@@ -180,119 +188,35 @@ def test_merged_watermark_independent_no_silent_loss(env):
     assert "2026-03-29" not in last, "ne dépasse JAMAIS le dernier fichier copié (anti-perte)"
 
 
-# ── Mode échantillon cohérent (ADR 0063) ─────────────────────────────────────
+# ── Manifest des footers (ADR 0105) ──────────────────────────────────────────
 
 
-def test_coherent_sample_requires_works(env):
-    """Garde-fou : coherent_sample sans « works » dans entities échoue (ADR 0063)."""
-    fake = FakeRclone(watermark_json="")
-    env.setattr(subprocess, "run", fake)
-    with pytest.raises(Failure):
-        raw_snapshot(
-            build_asset_context(),
-            RawSnapshotConfig(entities=["authors"], coherent_sample=True),
-        )
-
-
-# Le module est ombré dans le namespace `assets` par l'asset homonyme (assets/__init__
-# ré-exporte `raw_snapshot`) : on récupère le VRAI module via sys.modules pour patcher.
-_RS_MODULE = sys.modules["citation_dagster.assets.raw_snapshot"]
-
-
-def test_coherent_sample_derives_authors(env, monkeypatch):
-    """coherent_sample=True dérive les authors APRÈS le sync et reporte le compte."""
+def test_manifest_written_after_works_sync(env, monkeypatch):
+    """Après le sync works, ``_write_works_manifest`` est appelé et son compte remonté."""
     called = {}
 
-    def fake_derive(bucket):
+    def fake_manifest(bucket):
         called["bucket"] = bucket
-        return 42
+        return 7
 
-    monkeypatch.setattr(_RS_MODULE, "_derive_coherent_authors", fake_derive)
+    monkeypatch.setattr(_RS_MODULE, "_write_works_manifest", fake_manifest)
     fake = FakeRclone(watermark_json="")
-    result = _run(env, fake, coherent_sample=True)
+    result = _run(env, fake, max_partitions=1)
     assert called["bucket"] == "citation-datalake-x"
-    assert result.metadata["coherent_authors"].value == 42
+    assert result.metadata["manifest_files"].value == 7
 
 
-def test_coherent_sample_off_by_default(env, monkeypatch):
-    """Par défaut (OFF), aucune dérivation : compte 0, _derive non appelé."""
+def test_manifest_skipped_when_works_not_ingested(env, monkeypatch):
+    """Sans « works » dans entities, aucun manifest (le manifest est propre aux works)."""
 
     def _boom(bucket):
-        raise AssertionError("ne doit pas être appelé")
+        raise AssertionError("ne doit pas être appelé sans works")
 
-    monkeypatch.setattr(_RS_MODULE, "_derive_coherent_authors", _boom)
+    monkeypatch.setattr(_RS_MODULE, "_write_works_manifest", _boom)
     fake = FakeRclone(watermark_json="")
-    result = _run(env, fake)
-    assert result.metadata["coherent_authors"].value == 0
-
-
-def test_derive_coherent_authors_sql_extracts_distinct_inline_authors(tmp_path):
-    """La logique de dérivation (DuckDB) : authors distincts depuis l'inline des works.
-
-    Hermétique (DuckDB en mémoire, fichiers locaux, aucun S3) : on valide le SELECT
-    embarqué par _derive_coherent_authors — DISTINCT sur author.id, champs id/orcid/
-    display_name conservés, works_count/cited_by_count à 0.
-    """
-    import gzip
-    import json
-
-    import duckdb
-
-    # Deux works ; l'auteur A1 cité par les deux (doit être dédupliqué), A2 par un seul.
-    works = [
-        {
-            "id": "https://openalex.org/W1",
-            "authorships": [
-                {
-                    "author": {
-                        "id": "https://openalex.org/A1",
-                        "display_name": "Alice",
-                        "orcid": None,
-                    }
-                },
-                {
-                    "author": {
-                        "id": "https://openalex.org/A2",
-                        "display_name": "Bob",
-                        "orcid": "0000-0002",
-                    }
-                },
-            ],
-        },
-        {
-            "id": "https://openalex.org/W2",
-            "authorships": [
-                {
-                    "author": {
-                        "id": "https://openalex.org/A1",
-                        "display_name": "Alice",
-                        "orcid": None,
-                    }
-                },
-                {"author": {"id": None, "display_name": "Anon", "orcid": None}},  # ignoré (id nul)
-            ],
-        },
-    ]
-    src = tmp_path / "part_0000.gz"
-    with gzip.open(src, "wt") as fh:
-        for w in works:
-            fh.write(json.dumps(w) + "\n")
-
-    con = duckdb.connect()
-    rows = con.execute(
-        f"""
-        SELECT DISTINCT
-            ash.author.id AS id, ash.author.orcid AS orcid,
-            ash.author.display_name AS display_name, 0 AS works_count, 0 AS cited_by_count
-        FROM (SELECT unnest(authorships) AS ash
-              FROM read_json_auto('{src}', hive_partitioning=false, union_by_name=true)) t
-        WHERE ash.author.id IS NOT NULL
-        ORDER BY id
-        """
-    ).fetchall()
-    assert [r[0] for r in rows] == [
-        "https://openalex.org/A1",
-        "https://openalex.org/A2",
-    ]  # A1 dédupliqué, id nul écarté
-    assert rows[0] == ("https://openalex.org/A1", None, "Alice", 0, 0)
-    assert rows[1] == ("https://openalex.org/A2", "0000-0002", "Bob", 0, 0)
+    monkeypatch.setattr(subprocess, "run", fake)
+    result = raw_snapshot(
+        build_asset_context(),
+        RawSnapshotConfig(entities=["authors"], max_partitions=1),
+    )
+    assert result.metadata["manifest_files"].value == 0

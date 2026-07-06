@@ -346,10 +346,10 @@ def _ingest_run_config(env: dict | None = None) -> RunConfig | None:
 
     Le défaut CODE de ``RawSnapshotConfig`` est **prod-complet** (0 = illimité) : la prod
     ne pose donc AUCUNE de ces variables et rapatrie tout. C'est le **banc** qui borne, via
-    son overlay (``CITATION_INGEST_SAMPLE_SIZE`` / ``CITATION_INGEST_MAX_PARTITIONS`` /
-    ``CITATION_INGEST_COHERENT``). Sans variable posée → ``None`` (pas de surcharge → défaut
-    complet). Parse défensif : une valeur absente/invalide n'est simplement pas surchargée
-    (jamais de crash de l'ingestion pour un env mal formé)."""
+    son overlay (``CITATION_INGEST_SAMPLE_SIZE`` / ``CITATION_INGEST_MAX_PARTITIONS``). Sans
+    variable posée → ``None`` (pas de surcharge → défaut complet). Parse défensif : une valeur
+    absente/invalide n'est simplement pas surchargée (jamais de crash de l'ingestion pour un
+    env mal formé)."""
     env = env if env is not None else os.environ
     overrides: dict[str, object] = {}
 
@@ -368,9 +368,6 @@ def _ingest_run_config(env: dict | None = None) -> RunConfig | None:
     }
     for key in _ENV_TO_FIELD:
         _int(key)
-    coherent = env.get("CITATION_INGEST_COHERENT")
-    if coherent is not None:
-        overrides["coherent_sample"] = coherent.strip().lower() in ("1", "true", "on", "yes")
     if not overrides:
         return None
     return RunConfig(ops={"raw_snapshot": RawSnapshotConfig(**overrides)})

@@ -149,14 +149,12 @@ def test_ingest_run_config_bench_bounds_from_env():
     env = {
         "CITATION_INGEST_SAMPLE_SIZE": "4",
         "CITATION_INGEST_MAX_PARTITIONS": "1",
-        "CITATION_INGEST_COHERENT": "on",
     }
     rc = _ingest_run_config(env)
     assert rc is not None
     cfg = rc.ops["raw_snapshot"]
     assert cfg.sample_size == 4
     assert cfg.max_partitions == 1
-    assert cfg.coherent_sample is True
 
 
 def test_ingest_run_config_ignores_malformed_env():
