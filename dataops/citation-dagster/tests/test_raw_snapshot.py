@@ -5,6 +5,7 @@ import sys
 
 import pytest
 from dagster import Failure, build_asset_context
+from openlineage.client.event_v2 import RunState
 
 from citation_dagster.assets.raw_snapshot import RawSnapshotConfig, raw_snapshot
 
@@ -220,3 +221,54 @@ def test_manifest_skipped_when_works_not_ingested(env, monkeypatch):
         RawSnapshotConfig(entities=["authors"], max_partitions=1),
     )
     assert result.metadata["manifest_files"].value == 0
+
+
+def test_write_works_manifest_delegates_to_lakehouse(monkeypatch):
+    """``_write_works_manifest`` ouvre une connexion et délègue à lakehouse (hermétique).
+
+    Couvre le câblage réel (connect + write_works_manifest) sans S3 : on monkeypatche les
+    deux primitives lakehouse et on vérifie le passage du bucket + le report du compte."""
+    seen = {}
+
+    def _fake_write(con, bucket):
+        seen["args"] = (con, bucket)
+        return 2446
+
+    monkeypatch.setattr(_RS_MODULE.lakehouse, "connect", lambda: "CON")
+    monkeypatch.setattr(_RS_MODULE.lakehouse, "write_works_manifest", _fake_write)
+    n = _RS_MODULE._write_works_manifest("citation")
+    assert n == 2446
+    assert seen["args"] == ("CON", "citation")
+
+
+def test_emit_lineage_includes_manifest_output_for_works(monkeypatch):
+    """Avec OPENLINEAGE_URL posé, l'événement porte le manifest en output du sync works."""
+    monkeypatch.setenv("OPENLINEAGE_URL", "http://marquez.test:5000")
+    captured = {}
+
+    class _FakeClient:
+        @staticmethod
+        def from_environment():
+            return _FakeClient()
+
+        def emit(self, event):
+            captured["event"] = event
+
+    monkeypatch.setattr(_RS_MODULE, "OpenLineageClient", _FakeClient)
+    run_id = "12345678-1234-1234-1234-123456789abc"  # RunEvent valide le format UUID
+    _RS_MODULE._emit_lineage(RunState.COMPLETE, run_id, ["works"], "citation")
+    out_names = {d.name for d in captured["event"].outputs}
+    assert "raw/manifest_works" in out_names  # manifest présent (works ingéré)
+    assert "raw/works" in out_names
+
+
+def test_emit_lineage_noop_without_url(monkeypatch):
+    """Sans OPENLINEAGE_URL, aucun événement émis (no-op silencieux)."""
+    monkeypatch.delenv("OPENLINEAGE_URL", raising=False)
+
+    def _boom(*a, **k):
+        raise AssertionError("ne doit pas émettre sans URL")
+
+    monkeypatch.setattr(_RS_MODULE, "OpenLineageClient", _boom)
+    # Ne lève pas : la garde early-return protège.
+    _RS_MODULE._emit_lineage(RunState.START, "run1", ["works"], "citation")

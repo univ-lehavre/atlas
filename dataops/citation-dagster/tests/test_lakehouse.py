@@ -221,3 +221,77 @@ def test_parquet_file_metadata_leve_sur_glob_vide(tmp_path):
     except duckdb.IOException:
         raised = True
     assert raised, "parquet_file_metadata devrait lever sur un glob sans fichier"
+
+
+# ── write_works_manifest : 3 branches (hermétique, con factice, aucun S3) ─────
+
+
+class _ManifestFakeRel:
+    def __init__(self, one):
+        self._one = one
+
+    def fetchone(self):
+        return self._one
+
+
+class _ManifestFakeCon:
+    """Con factice pour write_works_manifest : `count` renvoie n (ou lève), `COPY` capturé."""
+
+    def __init__(self, count=None, raise_io=False):
+        self._count = count
+        self._raise = raise_io
+        self.copied = False
+
+    def sql(self, query):
+        if self._raise:
+            raise duckdb.IOException("no files found")
+        return _ManifestFakeRel((self._count,))
+
+    def execute(self, query):
+        self.copied = True
+
+
+def test_write_works_manifest_glob_vide_leve_renvoie_zero():
+    """raw/works/ vide → parquet_file_metadata lève → no-op, renvoie 0, aucun COPY."""
+    con = _ManifestFakeCon(raise_io=True)
+    assert lakehouse.write_works_manifest(con, "citation") == 0
+    assert con.copied is False
+
+
+def test_write_works_manifest_zero_fichier_renvoie_zero():
+    """count == 0 (cas défensif) → no-op, renvoie 0, aucun COPY."""
+    con = _ManifestFakeCon(count=0)
+    assert lakehouse.write_works_manifest(con, "citation") == 0
+    assert con.copied is False
+
+
+def test_write_works_manifest_ecrit_et_renvoie_nb_fichiers():
+    """count > 0 → écrit le manifest (COPY) et renvoie le nombre de fichiers recensés."""
+    con = _ManifestFakeCon(count=2446)
+    assert lakehouse.write_works_manifest(con, "citation") == 2446
+    assert con.copied is True
+
+
+# ── copy_to_parquet : plat + partitionné Hive (DuckDB local, aucun S3) ───────
+
+
+def test_copy_to_parquet_plat(tmp_path):
+    """Sans partition_by : écrit un unique Parquet lisible (FORMAT PARQUET)."""
+    con = duckdb.connect()
+    dest = str(tmp_path / "out.parquet")
+    lakehouse.copy_to_parquet(con, "SELECT range AS id FROM range(4)", dest)
+    assert con.sql(f"SELECT count(*) FROM read_parquet('{dest}')").fetchone()[0] == 4
+
+
+def test_copy_to_parquet_partitionne_hive(tmp_path):
+    """Avec partition_by : arborescence Hive `col=…/` + OVERWRITE_OR_IGNORE (rejouable)."""
+    con = duckdb.connect()
+    dest = str(tmp_path / "hive")
+    sel = "SELECT range AS id, (range % 2) AS grp FROM range(4)"
+    lakehouse.copy_to_parquet(con, sel, dest, partition_by=["grp"])
+    # Rejeu OK (OVERWRITE_OR_IGNORE) + partitionnement présent.
+    lakehouse.copy_to_parquet(con, sel, dest, partition_by=["grp"])
+    groups = con.sql(
+        f"SELECT DISTINCT grp FROM read_parquet('{dest}/**/*.parquet') ORDER BY grp"
+    ).fetchall()
+    assert [r[0] for r in groups] == [0, 1]

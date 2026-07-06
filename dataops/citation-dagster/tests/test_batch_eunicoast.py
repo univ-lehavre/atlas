@@ -3,12 +3,15 @@
 - ``plan_batches`` : logique PURE de composition des lots (cumul ``num_rows``).
 - ``_filter_sql`` : filtre EUNICoast + année sur un mini-graphe Parquet (DuckDB in-memory,
   aucun S3) — valide le double-unnest ``authorships → institutions → ror`` et la projection.
+- ``mart_eunicoast`` : l'asset de bout en bout, avec ``lakehouse.connect``/``ceph_target``
+  monkeypatchés (loader factice, aucun S3 ni Docker) → couvre l'orchestration hermétiquement.
 - anti-drift : la constante ``_EUNICOAST_ROR`` == le seed dbt ``ref_eunicoast.csv``.
 """
 
 import duckdb
 
 from citation_dagster.assets import batch_eunicoast as be
+from citation_dagster.resources import CephTarget
 
 # ── plan_batches (pur) ───────────────────────────────────────────────────────
 
@@ -110,3 +113,92 @@ def test_ror_list_matches_seed():
     assert set(be._EUNICOAST_ROR) == be._seed_ror(), (
         "les 14 ROR de _EUNICOAST_ROR ont divergé de citation-dbt/seeds/ref_eunicoast.csv"
     )
+
+
+# ── Lineage + lecture manifest (purs) ────────────────────────────────────────
+
+
+def test_lineage_io_datasets():
+    """L'I/O lineage lit raw/works + manifest, écrit le mart (noms techniques, pas de PII)."""
+    inputs, outputs = be._lineage_io()
+    in_names = {d.name for d in inputs}
+    out_names = {d.name for d in outputs}
+    assert in_names == {"raw/works", "raw/manifest_works"}
+    assert out_names == {"mart_eunicoast"}
+
+
+class _FakeRel:
+    """Relation DuckDB factice : sert `.fetchall()` (manifest) et `.fetchone()` (count)."""
+
+    def __init__(self, rows):
+        self._rows = rows
+
+    def fetchall(self):
+        return self._rows
+
+    def fetchone(self):
+        return self._rows[0]
+
+
+class _FakeCon:
+    """Connexion DuckDB factice pour l'asset : route manifest / COPY / count sans S3.
+
+    - `read_parquet('.../manifest_works.parquet')` → le manifest injecté ;
+    - `COPY (...)` → no-op (pas d'écriture réelle) ;
+    - `count(*) FROM read_parquet('.../part-*.parquet')` → nb de works du lot (injecté).
+    """
+
+    def __init__(self, manifest_rows, works_per_batch_result):
+        self._manifest = manifest_rows
+        self._count = works_per_batch_result
+        self.copies = []
+
+    def sql(self, query):
+        if "manifest_works" in query:
+            return _FakeRel(self._manifest)
+        # count(*) sur un part écrit : renvoie le nb de works retenus du lot.
+        return _FakeRel([(self._count,)])
+
+    def execute(self, query):
+        # COPY (...) TO '...part-NNNNN.parquet' : on mémorise, sans écrire.
+        self.copies.append(query)
+
+
+def _patch_asset(monkeypatch, manifest_rows, count_per_batch):
+    """Monkeypatch lakehouse.connect + ceph_target_from_env pour l'asset (aucun S3)."""
+    con = _FakeCon(manifest_rows, count_per_batch)
+    monkeypatch.setattr(be.lakehouse, "connect", lambda cfg=None: con)
+    monkeypatch.setattr(
+        be, "ceph_target_from_env", lambda env=None: CephTarget("k", "s", "http://h:1", "citation")
+    )
+    return con
+
+
+def test_mart_eunicoast_orchestration(monkeypatch):
+    """L'asset lit le manifest, compose les lots, écrit un part/lot, agrège le compte.
+
+    Hermétique : aucun S3, aucun Docker. Manifest de 3 fichiers (5M+5M+1M works) avec
+    works_per_batch=5M → 2 lots ([a,b] car cumul 10M>5M ferme après a… en fait a=5M seul,
+    puis b+c). On vérifie : nb de COPY == nb de lots, métadonnées cohérentes."""
+    manifest = [("a.parquet", 5_000_000), ("b.parquet", 3_000_000), ("c.parquet", 1_000_000)]
+    con = _patch_asset(monkeypatch, manifest, count_per_batch=7)
+    # Avec works_per_batch par défaut (5M) : a(5M) ; +b(8M>5M) ferme → [a] ; b+c(4M) → [b,c].
+    res = be.mart_eunicoast()
+    batches = be.plan_batches(manifest)
+    assert len(con.copies) == len(batches)  # un COPY par lot
+    assert all("FORMAT PARQUET" in q for q in con.copies)
+    assert res.metadata["batches"].value == len(batches)
+    assert res.metadata["source_files"].value == 3
+    assert res.metadata["min_year"].value == be._MIN_YEAR
+    # total_works = count injecté (7) × nb de lots.
+    assert res.metadata["eunicoast_works"].value == 7 * len(batches)
+
+
+def test_mart_eunicoast_empty_manifest(monkeypatch):
+    """Manifest vide → aucun lot, aucun COPY, 0 work (run idempotent sans données)."""
+    con = _patch_asset(monkeypatch, manifest_rows=[], count_per_batch=0)
+    res = be.mart_eunicoast()
+    assert con.copies == []
+    assert res.metadata["batches"].value == 0
+    assert res.metadata["eunicoast_works"].value == 0
+    assert res.metadata["source_files"].value == 0
