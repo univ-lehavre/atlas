@@ -89,6 +89,13 @@ def build_dbt_vars(run_id: str, curated_dt: str) -> dict[str, str]:
     bucket = ceph_target_from_env().bucket
     vars_: dict[str, str] = {
         "raw_root": f"s3://{bucket}/raw",
+        # `mart_root` = source de la chaîne dbt (le mart EUNICoast Parquet, ADR 0094) : DOIT
+        # être dérivée du bucket réel comme les autres racines, sinon dbt lit le défaut banc
+        # `s3://citation/mart_eunicoast` inexistant en prod → 404 (constaté prod 2026-07-06 :
+        # le transform échouait dès stg_citation_works/authorships/topics). Oublié au câblage
+        # initial du refactoring (les tests d'intégration passent mart_root explicitement, donc
+        # le banc ne le voyait pas).
+        "mart_root": f"s3://{bucket}/mart_eunicoast",
         "curated_root": f"s3://{bucket}/curated",
         "marts_root": f"s3://{bucket}/marts",
         "curated_dt": curated_dt,

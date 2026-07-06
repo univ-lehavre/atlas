@@ -32,6 +32,7 @@ def test_build_dbt_vars_uses_run_id_as_immutable_run(monkeypatch):
     vars_ = dbt_mod.build_dbt_vars(run_id="run-abc", curated_dt="2026-06")
     assert vars_ == {
         "raw_root": "s3://citation-datalake-abc123/raw",
+        "mart_root": "s3://citation-datalake-abc123/mart_eunicoast",
         "curated_root": "s3://citation-datalake-abc123/curated",
         "marts_root": "s3://citation-datalake-abc123/marts",
         "curated_dt": "2026-06",
@@ -51,6 +52,9 @@ def test_build_dbt_vars_derives_s3_roots_from_bucket_name(monkeypatch):
     monkeypatch.setenv("BUCKET_NAME", "citation-datalake-prod-9f2c")
     vars_ = dbt_mod.build_dbt_vars(run_id="r", curated_dt="2026-06")
     assert vars_["raw_root"] == "s3://citation-datalake-prod-9f2c/raw"
+    # `mart_root` = source de la chaîne dbt (mart EUNICoast, ADR 0094) : DOIT suivre le bucket
+    # réel, sinon 404 en prod (le transform lisait s3://citation/mart_eunicoast inexistant).
+    assert vars_["mart_root"] == "s3://citation-datalake-prod-9f2c/mart_eunicoast"
     assert vars_["curated_root"] == "s3://citation-datalake-prod-9f2c/curated"
     assert vars_["marts_root"] == "s3://citation-datalake-prod-9f2c/marts"
 
