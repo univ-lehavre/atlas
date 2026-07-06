@@ -32,7 +32,7 @@
     "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
-    "@clack/prompts": "~1.6.0",
+    "@clack/prompts": "~1.7.0",
     "@effect/experimental": "~0.60.0",
     "@univ-lehavre/atlas-citation-types": "workspace:*",
     "@univ-lehavre/atlas-citation-validate": "workspace:*",
@@ -45,7 +45,7 @@
     "eslint": "^10.6.0",
     "prettier": "^3.9.4",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   },
   "publishConfig": {
     "access": "public"
