@@ -124,6 +124,8 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0092 | [Scope-enum dérivé du workspace (exhaustif, non ambigu)](/atlas/decisions/0092-scope-enum-derive-du-workspace/)                                                 | Accepted        |
 | 0093 | [Release en cycle complet sur un seul run nocturne (auto-merge total)](/atlas/decisions/0093-release-cycle-complet-une-nuit/)                                   | Accepted        |
 | 0094 | [Mart EUNICoast Parquet + co-autorat (modèle de données du pipeline citation)](/atlas/decisions/0094-mart-eunicoast-parquet-co-autorat/)                        | Accepted        |
+| 0095 | [Source dataops « pageviews universités » (audience Wikipédia des établissements)](/atlas/decisions/0095-source-pageviews-universites/)                         | Accepted        |
+| 0096 | [Modèle explicatif du trafic Wikipédia des universités (posture associative)](/atlas/decisions/0096-modele-explicatif-trafic-universites/)                      | Accepted        |
 
 ## Quand ouvrir un ADR
 
