@@ -53,26 +53,43 @@ vraiment actionnable qui survit ; `backlinks` domine mais confond cause/symptôm
 (exactement le risque anticipé par l'ADR 0096) ; `links_out` illustre pourquoi le
 modèle naïf est trompeur.
 
-### Phase 4b — Modèle WITHIN-PAGE ✅ (le test décisif, ADR 0096)
+### Phase 4b/4c — Modèle WITHIN-PAGE + tests de robustesse
 
 Le between-pages ci-dessus n'identifie pas causalement (la longueur pourrait juste
 marquer la notoriété). On a donc collecté l'**historique versionné de la taille de
 page** (`prop=revisions`, **94 512 obs** `(ror,lang,month)` sur 958 séries — faisable
-en API !) et estimé un panel **à effets fixes page + mois** : l'effet de la longueur
-est alors identifié par la **variation temporelle d'une même page** (elle s'allonge →
-ses vues bougent-elles ?), ce qui **absorbe toute la notoriété invariante**.
+en API) et estimé un panel **à effets fixes page + mois** : l'effet de la longueur
+est identifié par la **variation temporelle d'une même page**, ce qui absorbe la
+notoriété invariante. Résultat brut : `log_length → log_views` **+0,18** [0,11 ;
+0,25]. **Mais ce chiffre brut n'était pas fiable** — il a fallu le passer au crible.
 
-Résultat sur **52 657 obs / 506 pages** (celles dont la taille varie dans le temps) :
+**Ce que les tests de robustesse ont établi** (dont une vérification adversariale
+multi-agents qui a corrigé deux erreurs de spécification) :
 
-> **log_length → log_views : coef +0,182, IC 95 % [0,113 ; 0,251], p < 0,001.**
+- **Un test placebo en _niveaux_ semblait tuer l'effet** (la longueur _future_
+  prédisait les vues présentes aussi fort). **C'était un faux signal** : la longueur
+  est quasi constante dans le temps (AR(1) ≈ 0,97), donc « longueur future ≈ présente »
+  mécaniquement — un placebo univarié en niveaux est ininformatif ici. Ne pas citer
+  ce test comme réfutation.
+- **En premières différences, le placebo s'effondre proprement** : Δlongueur →
+  Δvues **+0,14** (p ≈ 0,005), tandis que Δlongueur _future_ → Δvues est **nul**
+  (p = 0,72). Signal contemporain propre.
+- **Event-study sur 469 vraies éditions** (le test le plus propre) : **pré-tendance
+  plate**, **saut net au mois d'édition +0,22** [0,16 ; 0,29], puis **retour partiel**
+  les mois suivants. Signature d'un effet de timing réel et **transitoire**.
 
-**Interprétation :** à notoriété fixe, **quand une page s'allonge, ses vues
-augmentent** — association within-page positive et robuste. C'est le résultat le
-plus solide de la nuit : il donne au conseil « enrichir la page » un **fondement
-empirique défendable**, pas une simple corrélation. L'effet (0,18) est plus faible
-que le between naïf (une part de ce dernier était bien de la notoriété), mais il
-**survit** au contrôle le plus exigeant. Reste observationnel (pas un essai
-randomisé) → toujours formulé comme piste, cf. limite causale ADR 0096.
+**Conclusion défendable (posture ADR 0096) :** allonger une page est **associé de
+façon robuste** à une hausse **contemporaine** des vues (ordre de grandeur
+**+10-15 %**, en partie **transitoire**) — pas la magnitude brute +0,18 qui intègre
+de la co-évolution. **Ce n'est pas un effet causal net** (simultanéité idiosyncratique
+page×mois non levée, un lead à 3 mois subsiste, puissance au plancher : MDE ≈ 0,135).
+Formulation métier : « l'enrichissement est une **piste plausible, peu risquée et
+cohérente avec les données** — sans garantie causale ni promesse de gain durable
+chiffré ». Ni « prouvé nul », ni « garantie de +X % ».
+
+**Hétérogénéité** : effet apparemment plus fort chez les petites universités
+(works 0-99 : +0,43) mais sur 70 pages seulement, IC large, strate la plus endogène
+— **hypothèse à tester, jamais une reco**.
 
 ## Surprises / soucis rencontrés
 
