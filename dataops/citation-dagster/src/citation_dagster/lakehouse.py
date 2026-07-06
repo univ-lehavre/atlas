@@ -66,19 +66,20 @@ def connect(cfg: DuckDBS3Config | None = None) -> duckdb.DuckDBPyConnection:
     con.execute("SET http_timeout=120000;")
     con.execute("SET http_retries=5;")
     # Scalabilité (parité avec le profil dbt) : borne la RAM, autorise le SPILLING disque et
-    # PARALLÉLISE. Les assets Python DuckDB en aval (embeddings, uplift, index_load) lisent des
-    # marts volumineux au datalake complet — sans borne, un tri/jointure fait OOM le pod. Au-delà
-    # de memory_limit, DuckDB déborde ses opérateurs dans temp_directory (emptyDir monté, cf.
-    # definitions._SPILL_MOUNT). `threads=60` exploite les nœuds (80 cœurs) pour paralléliser
-    # les gros tris/jointures ; le pod de run RÉSERVE ces ressources (requests/limits, cf.
-    # definitions._RUN_RESOURCES) → le scheduler place et cadre. On garde ~20 cœurs de marge.
-    # Tout dérivé de l'env (ADR 0023 : le banc léger baisse ; défauts prod généreux, nœuds à
-    # ~235 GiB / 80 cœurs).
-    con.execute(f"SET memory_limit='{os.environ.get('DBT_DUCKDB_MEMORY_LIMIT', '64GB')}';")
+    # PARALLÉLISE. Le gros consommateur est l'asset mart_eunicoast, qui lit le lac PAR LOTS
+    # (~5M works PROJETÉS/lot = quelques Go — jamais les colonnes lourdes, ADR 0094) ; l'aval
+    # dbt (~70k works) est petit. `memory_limit=24GB` borne la RAM ; au-delà, DuckDB déborde ses
+    # opérateurs dans temp_directory (emptyDir monté, cf. definitions._SPILL_MOUNT) au lieu d'OOM
+    # — filet, quasi gratuit. `threads=32` parallélise le filtrage d'un lot sans réserver tous
+    # les cœurs du nœud au repos (dimensionnement révisé depuis l'ancienne approche « tout
+    # OpenAlex en RAM » qui exigeait 60 threads / 64GB). Le pod de run RÉSERVE ces ressources
+    # (requests/limits, cf. definitions._RUN_RESOURCES) → le scheduler place et cadre. Tout
+    # dérivé de l'env (ADR 0023 : le banc léger baisse encore).
+    con.execute(f"SET memory_limit='{os.environ.get('DBT_DUCKDB_MEMORY_LIMIT', '24GB')}';")
     con.execute(
         f"SET temp_directory='{os.environ.get('DBT_DUCKDB_TEMP_DIR', '/tmp/duckdb-spill')}';"
     )
-    con.execute(f"SET threads={os.environ.get('DBT_DUCKDB_THREADS', '60')};")
+    con.execute(f"SET threads={os.environ.get('DBT_DUCKDB_THREADS', '32')};")
     con.execute(_create_secret_sql(cfg))
     return con
 

@@ -77,9 +77,9 @@ def test_run_pod_declares_resources_coherent_with_duckdb():
     for cfg in (_RUN_K8S_CONFIG, _TRANSFORM_K8S_CONFIG):
         res = cfg["dagster-k8s/config"]["container_config"]["resources"]
         assert res["requests"]["cpu"] and res["requests"]["memory"]
-        assert res["limits"]["cpu"] == "60"  # = threads DuckDB
-        # 72Gi (limit pod) > 64GB (memory_limit DuckDB) : le spill précède l'OOM cgroup.
-        assert res["limits"]["memory"] == "72Gi"
+        assert res["limits"]["cpu"] == "32"  # = threads DuckDB (ADR 0094 : lots ~5M works)
+        # 28Gi (limit pod) > 24GB (memory_limit DuckDB) : le spill précède l'OOM cgroup.
+        assert res["limits"]["memory"] == "28Gi"
 
 
 def test_defs_exposes_raw_snapshot_asset():

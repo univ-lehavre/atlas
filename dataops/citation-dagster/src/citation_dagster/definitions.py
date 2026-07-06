@@ -135,20 +135,25 @@ _DNS_NDOTS_1 = {"dns_config": {"options": [{"name": "ndots", "value": "1"}]}}
 _SPILL_VOLUME = {"name": "duckdb-spill", "empty_dir": {}}
 _SPILL_MOUNT = {"name": "duckdb-spill", "mount_path": "/tmp/duckdb-spill"}
 
-# requests/limits du pod de run, COHÉRENTS avec les réglages DuckDB (memory_limit=64GB,
-# threads=60 — cf. lakehouse.connect / profiles.yml). Sans resources explicites, le pod de
-# run tournait en BestEffort : le scheduler ne réservait rien → DuckDB parallélisait/allouait
-# « à l'aveugle » et le pod était OOM-killé au 1er gros modèle curated. On DÉCLARE donc :
-#   - requests : placement garanti — 16 cœurs / 16Gi (ce que le run prend a minima) ;
-#   - limits : plafond aligné sur DuckDB (memory_limit 64GB + marge pandas/python/arrow →
-#     72Gi) + 60 cœurs (= threads). Les nœuds ont 80 cœurs / ~251 GiB → confortable (< 30 %).
-# Dérivable par l'env (ADR 0023) : le banc léger baisse DBT_DUCKDB_MEMORY_LIMIT + ces valeurs.
-# NB CRITIQUE : le memory_limit DuckDB (64GB ≈ 68,7Gi) reste SOUS la limite pod (72Gi) → DuckDB
+# requests/limits du pod de run, COHÉRENTS avec les réglages DuckDB (memory_limit=24GB,
+# threads=32 — cf. lakehouse.connect / profiles.yml). Sans resources explicites, le pod de
+# run tournait en BestEffort : le scheduler ne réservait rien → DuckDB allouait « à l'aveugle »
+# et le pod était OOM-killé. On DÉCLARE donc :
+#   - requests : placement garanti — 8 cœurs / 8Gi (ce que le run prend a minima) ;
+#   - limits : plafond aligné sur DuckDB (memory_limit 24GB + marge pandas/python/arrow →
+#     28Gi) + 32 cœurs (= threads).
+# Dimensionnement révisé pour le modèle de données ADR 0094 (mart EUNICoast) : le gros du
+# DuckDB est l'asset mart_eunicoast, qui lit le lac PAR LOTS (~5M works PROJETÉS/lot =
+# quelques Go, jamais les colonnes lourdes) — plus la matérialisation de tout OpenAlex en RAM.
+# L'aval dbt (~70k works) est petit. On n'a donc plus besoin de réserver 60 cœurs / 72Gi au
+# repos : 32 cœurs / 28Gi couvrent largement un lot, en gardant le spilling comme filet.
+# Dérivable par l'env (ADR 0023) : le banc léger baisse encore.
+# NB CRITIQUE : le memory_limit DuckDB (24GB ≈ 25,8Gi) reste SOUS la limite pod (28Gi) → DuckDB
 # spille sur disque AVANT que le cgroup ne tue le pod (l'ordre est essentiel : sinon OOM avant
-# spill). L'écart (72Gi − 64GB) absorbe la RAM hors-DuckDB (pandas/arrow des assets Python).
+# spill). L'écart (28Gi − 24GB) absorbe la RAM hors-DuckDB (pandas/arrow des assets Python).
 _RUN_RESOURCES = {
-    "requests": {"cpu": "16", "memory": "16Gi"},
-    "limits": {"cpu": "60", "memory": "72Gi"},
+    "requests": {"cpu": "8", "memory": "8Gi"},
+    "limits": {"cpu": "32", "memory": "28Gi"},
 }
 
 
