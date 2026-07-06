@@ -121,22 +121,37 @@ def check_raw(bucket: str) -> AssetCheckResult:
     relationships sur le staging, suites curated/marts par run)."""
     con = lakehouse.connect()
     w_files = _sample_raw_files(con, bucket, "raw/works", _RAW_SAMPLE_FILES)
-    # `read_parquet` en PROJECTION colonnaire : DuckDB ne lit QUE les colonnes du contrat GE
-    # depuis le footer (jamais abstract_inverted_index ni referenced_works). C'est ce qui
-    # remplace l'ancien read_json(columns={}) sur le .gz — le Parquet est nativement projeté,
-    # sans parse de forme du JSON imbriqué (qui faisait OOM + « Map keys must be unique »,
-    # drift L77 : abstract_inverted_index auto-détecté, clé dupliquée). La liste passe en bind.
-    works = con.sql(
-        "SELECT id, publication_year, title, authorships, topics FROM read_parquet($files)",
-        params={"files": w_files},
-    ).df()
-    ok_w, meta_w = ge_suites.validate_df(works, "raw_works", ge_suites.raw_works_expectations())
+    # CONTRAT DE FORME sans MATÉRIALISER les colonnes imbriquées (drift : OOM prod 2026-07-06).
+    # Charger `authorships`/`topics` en pandas (`.df()`) matérialise des STRUCTS LOURDS (chaque
+    # work porte des dizaines d'auteurs × institutions, des topics hiérarchiques) : sur un
+    # échantillon de fichiers récents (~360k works/fichier), pandas explose la RAM (28Gi
+    # dépassés → OOMKilled). Or le contrat ne teste QUE la PRÉSENCE de ces colonnes, jamais leur
+    # contenu. On découple donc :
+    #   1) EXISTENCE des colonnes → lue du SCHÉMA Parquet (`DESCRIBE`, AUCUNE donnée chargée) ;
+    #   2) VALEURS (id not_null/regex, row_count) → sur la SEULE colonne `id` (légère, VARCHAR).
+    # `raw_works_expectations` ne porte donc plus d'ExpectColumnToExist sur les colonnes lourdes
+    # (vérifiées ici par le schéma) — juste l'existence + les valeurs de `id`.
+    schema_cols = {
+        r[0]
+        for r in con.sql(
+            "DESCRIBE SELECT * FROM read_parquet($files)", params={"files": w_files}
+        ).fetchall()
+    }
+    required = ("id", "publication_year", "title", "authorships", "topics")
+    missing = [c for c in required if c not in schema_cols]
+    # `id` seul en pandas (VARCHAR léger) : DuckDB ne lit que cette colonne du Parquet.
+    ids = con.sql("SELECT id FROM read_parquet($files)", params={"files": w_files}).df()
+    ok_w, meta_w = ge_suites.validate_df(ids, "raw_works", ge_suites.raw_works_expectations())
+    passed = ok_w and not missing
+    failed = list(meta_w["failed"]) + (
+        [f"colonnes absentes: {', '.join(missing)}"] if missing else []
+    )
     return _result(
-        ok_w,
+        passed,
         {
             "suite": "raw_works",
-            "evaluated": meta_w["evaluated"],
-            "failed": meta_w["failed"],
+            "evaluated": meta_w["evaluated"] + len(required),
+            "failed": failed,
             "sampled_files": len(w_files),
         },
     )

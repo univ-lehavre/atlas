@@ -52,17 +52,16 @@ _WEIGHT_MAX = 1_000_000.0
 
 
 def raw_works_expectations() -> list:
-    """Contrat structurel du brut works Parquet (colonnes consommées en aval + format id).
+    """Contrat structurel du brut works Parquet — VALEURS de `id` uniquement.
 
-    Le brut est désormais le **Parquet** OpenAlex (ADR 0105) : on valide les colonnes que
-    le mart EUNICoast projette (id, publication_year, title, authorships, topics) — plus de
-    `referenced_works` (hors périmètre) ni d'entité `authors` (le work est auto-suffisant)."""
+    Le brut est le **Parquet** OpenAlex (ADR 0105). L'EXISTENCE des colonnes consommées en aval
+    (id, publication_year, title, authorships, topics) est vérifiée par ``check_raw`` sur le
+    SCHÉMA Parquet (``DESCRIBE``, sans charger de données) — matérialiser ``authorships``/
+    ``topics`` (structs lourds) en pandas faisait OOM le pod (drift prod 2026-07-06). Cette suite
+    ne porte donc plus que les attentes de VALEUR, sur la seule colonne légère ``id`` : non-nul,
+    format OpenAlex, table non vide."""
     return [
         gxe.ExpectColumnToExist(column="id"),
-        gxe.ExpectColumnToExist(column="publication_year"),
-        gxe.ExpectColumnToExist(column="title"),
-        gxe.ExpectColumnToExist(column="authorships"),
-        gxe.ExpectColumnToExist(column="topics"),
         gxe.ExpectColumnValuesToNotBeNull(column="id"),
         gxe.ExpectColumnValuesToMatchRegex(column="id", regex=_WORK_ID_RE),
         gxe.ExpectTableRowCountToBeBetween(min_value=1),
