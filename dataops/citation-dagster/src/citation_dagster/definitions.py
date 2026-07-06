@@ -128,7 +128,7 @@ _DNS_NDOTS_1 = {"dns_config": {"options": [{"name": "ndots", "value": "1"}]}}
 # (memory_limit, cf. lakehouse.connect / profiles.yml) et déborde ses tris/jointures dans
 # `temp_directory` — sans disque monté, ce spilling écrirait dans l'overlay du conteneur
 # (petit, peu perf). On monte un emptyDir dédié (`/tmp/duckdb-spill`, = DBT_DUCKDB_TEMP_DIR)
-# → gros modèles curated (ex. curated_edges : DISTINCT+ORDER BY sur ~8M arêtes) débordent sur
+# → un tri/jointure volumineux (ex. self-join de co-autorat, agrégats uplift) déborde sur
 # disque au lieu d'OOM-killer le pod. emptyDir = éphémère par run (nettoyé à la fin), taille
 # bornée par l'espace du nœud (kubelet évince si dépassement — accepté : le spill est
 # transitoire). `medium: ""` = disque du nœud (pas la RAM ; `Memory` compterait dans la RAM).
@@ -256,8 +256,8 @@ _assets = [
 _jobs = [ingestion_job]
 
 # Asset checks Great Expectations bloquants (étape 3.5a). Le check du brut s'applique
-# à raw_snapshot (toujours présent) ; ceux des couches dbt (curated_edges,
-# marts_collab_pairs) ne sont enregistrés QUE si les assets dbt existent — sinon leur
+# à raw_snapshot (toujours présent) ; ceux des couches dbt (marts_collab_pairs,
+# marts_researchers) ne sont enregistrés QUE si les assets dbt existent — sinon leur
 # clé cible n'est pas résolue en mode dégradé (dbt indisponible : lint/checkout neuf).
 # ge_researcher_vectors cible l'asset PYTHON researcher_embeddings (toujours enregistré)
 # → INCONDITIONNEL (ne pas copier le pattern conditionnel-dbt, sinon le check du vecteur
