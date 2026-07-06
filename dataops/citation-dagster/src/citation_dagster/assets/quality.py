@@ -4,7 +4,7 @@ Trois *asset checks* Dagster en **porte de qualité bloquante** (``blocking=True
 un échec d'attente fait échouer le run et empêche l'aval (p. ex. l'écriture du
 manifest sentinelle après le mart). Ils s'appliquent à trois couches :
 
-- ``ge_raw_contract`` sur ``raw_snapshot`` — le brut JSONL.gz (aucun test dbt ici) ;
+- ``ge_raw_contract`` sur ``raw_snapshot`` — le brut Parquet works (aucun test dbt ici) ;
 - ``ge_curated_edges`` sur ``curated_edges`` — format des ids + pas d'auto-citation ;
 - ``ge_marts_collab`` sur ``marts_collab_pairs`` — contrat de colonnes + bornes.
 
@@ -76,36 +76,34 @@ def _result(passed: bool, metadata: dict) -> AssetCheckResult:
 # ── Corps purs (chargement + validation), testables sans Dagster ─────────────
 
 
-# Nombre de fichiers .gz échantillonnés par entité pour le contrat de FORME du brut.
+# Nombre de fichiers .parquet works échantillonnés pour le contrat de FORME du brut.
 # Borne de contrat (valeur-exemple stable, ADR 0023) — dérivable de l'env : le banc peut
-# la baisser, la prod l'ajuster. `raw/` est append-only cumulatif (chaque ingestion empile
-# des .gz jamais purgés) → sans borne, check_raw matérialiserait TOUT le lac (261k fichiers
-# post-ingestion complète, des milliards de lignes) et gèlerait (~10-19 s/fichier ; le run
-# timeoute à ~73s et httpfs déguise le timeout HTTP en « Could not resolve hostname » — ce
-# n'est PAS un bug DNS, cf. drift + audit ndots). curated/marts ne sont PAS concernés : ils
-# lisent le Parquet du `run={run_id}` courant, borné par nature.
-# Défaut 4 : chaque .gz OpenAlex ≈ 150-290k lignes → 4 fichiers ≈ 1,4M lignes réparties sur
-# 4 partitions updated_date, largement assez pour un contrat de forme, en ~60 s (le format
-# est un invariant homogène). PROUVÉ sur le RGW prod : works 725k lignes/41s + authors
-# 751k/19s, 0 id mal formé, sans OOM. Ne PAS remonter sans raison — un asset check BLOQUANT
-# ne doit pas prendre des minutes×N.
+# la baisser, la prod l'ajuster. `raw/works/` est append-only cumulatif (chaque ingestion
+# empile des .parquet jamais purgés, ~2446 fichiers au snapshot complet) → sans borne,
+# check_raw listerait tout le lac. Avec le Parquet colonnaire, la lecture d'un échantillon
+# est légère (projection au footer, jamais le corps des colonnes lourdes) : plus l'ancien
+# risque OOM/timeout du read_json de forme sur le .gz (déguisé en « Could not resolve
+# hostname » par httpfs — PAS un bug DNS, drifts L74/L77). curated/marts lisent le Parquet
+# du `run={run_id}` courant, bornés par nature.
+# Défaut 4 : chaque .parquet works OpenAlex ≈ 10⁵–10⁶ lignes → 4 fichiers répartis sur 4
+# partitions updated_date, largement assez pour un contrat de forme homogène. Ne PAS
+# remonter sans raison — un asset check BLOQUANT ne doit pas prendre des minutes×N.
 _RAW_SAMPLE_FILES = int(os.environ.get("CITATION_GE_RAW_SAMPLE_FILES", "4"))
 
 
 def _sample_raw_files(con, bucket: str, prefix: str, n: int) -> list[str]:
-    """Échantillon DÉTERMINISTE et RÉPARTI de N fichiers .gz d'un préfixe brut.
+    """Échantillon DÉTERMINISTE et RÉPARTI de N fichiers .parquet d'un préfixe brut.
 
     `glob()` LISTE les clés sans les LIRE (I/O = un LIST S3, pas des GET) → on borne la
-    lecture lourde en AMONT en passant une liste explicite de N fichiers à read_json_auto
-    (robuste quel que soit le pushdown du LIMIT, incertain avec union_by_name). Tri (rejeu
-    identique) puis pas régulier `files[::step]` pour COUVRIR toutes les partitions
+    lecture lourde en AMONT en passant une liste explicite de N fichiers à read_parquet.
+    Tri (rejeu identique) puis pas régulier `files[::step]` pour COUVRIR toutes les partitions
     `updated_date=…` (récentes ET anciennes), pas seulement les premières lexicographiques —
     un régresseur de format sur une partition récente reste ainsi couvert. Réserve : le glob
     s'appuie sur le listing RGW (tronqué, cf. drift index RGW) → check_raw est un contrat de
     FORME, PAS une preuve d'exhaustivité. Retombe sur la liste entière si < N fichiers."""
     rows = con.sql(
         "SELECT file FROM glob($glob) ORDER BY file",
-        params={"glob": f"s3://{bucket}/{prefix}/**/*.gz"},
+        params={"glob": f"s3://{bucket}/{prefix}/**/*.parquet"},
     ).fetchall()
     files = [r[0] for r in rows]
     if len(files) <= n:
@@ -115,7 +113,7 @@ def _sample_raw_files(con, bucket: str, prefix: str, n: int) -> list[str]:
 
 
 def check_raw(bucket: str) -> AssetCheckResult:
-    """Valide le brut works + authors (contrat structurel + format des ids).
+    """Valide le brut works Parquet (contrat structurel + format des ids).
 
     Contrat de FORME, PAS audit exhaustif : la lecture est bornée à un ÉCHANTILLON de
     fichiers (`_sample_raw_files`). La forme (colonnes présentes, ids au bon préfixe) est un
@@ -124,40 +122,23 @@ def check_raw(bucket: str) -> AssetCheckResult:
     relationships sur le staging, suites curated/marts par run)."""
     con = lakehouse.connect()
     w_files = _sample_raw_files(con, bucket, "raw/works", _RAW_SAMPLE_FILES)
-    a_files = _sample_raw_files(con, bucket, "raw/authors", _RAW_SAMPLE_FILES)
-    # `read_json` + `columns={}` EXPLICITES (pas read_json_auto) : on impose le type des SEULES
-    # colonnes que les suites GE valident (raw_works → id/referenced_works/authorships ;
-    # raw_authors → id). Décisif sur le brut OpenAlex réel : read_json_auto INFÈRE et parse le
-    # JSON complet de chaque work (abstract_inverted_index imbriqué, ~200k works/fichier) →
-    # explosion mémoire (OOM prouvé même sur peu de fichiers) ET échec « Map keys must be
-    # unique ». En figeant les colonnes, DuckDB ne parse QUE ces 3 champs (referenced_works/
-    # authorships en JSON opaque, non matérialisé) : lecture légère et bornée. `ignore_errors`
-    # tolère une ligne malformée isolée. La liste de fichiers passe en bind ($files) →
-    # read_json accepte une LISTE. Mesuré sur le RGW prod (N=4) : works 725k lignes/41s +
-    # authors 751k/19s, 0 id mal formé, sans OOM (cf. audit ge_raw_contract non-scalable).
+    # `read_parquet` en PROJECTION colonnaire : DuckDB ne lit QUE les colonnes du contrat GE
+    # depuis le footer (jamais abstract_inverted_index ni referenced_works). C'est ce qui
+    # remplace l'ancien read_json(columns={}) sur le .gz — le Parquet est nativement projeté,
+    # sans parse de forme du JSON imbriqué (qui faisait OOM + « Map keys must be unique »,
+    # drift L77 : abstract_inverted_index auto-détecté, clé dupliquée). La liste passe en bind.
     works = con.sql(
-        "SELECT id, referenced_works, authorships FROM read_json($files, "
-        "columns={'id': 'VARCHAR', 'referenced_works': 'JSON', 'authorships': 'JSON'}, "
-        "format='newline_delimited', hive_partitioning=false, ignore_errors=true)",
+        "SELECT id, publication_year, title, authorships, topics FROM read_parquet($files)",
         params={"files": w_files},
     ).df()
-    authors = con.sql(
-        "SELECT id FROM read_json($files, columns={'id': 'VARCHAR'}, "
-        "format='newline_delimited', hive_partitioning=false, ignore_errors=true)",
-        params={"files": a_files},
-    ).df()
     ok_w, meta_w = ge_suites.validate_df(works, "raw_works", ge_suites.raw_works_expectations())
-    ok_a, meta_a = ge_suites.validate_df(
-        authors, "raw_authors", ge_suites.raw_authors_expectations()
-    )
-    failed = meta_w["failed"] + meta_a["failed"]
     return _result(
-        ok_w and ok_a,
+        ok_w,
         {
-            "suite": "raw_works+raw_authors",
-            "evaluated": meta_w["evaluated"] + meta_a["evaluated"],
-            "failed": failed,
-            "sampled_files": len(w_files) + len(a_files),
+            "suite": "raw_works",
+            "evaluated": meta_w["evaluated"],
+            "failed": meta_w["failed"],
+            "sampled_files": len(w_files),
         },
     )
 

@@ -45,39 +45,28 @@ class _FakeRel:
 class _FakeCon:
     """Connexion DuckDB factice : renvoie un DataFrame selon le contenu du SELECT.
 
-    Distingue works / authors / autre via une sous-chaîne de la requête. ``check_raw``
-    échantillonne : il fait d'abord un ``glob(...)`` (identifié par le param ``glob`` qui
-    porte ``raw/works``/``raw/authors``) puis un ``read_json_auto($files)`` (identifié par
-    le param ``files`` = la liste échantillonnée). On route sur ces deux paramètres.
-    """
+    ``check_raw`` (works-only, ADR 0105) échantillonne : d'abord un ``glob(...)`` (param
+    ``glob`` portant ``raw/works``), puis un ``read_parquet($files)`` (param ``files`` =
+    liste échantillonnée). On route sur ces deux paramètres."""
 
-    def __init__(self, df, works=None, authors=None):
+    def __init__(self, df, works=None):
         self._df = df
         self._works = works
-        self._authors = authors
 
     def sql(self, query, params=None):
         params = params or {}
-        glob = params.get("glob", "")
-        files = params.get("files", [])
-        # 1) glob() de l'échantillonneur : renvoie des fichiers factices (déterministes).
+        # 1) glob() de l'échantillonneur : renvoie des fichiers .parquet factices.
         if "glob(" in query:
-            entity = "works" if "raw/works" in glob else "authors"
-            rows = [(f"s3://b/raw/{entity}/part_{i:04d}.gz",) for i in range(3)]
+            rows = [(f"s3://b/raw/works/part_{i:04d}.parquet",) for i in range(3)]
             return _FakeRel(None, rows=rows)
-        # 2) read_json_auto($files) : route works/authors via le contenu de la liste bindée.
-        joined = " ".join(files) if isinstance(files, list) else str(files)
-        if self._works is not None and ("raw/works" in query or "raw/works" in joined):
+        # 2) read_parquet($files) : le brut works.
+        if self._works is not None:
             return _FakeRel(self._works)
-        if self._authors is not None and ("raw/authors" in query or "raw/authors" in joined):
-            return _FakeRel(self._authors)
         return _FakeRel(self._df)
 
 
-def _patch_loader(monkeypatch, df=None, works=None, authors=None):
-    monkeypatch.setattr(
-        q.lakehouse, "connect", lambda cfg=None: _FakeCon(df, works=works, authors=authors)
-    )
+def _patch_loader(monkeypatch, df=None, works=None):
+    monkeypatch.setattr(q.lakehouse, "connect", lambda cfg=None: _FakeCon(df, works=works))
 
 
 # ── Corps purs (loader monkeypatché) ─────────────────────────────────────────
@@ -187,17 +176,26 @@ def test_check_curated_edges_passes(monkeypatch):
     assert q.check_curated_edges("citation", "run1").passed is True
 
 
-def test_check_raw_passes(monkeypatch):
-    works = pd.DataFrame(
-        {"id": ["https://openalex.org/W1"], "referenced_works": [[]], "authorships": [[]]}
+def _raw_works_df(work_id="https://openalex.org/W1"):
+    """DataFrame works au schéma Parquet du contrat GE (ADR 0105)."""
+    return pd.DataFrame(
+        {
+            "id": [work_id],
+            "publication_year": [2018],
+            "title": ["T"],
+            "authorships": [[]],
+            "topics": [[]],
+        }
     )
-    authors = pd.DataFrame({"id": ["https://openalex.org/A1"]})
-    _patch_loader(monkeypatch, works=works, authors=authors)
+
+
+def test_check_raw_passes(monkeypatch):
+    _patch_loader(monkeypatch, works=_raw_works_df())
     assert q.check_raw("citation").passed is True
 
 
 def _raw_key(i):
-    return f"s3://b/raw/works/updated_date=2020-{i:02d}-01/part.gz"
+    return f"s3://b/raw/works/updated_date=2020-{i:02d}-01/part.parquet"
 
 
 class _GlobCon:
@@ -225,12 +223,9 @@ def test_sample_raw_files_is_bounded_deterministic_and_spread():
     assert int(s1[-1].split("2020-")[1][:2]) >= 20
 
 
-def test_check_raw_fails_on_bad_author_id(monkeypatch):
-    works = pd.DataFrame(
-        {"id": ["https://openalex.org/W1"], "referenced_works": [[]], "authorships": [[]]}
-    )
-    bad_authors = pd.DataFrame({"id": ["https://openalex.org/W9"]})  # W au lieu de A
-    _patch_loader(monkeypatch, works=works, authors=bad_authors)
+def test_check_raw_fails_on_bad_work_id(monkeypatch):
+    # id au mauvais préfixe (A au lieu de W) → le contrat de forme échoue.
+    _patch_loader(monkeypatch, works=_raw_works_df("https://openalex.org/A9"))
     assert q.check_raw("citation").passed is False
 
 

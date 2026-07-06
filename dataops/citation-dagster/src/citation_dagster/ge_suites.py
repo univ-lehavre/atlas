@@ -33,7 +33,6 @@ os.environ.setdefault("GX_ANALYTICS_ENABLED", "false")
 
 # Format d'id OpenAlex (en prose la marque est tolérée ; ici c'est le format réel).
 _WORK_ID_RE = r"^https://openalex\.org/W"
-_AUTHOR_ID_RE = r"^https://openalex\.org/A"
 
 # Borne haute de sanité pour cross_citations : un nombre absurde signalerait une
 # explosion de jointure (pas une vraie collaboration). Large mais fini.
@@ -53,23 +52,19 @@ _WEIGHT_MAX = 1_000_000.0
 
 
 def raw_works_expectations() -> list:
-    """Contrat structurel du brut works (colonnes consommées par le staging + format id)."""
+    """Contrat structurel du brut works Parquet (colonnes consommées en aval + format id).
+
+    Le brut est désormais le **Parquet** OpenAlex (ADR 0105) : on valide les colonnes que
+    le mart EUNICoast projette (id, publication_year, title, authorships, topics) — plus de
+    `referenced_works` (hors périmètre) ni d'entité `authors` (le work est auto-suffisant)."""
     return [
         gxe.ExpectColumnToExist(column="id"),
-        gxe.ExpectColumnToExist(column="referenced_works"),
+        gxe.ExpectColumnToExist(column="publication_year"),
+        gxe.ExpectColumnToExist(column="title"),
         gxe.ExpectColumnToExist(column="authorships"),
+        gxe.ExpectColumnToExist(column="topics"),
         gxe.ExpectColumnValuesToNotBeNull(column="id"),
         gxe.ExpectColumnValuesToMatchRegex(column="id", regex=_WORK_ID_RE),
-        gxe.ExpectTableRowCountToBeBetween(min_value=1),
-    ]
-
-
-def raw_authors_expectations() -> list:
-    """Contrat structurel du brut authors (id présent + format)."""
-    return [
-        gxe.ExpectColumnToExist(column="id"),
-        gxe.ExpectColumnValuesToNotBeNull(column="id"),
-        gxe.ExpectColumnValuesToMatchRegex(column="id", regex=_AUTHOR_ID_RE),
         gxe.ExpectTableRowCountToBeBetween(min_value=1),
     ]
 
