@@ -117,7 +117,8 @@
   },
   "ignoreWorkspaces": [
     "dataops/citation-dagster",
-    "dataops/mediawatch-dagster"
+    "dataops/mediawatch-dagster",
+    "dataops/pageviews-dagster"
   ],
   "ignoreDependencies": [
     "@univ-lehavre/atlas-shared-config",
