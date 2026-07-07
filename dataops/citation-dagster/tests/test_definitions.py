@@ -72,14 +72,19 @@ def test_run_pod_mounts_duckdb_spill_volume():
 
 def test_run_pod_declares_resources_coherent_with_duckdb():
     # Le pod de run RÉSERVE des resources cohérentes avec DuckDB (fin du BestEffort qui OOMait).
-    # Invariant CRITIQUE : la limite mémoire pod (28Gi) doit être > memory_limit DuckDB (24GB)
-    # → DuckDB spille sur disque AVANT que le cgroup ne tue le pod.
+    # Invariant CRITIQUE : la limite mémoire pod (56Gi) doit être > memory_limit DuckDB (24GB)
+    # → DuckDB spille sur disque AVANT que le cgroup ne tue le pod. L'ÉCART (pod − DuckDB) est la
+    # RAM hors-DuckDB des assets numpy purs (pair_uplift_model) : portée à 56Gi (drift L91) car
+    # 28Gi ne laissait que ~4Gi, insuffisant pour le pic ~10Gi à l'échelle réelle (242k auteurs).
     for cfg in (_RUN_K8S_CONFIG, _TRANSFORM_K8S_CONFIG):
         res = cfg["dagster-k8s/config"]["container_config"]["resources"]
         assert res["requests"]["cpu"] and res["requests"]["memory"]
         assert res["limits"]["cpu"] == "32"  # = threads DuckDB (ADR 0094 : lots ~5M works)
-        # 28Gi (limit pod) > 24GB (memory_limit DuckDB) : le spill précède l'OOM cgroup.
-        assert res["limits"]["memory"] == "28Gi"
+        assert res["limits"]["memory"] == "56Gi"
+        # Invariant robuste : la limite pod (Gi) DOIT dépasser le memory_limit DuckDB (24 GB) pour
+        # que le spill précède l'OOM cgroup — quelle que soit la valeur exacte.
+        pod_gib = int(res["limits"]["memory"].removesuffix("Gi"))
+        assert pod_gib * 2**30 > 24 * 10**9
 
 
 def test_defs_exposes_raw_snapshot_asset():

@@ -148,12 +148,20 @@ _SPILL_MOUNT = {"name": "duckdb-spill", "mount_path": "/tmp/duckdb-spill"}
 # L'aval dbt (~70k works) est petit. On n'a donc plus besoin de réserver 60 cœurs / 72Gi au
 # repos : 32 cœurs / 28Gi couvrent largement un lot, en gardant le spilling comme filet.
 # Dérivable par l'env (ADR 0023) : le banc léger baisse encore.
-# NB CRITIQUE : le memory_limit DuckDB (24GB ≈ 25,8Gi) reste SOUS la limite pod (28Gi) → DuckDB
-# spille sur disque AVANT que le cgroup ne tue le pod (l'ordre est essentiel : sinon OOM avant
-# spill). L'écart (28Gi − 24GB) absorbe la RAM hors-DuckDB (pandas/arrow des assets Python).
+# NB CRITIQUE : le memory_limit DuckDB (24GB ≈ 25,8Gi) reste SOUS la limite pod → DuckDB spille
+# sur disque AVANT que le cgroup ne tue le pod (l'ordre est essentiel : sinon OOM avant spill).
+# L'écart (limite pod − 24GB) absorbe la RAM HORS-DuckDB des assets Python (numpy/pandas/arrow).
+#
+# Limite portée à 56Gi (drift L91) : l'écart de 4Gi (ancien 28Gi) était calibré pour les GE
+# checks (pandas .df()), pas pour l'asset pair_uplift_model. À l'échelle prod réelle (242k
+# auteurs profilés, ~12M paires candidates kNN), son travail NUMPY PUR (matrice cosinus kNN,
+# vecteurs thématique/embedding, features par lot) a un pic de ~10Gi qui coexiste avec la
+# réservation DuckDB de 24GB → OOMKill sous 28Gi, malgré le kNN (L89) et le batch (L90). 56Gi
+# laisse ~30Gi hors-DuckDB, très au-dessus du pic, tout en gardant DuckDB sous la limite (spill
+# préservé). Les nœuds dirqual ont 256Gi : large marge. Dérivable par l'env (ADR 0023).
 _RUN_RESOURCES = {
     "requests": {"cpu": "8", "memory": "8Gi"},
-    "limits": {"cpu": "32", "memory": "28Gi"},
+    "limits": {"cpu": "32", "memory": "56Gi"},
 }
 
 
