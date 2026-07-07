@@ -28,6 +28,12 @@ _EMBEDDINGS_SUBDIR = "marts/researcher_vectors"
 _PREDICTIONS_SUBDIR = "marts/pair_uplift_predictions"
 _RECOMMENDATIONS_SUBDIR = "marts/author_recommendations"
 _TOP_N = 10
+# Taille de lot pour le scoring des paires candidates (drift L90) : on ne matérialise les
+# features (~1,3k floats/paire) que pour ce nombre de paires à la fois, jamais toutes d'un
+# coup (des millions de paires → matrice de dizaines de Go → OOM). 200k paires ≈ ~2 Go de
+# features transitoires, largement sous la limite du pod. Sans effet sur le résultat (predict
+# sans état) ni au petit N (un seul lot).
+_PREDICT_BATCH = 200_000
 
 
 def _lineage_io() -> tuple[list, list]:
@@ -118,8 +124,12 @@ def _predict_knn_pairs(model, vecs: dict, emb_vecs: dict, emb_dim: int):
     ENRICHIT les FEATURES de chaque paire candidate (``pair_features_combined``), sans piloter
     le voisinage. Vecteurs subfields déjà L2-normalisés → cosinus = produit scalaire.
 
-    ``model.predict`` est appelé UNE fois sur la matrice de toutes les features candidates
-    (batché) — même résultat numérique que N appels unitaires, sans le coût par paire.
+    ``model.predict`` est appelé PAR LOTS de paires candidates : les features ne sont
+    matérialisées QUE pour le lot courant, jamais la matrice complète. À l'échelle réelle
+    (~N·k ≈ plusieurs millions de paires × ~1,3k floats de features), un unique
+    ``np.stack`` de TOUTES les features pèserait des dizaines de Go → OOM (drift L90, même
+    si le kNN a déjà borné le NOMBRE de paires, L89). Le lotissement borne la RAM à
+    ``_PREDICT_BATCH`` paires ; résultat numérique identique (predict est sans état).
     """
     authors = sorted(vecs)  # tous les auteurs profilés (l'ordre trié fige a < b)
     if len(authors) < 2:
@@ -128,23 +138,27 @@ def _predict_knn_pairs(model, vecs: dict, emb_vecs: dict, emb_dim: int):
     index_pairs = uplift_model.knn_candidate_pairs(thematic)
     if not index_pairs:
         return []
-    feats = np.stack(
-        [
-            uplift_model.pair_features_combined(
-                vecs[authors[i]],
-                vecs[authors[j]],
-                emb_vecs.get(authors[i]),
-                emb_vecs.get(authors[j]),
-                emb_dim,
-            )
-            for i, j in index_pairs
-        ]
-    )
-    scores = model.predict(feats)  # batché
-    return [
-        (authors[i], authors[j], float(score))
-        for (i, j), score in zip(index_pairs, scores, strict=True)
-    ]
+    predicted = []
+    for start in range(0, len(index_pairs), _PREDICT_BATCH):
+        chunk = index_pairs[start : start + _PREDICT_BATCH]
+        feats = np.stack(
+            [
+                uplift_model.pair_features_combined(
+                    vecs[authors[i]],
+                    vecs[authors[j]],
+                    emb_vecs.get(authors[i]),
+                    emb_vecs.get(authors[j]),
+                    emb_dim,
+                )
+                for i, j in chunk
+            ]
+        )
+        scores = model.predict(feats)  # batché SUR LE LOT
+        predicted.extend(
+            (authors[i], authors[j], float(score))
+            for (i, j), score in zip(chunk, scores, strict=True)
+        )
+    return predicted
 
 
 def _write_predictions(rows: list[dict], bucket: str, run_id: str) -> None:

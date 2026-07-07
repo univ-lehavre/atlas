@@ -107,6 +107,20 @@ def test_asset_serves_predictive_on_signal(monkeypatch) -> None:
     assert result.metadata["embedding_coverage"].value == 0.0
 
 
+def test_asset_predict_is_batched_and_stable(monkeypatch) -> None:
+    # drift L90 : le scoring des paires candidates est LOTI (features matérialisées par lot,
+    # jamais toutes d'un coup → borne la RAM). On force un lot minuscule (2 paires) pour
+    # emprunter le chemin multi-lots, et on vérifie que le résultat est IDENTIQUE au cas
+    # 1-lot (mêmes 780 paires servies, aucune perdue ni dupliquée à la frontière des lots).
+    monkeypatch.setattr(mod, "_PREDICT_BATCH", 2)
+    profiles, labels = _signal_data(40)
+    con = _FakeCon(profiles, labels)
+    _patch(monkeypatch, con)
+    result = mod.pair_uplift_model(build_asset_context())
+    assert result.metadata["served_mode"].text == "predictive"
+    assert result.metadata["pairs_served"].value == 780  # 780 = C(40,2), indépendant du lot
+
+
 def test_asset_uses_embedding_family_when_available(monkeypatch) -> None:
     # Avec un mart researcher_vectors servi, la 2ᵉ famille de features est branchée :
     # la couverture embedding reflète les auteurs profilés disposant d'un vecteur. Les
