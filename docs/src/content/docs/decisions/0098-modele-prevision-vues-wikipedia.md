@@ -16,7 +16,7 @@ causale nette). On **réduit l'ambition** à une tâche mieux posée et directem
 **prévoir** le volume de vues à horizon **1 mois, 3 mois, 1 an**.
 
 Le dépôt a déjà un **patron maison** de modèle de prévision de série temporelle dans un
-pipeline DataOps : `mediawatch` ([ADR 0081](/atlas/decisions/0081-modele-prevision-volume-articles-mediawatch.md))
+pipeline DataOps : `mediawatch` ([ADR 0081](/atlas/decisions/0081-modele-prevision-volume-articles-mediawatch/))
 prévoit le volume d'articles de presse par université. On **réplique ce patron** —
 module pur, asset Dagster, validation honnête, porte de décision prédictif/descriptif,
 suivi MLflow, drift Evidently, contrat Parquet + manifest — en l'adaptant à notre série.

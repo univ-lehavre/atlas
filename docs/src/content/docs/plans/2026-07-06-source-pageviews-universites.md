@@ -76,7 +76,7 @@ de la Phase 2 alimente directement le modèle.
 
 ## Phase 4 — Modèle de PRÉVISION (ADR 0098)
 
-Aligné sur le patron mediawatch ([ADR 0081](/atlas/decisions/0081-modele-prevision-volume-articles-mediawatch.md)),
+Aligné sur le patron mediawatch ([ADR 0081](/atlas/decisions/0081-modele-prevision-volume-articles-mediawatch/)),
 implémenté dans `dataops/pageviews-dagster/src/pageviews_dagster/forecast_model.py` :
 
 - **Un modèle GLOBAL** `HistGradientBoostingRegressor` (établissement en feature
