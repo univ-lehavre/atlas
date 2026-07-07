@@ -219,3 +219,38 @@ def test_train_final_predicts() -> None:
     # Le modèle entraîné prédit un réel par paire (forme attendue).
     pred = model.predict(ds.X[:3])
     assert pred.shape == (3,)
+
+
+def _unit_rows(n, d, rng):
+    """n vecteurs (d) L2-normalisés (contrat d'entrée de knn_candidate_pairs)."""
+    m = rng.random((n, d))
+    return m / np.linalg.norm(m, axis=1, keepdims=True)
+
+
+def test_knn_candidate_pairs_degenerates_to_all_pairs_when_k_ge_n() -> None:
+    # k ≥ N-1 → chaque ligne voisine toutes les autres → union = TOUTES les paires C(N,2).
+    # (préserve le comportement historique "toutes les paires" au petit N, ex. tests d'asset).
+    pairs = um.knn_candidate_pairs(_unit_rows(6, 4, _rng()), k=50)
+    assert len(pairs) == 6 * 5 // 2  # C(6,2) = 15
+    assert all(i < j for i, j in pairs)  # invariant (i < j), non orienté
+    assert len(pairs) == len(set(pairs))  # dédupliqué
+
+
+def test_knn_candidate_pairs_bounded_by_k_at_scale() -> None:
+    # À grand N, le nombre de paires est borné par ~N*k (≪ N²) — c'est tout l'objet du fix L89.
+    rng = _rng()
+    n, k = 400, 5
+    pairs = um.knn_candidate_pairs(_unit_rows(n, 8, rng), k=k, block=64)
+    assert len(pairs) <= n * k  # union symétrisée, borne haute
+    assert len(pairs) < n * (n - 1) // 2  # STRICTEMENT moins que toutes les paires
+    assert all(i < j for i, j in pairs) and len(pairs) == len(set(pairs))
+
+
+def test_knn_candidate_pairs_picks_nearest() -> None:
+    # 3 vecteurs : 0 et 1 quasi colinéaires (voisins), 2 orthogonal. k=1 → la paire (0,1)
+    # doit sortir ; (0,2) non (2 n'est le plus proche de personne ; 0 et 1 se choisissent).
+    vecs = np.array([[1.0, 0.0], [0.9987, 0.0500], [0.0, 1.0]])
+    vecs = vecs / np.linalg.norm(vecs, axis=1, keepdims=True)
+    pairs = um.knn_candidate_pairs(vecs, k=1)
+    assert (0, 1) in pairs
+    assert (0, 2) not in pairs

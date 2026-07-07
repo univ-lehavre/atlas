@@ -109,6 +109,49 @@ def pair_features_combined(
     return np.concatenate([feat_sub, [has_emb], feat_emb])
 
 
+# Génération de candidats par plus-proches-voisins (kNN) (ADR 0067 §candidats, drift L89).
+# DÉFAUT : k voisins par ligne. Scorer TOUTES les paires (a<b) est O(N²) — à l'échelle réelle
+# (~90k auteurs profilés) ce sont ~4 milliards de paires, intractables en RAM/temps (OOM prod).
+# On restreint aux candidats pertinents : les k plus proches voisins de chaque auteur (cosinus),
+# l'union symétrisée. ~N×k paires. La MATRICE d'entrée est fournie par l'appelant (vecteur
+# thématique subfields chez pair_uplift_model) ; la fonction reste agnostique de sa nature.
+KNN_DEFAULT = 50
+
+
+def knn_candidate_pairs(
+    vectors: np.ndarray, k: int = KNN_DEFAULT, block: int = 2048
+) -> list[tuple[int, int]]:
+    """Paires candidates (i < j) = union des k plus proches voisins cosinus de chaque ligne.
+
+    ``vectors`` : matrice (M, D) de vecteurs **déjà L2-normalisés** → la similarité cosinus
+    est le simple produit scalaire ``V @ V.T``. On CALCULE par blocs de lignes (jamais la
+    matrice M×M complète : à M=90k elle ferait ~30 Go) : pour chaque bloc, top-k par
+    ``argpartition`` (O(M) par ligne, pas de tri complet), self exclu. Renvoie des INDICES de
+    lignes, dédupliqués sur ``(min, max)`` — chaque paire non orientée une seule fois
+    (invariant attendu par ``top_recommendations`` et l'écriture Parquet).
+
+    Le voisinage kNN n'est pas symétrique (b ∈ voisins(a) n'implique pas a ∈ voisins(b)) ;
+    l'union des deux sens garantit qu'un auteur reçoit des candidats des DEUX côtés. Prendre
+    ``k ≥ TOP_N`` assure assez de partenaires pour remplir les recommandations top-N.
+    """
+    m = vectors.shape[0]
+    if m < 2:
+        return []
+    kk = min(k, m - 1)
+    pairs: set[tuple[int, int]] = set()
+    for start in range(0, m, block):
+        sims = vectors[start : start + block] @ vectors.T  # (b, M), cosinus
+        for local_i, row in enumerate(sims):
+            i = start + local_i
+            row[i] = -np.inf  # jamais soi-même
+            neighbors = np.argpartition(row, -kk)[-kk:]
+            for j in neighbors:
+                j = int(j)
+                if i != j:
+                    pairs.add((i, j) if i < j else (j, i))
+    return sorted(pairs)
+
+
 @dataclass(frozen=True)
 class Dataset:
     """Matrice de features X, cible y (uplift), et groupes (auteurs) pour le split."""
