@@ -1,13 +1,24 @@
 ---
-title: "Plan — source pageviews universités + modèle explicatif du trafic"
+title: "Plan — source pageviews universités + modèle de prévision des vues"
 ---
 
+> **Pivot (2026-07-07) — le modèle a changé.** L'ambition explicative causale de
+> l'[ADR 0096](/atlas/decisions/0096-modele-explicatif-trafic-universites/) (panel à
+> effets fixes, features de page, conseiller les leviers) a été **abandonnée** au
+> profit d'une **prévision** des vues à horizons 1 / 3 / 12 mois
+> ([ADR 0098](/atlas/decisions/0098-modele-prevision-vues-wikipedia/), supersede 0096,
+> alignée sur le patron mediawatch [ADR 0081]). Conséquences sur ce plan :
+> **la Phase 3 (features de page) devient caduque** (la prévision se fait sur
+> l'historique des vues, pas sur des features de page), **la Phase 4 est remplacée**
+> par le modèle de prévision. Les Phases 0-2 (référentiel, vues, redirections)
+> restent valables. Le package `dataops/pageviews-dagster` + `pageviews-dbt`
+> implémente ce périmètre révisé.
+
 Ce plan opérationnalise l'[ADR 0095](/atlas/decisions/0095-source-pageviews-universites/)
-(source dataops) et l'[ADR 0096](/atlas/decisions/0096-modele-explicatif-trafic-universites/)
-(modèle). Le code vit dans `dataops/` (Python natif : uv/ruff/pytest, hors graphe
-pnpm — [ADR 0055](/atlas/decisions/0055-categorie-dataops-python/)). Toutes les
-briques ci-dessous reposent sur un POC vérifié sur les API/données publiques
-(juillet 2026).
+(source dataops) et l'[ADR 0098](/atlas/decisions/0098-modele-prevision-vues-wikipedia/)
+(modèle de prévision). Le code vit dans `dataops/` (Python natif : uv/ruff/pytest, hors
+graphe pnpm — [ADR 0055](/atlas/decisions/0055-categorie-dataops-python/)). Les briques
+ci-dessous reposent sur un POC vérifié sur les API/données publiques (juillet 2026).
 
 ## Phase 0 — Cadrage & couverture réelle (avant tout code de prod)
 
@@ -55,27 +66,32 @@ n_langues)` + table `titres(ror, lang, title)`.
 - **GE** : unicité `(ror, lang, month)` ; `views ≥ 0` ; `month` dans la plage ;
   intégrité référentielle `ror` ∈ dimension.
 
-## Phase 3 — Features de page (pour le modèle)
+## Phase 3 — ~~Features de page~~ (CADUQUE, pivot ADR 0098)
 
-- Par `(ror, lang)` : longueur (mots + octets), liens sortants, liens entrants
-  (backlinks), images, sections, références, statut qualité. Source : **dumps
-  `pagelinks` + `page`** à l'échelle (API MediaWiki réservée au POC/rattrapage).
-- **Snapshoter les features par run** (bimensuel) → permet la version
-  _within-page_ du modèle (ADR 0096).
-- Produire `features_page(ror, lang, snapshot_date, longueur, liens_out,
-backlinks, images, sections, refs, qualite)`.
-- **GE** : compteurs `≥ 0` ; `snapshot_date` valide.
+**Supprimée.** Le modèle de prévision ([ADR 0098](/atlas/decisions/0098-modele-prevision-vues-wikipedia/))
+s'appuie sur l'**historique des vues** (auto-régression, saisonnalité), pas sur des
+features de page. La collecte MediaWiki (longueur, liens, images) et la version
+within-page ne sont plus au périmètre. Le mart timeline `(university_id, month, views)`
+de la Phase 2 alimente directement le modèle.
 
-## Phase 4 — Modèle explicatif (ADR 0096)
+## Phase 4 — Modèle de PRÉVISION (ADR 0098)
 
-- Assembler le **panel** page × mois : cible (vues dé-saisonnalisées) × features
-  (décalées) × contrôles (`n_langues`, `works_count`, pays).
-- Estimer le **panel à effets fixes** (établissement + langue + temps) +
-  saisonnalité par hémisphère.
-- Séparer explicitement **leviers** et **contrôles** dans les sorties.
-- Restitution : pour un établissement, ses pages **sous-performantes vs leurs
-  pairs** (résidu) + pistes actionnables, **avec incertitude et avertissement**
-  (associations conditionnelles, pas garanties).
+Aligné sur le patron mediawatch ([ADR 0081](/atlas/decisions/0081-modele-prevision-volume-articles-mediawatch/)),
+implémenté dans `dataops/pageviews-dagster/src/pageviews_dagster/forecast_model.py` :
+
+- **Un modèle GLOBAL** `HistGradientBoostingRegressor` (établissement en feature
+  catégorielle) — pas N modèles. Série **mensuelle**, saisonnalité **annuelle**.
+- **Multi-horizon direct** : horizon `h` (mois) en feature → agrégation aval en
+  fenêtres **`month_1` / `month_3` / `year_1`** (1 / 3 / 12 mois).
+- **Validation honnête** : `TimeSeriesSplit` + **embargo** sur la date cible (contrôle
+  négatif : bruit i.i.d. → mode descriptif). **Porte de décision** `R² > 0,05 ∧ MAE <
+MAE_baseline` → prédictif, sinon repli **descriptif** (baseline saisonnière).
+- **Sortie** : mart `marts/views_forecast` `(university_id, horizon_label, window_start,
+window_end, views_pred, served_mode)` + `manifest.json` atomique. Prévision ≥ 0,
+  déterminisme figé. MLflow best-effort + drift Evidently (bascule predictive→descriptive
+  bloquante).
+- **Validé** : le cœur pur tourne (predictive sur signal saisonnier, descriptive sur
+  bruit — honnête). Les assets S3 sont testés par mocking (couverture ≥ 90 %).
 
 ## Phase 5 — Industrialisation
 

@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: stg_pageviews_views
+    description: "Vues d'établissements typées/normalisées (grain mensuel dérivé)."
+    columns:
+      - name: university_id
+        description: "Identifiant d'établissement (référentiel ouvert, générique)."
+        tests:
+          - not_null
+      - name: view_date
+        description: "Date d'observation de la vue (issue du dump mensuel)."
+        tests:
+          - not_null
+      - name: view_month
+        description: "Premier jour du mois (YYYY-MM-01) ; axe de la série mensuelle."
+        tests:
+          - not_null
+      - name: views
+        description: "Compteur de vues (entier non négatif)."
+        tests:
+          - not_null

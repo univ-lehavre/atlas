@@ -2,6 +2,13 @@
 title: "0096 — Modèle explicatif du trafic Wikipédia des universités (posture associative, panel à effets fixes)"
 ---
 
+> **Statut : Superseded by [ADR 0098](/atlas/decisions/0098-modele-prevision-vues-wikipedia/)
+> (2026-07-07).** L'ambition explicative causale (conseiller les leviers) a été
+> abandonnée au profit d'une **prévision** des vues (1 / 3 / 12 mois). Le travail
+> méthodologique ci-dessous — posture « associations honnêtes », tests de robustesse
+> within-page — reste une **référence valable** documentant _pourquoi_ la voie
+> explicative n'a pas été retenue ; il n'est plus le modèle cible du pipeline.
+
 ## Contexte
 
 La source [ADR 0095] produit des séries d'audience Wikipédia par

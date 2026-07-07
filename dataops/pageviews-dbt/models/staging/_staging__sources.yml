@@ -1,0 +1,36 @@
+version: 2
+
+# Source du brut de vues projeté par l'asset `raw_pageviews` vers
+# `s3://pageviews/raw/pageviews/`. dbt-duckdb résout `meta.external_location` en un
+# reader DuckDB (`read_parquet`) ; le secret S3 du profil (path-style, depuis
+# l'environnement) s'y applique. Déclarer la source ici (plutôt qu'un `read_parquet`
+# en dur dans chaque modèle) centralise le chemin et rend le lineage source→staging
+# visible dans le manifest (Marquez, namespace lineage « pageviews »).
+#
+# Le brut est projeté depuis les SOURCES HTTP (dumps `pageview_complete` mensuels de
+# Wikimedia, API Pageviews, résolution établissement→page via SPARQL Wikidata et API
+# OpenAlex) par l'asset d'ingestion, puis normalisé en un enregistrement neutre :
+#   (university_id, view_date, views, page_title, wiki, source_dump).
+# Aucune de ces marques n'apparaît dans un IDENTIFIANT d'objet (ADR 0022/0035) ; elles
+# ne subsistent qu'en descriptif et dans la colonne libre `source_dump` (traçabilité).
+#
+# `hive_partitioning=false` : le brut est rangé sous `dt=YYYY-MM/run=<id>/`, mais ces
+# clés viennent du CHEMIN, pas du Parquet. Sans ce drapeau, DuckDB injecterait des
+# colonnes fantômes `dt`/`run`.
+#
+# PERFORMANCE : le scan est BORNÉ au mois de la partition courante (`event_month`,
+# injectée par Dagster = la partition raw_pageviews du run), pas un glob `**` qui
+# relirait TOUT l'historique. Le glob `run=*` couvre les multiples `run=` du mois
+# (re-matérialisations) ; la DÉDUPLICATION (dernier run gagne) est faite dans
+# `stg_pageviews_views`. Défaut `event_month=*` (tous les mois) pour le dev local et
+# les tests, surchargé au run réel par la période de partition.
+#
+# `raw_root` est une var (défaut `s3://pageviews/raw`, surchargée en test).
+sources:
+  - name: pageviews_raw
+    description: "Brut des vues projeté (Parquet), ingéré dans le lakehouse par raw_pageviews."
+    tables:
+      - name: views
+        description: "Vues par établissement et date : university_id, view_date, views, page_title, wiki, source_dump."
+        meta:
+          external_location: "read_parquet('{{ var('raw_root') }}/pageviews/dt={{ var('event_month', '*') }}/run=*/*.parquet', hive_partitioning=false, union_by_name=true, filename=true)"

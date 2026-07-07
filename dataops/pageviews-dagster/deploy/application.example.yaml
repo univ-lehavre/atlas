@@ -1,0 +1,44 @@
+# Application Argo CD — code-location Dagster « pageviews » (profil PROD).
+#
+# Ce que l'application FOURNIT au cluster (contrat ADR 0033) : une `Application`
+# Argo CD réconciliable sans intervention manuelle, cadrée par l'AppProject
+# `atlas` (univ-lehavre/cluster → platform/argocd/appproject-atlas.yaml, qui
+# autorise le ns `dagster`).
+#
+# Patron `*.example` (ADR 0023) : `repoURL` et `targetRevision` sont des VALEURS
+# PROPRES À UNE INSTANCE — surchargées au déploiement (config locale non
+# versionnée : kustomize patch, envsubst, ou variante ré-appliquée). On NE grave
+# jamais ici l'URL réelle d'un dépôt atlas. La forge cible est le Gitea
+# intra-banc (air-gapped, ADR 0044) ou un remote git de l'instance.
+#
+# Profil : `path` pointe l'overlay PROD (Ceph/OBC). Une instance de banc léger
+# pointe `dataops/pageviews-dagster/deploy/overlays/bench` à la place.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pageviews-dagster
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: atlas
+spec:
+  project: atlas
+  source:
+    # EXEMPLE générique — surcharger par le dépôt réel de l'instance.
+    repoURL: http://gitea-http.gitea.svc.cluster.local/atlas/atlas.git
+    targetRevision: main
+    path: dataops/pageviews-dagster/deploy/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dagster
+  syncPolicy:
+    automated:
+      # selfHeal : reconverge si quelqu'un édite le live à la main.
+      selfHeal: true
+      # prune désactivé : le ns `dagster` est un addon SOCLE partagé (orchestrateur
+      # livré par le cluster). On ne veut pas qu'Argo CD supprime des ressources
+      # du socle qu'il ne « voit » pas dans cette source ; la code-location est
+      # additive. Activer prune seulement si la source devient exhaustive du ns.
+      prune: false
+    syncOptions:
+      # Le ns `dagster` préexiste (addon socle) — ne pas le (re)créer.
+      - CreateNamespace=false

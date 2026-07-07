@@ -1,0 +1,21 @@
+# Accès S3 du lakehouse — profil BANC LÉGER (SeaweedFS, ADR cluster 0036).
+#
+# Le banc Lima léger n'a pas de Rook/OBC : le S3 est SeaweedFS, avec des creds
+# statiques génériques (ADR cluster 0023). Ce Secret fournit à la code-location
+# les variables que les assets lisent (mêmes noms que le Secret/ConfigMap d'un
+# ObjectBucketClaim, pour que le code soit identique banc ↔ prod).
+#
+# En PROD (Ceph), ce fichier est remplacé par un ObjectBucketClaim (voir
+# objectbucketclaim.yaml) : Rook génère le Secret + ConfigMap équivalents.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pageviews-s3-access
+  namespace: dagster
+type: Opaque
+stringData:
+  AWS_ACCESS_KEY_ID: seaweedadmin
+  AWS_SECRET_ACCESS_KEY: seaweedadmin-secret
+  BUCKET_HOST: seaweedfs.s3.svc.cluster.local
+  BUCKET_PORT: "8333"
+  BUCKET_NAME: pageviews

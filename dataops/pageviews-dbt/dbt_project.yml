@@ -1,0 +1,50 @@
+# Projet dbt-duckdb de la prévision des vues (ADR 0055).
+#
+# dbt produit les modèles (staging → curated → marts) ; Dagster les orchestre et
+# émet le lineage (dagster-dbt). Le backend S3 est configuré dans profiles.yml
+# (DuckDB httpfs + secret path-style depuis l'environnement). Staging = vues
+# éphémères de session `:memory:` → curated/marts = Parquet external S3.
+#
+# Pipeline : prévision des VUES Wikipédia mensuelles des établissements. Grain
+# métier : (university_id, month, views). Nommage NEUTRE « pageviews » partout ;
+# les sources HTTP (dumps Wikimedia, API Pageviews, SPARQL Wikidata, API OpenAlex)
+# ne transparaissent JAMAIS dans un identifiant d'objet (ADR 0022/0035).
+name: "pageviews"
+version: "0.0.0"
+config-version: 2
+
+profile: "pageviews"
+
+# Pas de télémétrie réseau ni d'identifiant machine généré (hermétisme, ADR 0057).
+flags:
+  send_anonymous_usage_stats: false
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+
+# Variables injectées par Dagster au run (`dbt build --vars …`). Les défauts sont
+# inertes : ils permettent `dbt parse` et le dev local de réussir sans Dagster.
+#   - curated_dt  : période de la partition curated (YYYY-MM), remplacée au run.
+#   - curated_run : identifiant de run IMMUABLE (rejeu = nouveau run=<id>), de
+#     context.run_id côté Dagster. Garantit qu'un rejeu n'écrase jamais en place.
+#   - raw_root    : racine du brut (surchargée en test vers le bucket MinIO).
+#   - marts_root  : racine du mart « servi » (contrat ADR 0029) ; surchargée en test.
+vars:
+  curated_dt: "0000-00"
+  curated_run: "dev"
+  raw_root: "s3://pageviews/raw"
+  marts_root: "s3://pageviews/marts"
+
+# Staging = vues vivant le temps de la session DuckDB `:memory:` (pas d'artefact S3
+# intermédiaire). `curated` et `marts` sont externalisés en Parquet (contrats de
+# sortie) : curated = couche réutilisable interne, marts = signal servi au modèle.
+models:
+  pageviews:
+    staging:
+      +materialized: view
+    curated:
+      +materialized: external
+    marts:
+      +materialized: external

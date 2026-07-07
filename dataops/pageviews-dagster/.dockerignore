@@ -1,0 +1,18 @@
+# Contexte de build de l'image pageviews-dagster = `dataops/` (cf. Dockerfile).
+# Le .dockerignore RACINE ne s'applique plus à ce contexte : on exclut ici les
+# artefacts locaux pour ne pas gonfler le contexte envoyé au démon Docker.
+**/.venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+**/.ruff_cache/
+**/*.egg-info/
+# Artefacts dbt régénérés au build (`dbt parse`) — jamais copiés depuis l'hôte.
+**/target/
+**/logs/
+**/*.log
+**/.user.yml
+# Tests et manifestes de déploiement : hors image (le run worker n'en a pas besoin).
+**/tests/
+pageviews-dagster/deploy/
+**/.tmp_dagster_home_*/
