@@ -310,6 +310,15 @@ if _dbt_assets:
         ),
         # index_load écrit vers Postgres → ce job a besoin du Secret pg-role-pgvector.
         tags=_TRANSFORM_K8S_CONFIG,
+        # SÉRIALISE les steps dans l'UNIQUE pod de run (K8sRunLauncher = 1 pod/run,
+        # executor multiprocess intra-pod). Sans cap, researcher_embeddings (charge les
+        # vecteurs en RAM) + les GE checks (chacun matérialise un Parquet en pandas `.df()`)
+        # s'exécutent EN PARALLÈLE et cumulent leur mémoire → OOMKill à l'échelle réelle
+        # (drift L88, constaté prod 2026-07-07 : 28Gi dépassés dès le démarrage des embeddings,
+        # alors que le dbt build était fini vert). max_concurrent=1 → chaque step lourd dispose
+        # seul de la mémoire du pod. Coût : steps séquentiels (run un peu plus long), acceptable
+        # pour un pod à mémoire bornée. Invisible au banc : échantillon trop petit pour saturer.
+        config={"execution": {"config": {"multiprocess": {"max_concurrent": 1}}}},
     )
     _jobs.append(transform_job)
 
