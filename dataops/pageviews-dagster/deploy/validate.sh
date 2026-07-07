@@ -16,7 +16,7 @@
 #      placeholders d'image digest intacts (atlas ne résout pas l'image, ADR 0075).
 #
 # NB : invariant MLFLOW présent (comme citation, contrairement à mediawatch) — pageviews
-# ENTRAÎNE un modèle de prévision des vues (ADR 0097) : sans MLFLOW_TRACKING_URI, le
+# ENTRAÎNE un modèle de prévision des vues (ADR 0098) : sans MLFLOW_TRACKING_URI, le
 # suivi de modèles + la dérive (drift/CT) tombent en no-op silencieux.
 #
 # Usage : dataops/pageviews-dagster/deploy/validate.sh  (ou `pnpm dataops:manifests`)
@@ -74,7 +74,7 @@ for o in "${overlays[@]}"; do
 
   # Invariant commun : MLFLOW_TRACKING_URI doit être injecté (sinon le suivi de
   # modèles ET la dérive/CT tombent en no-op silencieux — pageviews entraîne un
-  # modèle de prévision, ADR 0097).
+  # modèle de prévision, ADR 0098).
   if ! printf '%s' "$rendered" | grep -q 'MLFLOW_TRACKING_URI'; then
     echo "✗ $o : MLFLOW_TRACKING_URI absent du rendu." >&2; fail=1
   else

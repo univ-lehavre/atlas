@@ -1,4 +1,4 @@
-"""Modèle de PRÉVISION des vues Wikipédia par établissement (ADR 0097).
+"""Modèle de PRÉVISION des vues Wikipédia par établissement (ADR 0098).
 
 Cœur ML PUR : numpy + scikit-learn, **zéro I/O, zéro Dagster** — testable sans S3 ni
 réseau (lignes en mémoire). L'asset Dagster (``assets/forecast.py``) délègue ici toute la
@@ -22,7 +22,7 @@ Déterminisme figé (``RANDOM_STATE``, ADR 0057). Prévision jamais négative (c
 
 Note d'échelle horizon : « 1 semaine » n'a pas de sens sur une série mensuelle → l'horizon
 court servi est **1 mois** ; les trois horizons métier sont 1 / 3 / 12 mois. Le choix est
-tracé dans l'ADR 0097 (§ granularité).
+tracé dans l'ADR 0098 (§ granularité).
 """
 
 from __future__ import annotations

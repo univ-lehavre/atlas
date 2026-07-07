@@ -1,4 +1,4 @@
-"""Suivi de DÉRIVE du modèle de prévision des vues — asset check à porte de sécurité (ADR 0097).
+"""Suivi de DÉRIVE du modèle de prévision des vues — asset check à porte de sécurité (ADR 0098).
 
 Première brique de drift de pageviews (jusqu'ici sans modèle, donc sans signal de dérive).
 Compare le run courant (N) au run consigné précédent (N-1) sur deux signaux :
@@ -8,7 +8,7 @@ Compare le run courant (N) au run consigné précédent (N-1) sur deux signaux :
 2. **bascule ``served_mode``** — passage ``predictive → descriptive`` (perte totale de
    pouvoir prédictif honnête).
 
-PORTE DE SÉCURITÉ (parité ADR 0068/0097) : un décalage de distribution est **informatif**
+PORTE DE SÉCURITÉ (parité ADR 0068/0098) : un décalage de distribution est **informatif**
 (check marqué, loggué MLflow, run NON interrompu) ; la seule bascule
 ``predictive → descriptive`` est **BLOQUANTE** — servir silencieusement une baseline là où
 l'on servait un modèle est un changement de contrat majeur qui doit ARRÊTER le pipeline pour
@@ -272,7 +272,7 @@ def _persist_verdict(bucket: str, run_id: str, baseline_run: str, dist: dict, re
 
 
 def check_forecast_drift(bucket: str, run_id: str) -> AssetCheckResult:
-    """Mesure la dérive du modèle de prévision (N vs N-1) — porte de sécurité (ADR 0068/0097).
+    """Mesure la dérive du modèle de prévision (N vs N-1) — porte de sécurité (ADR 0068/0098).
 
     Premier run (aucun N-1) : check PASSÉ, « baseline absente ». Sinon : drift de
     distribution (informatif) + verdict de bascule ``served_mode``. ``passed`` est False

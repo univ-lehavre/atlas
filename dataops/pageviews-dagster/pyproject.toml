@@ -1,7 +1,7 @@
 [project]
 name = "pageviews-dagster"
 version = "0.0.0"
-description = "Code-location Dagster du pipeline de prévision des vues Wikipédia des établissements (DataOps, ADR 0055/0097)"
+description = "Code-location Dagster du pipeline de prévision des vues Wikipédia des établissements (DataOps, ADR 0055/0098)"
 requires-python = ">=3.10,<3.11"
 # Parité avec l'image Dagster du cluster (python:3.10-slim, dagster==1.13.7,
 # ADR cluster 0006 : verrou chart Helm <-> paquet Python 1:1). Aligné sur
@@ -37,7 +37,7 @@ dependencies = [
   # BLOQUANTS (complément des tests dbt). Validation in-process sur DataFrame
   # (contexte éphémère, hermétique). Épinglé (résolution multi-arch vérifiée).
   "great-expectations==1.18.2",
-  # Modèle de PRÉVISION des vues (ADR 0097) : HistGradientBoostingRegressor global
+  # Modèle de PRÉVISION des vues (ADR 0098) : HistGradientBoostingRegressor global
   # unique (numpy + scikit-learn), série mensuelle, saisonnalité annuelle. Épinglé
   # en 1.6.x : dernière série compatible Python 3.10 (1.7+ exige 3.11 ; le
   # code-location est figé en 3.10, parité Dagster cluster ADR 0006).

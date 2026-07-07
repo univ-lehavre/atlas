@@ -1,4 +1,4 @@
-"""Asset de PRÉVISION des vues Wikipédia par établissement (ADR 0097).
+"""Asset de PRÉVISION des vues Wikipédia par établissement (ADR 0098).
 
 En aval du mart ``views_timeline`` (série temporelle MENSUELLE des vues par
 établissement, grain ``(university_id, month, views)``), cet asset entraîne/sert un
@@ -67,7 +67,7 @@ def _read_timeline(con, bucket: str) -> list[tuple[str, dt.date, int]]:
     on ne retient, par (dt, month), que les lignes du run lexicographiquement maximal —
     « dernier run gagne », comme le manifest. Filtre la ligne fantôme NULL (placeholder
     dbt). Le ``month`` observé est normalisé en 1er du mois (``_month_to_date``) pour le
-    cœur pur — la série étant mensuelle (ADR 0097).
+    cœur pur — la série étant mensuelle (ADR 0098).
     """
     glob = f"s3://{bucket}/{_TIMELINE_SUBDIR}/dt=*/run=*/*.parquet"
     rows = con.sql(
@@ -130,7 +130,7 @@ def _write_forecast(rows: list[dict], bucket: str, run_day: str, run_id: str) ->
     deps=[AssetKey(["marts_views_timeline"])],
 )
 def forecast_views(context: AssetExecutionContext) -> MaterializeResult:
-    """Entraîne, valide honnêtement et sert le modèle de prévision des vues (ADR 0097).
+    """Entraîne, valide honnêtement et sert le modèle de prévision des vues (ADR 0098).
 
     Lit toute la timeline mensuelle → ``forecast_model.forecast`` (porte
     prédictif/descriptif) → écrit le mart servi → logge MLflow (best-effort) → émet le

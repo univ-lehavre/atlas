@@ -1,4 +1,4 @@
-"""Tests du modèle de prévision des vues (ADR 0097) — exemples déterministes, hermétiques.
+"""Tests du modèle de prévision des vues (ADR 0098) — exemples déterministes, hermétiques.
 
 Patron calqué sur ``mediawatch_dagster`` (ADR 0081), adapté à la série MENSUELLE à
 saisonnalité ANNUELLE (S=12). Fixtures synthétiques à graine figée, aucun I/O. Couvre :

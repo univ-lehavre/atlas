@@ -27,7 +27,7 @@ _DBT_EXE = shutil.which("dbt") or os.path.join(os.path.dirname(sys.executable), 
 def test_build_dbt_vars_injects_month_and_default_ref_source(monkeypatch) -> None:
     # month (YYYY-MM) borne le scan du brut ET sert de période immuable (curated_dt).
     # curated_run = run_id → un rejeu écrit un nouveau préfixe run=<id>/ (immutabilité).
-    # ref_source défaut = seed (exemple versionné, tests hermétiques). Grain MENSUEL (ADR 0097).
+    # ref_source défaut = seed (exemple versionné, tests hermétiques). Grain MENSUEL (ADR 0098).
     monkeypatch.delenv("PAGEVIEWS_REF_SOURCE", raising=False)
     vars_ = dbt.build_dbt_vars("run-abc", month="2024-06")
     assert vars_ == {
@@ -220,5 +220,5 @@ def test_build_pageviews_dbt_assets_wraps_multi_model_asset(monkeypatch, tmp_pat
     monkeypatch.setattr(dbt, "ensure_manifest", lambda: manifest)
     asset_def = dbt.build_pageviews_dbt_assets()
     assert isinstance(asset_def, AssetsDefinition)
-    # Partition MENSUELLE portée par l'asset (la série est mensuelle, ADR 0097).
+    # Partition MENSUELLE portée par l'asset (la série est mensuelle, ADR 0098).
     assert asset_def.partitions_def is dbt.pageviews_monthly_partitions

@@ -48,7 +48,7 @@ spec:
             - name: OPENLINEAGE_NAMESPACE
               value: dagster
             # Suivi de modèles MLflow → serveur du socle (contrat cluster ADR 0043).
-            # pageviews ENTRAÎNE un modèle de prévision des vues (ADR 0097) : chaque
+            # pageviews ENTRAÎNE un modèle de prévision des vues (ADR 0098) : chaque
             # matérialisation logge params + métriques (r2, mae) et la dérive (drift/CT).
             # Absent → l'instrumentation dégrade en no-op silencieux (best-effort). L'egress
             # dagster→mlflow:5000 est ouvert côté cluster (allow-mlflow-egress,

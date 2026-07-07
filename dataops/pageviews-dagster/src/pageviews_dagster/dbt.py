@@ -1,4 +1,4 @@
-"""Intégration dbt ↔ Dagster de la prévision des vues Wikipédia (ADR 0055/0097).
+"""Intégration dbt ↔ Dagster de la prévision des vues Wikipédia (ADR 0055/0098).
 
 Expose les modèles dbt (``staging`` → ``curated`` → ``marts``) comme assets Dagster
 via ``dagster-dbt`` (``@dbt_assets``). Le point délicat est le **manifest** : le
@@ -16,7 +16,7 @@ proprement en ``([], {})`` : la code-location reste chargeable pour le lint et l
 collecte pytest sans dbt (le projet ``pageviews-dbt`` peut être vide en checkout de
 travail — les modèles arrivent dans une PR ultérieure).
 
-Grain de la série (ADR 0097) : ``(university_id, month, views)`` — série MENSUELLE
+Grain de la série (ADR 0098) : ``(university_id, month, views)`` — série MENSUELLE
 (pas journalière), saisonnalité annuelle. Le curseur de la transformation est donc le
 **mois** (``YYYY-MM``), pas un jour : partition mensuelle, période curated ``curated_dt``
 mensuelle.
@@ -86,7 +86,7 @@ def build_dbt_vars(run_id: str, month: str) -> dict[str, str]:
     ``month`` (YYYY-MM) est LE curseur de la transformation incrémentale : il BORNE le
     scan du brut (``raw/pageviews/dt=<month>/``) et sert de période immuable
     (``curated_dt``) des artefacts curated/mart. Aligné sur la partition du run brut
-    amont — full-scan évité. Le grain de la série étant mensuel (ADR 0097), le curseur
+    amont — full-scan évité. Le grain de la série étant mensuel (ADR 0098), le curseur
     est un mois, pas un jour.
 
     ``curated_run`` vient de ``context.run_id`` → un rejeu écrit un nouveau préfixe
@@ -169,7 +169,7 @@ def build_pageviews_dbt_assets():
 
     @dbt_assets(manifest=manifest, partitions_def=pageviews_monthly_partitions)
     def pageviews_dbt_models(context: AssetExecutionContext, dbt: DbtCliResource):
-        # month = la partition mensuelle (borne le scan du brut, grain ADR 0097).
+        # month = la partition mensuelle (borne le scan du brut, grain ADR 0098).
         month = context.partition_key  # pragma: no cover
         dbt_vars = build_dbt_vars(context.run_id, month=month)  # pragma: no cover
         inputs = [_dataset("raw/pageviews")]  # pragma: no cover

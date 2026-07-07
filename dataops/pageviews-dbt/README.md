@@ -1,7 +1,7 @@
 # pageviews-dbt — transformations dbt de la prévision des vues
 
 Projet [dbt](https://www.getdbt.com/) (sur DuckDB) des transformations SQL de la source
-« pageviews » ([ADR 0097](https://univ-lehavre.github.io/atlas/decisions/0097-prevision-vues-pageviews/)).
+« pageviews » ([ADR 0098](https://univ-lehavre.github.io/atlas/decisions/0097-prevision-vues-pageviews/)).
 Orchestré par `pageviews-dagster` via `dagster-dbt`. La frontière entre les deux : dbt
 **décrit** les transformations, Dagster les **exécute** et émet le lineage.
 

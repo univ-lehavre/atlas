@@ -1,4 +1,4 @@
-"""Tests du drift du modèle de prévision des vues (ADR 0068/0097) — corps purs, hermétiques.
+"""Tests du drift du modèle de prévision des vues (ADR 0068/0098) — corps purs, hermétiques.
 
 Pattern calqué sur mediawatch ``test_drift_forecast`` : on teste la porte de sécurité
 (``evaluate_regression`` : seule predictive→descriptive bloque), le drift de distribution

@@ -4,7 +4,7 @@ L'asset Python ``forecast_views`` **produit** le mart « servi » des prévision
 Wikipédia en Parquet sous
 ``s3://<bucket>/marts/views_forecast/dt=<month>/run=<id>/part.parquet`` (grain servi :
 ``university_id`` × fenêtre métier ``horizon_label`` ∈ {month_1, month_3, year_1},
-ADR 0097). Cet asset écrit, **en dernier**, le ``manifest.json`` voisin — le **contrat
+ADR 0098). Cet asset écrit, **en dernier**, le ``manifest.json`` voisin — le **contrat
 de transfert** que le consommateur (application) valide AVANT de lire : il vérifie
 ``row_count`` + le ``sha256`` de chaque part et refuse une ``schema_version`` inconnue
 (ADR 0029).
@@ -294,7 +294,7 @@ def _build_and_write_manifest(
     deps=[AssetKey(["forecast_views"])],
 )
 def forecast_manifest(context: AssetExecutionContext) -> MaterializeResult:
-    """``manifest.json`` GLOBAL atomique du mart de PRÉVISIONS (ADR 0029/0097).
+    """``manifest.json`` GLOBAL atomique du mart de PRÉVISIONS (ADR 0029/0098).
 
     Écrit après l'asset ``forecast_views`` (même run) sous ``marts/views_forecast/`` : à
     chaque exécution il recouvre TOUT le mart (dernier run/mois), sentinelle de complétude.

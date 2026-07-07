@@ -39,7 +39,7 @@ def test_unconditional_python_assets_registered() -> None:
 
 def test_asset_checks_registered() -> None:
     # Les 3 asset checks CIBLENT des assets Python toujours présents → INCONDITIONNELS :
-    # porte GE du brut, porte GE du mart servi, porte de dérive du modèle (ADR 0097/0068).
+    # porte GE du brut, porte GE du mart servi, porte de dérive du modèle (ADR 0098/0068).
     names = {k.name for c in definitions.defs.asset_checks for k in c.check_keys}
     assert names == {"ge_raw_pageviews", "ge_marts_views_forecast", "evidently_forecast_drift"}
 

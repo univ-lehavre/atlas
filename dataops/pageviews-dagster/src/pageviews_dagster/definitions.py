@@ -3,7 +3,7 @@
 Chargé par le serveur gRPC (``dagster api grpc -m pageviews_dagster.definitions``)
 que l'orchestrateur Dagster du cluster découvre via son workspace.
 
-Pipeline : PRÉVISION des VUES Wikipédia des établissements (ADR 0097). La source est
+Pipeline : PRÉVISION des VUES Wikipédia des établissements (ADR 0098). La source est
 HTTP (dumps mensuels ``pageview_complete`` de Wikimedia + API REST Pageviews + SPARQL
 Wikidata + API OpenAlex) : ces briques ne sont NOMMÉES qu'en prose ; les identifiants
 d'objets restent neutres (« pageviews », ADR 0022/0035). La série est MENSUELLE (grain
@@ -67,7 +67,7 @@ _RUN_ENV = [
     {"name": "OPENLINEAGE_URL", "value": "http://marquez.marquez:5000"},
     {"name": "OPENLINEAGE_ENDPOINT", "value": "api/v1/lineage"},
     {"name": "OPENLINEAGE_NAMESPACE", "value": "dagster"},
-    # Suivi MLflow du modèle de prévision (ADR 0097) : comme OPENLINEAGE_URL, cette var
+    # Suivi MLflow du modèle de prévision (ADR 0098) : comme OPENLINEAGE_URL, cette var
     # posée sur le Deployment gRPC NE se propage PAS aux pods de run (piège contrat cluster)
     # — on la réinjecte ICI au niveau du run, sinon le tracking tombe en no-op silencieux
     # dans le pod de run. Host en forme COURTE <svc>.<ns> (note DNS prod).
@@ -170,13 +170,13 @@ _jobs = [ingestion_job]
 # non résolue en mode dégradé) :
 #   - ge_raw_pageviews : porte bloquante du brut de la série mensuelle des vues ;
 #   - ge_marts_views_forecast : porte bloquante du mart de prévision servi ;
-#   - evidently_forecast_drift : porte de sécurité sur la bascule served_mode (ADR 0097/0068).
+#   - evidently_forecast_drift : porte de sécurité sur la bascule served_mode (ADR 0098/0068).
 _asset_checks = [ge_raw_pageviews, ge_marts_views_forecast, evidently_forecast_drift]
 
 # Le transform_job enchaîne les modèles dbt (staging → curated → mart views_timeline) PUIS
 # la prévision (forecast_views) et l'écriture du manifest (forecast_manifest), dans un seul
 # run. Enregistré SEULEMENT si les assets dbt existent (sinon la sélection des modèles dbt
-# ne résout rien). PARTITIONNÉ par MOIS (la série est mensuelle, ADR 0097) : la définition
+# ne résout rien). PARTITIONNÉ par MOIS (la série est mensuelle, ADR 0098) : la définition
 # de partition mensuelle vient des assets dbt (pageviews_monthly_partitions) ; forecast_views
 # et forecast_manifest ne sont pas partitionnés Dagster mais s'exécutent dans le même run,
 # en aval du mart, via leurs dépendances de clé.

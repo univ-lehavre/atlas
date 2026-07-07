@@ -1,7 +1,7 @@
 # pageviews-dagster — code-location Dagster de la prévision des vues
 
 Code-location [Dagster](https://dagster.io/) de la **prévision des vues Wikipédia**
-des établissements ([ADR 0097](https://univ-lehavre.github.io/atlas/decisions/0097-prevision-vues-pageviews/)) :
+des établissements ([ADR 0098](https://univ-lehavre.github.io/atlas/decisions/0097-prevision-vues-pageviews/)) :
 on collecte la **série mensuelle** des vues de page par établissement, on la transforme
 (dbt), puis on **entraîne/sert un modèle de prévision** dont le résultat est un mart
 « servi » en Parquet + `manifest.json`.

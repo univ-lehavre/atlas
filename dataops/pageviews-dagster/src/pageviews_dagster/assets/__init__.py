@@ -7,13 +7,13 @@ Lots (série MENSUELLE des vues Wikipédia par établissement, saisonnalité ann
   API Pageviews en proto, dumps ``pageview_complete`` en cible), grain
   ``(university_id, month, views)`` ;
 - ``forecast_views`` — modèle GLOBAL de prévision servant le mart
-  ``marts/views_forecast/`` (ADR 0097) ;
+  ``marts/views_forecast/`` (ADR 0098) ;
 - ``forecast_manifest`` — contrat ``manifest.json`` atomique du mart servi (ADR 0029).
 
 Asset checks (portes de qualité/dérive) :
 - ``ge_raw_pageviews`` / ``ge_marts_views_forecast`` — Great Expectations BLOQUANTS
   sur le brut et sur le mart servi ;
-- ``evidently_forecast_drift`` — suivi de DÉRIVE du modèle de prévision (ADR 0097/0068).
+- ``evidently_forecast_drift`` — suivi de DÉRIVE du modèle de prévision (ADR 0098/0068).
 """
 
 from pageviews_dagster.assets.drift_forecast import evidently_forecast_drift
