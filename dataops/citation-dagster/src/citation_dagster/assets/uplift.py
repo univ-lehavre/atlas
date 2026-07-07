@@ -28,11 +28,9 @@ _EMBEDDINGS_SUBDIR = "marts/researcher_vectors"
 _PREDICTIONS_SUBDIR = "marts/pair_uplift_predictions"
 _RECOMMENDATIONS_SUBDIR = "marts/author_recommendations"
 _TOP_N = 10
-# Taille de lot pour le scoring des paires candidates (drift L90) : on ne matérialise les
-# features (~1,3k floats/paire) que pour ce nombre de paires à la fois, jamais toutes d'un
-# coup (des millions de paires → matrice de dizaines de Go → OOM). 200k paires ≈ ~2 Go de
-# features transitoires, largement sous la limite du pod. Sans effet sur le résultat (predict
-# sans état) ni au petit N (un seul lot).
+# Taille de lot pour l'INSERT du repli descriptif dans `preds` (paires observées) : on n'insère
+# que ce nombre de lignes à la fois (drift L90/L92). Le chemin PRÉDICTIF, lui, streame par bloc
+# kNN (cf. _stream_knn_predictions) — sa taille de lot est celle du bloc du générateur.
 _PREDICT_BATCH = 200_000
 
 
@@ -94,53 +92,37 @@ def _read_embeddings(con, bucket: str, run_id: str):
     return [(r[0], r[1]) for r in rows]
 
 
-def _candidate_pairs(vecs: dict, predicted, served_mode: str):
-    """Paires servies : prédictions du modèle, ou uplift observé en repli descriptif.
-
-    En mode prédictif, ``predicted`` est la liste ``(a, b, uplift_prédit)`` pour toutes
-    les paires d'auteurs profilés (y compris inédites). En repli descriptif, ce sont les
-    paires OBSERVÉES uniquement (passées telles quelles).
-    """
-    return [
-        {"author_a": a, "author_b": b, "uplift": u, "served_mode": served_mode}
-        for a, b, u in predicted
-    ]
+def _create_preds_table(con) -> None:
+    """Crée la table DuckDB ``preds`` (support de streaming des prédictions)."""
+    con.execute("DROP TABLE IF EXISTS preds")
+    con.execute(
+        "CREATE TABLE preds(author_a VARCHAR, author_b VARCHAR, uplift DOUBLE, served_mode VARCHAR)"
+    )
 
 
-def _predict_knn_pairs(model, vecs: dict, emb_vecs: dict, emb_dim: int):
-    """Prédit l'uplift des paires candidates par PLUS-PROCHES-VOISINS thématiques (ADR 0067).
+def _stream_knn_predictions(con, model, vecs: dict, emb_vecs: dict, emb_dim: int) -> None:
+    """STREAME les prédictions kNN dans la table DuckDB ``preds`` (drift L92, mémoire bornée).
 
-    Recommander de NOUVEAUX partenaires reste l'intérêt du prédictif — mais scorer TOUTES
-    les paires (a < b) est O(N²) : à l'échelle réelle (~90k auteurs profilés) ce sont ~4
-    milliards de paires, intractables en RAM/temps (drift L89, OOM prod). On restreint aux
-    candidats PERTINENTS : les k plus proches voisins de chaque auteur, l'union symétrisée —
-    ~N×k paires. Features (thématique + embedding) et modèle IDENTIQUES à l'entraînement ;
-    seul le PÉRIMÈTRE des candidats change.
+    Recommander de NOUVEAUX partenaires reste l'intérêt du prédictif (ADR 0067) — mais scorer
+    TOUTES les paires est O(N²) (drift L89 → kNN) et même la LISTE des ~N·k prédictions + son
+    écriture en littéral SQL VALUES explosaient la RAM à l'échelle réelle (242k auteurs, ~12M
+    paires ; drift L90 puis L92, OOM > 56Gi). On ne matérialise JAMAIS toutes les paires :
 
-    Le voisinage se calcule sur le vecteur THÉMATIQUE (subfields, ``vecs``) : c'est le socle
-    universel (tout auteur profilé en a un, ADR 0067 « la paire entre par la combinaison de
-    ses profils thématiques »), donc AUCUN auteur profilé n'est exclu du candidat-generation
-    — contrairement à l'embedding, absent pour une partie des auteurs. L'embedding, lui,
-    ENRICHIT les FEATURES de chaque paire candidate (``pair_features_combined``), sans piloter
-    le voisinage. Vecteurs subfields déjà L2-normalisés → cosinus = produit scalaire.
+      - ``knn_candidate_pairs`` est un GÉNÉRATEUR : il yield les indices de paires PAR BLOC ;
+      - pour chaque bloc, on construit les features (bornées au bloc), on prédit, et on INSÈRE
+        les lignes directement dans ``preds`` (``executemany``, borné au bloc) — puis on libère.
 
-    ``model.predict`` est appelé PAR LOTS de paires candidates : les features ne sont
-    matérialisées QUE pour le lot courant, jamais la matrice complète. À l'échelle réelle
-    (~N·k ≈ plusieurs millions de paires × ~1,3k floats de features), un unique
-    ``np.stack`` de TOUTES les features pèserait des dizaines de Go → OOM (drift L90, même
-    si le kNN a déjà borné le NOMBRE de paires, L89). Le lotissement borne la RAM à
-    ``_PREDICT_BATCH`` paires ; résultat numérique identique (predict est sans état).
+    Aucune structure ne grandit avec le nombre TOTAL de paires ; le pic RAM est le bloc courant
+    (features ≤ block·k × ~1,3k floats). Le voisinage se calcule sur le vecteur THÉMATIQUE
+    (subfields, ``vecs``) — socle universel (tout auteur profilé en a un) ; l'embedding enrichit
+    les FEATURES via ``pair_features_combined`` sans piloter le voisinage. La déduplication
+    globale des paires (union symétrisée) se fait à la lecture (``SELECT DISTINCT`` aval).
     """
     authors = sorted(vecs)  # tous les auteurs profilés (l'ordre trié fige a < b)
     if len(authors) < 2:
-        return []
+        return
     thematic = np.stack([vecs[a] for a in authors])  # (M, #subfields), lignes L2-normalisées
-    index_pairs = uplift_model.knn_candidate_pairs(thematic)
-    if not index_pairs:
-        return []
-    predicted = []
-    for start in range(0, len(index_pairs), _PREDICT_BATCH):
-        chunk = index_pairs[start : start + _PREDICT_BATCH]
+    for block_pairs in uplift_model.knn_candidate_pairs(thematic):
         feats = np.stack(
             [
                 uplift_model.pair_features_combined(
@@ -150,57 +132,66 @@ def _predict_knn_pairs(model, vecs: dict, emb_vecs: dict, emb_dim: int):
                     emb_vecs.get(authors[j]),
                     emb_dim,
                 )
-                for i, j in chunk
+                for i, j in block_pairs
             ]
         )
-        scores = model.predict(feats)  # batché SUR LE LOT
-        predicted.extend(
-            (authors[i], authors[j], float(score))
-            for (i, j), score in zip(chunk, scores, strict=True)
+        scores = model.predict(feats)
+        con.executemany(
+            "INSERT INTO preds VALUES (?, ?, ?, 'predictive')",
+            [
+                (authors[int(i)], authors[int(j)], float(s))
+                for (i, j), s in zip(block_pairs, scores, strict=True)
+            ],
         )
-    return predicted
+        del feats, scores
 
 
-def _write_predictions(rows: list[dict], bucket: str, run_id: str) -> None:
-    """Écrit les prédictions en Parquet servi via DuckDB COPY (immuable dt=…/run=…)."""
-    con = lakehouse.connect()
-    if not rows:
-        con.execute(
-            "CREATE TABLE preds("
-            "author_a VARCHAR, author_b VARCHAR, uplift DOUBLE, served_mode VARCHAR)"
+def _insert_observed_predictions(con, labels) -> None:
+    """Repli descriptif : insère l'uplift OBSERVÉ des paires connues dans ``preds`` (par lots)."""
+    for start in range(0, len(labels), _PREDICT_BATCH):
+        con.executemany(
+            "INSERT INTO preds VALUES (?, ?, ?, 'descriptive')",
+            [(a, b, float(u)) for a, b, u in labels[start : start + _PREDICT_BATCH]],
         )
-    else:
-        con.execute(
-            "CREATE TABLE preds AS SELECT * FROM (VALUES "
-            + ", ".join(
-                f"('{r['author_a']}', '{r['author_b']}', {r['uplift']}, '{r['served_mode']}')"
-                for r in rows
-            )
-            + ") AS t(author_a, author_b, uplift, served_mode)"
-        )
+
+
+def _write_predictions(con, bucket: str, run_id: str) -> int:
+    """Écrit ``preds`` (dédupliquée) en Parquet servi via COPY. Renvoie le nombre de lignes."""
     dest = f"s3://{bucket}/{_PREDICTIONS_SUBDIR}/dt={CURATED_DT}/run={run_id}/part.parquet"
+    # DISTINCT : union symétrisée des voisinages (une paire non orientée peut venir des 2 sens).
     con.execute(
-        f"COPY (SELECT * FROM preds ORDER BY author_a, author_b) TO '{dest}' (FORMAT PARQUET)"
+        f"COPY (SELECT DISTINCT author_a, author_b, uplift, served_mode FROM preds "
+        f"ORDER BY author_a, author_b) TO '{dest}' (FORMAT PARQUET)"
     )
+    return con.execute("SELECT count(DISTINCT (author_a, author_b)) FROM preds").fetchone()[0]
 
 
-def _write_recommendations(
-    recos: list[tuple[str, str, float, int]], bucket: str, run_id: str
-) -> None:
-    """Écrit les recommandations par auteur (top-N partenaires) en Parquet servi."""
-    con = lakehouse.connect()
-    if not recos:
-        con.execute(
-            "CREATE TABLE recos(author_id VARCHAR, partner_id VARCHAR, uplift DOUBLE, rank INTEGER)"
-        )
-    else:
-        con.execute(
-            "CREATE TABLE recos AS SELECT * FROM (VALUES "
-            + ", ".join(f"('{a}', '{p}', {u}, {r})" for a, p, u, r in recos)
-            + ") AS t(author_id, partner_id, uplift, rank)"
-        )
+def _write_recommendations(con, bucket: str, run_id: str, top_n: int) -> int:
+    """Top-N partenaires par auteur, calculé EN DuckDB (fenêtre), sans dict Python (drift L92).
+
+    Chaque paire non orientée crédite les DEUX auteurs (union des deux sens), puis
+    ``row_number()`` classe par uplift décroissant (tie-break partner_id, déterministe, ADR
+    0057) et garde le top-N. Tout se fait en SQL sur la table ``preds`` — aucune structure
+    Python proportionnelle au nombre de paires. Renvoie le nombre de recommandations écrites.
+    """
     dest = f"s3://{bucket}/{_RECOMMENDATIONS_SUBDIR}/dt={CURATED_DT}/run={run_id}/part.parquet"
-    con.execute(f"COPY (SELECT * FROM recos ORDER BY author_id, rank) TO '{dest}' (FORMAT PARQUET)")
+    query = f"""
+        WITH both_directions AS (
+            SELECT author_a AS author_id, author_b AS partner_id, uplift FROM preds
+            UNION ALL
+            SELECT author_b AS author_id, author_a AS partner_id, uplift FROM preds
+        ),
+        ranked AS (
+            SELECT author_id, partner_id, uplift,
+                   row_number() OVER (
+                       PARTITION BY author_id ORDER BY uplift DESC, partner_id
+                   ) AS rank
+            FROM both_directions
+        )
+        SELECT author_id, partner_id, uplift, rank FROM ranked WHERE rank <= {int(top_n)}
+    """
+    con.execute(f"COPY ({query} ORDER BY author_id, rank) TO '{dest}' (FORMAT PARQUET)")
+    return con.execute(f"SELECT count(*) FROM ({query})").fetchone()[0]
 
 
 @asset(
@@ -243,18 +234,20 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
     except ValueError:
         served_mode = "descriptive"
 
-    # Porte de décision : prédictif (modèle entraîné sur toutes les paires) ou repli
-    # descriptif (uplift observé des paires connues).
+    # Porte de décision : prédictif (modèle entraîné) ou repli descriptif (uplift observé).
+    # Les prédictions sont STREAMÉES dans la table DuckDB `preds` (jamais toutes en RAM, drift
+    # L92) : le prédictif yield ses paires kNN par bloc + INSERT ; le descriptif insère les
+    # paires observées par lots. Predictions et recommandations sont ensuite écrites depuis
+    # `preds` (COPY + fenêtre SQL), sans structure Python proportionnelle au nombre de paires.
+    _create_preds_table(con)
     if served_mode == "predictive":
         model = uplift_model.train_final(ds)
-        predicted = _predict_knn_pairs(model, vecs, emb_vecs, embedding.EMBEDDING_DIM)
+        _stream_knn_predictions(con, model, vecs, emb_vecs, embedding.EMBEDDING_DIM)
     else:
-        predicted = list(labels)  # uplift observé, paires connues uniquement
+        _insert_observed_predictions(con, labels)  # uplift observé, paires connues uniquement
 
-    rows = _candidate_pairs(vecs, predicted, served_mode)
-    recos = uplift_model.top_recommendations(predicted, _TOP_N)
-    _write_predictions(rows, target.bucket, run_id)
-    _write_recommendations(recos, target.bucket, run_id)
+    n_served = _write_predictions(con, target.bucket, run_id)
+    n_recos = _write_recommendations(con, target.bucket, run_id, _TOP_N)
 
     lineage.emit(RunState.COMPLETE, run_id, "pair_uplift_model", lin_inputs, lin_outputs)
 
@@ -265,7 +258,7 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
     emb_coverage = (len(set(emb_vecs) & set(vecs)) / len(vecs)) if vecs else 0.0
     metrics = {
         "n_pairs_labeled": float(len(labels)),
-        "n_pairs_served": float(len(rows)),
+        "n_pairs_served": float(n_served),
         "predictive": 1.0 if served_mode == "predictive" else 0.0,
         "embedding_coverage": emb_coverage,
     }
@@ -288,8 +281,8 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
             "r2_honest": MetadataValue.float(evaluation.r2 if evaluation else float("nan")),
             "mae": MetadataValue.float(evaluation.mae if evaluation else float("nan")),
             "pairs_labeled": MetadataValue.int(len(labels)),
-            "pairs_served": MetadataValue.int(len(rows)),
-            "recommendations": MetadataValue.int(len(recos)),
+            "pairs_served": MetadataValue.int(n_served),
+            "recommendations": MetadataValue.int(n_recos),
             "embedding_coverage": MetadataValue.float(emb_coverage),
             "decision": MetadataValue.text(
                 "prédictif (pouvoir confirmé)"

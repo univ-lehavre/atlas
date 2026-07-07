@@ -5,8 +5,11 @@ l'asset : porte de décision (prédictif vs repli descriptif), métadonnées, é
 avec lakehouse + MLflow mockés (hermétique, sans S3 ni serveur MLflow).
 """
 
+import re
 import sys
+import tempfile
 
+import duckdb
 import numpy as np
 from dagster import build_asset_context
 
@@ -24,14 +27,22 @@ _ENV = {
 
 
 class _FakeCon:
-    """Connexion DuckDB factice : sert profils/labels/embeddings selon la requête, capte COPY."""
+    """Connexion DuckDB HYBRIDE pour les tests de l'asset.
+
+    Les LECTURES S3 (profils/labels/embeddings, via ``con.sql(...).fetchall()``) sont mockées
+    — pas de vrai S3. Mais le chemin d'ÉCRITURE (drift L92 : ``CREATE TABLE preds`` +
+    ``executemany`` streamé + ``COPY`` avec fenêtre SQL) tourne sur une VRAIE base DuckDB en
+    mémoire, pour prouver la logique SQL réelle (dédup, top-N par fenêtre). Les ``COPY ... TO
+    's3://…'`` sont redirigés vers un fichier Parquet LOCAL temporaire (l'écriture réussit,
+    les count() qui suivent lisent la vraie table)."""
 
     def __init__(self, profiles_rows, labels_rows, embedding_rows=None) -> None:
         self._profiles = profiles_rows
         self._labels = labels_rows
         self._embeddings = embedding_rows or []
         self.executed: list[str] = []
-        self.created_rows: list | None = None
+        self._db = duckdb.connect(":memory:")
+        self._tmp = tempfile.mkdtemp(prefix="uplift-test-")
 
     def sql(self, query: str):
         if "author_profiles" in query:
@@ -42,9 +53,22 @@ class _FakeCon:
             return _FakeRel(self._embeddings)
         return _FakeRel([])
 
+    def _rewrite(self, query: str) -> str:
+        # Redirige tout COPY vers un Parquet local temporaire (pas de S3 en test).
+        return re.sub(r"'s3://[^']*'", f"'{self._tmp}/out.parquet'", query)
+
     def execute(self, query: str):
         self.executed.append(query)
+        self._last = self._db.execute(self._rewrite(query))
         return self
+
+    def executemany(self, query: str, params):
+        self.executed.append(query)
+        self._db.executemany(query, params)
+        return self
+
+    def fetchone(self):
+        return self._last.fetchone()
 
 
 class _FakeRel:

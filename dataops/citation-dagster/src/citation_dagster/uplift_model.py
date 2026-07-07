@@ -116,40 +116,52 @@ def pair_features_combined(
 # l'union symétrisée. ~N×k paires. La MATRICE d'entrée est fournie par l'appelant (vecteur
 # thématique subfields chez pair_uplift_model) ; la fonction reste agnostique de sa nature.
 KNN_DEFAULT = 50
+# Budget mémoire du bloc de similarité ``sims`` (block × M × 8o). Le bloc est dérivé de M pour
+# viser ~cette taille — SANS lui, un ``block`` fixe (2048) donne ~4 Go à M=242k (drift L91/L92).
+_KNN_SIMS_BUDGET_BYTES = 256 * 1024 * 1024  # ~0,25 Gi/bloc
 
 
-def knn_candidate_pairs(
-    vectors: np.ndarray, k: int = KNN_DEFAULT, block: int = 2048
-) -> list[tuple[int, int]]:
-    """Paires candidates (i < j) = union des k plus proches voisins cosinus de chaque ligne.
+def knn_candidate_pairs(vectors: np.ndarray, k: int = KNN_DEFAULT, block: int | None = None):
+    """Génère les paires candidates (i < j) par blocs : k plus proches voisins cosinus par ligne.
 
-    ``vectors`` : matrice (M, D) de vecteurs **déjà L2-normalisés** → la similarité cosinus
-    est le simple produit scalaire ``V @ V.T``. On CALCULE par blocs de lignes (jamais la
-    matrice M×M complète : à M=90k elle ferait ~30 Go) : pour chaque bloc, top-k par
-    ``argpartition`` (O(M) par ligne, pas de tri complet), self exclu. Renvoie des INDICES de
-    lignes, dédupliqués sur ``(min, max)`` — chaque paire non orientée une seule fois
-    (invariant attendu par ``top_recommendations`` et l'écriture Parquet).
+    GÉNÉRATEUR (drift L92) : ``yield`` un tableau ``(p, 2)`` d'indices int32 par bloc de lignes,
+    au lieu de matérialiser l'union COMPLÈTE (~N·k paires = plusieurs Go à l'échelle réelle). La
+    déduplication GLOBALE ``(min,max)`` est déléguée à l'appelant (DISTINCT côté DuckDB) ; chaque
+    bloc est déjà dédupliqué localement. L'appelant streame ces lots vers le stockage sans jamais
+    tenir toutes les paires en RAM.
 
-    Le voisinage kNN n'est pas symétrique (b ∈ voisins(a) n'implique pas a ∈ voisins(b)) ;
-    l'union des deux sens garantit qu'un auteur reçoit des candidats des DEUX côtés. Prendre
-    ``k ≥ TOP_N`` assure assez de partenaires pour remplir les recommandations top-N.
+    ``vectors`` : matrice (M, D) **déjà L2-normalisée** → cosinus = produit scalaire ``V @ V.T``.
+    Le bloc ``sims`` (block, M) est BORNÉ : ``block`` est dérivé de M pour viser ~0,25 Gi (au lieu
+    d'un 2048 fixe qui donnait ~4 Go à M=242k). Top-k VECTORISÉ par ``argpartition`` sur l'axe 1
+    (pas de boucle Python ligne-à-ligne). Self exclu.
+
+    Le voisinage kNN n'est pas symétrique ; l'union des deux sens (garantie par ``(min,max)`` +
+    le DISTINCT aval) donne à chaque auteur des candidats des DEUX côtés. ``k ≥ TOP_N`` assure
+    assez de partenaires pour les recommandations top-N.
     """
     m = vectors.shape[0]
     if m < 2:
-        return []
+        return
     kk = min(k, m - 1)
-    pairs: set[tuple[int, int]] = set()
+    if block is None:
+        block = max(64, min(m, _KNN_SIMS_BUDGET_BYTES // (m * 8)))
     for start in range(0, m, block):
-        sims = vectors[start : start + block] @ vectors.T  # (b, M), cosinus
-        for local_i, row in enumerate(sims):
-            i = start + local_i
-            row[i] = -np.inf  # jamais soi-même
-            neighbors = np.argpartition(row, -kk)[-kk:]
-            for j in neighbors:
-                j = int(j)
-                if i != j:
-                    pairs.add((i, j) if i < j else (j, i))
-    return sorted(pairs)
+        sims = vectors[start : start + block] @ vectors.T  # (b, M) borné, cosinus
+        b = sims.shape[0]
+        rows = np.arange(start, start + b)
+        # self exclu : diagonale du sous-bloc → -inf
+        sims[np.arange(b), rows] = -np.inf
+        nn = np.argpartition(sims, -kk, axis=1)[:, -kk:]  # (b, kk) voisins par ligne
+        i = np.repeat(rows, kk)
+        j = nn.reshape(-1)
+        keep = i != j
+        i, j = i[keep], j[keep]
+        lo = np.minimum(i, j).astype(np.int32)
+        hi = np.maximum(i, j).astype(np.int32)
+        block_pairs = np.unique(np.stack([lo, hi], axis=1), axis=0)  # dédup LOCALE au bloc
+        del sims, nn
+        if block_pairs.size:
+            yield block_pairs
 
 
 @dataclass(frozen=True)
