@@ -1,0 +1,60 @@
+# Manifeste de déclaration montant (atlas → cluster) — ADR cluster 0094.
+#
+# atlas DÉCLARE ce que la code-location `pageviews` apporte et consomme ; cluster LIT ce
+# fichier pour valider les dépendances + la capacité AVANT d'instancier l'Application Argo
+# CD, et pour ordonner le déploiement. Ce manifeste REMPLACE la copie figée du contrat
+# cluster (cause racine de l'audit atlas#499 / cluster#499) : atlas ne duplique plus le
+# contrat, il déclare ce qu'il consomme + contre quelle `contractVersion`, et cluster
+# valide. Toute dérive (version inconnue, dépendance absente) échoue bruyamment.
+#
+# `revision` est le SIGNAL CANONIQUE d'évolution : un nouveau SHA poussé = nouvelle version
+# à réconcilier. Le tag lisible `registry:80/pageviews-dagster:<revision>` trace le lien
+# commit→image, mais le DÉPLOIEMENT se fait PAR DIGEST `@sha256` (ancre d'immuabilité, jamais
+# par tag mutable — ADR cluster 0095 §2 + cluster 0006, ADR atlas 0075). cluster build à ce `revision`, lit
+# le digest produit et l'injecte dans `apps/pageviews.yaml` (write-back @sha256) ; le tag ne
+# sert qu'à la traçabilité humaine, l'immuabilité tient au digest.
+
+codeLocation: pageviews
+ready: false # code en cours (assets + dbt à compléter) ; passera à true une fois mergé sur main, testé et validate.sh OK (bench + prod)
+revision: 00000000 # SHA git court de main (placeholder) ; tag lisible de l'image, mais déploiement PAR DIGEST @sha256
+contractVersion: "1.0" # contract_version ciblé (cluster/contract/endpoints.example.yaml)
+
+# Besoins déclarés → cluster valide la capacité AVANT de déployer.
+# Ces valeurs concernent les pods de RUN (K8sRunLauncher) qui exécutent les
+# transformations + l'entraînement du modèle de prévision, PAS le serveur gRPC de la
+# code-location (dont les requests, plus modestes — cpu 100m / mem 384Mi,
+# base/code-location.yaml — ne portent pas le travail). Volumétrie modeste : pageviews
+# matérialise une SÉRIE MENSUELLE agrégée (dumps `pageview_complete` mensuels de
+# Wikimedia + API Pageviews, ADR 0097) au grain (university_id, month, views) — pas un
+# snapshot brut complet. L'entraînement (HistGradientBoostingRegressor global unique)
+# tient en mémoire. Le `disk` est un scratch BLOC (PVC RBD) pour le spill RÉSIDUEL de
+# DuckDB (temp_directory) ; il NE stocke PAS le datalake (qui vit en S3 objet, cf.
+# buckets). Valeurs = défaut raisonnable, ajustables par instance (ADR 0031).
+resources:
+  cpu: 500m
+  memory: 2Gi # agrégation dbt-duckdb (série mensuelle) + entraînement du modèle de prévision
+  disk: 20Gi # scratch bloc (PVC RBD) : spill DuckDB résiduel, pas le datalake
+
+dependsOn:
+  # Dépendances INTER-applicatives (autres code-locations gRPC). AUCUNE : pageviews lit
+  # ses sources en pull HTTP propre (dumps `pageview_complete` Wikimedia, API Pageviews,
+  # SPARQL Wikidata, API OpenAlex, ADR 0097), pas les marts d'une autre code-location ;
+  # le projet `pageviews-dbt` n'est PAS une dépendance, il est EMBARQUÉ dans l'image
+  # (COPY au build + manifest dbt généré par `dbt parse`, Dockerfile) → couvert par
+  # `revision`, rien à déclarer ici.
+  codeLocations: []
+  # Aucune base applicative ni index vectoriel (contrairement à citation/pgvector) :
+  # pageviews ne matérialise AUCUN index (pas de recherche vectorielle) → pas de
+  # database, pas de secret PG. Le modèle de prévision est suivi via MLflow (serveur du
+  # socle, contrat cluster ADR 0043) ; MLflow n'est pas une dépendance déclarée ici (le
+  # client best-effort no-op sans MLFLOW_TRACKING_URI — l'egress est ouvert côté cluster).
+  database: []
+  secrets: []
+  # Stockage OBJET (OBC S3 RGW Ceph), distinct d'un volume bloc : raw pageviews +
+  # curated + marts servis + modèle de prévision (immuables dt=/run=, donc cumulatifs).
+  buckets:
+    - name: pageviews-datalake # convention <service>-<usage> (cf. citation-datalake, mlflow-artifacts)
+      size: 200Gi # série mensuelle agrégée + accumulation des partitions immuables (revoir à l'usage)
+      storageClass: rook-ceph-datalake
+  # Aucune migration de schéma : pageviews n'a pas de base SQL applicative (pas d'index).
+  migrations: []

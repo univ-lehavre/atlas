@@ -1,0 +1,90 @@
+[project]
+name = "pageviews-dagster"
+version = "0.0.0"
+description = "Code-location Dagster du pipeline de prévision des vues Wikipédia des établissements (DataOps, ADR 0055/0097)"
+requires-python = ">=3.10,<3.11"
+# Parité avec l'image Dagster du cluster (python:3.10-slim, dagster==1.13.7,
+# ADR cluster 0006 : verrou chart Helm <-> paquet Python 1:1). Aligné sur
+# citation-dagster / mediawatch-dagster.
+# NB : rclone n'est PAS une dépendance pip — c'est un binaire installé dans
+# l'image (voir Dockerfile), invoqué en sous-processus par l'asset de sync.
+dependencies = [
+  "dagster==1.13.7",
+  # Le run worker (K8sRunLauncher) EST cette image : le pod de run doit pouvoir
+  # importer dagster_postgres ET dagster_k8s pour rehydrater l'instance Dagster
+  # du cluster (contrat ADR 0043). Numérotation propre 0.YY.Z (≠ dagster core) :
+  # 0.29.7 ↔ dagster 1.13.7 (parité chart Helm ↔ paquet, ADR cluster 0006).
+  "dagster-postgres==0.29.7",
+  "dagster-k8s==0.29.7",
+  # Borne grpcio/grpcio-health-checking sous 1.82 : dagster 1.13.7 cape protobuf<7
+  # (Python 3.10), mais laisse grpcio-health-checking>=1.44 sans plafond. À partir de
+  # 1.82.0, le health_pb2 packagé est généré avec protoc gencode 7.35 → EXIGE un
+  # runtime protobuf>=7.35, ce qui CONTREDIT le cap protobuf<7 de dagster (import de
+  # dagster_dbt/grpc alors cassé : VersionError gencode 7.35 / runtime 6.x). Le
+  # plafond aligne pageviews sur la résolution 1.81.x de citation/mediawatch.
+  "grpcio<1.82",
+  "grpcio-health-checking<1.82",
+  "openlineage-python",
+  # Transformation : DuckDB lit/écrit le Parquet sur S3 (httpfs path-style) ;
+  # dbt-duckdb porte les modèles ; dagster-dbt les expose comme assets. Plancher
+  # dbt-core explicite (contrat cluster ADR 0006, cluster#536) : dbt-core>=1.10.22
+  # tire dbt-common>=1.34.2 (deepdiff<9, CVE corrigées nativement).
+  "duckdb",
+  "dbt-duckdb",
+  "dagster-dbt==0.29.7",
+  "dbt-core>=1.10.22",
+  # Qualité des données : suites Great Expectations en asset checks Dagster
+  # BLOQUANTS (complément des tests dbt). Validation in-process sur DataFrame
+  # (contexte éphémère, hermétique). Épinglé (résolution multi-arch vérifiée).
+  "great-expectations==1.18.2",
+  # Modèle de PRÉVISION des vues (ADR 0097) : HistGradientBoostingRegressor global
+  # unique (numpy + scikit-learn), série mensuelle, saisonnalité annuelle. Épinglé
+  # en 1.6.x : dernière série compatible Python 3.10 (1.7+ exige 3.11 ; le
+  # code-location est figé en 3.10, parité Dagster cluster ADR 0006).
+  "numpy",
+  "scikit-learn==1.6.1",
+  # Détection de DÉRIVE des prévisions (MLOps) : asset check Evidently — bascule
+  # predictive→descriptive BLOQUANTE. Tire pandas/numpy/scipy. Épinglé.
+  "evidently==0.4.40",
+  # Suivi de modèles : logge params/métriques (r2, mae) dans le serveur MLflow du
+  # socle (MLFLOW_TRACKING_URI, contrat cluster ADR 0043). Client seul, best-effort.
+  "mlflow-skinny==2.22.5",
+  # Ingestion HTTP (BSD) : httpx interroge l'API REST Pageviews et lit les dumps
+  # mensuels ``pageview_complete`` de Wikimedia (la source est HTTP, pas S3→S3 —
+  # même patron que mediawatch/GDELT). rclone reste réservé à l'écriture lakehouse.
+  "httpx",
+]
+
+[tool.uv]
+# Override sécurité DÉFENSIF (homologue uv des overrides pnpm), symétrique de
+# citation/mediawatch. Depuis dbt-core>=1.10.22, deepdiff 8.x est tiré
+# nativement : l'override est un NO-OP qui VERROUILLE contre une régression amont
+# (dbt-common 2.0.0 ré-épingle deepdiff<8 → réintroduirait GHSA-mw26-5g2v-hqw3 /
+# GHSA-54jj-px8x-5w5q). N'impacte ni la chaîne dagster/dbt ni la parité 1.13.7.
+override-dependencies = ["deepdiff>=8,<9"]
+
+[dependency-groups]
+# hypothesis : property-based testing (ADR 0072), branché DANS pytest via @given.
+# Ciblé sur les invariants du cœur pur forecast_model (anti-fuite, non-négativité,
+# bornes calendaires). Dev-dépendance de test uniquement (zéro empreinte runtime).
+dev = ["ruff==0.15.20", "pytest", "pytest-cov", "hypothesis==6.156.1"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pageviews_dagster"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "--cov=pageviews_dagster --cov-report=term-missing --cov-fail-under=90"

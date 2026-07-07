@@ -1,0 +1,15 @@
+# Overlay BANC LÉGER (SeaweedFS, ADR cluster 0036).
+#
+# Le banc Lima léger n'a pas de Rook/OBC : le S3 est SeaweedFS avec des creds
+# statiques (s3-access.yaml, un Secret unique portant AWS_*/BUCKET_*). On l'ajoute
+# à la base et on branche la code-location dessus via envFrom (patch-s3-envfrom).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - s3-access.yaml
+patches:
+  - path: patch-s3-envfrom.yaml
+    target:
+      kind: Deployment
+      name: pageviews-dagster

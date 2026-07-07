@@ -1,0 +1,27 @@
+# PodDisruptionBudget de la code-location « pageviews » (issue #400, anti-SPOF).
+#
+# La code-location tourne en `replicas: 1`. Pour un SINGLETON, on déclare
+# `maxUnavailable: 1` (et NON `minAvailable: 1`) : `minAvailable: 1` sur un seul
+# replica BLOQUERAIT tout drain volontaire de nœud (le pod ne pourrait jamais être
+# évincé → maintenance/upgrade du nœud coincée). `maxUnavailable: 1` documente
+# l'intention — « ce service tolère l'éviction de son unique pod lors d'une
+# disruption volontaire » — sans figer le nœud. Le rééquilibrage repose sur le
+# redémarrage rapide du pod (image en cache, readiness/liveness TCP), pas sur la
+# redondance (un seul replica par choix : l'orchestrateur Dagster, lui, est HA côté
+# socle ; cette code-location est un serveur gRPC stateless redéployable).
+#
+# Si le déployeur passe la code-location à plusieurs replicas (valeur d'instance),
+# il peut basculer ce PDB en `minAvailable: 1` pour garantir une dispo continue.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pageviews-dagster
+  namespace: dagster
+  labels:
+    app.kubernetes.io/name: pageviews-dagster
+    app.kubernetes.io/part-of: atlas
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pageviews-dagster

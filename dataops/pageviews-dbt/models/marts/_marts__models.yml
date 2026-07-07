@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: marts_views_timeline
+    description: "Timeline mensuelle servie : vues par (établissement, mois) — contrat du modèle de prévision."
+    columns:
+      - name: university_id
+        description: "Identifiant de l'établissement (référentiel)."
+        tests:
+          - not_null
+      - name: month
+        description: "Mois de la série (premier jour du mois, YYYY-MM-01)."
+        tests:
+          - not_null
+      - name: views
+        description: "Total des vues du mois servi au modèle de prévision."
+        tests:
+          - not_null

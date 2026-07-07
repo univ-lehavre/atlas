@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: curated_views
+    description: "Vues mensuelles consolidées par établissement (couche réutilisable interne)."
+    columns:
+      - name: university_id
+        description: "Identifiant de l'établissement (référentiel ouvert)."
+        tests:
+          - not_null
+      - name: view_month
+        description: "Premier jour du mois (YYYY-MM-01) ; axe de la série mensuelle."
+        tests:
+          - not_null
+      - name: views
+        description: "Total des vues du mois (somme sur pages/wikis)."
+        tests:
+          - not_null
