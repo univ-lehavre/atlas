@@ -1043,6 +1043,8 @@ importers:
 
   dataops/mediawatch-dagster: {}
 
+  dataops/pageviews-dagster: {}
+
   docs:
     dependencies:
       '@astrojs/starlight':
