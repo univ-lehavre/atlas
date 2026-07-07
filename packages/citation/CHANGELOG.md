@@ -1,5 +1,11 @@
 # @univ-lehavre/atlas-openalex
 
+## 2.1.1
+
+### Patch Changes
+
+- [#536](https://github.com/univ-lehavre/atlas/pull/536) [`2cbb5f0`](https://github.com/univ-lehavre/atlas/commit/2cbb5f02195c408f15d79a13db888e304c6ba54c) Thanks [@chasset](https://github.com/chasset)! - - fix: temp_directory en config_options (spill duckdb à l'échelle)
+
 ## 2.1.0
 
 ### Minor Changes
