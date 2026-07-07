@@ -126,6 +126,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0094 | [Mart EUNICoast Parquet + co-autorat (modèle de données du pipeline citation)](/atlas/decisions/0094-mart-eunicoast-parquet-co-autorat/)                        | Accepted        |
 | 0095 | [Source dataops « pageviews universités » (audience Wikipédia des établissements)](/atlas/decisions/0095-source-pageviews-universites/)                         | Accepted        |
 | 0096 | [Modèle explicatif du trafic Wikipédia des universités (posture associative)](/atlas/decisions/0096-modele-explicatif-trafic-universites/)                      | Accepted        |
+| 0097 | [Génération des candidats du modèle d'uplift par plus-proches-voisins (kNN)](/atlas/decisions/0097-candidats-uplift-par-knn/)                                   | Accepted        |
 
 ## Quand ouvrir un ADR
 

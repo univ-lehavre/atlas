@@ -14,6 +14,7 @@ est loggé MLflow et porté en métadonnée de l'asset.
 NB : pas de ``from __future__ import annotations`` — Dagster introspecte les annotations.
 """
 
+import numpy as np
 from dagster import AssetExecutionContext, AssetKey, MaterializeResult, MetadataValue, asset
 from openlineage.client.event_v2 import RunState
 
@@ -100,22 +101,50 @@ def _candidate_pairs(vecs: dict, predicted, served_mode: str):
     ]
 
 
-def _predict_all_pairs(model, vecs: dict, emb_vecs: dict, emb_dim: int):
-    """Prédit l'uplift de TOUTES les paires d'auteurs profilés (y compris inédites).
+def _predict_knn_pairs(model, vecs: dict, emb_vecs: dict, emb_dim: int):
+    """Prédit l'uplift des paires candidates par PLUS-PROCHES-VOISINS thématiques (ADR 0067).
 
-    C'est l'intérêt du prédictif (ADR 0067) : recommander de NOUVEAUX partenaires. On
-    énumère les paires (a < b) d'auteurs ayant un profil, on les passe au modèle — avec
-    les MÊMES features combinées (thématique + embedding) que l'entraînement.
+    Recommander de NOUVEAUX partenaires reste l'intérêt du prédictif — mais scorer TOUTES
+    les paires (a < b) est O(N²) : à l'échelle réelle (~90k auteurs profilés) ce sont ~4
+    milliards de paires, intractables en RAM/temps (drift L89, OOM prod). On restreint aux
+    candidats PERTINENTS : les k plus proches voisins de chaque auteur, l'union symétrisée —
+    ~N×k paires. Features (thématique + embedding) et modèle IDENTIQUES à l'entraînement ;
+    seul le PÉRIMÈTRE des candidats change.
+
+    Le voisinage se calcule sur le vecteur THÉMATIQUE (subfields, ``vecs``) : c'est le socle
+    universel (tout auteur profilé en a un, ADR 0067 « la paire entre par la combinaison de
+    ses profils thématiques »), donc AUCUN auteur profilé n'est exclu du candidat-generation
+    — contrairement à l'embedding, absent pour une partie des auteurs. L'embedding, lui,
+    ENRICHIT les FEATURES de chaque paire candidate (``pair_features_combined``), sans piloter
+    le voisinage. Vecteurs subfields déjà L2-normalisés → cosinus = produit scalaire.
+
+    ``model.predict`` est appelé UNE fois sur la matrice de toutes les features candidates
+    (batché) — même résultat numérique que N appels unitaires, sans le coût par paire.
     """
-    authors = sorted(vecs)
-    preds = []
-    for i, a in enumerate(authors):
-        for b in authors[i + 1 :]:
-            feat = uplift_model.pair_features_combined(
-                vecs[a], vecs[b], emb_vecs.get(a), emb_vecs.get(b), emb_dim
-            ).reshape(1, -1)
-            preds.append((a, b, float(model.predict(feat)[0])))
-    return preds
+    authors = sorted(vecs)  # tous les auteurs profilés (l'ordre trié fige a < b)
+    if len(authors) < 2:
+        return []
+    thematic = np.stack([vecs[a] for a in authors])  # (M, #subfields), lignes L2-normalisées
+    index_pairs = uplift_model.knn_candidate_pairs(thematic)
+    if not index_pairs:
+        return []
+    feats = np.stack(
+        [
+            uplift_model.pair_features_combined(
+                vecs[authors[i]],
+                vecs[authors[j]],
+                emb_vecs.get(authors[i]),
+                emb_vecs.get(authors[j]),
+                emb_dim,
+            )
+            for i, j in index_pairs
+        ]
+    )
+    scores = model.predict(feats)  # batché
+    return [
+        (authors[i], authors[j], float(score))
+        for (i, j), score in zip(index_pairs, scores, strict=True)
+    ]
 
 
 def _write_predictions(rows: list[dict], bucket: str, run_id: str) -> None:
@@ -204,7 +233,7 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
     # descriptif (uplift observé des paires connues).
     if served_mode == "predictive":
         model = uplift_model.train_final(ds)
-        predicted = _predict_all_pairs(model, vecs, emb_vecs, embedding.EMBEDDING_DIM)
+        predicted = _predict_knn_pairs(model, vecs, emb_vecs, embedding.EMBEDDING_DIM)
     else:
         predicted = list(labels)  # uplift observé, paires connues uniquement
 
