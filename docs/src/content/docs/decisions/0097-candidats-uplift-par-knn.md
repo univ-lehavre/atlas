@@ -47,7 +47,7 @@ recommandation (« candidate generation » puis « ranking ») :
   **périmètre des candidats** change. Au **petit N** (`k ≥ N−1`) le kNN **dégénère
   exactement en toutes-les-paires**, ce qui préserve le comportement historique et les
   tests d'asset existants.
-- **Déterminisme** ([ADR 0057](/atlas/decisions/0057-determinisme-des-artefacts/)) : le
+- **Déterminisme** ([ADR 0057](/atlas/decisions/0057-reproductibilite-tests-hermetiques/)) : le
   calcul par blocs + `argpartition` + les tris de sortie gardent un résultat reproductible.
 
 Le défaut est **k = 50** (`KNN_DEFAULT`), avec `k ≥ TOP_N` (10) pour garantir assez de
