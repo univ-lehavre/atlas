@@ -407,3 +407,29 @@
     works.authorships, écrite sous la partition réservée updated_date=coherent-sample.
     Vérifié au banc : 0 FK manquante, dbt PASS=69, transform_job RUN_SUCCESS sans seed manuel.
   statut: corrige
+
+- id: D24
+  campagne: "Preuve prod pageviews — contrat de chemin producteur/consommateur"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    À l'échelle prod, ingestion_job de pageviews échoue à l'étape raw_pageviews :
+    « IO Error: No files found that match the pattern
+    s3://…/ref/universities/source=seed/*.parquet ». ref_universities (amont) a pourtant
+    réussi (référentiel écrit). Invisible au banc (assets testés isolément, jamais chaînés).
+  cause: >-
+    Le CONTRAT DE CHEMIN interne entre le PRODUCTEUR (ref_universities, qui écrit le
+    référentiel) et le CONSOMMATEUR (raw_pageviews, qui le lit) était codé EN DUR DEUX FOIS,
+    de part et d'autre, sans lien : le producteur écrivait sous « raw/ref_universities/ », le
+    consommateur lisait sous « ref/universities/source=<src>/ » (la prod pose
+    PAGEVIEWS_REF_SOURCE=ingested). Deux constantes dupliquées qui ont divergé → aucun
+    test/lint ne pouvait l'attraper (chaque asset mocké séparément). Contrat implicite, pas
+    explicite.
+  correctif: >-
+    Contrat de chemin PARTAGÉ en une source unique dans lakehouse.py
+    (referential_prefix/dest/glob) : le producteur ÉCRIT via referential_dest(source=ingested)
+    et le consommateur LIT via referential_glob(source) — divergence structurellement
+    impossible. Test de non-régression test_referential_producer_writes_where_consumer_reads
+    qui verrouille que le fichier écrit tombe dans le glob lu. 119 tests pageviews verts.
+    LEÇON : un contrat inter-assets doit être défini UNE fois et testé, jamais dupliqué.
+  statut: corrige

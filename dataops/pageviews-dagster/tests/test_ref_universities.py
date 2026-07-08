@@ -40,6 +40,32 @@ _WP_REST = "/w/rest.php/v1/page/"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  Contrat de chemin RÉFÉRENTIEL — producteur (écrit) ↔ consommateur (lit)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_referential_producer_writes_where_consumer_reads():
+    """GARDE-FOU du contrat producteur/consommateur (drift : chemins divergents).
+
+    `ref_universities` ÉCRIT via `lakehouse.referential_dest` ; `raw_pageviews` LIT via
+    `lakehouse.referential_glob`. Ce test VERROUILLE que le fichier écrit tombe bien dans le
+    glob lu, pour la MÊME source — sinon `raw_pageviews` échoue au run (« No files found … »).
+    Avant, chaque asset codait son chemin en dur de son côté et ils avaient divergé.
+    """
+    from pageviews_dagster import lakehouse
+
+    bucket, source = "pageviews", _MODULE._REF_SOURCE
+    dest = lakehouse.referential_dest(bucket, source)  # ce que le producteur écrit
+    glob = lakehouse.referential_glob(bucket, source)  # ce que le consommateur lit
+    # Le dest doit être dans le dossier du glob (préfixe identique avant le motif *.parquet).
+    glob_dir = glob[: glob.rindex("/") + 1]
+    assert dest.startswith(glob_dir), f"écrit {dest} hors du glob de lecture {glob}"
+    assert dest.endswith(".parquet")
+    # La source ingérée par ref_universities est bien `ingested` (alignée sur la prod).
+    assert source == "ingested"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  Corps PURS — works_band (discrétisation)
 # ─────────────────────────────────────────────────────────────────────────────
 

@@ -63,6 +63,33 @@ def read_parquet(con: duckdb.DuckDBPyConnection, glob: str, hive: bool = True):
     return con.execute(f"SELECT * FROM read_parquet('{glob}'{hive_opt})")
 
 
+# ── Contrat de chemin du RÉFÉRENTIEL d'établissements (drift D24) ───────────────
+# CONTRAT INTERNE partagé entre le PRODUCTEUR (`ref_universities`, qui écrit) et le
+# CONSOMMATEUR (`raw_pageviews`, qui lit). Codé UNE SEULE FOIS ici : avant, chaque asset
+# codait son chemin en dur de son côté (`raw/ref_universities` écrit vs
+# `ref/universities/source=…` lu) → ils ont DIVERGÉ, et `raw_pageviews` échouait au run
+# prod (« No files found … ref/universities/source=ingested »). Une source unique rend la
+# divergence structurellement impossible. `source` distingue le référentiel INGÉRÉ
+# (`ingested`, produit par ref_universities) d'un référentiel pré-seedé (`seed`) ; la prod
+# pose `PAGEVIEWS_REF_SOURCE=ingested`.
+_REFERENTIAL_BASE = "ref/universities"
+
+
+def referential_prefix(source: str) -> str:
+    """Préfixe S3 (sans bucket) du référentiel pour une ``source`` (``ingested``/``seed``)."""
+    return f"{_REFERENTIAL_BASE}/source={source}"
+
+
+def referential_dest(bucket: str, source: str) -> str:
+    """Chemin d'ÉCRITURE Parquet du référentiel (fichier unique dans la partition ``source``)."""
+    return f"s3://{bucket}/{referential_prefix(source)}/ref_universities.parquet"
+
+
+def referential_glob(bucket: str, source: str) -> str:
+    """Glob de LECTURE du référentiel — DOIT matcher ce qu'écrit ``referential_dest``."""
+    return f"s3://{bucket}/{referential_prefix(source)}/*.parquet"
+
+
 def copy_to_parquet(
     con: duckdb.DuckDBPyConnection,
     select_sql: str,
