@@ -457,3 +457,33 @@
     LEÇON : tout job dont les assets lisent une var d'env de l'overlay DOIT relayer cette var
     au pod de run — pas seulement le job dbt.
   statut: corrige
+
+- id: D26
+  campagne: "Preuve prod pageviews — saturation DNS de raw_pageviews (httpx.ConnectError)"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    Après D24+D25 (raw_pageviews trouve enfin le référentiel), il échoue plus loin dans la
+    collecte des vues : httpx.ConnectError « [Errno -2] Name or service not known » sur
+    en.wikipedia.org / wikimedia.org. Un pod au repos résout pourtant ces hôtes en 34 ms — c'est
+    SOUS CHARGE que ça casse, et les 4 retries s'épuisent (échec persistant, pas un hoquet).
+  cause: >-
+    raw_pageviews (httpx) fait des DIZAINES DE MILLIERS de requêtes (15 302 titres × redirects +
+    N×M articles de vues). Il utilisait httpx.get (fonction module) qui ouvre une connexion NEUVE
+    — donc une résolution DNS (getaddrinfo) NEUVE — à CHAQUE appel. Amplifié par ndots:5 (défaut
+    k8s) : un host < 5 points est tenté RELATIF → glibc parcourt les 5 search-domains (dont
+    externes tahr-boga.ts.net / dix.univ-lehavre.fr, NXDOMAIN) avant l'absolu = ~6 lookups par
+    résolution. ~183 000 lookups saturent CoreDNS (pas de cache DNS node-local) → EAI_NONAME
+    intermittent. Invisible au banc (volume moindre).
+  correctif: >-
+    (1) CAUSE RACINE : httpx.Client PERSISTANT (keep-alive) dans _Fetcher au lieu de httpx.get →
+    la connexion est réutilisée par hôte, le DNS résolu ~1 fois/hôte tant qu'elle vit →
+    ~183 000 lookups deviennent une poignée (SUPPRIME la classe). close() libère le pool.
+    (2) DÉFENSE EN PROFONDEUR : ndots:1 sur les pods de run via pod_spec_config (aligné sur
+    citation, cluster#458) → tout host ≥1 point tenté ABSOLU d'abord (1 lookup) ; les services
+    nom-court intra-cluster retombent sur la search-list (résolvent quand même). Tests :
+    _Fetcher client persistant + close, ndots:1 sur les runs. Le point final « .org. » a été
+    ÉCARTÉ (casse TLS : le module ssl ne normalise pas le trailing dot → CERTIFICATE_VERIFY_FAILED).
+    SUIVI durable : NodeLocal DNSCache côté cluster (issue séparée). À PROUVER par un run complet
+    (phénomène de charge, un test unitaire ne suffit pas — ADR 0052).
+  statut: corrige

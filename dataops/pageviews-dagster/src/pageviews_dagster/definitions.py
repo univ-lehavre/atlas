@@ -99,6 +99,19 @@ def _s3_env_from() -> list[dict]:
     return env_from
 
 
+# dnsConfig ndots:1 sur les pods de RUN (drift D26 ; aligné sur citation, cluster#458). Le
+# résolveur k8s pose `ndots:5` par défaut : un host < 5 points (en.wikipedia.org = 3 pts,
+# wikimedia.org = 2 pts) est traité comme RELATIF → glibc `getaddrinfo` parcourt TOUTE la
+# search-list (dagster.svc…, svc…, cluster.local, PUIS les domaines EXTERNES tahr-boga.ts.net /
+# dix.univ-lehavre.fr, tous NXDOMAIN) avant la forme absolue = ~6 lookups/résolution. raw_pageviews
+# fait des dizaines de milliers de requêtes → l'amplification ×6 sature CoreDNS → httpx.ConnectError
+# EAI_NONAME (Errno -2) sous charge. `ndots:1` fait tenter tout nom ≥ 1 point en ABSOLU d'abord
+# (1 lookup) ; les services intra-cluster nom-court (marquez.marquez, mlflow.mlflow — 1 pt)
+# retombent sur la search-list après l'absolu → résolvent toujours (prouvé par citation en prod).
+# DÉFENSE EN PROFONDEUR : le vrai fix est le Client keep-alive de _Fetcher (raw_pageviews.py).
+_DNS_NDOTS_1 = {"dns_config": {"options": [{"name": "ndots", "value": "1"}]}}
+
+
 def _run_k8s_config() -> dict:
     """Config K8s des pods de run : accès S3 + RELAIS des vars d'env de l'overlay prod.
 
@@ -125,6 +138,9 @@ def _run_k8s_config() -> dict:
                 "env": _RUN_ENV + relayed,
                 "env_from": _s3_env_from(),
             },
+            # ndots:1 sur le pod de run (le K8sRunLauncher ne porte pas le pod-spec des runs —
+            # il vient d'ici). Défense en profondeur contre la saturation DNS (drift D26).
+            "pod_spec_config": _DNS_NDOTS_1,
         },
     }
 

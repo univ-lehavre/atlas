@@ -157,6 +157,16 @@ def test_no_postgres_in_run_env() -> None:
     assert not any(n.startswith("POSTGRES_") for n in names)
 
 
+def test_run_pod_sets_ndots_1() -> None:
+    # ndots:1 sur le pod de run (drift D26) : tue le fan-out de search-list (ndots:5 → ~6 lookups
+    # par résolution) qui saturait CoreDNS pendant les dizaines de milliers de requêtes de
+    # raw_pageviews → httpx.ConnectError EAI_NONAME. Défense en profondeur (le fix racine est le
+    # Client keep-alive de _Fetcher). Le pod-spec des runs vient d'ici (K8sRunLauncher).
+    cfg = definitions._run_k8s_config()["dagster-k8s/config"]
+    dns = cfg["pod_spec_config"]["dns_config"]
+    assert {"name": "ndots", "value": "1"} in dns["options"]
+
+
 # ── _s3_env_from (banc léger vs prod OBC) ────────────────────────────────────
 
 
