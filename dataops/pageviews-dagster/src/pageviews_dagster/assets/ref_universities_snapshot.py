@@ -4,8 +4,9 @@ Construit la table pivot qui relie un **établissement** à ses **titres d'artic
 encyclopédique** (par langue), pour que l'aval sache QUELLES pages compter. Deux
 sources ouvertes sont jointes par un identifiant d'organisation partagé (ROR) :
 
-- un **catalogue d'organisations de recherche** (API, ``type:education``) qui donne,
-  pour chaque établissement, son ROR, son pays et une bande de volume de publications ;
+- un **catalogue d'organisations de recherche** (SNAPSHOT S3 public, entité
+  ``institutions`` en Parquet, filtre ``type=education``) qui donne, pour chaque
+  établissement, son ROR, son pays et une bande de volume de publications ;
 - une **base de connaissances collaborative** (SPARQL) qui, à partir du même ROR
   (propriété ``P6782``), donne l'identifiant de l'entité (``qid``) et ses **titres
   d'article multilingues** (un par langue de projet encyclopédique).
@@ -25,11 +26,12 @@ par la base de connaissances devient une **redirection**. Compter les vues sur u
 titre obsolète sous-estime le trafic (le trafic réel s'accumule sur la cible). On
 RÉSOUT donc chaque titre vers sa cible canonique avant de l'écrire (``_resolve_titles``).
 
-**Échelle.** À l'échelle réelle, ces jointures se feraient sur des **dumps** (extrait
-Wikidata, snapshot du catalogue) plutôt que par appels API unitaires. Ici l'asset
-DOCUMENTE le pattern API + dump : la glue I/O (HTTP, résolution de redirections,
-écriture S3) est isolée derrière un ``_Fetcher`` injectable, et les corps de parsing
-sont **purs** (aucune I/O), donc testables sans réseau ni S3.
+**Échelle (drift D27).** Le catalogue d'établissements est lu du **snapshot S3**
+(``institutions`` en Parquet, rapatrié par rclone puis interrogé en DuckDB local),
+JAMAIS de l'API REST : à l'échelle prod (~24 700 établissements ``type=education``)
+la pagination de l'API rate-limitait (HTTP 429). Wikidata (SPARQL) et Wikipédia
+(résolution de redirections) restent en HTTP via un ``_Fetcher`` injectable. Les corps
+de parsing/SQL sont **purs** (aucune I/O), donc testables sans réseau ni S3.
 
 NB : pas de ``from __future__ import annotations`` — Dagster introspecte les
 annotations des assets à l'exécution (drift D9 ; le cœur pur ``forecast_model`` peut,
@@ -37,22 +39,35 @@ lui, la porter — pas les assets).
 """
 
 import json
+import subprocess
+import tempfile
 import time
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from pathlib import Path
 
+import duckdb
 from dagster import Config, Failure, MaterializeResult, MetadataValue, asset
 from openlineage.client.event_v2 import RunState
 from pydantic import Field
 
 from pageviews_dagster import lakehouse, lineage
+from pageviews_dagster.resources import ceph_target_from_env, render_rclone_config
 
 # ── Sources externes (en PROSE uniquement ; jamais dans un identifiant interne) ──
-# Catalogue d'organisations de recherche : filtre ``type:education`` → ROR, pays,
-# nombre d'œuvres. Paginé par curseur (l'API borne à ~200 par page).
-_OPENALEX_INSTITUTIONS_URL = "https://api.openalex.org/institutions"
+# Catalogue d'organisations de recherche : le SNAPSHOT S3 public (AWS Open Data),
+# entité ``institutions`` en Parquet colonnaire (``data/parquet/<entity>``, publié
+# 2024+). RAPATRIÉ par rclone (remote ``openalex`` anonyme) puis lu en LOCAL par DuckDB,
+# JAMAIS via l'API REST : l'API rate-limite (429) sous la pagination à l'échelle prod
+# (des dizaines de milliers d'établissements). Le snapshot fait ~91 Mio en 137 petits
+# fichiers → rclone les copie en parallèle (~5 s) là où un httpfs direct enchaîne 137
+# aller-retours S3 (>2 min). Même source que ``citation`` pour works/authors.
+# Partitionné par ``updated_date`` : le catalogue courant = dédup par ``id`` en gardant
+# la partition la PLUS RÉCENTE (un établissement réapparaît dans la partition de sa
+# dernière mise à jour). Filtre ``type='education'`` (+ pays) poussé en SQL.
+_OPENALEX_INSTITUTIONS_SRC = "openalex:openalex/data/parquet/institutions"
 # Point d'accès SPARQL de la base de connaissances collaborative. La requête part du
 # ROR (propriété P6782) et remonte le qid + les libellés d'article par site linguistique.
 _WIKIDATA_SPARQL_URL = "https://query.wikidata.org/sparql"
@@ -188,18 +203,6 @@ def parse_institutions(payload: dict) -> list[dict]:
             }
         )
     return out
-
-
-def next_cursor(payload: dict) -> str | None:
-    """Curseur de pagination de la page (``meta.next_cursor``) ; ``None`` en fin de liste.
-
-    L'API renvoie ``next_cursor: null`` (ou ``"*"`` figé) quand il n'y a plus de page :
-    on rend ``None`` dans les deux cas pour ARRÊTER la boucle (sinon pagination infinie).
-    """
-    cursor = (payload.get("meta") or {}).get("next_cursor")
-    if not cursor or cursor == "*":
-        return None
-    return str(cursor)
 
 
 def _binding_str(binding: dict, key: str) -> str:
@@ -356,29 +359,88 @@ class _Fetcher:
             ) from exc
 
 
-def _fetch_institutions(fetcher: _Fetcher, config: RefUniversitiesConfig) -> list[dict]:
-    """Pagine le catalogue (``type:education`` + filtre pays) → établissements normalisés.
+def institutions_query(local_glob: str, config: RefUniversitiesConfig) -> str:
+    """SQL DuckDB (PUR, testable) lisant le snapshot ``institutions`` LOCAL → établissements.
 
-    Pagination par CURSEUR (``cursor=*`` puis ``meta.next_cursor``), bornée par
-    ``max_institutions`` (0 = illimité). S'arrête quand la source ne rend plus de curseur
-    ou quand le quota est atteint. Corps de parsing délégué à ``parse_institutions`` (pur).
+    ``local_glob`` = le chemin des Parquet rapatriés (``<dir>/**/*.parquet``). Filtre
+    ``type='education'`` (+ pays si demandé), **dédup par ``id`` en gardant la partition
+    ``updated_date`` la plus récente** (catalogue courant), projette les colonnes de
+    ``parse_institutions`` (``ror``, ``id``, ``country_code``, ``works_count``). Le ROR est
+    normalisé en aval par ``parse_institutions`` ; le tri par ``id`` rend l'ordre DÉTERMINISTE
+    (ADR 0057). ``max_institutions`` borne le résultat (0 = illimité).
     """
-    filters = ["type:education"]
+    where = ["type = 'education'", "ror IS NOT NULL", "ror <> ''"]
     if config.country_codes:
-        filters.append("country_code:" + "|".join(c.lower() for c in config.country_codes))
-    institutions: list[dict] = []
-    cursor: str | None = "*"
-    while cursor is not None:
-        payload = fetcher.get_json(
-            _OPENALEX_INSTITUTIONS_URL,
-            {"filter": ",".join(filters), "per-page": 200, "cursor": cursor},
+        codes = ", ".join(
+            "'" + c.strip().upper().replace("'", "") + "'" for c in config.country_codes
         )
-        institutions.extend(parse_institutions(payload))
-        if config.max_institutions and len(institutions) >= config.max_institutions:
-            institutions = institutions[: config.max_institutions]
-            break
-        cursor = next_cursor(payload)
-    return institutions
+        where.append(f"upper(coalesce(country_code, geo.country_code)) IN ({codes})")
+    limit = f"\nLIMIT {int(config.max_institutions)}" if config.max_institutions else ""
+    return (
+        "WITH ranked AS (\n"
+        "  SELECT id, ror, ids, country_code, geo, works_count, updated_date,\n"
+        "         row_number() OVER (PARTITION BY id ORDER BY updated_date DESC) AS rn\n"
+        f"  FROM read_parquet('{local_glob}', hive_partitioning=true)\n"
+        f"  WHERE {' AND '.join(where)}\n"
+        ")\n"
+        "SELECT id, ror, ids,\n"
+        "       coalesce(country_code, geo.country_code) AS country_code, works_count\n"
+        "FROM ranked WHERE rn = 1\n"
+        f"ORDER BY id{limit}"
+    )
+
+
+def _rclone_copy_institutions(dest_dir: Path) -> None:
+    """Rapatrie le snapshot ``institutions`` (Parquet) du remote ``openalex`` → ``dest_dir``.
+
+    Rend le ``rclone.conf`` (remote ``openalex`` anonyme + ``ceph`` interne) dans un fichier
+    temporaire, puis ``rclone copy`` parallélisé (16 transferts) ne prenant que les
+    ``*.parquet``. Lève ``Failure`` si la copie échoue (fail-fast, ADR 0046). ~5 s en prod.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        config_path = Path(tmp) / "rclone.conf"
+        config_path.write_text(render_rclone_config(ceph_target_from_env()))
+        proc = subprocess.run(
+            ["rclone", "--config", str(config_path), "copy", "--transfers", "16",
+             "--include", "*.parquet", _OPENALEX_INSTITUTIONS_SRC, str(dest_dir)],
+            capture_output=True, text=True, check=False,
+        )  # fmt: skip
+        if proc.returncode != 0:
+            raise Failure(
+                description="Rapatriement du snapshot OpenAlex ``institutions`` échoué (rclone).",
+                metadata={"stderr": MetadataValue.text(proc.stderr[-2000:])},
+            )
+
+
+def _fetch_institutions(config: RefUniversitiesConfig) -> list[dict]:
+    """Lit le catalogue (``type:education`` + filtre pays) depuis le SNAPSHOT S3 → normalisé.
+
+    Rapatrie le snapshot ``institutions`` en local (rclone, remote anonyme ``openalex``) puis
+    l'interroge en DuckDB local (``institutions_query``, pure) — dédup par ``id`` sur la
+    partition la plus récente. Chaque ligne est re-normalisée par ``parse_institutions``
+    (mêmes règles ROR/pays/bande que l'ancienne page d'API → aucun changement de sémantique
+    aval). Remplace la pagination par curseur de l'API REST (rate-limitée, 429 en prod).
+    """
+    with tempfile.TemporaryDirectory() as snap_dir:
+        _rclone_copy_institutions(Path(snap_dir))
+        con = duckdb.connect()  # lecture LOCALE : aucun secret S3 requis
+        rows = con.execute(institutions_query(f"{snap_dir}/**/*.parquet", config)).fetchall()
+    # DuckDB rend (id, ror, ids{struct}, country_code, works_count) : on les remet en forme
+    # "enregistrement" que parse_institutions projette (mêmes clés que l'API :
+    # `id`, `ror`, `ids.ror`, `country_code`, `works_count`).
+    payload = {
+        "results": [
+            {
+                "id": r[0],
+                "ror": r[1],
+                "ids": {"ror": (r[2] or {}).get("ror") if isinstance(r[2], dict) else None},
+                "country_code": r[3],
+                "works_count": r[4],
+            }
+            for r in rows
+        ]
+    }
+    return parse_institutions(payload)
 
 
 def _chunked(items: list[str], size: int) -> list[list[str]]:
@@ -562,7 +624,7 @@ def ref_universities(context, config: RefUniversitiesConfig) -> MaterializeResul
     lineage.emit(RunState.START, run_id, "ref_universities", [lineage.source_dataset()], [])
 
     log = context.log.info
-    institutions = _fetch_institutions(fetcher, config)
+    institutions = _fetch_institutions(config)
     rors = sorted({inst["ror"] for inst in institutions})
     log(f"ref_universities : {len(institutions)} établissements, {len(rors)} ROR distincts.")
     knowledge_base = _fetch_wikidata(fetcher, rors, config.langs)

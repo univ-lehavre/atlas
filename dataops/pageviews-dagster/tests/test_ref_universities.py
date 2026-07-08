@@ -1,16 +1,16 @@
 """Tests de l'asset ref_universities et de ses corps PURS de parsing/jointure.
 
 Le référentiel joint DEUX sources ouvertes par un ROR partagé : un catalogue
-d'organisations (API paginée, ``type:education``) et une base de connaissances
-(SPARQL) qui donne qid + titres d'article multilingues, chaque titre étant RÉSOLU
-vers sa cible de redirection (piège renommage) avant écriture.
+d'organisations (SNAPSHOT S3 Parquet, ``type=education`` — drift D27) et une base de
+connaissances (SPARQL) qui donne qid + titres d'article multilingues, chaque titre
+étant RÉSOLU vers sa cible de redirection (piège renommage) avant écriture.
 
-Stratégie (patron mediawatch, sans Docker) : les corps de parsing/jointure sont PURS
-(aucune I/O) → testés directement sur des payloads synthétiques. La glue I/O est
-isolée derrière un ``_Fetcher`` injectable et l'écriture derrière ``lakehouse`` :
-on remplace le ``_Fetcher`` du module par un fake qui DISPATCHE sur l'URL, et on
-mocke ``lakehouse.connect``/``copy_to_parquet``/``duckdb_s3_config_from_env`` +
-``lineage.emit`` → hermétique (zéro réseau, zéro S3).
+Stratégie (patron mediawatch, sans Docker) : les corps de parsing/jointure et le SQL
+(``institutions_query``) sont PURS (aucune I/O) → testés directement. La glue I/O est
+isolée : les institutions derrière ``_fetch_institutions`` (stubé ; testé à part sur un
+mini-snapshot Parquet LOCAL), le reste derrière un ``_Fetcher`` injectable (SPARQL/REST)
+et ``lakehouse`` (connect/copy_to_parquet/duckdb_s3_config_from_env) → hermétique
+(zéro réseau, zéro S3 réel).
 """
 
 import sys
@@ -23,7 +23,6 @@ from pageviews_dagster.assets.ref_universities_snapshot import (
     RefRow,
     RefUniversitiesConfig,
     join_rows,
-    next_cursor,
     parse_institutions,
     parse_wikidata_titles,
     ref_universities,
@@ -32,9 +31,8 @@ from pageviews_dagster.assets.ref_universities_snapshot import (
 
 _MODULE = sys.modules["pageviews_dagster.assets.ref_universities_snapshot"]
 
-# URLs des trois sources (miroir des constantes privées du module) — le fake fetcher
-# dispatche dessus. Sous-chaînes suffisantes pour éviter tout couplage aux paramètres.
-_INSTITUTIONS = "api.openalex.org/institutions"
+# URLs des sources HTTP restantes (SPARQL / résolution REST) — le fake fetcher dispatche
+# dessus. Les institutions viennent désormais du snapshot S3 (drift D27), pas d'une URL.
 _SPARQL = "query.wikidata.org/sparql"
 _WP_REST = "/w/rest.php/v1/page/"
 
@@ -182,20 +180,86 @@ def test_parse_institutions_empty_payload():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Corps PURS — next_cursor (pagination)
+#  institutions_query (SQL PUR) — filtre/dédup/borne du snapshot institutions (D27)
 # ─────────────────────────────────────────────────────────────────────────────
 
 
-def test_next_cursor_returns_value():
-    assert next_cursor({"meta": {"next_cursor": "abc=="}}) == "abc=="
+def test_institutions_query_filters_education_and_dedups():
+    # Le SQL filtre type='education' + ROR non nul et dédup par id (dernière partition).
+    sql = mod.institutions_query("/snap/**/*.parquet", RefUniversitiesConfig())
+    assert "type = 'education'" in sql
+    assert "ror IS NOT NULL" in sql
+    assert "row_number() OVER (PARTITION BY id ORDER BY updated_date DESC)" in sql
+    assert "WHERE rn = 1" in sql
+    assert "/snap/**/*.parquet" in sql
+    # Pas de filtre pays quand country_codes vide, pas de LIMIT quand max=0.
+    assert " IN (" not in sql
+    assert "LIMIT" not in sql
 
 
-def test_next_cursor_none_on_terminal_markers():
-    # null, "*" figé, absence → None (arrête la boucle, pas de pagination infinie).
-    assert next_cursor({"meta": {"next_cursor": None}}) is None
-    assert next_cursor({"meta": {"next_cursor": "*"}}) is None
-    assert next_cursor({"meta": {}}) is None
-    assert next_cursor({}) is None
+def test_institutions_query_country_and_limit():
+    # country_codes → filtre IN (majuscules) ; max_institutions → LIMIT.
+    sql = mod.institutions_query(
+        "/snap/**/*.parquet",
+        RefUniversitiesConfig(country_codes=["fr", "de"], max_institutions=50),
+    )
+    assert "IN ('FR', 'DE')" in sql
+    assert "LIMIT 50" in sql
+
+
+def test_fetch_institutions_reads_local_parquet(monkeypatch, tmp_path):
+    # Intégration DuckDB LOCALE : un mini-snapshot Parquet (2 partitions, 1 doublon d'id
+    # mis à jour) → dédup sur la partition récente + normalisation parse_institutions.
+    import duckdb
+
+    con = duckdb.connect()
+    p1 = tmp_path / "updated_date=2024-01-01"
+    p2 = tmp_path / "updated_date=2024-06-01"
+    p1.mkdir(parents=True)
+    p2.mkdir(parents=True)
+    # part ancienne : I1 works=1000 ; part récente : I1 works=9000 (gagne) + I2 + un non-education.
+    con.execute(
+        "COPY (SELECT 'https://openalex.org/I1' AS id, 'https://ror.org/r1' AS ror, "
+        "'education' AS type, 'US' AS country_code, 1000 AS works_count, "
+        "{'ror': 'https://ror.org/r1'} AS ids, {'country_code': 'US'} AS geo) "
+        f"TO '{p1}/part.parquet' (FORMAT PARQUET)"
+    )
+    con.execute(
+        "COPY (SELECT * FROM (VALUES "
+        "('https://openalex.org/I1','https://ror.org/r1','education','FR',9000,"
+        "{'ror':'https://ror.org/r1'},{'country_code':'FR'}), "
+        "('https://openalex.org/I2','https://ror.org/r2','education','DE',5000,"
+        "{'ror':'https://ror.org/r2'},{'country_code':'DE'}), "
+        "('https://openalex.org/I3','https://ror.org/r3','company','US',1,"
+        "{'ror':'https://ror.org/r3'},{'country_code':'US'})) "
+        "AS t(id,ror,type,country_code,works_count,ids,geo)) "
+        f"TO '{p2}/part.parquet' (FORMAT PARQUET)"
+    )
+    # Court-circuite le rclone (le snapshot est déjà « rapatrié » dans tmp_path).
+    monkeypatch.setattr(mod, "_rclone_copy_institutions", lambda dest: None)
+    monkeypatch.setattr(
+        mod.tempfile, "TemporaryDirectory", lambda *a, **k: _FixedTmp(str(tmp_path))
+    )
+
+    insts = mod._fetch_institutions(RefUniversitiesConfig())
+    by_ror = {i["ror"]: i for i in insts}
+    # I3 (company) exclu ; I1 dédup sur la partition récente (works=9000 → bande 'm', pays FR).
+    assert set(by_ror) == {"r1", "r2"}
+    assert by_ror["r1"]["country_code"] == "FR"
+    assert by_ror["r1"]["works_band"] == mod.works_band(9000)
+
+
+class _FixedTmp:
+    """Contexte tempfile.TemporaryDirectory factice pointant un dossier fixe (test)."""
+
+    def __init__(self, path):
+        self._path = path
+
+    def __enter__(self):
+        return self._path
+
+    def __exit__(self, *a):
+        return False
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -454,23 +518,21 @@ class _FakeCon:
 
 
 class _FakeFetcher:
-    """Fetcher HTTP factice : DISPATCHE sur l'URL (catalogue / SPARQL / résolution REST).
+    """Fetcher HTTP factice : DISPATCHE sur l'URL (SPARQL / résolution REST).
 
-    - Institutions : rend les pages fournies dans ``institution_pages`` (pagination).
+    Depuis le passage des institutions au snapshot S3 (drift D27), le fetcher ne sert
+    PLUS le catalogue — seulement la base de connaissances (SPARQL) et la résolution REST.
     - SPARQL : rend ``sparql_payload``.
     - Résolution REST : rend ``{"title": <canonique>}`` selon ``resolved`` (défaut : titre
       inchangé — pas de renommage). Enregistre les titres résolus (``resolved_calls``).
     """
 
-    def __init__(self, institution_pages, sparql_payload, resolved=None):
-        self._institution_pages = list(institution_pages)
+    def __init__(self, sparql_payload, resolved=None):
         self._sparql_payload = sparql_payload
         self._resolved = resolved or {}
         self.resolved_calls: list[str] = []
 
     def get_json(self, url, params=None):
-        if _INSTITUTIONS in url:
-            return self._institution_pages.pop(0)
         if _SPARQL in url:
             return self._sparql_payload
         if _WP_REST in url:
@@ -484,30 +546,25 @@ class _FakeFetcher:
         raise AssertionError(f"URL inattendue : {url}")
 
     def post_json(self, url, data=None):
-        # Le SPARQL passe désormais en POST (corps de requête, pas d'URL géante) : même
-        # payload que le GET d'avant, dispatché sur l'URL de l'endpoint SPARQL.
+        # Le SPARQL passe en POST (corps de requête, pas d'URL géante) : même payload que
+        # le GET d'avant, dispatché sur l'URL de l'endpoint SPARQL.
         if _SPARQL in url:
             return self._sparql_payload
         raise AssertionError(f"POST inattendu : {url}")
-
-
-def _one_page(results, next_cur=None):
-    return {"results": results, "meta": {"next_cursor": next_cur}}
-
-
-def _inst_result(uid, ror, works=6_000, country="US"):
-    return {"id": uid, "ror": ror, "works_count": works, "geo": {"country_code": country}}
 
 
 def _sparql_payload(bindings):
     return {"results": {"bindings": bindings}}
 
 
-def _patch_glue(monkeypatch, fetcher, con):
-    """Isole toute la glue I/O : fetcher, bucket, connexion + écriture DuckDB, lineage."""
+def _patch_glue(monkeypatch, fetcher, con, institutions):
+    """Isole toute la glue I/O : institutions (snapshot S3 stubé), fetcher (SPARQL/REST),
+    bucket, connexion + écriture DuckDB, lineage. ``institutions`` = liste NORMALISÉE
+    (sortie de ``_fetch_institutions``, stubé : ni rclone ni DuckDB réels)."""
     from pageviews_dagster.resources import DuckDBS3Config
 
     monkeypatch.setattr(_MODULE, "_Fetcher", lambda *a, **k: fetcher)
+    monkeypatch.setattr(_MODULE, "_fetch_institutions", lambda config: list(institutions))
     monkeypatch.setattr(
         mod.lakehouse,
         "duckdb_s3_config_from_env",
@@ -525,16 +582,13 @@ def _ctx():
 def test_asset_builds_referential_and_writes(monkeypatch):
     # Chaîne complète : 1 établissement joint à un titre RÉSOLU → 1 ligne écrite.
     fetcher = _FakeFetcher(
-        institution_pages=[
-            _one_page([_inst_result("u1", "https://ror.org/03vek6s52")], next_cur=None)
-        ],
         sparql_payload=_sparql_payload(
             [_sparql_binding("03vek6s52", "http://x/entity/Q13371", "en", "Old Harvard")]
         ),
         resolved={"Old Harvard": "Harvard University"},  # renommage résolu
     )
     con = _FakeCon()
-    _patch_glue(monkeypatch, fetcher, con)
+    _patch_glue(monkeypatch, fetcher, con, [_inst("u1", "03vek6s52")])
 
     result = ref_universities(_ctx(), RefUniversitiesConfig(langs=["en"]))
 
@@ -552,17 +606,16 @@ def test_asset_builds_referential_and_writes(monkeypatch):
     assert "Old Harvard" in fetcher.resolved_calls  # résolution appelée
 
 
-def test_asset_paginates_institutions(monkeypatch):
-    # Deux pages liées par un curseur → les deux établissements sont retenus.
-    fetcher = _FakeFetcher(
-        institution_pages=[
-            _one_page([_inst_result("u1", "https://ror.org/r1")], next_cur="PAGE2"),
-            _one_page([_inst_result("u2", "https://ror.org/r2")], next_cur=None),
-        ],
-        sparql_payload=_sparql_payload([]),  # aucun titre → has_wp False partout
-    )
+def test_asset_multiple_institutions(monkeypatch):
+    # Deux établissements retournés par le snapshot → les deux sont retenus.
+    fetcher = _FakeFetcher(sparql_payload=_sparql_payload([]))  # aucun titre → has_wp False
     con = _FakeCon()
-    _patch_glue(monkeypatch, fetcher, con)
+    _patch_glue(
+        monkeypatch,
+        fetcher,
+        con,
+        [_inst("u1", "r1"), _inst("u2", "r2")],
+    )
 
     result = ref_universities(_ctx(), RefUniversitiesConfig(langs=["en"]))
     assert result.metadata["n_etablissements"].value == 2
@@ -573,7 +626,7 @@ def test_asset_batches_sparql_over_many_rors(monkeypatch):
     # >_SPARQL_BATCH_SIZE établissements → PLUSIEURS POST SPARQL (un par lot), fusionnés.
     # C'est le cœur du fix : à l'échelle prod (24k+ ROR) un seul VALUES fait Broken pipe.
     n = mod._SPARQL_BATCH_SIZE * 2 + 5  # 3 lots (200, 200, 5)
-    results = [_inst_result(f"u{i:05d}", f"https://ror.org/r{i:05d}") for i in range(n)]
+    institutions = [_inst(f"u{i:05d}", f"r{i:05d}") for i in range(n)]
 
     class _CountingFetcher(_FakeFetcher):
         def __init__(self, *a, **k):
@@ -587,12 +640,9 @@ def test_asset_batches_sparql_over_many_rors(monkeypatch):
                 self.post_batches.append(q.count('"r'))  # chaque ROR est "rNNNNN"
             return super().post_json(url, data)
 
-    fetcher = _CountingFetcher(
-        institution_pages=[_one_page(results, next_cur=None)],
-        sparql_payload=_sparql_payload([]),
-    )
+    fetcher = _CountingFetcher(sparql_payload=_sparql_payload([]))
     con = _FakeCon()
-    _patch_glue(monkeypatch, fetcher, con)
+    _patch_glue(monkeypatch, fetcher, con, institutions)
 
     result = ref_universities(_ctx(), RefUniversitiesConfig(langs=["en"]))
     assert result.metadata["n_etablissements"].value == n
@@ -601,57 +651,11 @@ def test_asset_batches_sparql_over_many_rors(monkeypatch):
     assert fetcher.post_batches == [mod._SPARQL_BATCH_SIZE, mod._SPARQL_BATCH_SIZE, 5]
 
 
-def test_asset_respects_max_institutions(monkeypatch):
-    # max_institutions=1 → pagination arrêtée tôt, une seule ligne malgré 2 résultats page 1.
-    fetcher = _FakeFetcher(
-        institution_pages=[
-            _one_page(
-                [
-                    _inst_result("u1", "https://ror.org/r1"),
-                    _inst_result("u2", "https://ror.org/r2"),
-                ],
-                next_cur="PAGE2",
-            )
-        ],
-        sparql_payload=_sparql_payload([]),
-    )
-    con = _FakeCon()
-    _patch_glue(monkeypatch, fetcher, con)
-
-    result = ref_universities(_ctx(), RefUniversitiesConfig(langs=["en"], max_institutions=1))
-    assert result.metadata["n_etablissements"].value == 1
-
-
-def test_asset_country_filter_reaches_fetcher(monkeypatch):
-    # country_codes non vide → le filtre est passé au catalogue (paramètre ``filter``).
-    seen_params = {}
-
-    class _CapturingFetcher(_FakeFetcher):
-        def get_json(self, url, params=None):
-            if _INSTITUTIONS in url:
-                seen_params.update(params or {})
-            return super().get_json(url, params)
-
-    fetcher = _CapturingFetcher(
-        institution_pages=[_one_page([_inst_result("u1", "https://ror.org/r1")])],
-        sparql_payload=_sparql_payload([]),
-    )
-    con = _FakeCon()
-    _patch_glue(monkeypatch, fetcher, con)
-
-    ref_universities(_ctx(), RefUniversitiesConfig(langs=["en"], country_codes=["FR", "DE"]))
-    assert "country_code:fr|de" in seen_params["filter"]
-    assert "type:education" in seen_params["filter"]
-
-
 def test_asset_raises_on_empty_referential(monkeypatch):
     # Aucun établissement retenu (filtre trop restrictif) → Failure explicite.
-    fetcher = _FakeFetcher(
-        institution_pages=[_one_page([], next_cur=None)],
-        sparql_payload=_sparql_payload([]),
-    )
+    fetcher = _FakeFetcher(sparql_payload=_sparql_payload([]))
     con = _FakeCon()
-    _patch_glue(monkeypatch, fetcher, con)
+    _patch_glue(monkeypatch, fetcher, con, [])  # snapshot vide
 
     with pytest.raises(Failure, match="Référentiel vide"):
         ref_universities(_ctx(), RefUniversitiesConfig(langs=["en"]))
@@ -660,7 +664,6 @@ def test_asset_raises_on_empty_referential(monkeypatch):
 def test_asset_resolution_best_effort_keeps_raw_on_failure(monkeypatch):
     # L'API de résolution lève Failure → on garde le titre brut (pas de perte de ligne).
     fetcher = _FakeFetcher(
-        institution_pages=[_one_page([_inst_result("u1", "https://ror.org/r1")])],
         sparql_payload=_sparql_payload(
             [_sparql_binding("r1", "http://x/entity/Q1", "en", "Kept Title")]
         ),
@@ -675,7 +678,7 @@ def test_asset_resolution_best_effort_keeps_raw_on_failure(monkeypatch):
 
     fetcher.get_json = get_json
     con = _FakeCon()
-    _patch_glue(monkeypatch, fetcher, con)
+    _patch_glue(monkeypatch, fetcher, con, [_inst("u1", "r1")])
 
     result = ref_universities(_ctx(), RefUniversitiesConfig(langs=["en"]))
     assert result.metadata["n_titres"].value == 1
