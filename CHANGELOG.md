@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.5.0](https://github.com/univ-lehavre/atlas/compare/v1.4.0...v1.5.0) (2026-07-08)
+
+
+### Features
+
+* **pageviews-dagster:** package de prévision des vues wikipedia (adr 0097) ([52db340](https://github.com/univ-lehavre/atlas/commit/52db340ba3e16c1be47f461eb5f9ef5c1594a8b9))
+* **pageviews-dagster:** package de prévision des vues wikipedia (ADR 0098) ([#576](https://github.com/univ-lehavre/atlas/issues/576)) ([e11a77e](https://github.com/univ-lehavre/atlas/commit/e11a77e9ca1d3e1dcc2eabcee7c1d03c8f61a658))
+
+
+### Bug Fixes
+
+* **citation:** 56gi pour le pod de run uplift (oom numpy vs duckdb) ([2f07bf9](https://github.com/univ-lehavre/atlas/commit/2f07bf9af6b37aee7cab12156892e181c6224321))
+* **citation:** 56gi pour le pod de run uplift (oom numpy vs duckdb) ([#579](https://github.com/univ-lehavre/atlas/issues/579)) ([97a929f](https://github.com/univ-lehavre/atlas/commit/97a929f16a39a38f2fedae9211632513995c6505))
+* **citation:** candidats uplift par knn thématique (évite l'explosion quadratique, oom prod) ([3e0d50b](https://github.com/univ-lehavre/atlas/commit/3e0d50bdb3aca901bd3f4b00d9cc4886fc497beb))
+* **citation:** candidats uplift par knn thématique (évite l'explosion quadratique, oom prod) ([#575](https://github.com/univ-lehavre/atlas/issues/575)) ([bc27cdb](https://github.com/univ-lehavre/atlas/commit/bc27cdb7bf10f233408ccc1372d34efe85738fa1))
+* **citation:** déduplique work_id dans stg_citation_works (doublons openalex) ([de19cec](https://github.com/univ-lehavre/atlas/commit/de19cecc1b297e6350da13943644d9123c2b9722))
+* **citation:** déduplique work_id dans stg_citation_works (doublons openalex) ([#573](https://github.com/univ-lehavre/atlas/issues/573)) ([0c88824](https://github.com/univ-lehavre/atlas/commit/0c88824344fa7975182f6a40013c1cc40b6d3b99))
+* **citation:** score les paires uplift par lots (features, oom prod) ([6d0ac29](https://github.com/univ-lehavre/atlas/commit/6d0ac29c9fc41bb821a84296de71bf7c46687357))
+* **citation:** score les paires uplift par lots (features, oom prod) ([#578](https://github.com/univ-lehavre/atlas/issues/578)) ([e484084](https://github.com/univ-lehavre/atlas/commit/e4840843457910793fedfa52162ee4f2d7a544e7))
+* **citation:** sérialise le transform_job (max_concurrent=1, oom embeddings) ([dec2301](https://github.com/univ-lehavre/atlas/commit/dec230116c55145eefb81f1ebac3c4afdc0958a8))
+* **citation:** sérialise le transform_job (max_concurrent=1, oom embeddings) ([#574](https://github.com/univ-lehavre/atlas/issues/574)) ([78d7ed5](https://github.com/univ-lehavre/atlas/commit/78d7ed523f2781f98371e2f3f431fcb05e3e896e))
+* **citation:** streame le scoring uplift dans duckdb (mémoire bornée, oom prod) ([bb668bc](https://github.com/univ-lehavre/atlas/commit/bb668bcf4c7c999c88a31e40cec69786dd1d1370))
+* **citation:** streame le scoring uplift dans duckdb (mémoire bornée, oom prod) ([#580](https://github.com/univ-lehavre/atlas/issues/580)) ([ae52d4e](https://github.com/univ-lehavre/atlas/commit/ae52d4e0ad2183d79b33505f0db198798b0d16bf))
+
+
+### Documentation
+
+* adr 0098 prévision des vues (supersede 0096), plan révisé ([c413a55](https://github.com/univ-lehavre/atlas/commit/c413a55ae28967d7d839f747cb58aea111444d7c))
+* corrige les liens vers l'adr 0081 (sans extension .md) ([0bd3945](https://github.com/univ-lehavre/atlas/commit/0bd394591576162b2ed1980f0a5c366fd163b7e9))
+* **docs:** adr 0097 — candidats uplift par knn (complète 0067) ([749e090](https://github.com/univ-lehavre/atlas/commit/749e0903010c1bb3cca9d863af1f35c9f7d6e82a))
+* **docs:** corrige le lien adr 0057 dans 0097 (slug réel) ([d456a1f](https://github.com/univ-lehavre/atlas/commit/d456a1fb5c24904369762ac585f1b5830b6b7595))
+* **pageviews-dagster:** runbook de déploiement + handoff cluster ([#577](https://github.com/univ-lehavre/atlas/issues/577)) ([a172668](https://github.com/univ-lehavre/atlas/commit/a1726688b3ed255b713baee4c33507f8b8dee447))
+* **pageviews-dagster:** runbook de déploiement + handoff cluster (phase 5) ([9ce5cee](https://github.com/univ-lehavre/atlas/commit/9ce5cee61351b7e83ef1b9ed1f35f75064e3717d))
+
 ## [1.4.0](https://github.com/univ-lehavre/atlas/compare/v1.3.2...v1.4.0) (2026-07-07)
 
 
