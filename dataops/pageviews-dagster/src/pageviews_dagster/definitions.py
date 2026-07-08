@@ -99,25 +99,20 @@ def _s3_env_from() -> list[dict]:
     return env_from
 
 
-RUN_K8S_CONFIG = {
-    "dagster-k8s/config": {
-        "container_config": {
-            "env": _RUN_ENV,
-            "env_from": _s3_env_from(),
-        },
-    },
-}
-
-
-def _transform_run_config() -> dict:
-    """Config K8s du run de transformation : relaie les vars dbt aux pods de run.
+def _run_k8s_config() -> dict:
+    """Config K8s des pods de run : accès S3 + RELAIS des vars d'env de l'overlay prod.
 
     Piège ADR 0086 : les vars posées sur le Deployment gRPC (overlay prod :
     ``DBT_S3_USE_SSL``, ``PAGEVIEWS_REF_SOURCE``) NE se propagent PAS aux pods de run. Or
-    dbt-duckdb (SSL) et ``build_dbt_vars`` (ref_source) les lisent DANS le pod de run. Ce
-    module étant importé dans le Deployment gRPC, ``os.environ`` y porte les valeurs de
-    l'overlay : on les RELAIE explicitement au niveau du run (valeurs absentes au banc →
-    défauts ``false``/``seed``, inchangé).
+    dbt-duckdb (SSL) ET ``raw_pageviews``/``build_dbt_vars`` (ref_source) les lisent DANS
+    le pod de run. Ce module étant importé dans le Deployment gRPC, ``os.environ`` y porte
+    les valeurs de l'overlay : on les RELAIE explicitement au niveau du run (valeurs
+    absentes au banc → défauts ``false``/``seed``, inchangé).
+
+    Utilisé par les DEUX jobs : ``ingestion_job`` (``raw_pageviews`` lit
+    ``PAGEVIEWS_REF_SOURCE`` pour trouver le référentiel INGÉRÉ — drift D25 : l'ancien
+    ``ingestion_job`` utilisait une config SANS relais → le run retombait sur ``seed`` et ne
+    trouvait pas le référentiel écrit sous ``source=ingested``) ET ``transform_job`` (dbt).
     """
     relayed = [
         {"name": name, "value": os.environ[name]}
@@ -143,7 +138,9 @@ def _transform_run_config() -> dict:
 ingestion_job = define_asset_job(
     "ingestion_job",
     selection=AssetSelection.assets("ref_universities", "raw_pageviews"),
-    tags=RUN_K8S_CONFIG,
+    # Relaie PAGEVIEWS_REF_SOURCE au pod de run : raw_pageviews en a besoin pour lire le
+    # référentiel INGÉRÉ (source=ingested), sinon défaut seed → « No files found » (drift D25).
+    tags=_run_k8s_config(),
 )
 
 
@@ -189,7 +186,7 @@ if _dbt_assets:
             | AssetSelection.assets("forecast_manifest")
         ),
         # Relaie DBT_S3_USE_SSL / PAGEVIEWS_REF_SOURCE aux pods de run (piège ADR 0086).
-        tags=_transform_run_config(),
+        tags=_run_k8s_config(),
     )
     _jobs.append(transform_job)
 

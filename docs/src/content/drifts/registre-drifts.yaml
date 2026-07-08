@@ -433,3 +433,27 @@
     qui verrouille que le fichier écrit tombe dans le glob lu. 119 tests pageviews verts.
     LEÇON : un contrat inter-assets doit être défini UNE fois et testé, jamais dupliqué.
   statut: corrige
+
+- id: D25
+  campagne: "Preuve prod pageviews — relais de PAGEVIEWS_REF_SOURCE au pod de run"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    Même APRÈS le contrat de chemin partagé (D24), ingestion_job échoue encore à raw_pageviews :
+    « No files found … ref/universities/source=SEED/*.parquet ». Or ref_universities écrit sous
+    source=INGESTED. raw_pageviews cherche donc la mauvaise partition.
+  cause: >-
+    raw_pageviews lit PAGEVIEWS_REF_SOURCE DANS le pod de run (défaut « seed »). L'overlay prod
+    pose bien PAGEVIEWS_REF_SOURCE=ingested sur le Deployment gRPC, mais les vars du gRPC NE se
+    propagent PAS aux pods de run du K8sRunLauncher (piège ADR 0086) — il faut les RELAYER via
+    le tag dagster-k8s/config. Or seul transform_job avait ce relais (_transform_run_config) ;
+    ingestion_job utilisait la config STATIQUE RUN_K8S_CONFIG, SANS relais. Le pod de run de
+    raw_pageviews retombait donc sur « seed ». Env du pod de run vérifié VIDE de la var.
+  correctif: >-
+    Généraliser le relais : _transform_run_config → _run_k8s_config, utilisé par les DEUX jobs
+    (ingestion ET transform) ; suppression de la config statique RUN_K8S_CONFIG (sans relais).
+    Test de non-régression test_ingestion_job_relays_ref_source_to_run_pod (recharge le module
+    avec la var posée, vérifie qu'elle est bien dans les tags du run). 23 tests definitions verts.
+    LEÇON : tout job dont les assets lisent une var d'env de l'overlay DOIT relayer cette var
+    au pod de run — pas seulement le job dbt.
+  statut: corrige

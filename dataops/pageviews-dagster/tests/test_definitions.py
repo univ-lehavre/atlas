@@ -61,6 +61,26 @@ def test_ingestion_job_carries_run_k8s_config() -> None:
     assert "dagster-k8s/config" in job.tags
 
 
+def test_ingestion_job_relays_ref_source_to_run_pod(monkeypatch) -> None:
+    # GARDE-FOU drift D25 : raw_pageviews (dans ingestion_job) lit PAGEVIEWS_REF_SOURCE DANS le
+    # pod de run pour trouver le référentiel INGÉRÉ (source=ingested). L'ancien ingestion_job
+    # utilisait une config SANS relais → le run retombait sur `seed` et ne trouvait PAS le
+    # référentiel → « No files found ». On vérifie que la var est bien relayée au run.
+    import importlib
+
+    monkeypatch.setenv("PAGEVIEWS_REF_SOURCE", "ingested")
+    reloaded = importlib.reload(definitions)
+    try:
+        job = reloaded.defs.get_job_def("ingestion_job")
+        cfg = job.tags["dagster-k8s/config"]
+        # tags sérialisés en JSON : le relais doit contenir PAGEVIEWS_REF_SOURCE=ingested.
+        assert "PAGEVIEWS_REF_SOURCE" in cfg
+        assert "ingested" in cfg
+    finally:
+        monkeypatch.delenv("PAGEVIEWS_REF_SOURCE", raising=False)
+        importlib.reload(definitions)  # restaure l'état module pour les tests suivants
+
+
 # ── Dégradation propre : pas de transform_job sans assets dbt ────────────────
 
 
@@ -123,7 +143,7 @@ def test_run_env_reinjects_lineage_and_mlflow() -> None:
 
 
 def test_run_k8s_config_injects_s3_secret_and_run_env() -> None:
-    cfg = definitions.RUN_K8S_CONFIG["dagster-k8s/config"]["container_config"]
+    cfg = definitions._run_k8s_config()["dagster-k8s/config"]["container_config"]
     names = {e["name"] for e in cfg["env"]}
     assert "OPENLINEAGE_URL" in names
     assert "MLFLOW_TRACKING_URI" in names
@@ -167,15 +187,15 @@ def test_s3_env_from_secret_without_configmap(monkeypatch) -> None:
     assert definitions._s3_env_from() == [{"secret_ref": {"name": "custom-s3"}}]
 
 
-# ── _transform_run_config (relais des vars dbt aux pods de run, ADR 0086) ─────
+# ── _run_k8s_config (relais des vars d'env aux pods de run, ADR 0086) ─────────
 
 
-def test_transform_run_config_relays_dbt_env(monkeypatch) -> None:
+def test_run_k8s_config_relays_dbt_env(monkeypatch) -> None:
     # Piège ADR 0086 : DBT_S3_USE_SSL (SSL dbt-duckdb) et PAGEVIEWS_REF_SOURCE (ref_source)
     # sont lues DANS le pod de run → relayées. Présentes dans l'env → relayées.
     monkeypatch.setenv("DBT_S3_USE_SSL", "true")
     monkeypatch.setenv("PAGEVIEWS_REF_SOURCE", "ingested")
-    cfg = definitions._transform_run_config()["dagster-k8s/config"]["container_config"]
+    cfg = definitions._run_k8s_config()["dagster-k8s/config"]["container_config"]
     env = {e["name"]: e["value"] for e in cfg["env"]}
     assert env["DBT_S3_USE_SSL"] == "true"
     assert env["PAGEVIEWS_REF_SOURCE"] == "ingested"
@@ -183,11 +203,11 @@ def test_transform_run_config_relays_dbt_env(monkeypatch) -> None:
     assert env["MLFLOW_TRACKING_URI"] == "http://mlflow.mlflow:5000"
 
 
-def test_transform_run_config_omits_absent_env(monkeypatch) -> None:
+def test_run_k8s_config_omits_absent_env(monkeypatch) -> None:
     # Au banc (vars absentes) : rien à relayer → seules les vars de base (lineage/MLflow).
     monkeypatch.delenv("DBT_S3_USE_SSL", raising=False)
     monkeypatch.delenv("PAGEVIEWS_REF_SOURCE", raising=False)
-    cfg = definitions._transform_run_config()["dagster-k8s/config"]["container_config"]
+    cfg = definitions._run_k8s_config()["dagster-k8s/config"]["container_config"]
     names = {e["name"] for e in cfg["env"]}
     assert "DBT_S3_USE_SSL" not in names
     assert "PAGEVIEWS_REF_SOURCE" not in names
