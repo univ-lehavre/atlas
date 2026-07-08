@@ -268,10 +268,29 @@ class _Fetcher:
         monotonic: Callable[[], float] = time.monotonic,
     ) -> None:
         self._config = config
-        self._get = get or httpx.get
+        # Client PERSISTANT (keep-alive) au lieu de httpx.get (drift D26). httpx.get ouvre une
+        # connexion NEUVE — donc une résolution DNS NEUVE (getaddrinfo) — à CHAQUE appel. Or
+        # raw_pageviews frappe une poignée d'hôtes (<lang>.wikipedia.org, wikimedia.org) des
+        # DIZAINES DE MILLIERS de fois (15 302 titres × redirects + N×M articles) → autant de
+        # lookups, ×6 sous ndots:5 (search-list) → sature CoreDNS → httpx.ConnectError EAI_NONAME
+        # (Errno -2) PERSISTANT sous charge (les 4 retries s'épuisent). Le Client réutilise la
+        # connexion par hôte (pool) : le DNS n'est résolu qu'~1 fois/hôte tant que la connexion
+        # vit (keepalive_expiry ≫ min_interval_s) → ~183 000 lookups deviennent une poignée. C'est
+        # le fix qui SUPPRIME la classe (le ndots:2 côté pod de run n'est qu'une défense en
+        # profondeur). ``get`` injecté (tests) → le Client n'est pas utilisé (inoffensif).
+        self._client = httpx.Client(
+            headers={"User-Agent": _USER_AGENT},
+            timeout=60.0,
+            limits=httpx.Limits(max_keepalive_connections=10, keepalive_expiry=30.0),
+        )
+        self._get = get or self._client.get
         self._sleep = sleep
         self._monotonic = monotonic
         self._last_at: float | None = None
+
+    def close(self) -> None:
+        """Ferme le pool de connexions keep-alive (libère les sockets)."""
+        self._client.close()
 
     def _throttle(self) -> None:
         if self._last_at is not None:
@@ -286,9 +305,8 @@ class _Fetcher:
         for attempt in range(1, attempts + 1):
             self._throttle()
             try:
-                resp = self._get(
-                    url, params=params, headers={"User-Agent": _USER_AGENT}, timeout=60.0
-                )
+                # User-Agent + timeout portés par le Client persistant (cf. __init__).
+                resp = self._get(url, params=params)
             except httpx.TransportError:
                 if attempt >= attempts:
                     raise
@@ -467,43 +485,48 @@ def raw_pageviews(context, config: RawPageviewsConfig) -> MaterializeResult:
     ref_source = os.environ.get("PAGEVIEWS_REF_SOURCE", "seed")
     fetcher = _Fetcher(config)
 
-    with tempfile.TemporaryDirectory() as tmp:
-        config_path = Path(tmp) / "rclone.conf"
-        config_path.write_text(render_rclone_config(target))
+    try:
+        with tempfile.TemporaryDirectory() as tmp:
+            config_path = Path(tmp) / "rclone.conf"
+            config_path.write_text(render_rclone_config(target))
 
-        con = lakehouse.connect()
-        titles = _read_referential(con, target.bucket, ref_source)
-        if not titles:
-            raise Failure(description=f"Référentiel vide : ref/universities (source={ref_source})")
+            con = lakehouse.connect()
+            titles = _read_referential(con, target.bucket, ref_source)
+            if not titles:
+                raise Failure(
+                    description=f"Référentiel vide : ref/universities (source={ref_source})"
+                )
 
-        after = _read_watermark(target.bucket, ref_source, config_path)
-        until = last_complete_month(date.today())
-        months = months_to_collect(after, until, config.max_months)
-        if not months:
-            # Rien de neuf (déjà à jour au dernier mois complet) : run idempotent, no-op.
-            return _empty_result(ref_source, after, until)
+            after = _read_watermark(target.bucket, ref_source, config_path)
+            until = last_complete_month(date.today())
+            months = months_to_collect(after, until, config.max_months)
+            if not months:
+                # Rien de neuf (déjà à jour au dernier mois complet) : run idempotent, no-op.
+                return _empty_result(ref_source, after, until)
 
-        wanted = set(months)
-        lineage.emit(RunState.START, run_id, "raw_pageviews", [lineage.source_dataset()], [])
+            wanted = set(months)
+            lineage.emit(RunState.START, run_id, "raw_pageviews", [lineage.source_dataset()], [])
 
-        fetched: dict[tuple[str, str], list[MonthlyViews]] = {}
-        for wt in titles:
-            fetched[(wt.lang, wt.title)] = _fetch_title_views(
-                fetcher, wt, months, config.include_redirects
+            fetched: dict[tuple[str, str], list[MonthlyViews]] = {}
+            for wt in titles:
+                fetched[(wt.lang, wt.title)] = _fetch_title_views(
+                    fetcher, wt, months, config.include_redirects
+                )
+
+            rows = aggregate_views(titles, fetched, wanted)
+            if rows:
+                _write_raw(con, rows, target.bucket, run_id)
+                _write_watermark(target.bucket, ref_source, max(months), config_path)
+
+            lineage.emit(
+                RunState.COMPLETE,
+                run_id,
+                "raw_pageviews",
+                [lineage.source_dataset()],
+                [lineage.raw_dataset()],
             )
-
-        rows = aggregate_views(titles, fetched, wanted)
-        if rows:
-            _write_raw(con, rows, target.bucket, run_id)
-            _write_watermark(target.bucket, ref_source, max(months), config_path)
-
-        lineage.emit(
-            RunState.COMPLETE,
-            run_id,
-            "raw_pageviews",
-            [lineage.source_dataset()],
-            [lineage.raw_dataset()],
-        )
+    finally:
+        fetcher.close()  # libère le pool keep-alive (drift D26)
 
     n_series = len({r["university_id"] for r in rows})
     n_obs = len(rows)

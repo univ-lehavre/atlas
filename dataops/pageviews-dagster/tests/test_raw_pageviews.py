@@ -325,6 +325,20 @@ def test_fetcher_returns_empty_dict_on_404():
     assert fetcher.get_json("http://x") == {}
 
 
+def test_fetcher_uses_persistent_client_and_closes():
+    # Drift D26 : sans `get` injecté, _Fetcher utilise un httpx.Client PERSISTANT (keep-alive) au
+    # lieu de httpx.get (connexion + DNS neufs à chaque appel → sature CoreDNS sous charge). Le
+    # client réutilise la connexion par hôte → 1 résolution DNS/hôte. close() libère le pool.
+    import httpx
+
+    fetcher = _Fetcher(_cfg())
+    assert isinstance(fetcher._client, httpx.Client)
+    # get par défaut = la méthode du Client persistant (pas la fonction module httpx.get).
+    assert fetcher._get == fetcher._client.get
+    fetcher.close()
+    assert fetcher._client.is_closed
+
+
 def test_fetcher_retries_on_5xx_then_succeeds():
     # Premier appel 503 (retryable) → backoff (sleep injecté) → second appel OK.
     responses = [_Resp(503), _Resp(200, {"ok": 1})]
@@ -402,6 +416,11 @@ class _FakeFetcher:
         self._views = views_by_article or {}
         self._redirects = redirects or []
         self.calls: list[str] = []
+        self.closed = False
+
+    def close(self) -> None:
+        # L'asset ferme le fetcher en finally (pool keep-alive, drift D26) : no-op ici.
+        self.closed = True
 
     def get_json(self, url, params=None):
         self.calls.append(url)
