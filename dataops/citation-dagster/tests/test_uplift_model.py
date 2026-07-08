@@ -227,10 +227,21 @@ def _unit_rows(n, d, rng):
     return m / np.linalg.norm(m, axis=1, keepdims=True)
 
 
+def _collect_pairs(vectors, **kw):
+    """Consomme le GÉNÉRATEUR knn_candidate_pairs (yield d'arrays par bloc, drift L92) et
+    déduplique globalement en un set de tuples (i, j) — la dédup globale que l'asset délègue
+    au DISTINCT DuckDB. Pour les tests : matérialise le résultat complet."""
+    pairs = set()
+    for block in um.knn_candidate_pairs(vectors, **kw):
+        for i, j in block:
+            pairs.add((int(i), int(j)))
+    return sorted(pairs)
+
+
 def test_knn_candidate_pairs_degenerates_to_all_pairs_when_k_ge_n() -> None:
     # k ≥ N-1 → chaque ligne voisine toutes les autres → union = TOUTES les paires C(N,2).
     # (préserve le comportement historique "toutes les paires" au petit N, ex. tests d'asset).
-    pairs = um.knn_candidate_pairs(_unit_rows(6, 4, _rng()), k=50)
+    pairs = _collect_pairs(_unit_rows(6, 4, _rng()), k=50)
     assert len(pairs) == 6 * 5 // 2  # C(6,2) = 15
     assert all(i < j for i, j in pairs)  # invariant (i < j), non orienté
     assert len(pairs) == len(set(pairs))  # dédupliqué
@@ -240,10 +251,20 @@ def test_knn_candidate_pairs_bounded_by_k_at_scale() -> None:
     # À grand N, le nombre de paires est borné par ~N*k (≪ N²) — c'est tout l'objet du fix L89.
     rng = _rng()
     n, k = 400, 5
-    pairs = um.knn_candidate_pairs(_unit_rows(n, 8, rng), k=k, block=64)
+    pairs = _collect_pairs(_unit_rows(n, 8, rng), k=k, block=64)
     assert len(pairs) <= n * k  # union symétrisée, borne haute
     assert len(pairs) < n * (n - 1) // 2  # STRICTEMENT moins que toutes les paires
     assert all(i < j for i, j in pairs) and len(pairs) == len(set(pairs))
+
+
+def test_knn_candidate_pairs_yields_blocks_bounded_by_block_size() -> None:
+    # drift L92 : générateur → chaque yield est un array (≤ block·k, 2), jamais l'union complète.
+    rng = _rng()
+    blocks = list(um.knn_candidate_pairs(_unit_rows(300, 8, rng), k=5, block=64))
+    assert len(blocks) >= 2  # 300 lignes / bloc 64 → plusieurs blocs (pas tout d'un coup)
+    for arr in blocks:
+        assert arr.shape[1] == 2 and arr.shape[0] <= 64 * 5  # borné par bloc·k
+        assert (arr[:, 0] < arr[:, 1]).all()  # (i < j) par bloc
 
 
 def test_knn_candidate_pairs_picks_nearest() -> None:
@@ -251,6 +272,6 @@ def test_knn_candidate_pairs_picks_nearest() -> None:
     # doit sortir ; (0,2) non (2 n'est le plus proche de personne ; 0 et 1 se choisissent).
     vecs = np.array([[1.0, 0.0], [0.9987, 0.0500], [0.0, 1.0]])
     vecs = vecs / np.linalg.norm(vecs, axis=1, keepdims=True)
-    pairs = um.knn_candidate_pairs(vecs, k=1)
+    pairs = _collect_pairs(vecs, k=1)
     assert (0, 1) in pairs
     assert (0, 2) not in pairs
