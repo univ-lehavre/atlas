@@ -20,6 +20,7 @@ Dagster).
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 import numpy as np
@@ -28,6 +29,15 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import GroupKFold
 
 RANDOM_STATE = 42
+
+# Plafond du nombre de paires LABELLISÉES entrant dans l'entraînement (drift L93). À l'échelle
+# réelle, curated_pair_uplift_labels compte ~4,7 M paires distinctes → une matrice X dense
+# (~4,7M × ~1,3k features × 8o ≈ 48 Go, + la copie de sklearn.fit) dépasse la RAM du pod. Un
+# GradientBoosting n'a PAS besoin de 4,7 M lignes : un échantillon DÉTERMINISTE (graine figée,
+# ADR 0057) borne la mémoire sans dégrader le signal, et la validation groupée-par-auteur reste
+# honnête sur l'échantillon. Dérivable par l'env (valeur d'instance, ADR 0023) ; 0/absent → pas
+# de plafond (rétro-compat / petit N au banc).
+_MAX_TRAIN_LABELS = int(os.environ.get("CITATION_UPLIFT_MAX_TRAIN_LABELS", "800000"))
 
 
 def author_vectors(
@@ -176,6 +186,22 @@ class Dataset:
     group_a: np.ndarray  # author_a de chaque paire (clé de groupe)
 
 
+def _sample_labels(labels: list[tuple[str, str, float]]) -> list[tuple[str, str, float]]:
+    """Échantillon DÉTERMINISTE des labels si leur nombre dépasse ``_MAX_TRAIN_LABELS`` (drift
+    L93). Sans plafond (0/absent) ou en-dessous, on renvoie tout (rétro-compat, petit N au banc).
+
+    La sélection est reproductible (graine ``RANDOM_STATE``, ADR 0057) et SANS remise (paires
+    distinctes). Elle borne la matrice X d'entraînement — le vrai OOM était sa densification
+    (~4,7M × 1,3k features = ~48 Go), PAS le scoring des candidats (kNN/streaming, L89-L92).
+    """
+    if _MAX_TRAIN_LABELS <= 0 or len(labels) <= _MAX_TRAIN_LABELS:
+        return labels
+    rng = np.random.default_rng(RANDOM_STATE)
+    idx = rng.choice(len(labels), size=_MAX_TRAIN_LABELS, replace=False)
+    idx.sort()  # préserve un ordre stable (déterminisme des folds en aval)
+    return [labels[i] for i in idx]
+
+
 def build_dataset(
     labels: list[tuple[str, str, float]],
     vecs: dict[str, np.ndarray],
@@ -190,9 +216,12 @@ def build_dataset(
     384) : présent pour une paire → enrichit ; absent pour l'un des deux → features
     embedding neutres + drapeau (cf. ``pair_features_combined``). Sans ``emb_vecs``, on
     reste sur les seules features thématiques (rétro-compatible).
+
+    Les labels sont ÉCHANTILLONNÉS (déterministe) au-delà de ``_MAX_TRAIN_LABELS`` avant la
+    densification de X, pour borner la RAM de l'entraînement (drift L93).
     """
     rows_x, rows_y, groups = [], [], []
-    for a, b, uplift in labels:
+    for a, b, uplift in _sample_labels(labels):
         if a not in vecs or b not in vecs:
             continue
         if emb_vecs is None:
