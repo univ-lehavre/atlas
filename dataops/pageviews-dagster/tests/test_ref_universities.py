@@ -14,6 +14,7 @@ et ``lakehouse`` (connect/copy_to_parquet/duckdb_s3_config_from_env) → hermét
 """
 
 import sys
+import urllib.error
 
 import pytest
 from dagster import Failure, build_asset_context
@@ -177,6 +178,91 @@ def test_parse_institutions_skips_entries_without_id():
 def test_parse_institutions_empty_payload():
     assert parse_institutions({}) == []
     assert parse_institutions({"results": None}) == []
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  _Fetcher — reprise sur erreur HTTP transitoire (429/5xx, D27 §2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_retry_delay_honours_retry_after_then_backoff():
+    # Retry-After (secondes) prime ; sinon backoff exponentiel base×2**attempt.
+    assert mod._retry_delay_s(0, "7") == 7.0
+    assert mod._retry_delay_s(0, None) == mod._HTTP_BACKOFF_BASE_S
+    assert mod._retry_delay_s(2, None) == mod._HTTP_BACKOFF_BASE_S * 4
+    # Retry-After aberrant / format date → plafonné / retombe sur le backoff (jamais un gel).
+    assert mod._retry_delay_s(0, "99999") == mod._HTTP_BACKOFF_CAP_S
+    assert mod._retry_delay_s(1, "Wed, 21 Oct 2099 07:28:00 GMT") == mod._HTTP_BACKOFF_BASE_S * 2
+
+
+def _http_error(code):
+    return urllib.error.HTTPError("http://x", code, "err", {}, None)
+
+
+def test_fetcher_retries_transient_then_succeeds(monkeypatch):
+    # 502 (transitoire) puis 200 → 1 reprise, sleep mocké (aucune attente réelle), succès.
+    slept, calls = [], {"n": 0}
+
+    def fake_urlopen(req, timeout=None):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise _http_error(502)
+        return _FakeResp(b'{"ok": true}')
+
+    monkeypatch.setattr(mod.urllib.request, "urlopen", fake_urlopen)
+    fetcher = mod._Fetcher(sleep=slept.append)
+    out = fetcher.get_json("http://x")
+    assert out == {"ok": True}
+    assert calls["n"] == 2  # 1 échec transitoire + 1 succès
+    assert len(slept) == 1  # exactement 1 backoff
+
+
+def test_fetcher_gives_up_after_max_attempts(monkeypatch):
+    # 502 permanent → épuise les tentatives puis Failure (aucun faux-vert).
+    slept, calls = [], {"n": 0}
+
+    def fake_urlopen(req, timeout=None):
+        calls["n"] += 1
+        raise _http_error(503)
+
+    monkeypatch.setattr(mod.urllib.request, "urlopen", fake_urlopen)
+    fetcher = mod._Fetcher(sleep=slept.append)
+    with pytest.raises(Failure, match="après .* tentatives"):
+        fetcher.post_json("http://x", {"q": "1"})
+    assert calls["n"] == mod._HTTP_MAX_ATTEMPTS  # a bien tout tenté
+    assert len(slept) == mod._HTTP_MAX_ATTEMPTS - 1  # 1 backoff entre chaque essai
+
+
+def test_fetcher_does_not_retry_non_transient_4xx(monkeypatch):
+    # 404 (non-transitoire) → échec IMMÉDIAT, pas de reprise inutile.
+    slept, calls = [], {"n": 0}
+
+    def fake_urlopen(req, timeout=None):
+        calls["n"] += 1
+        raise _http_error(404)
+
+    monkeypatch.setattr(mod.urllib.request, "urlopen", fake_urlopen)
+    fetcher = mod._Fetcher(sleep=slept.append)
+    with pytest.raises(Failure):
+        fetcher.get_json("http://x")
+    assert calls["n"] == 1  # un seul essai
+    assert slept == []  # aucun backoff
+
+
+class _FakeResp:
+    """Réponse urlopen factice (context manager) rendant un corps JSON fixe."""
+
+    def __init__(self, body: bytes):
+        self._body = body
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def read(self):
+        return self._body
 
 
 # ─────────────────────────────────────────────────────────────────────────────

@@ -42,6 +42,7 @@ import json
 import subprocess
 import tempfile
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
@@ -306,36 +307,88 @@ def _sparql_query(rors: list[str], langs: list[str]) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 
 
+# Codes HTTP TRANSITOIRES : une nouvelle tentative a des chances d'aboutir. 429 (rate-limit
+# — sans objet pour les institutions désormais lues du S3, mais possible côté Wikimedia) et
+# 5xx (l'endpoint SPARQL public Wikidata renvoie des 502/503 intermittents sous charge).
+_RETRYABLE_HTTP = frozenset({429, 500, 502, 503, 504})
+_HTTP_MAX_ATTEMPTS = 5  # 1 essai + 4 reprises
+_HTTP_BACKOFF_BASE_S = 1.0  # backoff exponentiel : 1, 2, 4, 8 s (borné par Retry-After si fourni)
+_HTTP_BACKOFF_CAP_S = 30.0  # plafond d'une attente (un Retry-After aberrant ne gèle pas le run)
+
+
+def _retry_delay_s(attempt: int, retry_after: str | None) -> float:
+    """Délai (s) avant la reprise ``attempt`` (0-indexée) — PUR, testable.
+
+    Honore l'en-tête ``Retry-After`` (secondes entières) s'il est présent et valide ; sinon
+    backoff EXPONENTIEL ``base × 2**attempt``. Plafonné à ``_HTTP_BACKOFF_CAP_S`` (un
+    ``Retry-After`` aberrant ne fige pas le run). Pas de jitter : le déterminisme prime
+    (ADR 0057) et les reprises sont peu nombreuses (≤4), le troupeau n'est pas un enjeu.
+    """
+    if retry_after:
+        try:
+            return min(float(int(retry_after)), _HTTP_BACKOFF_CAP_S)
+        except (TypeError, ValueError):
+            pass  # Retry-After au format date HTTP (rare) → on retombe sur le backoff
+    return min(_HTTP_BACKOFF_BASE_S * (2**attempt), _HTTP_BACKOFF_CAP_S)
+
+
 class _Fetcher:
-    """Client HTTP minimal (stdlib) pour les trois sources ouvertes.
+    """Client HTTP minimal (stdlib) pour les sources ouvertes restantes (SPARQL / REST).
 
     Isolé pour rester INJECTABLE (les corps de parsing sont purs, celui-ci est
     monkeypatchable en test — aucun réseau réel requis). Un User-Agent explicite est
-    posé : les endpoints publics (SPARQL, API) rejettent les requêtes anonymes.
+    posé : les endpoints publics rejettent les requêtes anonymes. Les erreurs HTTP
+    TRANSITOIRES (429/5xx) et les erreurs de connexion sont RÉESSAYÉES avec backoff
+    exponentiel (le SPARQL public Wikidata renvoie des 502 intermittents sous charge —
+    sans reprise, un seul 502 tuait le run, drift D27 §2).
     """
 
     _UA = "pageviews-dagster/0.0 (dataops; +https://github.com/univ-lehavre/atlas)"
 
-    def __init__(self, timeout: float = _HTTP_TIMEOUT) -> None:
+    def __init__(self, timeout: float = _HTTP_TIMEOUT, sleep=time.sleep) -> None:
         self._timeout = timeout
+        self._sleep = sleep  # injectable → tests déterministes sans attente réelle
+
+    def _read(self, req: urllib.request.Request, label: str) -> dict:
+        """Ouvre ``req`` avec REPRISE sur erreur transitoire ; lève ``Failure`` à l'épuisement.
+
+        Réessaie sur HTTPError 429/5xx (honore ``Retry-After`` si présent) et sur URLError
+        (connexion/DNS/timeout). Une HTTPError 4xx non-transitoire (400/404…) échoue tout de
+        suite — la reprise ne changerait rien. Backoff exponentiel borné à ``_HTTP_MAX_ATTEMPTS``.
+        """
+        last: Exception | None = None
+        for attempt in range(_HTTP_MAX_ATTEMPTS):
+            try:
+                with urllib.request.urlopen(req, timeout=self._timeout) as resp:  # noqa: S310
+                    return json.loads(resp.read().decode("utf-8"))
+            except urllib.error.HTTPError as exc:
+                last = exc
+                if exc.code not in _RETRYABLE_HTTP or attempt == _HTTP_MAX_ATTEMPTS - 1:
+                    break
+                self._sleep(_retry_delay_s(attempt, exc.headers.get("Retry-After")))
+            except (urllib.error.URLError, OSError) as exc:
+                last = exc  # connexion/DNS/timeout : transitoire, on réessaie
+                if attempt == _HTTP_MAX_ATTEMPTS - 1:
+                    break
+                self._sleep(_retry_delay_s(attempt, None))
+            except json.JSONDecodeError as exc:
+                last = exc  # réponse illisible : pas une erreur réseau, inutile de réessayer
+                break
+        raise Failure(
+            description=f"Requête source échouée après {_HTTP_MAX_ATTEMPTS} tentatives : {label}",
+            metadata={"error": MetadataValue.text(str(last))},
+        ) from last
 
     def get_json(self, url: str, params: dict | None = None) -> dict:
-        """GET JSON avec paramètres de requête ; lève ``Failure`` sur erreur réseau/HTTP."""
+        """GET JSON avec paramètres de requête ; ``Failure`` après reprises épuisées."""
         if params:
             url = f"{url}?{urllib.parse.urlencode(params)}"
         headers = {"User-Agent": self._UA, "Accept": "application/json"}
         req = urllib.request.Request(url, headers=headers)  # noqa: S310 — hôtes https connus
-        try:
-            with urllib.request.urlopen(req, timeout=self._timeout) as resp:  # noqa: S310
-                return json.loads(resp.read().decode("utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
-            raise Failure(
-                description=f"Requête source échouée : {url}",
-                metadata={"error": MetadataValue.text(str(exc))},
-            ) from exc
+        return self._read(req, url)
 
     def post_json(self, url: str, data: dict) -> dict:
-        """POST ``data`` (form-urlencodé) et rend le JSON ; lève ``Failure`` sur erreur.
+        """POST ``data`` (form-urlencodé) et rend le JSON ; ``Failure`` après reprises épuisées.
 
         Le corps de requête porte les paramètres au lieu de l'URL : un GET SPARQL avec des
         milliers de ROR en ``VALUES`` produit une URL de ~400 Ko que l'endpoint public
@@ -349,14 +402,7 @@ class _Fetcher:
             "Content-Type": "application/x-www-form-urlencoded",
         }
         req = urllib.request.Request(url, data=body, headers=headers)  # noqa: S310 — hôtes https connus
-        try:
-            with urllib.request.urlopen(req, timeout=self._timeout) as resp:  # noqa: S310
-                return json.loads(resp.read().decode("utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
-            raise Failure(
-                description=f"Requête source échouée : {url}",
-                metadata={"error": MetadataValue.text(str(exc))},
-            ) from exc
+        return self._read(req, url)
 
 
 def institutions_query(local_glob: str, config: RefUniversitiesConfig) -> str:
