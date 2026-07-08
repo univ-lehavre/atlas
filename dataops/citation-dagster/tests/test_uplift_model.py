@@ -135,6 +135,29 @@ def test_build_dataset_skips_pairs_without_profile() -> None:
     assert len(ds.y) == 0  # aucune paire complète
 
 
+def test_build_dataset_caps_training_labels(monkeypatch) -> None:
+    # drift L93 : au-delà de _MAX_TRAIN_LABELS, l'entraînement est échantillonné (borne la RAM
+    # de la matrice X). On plafonne à 10 sur 50 paires → X a AU PLUS 10 lignes.
+    monkeypatch.setattr(um, "_MAX_TRAIN_LABELS", 10)
+    rng = _rng()
+    authors = [f"A{i}" for i in range(50)]
+    vecs = {a: _random_unit(rng) for a in authors}
+    labels = [(authors[i], authors[i + 1], float(i)) for i in range(49)]  # 49 paires complètes
+    ds = um.build_dataset(labels, vecs)
+    assert len(ds.y) == 10  # plafonné
+
+
+def test_sample_labels_deterministic_and_passthrough(monkeypatch) -> None:
+    labels = [(f"A{i}", f"A{i + 1}", float(i)) for i in range(100)]
+    # Sous le plafond → tout est conservé (rétro-compat).
+    monkeypatch.setattr(um, "_MAX_TRAIN_LABELS", 200)
+    assert um._sample_labels(labels) == labels
+    # Au-dessus → échantillon REPRODUCTIBLE (graine figée, ADR 0057) : deux appels identiques.
+    monkeypatch.setattr(um, "_MAX_TRAIN_LABELS", 20)
+    s1, s2 = um._sample_labels(labels), um._sample_labels(labels)
+    assert len(s1) == 20 and s1 == s2
+
+
 def test_combined_features_capture_embedding_signal() -> None:
     # L'uplift dépend du SEUL embedding (subfields aléatoires, sans lien) → le modèle ne
     # peut l'apprendre QUE via la 2ᵉ famille. Prouve que brancher l'embedding apporte un
