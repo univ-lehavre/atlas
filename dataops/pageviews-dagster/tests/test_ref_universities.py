@@ -256,6 +256,50 @@ def test_sparql_query_embeds_rors_langs_and_property():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+#  Corps PURS — _chunked (découpage en lots) + merge_knowledge_bases (fusion)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def test_chunked_splits_into_bounded_batches():
+    # 5 éléments, lots de 2 → [2, 2, 1] (dernier lot plus court).
+    assert mod._chunked(["a", "b", "c", "d", "e"], 2) == [["a", "b"], ["c", "d"], ["e"]]
+
+
+def test_chunked_exact_multiple():
+    assert mod._chunked(["a", "b", "c", "d"], 2) == [["a", "b"], ["c", "d"]]
+
+
+def test_chunked_empty_and_nonpositive_size():
+    assert mod._chunked([], 200) == []
+    assert mod._chunked(["a", "b"], 0) == [["a", "b"]]  # garde-fou : un seul lot
+    assert mod._chunked([], 0) == []
+
+
+def test_merge_knowledge_bases_assembles_disjoint_lots():
+    # Lots à ROR disjoints (cas nominal : partition de la sélection) → simple assemblage.
+    b1 = {"r1": {"qid": "Q1", "titles": {"en": "A"}}}
+    b2 = {"r2": {"qid": "Q2", "titles": {"en": "B", "fr": "B-fr"}}}
+    merged = mod.merge_knowledge_bases([b1, b2])
+    assert merged == {
+        "r1": {"qid": "Q1", "titles": {"en": "A"}},
+        "r2": {"qid": "Q2", "titles": {"en": "B", "fr": "B-fr"}},
+    }
+
+
+def test_merge_knowledge_bases_first_title_per_lang_wins_on_overlap():
+    # Même ROR dans deux lots (bord) : premier lot gagné, titres fusionnés sans écrasement.
+    b1 = {"r1": {"qid": "Q1", "titles": {"en": "First"}}}
+    b2 = {"r1": {"qid": "Q1", "titles": {"en": "Second", "fr": "Fr"}}}
+    merged = mod.merge_knowledge_bases([b1, b2])
+    assert merged["r1"]["titles"] == {"en": "First", "fr": "Fr"}  # en du 1er lot conservé
+
+
+def test_merge_knowledge_bases_empty():
+    assert mod.merge_knowledge_bases([]) == {}
+    assert mod.merge_knowledge_bases([{}, {}]) == {}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 #  Corps PURS — join_rows (jointure établissements × base de connaissances)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -413,6 +457,13 @@ class _FakeFetcher:
             return {"title": ""}  # pas de canonique connu → garde le brut (best-effort)
         raise AssertionError(f"URL inattendue : {url}")
 
+    def post_json(self, url, data=None):
+        # Le SPARQL passe désormais en POST (corps de requête, pas d'URL géante) : même
+        # payload que le GET d'avant, dispatché sur l'URL de l'endpoint SPARQL.
+        if _SPARQL in url:
+            return self._sparql_payload
+        raise AssertionError(f"POST inattendu : {url}")
+
 
 def _one_page(results, next_cur=None):
     return {"results": results, "meta": {"next_cursor": next_cur}}
@@ -487,6 +538,38 @@ def test_asset_paginates_institutions(monkeypatch):
     result = ref_universities(_ctx(), RefUniversitiesConfig(langs=["en"]))
     assert result.metadata["n_etablissements"].value == 2
     assert result.metadata["n_titres"].value == 0  # SPARQL vide
+
+
+def test_asset_batches_sparql_over_many_rors(monkeypatch):
+    # >_SPARQL_BATCH_SIZE établissements → PLUSIEURS POST SPARQL (un par lot), fusionnés.
+    # C'est le cœur du fix : à l'échelle prod (24k+ ROR) un seul VALUES fait Broken pipe.
+    n = mod._SPARQL_BATCH_SIZE * 2 + 5  # 3 lots (200, 200, 5)
+    results = [_inst_result(f"u{i:05d}", f"https://ror.org/r{i:05d}") for i in range(n)]
+
+    class _CountingFetcher(_FakeFetcher):
+        def __init__(self, *a, **k):
+            super().__init__(*a, **k)
+            self.post_batches: list[int] = []
+
+        def post_json(self, url, data=None):
+            if _SPARQL in url:
+                # nb de ROR dans ce lot = occurrences de VALUES ?ror … dans la requête
+                q = (data or {}).get("query", "")
+                self.post_batches.append(q.count('"r'))  # chaque ROR est "rNNNNN"
+            return super().post_json(url, data)
+
+    fetcher = _CountingFetcher(
+        institution_pages=[_one_page(results, next_cur=None)],
+        sparql_payload=_sparql_payload([]),
+    )
+    con = _FakeCon()
+    _patch_glue(monkeypatch, fetcher, con)
+
+    result = ref_universities(_ctx(), RefUniversitiesConfig(langs=["en"]))
+    assert result.metadata["n_etablissements"].value == n
+    # 3 lots POST, jamais un seul VALUES géant.
+    assert len(fetcher.post_batches) == 3
+    assert fetcher.post_batches == [mod._SPARQL_BATCH_SIZE, mod._SPARQL_BATCH_SIZE, 5]
 
 
 def test_asset_respects_max_institutions(monkeypatch):
@@ -652,3 +735,36 @@ def test_real_fetcher_raises_failure_on_network_error(monkeypatch):
     monkeypatch.setattr(mod.urllib.request, "urlopen", boom)
     with pytest.raises(Failure, match="Requête source échouée"):
         mod._Fetcher().get_json("https://example/api")
+
+
+def test_real_fetcher_post_sends_body_not_url(monkeypatch):
+    # Le POST porte les paramètres dans le CORPS (pas dans l'URL) : c'est la clé du fix
+    # d'échelle (une URL SPARQL de ~400 Ko en GET fait Broken pipe).
+    import json
+
+    captured = {}
+
+    def fake_urlopen(req, timeout=None):
+        captured["url"] = req.full_url
+        captured["body"] = req.data
+        captured["ctype"] = req.get_header("Content-type")
+        assert req.get_header("User-agent")
+        return _FakeResp(json.dumps({"results": {"bindings": []}}).encode("utf-8"))
+
+    monkeypatch.setattr(mod.urllib.request, "urlopen", fake_urlopen)
+    out = mod._Fetcher(timeout=1.0).post_json(
+        "https://query.wikidata.org/sparql", {"query": "SELECT ?x {}", "format": "json"}
+    )
+    assert out == {"results": {"bindings": []}}
+    assert "?" not in captured["url"]  # aucun paramètre dans l'URL
+    assert b"query=" in captured["body"] and b"format=json" in captured["body"]
+    assert "x-www-form-urlencoded" in captured["ctype"]
+
+
+def test_real_fetcher_post_raises_failure_on_network_error(monkeypatch):
+    def boom(req, timeout=None):
+        raise OSError("broken pipe")
+
+    monkeypatch.setattr(mod.urllib.request, "urlopen", boom)
+    with pytest.raises(Failure, match="Requête source échouée"):
+        mod._Fetcher().post_json("https://query.wikidata.org/sparql", {"query": "x"})
