@@ -2,53 +2,48 @@
 
 ## [1.4.0](https://github.com/univ-lehavre/atlas/compare/v1.3.2...v1.4.0) (2026-07-07)
 
-
 ### Features
 
-* **citation-dagster:** asset mart_eunicoast (batch colonnaire) ([4380792](https://github.com/univ-lehavre/atlas/commit/438079290f7bf772503106cf0615ba5f980fd6af))
-* **citation-dagster:** helpers read_parquet + manifest footer ([fa45228](https://github.com/univ-lehavre/atlas/commit/fa452283da68ea46b52aa8accbd534b25df75939))
-* **citation-dagster:** raw_snapshot rapatrie le parquet openalex ([daaaf6c](https://github.com/univ-lehavre/atlas/commit/daaaf6c1b6efc9cf5500b58f9d75bca74927676c))
-
+- **citation-dagster:** asset mart_eunicoast (batch colonnaire) ([4380792](https://github.com/univ-lehavre/atlas/commit/438079290f7bf772503106cf0615ba5f980fd6af))
+- **citation-dagster:** helpers read_parquet + manifest footer ([fa45228](https://github.com/univ-lehavre/atlas/commit/fa452283da68ea46b52aa8accbd534b25df75939))
+- **citation-dagster:** raw_snapshot rapatrie le parquet openalex ([daaaf6c](https://github.com/univ-lehavre/atlas/commit/daaaf6c1b6efc9cf5500b58f9d75bca74927676c))
 
 ### Bug Fixes
 
-* **citation-dagster:** dérive mart_root du bucket réel (transform prod) ([563ee37](https://github.com/univ-lehavre/atlas/commit/563ee37bc93b07a75e1a2b13183e71b75a67fbe2))
-* **citation-dagster:** dérive mart_root du bucket réel (transform prod) ([#563](https://github.com/univ-lehavre/atlas/issues/563)) ([878c7ad](https://github.com/univ-lehavre/atlas/commit/878c7ad016853c74fdf391023e2b9b4d64b8bda5))
-* **citation-dagster:** ge raw sans matérialiser les colonnes imbriquées ([7ee6ace](https://github.com/univ-lehavre/atlas/commit/7ee6ace689693938db7c29ad07f46116cdd3b833))
-* **citation-dagster:** ge raw sans matérialiser les colonnes imbriquées ([#560](https://github.com/univ-lehavre/atlas/issues/560)) ([7dbe0bf](https://github.com/univ-lehavre/atlas/commit/7dbe0bfbea27db97a739064e9ae6d71019b54727))
-* **citation-dagster:** honore uv.lock au build (grpcio/protobuf) ([91dc571](https://github.com/univ-lehavre/atlas/commit/91dc57193a8c4b27ebcdaa09a67e93d8c737acc4))
-* **citation-dagster:** honore uv.lock au build (grpcio/protobuf) ([#558](https://github.com/univ-lehavre/atlas/issues/558)) ([bc8c76a](https://github.com/univ-lehavre/atlas/commit/bc8c76a1d9efacae1297c9cbcbf2606ba6e9016b))
-* **citation:** temp_directory en config_options (spill duckdb à l'échelle) ([b88b892](https://github.com/univ-lehavre/atlas/commit/b88b8928aebf2f82ee579629c2182a2ce23fbbb3))
-* **citation:** temp_directory en config_options (spill DuckDB à l'échelle) ([#569](https://github.com/univ-lehavre/atlas/issues/569)) ([44d9c3b](https://github.com/univ-lehavre/atlas/commit/44d9c3bfeb066be86b85f3de2f2e4cd938cfe014))
-* **deps:** épingle @vitest/eslint-plugin à 1.6.20 (faux positif valid-expect) ([65d69d9](https://github.com/univ-lehavre/atlas/commit/65d69d91bb3270504febbe5d0230e3a2121bf036))
-* **deps:** épingle @vitest/eslint-plugin à 1.6.20 (faux positif valid-expect) ([#559](https://github.com/univ-lehavre/atlas/issues/559)) ([5dae1c4](https://github.com/univ-lehavre/atlas/commit/5dae1c43059ddf79f76992b88dcdc9fd3c7492d9))
-* **mediawatch-dagster:** honore uv.lock au build (grpcio/protobuf) ([6c22ede](https://github.com/univ-lehavre/atlas/commit/6c22ede8287c82752ff21eaaf31f462b1bb2deb7))
-* **mediawatch-dagster:** honore uv.lock au build (grpcio/protobuf) ([#562](https://github.com/univ-lehavre/atlas/issues/562)) ([5b77a5d](https://github.com/univ-lehavre/atlas/commit/5b77a5d37289d306856917072a8f301194dc5b27))
-
+- **citation-dagster:** dérive mart_root du bucket réel (transform prod) ([563ee37](https://github.com/univ-lehavre/atlas/commit/563ee37bc93b07a75e1a2b13183e71b75a67fbe2))
+- **citation-dagster:** dérive mart_root du bucket réel (transform prod) ([#563](https://github.com/univ-lehavre/atlas/issues/563)) ([878c7ad](https://github.com/univ-lehavre/atlas/commit/878c7ad016853c74fdf391023e2b9b4d64b8bda5))
+- **citation-dagster:** ge raw sans matérialiser les colonnes imbriquées ([7ee6ace](https://github.com/univ-lehavre/atlas/commit/7ee6ace689693938db7c29ad07f46116cdd3b833))
+- **citation-dagster:** ge raw sans matérialiser les colonnes imbriquées ([#560](https://github.com/univ-lehavre/atlas/issues/560)) ([7dbe0bf](https://github.com/univ-lehavre/atlas/commit/7dbe0bfbea27db97a739064e9ae6d71019b54727))
+- **citation-dagster:** honore uv.lock au build (grpcio/protobuf) ([91dc571](https://github.com/univ-lehavre/atlas/commit/91dc57193a8c4b27ebcdaa09a67e93d8c737acc4))
+- **citation-dagster:** honore uv.lock au build (grpcio/protobuf) ([#558](https://github.com/univ-lehavre/atlas/issues/558)) ([bc8c76a](https://github.com/univ-lehavre/atlas/commit/bc8c76a1d9efacae1297c9cbcbf2606ba6e9016b))
+- **citation:** temp_directory en config_options (spill duckdb à l'échelle) ([b88b892](https://github.com/univ-lehavre/atlas/commit/b88b8928aebf2f82ee579629c2182a2ce23fbbb3))
+- **citation:** temp_directory en config_options (spill DuckDB à l'échelle) ([#569](https://github.com/univ-lehavre/atlas/issues/569)) ([44d9c3b](https://github.com/univ-lehavre/atlas/commit/44d9c3bfeb066be86b85f3de2f2e4cd938cfe014))
+- **deps:** épingle @vitest/eslint-plugin à 1.6.20 (faux positif valid-expect) ([65d69d9](https://github.com/univ-lehavre/atlas/commit/65d69d91bb3270504febbe5d0230e3a2121bf036))
+- **deps:** épingle @vitest/eslint-plugin à 1.6.20 (faux positif valid-expect) ([#559](https://github.com/univ-lehavre/atlas/issues/559)) ([5dae1c4](https://github.com/univ-lehavre/atlas/commit/5dae1c43059ddf79f76992b88dcdc9fd3c7492d9))
+- **mediawatch-dagster:** honore uv.lock au build (grpcio/protobuf) ([6c22ede](https://github.com/univ-lehavre/atlas/commit/6c22ede8287c82752ff21eaaf31f462b1bb2deb7))
+- **mediawatch-dagster:** honore uv.lock au build (grpcio/protobuf) ([#562](https://github.com/univ-lehavre/atlas/issues/562)) ([5b77a5d](https://github.com/univ-lehavre/atlas/commit/5b77a5d37289d306856917072a8f301194dc5b27))
 
 ### Performance
 
-* **citation-dagster:** allège les ressources duckdb pour le mart ([cee9111](https://github.com/univ-lehavre/atlas/commit/cee9111af0ab077fb276bb82a1bbb6c30533311d))
-
+- **citation-dagster:** allège les ressources duckdb pour le mart ([cee9111](https://github.com/univ-lehavre/atlas/commit/cee9111af0ab077fb276bb82a1bbb6c30533311d))
 
 ### Refactor
 
-* **citation-dagster:** contrat ge raw sur parquet works-only ([d1c76f3](https://github.com/univ-lehavre/atlas/commit/d1c76f341bba6ccbc750a43b73446f1cc11c24b6))
-* **citation:** mart eunicoast parquet + co-autorat (scalabilité) ([#557](https://github.com/univ-lehavre/atlas/issues/557)) ([e3a8457](https://github.com/univ-lehavre/atlas/commit/e3a84575c37b1d8c00398644aa78093ffe7130e4))
-* **citation:** mart parquet source dbt + co-autorat + fixtures ([97da1c1](https://github.com/univ-lehavre/atlas/commit/97da1c1fe93e3b82a17c19c07158e805da11d911))
-
+- **citation-dagster:** contrat ge raw sur parquet works-only ([d1c76f3](https://github.com/univ-lehavre/atlas/commit/d1c76f341bba6ccbc750a43b73446f1cc11c24b6))
+- **citation:** mart eunicoast parquet + co-autorat (scalabilité) ([#557](https://github.com/univ-lehavre/atlas/issues/557)) ([e3a8457](https://github.com/univ-lehavre/atlas/commit/e3a84575c37b1d8c00398644aa78093ffe7130e4))
+- **citation:** mart parquet source dbt + co-autorat + fixtures ([97da1c1](https://github.com/univ-lehavre/atlas/commit/97da1c1fe93e3b82a17c19c07158e805da11d911))
 
 ### Documentation
 
-* adr 0095/0096 source pageviews universités + plan et modèle explicatif ([28abcca](https://github.com/univ-lehavre/atlas/commit/28abcca303b538fc3396deb7bb01b8228dea1eed))
-* ajoute le modèle within-page au rapport de nuit (longueur→vues +0.18 à notoriété fixe) ([da59010](https://github.com/univ-lehavre/atlas/commit/da590101355a5662766a1f16113cfcadff8a09be))
-* **citation:** adr 0094 mart eunicoast parquet + co-autorat ([fbc0f7f](https://github.com/univ-lehavre/atlas/commit/fbc0f7f5101d6260181c4cb620305879862c9a1d))
-* **citation:** aligne readme + commentaires sur le co-autorat ([9233668](https://github.com/univ-lehavre/atlas/commit/923366815aa3ff2efb8a5591d0c99d9f3b26a523))
-* phase 0 couverture réelle mesurée (78% tirage uniforme), corrige adr 0095/0096 et plan ([9a7dc5c](https://github.com/univ-lehavre/atlas/commit/9a7dc5cdfc7f775b83d81db83d23cdd6a82a168c))
-* rapport de nuit pipeline pageviews-universités (phases 1-4 sur échantillon) ([dec04bf](https://github.com/univ-lehavre/atlas/commit/dec04bf459929b8db595092c7f72576c081977bf))
-* robustesse du levier longueur (within-page) — formulation défendable ([#570](https://github.com/univ-lehavre/atlas/issues/570)) ([157816b](https://github.com/univ-lehavre/atlas/commit/157816b6538bdd70f6b9a13ebf9505761fd2e4c0))
-* robustesse du within-page (effet longueur transitoire, non causal net) ([be680b3](https://github.com/univ-lehavre/atlas/commit/be680b35e6bb23c56bf48aa1ee78b6cdb3553f6c))
-* source pageviews-universités — ADR, plan et proto (phases 1-4) ([#568](https://github.com/univ-lehavre/atlas/issues/568)) ([d50cca4](https://github.com/univ-lehavre/atlas/commit/d50cca4a061ed372827e5aac71bf755beb7586b2))
+- adr 0095/0096 source pageviews universités + plan et modèle explicatif ([28abcca](https://github.com/univ-lehavre/atlas/commit/28abcca303b538fc3396deb7bb01b8228dea1eed))
+- ajoute le modèle within-page au rapport de nuit (longueur→vues +0.18 à notoriété fixe) ([da59010](https://github.com/univ-lehavre/atlas/commit/da590101355a5662766a1f16113cfcadff8a09be))
+- **citation:** adr 0094 mart eunicoast parquet + co-autorat ([fbc0f7f](https://github.com/univ-lehavre/atlas/commit/fbc0f7f5101d6260181c4cb620305879862c9a1d))
+- **citation:** aligne readme + commentaires sur le co-autorat ([9233668](https://github.com/univ-lehavre/atlas/commit/923366815aa3ff2efb8a5591d0c99d9f3b26a523))
+- phase 0 couverture réelle mesurée (78% tirage uniforme), corrige adr 0095/0096 et plan ([9a7dc5c](https://github.com/univ-lehavre/atlas/commit/9a7dc5cdfc7f775b83d81db83d23cdd6a82a168c))
+- rapport de nuit pipeline pageviews-universités (phases 1-4 sur échantillon) ([dec04bf](https://github.com/univ-lehavre/atlas/commit/dec04bf459929b8db595092c7f72576c081977bf))
+- robustesse du levier longueur (within-page) — formulation défendable ([#570](https://github.com/univ-lehavre/atlas/issues/570)) ([157816b](https://github.com/univ-lehavre/atlas/commit/157816b6538bdd70f6b9a13ebf9505761fd2e4c0))
+- robustesse du within-page (effet longueur transitoire, non causal net) ([be680b3](https://github.com/univ-lehavre/atlas/commit/be680b35e6bb23c56bf48aa1ee78b6cdb3553f6c))
+- source pageviews-universités — ADR, plan et proto (phases 1-4) ([#568](https://github.com/univ-lehavre/atlas/issues/568)) ([d50cca4](https://github.com/univ-lehavre/atlas/commit/d50cca4a061ed372827e5aac71bf755beb7586b2))
 
 ## [1.3.2](https://github.com/univ-lehavre/atlas/compare/v1.3.1...v1.3.2) (2026-07-06)
 

@@ -1,5 +1,16 @@
 # @univ-lehavre/atlas-openalex
 
+## 2.1.2
+
+### Patch Changes
+
+- [#536](https://github.com/univ-lehavre/atlas/pull/536) [`2cbb5f0`](https://github.com/univ-lehavre/atlas/commit/2cbb5f02195c408f15d79a13db888e304c6ba54c) Thanks [@chasset](https://github.com/chasset)! - - fix: streame le scoring uplift dans duckdb (mémoire bornée, oom prod)
+  - fix: 56gi pour le pod de run uplift (oom numpy vs duckdb)
+  - fix: score les paires uplift par lots (features, oom prod)
+  - fix: candidats uplift par knn thématique (évite l'explosion quadratique, oom prod)
+  - fix: sérialise le transform_job (max_concurrent=1, oom embeddings)
+  - fix: déduplique work_id dans stg_citation_works (doublons openalex)
+
 ## 2.1.1
 
 ### Patch Changes
