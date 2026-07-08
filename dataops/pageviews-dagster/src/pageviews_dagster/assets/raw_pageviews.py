@@ -361,7 +361,7 @@ def _read_referential(con, bucket: str, ref_source: str) -> list[WikiTitle]:
     Attendu : ``(university_id, lang, title)`` par établissement×page. Délégué à DuckDB
     (``lakehouse.read_parquet``) ; monkeypatchable en test (pas de vrai S3).
     """
-    glob = f"s3://{bucket}/ref/universities/source={ref_source}/*.parquet"
+    glob = lakehouse.referential_glob(bucket, ref_source)
     rows = lakehouse.read_parquet(con, glob, hive=False).fetchall()
     return [WikiTitle(university_id=str(r[0]), lang=str(r[1]), title=str(r[2])) for r in rows]
 

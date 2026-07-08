@@ -75,9 +75,12 @@ _RESOLVE_WORKERS = 16
 # limite de temps de 60 s de Wikidata). On DÉCOUPE donc les ROR en lots bornés, une
 # requête POST par lot, résultats fusionnés. 200 tient largement sous la limite de temps.
 _SPARQL_BATCH_SIZE = 200
-# Chemin du référentiel dans le lakehouse (Parquet). Instantané courant unique : le
-# référentiel évolue LENTEMENT (pas de partition temporelle), rematérialisable au besoin.
-_REF_DEST_SUBDIR = "raw/ref_universities"
+# `ref_universities` est la source INGÉRÉE du référentiel (par opposition à un référentiel
+# pré-seedé) → il écrit dans la partition `source=ingested` du CONTRAT DE CHEMIN PARTAGÉ
+# (`lakehouse.referential_*`), même source unique que celle LUE par l'aval `raw_pageviews`.
+# La prod pose `PAGEVIEWS_REF_SOURCE=ingested` (deploy/overlays/prod). Instantané courant
+# unique (pas de partition temporelle) : le référentiel évolue lentement, rematérialisable.
+_REF_SOURCE = "ingested"
 
 # Bandes de volume de publications (``works_count``) : discrétise une variable très
 # étalée en catégories stables, exploitables comme feature/segment en aval sans fuiter
@@ -520,7 +523,7 @@ def _write_referential(rows: list[RefRow], bucket: str) -> None:
             for r in rows
         ],
     )
-    dest = f"s3://{bucket}/{_REF_DEST_SUBDIR}/ref_universities.parquet"
+    dest = lakehouse.referential_dest(bucket, _REF_SOURCE)
     lakehouse.copy_to_parquet(con, "SELECT * FROM _ref_universities", dest)
 
 
@@ -592,7 +595,7 @@ def ref_universities(context, config: RefUniversitiesConfig) -> MaterializeResul
             "n_titres": MetadataValue.int(summary["n_titres"]),
             "n_langues": MetadataValue.int(summary["n_langues"]),
             "langs": MetadataValue.text(", ".join(config.langs)),
-            "bucket": MetadataValue.text(f"{bucket}/{_REF_DEST_SUBDIR}"),
+            "bucket": MetadataValue.text(f"{bucket}/{lakehouse.referential_prefix(_REF_SOURCE)}"),
             # Historique run-à-run (métadonnées Dagster, drift L96) : nb de titres résolus et
             # durée de la résolution parallélisée — repérer une régression de débit.
             "n_titres_resolus": MetadataValue.int(len(resolved)),
