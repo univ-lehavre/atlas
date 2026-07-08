@@ -129,6 +129,37 @@ def test_asset_serves_predictive_on_signal(monkeypatch) -> None:
     # Sans mart d'embeddings servi (FakeCon vide) → couverture nulle, mais l'asset tourne
     # (dégradation propre sur les seules features thématiques).
     assert result.metadata["embedding_coverage"].value == 0.0
+    # Métadonnées d'observabilité (drift L96) : durée + débit du scoring, historisées par Dagster.
+    assert result.metadata["scoring_duration_s"].value >= 0.0
+    assert result.metadata["scoring_pairs_per_s"].value >= 0.0
+
+
+def test_stream_knn_predictions_logs_progress(monkeypatch) -> None:
+    """Le scoring émet des lignes de PROGRESSION via ``log`` (drift L96 : run long observable).
+
+    On appelle directement ``_stream_knn_predictions`` avec un ``log`` capteur et un modèle
+    factice (predict constant). Un run rapide ne franchit pas le throttle de 60 s → on vérifie
+    au minimum la ligne de DÉBUT (M, blocs) et la ligne de FIN (paires, durée), et que des
+    paires ont bien été insérées dans ``preds``.
+    """
+    con = _FakeCon([], [])
+    con.execute(
+        "CREATE TABLE preds(author_a VARCHAR, author_b VARCHAR, uplift DOUBLE, served_mode VARCHAR)"
+    )
+    rng = np.random.default_rng(0)
+    vecs = {f"A{i}": (lambda v: v / np.linalg.norm(v))(rng.random(6)) for i in range(30)}
+
+    class _ConstModel:
+        def predict(self, feats):
+            return np.zeros(len(feats))
+
+    lines: list[str] = []
+    mod._stream_knn_predictions(con, _ConstModel(), vecs, {}, 5, log=lines.append)
+
+    assert any("M=30" in ln for ln in lines)  # ligne de début
+    assert any("TERMINÉ" in ln for ln in lines)  # ligne de fin
+    n = con._db.execute("SELECT count(*) FROM preds").fetchone()[0]
+    assert n > 0  # des paires ont été scorées et streamées
 
 
 def test_asset_predict_is_batched_and_stable(monkeypatch) -> None:

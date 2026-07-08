@@ -14,6 +14,8 @@ est loggé MLflow et porté en métadonnée de l'asset.
 NB : pas de ``from __future__ import annotations`` — Dagster introspecte les annotations.
 """
 
+import time
+
 import numpy as np
 from dagster import AssetExecutionContext, AssetKey, MaterializeResult, MetadataValue, asset
 from openlineage.client.event_v2 import RunState
@@ -100,7 +102,7 @@ def _create_preds_table(con) -> None:
     )
 
 
-def _stream_knn_predictions(con, model, vecs: dict, emb_vecs: dict, emb_dim: int) -> None:
+def _stream_knn_predictions(con, model, vecs: dict, emb_vecs: dict, emb_dim: int, log=None) -> dict:
     """STREAME les prédictions kNN dans la table DuckDB ``preds`` (drift L92, mémoire bornée).
 
     Recommander de NOUVEAUX partenaires reste l'intérêt du prédictif (ADR 0067) — mais scorer
@@ -109,41 +111,83 @@ def _stream_knn_predictions(con, model, vecs: dict, emb_vecs: dict, emb_dim: int
     paires ; drift L90 puis L92, OOM > 56Gi). On ne matérialise JAMAIS toutes les paires :
 
       - ``knn_candidate_pairs`` est un GÉNÉRATEUR : il yield les indices de paires PAR BLOC ;
-      - pour chaque bloc, on construit les features (bornées au bloc), on prédit, et on INSÈRE
-        les lignes directement dans ``preds`` (``executemany``, borné au bloc) — puis on libère.
+      - pour chaque bloc, on construit les features EN BLOC (``pair_features_block`` vectorisé —
+        drift L96 : la boucle Python par paire faisait des millions d'appels et un run de 3h+),
+        on prédit, et on INSÈRE dans ``preds`` (``executemany``, borné au bloc) — puis on libère.
 
     Aucune structure ne grandit avec le nombre TOTAL de paires ; le pic RAM est le bloc courant
     (features ≤ block·k × ~1,3k floats). Le voisinage se calcule sur le vecteur THÉMATIQUE
     (subfields, ``vecs``) — socle universel (tout auteur profilé en a un) ; l'embedding enrichit
-    les FEATURES via ``pair_features_combined`` sans piloter le voisinage. La déduplication
-    globale des paires (union symétrisée) se fait à la lecture (``SELECT DISTINCT`` aval).
+    les FEATURES via ``pair_features_block`` sans piloter le voisinage. La déduplication globale
+    des paires (union symétrisée) se fait à la lecture (``SELECT DISTINCT`` aval).
+
+    ``log`` (callable optionnel, p.ex. ``context.log.info``) : reçoit une ligne de PROGRESSION au
+    moins toutes les 60 s (bloc courant / total estimé, paires cumulées, débit, ETA) — un run
+    long DOIT être observable (drift L96). Absent en test → silencieux.
     """
     authors = sorted(vecs)  # tous les auteurs profilés (l'ordre trié fige a < b)
     if len(authors) < 2:
-        return
+        return {"scoring_n_pairs": 0, "scoring_duration_s": 0.0, "scoring_pairs_per_s": 0.0}
     thematic = np.stack([vecs[a] for a in authors])  # (M, #subfields), lignes L2-normalisées
-    for block_pairs in uplift_model.knn_candidate_pairs(thematic):
-        feats = np.stack(
-            [
-                uplift_model.pair_features_combined(
-                    vecs[authors[i]],
-                    vecs[authors[j]],
-                    emb_vecs.get(authors[i]),
-                    emb_vecs.get(authors[j]),
-                    emb_dim,
-                )
-                for i, j in block_pairs
-            ]
+    # Matrices auteur pré-empilées (une fois) pour la construction VECTORISÉE des features par
+    # bloc : indexation avancée par les indices du bloc, pas d'appel Python par paire.
+    emb_present = np.array([a in emb_vecs for a in authors])  # (M,) l'auteur a-t-il un embedding
+    emb_matrix = np.zeros((len(authors), emb_dim), dtype=np.float64)  # zéros = embedding neutre
+    for row, a in enumerate(authors):
+        if emb_present[row]:
+            emb_matrix[row] = emb_vecs[a]
+
+    total_blocks = -(-len(authors) // uplift_model.knn_block_size(len(authors)))  # ceil(M/block)
+    start_t = last_log_t = time.monotonic()
+    n_pairs = 0
+    if log:
+        log(f"pair_uplift scoring : M={len(authors)} auteurs, ~{total_blocks} blocs kNN à scorer.")
+
+    for block_idx, block_pairs in enumerate(uplift_model.knn_candidate_pairs(thematic), start=1):
+        ii = block_pairs[:, 0]
+        jj = block_pairs[:, 1]
+        feats = uplift_model.pair_features_block(
+            thematic[ii],
+            thematic[jj],
+            emb_matrix[ii],
+            emb_matrix[jj],
+            emb_present[ii] & emb_present[jj],
+            emb_dim,
         )
         scores = model.predict(feats)
         con.executemany(
             "INSERT INTO preds VALUES (?, ?, ?, 'predictive')",
             [
                 (authors[int(i)], authors[int(j)], float(s))
-                for (i, j), s in zip(block_pairs, scores, strict=True)
+                for i, j, s in zip(ii, jj, scores, strict=True)
             ],
         )
+        n_pairs += len(scores)
         del feats, scores
+        # Log de progression throttlé à ≥ 1×/min (drift L96) : ETA = temps écoulé / blocs faits ×
+        # blocs restants (blocs quasi-homogènes en taille). time.monotonic → insensible à l'heure.
+        now = time.monotonic()
+        if log and (now - last_log_t >= 60.0):
+            elapsed = now - start_t
+            rate = n_pairs / elapsed if elapsed > 0 else 0.0
+            eta = (elapsed / block_idx) * (total_blocks - block_idx) if block_idx else 0.0
+            log(
+                f"pair_uplift scoring : bloc {block_idx}/~{total_blocks} · {n_pairs:,} paires · "
+                f"{rate:,.0f} paires/s · ETA ~{eta / 60:.0f} min"
+            )
+            last_log_t = now
+
+    duration_s = time.monotonic() - start_t
+    if log:
+        mins = duration_s / 60
+        log(f"pair_uplift scoring TERMINÉ : {n_pairs:,} paires scorées en {mins:.1f} min.")
+    # Métriques renvoyées pour l'HISTORIQUE run-à-run (métadonnées Dagster + MLflow, pas Prometheus
+    # — batch éphémère) : comparer débit/durée d'un run à l'autre, repérer une régression.
+    return {
+        "scoring_n_pairs": n_pairs,
+        "scoring_duration_s": round(duration_s, 1),
+        "scoring_pairs_per_s": round(n_pairs / duration_s, 1) if duration_s > 0 else 0.0,
+    }
 
 
 def _insert_observed_predictions(con, labels) -> None:
@@ -240,9 +284,12 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
     # paires observées par lots. Predictions et recommandations sont ensuite écrites depuis
     # `preds` (COPY + fenêtre SQL), sans structure Python proportionnelle au nombre de paires.
     _create_preds_table(con)
+    scoring_metrics = {"scoring_n_pairs": 0, "scoring_duration_s": 0.0, "scoring_pairs_per_s": 0.0}
     if served_mode == "predictive":
         model = uplift_model.train_final(ds)
-        _stream_knn_predictions(con, model, vecs, emb_vecs, embedding.EMBEDDING_DIM)
+        scoring_metrics = _stream_knn_predictions(
+            con, model, vecs, emb_vecs, embedding.EMBEDDING_DIM, log=context.log.info
+        )
     else:
         _insert_observed_predictions(con, labels)  # uplift observé, paires connues uniquement
 
@@ -261,6 +308,9 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
         "n_pairs_served": float(n_served),
         "predictive": 1.0 if served_mode == "predictive" else 0.0,
         "embedding_coverage": emb_coverage,
+        # Débit/durée du scoring → historique run-à-run dans MLflow (repérer une régression).
+        "scoring_duration_s": float(scoring_metrics["scoring_duration_s"]),
+        "scoring_pairs_per_s": float(scoring_metrics["scoring_pairs_per_s"]),
     }
     if evaluation is not None:
         metrics.update(
@@ -284,6 +334,9 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
             "pairs_served": MetadataValue.int(n_served),
             "recommendations": MetadataValue.int(n_recos),
             "embedding_coverage": MetadataValue.float(emb_coverage),
+            # Historique run-à-run (métadonnées Dagster) : durée + débit du scoring kNN.
+            "scoring_duration_s": MetadataValue.float(scoring_metrics["scoring_duration_s"]),
+            "scoring_pairs_per_s": MetadataValue.float(scoring_metrics["scoring_pairs_per_s"]),
             "decision": MetadataValue.text(
                 "prédictif (pouvoir confirmé)"
                 if served_mode == "predictive"

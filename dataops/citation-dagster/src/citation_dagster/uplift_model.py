@@ -119,6 +119,43 @@ def pair_features_combined(
     return np.concatenate([feat_sub, [has_emb], feat_emb])
 
 
+def _pair_features_matrix(A: np.ndarray, B: np.ndarray) -> np.ndarray:
+    """Version VECTORISÉE de ``pair_features`` sur P paires empilées → (P, 2 + 2·D).
+
+    ``A``/``B`` : (P, D). Chaque colonne reproduit EXACTEMENT le terme de ``pair_features``
+    (cos = ``a @ b``, ‖a−b‖ = ``np.linalg.norm``, |a−b|, a·b) — on emploie les MÊMES primitives
+    numpy que la boucle unitaire (produit matriciel pour le cos, ``linalg.norm`` pour la
+    distance) pour rester bit-à-bit identique (déterminisme ADR 0057), sans overhead Python.
+    """
+    diff = A - B
+    cos = np.sum(A * B, axis=1)  # (P,) — a·b ligne à ligne, même somme que float(va @ vb)
+    dist = np.linalg.norm(diff, axis=1)  # (P,) — ‖a−b‖, même primitive que la version unitaire
+    return np.concatenate([cos[:, None], dist[:, None], np.abs(diff), A * B], axis=1)
+
+
+def pair_features_block(
+    SubA: np.ndarray,
+    SubB: np.ndarray,
+    EmbA: np.ndarray,
+    EmbB: np.ndarray,
+    has_emb: np.ndarray,
+    emb_dim: int,
+) -> np.ndarray:
+    """Version BLOC de ``pair_features_combined`` : mêmes flottants, sans boucle Python.
+
+    Pour P paires empilées : ``SubA``/``SubB`` (P, Dsub) ; ``EmbA``/``EmbB`` (P, emb_dim) —
+    vecteurs d'embedding des deux auteurs, mis à ZÉRO là où l'auteur n'a pas d'embedding ;
+    ``has_emb`` (P,) booléen = les DEUX auteurs ont un embedding. La famille embedding est
+    calculée pour toutes les lignes puis REMISE À ZÉRO là où ``has_emb`` est faux — exactement
+    la sémantique de la branche unitaire (features embedding neutres + drapeau 0/1). Résultat
+    (P, F) empilé dans l'ORDRE de ``pair_features_combined`` : [sub | has_emb | emb].
+    """
+    feat_sub = _pair_features_matrix(SubA, SubB)  # (P, 2 + 2·Dsub)
+    feat_emb = _pair_features_matrix(EmbA, EmbB)  # (P, 2 + 2·emb_dim)
+    feat_emb *= has_emb[:, None]  # neutre (zéros) là où un auteur n'a pas d'embedding
+    return np.concatenate([feat_sub, has_emb.astype(np.float64)[:, None], feat_emb], axis=1)
+
+
 # Génération de candidats par plus-proches-voisins (kNN) (ADR 0067 §candidats, drift L89).
 # DÉFAUT : k voisins par ligne. Scorer TOUTES les paires (a<b) est O(N²) — à l'échelle réelle
 # (~90k auteurs profilés) ce sont ~4 milliards de paires, intractables en RAM/temps (OOM prod).
@@ -129,6 +166,19 @@ KNN_DEFAULT = 50
 # Budget mémoire du bloc de similarité ``sims`` (block × M × 8o). Le bloc est dérivé de M pour
 # viser ~cette taille — SANS lui, un ``block`` fixe (2048) donne ~4 Go à M=242k (drift L91/L92).
 _KNN_SIMS_BUDGET_BYTES = 256 * 1024 * 1024  # ~0,25 Gi/bloc
+
+
+def knn_block_size(m: int) -> int:
+    """Taille de bloc (lignes) du calcul kNN, dérivée d'un budget RAM fixe.
+
+    ``sims = vectors[bloc] @ vectors.T`` fait ``block × m`` float64 ; on borne à
+    ``_KNN_SIMS_BUDGET_BYTES``. Source UNIQUE : ``knn_candidate_pairs`` (le générateur) ET
+    l'estimation de ``total_blocks`` côté appelant (pour l'ETA du log) l'utilisent — pas de
+    dérivation dupliquée (DRY/jscpd). ``m < 2`` → 1 (le générateur ne yield rien).
+    """
+    if m < 2:
+        return 1
+    return max(64, min(m, _KNN_SIMS_BUDGET_BYTES // (m * 8)))
 
 
 def knn_candidate_pairs(vectors: np.ndarray, k: int = KNN_DEFAULT, block: int | None = None):
@@ -154,7 +204,7 @@ def knn_candidate_pairs(vectors: np.ndarray, k: int = KNN_DEFAULT, block: int | 
         return
     kk = min(k, m - 1)
     if block is None:
-        block = max(64, min(m, _KNN_SIMS_BUDGET_BYTES // (m * 8)))
+        block = knn_block_size(m)
     for start in range(0, m, block):
         sims = vectors[start : start + block] @ vectors.T  # (b, M) borné, cosinus
         b = sims.shape[0]

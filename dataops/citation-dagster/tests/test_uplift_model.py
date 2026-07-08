@@ -72,6 +72,71 @@ def test_pair_features_combined_symmetric_and_neutral_when_absent() -> None:
     assert np.allclose(f_present[:sub_len], f_absent[:sub_len])
 
 
+def test_pair_features_block_matches_unit_loop() -> None:
+    """``pair_features_block`` (vectorisé) ≡ la boucle ``pair_features_combined`` par paire.
+
+    Garde-fou de l'optim de débit (drift L96) : la version bloc doit rendre les MÊMES features
+    que l'ancienne boucle Python — sinon les prédictions du modèle changeraient (déterminisme
+    ADR 0057). Les colonnes vectorielles (|a−b|, a·b) sont bit-à-bit identiques ; les 2 scalaires
+    ``cos``/``dist`` peuvent différer d'1 ULP (~1e-16) car ``a @ b`` (BLAS ddot) et ``np.sum``
+    accumulent dans un ordre différent — écart sans effet sur le modèle (seuils de split très au-
+    dessus). On exige donc l'égalité au dernier bit près (``atol=1e-12``), pas un array_equal
+    trompeur. Couvre les 4 cas d'embedding : (présent,présent), (présent,absent), (absent,*)."""
+    rng = _rng()
+    # 6 auteurs : indices 0-2 avec embedding, 3-5 sans (embedding neutre = zéros).
+    subs = np.stack([_random_unit(rng) for _ in range(6)])
+    embs = np.stack([rng.random(_EMB_DIM) for _ in range(6)])
+    embs = embs / np.linalg.norm(embs, axis=1, keepdims=True)
+    present = np.array([True, True, True, False, False, False])
+    emb_matrix = np.where(present[:, None], embs, 0.0)  # zéros là où absent
+
+    # Toutes les paires (i<j) : couvre les 4 combinaisons présent/absent.
+    pairs = [(i, j) for i in range(6) for j in range(i + 1, 6)]
+    ii = np.array([i for i, _ in pairs])
+    jj = np.array([j for _, j in pairs])
+
+    # Référence : boucle unitaire (le chemin AVANT l'optim).
+    ref = np.stack(
+        [
+            um.pair_features_combined(
+                subs[i],
+                subs[j],
+                embs[i] if present[i] else None,
+                embs[j] if present[j] else None,
+                _EMB_DIM,
+            )
+            for i, j in pairs
+        ]
+    )
+    # Vectorisé : le chemin APRÈS l'optim.
+    got = um.pair_features_block(
+        subs[ii], subs[jj], emb_matrix[ii], emb_matrix[jj], present[ii] & present[jj], _EMB_DIM
+    )
+    assert got.shape == ref.shape
+    # Écart maximal ≤ 1 ULP : seuls les scalaires cos/dist (thématique ET embedding) diffèrent
+    # d'~1e-16 (BLAS ddot vs np.sum), le reste est identique. Aucun effet sur le modèle.
+    assert np.allclose(got, ref, rtol=0, atol=1e-12)
+    assert (
+        np.abs(got - ref).max() < 1e-15
+    )  # borne dure : c'est du bruit sub-ULP, pas un écart logique
+    # Les parties vectorielles (|sub_diff|, sub_prod) sont EXACTEMENT identiques.
+    sub_len = 2 + 2 * len(_SUBFIELDS)
+    assert np.array_equal(got[:, 2:sub_len], ref[:, 2:sub_len])
+    # Le drapeau has_embedding (colonne charnière) est exact (0.0/1.0), jamais bruité.
+    assert np.array_equal(got[:, sub_len], ref[:, sub_len])
+
+
+def test_knn_block_size_derives_from_budget() -> None:
+    # Source unique de la taille de bloc : bornée, ≥ 64, ≤ m ; m < 2 → 1.
+    assert um.knn_block_size(1) == 1
+    assert um.knn_block_size(0) == 1
+    assert um.knn_block_size(100) == 100  # petit m → tout tient (min(m, budget//..))
+    big = um.knn_block_size(242_000)
+    assert 64 <= big <= 242_000
+    # cohérent avec le budget : block ≈ budget_bytes // (m*8)
+    assert big == max(64, min(242_000, um._KNN_SIMS_BUDGET_BYTES // (242_000 * 8)))
+
+
 def test_author_vectors_l2_normalized() -> None:
     profiles = [("A", "S0", 3.0), ("A", "S1", 4.0), ("B", "S2", 1.0)]
     vecs = um.author_vectors(profiles, _SUBFIELDS)
