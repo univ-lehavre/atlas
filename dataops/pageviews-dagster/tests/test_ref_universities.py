@@ -516,6 +516,9 @@ def test_asset_builds_referential_and_writes(monkeypatch):
     assert result.metadata["n_titres"].value == 1
     assert result.metadata["n_langues"].value == 1
     assert result.metadata["langs"].text == "en"
+    # Métadonnées d'observabilité (drift L96) : nb titres résolus + durée, historisées par Dagster.
+    assert result.metadata["n_titres_resolus"].value == 1
+    assert result.metadata["resolution_duration_s"].value >= 0.0
     # Écriture DuckDB effectuée : table créée + ligne insérée avec le titre RÉSOLU.
     assert any("CREATE OR REPLACE TABLE _ref_universities" in q for q in con.queries)
     assert len(con.inserted) == 1
@@ -676,6 +679,38 @@ def test_resolve_titles_skips_offlang_and_empty(monkeypatch):
     resolved = mod._resolve_titles(_RecordingFetcher(), kb, ["en", "fr"])
     assert resolved == {("Q1", "Wanted"): "Resolved"}
     assert len(calls) == 1  # une seule résolution (en/Wanted)
+
+
+def test_resolve_titles_parallel_resolves_all_and_is_order_independent(monkeypatch):
+    # Résolution PARALLÉLISÉE (drift L96) : plusieurs titres, pool de threads. Chaque titre est
+    # résolu vers son canonique ; le résultat (dict clé (qid, titre)) est le MÊME quel que soit
+    # l'ordre d'achèvement des threads (déterminisme ADR 0057). Un log de progression est émis.
+    import threading
+
+    seen_lock = threading.Lock()
+    seen: list[str] = []
+
+    class _ThreadFetcher:
+        def get_json(self, url, params=None):
+            with seen_lock:
+                seen.append(url)
+            # canonique = le titre brut (dernier segment d'URL) suffixé — déterministe par titre.
+            raw = url.rsplit("/", 1)[-1]
+            return {"title": f"canon::{raw}"}
+
+    kb = {f"Q{i}": {"qid": f"Q{i}", "titles": {"en": f"Title {i}"}} for i in range(50)}
+    lines: list[str] = []
+    resolved = mod._resolve_titles(_ThreadFetcher(), kb, ["en"], log=lines.append)
+
+    # Les 50 titres sont résolus, chacun vers son canonique attendu (aucun perdu, aucun mélangé).
+    assert len(resolved) == 50
+    for i in range(50):
+        title = f"Title {i}"
+        assert resolved[(f"Q{i}", title)] == f"canon::{title.replace(' ', '_')}"
+    assert len(seen) == 50  # un appel REST par titre
+    # Log de début + fin émis.
+    assert any("résolution de 50 titres" in ln for ln in lines)
+    assert any("50 titres résolus en" in ln for ln in lines)
 
 
 def test_resolve_one_title_prefers_canonical(monkeypatch):

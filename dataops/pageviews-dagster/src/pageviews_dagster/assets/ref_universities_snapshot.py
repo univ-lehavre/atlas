@@ -37,8 +37,10 @@ lui, la porter — pas les assets).
 """
 
 import json
+import time
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 
 from dagster import Config, Failure, MaterializeResult, MetadataValue, asset
@@ -59,6 +61,13 @@ _WIKIDATA_SPARQL_URL = "https://query.wikidata.org/sparql"
 _WIKIPEDIA_REST_HOST = "wikipedia.org"
 
 _HTTP_TIMEOUT = 120.0
+# Parallélisme de la RÉSOLUTION des redirections (drift L96). À l'échelle prod, des MILLIERS
+# de titres se résolvent chacun par un appel REST : en séquentiel c'était des dizaines de
+# minutes (un run de 61 min observé, silencieux). La résolution est I/O-bound (attente réseau)
+# → un pool de THREADS la parallélise sans contention GIL. Chaque appel est indépendant et
+# ``_Fetcher`` sans état partagé → sûr en threads. Le résultat est un dict clé ``(qid, titre)``
+# → ORDRE-indépendant : la parallélisation ne change PAS le référentiel (déterminisme ADR 0057).
+_RESOLVE_WORKERS = 16
 # Taille de lot des ROR par requête SPARQL. À l'échelle prod (filtre pays vide,
 # ``max_institutions=0``), le catalogue rend des DIZAINES DE MILLIERS de ROR : les
 # empiler tous dans un seul ``VALUES`` produit une requête que l'endpoint public REFUSE
@@ -419,7 +428,7 @@ def _fetch_wikidata(fetcher: _Fetcher, rors: list[str], langs: list[str]) -> dic
 
 
 def _resolve_titles(
-    fetcher: _Fetcher, knowledge_base: dict[str, dict], langs: list[str]
+    fetcher: _Fetcher, knowledge_base: dict[str, dict], langs: list[str], log=None
 ) -> dict[tuple[str, str], str]:
     """Résout chaque titre brut vers sa cible de redirection (piège renommage).
 
@@ -429,18 +438,51 @@ def _resolve_titles(
     garde le titre brut. Renvoie ``{(qid, titre_brut): titre_résolu}`` — clé stable
     consommée par ``join_rows``.
 
+    PARALLÉLISÉ (drift L96) : les milliers d'appels REST sont I/O-bound → un pool de threads
+    (``_RESOLVE_WORKERS``) les mène de front. Le résultat est un dict clé ``(qid, titre)``,
+    donc ORDRE-indépendant : la parallélisation ne change PAS le référentiel (ADR 0057).
+    ``log`` (callable optionnel) reçoit une ligne de progression ≥ 1×/min.
+
     Résolution best-effort : un échec ponctuel de l'API (titre supprimé, endpoint
     injoignable) laisse le titre brut inchangé (pas de perte de ligne, ``has_wp`` reste
     True sur le titre brut). C'est le SEUL point réseau tolérant : le référentiel doit se
     construire même si une poignée de titres ne se résout pas.
     """
+    # Aplatir les titres à résoudre (dédupe implicite par la clé du dict aval).
+    tasks = [
+        (entry["qid"], lang, raw_title)
+        for entry in knowledge_base.values()
+        for lang, raw_title in entry["titles"].items()
+        if lang in langs and raw_title
+    ]
+    total = len(tasks)
+    if log:
+        log(
+            f"ref_universities : résolution de {total} titres (redirections), "
+            f"{_RESOLVE_WORKERS} threads…"
+        )
     resolved: dict[tuple[str, str], str] = {}
-    for entry in knowledge_base.values():
-        qid = entry["qid"]
-        for lang, raw_title in entry["titles"].items():
-            if lang not in langs or not raw_title:
-                continue
-            resolved[(qid, raw_title)] = _resolve_one_title(fetcher, lang, raw_title)
+    start_t = last_log_t = time.monotonic()
+
+    def _one(task):
+        qid, lang, raw_title = task
+        return (qid, raw_title), _resolve_one_title(fetcher, lang, raw_title)
+
+    with ThreadPoolExecutor(max_workers=_RESOLVE_WORKERS) as pool:
+        for done, (key, value) in enumerate(pool.map(_one, tasks), start=1):
+            resolved[key] = value
+            now = time.monotonic()
+            if log and (now - last_log_t >= 60.0):
+                elapsed = now - start_t
+                eta = (elapsed / done) * (total - done) if done else 0.0
+                log(
+                    f"ref_universities : {done}/{total} titres résolus · "
+                    f"{done / elapsed:.0f} titres/s · ETA ~{eta / 60:.0f} min"
+                )
+                last_log_t = now
+    if log:
+        mins = (time.monotonic() - start_t) / 60
+        log(f"ref_universities : {total} titres résolus en {mins:.1f} min.")
     return resolved
 
 
@@ -516,10 +558,15 @@ def ref_universities(context, config: RefUniversitiesConfig) -> MaterializeResul
 
     lineage.emit(RunState.START, run_id, "ref_universities", [lineage.source_dataset()], [])
 
+    log = context.log.info
     institutions = _fetch_institutions(fetcher, config)
     rors = sorted({inst["ror"] for inst in institutions})
+    log(f"ref_universities : {len(institutions)} établissements, {len(rors)} ROR distincts.")
     knowledge_base = _fetch_wikidata(fetcher, rors, config.langs)
-    resolved = _resolve_titles(fetcher, knowledge_base, config.langs)
+    log(f"ref_universities : {len(knowledge_base)} ROR appariés dans la base de connaissances.")
+    _resolve_t0 = time.monotonic()
+    resolved = _resolve_titles(fetcher, knowledge_base, config.langs, log=log)
+    resolve_duration_s = round(time.monotonic() - _resolve_t0, 1)
     rows = join_rows(institutions, knowledge_base, resolved, config.langs)
 
     if not rows:
@@ -546,5 +593,9 @@ def ref_universities(context, config: RefUniversitiesConfig) -> MaterializeResul
             "n_langues": MetadataValue.int(summary["n_langues"]),
             "langs": MetadataValue.text(", ".join(config.langs)),
             "bucket": MetadataValue.text(f"{bucket}/{_REF_DEST_SUBDIR}"),
+            # Historique run-à-run (métadonnées Dagster, drift L96) : nb de titres résolus et
+            # durée de la résolution parallélisée — repérer une régression de débit.
+            "n_titres_resolus": MetadataValue.int(len(resolved)),
+            "resolution_duration_s": MetadataValue.float(resolve_duration_s),
         }
     )
