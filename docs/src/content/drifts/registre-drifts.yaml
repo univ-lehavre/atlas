@@ -496,6 +496,10 @@
     ref_universities : urllib.error.HTTPError « HTTP Error 429: Too Many Requests » sur
     api.openalex.org/institutions (en pleine pagination par curseur). Un seul 429 tue le run —
     aucun retry. raw_pageviews (l'étape suivante, celle qui saturait le DNS) n'est même pas atteinte.
+    §2 — une fois l'API OpenAlex abandonnée, un run borné a révélé le MÊME motif « aucun retry » sur
+    un AUTRE endpoint : « HTTP Error 502: Bad Gateway » sur query.wikidata.org/sparql (post_json de
+    _fetch_wikidata). Le SPARQL public Wikidata renvoie des 502/503 intermittents sous charge → un
+    seul suffisait à tuer le run.
   cause: >-
     ref_universities paginait le catalogue d'établissements via l'API REST publique OpenAlex
     (api.openalex.org/institutions, per-page=200, cursor). À l'échelle prod (~24 700 établissements
@@ -513,7 +517,14 @@
     pur) : filtre type='education' (+ pays), dédup par id sur la partition updated_date la plus récente
     (catalogue courant), borne max_institutions ; parse_institutions inchangé (mêmes clés que l'API).
     Wikidata (SPARQL) et Wikipedia (résolution) restent en HTTP — seules les institutions changent de
-    source. Retrait du code mort de pagination (next_cursor). Tests : institutions_query (SQL pur) +
-    _fetch_institutions sur mini-snapshot Parquet local (dédup + filtre), 323 tests verts. PROUVÉ E2E
-    dans le pod prod : 503 établissements FR education rapatriés+projetés en 5,6 s.
+    source. Retrait du code mort de pagination (next_cursor).
+    §2 — ROBUSTESSE HTTP : _Fetcher (get_json/post_json, désormais les SEULES sorties HTTP :
+    Wikidata SPARQL + Wikipedia REST) RÉESSAIE les erreurs transitoires (429 + 5xx) et les erreurs
+    de connexion, backoff exponentiel (1/2/4/8 s, plafonné 30 s) honorant Retry-After, sleep
+    injectable (tests déterministes). Une 4xx non-transitoire (400/404) échoue tout de suite. Sans
+    ça, un seul 502 Wikidata tuait le run.
+    Tests : institutions_query + _fetch_institutions (mini-snapshot Parquet local) + reprise
+    (_retry_delay_s, 502→200 = 1 reprise, 503 permanent → épuise+Failure, 404 → pas de reprise),
+    327 tests verts. PROUVÉ E2E dans le pod prod : ref_universities lit 24 761 établissements du
+    snapshot en 3m25s, 0×429 (fix source validé).
   statut: corrige
