@@ -564,7 +564,9 @@ def ref_universities(context, config: RefUniversitiesConfig) -> MaterializeResul
     log(f"ref_universities : {len(institutions)} établissements, {len(rors)} ROR distincts.")
     knowledge_base = _fetch_wikidata(fetcher, rors, config.langs)
     log(f"ref_universities : {len(knowledge_base)} ROR appariés dans la base de connaissances.")
+    _resolve_t0 = time.monotonic()
     resolved = _resolve_titles(fetcher, knowledge_base, config.langs, log=log)
+    resolve_duration_s = round(time.monotonic() - _resolve_t0, 1)
     rows = join_rows(institutions, knowledge_base, resolved, config.langs)
 
     if not rows:
@@ -591,5 +593,9 @@ def ref_universities(context, config: RefUniversitiesConfig) -> MaterializeResul
             "n_langues": MetadataValue.int(summary["n_langues"]),
             "langs": MetadataValue.text(", ".join(config.langs)),
             "bucket": MetadataValue.text(f"{bucket}/{_REF_DEST_SUBDIR}"),
+            # Historique run-à-run (métadonnées Dagster, drift L96) : nb de titres résolus et
+            # durée de la résolution parallélisée — repérer une régression de débit.
+            "n_titres_resolus": MetadataValue.int(len(resolved)),
+            "resolution_duration_s": MetadataValue.float(resolve_duration_s),
         }
     )

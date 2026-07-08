@@ -516,6 +516,9 @@ def test_asset_builds_referential_and_writes(monkeypatch):
     assert result.metadata["n_titres"].value == 1
     assert result.metadata["n_langues"].value == 1
     assert result.metadata["langs"].text == "en"
+    # Métadonnées d'observabilité (drift L96) : nb titres résolus + durée, historisées par Dagster.
+    assert result.metadata["n_titres_resolus"].value == 1
+    assert result.metadata["resolution_duration_s"].value >= 0.0
     # Écriture DuckDB effectuée : table créée + ligne insérée avec le titre RÉSOLU.
     assert any("CREATE OR REPLACE TABLE _ref_universities" in q for q in con.queries)
     assert len(con.inserted) == 1
