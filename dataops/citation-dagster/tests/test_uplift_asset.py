@@ -129,6 +129,9 @@ def test_asset_serves_predictive_on_signal(monkeypatch) -> None:
     # Sans mart d'embeddings servi (FakeCon vide) → couverture nulle, mais l'asset tourne
     # (dégradation propre sur les seules features thématiques).
     assert result.metadata["embedding_coverage"].value == 0.0
+    # Métadonnées d'observabilité (drift L96) : durée + débit du scoring, historisées par Dagster.
+    assert result.metadata["scoring_duration_s"].value >= 0.0
+    assert result.metadata["scoring_pairs_per_s"].value >= 0.0
 
 
 def test_stream_knn_predictions_logs_progress(monkeypatch) -> None:

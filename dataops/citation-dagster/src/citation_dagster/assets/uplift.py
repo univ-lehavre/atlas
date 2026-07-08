@@ -102,7 +102,7 @@ def _create_preds_table(con) -> None:
     )
 
 
-def _stream_knn_predictions(con, model, vecs: dict, emb_vecs: dict, emb_dim: int, log=None) -> None:
+def _stream_knn_predictions(con, model, vecs: dict, emb_vecs: dict, emb_dim: int, log=None) -> dict:
     """STREAME les prédictions kNN dans la table DuckDB ``preds`` (drift L92, mémoire bornée).
 
     Recommander de NOUVEAUX partenaires reste l'intérêt du prédictif (ADR 0067) — mais scorer
@@ -127,7 +127,7 @@ def _stream_knn_predictions(con, model, vecs: dict, emb_vecs: dict, emb_dim: int
     """
     authors = sorted(vecs)  # tous les auteurs profilés (l'ordre trié fige a < b)
     if len(authors) < 2:
-        return
+        return {"scoring_n_pairs": 0, "scoring_duration_s": 0.0, "scoring_pairs_per_s": 0.0}
     thematic = np.stack([vecs[a] for a in authors])  # (M, #subfields), lignes L2-normalisées
     # Matrices auteur pré-empilées (une fois) pour la construction VECTORISÉE des features par
     # bloc : indexation avancée par les indices du bloc, pas d'appel Python par paire.
@@ -177,11 +177,17 @@ def _stream_knn_predictions(con, model, vecs: dict, emb_vecs: dict, emb_dim: int
             )
             last_log_t = now
 
+    duration_s = time.monotonic() - start_t
     if log:
-        log(
-            f"pair_uplift scoring TERMINÉ : {n_pairs:,} paires scorées en "
-            f"{(time.monotonic() - start_t) / 60:.1f} min."
-        )
+        mins = duration_s / 60
+        log(f"pair_uplift scoring TERMINÉ : {n_pairs:,} paires scorées en {mins:.1f} min.")
+    # Métriques renvoyées pour l'HISTORIQUE run-à-run (métadonnées Dagster + MLflow, pas Prometheus
+    # — batch éphémère) : comparer débit/durée d'un run à l'autre, repérer une régression.
+    return {
+        "scoring_n_pairs": n_pairs,
+        "scoring_duration_s": round(duration_s, 1),
+        "scoring_pairs_per_s": round(n_pairs / duration_s, 1) if duration_s > 0 else 0.0,
+    }
 
 
 def _insert_observed_predictions(con, labels) -> None:
@@ -278,9 +284,10 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
     # paires observées par lots. Predictions et recommandations sont ensuite écrites depuis
     # `preds` (COPY + fenêtre SQL), sans structure Python proportionnelle au nombre de paires.
     _create_preds_table(con)
+    scoring_metrics = {"scoring_n_pairs": 0, "scoring_duration_s": 0.0, "scoring_pairs_per_s": 0.0}
     if served_mode == "predictive":
         model = uplift_model.train_final(ds)
-        _stream_knn_predictions(
+        scoring_metrics = _stream_knn_predictions(
             con, model, vecs, emb_vecs, embedding.EMBEDDING_DIM, log=context.log.info
         )
     else:
@@ -301,6 +308,9 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
         "n_pairs_served": float(n_served),
         "predictive": 1.0 if served_mode == "predictive" else 0.0,
         "embedding_coverage": emb_coverage,
+        # Débit/durée du scoring → historique run-à-run dans MLflow (repérer une régression).
+        "scoring_duration_s": float(scoring_metrics["scoring_duration_s"]),
+        "scoring_pairs_per_s": float(scoring_metrics["scoring_pairs_per_s"]),
     }
     if evaluation is not None:
         metrics.update(
@@ -324,6 +334,9 @@ def pair_uplift_model(context: AssetExecutionContext) -> MaterializeResult:
             "pairs_served": MetadataValue.int(n_served),
             "recommendations": MetadataValue.int(n_recos),
             "embedding_coverage": MetadataValue.float(emb_coverage),
+            # Historique run-à-run (métadonnées Dagster) : durée + débit du scoring kNN.
+            "scoring_duration_s": MetadataValue.float(scoring_metrics["scoring_duration_s"]),
+            "scoring_pairs_per_s": MetadataValue.float(scoring_metrics["scoring_pairs_per_s"]),
             "decision": MetadataValue.text(
                 "prédictif (pouvoir confirmé)"
                 if served_mode == "predictive"
