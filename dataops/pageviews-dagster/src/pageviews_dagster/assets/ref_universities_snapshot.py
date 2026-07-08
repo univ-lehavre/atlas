@@ -59,6 +59,13 @@ _WIKIDATA_SPARQL_URL = "https://query.wikidata.org/sparql"
 _WIKIPEDIA_REST_HOST = "wikipedia.org"
 
 _HTTP_TIMEOUT = 120.0
+# Taille de lot des ROR par requête SPARQL. À l'échelle prod (filtre pays vide,
+# ``max_institutions=0``), le catalogue rend des DIZAINES DE MILLIERS de ROR : les
+# empiler tous dans un seul ``VALUES`` produit une requête que l'endpoint public REFUSE
+# (URL de ~400 Ko en GET → Broken pipe ; et même en POST, un ``VALUES`` géant dépasse la
+# limite de temps de 60 s de Wikidata). On DÉCOUPE donc les ROR en lots bornés, une
+# requête POST par lot, résultats fusionnés. 200 tient largement sous la limite de temps.
+_SPARQL_BATCH_SIZE = 200
 # Chemin du référentiel dans le lakehouse (Parquet). Instantané courant unique : le
 # référentiel évolue LENTEMENT (pas de partition temporelle), rematérialisable au besoin.
 _REF_DEST_SUBDIR = "raw/ref_universities"
@@ -312,6 +319,30 @@ class _Fetcher:
                 metadata={"error": MetadataValue.text(str(exc))},
             ) from exc
 
+    def post_json(self, url: str, data: dict) -> dict:
+        """POST ``data`` (form-urlencodé) et rend le JSON ; lève ``Failure`` sur erreur.
+
+        Le corps de requête porte les paramètres au lieu de l'URL : un GET SPARQL avec des
+        milliers de ROR en ``VALUES`` produit une URL de ~400 Ko que l'endpoint public
+        RESET (Broken pipe). Le POST supprime la limite de longueur d'URL (la clé du fix
+        de mise à l'échelle prod de ``_fetch_wikidata``).
+        """
+        body = urllib.parse.urlencode(data).encode("utf-8")
+        headers = {
+            "User-Agent": self._UA,
+            "Accept": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+        req = urllib.request.Request(url, data=body, headers=headers)  # noqa: S310 — hôtes https connus
+        try:
+            with urllib.request.urlopen(req, timeout=self._timeout) as resp:  # noqa: S310
+                return json.loads(resp.read().decode("utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise Failure(
+                description=f"Requête source échouée : {url}",
+                metadata={"error": MetadataValue.text(str(exc))},
+            ) from exc
+
 
 def _fetch_institutions(fetcher: _Fetcher, config: RefUniversitiesConfig) -> list[dict]:
     """Pagine le catalogue (``type:education`` + filtre pays) → établissements normalisés.
@@ -338,19 +369,53 @@ def _fetch_institutions(fetcher: _Fetcher, config: RefUniversitiesConfig) -> lis
     return institutions
 
 
+def _chunked(items: list[str], size: int) -> list[list[str]]:
+    """Découpe ``items`` en lots de ``size`` maximum (dernier lot possiblement plus court).
+
+    ``size`` non positif → un seul lot (pas de découpage) : garde-fou contre une config
+    aberrante qui produirait une infinité de lots vides.
+    """
+    if size <= 0:
+        return [items] if items else []
+    return [items[i : i + size] for i in range(0, len(items), size)]
+
+
+def merge_knowledge_bases(bases: list[dict[str, dict]]) -> dict[str, dict]:
+    """Fusionne les index SPARQL de plusieurs lots en un seul (PUR, testable sans réseau).
+
+    Les lots portent des ROR DISJOINTS (partition de la sélection), donc la fusion est un
+    simple assemblage. Robuste néanmoins à un ROR vu deux fois : le premier lot gagne, et
+    les titres par langue sont fusionnés sans écrasement (``setdefault``) → même sémantique
+    « premier titre gagné » que ``parse_wikidata_titles`` (déterminisme ADR 0057).
+    """
+    merged: dict[str, dict] = {}
+    for base in bases:
+        for ror, entry in base.items():
+            target = merged.setdefault(ror, {"qid": entry["qid"], "titles": {}})
+            for lang, title in entry["titles"].items():
+                target["titles"].setdefault(lang, title)
+    return merged
+
+
 def _fetch_wikidata(fetcher: _Fetcher, rors: list[str], langs: list[str]) -> dict[str, dict]:
     """Interroge la base de connaissances (SPARQL) pour les ROR retenus → index par ROR.
 
-    Requête bornée aux ROR de la sélection (``VALUES``). Corps de parsing délégué à
-    ``parse_wikidata_titles`` (pur). Renvoie ``{}`` si aucun ROR (rien à joindre).
+    Requête bornée aux ROR de la sélection (``VALUES``), DÉCOUPÉE en lots (``_SPARQL_BATCH_SIZE``)
+    car la sélection prod compte des dizaines de milliers de ROR — un seul ``VALUES`` fait
+    exploser l'URL/la durée côté endpoint (cf. ``_SPARQL_BATCH_SIZE``). Un POST par lot (corps
+    de requête, pas d'URL géante), résultats fusionnés par ``merge_knowledge_bases``. Corps de
+    parsing délégué à ``parse_wikidata_titles`` (pur). Renvoie ``{}`` si aucun ROR.
     """
     if not rors:
         return {}
-    payload = fetcher.get_json(
-        _WIKIDATA_SPARQL_URL,
-        {"query": _sparql_query(rors, langs), "format": "json"},
-    )
-    return parse_wikidata_titles(payload, langs)
+    bases: list[dict[str, dict]] = []
+    for batch in _chunked(rors, _SPARQL_BATCH_SIZE):
+        payload = fetcher.post_json(
+            _WIKIDATA_SPARQL_URL,
+            {"query": _sparql_query(batch, langs), "format": "json"},
+        )
+        bases.append(parse_wikidata_titles(payload, langs))
+    return merge_knowledge_bases(bases)
 
 
 def _resolve_titles(
