@@ -60,13 +60,25 @@ def ceph_target_from_env(env: dict[str, str] | None = None) -> CephTarget:
 
 
 def render_rclone_config(target: CephTarget) -> str:
-    """Rend le contenu d'un ``rclone.conf`` à un seul remote (``ceph``).
+    """Rend le contenu d'un ``rclone.conf`` à deux remotes (``openalex``, ``ceph``).
 
-    ``ceph`` : S3 « Other » (RGW), **path-style** obligatoire. Pas de remote source
-    ici (la source Wikimedia est HTTP, téléchargée en amont).
+    - ``openalex`` : S3 AWS public (AWS Open Data), accès **anonyme** (aucune clé) —
+      source du snapshot ``institutions`` (Parquet) rapatrié par ``ref_universities``.
+      Aligné sur le remote homonyme de ``citation``. On COPIE le snapshot en local (137
+      petits fichiers, ~91 Mio) plutôt que le lire en httpfs : rclone parallélise la
+      copie (~5 s) là où httpfs enchaîne 137 aller-retours S3 (>2 min) ;
+    - ``ceph`` : S3 « Other » (RGW), **path-style** obligatoire — le lakehouse interne.
+
+    La source Wikimedia (redirections/SPARQL) reste HTTP directe, hors rclone.
     """
     return "\n".join(
         [
+            "[openalex]",
+            "type = s3",
+            "provider = AWS",
+            "region = us-east-1",
+            # Accès anonyme au bucket public (équivalent --no-sign-request).
+            "",
             "[ceph]",
             "type = s3",
             "provider = Other",

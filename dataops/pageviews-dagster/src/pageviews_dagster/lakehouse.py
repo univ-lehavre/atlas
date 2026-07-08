@@ -49,7 +49,12 @@ def _create_secret_sql(cfg: DuckDBS3Config) -> str:
 
 
 def connect(cfg: DuckDBS3Config | None = None) -> duckdb.DuckDBPyConnection:
-    """Ouvre une connexion DuckDB configurée pour S3 (httpfs + secret path-style)."""
+    """Ouvre une connexion DuckDB configurée pour S3 (httpfs + secret path-style).
+
+    Un seul secret S3 (``pageviews_s3``, lakehouse interne RGW Ceph). Le snapshot public
+    OpenAlex n'est PAS lu en httpfs (137 petits fichiers → >2 min d'aller-retours) mais
+    RAPATRIÉ en local par rclone puis lu depuis le disque (cf. ``ref_universities``).
+    """
     cfg = cfg or duckdb_s3_config_from_env()
     con = _new_connection()
     con.execute("INSTALL httpfs; LOAD httpfs;")

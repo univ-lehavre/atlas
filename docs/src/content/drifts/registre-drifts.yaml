@@ -487,3 +487,33 @@
     SUIVI durable : NodeLocal DNSCache côté cluster (issue séparée). À PROUVER par un run complet
     (phénomène de charge, un test unitaire ne suffit pas — ADR 0052).
   statut: corrige
+- id: D27
+  campagne: "Preuve prod pageviews — ref_universities : 429 sur l'API OpenAlex (mauvaise source)"
+  nature: drift-e2e
+  portee: code
+  symptome: >-
+    Après D26 (DNS de raw_pageviews réglé, 0 erreur au run), ingestion_job échoue PLUS TÔT, dès
+    ref_universities : urllib.error.HTTPError « HTTP Error 429: Too Many Requests » sur
+    api.openalex.org/institutions (en pleine pagination par curseur). Un seul 429 tue le run —
+    aucun retry. raw_pageviews (l'étape suivante, celle qui saturait le DNS) n'est même pas atteinte.
+  cause: >-
+    ref_universities paginait le catalogue d'établissements via l'API REST publique OpenAlex
+    (api.openalex.org/institutions, per-page=200, cursor). À l'échelle prod (~24 700 établissements
+    type:education dans le monde), la pagination enchaîne les requêtes et l'API rate-limite (429).
+    C'est la MAUVAISE SOURCE : citation ingère déjà works/authors depuis le SNAPSHOT S3 public
+    (s3://openalex/data/parquet/<entity>, AWS Open Data, accès anonyme, aucune limite de débit).
+    L'entité institutions vit dans le MÊME snapshot, en Parquet colonnaire — les champs dont
+    parse_institutions a besoin (id, ror, country_code, works_count, type) y sont des colonnes.
+  correctif: >-
+    CAUSE RACINE — on abandonne l'API pour le snapshot S3 (même source que works/authors, 0 rate-limit).
+    _fetch_institutions rapatrie s3://openalex/data/parquet/institutions par rclone (remote openalex
+    anonyme ajouté à render_rclone_config) puis interroge le Parquet en DuckDB LOCAL. Choix rclone-copy
+    plutôt que httpfs direct : le snapshot fait ~91 Mio en 137 petits fichiers → rclone parallélise la
+    copie (~5 s) là où httpfs enchaîne 137 aller-retours S3 (>2 min, mesuré). SQL (institutions_query,
+    pur) : filtre type='education' (+ pays), dédup par id sur la partition updated_date la plus récente
+    (catalogue courant), borne max_institutions ; parse_institutions inchangé (mêmes clés que l'API).
+    Wikidata (SPARQL) et Wikipedia (résolution) restent en HTTP — seules les institutions changent de
+    source. Retrait du code mort de pagination (next_cursor). Tests : institutions_query (SQL pur) +
+    _fetch_institutions sur mini-snapshot Parquet local (dédup + filtre), 323 tests verts. PROUVÉ E2E
+    dans le pod prod : 503 établissements FR education rapatriés+projetés en 5,6 s.
+  statut: corrige

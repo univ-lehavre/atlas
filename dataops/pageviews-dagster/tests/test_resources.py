@@ -70,13 +70,18 @@ def test_ceph_target_reads_process_env(monkeypatch) -> None:
     assert target.bucket == "pageviews-datalake-abc123"
 
 
-def test_render_rclone_config_has_single_ceph_remote_path_style() -> None:
+def test_render_rclone_config_has_openalex_and_ceph_remotes() -> None:
     conf = render_rclone_config(ceph_target_from_env(_ENV))
-    # Source pageviews en HTTP → aucun remote source S3 ; un seul remote ceph.
+    # Deux remotes : ``openalex`` (public anonyme, source du snapshot institutions, D27) et
+    # ``ceph`` (lakehouse interne). Pas de remote wikimedia (SPARQL/REST restent en HTTP).
+    assert "[openalex]" in conf
     assert "[ceph]" in conf
     assert "[wikimedia]" not in conf
-    assert "[openalex]" not in conf
-    # RGW impose le path-style.
+    # ``openalex`` : AWS public anonyme (aucune clé sous ce remote), région us-east-1.
+    assert "provider = AWS" in conf
+    assert "region = us-east-1" in conf
+    assert "access_key_id" not in conf.split("[ceph]")[0]  # rien d'identifiant sous [openalex]
+    # ``ceph`` : RGW impose le path-style + les identifiants du lakehouse.
     assert "force_path_style = true" in conf
     assert "provider = Other" in conf
     assert "access_key_id = AK" in conf
