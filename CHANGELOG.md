@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.6.0](https://github.com/univ-lehavre/atlas/compare/v1.5.0...v1.6.0) (2026-07-09)
+
+
+### Features
+
+* **citation-dagster:** historise durée et débit du scoring (dagster + mlflow) ([dfbae88](https://github.com/univ-lehavre/atlas/commit/dfbae8848cae8d28a984905b8cf318e23f98513d))
+* **pageviews-dagster:** historise le nb de titres résolus et la durée ([d8f5041](https://github.com/univ-lehavre/atlas/commit/d8f504182f58faff32bc4799e21c67490318e98a))
+
+
+### Bug Fixes
+
+* **citation:** échantillonne les labels d'entraînement uplift (oom, cause réelle) ([dd7206d](https://github.com/univ-lehavre/atlas/commit/dd7206d572da46b6941fef01be4dc32cf229866b))
+* **citation:** échantillonne les labels d'entraînement uplift (oom, cause réelle) ([#583](https://github.com/univ-lehavre/atlas/issues/583)) ([e3f5be5](https://github.com/univ-lehavre/atlas/commit/e3f5be5790e743028676032d28d77370dd23aaa3))
+* **pageviews-dagster:** _Fetcher réessaie les erreurs http transitoires (502 wikidata, d27 §2) ([dd1a22a](https://github.com/univ-lehavre/atlas/commit/dd1a22a5569e482f6fd18c8439d98b13a0fd2b7d))
+* **pageviews-dagster:** _Fetcher réessaie les erreurs HTTP transitoires (502 Wikidata, D27 §2) ([#593](https://github.com/univ-lehavre/atlas/issues/593)) ([2cb613d](https://github.com/univ-lehavre/atlas/commit/2cb613d65dad2561db33cb171fec7f87ce0a2f94))
+* **pageviews-dagster:** client http keep-alive + ndots:1 contre la saturation dns ([d1a87ae](https://github.com/univ-lehavre/atlas/commit/d1a87aed94d45aa1478097373a2eb1d5f5c39252))
+* **pageviews-dagster:** client HTTP keep-alive + ndots:1 contre la saturation DNS (drift D26) ([#591](https://github.com/univ-lehavre/atlas/issues/591)) ([aaf2151](https://github.com/univ-lehavre/atlas/commit/aaf21517036631de3d9875c2c8120d7830151a00))
+* **pageviews-dagster:** contrat de chemin partagé du référentiel établissements ([5c36894](https://github.com/univ-lehavre/atlas/commit/5c36894f2ffcb30043b9c09c885bfcb009b933fd))
+* **pageviews-dagster:** contrat de chemin partagé du référentiel établissements (drift D24) ([#587](https://github.com/univ-lehavre/atlas/issues/587)) ([c09ffa6](https://github.com/univ-lehavre/atlas/commit/c09ffa639476f1fff60455f881039c5a83c204a2))
+* **pageviews-dagster:** découpe la requête sparql en lots et passe en post ([e04f3f8](https://github.com/univ-lehavre/atlas/commit/e04f3f87893cc335c6c5c6ba81b0f4d0de07db1b))
+* **pageviews-dagster:** découpe la requête sparql en lots et passe en post ([#584](https://github.com/univ-lehavre/atlas/issues/584)) ([ecda116](https://github.com/univ-lehavre/atlas/commit/ecda116b4939ff4b3aa4401029ef7bb709cd1677))
+* **pageviews-dagster:** ref_universities lit institutions du snapshot s3 (429, drift d27) ([28f6f94](https://github.com/univ-lehavre/atlas/commit/28f6f949b066a58b51c9996fc75447b205529d37))
+* **pageviews-dagster:** ref_universities lit institutions du snapshot S3 (429, drift D27) ([#592](https://github.com/univ-lehavre/atlas/issues/592)) ([e6d0392](https://github.com/univ-lehavre/atlas/commit/e6d039220925221260c03665131beee5cdeec437))
+* **pageviews-dagster:** relaie PAGEVIEWS_REF_SOURCE au pod de run d'ingestion_job (drift D25) ([#588](https://github.com/univ-lehavre/atlas/issues/588)) ([4568ba3](https://github.com/univ-lehavre/atlas/commit/4568ba3a5d990e2d42c2d7755d4c52eb2993cdfb))
+* **pageviews-dagster:** relaie ref_source au pod de run d'ingestion_job ([0c31919](https://github.com/univ-lehavre/atlas/commit/0c319191efe6d47a81153abd6f1a6da18dc7605c))
+
+
+### Performance
+
+* **citation-dagster:** vectorise le scoring uplift et logue la progression ([c0d25e3](https://github.com/univ-lehavre/atlas/commit/c0d25e3e984286c934774c3de8c266644c490a10))
+* **citation-dagster:** vectorise le scoring uplift et logue la progression ([#585](https://github.com/univ-lehavre/atlas/issues/585)) ([1774a66](https://github.com/univ-lehavre/atlas/commit/1774a66b86805e3deea514fa45e510af23fad229))
+* **pageviews-dagster:** parallélise la résolution des redirections et logue ([691296b](https://github.com/univ-lehavre/atlas/commit/691296b79e440b02ae4c5929da378b369b5cf0fe))
+* **pageviews-dagster:** parallélise la résolution des redirections et logue ([#586](https://github.com/univ-lehavre/atlas/issues/586)) ([344c67f](https://github.com/univ-lehavre/atlas/commit/344c67ff97f758734aeb9f9adc749735389892d0))
+
 ## [1.5.0](https://github.com/univ-lehavre/atlas/compare/v1.4.0...v1.5.0) (2026-07-08)
 
 
