@@ -27,6 +27,7 @@ from pageviews_dagster.assets.ref_universities_snapshot import (
     parse_institutions,
     parse_wikidata_titles,
     ref_universities,
+    resolve_batch,
     works_band,
 )
 
@@ -35,7 +36,7 @@ _MODULE = sys.modules["pageviews_dagster.assets.ref_universities_snapshot"]
 # URLs des sources HTTP restantes (SPARQL / résolution REST) — le fake fetcher dispatche
 # dessus. Les institutions viennent désormais du snapshot S3 (drift D27), pas d'une URL.
 _SPARQL = "query.wikidata.org/sparql"
-_WP_REST = "/w/rest.php/v1/page/"
+_ACTION_API = "/w/api.php"  # résolution des redirections BATCHÉE (action=query, D27 §3)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -609,7 +610,7 @@ class _FakeFetcher:
     Depuis le passage des institutions au snapshot S3 (drift D27), le fetcher ne sert
     PLUS le catalogue — seulement la base de connaissances (SPARQL) et la résolution REST.
     - SPARQL : rend ``sparql_payload``.
-    - Résolution REST : rend ``{"title": <canonique>}`` selon ``resolved`` (défaut : titre
+    - Résolution BATCHÉE (action=query) : rend `query.redirects[]` depuis `resolved`.
       inchangé — pas de renommage). Enregistre les titres résolus (``resolved_calls``).
     """
 
@@ -621,14 +622,17 @@ class _FakeFetcher:
     def get_json(self, url, params=None):
         if _SPARQL in url:
             return self._sparql_payload
-        if _WP_REST in url:
-            # Le titre brut (avec espaces → underscores + quote) est dans l'URL ; on
-            # résout via la table ``resolved`` indexée par titre brut lisible.
-            for raw, canonical in self._resolved.items():
-                if raw.replace(" ", "_") in url:
+        if _ACTION_API in url:
+            # Résolution BATCHÉE (action=query&redirects=1) : `params["titles"]` = "A|B|C".
+            # On construit une réponse `redirects[]` depuis la table `resolved` (titre→cible)
+            # pour les titres demandés qui y figurent (les autres restent bruts, best-effort).
+            requested = (params or {}).get("titles", "").split("|")
+            redirects = []
+            for raw in requested:
+                if raw in self._resolved and self._resolved[raw]:
                     self.resolved_calls.append(raw)
-                    return {"title": canonical}
-            return {"title": ""}  # pas de canonique connu → garde le brut (best-effort)
+                    redirects.append({"from": raw, "to": self._resolved[raw]})
+            return {"query": {"redirects": redirects, "pages": {}}}
         raise AssertionError(f"URL inattendue : {url}")
 
     def post_json(self, url, data=None):
@@ -758,7 +762,7 @@ def test_asset_resolution_best_effort_keeps_raw_on_failure(monkeypatch):
     original_get = fetcher.get_json
 
     def get_json(url, params=None):
-        if _WP_REST in url:
+        if _ACTION_API in url:  # la résolution batchée échoue → titres bruts conservés
             raise Failure(description="endpoint injoignable")
         return original_get(url, params)
 
@@ -771,79 +775,93 @@ def test_asset_resolution_best_effort_keeps_raw_on_failure(monkeypatch):
     assert con.inserted[0][4] == "Kept Title"  # titre brut conservé
 
 
-def test_resolve_titles_skips_offlang_and_empty(monkeypatch):
+# ── resolve_batch (PUR) — chaînage normalized → redirects ─────────────────────
+
+
+def test_resolve_batch_chains_normalized_then_redirects():
+    # L'API chaîne normalized (casse/_) PUIS redirects (renommage) : demandé → normalisé → cible.
+    payload = {
+        "query": {
+            "normalized": [{"from": "harvard_university", "to": "Harvard university"}],
+            "redirects": [{"from": "Harvard university", "to": "Université Harvard"}],
+        }
+    }
+    out = resolve_batch(payload, ["harvard_university", "Inconnu"])
+    assert out["harvard_university"] == "Université Harvard"  # les 2 maillons suivis
+    assert out["Inconnu"] == "Inconnu"  # ni normalisé ni redirigé → inchangé (best-effort)
+
+
+def test_resolve_batch_redirect_only_and_missing():
+    payload = {
+        "query": {"redirects": [{"from": "MIT", "to": "Massachusetts Institute of Technology"}]}
+    }
+    out = resolve_batch(payload, ["MIT", "France"])
+    assert out["MIT"] == "Massachusetts Institute of Technology"
+    assert out["France"] == "France"  # pas de redirection → titre brut conservé
+
+
+def test_resolve_titles_skips_offlang_and_empty():
     # _resolve_titles ne résout QUE les langues demandées avec un titre non vide.
-    # (dans le chemin asset, parse_wikidata_titles pré-filtre déjà — ici on force le skip.)
-    calls: list[str] = []
+    calls: list[dict] = []
 
     class _RecordingFetcher:
         def get_json(self, url, params=None):
-            calls.append(url)
-            return {"title": "Resolved"}
+            calls.append(params)  # on capture les `titles` batchés
+            requested = (params or {}).get("titles", "").split("|")
+            return {"query": {"redirects": [{"from": t, "to": "Resolved"} for t in requested]}}
 
     kb = {
         "r1": {
             "qid": "Q1",
             "titles": {
                 "en": "Wanted",  # langue demandée + titre → résolu
-                "de": "Ignored",  # langue NON demandée → sauté
+                "de": "Ignored",  # langue NON demandée → sautée
                 "fr": "",  # langue demandée mais titre vide → sauté
             },
         }
     }
     resolved = mod._resolve_titles(_RecordingFetcher(), kb, ["en", "fr"])
     assert resolved == {("Q1", "Wanted"): "Resolved"}
-    assert len(calls) == 1  # une seule résolution (en/Wanted)
+    assert len(calls) == 1  # UNE requête batch (en/Wanted) ; ni de/Ignored ni fr/vide
+    assert calls[0]["titles"] == "Wanted"
 
 
-def test_resolve_titles_parallel_resolves_all_and_is_order_independent(monkeypatch):
-    # Résolution PARALLÉLISÉE (drift L96) : plusieurs titres, pool de threads. Chaque titre est
-    # résolu vers son canonique ; le résultat (dict clé (qid, titre)) est le MÊME quel que soit
-    # l'ordre d'achèvement des threads (déterminisme ADR 0057). Un log de progression est émis.
-    import threading
+def test_resolve_titles_batches_by_50_and_is_deterministic():
+    # >50 titres d'une même langue → PLUSIEURS lots (un par 50), résolus, fusionnés. Résultat
+    # ORDRE-indépendant (dict clé (qid, titre)) → déterministe (ADR 0057). Log début/fin émis.
+    n = mod._RESOLVE_BATCH_SIZE * 2 + 7  # 3 lots (50, 50, 7)
+    batch_sizes: list[int] = []
 
-    seen_lock = threading.Lock()
-    seen: list[str] = []
-
-    class _ThreadFetcher:
+    class _BatchFetcher:
         def get_json(self, url, params=None):
-            with seen_lock:
-                seen.append(url)
-            # canonique = le titre brut (dernier segment d'URL) suffixé — déterministe par titre.
-            raw = url.rsplit("/", 1)[-1]
-            return {"title": f"canon::{raw}"}
+            requested = (params or {}).get("titles", "").split("|")
+            batch_sizes.append(len(requested))
+            # canonique déterministe par titre : chaque "Title i" → "canon::Title i".
+            return {"query": {"redirects": [{"from": t, "to": f"canon::{t}"} for t in requested]}}
 
-    kb = {f"Q{i}": {"qid": f"Q{i}", "titles": {"en": f"Title {i}"}} for i in range(50)}
+    kb = {f"Q{i}": {"qid": f"Q{i}", "titles": {"en": f"Title {i:03d}"}} for i in range(n)}
     lines: list[str] = []
-    resolved = mod._resolve_titles(_ThreadFetcher(), kb, ["en"], log=lines.append)
+    resolved = mod._resolve_titles(_BatchFetcher(), kb, ["en"], log=lines.append)
 
-    # Les 50 titres sont résolus, chacun vers son canonique attendu (aucun perdu, aucun mélangé).
-    assert len(resolved) == 50
-    for i in range(50):
-        title = f"Title {i}"
-        assert resolved[(f"Q{i}", title)] == f"canon::{title.replace(' ', '_')}"
-    assert len(seen) == 50  # un appel REST par titre
-    # Log de début + fin émis.
-    assert any("résolution de 50 titres" in ln for ln in lines)
-    assert any("50 titres résolus en" in ln for ln in lines)
+    assert len(resolved) == n
+    for i in range(n):
+        title = f"Title {i:03d}"
+        assert resolved[(f"Q{i}", title)] == f"canon::{title}"
+    # 3 lots : 50, 50, 7 (jamais un lot > 50 = limite API).
+    assert batch_sizes == [mod._RESOLVE_BATCH_SIZE, mod._RESOLVE_BATCH_SIZE, 7]
+    assert any("résolution BATCHÉE" in ln for ln in lines)
+    assert any(f"{n} titres résolus en" in ln for ln in lines)
 
 
-def test_resolve_one_title_prefers_canonical(monkeypatch):
-    # Redirection : l'API rend un titre canonique non vide → il l'emporte sur le brut.
-    class _F:
+def test_resolve_titles_best_effort_on_batch_failure():
+    # Un lot qui lève Failure → ses titres restent BRUTS (pas de perte de ligne, best-effort).
+    class _FailingFetcher:
         def get_json(self, url, params=None):
-            return {"title": "Canonical Target"}
+            raise Failure(description="endpoint injoignable")
 
-    assert mod._resolve_one_title(_F(), "en", "Old Title") == "Canonical Target"
-
-
-def test_resolve_one_title_falls_back_to_raw_on_empty(monkeypatch):
-    # API rend un titre vide → on garde le brut (pas de titre canonique connu).
-    class _F:
-        def get_json(self, url, params=None):
-            return {"title": ""}
-
-    assert mod._resolve_one_title(_F(), "en", "Kept") == "Kept"
+    kb = {"Q1": {"qid": "Q1", "titles": {"en": "Kept"}}}
+    resolved = mod._resolve_titles(_FailingFetcher(), kb, ["en"])
+    assert resolved == {("Q1", "Kept"): "Kept"}  # titre brut conservé
 
 
 # ─────────────────────────────────────────────────────────────────────────────
