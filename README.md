@@ -121,6 +121,8 @@ Cible **Linux x86-64 et arm64** pour les conteneurs déployés, **macOS et Linux
 
 ## Culture d'ingénierie
 
+> **Prémisse — adaptativité matérielle.** Le code applicatif s'**adapte à la classe de matériel** de l'instance qui l'exécute : un profil dérivé de la classe (portable, bare-metal HDD, bare-metal massif…) règle les ressources de calcul (mémoire, threads, tailles de lot), la politique de cache des données — filtrer OpenAlex à la volée plutôt que stocker 1,27 Tio de brut, garder GDELT en agrégats mensuels immuables sur une petite instance — et la **dégradation propre** des composants optionnels (une instance sans `pgvector`/MLflow produit un résultat correct quoique réduit, jamais un crash). Le code reste **générique** : la classe est un paramètre d'instance, jamais une branche par déployeur. Cette prémisse traverse `cluster` et `atlas` ([ADR cluster 0107](https://univ-lehavre.github.io/cluster/decisions/0107-adaptativite-materielle-premisse-cultures/), _en construction_).
+
 Au-delà des garde-fous transverses, le dépôt revendique trois cultures d'ingénierie — chacune câblée dans le code et tracée par des décisions d'architecture (_ADR_, _Architecture Decision Record_, dans [`docs/decisions/`](docs/src/content/docs/decisions/)), pas seulement déclarée. Chaque affirmation ci-dessous **pointe vers sa preuve** (la décision, le workflow, le test) sans la recopier ([ADR 0070](https://univ-lehavre.github.io/atlas/decisions/0070-page-preuves-vitrine-doctrine-badges/)).
 
 ### GitOps — le dépôt Git est la source de vérité
