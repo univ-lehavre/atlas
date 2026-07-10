@@ -68,6 +68,44 @@ def test_check_raw_gkg_fails_on_bad_data(monkeypatch) -> None:
     assert res.passed is False
 
 
+# ── Native (27 champs, ADR 0100) ─────────────────────────────────────────────
+
+from mediawatch_dagster.gkg import NATIVE_COLUMNS  # noqa: E402
+
+# Ligne native valide : 27 colonnes, identifiant + date renseignés, reste vide (OK).
+_GOOD_NATIVE = pd.DataFrame(
+    [{**{c: "" for c in NATIVE_COLUMNS}, "gkg_record_id": "r1", "v21_date": "20260101120000"}]
+)
+
+
+def test_raw_native_suite_passes_on_good_df() -> None:
+    ok, meta = ge_suites.validate_df(
+        _GOOD_NATIVE, "raw_native_gkg", ge_suites.raw_native_gkg_expectations()
+    )
+    assert ok is True
+    assert meta["failed"] == []
+
+
+def test_raw_native_suite_fails_on_bad_date() -> None:
+    bad = _GOOD_NATIVE.copy()
+    bad["v21_date"] = ["2026-01-01"]  # tiret au lieu de YYYYMMDDHHMMSS
+    ok, meta = ge_suites.validate_df(bad, "raw_native_gkg", ge_suites.raw_native_gkg_expectations())
+    assert ok is False
+    assert "expect_column_values_to_match_regex" in meta["failed"]
+
+
+def test_raw_native_suite_fails_on_missing_column() -> None:
+    bad = _GOOD_NATIVE.drop(columns=["v2_gcam"])  # une des 27 colonnes manque
+    ok, _ = ge_suites.validate_df(bad, "raw_native_gkg", ge_suites.raw_native_gkg_expectations())
+    assert ok is False
+
+
+def test_check_raw_native_gkg_passes(monkeypatch) -> None:
+    monkeypatch.setattr(q.lakehouse, "connect", lambda cfg=None: _FakeCon(_GOOD_NATIVE))
+    res = q.check_raw_native_gkg("mediawatch")
+    assert res.passed is True
+
+
 # ── Curated (mentions qualifiées « université ») ─────────────────────────────
 
 _GOOD_CURATED = pd.DataFrame(

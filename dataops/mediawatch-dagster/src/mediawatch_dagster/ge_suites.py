@@ -5,9 +5,11 @@ suites d'attentes par couche et valide un ``DataFrame`` pandas via un **contexte
 éphémère** (en mémoire, hermétique). L'*asset check* Dagster (assets/quality.py) ne
 fait que charger la donnée puis appeler ``validate_df``.
 
-Couche **raw** (la plus exposée — le brut JSONL.gz projeté n'a aucun test dbt) : on
+Couche **raw** (la plus exposée — le brut Parquet projeté n'a aucun test dbt) : on
 vérifie la présence et la non-vacuité des colonnes que le staging consomme, le format
-du timestamp (14 chiffres) et la non-vacuité du nom d'organisation.
+du timestamp (14 chiffres) et la non-vacuité du nom d'organisation. La couche **native**
+(27 champs, ADR 0100) a sa propre suite : présence des 27 colonnes + non-vacuité de
+l'identifiant et de la date + format du timestamp.
 
 NB : pas de ``from __future__ import annotations`` (cohérence dépôt, drift D9).
 """
@@ -44,6 +46,29 @@ def raw_gkg_expectations() -> list:
         gxe.ExpectColumnValuesToNotBeNull(column="organization"),
         gxe.ExpectColumnValuesToMatchRegex(column="date", regex=_GKG_DATE_RE),
         gxe.ExpectColumnValueLengthsToBeBetween(column="organization", min_value=1),
+        gxe.ExpectTableRowCountToBeBetween(min_value=1),
+    ]
+    return exps
+
+
+def raw_native_gkg_expectations() -> list:
+    """Contrat structurel du brut GKG NATIF (les 27 colonnes V2.1, ADR 0100).
+
+    Vérifie la présence des 27 colonnes (schéma fidèle stable), la non-vacuité de
+    l'identifiant et de la date (invariants du GKG : une ligne = un document daté), et
+    le format du timestamp. Les 21 autres champs peuvent être vides (nombreux articles
+    n'ont ni thèmes ni GCAM…) : on ne contraint QUE le squelette structurel, la fidélité
+    du contenu étant l'objet même de cette couche.
+    """
+    # Import local pour éviter un cycle (gkg n'importe pas ge_suites, mais on garde ce
+    # module pur/sans dépendance forte au schéma d'ingestion en tête de fichier).
+    from mediawatch_dagster.gkg import NATIVE_COLUMNS
+
+    exps = [gxe.ExpectColumnToExist(column=c) for c in NATIVE_COLUMNS]
+    exps += [
+        gxe.ExpectColumnValuesToNotBeNull(column="gkg_record_id"),
+        gxe.ExpectColumnValuesToNotBeNull(column="v21_date"),
+        gxe.ExpectColumnValuesToMatchRegex(column="v21_date", regex=_GKG_DATE_RE),
         gxe.ExpectTableRowCountToBeBetween(min_value=1),
     ]
     return exps

@@ -1,14 +1,16 @@
 version: 2
 
-# Source du brut GKG projeté par `raw_gkg` (PR 2) vers `s3://mediawatch/raw/gkg/`.
-# dbt-duckdb résout `meta.external_location` en un reader DuckDB (`read_json_auto`) ;
-# le secret S3 du profil (path-style, depuis l'environnement) s'y applique. Déclarer
-# la source ici (plutôt qu'un `read_json_auto` en dur dans chaque modèle) centralise
-# le chemin et rend le lineage source→staging visible dans le manifest (Marquez).
+# Source du brut GKG projeté par `raw_gkg` vers `s3://mediawatch/raw/gkg/`. Le brut
+# est en **Parquet** (ADR 0100 : le brut mediawatch abandonne le JSONL.gz) : dbt-duckdb
+# résout `meta.external_location` en un reader DuckDB (`read_parquet`) ; le secret S3 du
+# profil (path-style, depuis l'environnement) s'y applique. Déclarer la source ici
+# (plutôt qu'un `read_parquet` en dur dans chaque modèle) centralise le chemin et rend
+# le lineage source→staging visible dans le manifest (Marquez).
 #
 # `hive_partitioning=false` : le brut est rangé sous `dt=YYYY-MM-DD/run=<id>/`, mais
-# ces clés viennent du CHEMIN, pas du JSON. Sans ce drapeau, DuckDB injecterait des
-# colonnes fantômes `dt`/`run`.
+# ces clés viennent du CHEMIN, pas des données. Sans ce drapeau, DuckDB injecterait des
+# colonnes fantômes `dt`/`run`. `filename=true` expose le chemin du run comme colonne
+# `filename`, utilisée par `stg_gkg_mentions` pour la déduplication « dernier run gagne ».
 #
 # PERFORMANCE (ADR 0064) : le scan est BORNÉ au jour de la partition courante
 # (`event_day`, injectée par Dagster = la partition raw_gkg du run), pas un glob `**`
@@ -20,12 +22,12 @@ version: 2
 # `raw_root` est une var (défaut `s3://mediawatch/raw`, surchargée en test).
 sources:
   - name: mediawatch_raw
-    description: "Brut GKG projeté (JSONL.gz), ingéré dans le lakehouse par raw_gkg."
+    description: "Brut GKG projeté (Parquet), ingéré dans le lakehouse par raw_gkg."
     tables:
       - name: gkg
         description: "Mentions d'organisations : record_id, date, organization, source, url, translated."
         meta:
-          external_location: "read_json_auto('{{ var('raw_root') }}/gkg/dt={{ var('event_day', '*') }}/run=*/*.jsonl.gz', hive_partitioning=false, union_by_name=true, filename=true)"
+          external_location: "read_parquet('{{ var('raw_root') }}/gkg/dt={{ var('event_day', '*') }}/run=*/*.parquet', hive_partitioning=false, union_by_name=true, filename=true)"
 
   - name: mediawatch_ref
     description: "Référentiel d'universités ingéré (JSONL.gz) par ref_universities_snapshot."

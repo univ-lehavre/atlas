@@ -1,5 +1,5 @@
--- Mentions d'organisations typées/normalisées depuis le brut JSONL.gz (vue de
--- session `:memory:`). Projection EXPLICITE (jamais SELECT *). On dérive :
+-- Mentions d'organisations typées/normalisées depuis le brut Parquet (vue de
+-- session `:memory:`, ADR 0100). Projection EXPLICITE (jamais SELECT *). On dérive :
 --   - event_date : la date civile (YYYY-MM-DD) extraite du timestamp GKG, axe du
 --     chronogramme (le mart agrège par jour) ;
 --   - org_name   : le nom d'organisation nettoyé (trim) ;

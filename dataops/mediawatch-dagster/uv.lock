@@ -1296,6 +1296,7 @@ dependencies = [
     { name = "mlflow-skinny" },
     { name = "numpy" },
     { name = "openlineage-python" },
+    { name = "pyarrow" },
     { name = "scikit-learn" },
 ]
 
@@ -1321,6 +1322,7 @@ requires-dist = [
     { name = "mlflow-skinny", specifier = "==2.22.5" },
     { name = "numpy" },
     { name = "openlineage-python" },
+    { name = "pyarrow" },
     { name = "scikit-learn", specifier = "==1.6.1" },
 ]
 

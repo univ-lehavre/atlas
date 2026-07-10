@@ -1,35 +1,22 @@
-"""Tests de l'asset raw_gkg PARTITIONNÉ : httpx + rclone mockés, fixture figé.
+"""Tests de l'asset raw_gkg DÉRIVÉ (ADR 0100) : lecture native + projection mockées.
 
-Hermétique : aucun réseau (httpx mocké), aucun S3 (rclone rcat mocké). On vérifie le
-filtrage par jour de partition, la projection et l'écriture lakehouse — sans dépendre
-de l'extérieur (ADR 0057).
+Hermétique : aucun réseau, aucun S3. ``raw_gkg`` ne télécharge plus GDELT — il LIT la
+couche native (mockée) et écrit la couche projetée en Parquet (écriture DuckDB mockée).
+On vérifie la projection 6 champs, l'éclatement des organisations et l'écriture sous
+``raw/gkg/dt=/run=`` (ADR 0057/0100).
 """
 
-import subprocess
 import sys
-import zipfile
-from io import BytesIO
 from pathlib import Path
 
-import httpx
 import pytest
 from dagster import Failure, build_asset_context
 
-from mediawatch_dagster import http_fetch
+from mediawatch_dagster import gkg, lakehouse
 from mediawatch_dagster.assets.raw_gkg import RawGkgConfig, raw_gkg
 from mediawatch_dagster.resources import ceph_target_from_env
 
-# Module réel (et non l'asset re-exporté sous le même nom dans assets/__init__) :
-# c'est lui qu'on patche pour ceph_target_from_env (idiome partagé avec citation).
 _MODULE = sys.modules["mediawatch_dagster.assets.raw_gkg"]
-
-# Throttle nul + pas de retry en test : aucune attente réelle (la robustesse
-# retry/backoff est testée dans test_http_fetch ; ici on ne valide que la logique
-# de l'asset, et max_attempts=1 évite tout sleep de backoff sur les chemins d'échec).
-_NO_THROTTLE = {"min_interval_s": 0.0, "max_attempts": 1}
-
-_FIXTURES = Path(__file__).resolve().parents[3] / "fixtures" / "gkg-sample"
-_ZIP_BYTES = (_FIXTURES / "20260101120000.gkg.csv.zip").read_bytes()
 
 _ENV = {
     "AWS_ACCESS_KEY_ID": "AK",
@@ -39,180 +26,137 @@ _ENV = {
     "BUCKET_NAME": "mediawatch",
 }
 
-# Deux fichiers le 2026-01-01 + un le lendemain (doit être exclu de la partition).
-_MASTER = (
-    "1 a http://data.gdeltproject.org/gdeltv2/20260101120000.gkg.csv.zip\n"
-    "1 b http://data.gdeltproject.org/gdeltv2/20260101121500.gkg.csv.zip\n"
-    "1 c http://data.gdeltproject.org/gdeltv2/20260102000000.gkg.csv.zip\n"
-)
+# Lignes NATIVES (dict 27 champs) telles que raw_native_gkg les a écrites, lues par la
+# projection. On ne renseigne que les champs utiles ; les autres valent "" (défaut).
+_FIXTURES = Path(__file__).resolve().parents[3] / "fixtures" / "gkg-sample"
 
 
-class _Resp:
-    def __init__(self, *, text: str = "", content: bytes = b"") -> None:
-        self.text = text
-        self.content = content
-        self.status_code = 200
-        self.headers: dict = {}
-
-    def raise_for_status(self) -> None:
-        return None
-
-
-class _FakeHttpx:
-    """Mock httpx.get : master lists (texte) et fichiers .zip (bytes du fixture)."""
-
-    def __init__(self) -> None:
-        self.downloaded: list[str] = []
-
-    def get(self, url: str, **kwargs) -> _Resp:
-        if url.endswith("masterfilelist.txt"):
-            return _Resp(text=_MASTER)
-        if url.endswith("masterfilelist-translation.txt"):
-            return _Resp(text="")  # pas de flux traduit dans ce test
-        self.downloaded.append(url)
-        return _Resp(content=_ZIP_BYTES)
+def _native_row(record_id, date, orgs, source="example.com", url="http://a", trans=""):
+    """Construit une ligne native (dict des 27 colonnes) pour les tests."""
+    row = dict.fromkeys(gkg.NATIVE_COLUMNS, "")
+    row["gkg_record_id"] = record_id
+    row["v21_date"] = date
+    row["v2_source_common_name"] = source
+    row["v2_document_identifier"] = url
+    row["v2_enhanced_organizations"] = orgs
+    row["v21_translation_info"] = trans
+    return row
 
 
-class _FakeRclone:
-    """Mock subprocess.run pour rclone rcat (écritures)."""
+class _CaptureCon:
+    """Connexion DuckDB factice : capture les écritures via register/copy_to_parquet.
+
+    ``registered`` retient la table même après ``unregister`` (l'asset la désenregistre
+    dans un ``finally``) pour que les tests puissent l'inspecter APRÈS le run.
+    """
 
     def __init__(self) -> None:
-        self.rcat_dests: list[str] = []
+        self.registered: dict = {}
+        self._live: dict = {}
 
-    def __call__(self, cmd, **kwargs):
-        if "rcat" in cmd:
-            self.rcat_dests.append(cmd[-1])
-            return subprocess.CompletedProcess(cmd, 0, stdout=b"", stderr=b"")
-        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+    def register(self, name, table) -> None:
+        self.registered[name] = table
+        self._live[name] = table
+
+    def unregister(self, name) -> None:  # noqa: D401 — nettoyage (ne purge pas la capture)
+        self._live.pop(name, None)
 
 
-def _patch(monkeypatch, fake_httpx: _FakeHttpx, fake_rclone: _FakeRclone) -> None:
+def _patch(monkeypatch, native_rows, capture: _CaptureCon, dests: list) -> None:
     monkeypatch.setattr(_MODULE, "ceph_target_from_env", lambda: ceph_target_from_env(_ENV))
-    # Le ThrottledClient appelle http_fetch.httpx.get : c'est là qu'on mocke le réseau.
-    monkeypatch.setattr(http_fetch.httpx, "get", fake_httpx.get)
-    monkeypatch.setattr(subprocess, "run", fake_rclone)
+    monkeypatch.setattr(lakehouse, "connect", lambda cfg=None: capture)
+    monkeypatch.setattr(
+        lakehouse, "read_native_rows", lambda con, bucket, prefix, dt, run_id: native_rows
+    )
+
+    def _fake_copy(con, select_sql, dest_dir, partition_by=None):
+        dests.append(dest_dir)
+
+    monkeypatch.setattr(lakehouse, "copy_to_parquet", _fake_copy)
 
 
 def _run(partition_key: str, config: RawGkgConfig):
     return raw_gkg(build_asset_context(partition_key=partition_key), config)
 
 
-def test_partition_ingests_only_that_day(monkeypatch) -> None:
-    fake_httpx, fake_rclone = _FakeHttpx(), _FakeRclone()
-    _patch(monkeypatch, fake_httpx, fake_rclone)
+def test_projects_native_rows_to_mentions(monkeypatch) -> None:
+    native = [
+        _native_row("r1", "20260101120000", "Harvard University,10;MIT,20"),
+        _native_row("r2", "20260101121500", "Stanford,5"),
+    ]
+    capture, dests = _CaptureCon(), []
+    _patch(monkeypatch, native, capture, dests)
 
-    result = _run(
-        "2026-01-01", RawGkgConfig(max_files=10, include_translation=False, **_NO_THROTTLE)
+    result = _run("2026-01-01", RawGkgConfig())
+    # 2 mentions (r1) + 1 (r2) = 3.
+    assert result.metadata["mentions_written"].value == 3
+    assert result.metadata["native_rows_read"].value == 2
+    # Écriture sous raw/gkg/dt=2026-01-01 (date de partition).
+    assert len(dests) == 1
+    assert "raw/gkg/dt=2026-01-01" in dests[0]
+    # La table Arrow enregistrée porte les 6 colonnes du contrat dbt.
+    table = capture.registered["projected_mentions"]
+    assert set(table.column_names) == {
+        "record_id",
+        "date",
+        "organization",
+        "source_common_name",
+        "document_identifier",
+        "translated",
+    }
+    # translated typé BOOLEAN (contrat staging : coalesce(translated, false)).
+    assert str(table.schema.field("translated").type) == "bool"
+
+
+def test_row_without_org_yields_no_mention(monkeypatch) -> None:
+    native = [_native_row("r1", "20260101120000", "")]  # aucune organisation
+    capture, dests = _CaptureCon(), []
+    _patch(monkeypatch, native, capture, dests)
+
+    result = _run("2026-01-01", RawGkgConfig())
+    assert result.metadata["mentions_written"].value == 0
+    # Aucune mention → pas d'écriture Parquet (pas de part vide).
+    assert dests == []
+
+
+def test_translated_flag_from_translation_info(monkeypatch) -> None:
+    native = [
+        _native_row("r1", "20260101120000", "UNESCO,3", trans="srclc:fra"),  # traduit
+        _native_row("r2", "20260101120000", "NATO,3", trans=""),  # natif anglais
+    ]
+    capture, dests = _CaptureCon(), []
+    _patch(monkeypatch, native, capture, dests)
+
+    _run("2026-01-01", RawGkgConfig())
+    table = capture.registered["projected_mentions"]
+    by_id = dict(
+        zip(
+            table.column("record_id").to_pylist(),
+            table.column("translated").to_pylist(),
+            strict=True,
+        )
     )
-    # 2 fichiers le 2026-01-01 ingérés ; celui du 2026-01-02 exclu.
-    assert result.metadata["files_ingested"].value == 2
-    assert result.metadata["partition"].text == "2026-01-01"
-    assert "20260102000000" not in " ".join(fake_httpx.downloaded)
-    # Écriture sous dt=2026-01-01 (date de partition), pas dérivée du fichier.
-    write_dests = [d for d in fake_rclone.rcat_dests if "raw/gkg/" in d]
-    assert len(write_dests) == 2
-    assert all("dt=2026-01-01" in d for d in write_dests)
+    assert by_id["r1"] is True
+    assert by_id["r2"] is False
 
 
-def test_partition_bounded_by_max_files(monkeypatch) -> None:
-    fake_httpx, fake_rclone = _FakeHttpx(), _FakeRclone()
-    _patch(monkeypatch, fake_httpx, fake_rclone)
+def test_empty_native_writes_nothing(monkeypatch) -> None:
+    capture, dests = _CaptureCon(), []
+    _patch(monkeypatch, [], capture, dests)
 
-    result = _run(
-        "2026-01-01", RawGkgConfig(max_files=1, include_translation=False, **_NO_THROTTLE)
-    )
-    assert result.metadata["files_ingested"].value == 1
-    assert result.metadata["truncated"].value is True
-
-
-def test_empty_partition_writes_nothing(monkeypatch) -> None:
-    fake_httpx, fake_rclone = _FakeHttpx(), _FakeRclone()
-    _patch(monkeypatch, fake_httpx, fake_rclone)
-
-    # Un jour sans aucun fichier dans la master list.
-    result = _run(
-        "2025-12-31", RawGkgConfig(max_files=10, include_translation=False, **_NO_THROTTLE)
-    )
-    assert result.metadata["files_ingested"].value == 0
-    assert [d for d in fake_rclone.rcat_dests if "raw/gkg/" in d] == []
+    result = _run("2026-01-01", RawGkgConfig())
+    assert result.metadata["mentions_written"].value == 0
+    assert result.metadata["native_rows_read"].value == 0
+    assert dests == []
 
 
-def test_mentions_written_matches_fixture(monkeypatch) -> None:
-    fake_httpx, fake_rclone = _FakeHttpx(), _FakeRclone()
-    _patch(monkeypatch, fake_httpx, fake_rclone)
-
-    # 1 seul fichier (max_files=1) → 4 mentions (GOLDEN : doc4 sans org, Harvard dédup).
-    result = _run(
-        "2026-01-01", RawGkgConfig(max_files=1, include_translation=False, **_NO_THROTTLE)
-    )
-    assert result.metadata["mentions_written"].value == 4
-
-
-# ── Multilingue ──────────────────────────────────────────────────────────────
-
-
-def test_translation_stream_merged_when_enabled(monkeypatch) -> None:
-    class _BothListsHttpx(_FakeHttpx):
-        def get(self, url: str, **kwargs):
-            if url.endswith("masterfilelist-translation.txt"):
-                return _Resp(
-                    text="1 t http://data.gdeltproject.org/gdeltv2/20260101130000.gkg.csv.zip"
-                )
-            return super().get(url, **kwargs)
-
-    fake_httpx, fake_rclone = _BothListsHttpx(), _FakeRclone()
-    _patch(monkeypatch, fake_httpx, fake_rclone)
-
-    result = _run(
-        "2026-01-01", RawGkgConfig(max_files=10, include_translation=True, **_NO_THROTTLE)
-    )
-    # 2 anglais + 1 traduit, tous le 2026-01-01.
-    assert result.metadata["files_ingested"].value == 3
-
-
-# ── Chemins d'échec ──────────────────────────────────────────────────────────
-
-
-def test_master_list_http_error_raises_failure(monkeypatch) -> None:
-    def boom(url, **kwargs):
-        raise httpx.ConnectError("dns")
-
+def test_native_read_failure_raises(monkeypatch) -> None:
     monkeypatch.setattr(_MODULE, "ceph_target_from_env", lambda: ceph_target_from_env(_ENV))
-    monkeypatch.setattr(http_fetch.httpx, "get", boom)
-    monkeypatch.setattr(subprocess, "run", _FakeRclone())
-    with pytest.raises(Failure, match="master list"):
-        _run("2026-01-01", RawGkgConfig(max_files=1, include_translation=False, **_NO_THROTTLE))
+    monkeypatch.setattr(lakehouse, "connect", lambda cfg=None: _CaptureCon())
 
+    def _boom(con, bucket, prefix, dt, run_id):
+        raise RuntimeError("no such file")
 
-def test_bad_zip_raises_failure(monkeypatch) -> None:
-    class _BadZipHttpx(_FakeHttpx):
-        def get(self, url: str, **kwargs):
-            if url.endswith(".txt"):
-                return super().get(url, **kwargs)
-            return _Resp(content=b"not a zip")
-
-    monkeypatch.setattr(_MODULE, "ceph_target_from_env", lambda: ceph_target_from_env(_ENV))
-    monkeypatch.setattr(http_fetch.httpx, "get", _BadZipHttpx().get)
-    monkeypatch.setattr(subprocess, "run", _FakeRclone())
-    with pytest.raises(Failure, match="Archive GKG illisible"):
-        _run("2026-01-01", RawGkgConfig(max_files=1, include_translation=False, **_NO_THROTTLE))
-
-
-def test_write_failure_raises(monkeypatch) -> None:
-    class _FailingRcat(_FakeRclone):
-        def __call__(self, cmd, **kwargs):
-            if "rcat" in cmd and "raw/gkg/" in cmd[-1]:
-                return subprocess.CompletedProcess(cmd, 1, stdout=b"", stderr=b"disk full")
-            return super().__call__(cmd, **kwargs)
-
-    monkeypatch.setattr(_MODULE, "ceph_target_from_env", lambda: ceph_target_from_env(_ENV))
-    monkeypatch.setattr(http_fetch.httpx, "get", _FakeHttpx().get)
-    monkeypatch.setattr(subprocess, "run", _FailingRcat())
-    with pytest.raises(Failure, match="Écriture du brut GKG"):
-        _run("2026-01-01", RawGkgConfig(max_files=1, include_translation=False, **_NO_THROTTLE))
-
-
-# Garde le ZIP cohérent avec le fixture (mention identique CSV ↔ ZIP) — sanity.
-def test_fixture_zip_is_valid() -> None:
-    with zipfile.ZipFile(BytesIO(_ZIP_BYTES)) as archive:
-        assert archive.namelist()[0].endswith(".gkg.csv")
+    monkeypatch.setattr(lakehouse, "read_native_rows", _boom)
+    with pytest.raises(Failure, match="Lecture de la couche native GKG"):
+        _run("2026-01-01", RawGkgConfig())

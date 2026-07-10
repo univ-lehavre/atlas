@@ -10,7 +10,8 @@ source externe, en prose seulement). Chaque flèche = un dataset partagé entre 
 amont (sortie) et le job aval (entrée) :
 
     gdelt:gkg
-        ─▶ [raw_gkg]        ─▶ mediawatch:raw/gkg
+        ─▶ [raw_native_gkg] ─▶ mediawatch:raw_native/gkg   (couche native 27 champs, ADR 0100)
+        ─▶ [raw_gkg]        ─▶ mediawatch:raw/gkg          (couche projetée 6 champs, dérivée)
         ─▶ [mediawatch_dbt] ─▶ mediawatch:curated/* + mediawatch:marts/university_timeline
         ─▶ [timeline_manifest] ─▶ mediawatch:marts/university_timeline/manifest
 
@@ -40,8 +41,13 @@ def source_dataset() -> Dataset:
     return Dataset(namespace=SOURCE_NAMESPACE, name="gkg")
 
 
+def raw_native_dataset(entity: str = "gkg") -> Dataset:
+    """Dataset de la couche NATIVE (sortie de raw_native_gkg, entrée de raw_gkg ; ADR 0100)."""
+    return Dataset(namespace=NAMESPACE, name=f"raw_native/{entity}")
+
+
 def raw_dataset(entity: str = "gkg") -> Dataset:
-    """Dataset de la couche brute (sortie de raw_gkg, entrée de dbt)."""
+    """Dataset de la couche projetée (sortie de raw_gkg, entrée de dbt)."""
     return Dataset(namespace=NAMESPACE, name=f"raw/{entity}")
 
 
