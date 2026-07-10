@@ -48,7 +48,7 @@ format du brut) ; tout le reste de l'ADR 0064 (pull HTTP, partition journalière
 curseur, cadence 15 minutes, backfill, robustesse rate-limit, neutralité de nommage)
 **demeure**.
 
-### Trois couches, chacune sa responsabilité (medallion)
+### Trois couches, chacune sa responsabilité
 
 | Couche       | Préfixe S3                | Contenu                          | Filtre             | Producteur               |
 | ------------ | ------------------------- | -------------------------------- | ------------------ | ------------------------ |
@@ -56,7 +56,7 @@ curseur, cadence 15 minutes, backfill, robustesse rate-limit, neutralité de nom
 | **projetée** | `raw/gkg/dt=/run=`        | **6 champs** (chronogramme)      | aucun (toutes org) | asset `raw_gkg` (dérivé) |
 | **curated**  | `curated/…`, `marts/…`    | mentions classées, chronogramme  | université/labo    | dbt ([ADR 0065])         |
 
-La règle : **bronze/silver fidèles et larges, gold filtré et métier**. Filtrer les
+La règle : **native et projetée fidèles et larges, curated filtré et métier**. Filtrer les
 organisations dès le brut serait destructif et amputerait l'historique dès qu'un
 établissement est ajouté au référentiel ROR ; la classification se **recalcule** au
 contraire sur tout le brut conservé. La couche projetée garde donc **toutes** les

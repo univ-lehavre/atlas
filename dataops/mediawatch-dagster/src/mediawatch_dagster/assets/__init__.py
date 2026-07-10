@@ -2,7 +2,7 @@
 
 Lots :
 - ``raw_native_gkg`` — ingestion NATIVE du brut GKG (27 champs Parquet, pull HTTP
-  partitionné ; couche bronze, ADR 0100) ;
+  partitionné ; couche native, ADR 0100) ;
 - ``raw_gkg`` — couche PROJETÉE (6 champs Parquet) dérivée de la native (ADR 0100) ;
 - ``ref_universities_snapshot`` — ingestion du référentiel d'universités (PR 4) ;
 - modèles dbt ``staging`` → ``curated`` → ``marts`` (PR 3/4) ;
