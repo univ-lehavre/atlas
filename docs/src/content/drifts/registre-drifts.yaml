@@ -527,4 +527,15 @@
     (_retry_delay_s, 502→200 = 1 reprise, 503 permanent → épuise+Failure, 404 → pas de reprise),
     327 tests verts. PROUVÉ E2E dans le pod prod : ref_universities lit 24 761 établissements du
     snapshot en 3m25s, 0×429 (fix source validé).
+    §3 — RÉSOLUTION EN BATCH (le vrai coupable du burst DNS). Le run mondial passait ref_universities
+    mais raw_pageviews échouait ENSUITE sur EAI_NONAME persistant (~7 s, 4 reprises DNS épuisées) —
+    même à l'échelle FR bornée. Cause ISOLÉE : ref_universities résolvait les redirections via un
+    ThreadPool 16 (drift L96), un BURST de résolutions DNS SIMULTANÉES qui écroulait CoreDNS (2 répliques,
+    pas de cache node-local, cluster#618) ; le sous-process raw_pageviews suivant ne résolvait plus rien
+    pendant la récupération. raw_pageviews, lui, est déjà séquentiel+throttle 0.2 s+keep-alive (~5 req/s,
+    1 hôte) → il ne peut PAS saturer seul. Fix : _resolve_titles résout par LOTS de 50 titres (limite
+    API vérifiée en direct : 51 → 0 page) via action=query&redirects=1 — 15 302 titres = ~306 requêtes
+    (÷50) au lieu de 15 302 unitaires. ~50× moins d'appels/résolutions DNS (plus de burst) ET ~50× plus
+    rapide, remplace le ThreadPool. resolve_batch (pur) chaîne normalized[]→redirects[]→titre final,
+    best-effort. Retrait du ThreadPool + _resolve_one_title. 328 tests, ruff, coverage 97 %.
   statut: corrige

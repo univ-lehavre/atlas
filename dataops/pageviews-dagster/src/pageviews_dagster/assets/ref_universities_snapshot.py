@@ -45,7 +45,6 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -72,18 +71,20 @@ _OPENALEX_INSTITUTIONS_SRC = "openalex:openalex/data/parquet/institutions"
 # Point d'accès SPARQL de la base de connaissances collaborative. La requête part du
 # ROR (propriété P6782) et remonte le qid + les libellés d'article par site linguistique.
 _WIKIDATA_SPARQL_URL = "https://query.wikidata.org/sparql"
-# API REST des projets encyclopédiques : sert à RÉSOUDRE un titre vers sa cible de
-# redirection (``redirects=1``) — piège des renommages.
-_WIKIPEDIA_REST_HOST = "wikipedia.org"
+# API Action des projets encyclopédiques (``action=query``) : RÉSOUT les titres vers leur
+# cible de redirection (``redirects=1``) — piège des renommages. BATCHABLE (contrairement au
+# REST unitaire ``/page/{titre}``) : jusqu'à 50 titres par requête, mapping rendu dans
+# ``query.normalized[]`` (casse/underscore) PUIS ``query.redirects[]`` (renommage).
+_WIKIPEDIA_ACTION_API = "https://{lang}.wikipedia.org/w/api.php"
 
 _HTTP_TIMEOUT = 120.0
-# Parallélisme de la RÉSOLUTION des redirections (drift L96). À l'échelle prod, des MILLIERS
-# de titres se résolvent chacun par un appel REST : en séquentiel c'était des dizaines de
-# minutes (un run de 61 min observé, silencieux). La résolution est I/O-bound (attente réseau)
-# → un pool de THREADS la parallélise sans contention GIL. Chaque appel est indépendant et
-# ``_Fetcher`` sans état partagé → sûr en threads. Le résultat est un dict clé ``(qid, titre)``
-# → ORDRE-indépendant : la parallélisation ne change PAS le référentiel (déterminisme ADR 0057).
-_RESOLVE_WORKERS = 16
+# Taille de lot de la RÉSOLUTION des redirections (drift D27 §3). L'API Action accepte 50
+# titres MAX par requête (limite vérifiée : 51 → 0 page). On résout donc par lots de 50 en
+# UNE requête ``action=query&redirects=1`` — 15 302 titres deviennent ~306 requêtes (÷50).
+# C'est la clé DOUBLE : ~50× moins d'appels (donc de résolutions DNS → plus de BURST qui
+# écroulait CoreDNS et cassait raw_pageviews, cluster#618) ET ~50× plus rapide (remplace le
+# ThreadPool 16 de L96, dont le burst était justement le problème). Séquentiel entre lots.
+_RESOLVE_BATCH_SIZE = 50
 # Taille de lot des ROR par requête SPARQL. À l'échelle prod (filtre pays vide,
 # ``max_institutions=0``), le catalogue rend des DIZAINES DE MILLIERS de ROR : les
 # empiler tous dans un seul ``VALUES`` produit une requête que l'endpoint public REFUSE
@@ -538,50 +539,81 @@ def _fetch_wikidata(fetcher: _Fetcher, rors: list[str], langs: list[str]) -> dic
     return merge_knowledge_bases(bases)
 
 
+def resolve_batch(payload: dict, requested: list[str]) -> dict[str, str]:
+    """Mappe ``titre_demandé → titre_résolu`` depuis UNE réponse ``action=query`` (PUR).
+
+    L'API chaîne DEUX transformations : ``query.normalized[]`` (casse / ``_``→espace) PUIS
+    ``query.redirects[]`` (renommage). Pour chaque titre demandé, on suit la chaîne
+    ``demandé → normalisé → redirigé`` et on renvoie le dernier maillon. Best-effort : un
+    titre absent des deux tables (donc ni normalisé ni redirigé) reste INCHANGÉ (pas de
+    perte de ligne). Testable sans réseau. Ordre-indépendant → déterministe (ADR 0057).
+    """
+    q = payload.get("query") or {}
+    norm = {m.get("from"): m.get("to") for m in (q.get("normalized") or []) if m.get("from")}
+    redir = {m.get("from"): m.get("to") for m in (q.get("redirects") or []) if m.get("from")}
+    out: dict[str, str] = {}
+    for title in requested:
+        step = norm.get(title, title)  # 1) normalisation éventuelle
+        step = redir.get(step, step)  # 2) redirection éventuelle (sur le titre normalisé)
+        out[title] = step or title
+    return out
+
+
 def _resolve_titles(
     fetcher: _Fetcher, knowledge_base: dict[str, dict], langs: list[str], log=None
 ) -> dict[tuple[str, str], str]:
     """Résout chaque titre brut vers sa cible de redirection (piège renommage).
 
-    Pour chaque ``(qid, lang, titre_brut)`` connu de la base de connaissances, interroge
-    l'API REST du projet linguistique avec ``redirects=1`` : si le titre est une
-    redirection (article renommé), on récupère le **titre canonique** courant ; sinon on
-    garde le titre brut. Renvoie ``{(qid, titre_brut): titre_résolu}`` — clé stable
-    consommée par ``join_rows``.
+    Pour chaque ``(qid, lang, titre_brut)`` connu de la base de connaissances, résout le
+    titre via l'API Action (``action=query&redirects=1``) : si le titre est une redirection
+    (article renommé), on récupère le **titre canonique** courant ; sinon on garde le titre
+    brut. Renvoie ``{(qid, titre_brut): titre_résolu}`` — clé stable consommée par ``join_rows``.
 
-    PARALLÉLISÉ (drift L96) : les milliers d'appels REST sont I/O-bound → un pool de threads
-    (``_RESOLVE_WORKERS``) les mène de front. Le résultat est un dict clé ``(qid, titre)``,
-    donc ORDRE-indépendant : la parallélisation ne change PAS le référentiel (ADR 0057).
+    BATCHÉ par 50 (drift D27 §3) : l'API Action accepte 50 titres par requête → on résout
+    par lots (une requête ``action=query`` par lot de titres UNIQUES d'une même langue),
+    remplaçant le ThreadPool 16 de L96. ~50× moins d'appels/résolutions DNS (plus de BURST
+    qui écroulait CoreDNS et cassait raw_pageviews, cluster#618) ET ~50× plus rapide. Le
+    résultat est ORDRE-indépendant (dict clé ``(qid, titre)``) → déterministe (ADR 0057).
     ``log`` (callable optionnel) reçoit une ligne de progression ≥ 1×/min.
 
-    Résolution best-effort : un échec ponctuel de l'API (titre supprimé, endpoint
-    injoignable) laisse le titre brut inchangé (pas de perte de ligne, ``has_wp`` reste
-    True sur le titre brut). C'est le SEUL point réseau tolérant : le référentiel doit se
-    construire même si une poignée de titres ne se résout pas.
+    Résolution best-effort : un échec de lot (endpoint injoignable) laisse les titres du lot
+    INCHANGÉS (pas de perte de ligne, ``has_wp`` reste True sur le titre brut). C'est le SEUL
+    point réseau tolérant : le référentiel se construit même si des titres ne se résolvent pas.
     """
-    # Aplatir les titres à résoudre (dédupe implicite par la clé du dict aval).
-    tasks = [
-        (entry["qid"], lang, raw_title)
-        for entry in knowledge_base.values()
-        for lang, raw_title in entry["titles"].items()
-        if lang in langs and raw_title
-    ]
-    total = len(tasks)
+    # Titres UNIQUES par langue (le même titre sous plusieurs qids → une seule résolution).
+    by_lang: dict[str, set[str]] = {}
+    for entry in knowledge_base.values():
+        for lang, raw_title in entry["titles"].items():
+            if lang in langs and raw_title:
+                by_lang.setdefault(lang, set()).add(raw_title)
+
+    total = sum(len(t) for t in by_lang.values())
     if log:
         log(
-            f"ref_universities : résolution de {total} titres (redirections), "
-            f"{_RESOLVE_WORKERS} threads…"
+            f"ref_universities : résolution BATCHÉE de {total} titres "
+            f"(redirections, lots de {_RESOLVE_BATCH_SIZE})…"
         )
-    resolved: dict[tuple[str, str], str] = {}
+    # Résolution titre→résolu par langue, batchée.
+    resolved_by_lang: dict[str, dict[str, str]] = {lang: {} for lang in by_lang}
+    done = 0
     start_t = last_log_t = time.monotonic()
-
-    def _one(task):
-        qid, lang, raw_title = task
-        return (qid, raw_title), _resolve_one_title(fetcher, lang, raw_title)
-
-    with ThreadPoolExecutor(max_workers=_RESOLVE_WORKERS) as pool:
-        for done, (key, value) in enumerate(pool.map(_one, tasks), start=1):
-            resolved[key] = value
+    for lang, titles in by_lang.items():
+        url = _WIKIPEDIA_ACTION_API.format(lang=lang)
+        for lot in _chunked(sorted(titles), _RESOLVE_BATCH_SIZE):  # sorted → lots déterministes
+            try:
+                payload = fetcher.get_json(
+                    url,
+                    {
+                        "action": "query",
+                        "format": "json",
+                        "redirects": "1",
+                        "titles": "|".join(lot),
+                    },
+                )
+                resolved_by_lang[lang].update(resolve_batch(payload, lot))
+            except Failure:
+                resolved_by_lang[lang].update({t: t for t in lot})  # best-effort : titres bruts
+            done += len(lot)
             now = time.monotonic()
             if log and (now - last_log_t >= 60.0):
                 elapsed = now - start_t
@@ -594,19 +626,16 @@ def _resolve_titles(
     if log:
         mins = (time.monotonic() - start_t) / 60
         log(f"ref_universities : {total} titres résolus en {mins:.1f} min.")
+
+    # Fan-out : chaque (qid, titre_brut) reçoit la résolution de son (lang, titre_brut).
+    resolved: dict[tuple[str, str], str] = {}
+    for entry in knowledge_base.values():
+        for lang, raw_title in entry["titles"].items():
+            if lang in langs and raw_title:
+                resolved[(entry["qid"], raw_title)] = resolved_by_lang[lang].get(
+                    raw_title, raw_title
+                )
     return resolved
-
-
-def _resolve_one_title(fetcher: _Fetcher, lang: str, raw_title: str) -> str:
-    """Résout UN titre via l'API REST (``redirects=1``) ; retombe sur le brut en cas d'échec."""
-    encoded = urllib.parse.quote(raw_title.replace(" ", "_"), safe="")
-    url = f"https://{lang}.{_WIKIPEDIA_REST_HOST}/w/rest.php/v1/page/{encoded}"
-    try:
-        payload = fetcher.get_json(url, {"redirect": "true"})
-    except Failure:
-        return raw_title  # best-effort : renommage non résolu → on garde le titre connu
-    canonical = (payload.get("title") or "").strip()
-    return canonical or raw_title
 
 
 def _write_referential(rows: list[RefRow], bucket: str) -> None:
