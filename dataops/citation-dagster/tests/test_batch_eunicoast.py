@@ -59,11 +59,13 @@ def _works_relation(con, works):
     for w in works:
         insts = ", ".join(f"{{'ror': '{r}'}}" for r in w["rors"])
         ash = f"[{{'institutions': [{insts}]}}]" if w["rors"] else "[]"
+        upd = w.get("updated", "2020-01-01")
         rows.append(
             f"SELECT '{w['id']}' AS id, {w['year']} AS publication_year, "
             f"'{w['title']}' AS title, {ash} AS authorships, "
             f"[] AS topics, [] AS keywords, "
             f"{w.get('fwci', 'NULL')} AS fwci, {w.get('cited', 0)} AS cited_by_count, "
+            f"DATE '{upd}' AS updated_date, "
             f"['ref1'] AS referenced_works, "
             f"{{'The': [0]}} AS abstract_inverted_index"
         )
@@ -100,9 +102,58 @@ def test_filter_projette_work_id_et_exclut_colonnes_lourdes(tmp_path):
     cols = {d[0] for d in con.sql(sql).description}
     assert "work_id" in cols and "id" not in cols
     assert "title" in cols and "keywords" in cols and "topics" in cols
+    # updated_date projetée : clé de déduplication par récence (ADR 0099).
+    assert "updated_date" in cols
     # Colonnes lourdes JAMAIS projetées (hors périmètre, ADR 0105).
     assert "referenced_works" not in cols
     assert "abstract_inverted_index" not in cols
+
+
+# ── _dedup_sql (dédup globale par récence, ADR 0099) ─────────────────────────
+
+
+def _write_filtered(con, path, rows):
+    """Écrit un fragment filtré minimal (work_id, updated_date, fwci, cited_by_count)."""
+    sql = " UNION ALL ".join(
+        f"SELECT '{r['work_id']}' AS work_id, DATE '{r['updated']}' AS updated_date, "
+        f"{r.get('fwci', 'NULL')} AS fwci, {r.get('cited', 0)} AS cited_by_count"
+        for r in rows
+    )
+    con.execute(f"COPY ({sql}) TO '{path}' (FORMAT PARQUET)")
+
+
+def test_dedup_garde_la_version_la_plus_recente(tmp_path):
+    """Un work_id en plusieurs versions → on garde celle d'``updated_date`` maximale."""
+    con = duckdb.connect()
+    p = str(tmp_path / "part-00000.parquet")
+    _write_filtered(
+        con,
+        p,
+        [
+            {"work_id": "W1", "updated": "2020-01-01", "fwci": 9.0},  # ancienne, FWCI élevé
+            {"work_id": "W1", "updated": "2024-06-01", "fwci": 2.0},  # RÉCENTE, FWCI bas
+            {"work_id": "W2", "updated": "2019-03-03", "fwci": 1.0},  # unique
+        ],
+    )
+    rows = con.sql(be._dedup_sql(p)).fetchall()
+    got = {r[0]: r[1] for r in rows}  # work_id -> updated_date
+    assert set(got) == {"W1", "W2"}  # unicité par work_id
+    # W1 : la version 2024 gagne malgré son FWCI plus bas (récence prime sur FWCI, ADR 0099).
+    assert str(got["W1"]) == "2024-06-01"
+
+
+def test_dedup_globale_cross_fragments(tmp_path):
+    """La dédup est GLOBALE : deux versions d'un work dans DEUX fragments (lots) distincts."""
+    con = duckdb.connect()
+    _write_filtered(
+        con, str(tmp_path / "part-00000.parquet"), [{"work_id": "W1", "updated": "2021-01-01"}]
+    )
+    _write_filtered(
+        con, str(tmp_path / "part-00001.parquet"), [{"work_id": "W1", "updated": "2023-01-01"}]
+    )
+    rows = con.sql(be._dedup_sql(str(tmp_path / "*.parquet"))).fetchall()
+    assert len(rows) == 1  # un seul W1 malgré deux fragments
+    assert str(rows[0][1]) == "2023-01-01"  # le plus récent, tous fragments confondus
 
 
 # ── anti-drift seed ↔ constante ──────────────────────────────────────────────
@@ -144,29 +195,33 @@ class _FakeCon:
     """Connexion DuckDB factice pour l'asset : route manifest / COPY / count sans S3.
 
     - `read_parquet('.../manifest_works.parquet')` → le manifest injecté ;
-    - `COPY (...)` → no-op (pas d'écriture réelle) ;
-    - `count(*) FROM read_parquet('.../part-*.parquet')` → nb de works du lot (injecté).
+    - `COPY (...)` → no-op (pas d'écriture réelle), mémorisé dans `copies` ;
+    - `count(*)` sur un fragment `_parts/` (passe 1) → `count_per_batch` (works du lot) ;
+    - `count(*)` sur le mart final (passe 2) → `dedup_count` (works après dédup globale).
     """
 
-    def __init__(self, manifest_rows, works_per_batch_result):
+    def __init__(self, manifest_rows, count_per_batch, dedup_count):
         self._manifest = manifest_rows
-        self._count = works_per_batch_result
+        self._count = count_per_batch
+        self._dedup = dedup_count
         self.copies = []
 
     def sql(self, query):
         if "manifest_works" in query:
             return _FakeRel(self._manifest)
-        # count(*) sur un part écrit : renvoie le nb de works retenus du lot.
+        # Le count de la passe 2 vise le mart final (hors `_parts/`) ; les autres, un lot.
+        if "_parts" not in query:
+            return _FakeRel([(self._dedup,)])
         return _FakeRel([(self._count,)])
 
     def execute(self, query):
-        # COPY (...) TO '...part-NNNNN.parquet' : on mémorise, sans écrire.
+        # COPY (...) TO '...' : on mémorise, sans écrire.
         self.copies.append(query)
 
 
-def _patch_asset(monkeypatch, manifest_rows, count_per_batch):
+def _patch_asset(monkeypatch, manifest_rows, count_per_batch, dedup_count=0):
     """Monkeypatch lakehouse.connect + ceph_target_from_env pour l'asset (aucun S3)."""
-    con = _FakeCon(manifest_rows, count_per_batch)
+    con = _FakeCon(manifest_rows, count_per_batch, dedup_count)
     monkeypatch.setattr(be.lakehouse, "connect", lambda cfg=None: con)
     monkeypatch.setattr(
         be, "ceph_target_from_env", lambda env=None: CephTarget("k", "s", "http://h:1", "citation")
@@ -175,30 +230,41 @@ def _patch_asset(monkeypatch, manifest_rows, count_per_batch):
 
 
 def test_mart_eunicoast_orchestration(monkeypatch):
-    """L'asset lit le manifest, compose les lots, écrit un part/lot, agrège le compte.
+    """L'asset filtre par lots sous _parts/, puis déduplique globalement vers le mart final.
 
-    Hermétique : aucun S3, aucun Docker. Manifest de 3 fichiers (5M+5M+1M works) avec
-    works_per_batch=5M → 2 lots ([a,b] car cumul 10M>5M ferme après a… en fait a=5M seul,
-    puis b+c). On vérifie : nb de COPY == nb de lots, métadonnées cohérentes."""
+    Hermétique : aucun S3, aucun Docker. Manifest de 3 fichiers (5M+3M+1M works) avec
+    works_per_batch=5M → 2 lots ([a] car a=5M seul, puis [b,c]). On vérifie : un COPY par lot
+    PLUS un COPY de dédup, la sortie finale déduplique (eunicoast_works = dedup_count) et le
+    compte de doublons retirés est cohérent."""
     manifest = [("a.parquet", 5_000_000), ("b.parquet", 3_000_000), ("c.parquet", 1_000_000)]
-    con = _patch_asset(monkeypatch, manifest, count_per_batch=7)
-    # Avec works_per_batch par défaut (5M) : a(5M) ; +b(8M>5M) ferme → [a] ; b+c(4M) → [b,c].
+    # count_per_batch=7 works/lot filtré ; dedup_count=10 works après dédup globale.
+    con = _patch_asset(monkeypatch, manifest, count_per_batch=7, dedup_count=10)
     res = be.mart_eunicoast()
     batches = be.plan_batches(manifest)
-    assert len(con.copies) == len(batches)  # un COPY par lot
+    # Passe 1 : un COPY par lot (destination sous _parts/) ; passe 2 : un COPY de dédup
+    # (destination = le mart final, hors _parts/). On discrimine sur la DESTINATION `TO '...'`,
+    # pas sur toute la requête (le SQL de dédup référence _parts/ en SOURCE).
+    assert len(con.copies) == len(batches) + 1
+    dests = [q.split("TO '")[1].split("'")[0] for q in con.copies]
+    part_copies = [d for d in dests if "/_parts/" in d]
+    dedup_copies = [d for d in dests if "/_parts/" not in d]
+    assert len(part_copies) == len(batches)
+    assert len(dedup_copies) == 1
     assert all("FORMAT PARQUET" in q for q in con.copies)
     assert res.metadata["batches"].value == len(batches)
     assert res.metadata["source_files"].value == 3
     assert res.metadata["min_year"].value == be._MIN_YEAR
-    # total_works = count injecté (7) × nb de lots.
-    assert res.metadata["eunicoast_works"].value == 7 * len(batches)
+    # eunicoast_works = compte APRÈS dédup (mart final), pas la somme des lots.
+    assert res.metadata["eunicoast_works"].value == 10
+    # doublons retirés = works filtrés (7 × lots) − works dédupliqués (10).
+    assert res.metadata["duplicates_removed"].value == 7 * len(batches) - 10
 
 
 def test_mart_eunicoast_empty_manifest(monkeypatch):
-    """Manifest vide → aucun lot, aucun COPY, 0 work (run idempotent sans données)."""
+    """Manifest vide → aucun lot, aucun COPY (ni filtrage ni dédup), 0 work (run idempotent)."""
     con = _patch_asset(monkeypatch, manifest_rows=[], count_per_batch=0)
     res = be.mart_eunicoast()
-    assert con.copies == []
+    assert con.copies == []  # passe 2 court-circuitée : pas de fragments à dédupliquer
     assert res.metadata["batches"].value == 0
     assert res.metadata["eunicoast_works"].value == 0
     assert res.metadata["source_files"].value == 0
