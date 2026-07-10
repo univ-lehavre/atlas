@@ -15,6 +15,10 @@ build/
 .env.prod.appwrite
 .env.cluster.local
 
+# Kubeconfigs (credentials admin de clusters) — jamais versionnés, sauf .gitkeep
+.kubeconfigs/*
+!.kubeconfigs/.gitkeep
+
 # IDE and tools
 .claude/
 .mcp.json

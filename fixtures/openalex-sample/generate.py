@@ -153,11 +153,18 @@ def _work_sql(
     topics: list[str],
     keywords: list[str],
 ) -> str:
-    """Ligne SELECT d'un work du mart (schéma _MART_COLUMNS de batch_eunicoast)."""
+    """Ligne SELECT d'un work du mart (schéma _MART_COLUMNS de batch_eunicoast).
+
+    ``updated_date`` (clé de dédup par récence, ADR 0099) est portée mais SANS doublon de
+    ``work_id`` dans la fixture : le mart simule la SORTIE de ``mart_eunicoast``, déjà
+    dédupliquée. On la fixe au 1ᵉʳ janvier de l'année suivant la publication (valeur plausible
+    et déterministe ; la dédup elle-même est prouvée par les tests unitaires ``test_dedup_*``).
+    """
     return (
         "SELECT {work_id} AS work_id, {year} AS publication_year, {title} AS title, "
         "[{ashs}] AS authorships, [{topics}] AS topics, [{keywords}] AS keywords, "
-        "{fwci}::DOUBLE AS fwci, {cited}::BIGINT AS cited_by_count"
+        "{fwci}::DOUBLE AS fwci, {cited}::BIGINT AS cited_by_count, "
+        "DATE {updated} AS updated_date"
     ).format(
         work_id=_sql_str(f"{OA}/W{num}"),
         year=year,
@@ -167,6 +174,7 @@ def _work_sql(
         keywords=", ".join(keywords),
         fwci=fwci,
         cited=cited_by,
+        updated=_sql_str(f"{year + 1}-01-01"),
     )
 
 

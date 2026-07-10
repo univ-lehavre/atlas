@@ -48,6 +48,10 @@ _WORKS_PER_BATCH = 5_000_000
 # Colonnes du mart (projection STRICTE, ADR 0105). Le ``title`` est porté (affichage aval,
 # décision utilisateur) ; ``keywords`` aussi (alimente marts_researchers/FTS). JAMAIS
 # ``abstract_inverted_index`` ni ``referenced_works`` (hors périmètre, lourds).
+# ``updated_date`` : date de dernière révision OpenAlex du work, portée pour DÉDUPLIQUER par
+# récence (ADR 0099). OpenAlex réédite un même ``work_id`` (FWCI recalculé, affiliation
+# modifiée) dans une partition ``updated_date`` plus récente ; le filigrane d'ingestion est
+# additif → le mart voit plusieurs versions. On garde la plus récente (cf. ``_dedup_sql``).
 _MART_COLUMNS = (
     "id",
     "publication_year",
@@ -57,6 +61,7 @@ _MART_COLUMNS = (
     "keywords",
     "fwci",
     "cited_by_count",
+    "updated_date",
 )
 
 # Sous-dossier de sortie (lakehouse). Écrit par run (immutable, ADR 0054).
@@ -132,6 +137,32 @@ def _filter_sql(files, ror_list, min_year):
     """
 
 
+def _dedup_sql(parts_glob):
+    """SQL DuckDB de la passe de consolidation : dédup GLOBALE par récence (ADR 0099).
+
+    Lit tous les fragments filtrés d'un run (``parts_glob``) et ne garde qu'UNE ligne par
+    ``work_id`` — la plus récente (``updated_date`` décroissante ; ``fwci`` puis
+    ``cited_by_count`` départagent à égalité de date, déterminisme ADR 0057). La dédup est
+    **globale** (sur l'ensemble du run), PAS intra-lot : un ``work_id`` réédité se répartit
+    sur plusieurs partitions ``updated_date`` donc plusieurs lots (jusqu'à ~482 partitions
+    dans le lac) — une dédup par lot en laisserait passer. Opère sur ~10⁴–10⁵ works (déjà
+    filtrés), jamais sur le lac brut : mémoire négligeable (débordement disque en filet).
+    ``updated_date`` reste projetée (mart auto-documenté, invariant vérifiable côté dbt).
+    """
+    return f"""
+        SELECT * EXCLUDE (_rn) FROM (
+            SELECT *, row_number() OVER (
+                PARTITION BY work_id
+                ORDER BY updated_date DESC NULLS LAST,
+                         fwci DESC NULLS LAST,
+                         cited_by_count DESC NULLS LAST
+            ) AS _rn
+            FROM read_parquet('{parts_glob}')
+        )
+        WHERE _rn = 1
+    """
+
+
 def _lineage_io():
     """I/O lineage : lit raw/works (+ manifest), écrit mart_eunicoast (ADR 0105)."""
     inputs = [lineage.raw_dataset("works"), lineage.raw_dataset("manifest_works")]
@@ -155,8 +186,16 @@ def mart_eunicoast() -> MaterializeResult:
     """Filtre le snapshot Parquet OpenAlex au périmètre EUNICoast, par lots (ADR 0105).
 
     Lit le manifest des footers → compose des lots homogènes → filtre chaque lot (≥1 auteur
-    EUNICoast + année ≥ 2016) → accumule en Parquet sous ``mart_eunicoast/run=<run_id>/``.
-    Mémoire bornée par lot (jamais les 600M works d'un coup)."""
+    EUNICoast + année ≥ 2016) sous ``run=<run_id>/_parts/`` → **déduplique globalement par
+    récence** (ADR 0099) vers ``run=<run_id>/part-00000.parquet``. Mémoire bornée par lot au
+    filtrage (jamais les 600M works d'un coup) ; la dédup opère sur les ~10⁵ works filtrés.
+
+    Deux temps SÉPARÉS car la dédup doit être GLOBALE : un ``work_id`` réédité par OpenAlex
+    se répartit sur plusieurs lots (une version par partition ``updated_date``) — dédupliquer
+    à l'intérieur d'un lot en laisserait passer. Le filtrage par lots (borné en mémoire) écrit
+    des fragments intermédiaires sous ``_parts/`` ; la passe de consolidation les relit tous et
+    ne garde qu'une ligne par ``work_id`` (la plus récente). ``_parts/`` (sous-dossier à deux
+    niveaux) n'est PAS lu par la source dbt (glob ``run=*/*.parquet``, un seul niveau)."""
     target = ceph_target_from_env()
     run_id = str(generate_new_uuid())
     con = lakehouse.connect()
@@ -167,20 +206,32 @@ def mart_eunicoast() -> MaterializeResult:
     manifest = _read_manifest(con, target.bucket)
     batches = plan_batches(manifest)
 
-    total_works = 0
-    dest_dir = f"s3://{target.bucket}/{_MART_SUBDIR}/run={run_id}"
+    # Passe 1 — filtrage par lots bornés en mémoire → fragments intermédiaires sous _parts/.
+    run_dir = f"s3://{target.bucket}/{_MART_SUBDIR}/run={run_id}"
+    parts_dir = f"{run_dir}/_parts"
+    filtered_works = 0
     for n, files in enumerate(batches):
-        dest = f"{dest_dir}/part-{n:05d}.parquet"
+        part = f"{parts_dir}/part-{n:05d}.parquet"
         con.execute(
-            f"COPY ({_filter_sql(files, _EUNICOAST_ROR, _MIN_YEAR)}) TO '{dest}' (FORMAT PARQUET)"
+            f"COPY ({_filter_sql(files, _EUNICOAST_ROR, _MIN_YEAR)}) TO '{part}' (FORMAT PARQUET)"
         )
-        total_works += con.sql(f"SELECT count(*) FROM read_parquet('{dest}')").fetchone()[0]
+        filtered_works += con.sql(f"SELECT count(*) FROM read_parquet('{part}')").fetchone()[0]
+
+    # Passe 2 — dédup GLOBALE par récence sur l'ensemble des fragments → mart final (un fichier).
+    # Court-circuitée si aucun lot : `_parts/` n'existe pas, un COPY dessus lèverait « no files
+    # found ». Manifest vide → run idempotent, 0 work, aucun mart écrit (comme l'ancien no-op).
+    total_works = 0
+    if batches:
+        dest = f"{run_dir}/part-00000.parquet"
+        con.execute(f"COPY ({_dedup_sql(f'{parts_dir}/*.parquet')}) TO '{dest}' (FORMAT PARQUET)")
+        total_works = con.sql(f"SELECT count(*) FROM read_parquet('{dest}')").fetchone()[0]
 
     lineage.emit(RunState.COMPLETE, run_id, "mart_eunicoast", inputs, outputs)
 
     return MaterializeResult(
         metadata={
             "eunicoast_works": MetadataValue.int(total_works),
+            "duplicates_removed": MetadataValue.int(filtered_works - total_works),
             "batches": MetadataValue.int(len(batches)),
             "source_files": MetadataValue.int(len(manifest)),
             "min_year": MetadataValue.int(_MIN_YEAR),
