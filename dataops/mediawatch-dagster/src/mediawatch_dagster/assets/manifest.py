@@ -38,7 +38,7 @@ from dagster import (
 )
 from openlineage.client.event_v2 import RunState
 
-from mediawatch_dagster import lakehouse, lineage
+from mediawatch_dagster import lakehouse, last_run, lineage
 from mediawatch_dagster.assets.raw_gkg import gkg_daily_partitions
 from mediawatch_dagster.resources import ceph_target_from_env, render_rclone_config
 
@@ -65,33 +65,28 @@ def mart_root(remote: str, bucket: str, mart_subdir: str = _MART_SUBDIR) -> str:
 
 
 def latest_run_parts(entries: list[dict], mart_subdir: str = _MART_SUBDIR) -> dict[str, int]:
-    """Sélectionne, par jour (``dt=``), les parts du DERNIER ``run=`` (ADR 0064).
+    """Sélectionne, par jour (``dt=``), les parts du DERNIER ``run=`` par RÉCENCE (ADR 0101).
 
     Le mart accumule une partition par jour ; chaque re-matérialisation écrit un
     nouveau ``run=`` (immutabilité). Pour le manifest GLOBAL servi, on ne retient que
-    le **dernier run de chaque jour** (le plus complet) — « dernier run gagne ». Les
-    runs obsolètes restent sur disque (nettoyage par lifecycle S3, contrat infra).
+    le **dernier run de chaque jour** — « dernier run gagne ». « Dernier » = run au
+    ``ModTime`` S3 le plus récent (PAS l'ordre lexical du ``run=``, un uuid4 aléatoire —
+    ADR 0101), via :func:`last_run.latest_run_by_day`. Les runs obsolètes restent sur
+    disque (nettoyage par lifecycle S3, contrat infra).
 
-    ``entries`` = lsjson récursif (champs ``Path`` relatif + ``Size``, ``IsDir``).
+    ``entries`` = lsjson récursif (champs ``Path`` relatif, ``ModTime``, ``Size``, ``IsDir``).
     ``mart_subdir`` préfixe les clés (le mart timeline ou le mart de prévisions).
-    Retourne ``{chemin_relatif: octets}`` des seules parts retenues. « Dernier » = run
-    lexicographiquement maximal par jour.
+    Retourne ``{chemin_relatif: octets}`` des seules parts retenues.
     """
-    paths = [
-        (e["Path"], int(e["Size"]))
-        for e in entries
-        if not e.get("IsDir", False) and e["Path"].endswith(".parquet")
-    ]
-    latest: dict[str, str] = {}
-    for path, _ in paths:
-        m = _DT_RUN_RE.search(path)
-        if m and (m.group(1) not in latest or m.group(2) > latest[m.group(1)]):
-            latest[m.group(1)] = m.group(2)
+    keep = last_run.latest_run_by_day(entries)  # {dt: run le plus récent}
     kept: dict[str, int] = {}
-    for path, size in paths:
+    for e in entries:
+        path = e["Path"]
+        if e.get("IsDir", False) or not path.endswith(".parquet"):
+            continue
         m = _DT_RUN_RE.search(path)
-        if m and latest.get(m.group(1)) == m.group(2):
-            kept[f"{mart_subdir}/{path}"] = size
+        if m and keep.get(m.group(1)) == m.group(2):
+            kept[f"{mart_subdir}/{path}"] = int(e["Size"])
     return kept
 
 
