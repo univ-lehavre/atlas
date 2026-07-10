@@ -253,7 +253,7 @@ def parse_native_csv(text: str) -> list[dict[str, str]]:
 def project_native_dict(row: dict[str, str]) -> list[OrgMention]:
     """Projette une ligne NATIVE (dict 27 champs) en mentions d'organisation.
 
-    Pont de la couche native (bronze) vers la couche projetée (silver, ADR 0100) :
+    Pont de la couche native vers la couche projetée (ADR 0100) :
     ``raw_gkg`` DÉRIVE sa projection 6 champs du Parquet natif au lieu de re-télécharger
     la source. Réutilise EXACTEMENT la même logique d'éclatement/déduplication des
     organisations que ``project_row`` (source unique de vérité) — seule l'origine des

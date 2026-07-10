@@ -82,8 +82,8 @@ def read_native_rows(
 ) -> list[dict]:
     """Lit les lignes de la couche NATIVE Parquet d'une partition/run (ADR 0100).
 
-    ``raw_gkg`` (silver) DÉRIVE sa projection du Parquet natif écrit par
-    ``raw_native_gkg`` (bronze) DANS LE MÊME RUN (même ``run_id`` → même préfixe
+    ``raw_gkg`` (couche projetée) DÉRIVE sa projection du Parquet natif écrit par
+    ``raw_native_gkg`` (couche native) DANS LE MÊME RUN (même ``run_id`` → même préfixe
     ``dt=…/run=…``). On lit donc exactement ``raw_native/gkg/dt=<dt>/run=<run_id>/*.parquet``
     (pas de « dernier run » à deviner : le run courant est la source). Seuls les champs
     utiles à la projection 6 champs sont lus (jamais un SELECT * : plus léger, insensible

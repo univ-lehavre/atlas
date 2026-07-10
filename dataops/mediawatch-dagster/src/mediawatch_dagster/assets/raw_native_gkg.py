@@ -1,6 +1,6 @@
 """Asset d'ingestion NATIVE : pull HTTP du flux GKG 2.1, **27 champs fidèles**, Parquet.
 
-Couche « bronze » de la veille médiatique (ADR 0100) : télécharge les fichiers 15
+Couche NATIVE de la veille médiatique (ADR 0100) : télécharge les fichiers 15
 minutes du GKG (``YYYYMMDDHHMMSS.gkg.csv.zip`` depuis ``data.gdeltproject.org``) du
 **jour de la partition**, décompresse chaque ZIP, et écrit les **27 colonnes V2.1
 telles quelles** (copie fidèle, VARCHAR — aucun champ perdu, aucun typage) en
