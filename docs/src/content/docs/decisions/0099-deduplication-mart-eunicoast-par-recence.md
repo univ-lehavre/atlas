@@ -41,7 +41,7 @@ problème :
 
 À cela s'ajoutait un symptôme opérationnel : `mart_eunicoast` n'émet **aucune
 sentinelle de complétude** et écrit un dossier `run=<id>/` immuable par exécution
-([ADR 0054](/atlas/decisions/0054-immutabilite-artefacts-run/)). La source dbt lisait
+([ADR 0054](/atlas/decisions/0054-ingestion-massive-snapshot-s3/)). La source dbt lisait
 `run=*` (tous les runs). Un run partiel ou d'un état antérieur du lac laisse un
 dossier indistinguable d'un run complet ; deux runs coexistant sur la prod partageaient
 ainsi **8 786 `work_id`** (le run le plus ancien était intégralement inclus dans le
@@ -94,7 +94,7 @@ Accepted (2026-07-09). Amende l'[ADR 0094](/atlas/decisions/0094-mart-eunicoast-
 (dont il complète le §4 « colonnes du mart » et la sémantique de production) et sert
 l'[ADR 0067](/atlas/decisions/0067-modele-uplift-fwci-eunicoast/) (un FWCI à jour est
 la cible correcte du modèle). Sans effet sur le contrat de sortie
-([ADR 0033](/atlas/decisions/0033-contrat-interface-cluster.md)) : le mart EUNICoast
+([ADR 0033](/atlas/decisions/0033-contrat-interface-cluster/)) : le mart EUNICoast
 est un artefact **interne** d'ingestion, pas un mart servi.
 
 ## Conséquences
