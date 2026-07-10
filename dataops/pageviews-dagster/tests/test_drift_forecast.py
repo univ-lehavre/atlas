@@ -11,6 +11,8 @@ Série MENSUELLE à saisonnalité annuelle : les DataFrames Evidently portent la
 distribution des volumes prédits.
 """
 
+import json
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -165,16 +167,14 @@ class _FakeRel:
 
 
 class _FakeCon:
-    """``_list_runs`` (SELECT DISTINCT run) → runs ; ``_load_run_summary`` lit ``views_pred``
-    (df) et ``served_mode`` (rows) du run retrouvé dans le glob ``run=<id>/``."""
+    """``_load_run_summary`` lit ``views_pred`` (df) et ``served_mode`` (rows) du run retrouvé
+    dans le glob ``run=<id>/``. (La sélection N-1 ne passe plus par DuckDB mais par rclone —
+    voir ``_make_fake_rclone`` — donc plus de branche ``DISTINCT run`` ici.)"""
 
-    def __init__(self, runs, by_run):
-        self._runs = runs
+    def __init__(self, by_run):
         self._by_run = by_run  # {run_id: {"pred": df, "mode": "predictive"|"descriptive"}}
 
     def sql(self, query):
-        if "DISTINCT run" in query:
-            return _FakeRel(rows=[(r,) for r in self._runs])
         for run_id, data in self._by_run.items():
             if f"run={run_id}/" in query:
                 if "DISTINCT served_mode" in query:
@@ -185,16 +185,49 @@ class _FakeCon:
         return _FakeRel(df=pd.DataFrame(columns=["views_pred"]))
 
 
-def _patch(monkeypatch, runs, by_run):
+def _make_fake_rclone(runs_modtime):
+    """``_run_rclone`` factice : lsjson du mart forecast (runs + ModTime) pour la sélection
+    N-1 (``_previous_run``), vide pour toute autre racine (``raw/pageviews`` de
+    ``_persist_verdict``, best-effort). ``runs_modtime`` = [(run, "2026-…Z"), …]."""
+    listing = json.dumps(
+        [
+            {
+                "Path": f"dt=2026-01-01/run={run}/part.parquet",
+                "Size": 1,
+                "IsDir": False,
+                "ModTime": mt,
+            }
+            for run, mt in runs_modtime
+        ]
+    )
+
+    def _fake_rclone(args, config_path):
+        root = args[-1] if args else ""
+        out = listing if "forecast" in root else "[]"
+        return subprocess.CompletedProcess(args, 0, stdout=out, stderr="")
+
+    return _fake_rclone
+
+
+def _patch(monkeypatch, runs_modtime, by_run):
     monkeypatch.delenv("MLFLOW_TRACKING_URI", raising=False)
-    for var in _CEPH_ENV:
-        monkeypatch.delenv(var, raising=False)  # _persist_verdict → no-op best-effort
-    monkeypatch.setattr(d.lakehouse, "connect", lambda cfg=None: _FakeCon(runs, by_run))
+    monkeypatch.setattr(d.lakehouse, "connect", lambda cfg=None: _FakeCon(by_run))
+    monkeypatch.setattr(d, "_run_rclone", _make_fake_rclone(runs_modtime))
+    monkeypatch.setattr(d, "render_rclone_config", lambda target: "")
+    from pageviews_dagster.resources import CephTarget
+
+    monkeypatch.setattr(
+        d,
+        "ceph_target_from_env",
+        lambda env=None: CephTarget("AK", "SK", "http://h:8333", "pageviews"),
+    )
 
 
 def test_first_run_has_no_baseline(monkeypatch):
     _patch(
-        monkeypatch, runs=["run1"], by_run={"run1": {"pred": _pred_df(50), "mode": "predictive"}}
+        monkeypatch,
+        runs_modtime=[("run1", "2026-01-01T12:00:00Z")],
+        by_run={"run1": {"pred": _pred_df(50), "mode": "predictive"}},
     )
     res = d.check_forecast_drift("pageviews", "run1")
     assert res.passed is True
@@ -206,7 +239,11 @@ def test_served_mode_regression_blocks(monkeypatch):
         "run1": {"pred": _pred_df(50, seed=1), "mode": "predictive"},
         "run2": {"pred": _pred_df(50, seed=2), "mode": "descriptive"},
     }
-    _patch(monkeypatch, runs=["run1", "run2"], by_run=by_run)
+    _patch(
+        monkeypatch,
+        runs_modtime=[("run1", "2026-01-01T10:00:00Z"), ("run2", "2026-01-01T12:00:00Z")],
+        by_run=by_run,
+    )
     res = d.check_forecast_drift("pageviews", "run2")
     assert res.passed is False  # bascule predictive→descriptive : bloquant
     assert res.metadata["served_mode_regressed"].value is True
@@ -219,21 +256,36 @@ def test_distribution_shift_alone_is_informative(monkeypatch):
         "run1": {"pred": _pred_df(50, seed=1), "mode": "predictive"},
         "run2": {"pred": _pred_df(200, seed=2), "mode": "predictive"},
     }
-    _patch(monkeypatch, runs=["run1", "run2"], by_run=by_run)
+    _patch(
+        monkeypatch,
+        runs_modtime=[("run1", "2026-01-01T10:00:00Z"), ("run2", "2026-01-01T12:00:00Z")],
+        by_run=by_run,
+    )
     res = d.check_forecast_drift("pageviews", "run2")
     assert res.passed is True  # pas de bascule → informatif
     assert res.metadata["forecast_distribution_drift"].value is True
 
 
-def test_baseline_is_previous_run(monkeypatch):
+def test_baseline_is_previous_run_by_modtime(monkeypatch):
+    # N courant "aaa" est lexicalement le PLUS PETIT mais le plus RÉCENT (écrit en dernier).
+    # Le baseline N-1 doit être "zzz" (juste avant par ModTime), PAS un artefact lexical :
+    # l'ancien `ORDER BY run` + `previous[-1]` aurait choisi "mmm".
     by_run = {
-        "run1": {"pred": _pred_df(50, seed=1), "mode": "predictive"},
-        "run2": {"pred": _pred_df(50, seed=2), "mode": "predictive"},
-        "run3": {"pred": _pred_df(50, seed=3), "mode": "predictive"},
+        "mmm": {"pred": _pred_df(50, seed=1), "mode": "predictive"},
+        "zzz": {"pred": _pred_df(50, seed=2), "mode": "predictive"},
+        "aaa": {"pred": _pred_df(50, seed=3), "mode": "predictive"},
     }
-    _patch(monkeypatch, runs=["run1", "run2", "run3"], by_run=by_run)
-    res = d.check_forecast_drift("pageviews", "run3")
-    assert res.metadata["baseline_run"].value == "run2"  # le précédent, pas le plus ancien
+    _patch(
+        monkeypatch,
+        runs_modtime=[
+            ("mmm", "2026-01-01T08:00:00Z"),
+            ("zzz", "2026-01-01T10:00:00Z"),  # N-1 attendu (le plus récent avant N)
+            ("aaa", "2026-01-01T12:00:00Z"),  # N courant
+        ],
+        by_run=by_run,
+    )
+    res = d.check_forecast_drift("pageviews", "aaa")
+    assert res.metadata["baseline_run"].value == "zzz"  # récence, pas ordre lexical
 
 
 # ── Persistance du verdict (source lisible par le sensor, ADR 0082) ──────────

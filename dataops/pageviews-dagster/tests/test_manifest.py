@@ -41,36 +41,102 @@ def test_mart_root_custom_subdir() -> None:
 # ── latest_run_parts : dernier run par mois (immutabilité, ADR 0054/0057) ────
 
 
-def test_latest_run_parts_keeps_latest_run_per_month() -> None:
+def test_latest_run_parts_keeps_most_recent_run_by_modtime_per_month() -> None:
+    # Le run retenu par mois est le plus RÉCENT (ModTime), pas le max lexical du run= (ADR 0101).
+    # Mois 1 : run=AAA est lexicalement < run=ZZZ mais écrit APRÈS → AAA gagne. Échoue sur
+    # l'ancien max(run) lexical, passe ici = preuve du correctif.
     entries = [
-        {"Path": "dt=2024-01/run=AAA/part.parquet", "Size": 10, "IsDir": False},
-        {"Path": "dt=2024-01/run=BBB/part.parquet", "Size": 20, "IsDir": False},  # plus récent
-        {"Path": "dt=2024-02/run=CCC/part.parquet", "Size": 30, "IsDir": False},
-        {"Path": "dt=2024-01/run=AAA", "Size": 0, "IsDir": True},  # dossier ignoré
+        {
+            "Path": "dt=2024-01/run=ZZZ/part.parquet",
+            "Size": 10,
+            "IsDir": False,
+            "ModTime": "2024-01-05T10:00:00Z",
+        },
+        {
+            "Path": "dt=2024-01/run=AAA/part.parquet",
+            "Size": 20,
+            "IsDir": False,
+            "ModTime": "2024-01-05T12:00:00Z",
+        },  # plus récent malgré run= lexical inférieur
+        {
+            "Path": "dt=2024-02/run=CCC/part.parquet",
+            "Size": 30,
+            "IsDir": False,
+            "ModTime": "2024-02-05T09:00:00Z",
+        },
+        {"Path": "dt=2024-01/run=AAA", "Size": 0, "IsDir": True, "ModTime": ""},  # dossier ignoré
     ]
     kept = m.latest_run_parts(entries)
-    # Mois 1 : run BBB gagne (AAA exclu) ; mois 2 : run CCC.
+    # Mois 1 : run AAA gagne (ZZZ exclu, plus ancien) ; mois 2 : run CCC.
     assert kept == {
-        f"{_SUBDIR}/dt=2024-01/run=BBB/part.parquet": 20,
+        f"{_SUBDIR}/dt=2024-01/run=AAA/part.parquet": 20,
         f"{_SUBDIR}/dt=2024-02/run=CCC/part.parquet": 30,
     }
 
 
+def test_latest_run_parts_breaks_modtime_ties_by_run_lexical() -> None:
+    # Ex-æquo de ModTime → départage par run= lexical MAX (déterminisme, ADR 0057).
+    entries = [
+        {
+            "Path": "dt=2024-01/run=AAA/part.parquet",
+            "Size": 10,
+            "IsDir": False,
+            "ModTime": "2024-01-05T12:00:00Z",
+        },
+        {
+            "Path": "dt=2024-01/run=BBB/part.parquet",
+            "Size": 20,
+            "IsDir": False,
+            "ModTime": "2024-01-05T12:00:00Z",
+        },
+    ]
+    assert m.latest_run_parts(entries) == {f"{_SUBDIR}/dt=2024-01/run=BBB/part.parquet": 20}
+
+
 def test_latest_run_parts_skips_non_parquet_and_dirs() -> None:
     entries = [
-        {"Path": "dt=2024-01/run=AAA/part.parquet", "Size": 10, "IsDir": False},
-        {"Path": "dt=2024-01/run=AAA/_SUCCESS", "Size": 0, "IsDir": False},  # pas .parquet
-        {"Path": "dt=2024-01/run=AAA", "Size": 0, "IsDir": True},  # dossier
+        {
+            "Path": "dt=2024-01/run=AAA/part.parquet",
+            "Size": 10,
+            "IsDir": False,
+            "ModTime": "2024-01-05T12:00:00Z",
+        },
+        {
+            "Path": "dt=2024-01/run=AAA/_SUCCESS",
+            "Size": 0,
+            "IsDir": False,
+            "ModTime": "2024-01-05T12:00:00Z",
+        },  # pas .parquet
+        {"Path": "dt=2024-01/run=AAA", "Size": 0, "IsDir": True, "ModTime": ""},  # dossier
     ]
     assert m.latest_run_parts(entries) == {f"{_SUBDIR}/dt=2024-01/run=AAA/part.parquet": 10}
 
 
 def test_latest_run_parts_multiple_parts_same_run() -> None:
-    """Plusieurs parts d'un même run (dernier) sont toutes retenues."""
+    """Plusieurs parts d'un même run (le plus récent par ModTime) sont toutes retenues.
+
+    Le run gagnant ``ZZ`` est lexicalement > ``YY`` ici, mais on l'atteste par le ``ModTime``
+    (max sur ses parts), pas par l'ordre lexical : ``YY`` (obsolète) est plus ancien.
+    """
     entries = [
-        {"Path": "dt=2024-03/run=ZZ/part-0.parquet", "Size": 5, "IsDir": False},
-        {"Path": "dt=2024-03/run=ZZ/part-1.parquet", "Size": 7, "IsDir": False},
-        {"Path": "dt=2024-03/run=YY/part-0.parquet", "Size": 99, "IsDir": False},  # run obsolète
+        {
+            "Path": "dt=2024-03/run=ZZ/part-0.parquet",
+            "Size": 5,
+            "IsDir": False,
+            "ModTime": "2024-03-10T12:00:00Z",
+        },
+        {
+            "Path": "dt=2024-03/run=ZZ/part-1.parquet",
+            "Size": 7,
+            "IsDir": False,
+            "ModTime": "2024-03-10T12:05:00Z",
+        },  # ModTime max du run ZZ
+        {
+            "Path": "dt=2024-03/run=YY/part-0.parquet",
+            "Size": 99,
+            "IsDir": False,
+            "ModTime": "2024-03-09T08:00:00Z",
+        },  # run obsolète (plus ancien)
     ]
     assert m.latest_run_parts(entries) == {
         f"{_SUBDIR}/dt=2024-03/run=ZZ/part-0.parquet": 5,
