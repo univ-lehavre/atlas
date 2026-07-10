@@ -1,38 +1,36 @@
-"""Asset d'ingestion : pull HTTP du flux GKG 2.1, PARTITIONNÉ par jour.
+"""Asset de PROJECTION : dérive la couche projetée (6 champs) de la native, en Parquet.
 
-Télécharge les fichiers 15 minutes du GKG (``YYYYMMDDHHMMSS.gkg.csv.zip`` depuis
-``data.gdeltproject.org``) du **jour de la partition**, les **projette** aux champs
-utiles (ADR 0064 : identifiant de document, date, organisations, source, info de
-traduction) et écrit le résultat en JSONL gzippé sous
-``raw/gkg/dt=YYYY-MM-DD/run=<run_id>/`` du lakehouse.
+Couche « silver » de la veille médiatique (ADR 0100). À la différence de l'ancienne
+implémentation (qui téléchargeait GDELT et écrivait du JSONL.gz), ``raw_gkg`` **ne
+frappe plus la source** : il LIT le Parquet natif 27 champs écrit par
+``raw_native_gkg`` (couche bronze) pour la **même partition et le même run**, le
+**projette** aux 6 champs utiles au chronogramme (identifiant de document, date,
+organisations éclatées, source, URL, info de traduction) et écrit le résultat en
+**Parquet** sous ``raw/gkg/dt=YYYY-MM-DD/run=<run_id>/``.
 
-**Pilotage par partition temporelle (ADR 0064, PR 4).** La partition journalière
-est le **curseur** : matérialiser une partition rapatrie tous les fichiers de ce
-jour (idempotent — un rejeu écrit un nouveau ``run=``). Le schedule matérialise la
-partition du jour courant toutes les 15 minutes (ingestion quasi temps réel) ; le
-**backfill** historique = matérialiser les partitions passées (UI Dagster,
-parallélisable). Plus de watermark : la partition EST le curseur.
+**Un seul téléchargement de la source (ADR 0100).** La native télécharge ; la
+projetée dérive de S3. On protège ainsi l'API rate-limitée (plus de double pull) et
+le brut projeté reste RECALCULABLE depuis la native sans re-frapper GDELT.
 
-À la différence de « citation » (sync S3→S3 via rclone), la source est un **serveur
-HTTP** : le download passe par ``httpx``, le ZIP est décompressé en mémoire
-(``zipfile``), puis le CSV tab-delimited est projeté (``gkg.project_csv``). L'écriture
-lakehouse, elle, repasse par ``rclone`` (un seul remote ``ceph``).
+**Pilotage par partition temporelle (ADR 0064).** La partition journalière est le
+curseur (définie ici, importée par tout le pipeline). ``raw_gkg`` dépend de
+``raw_native_gkg`` : dans un run d'ingestion, la native est matérialisée d'abord,
+puis la projetée la dérive (même ``run_id`` → même préfixe ``dt=…/run=…``).
+
+La lecture native et l'écriture Parquet passent par DuckDB (httpfs path-style,
+``lakehouse``) ; l'éclatement des organisations réutilise la logique PURE de ``gkg``
+(source unique de vérité, testée hermétiquement).
 
 NB : pas de ``from __future__ import annotations`` ici — Dagster introspecte les
 annotations à l'exécution.
 """
 
-import gzip
-import io
-import json
 import os
-import subprocess
-import tempfile
-import zipfile
 from dataclasses import asdict
-from pathlib import Path
 
+import pyarrow as pa
 from dagster import (
+    AssetKey,
     Config,
     DailyPartitionsDefinition,
     Failure,
@@ -42,168 +40,130 @@ from dagster import (
 )
 from openlineage.client.event_v2 import RunState
 
-from mediawatch_dagster import gkg, lineage
-from mediawatch_dagster.gkg import GkgFile, OrgMention
-from mediawatch_dagster.http_fetch import RateLimitError, RetryPolicy, ThrottledClient
-from mediawatch_dagster.resources import CephTarget, ceph_target_from_env, render_rclone_config
-
-# Source externe (en prose uniquement ; jamais dans un identifiant interne, ADR 0035).
-_MASTER_LIST_URL = "http://data.gdeltproject.org/gdeltv2/masterfilelist.txt"
-_MASTER_LIST_TRANSLATION_URL = "http://data.gdeltproject.org/gdeltv2/masterfilelist-translation.txt"
+from mediawatch_dagster import gkg, lakehouse, lineage
+from mediawatch_dagster.gkg import OrgMention
+from mediawatch_dagster.resources import ceph_target_from_env
 
 # Date de départ des partitions journalières. GKG 2.1 (Translingual) démarre au
 # 2015-02-19 ; surchargeable par env pour borner un banc (pas de backfill géant en
 # test). Le schedule et le backfill s'appuient sur cette définition de partition.
+# DÉFINIE ICI (et non dans raw_native_gkg) car tout le pipeline l'importe de ce module
+# historiquement — on préserve ce point d'import unique.
 _PARTITION_START = os.environ.get("MEDIAWATCH_GKG_START_DATE", "2015-02-19")
 gkg_daily_partitions = DailyPartitionsDefinition(start_date=_PARTITION_START)
 
+# Préfixe de la couche native lue en amont (miroir de raw_native_gkg._NATIVE_PREFIX).
+_NATIVE_PREFIX = "raw_native/gkg"
+# Préfixe de la couche projetée écrite par cet asset.
+_PROJECTED_PREFIX = "raw/gkg"
+
 
 class RawGkgConfig(Config):
-    """Paramètres du pull borné (par partition journalière)."""
+    """Paramètres de la projection (couche silver dérivée de la native)."""
 
-    max_files: int = 8
-    """Nombre maximal de fichiers 15 minutes ingérés **par partition et par run**.
+    # Plus de max_files / include_translation / anti-rate-limit ici : le pull (et donc
+    # ces réglages) vit dans raw_native_gkg. La projection lit ce que la native a écrit.
 
-    Une journée complète = 96 fichiers ; le défaut (8) borne un run de banc. La prod
-    relève cette limite (≥ 96 pour couvrir une journée entière). Si la partition est
-    tronquée, la re-matérialiser avec un ``max_files`` plus haut complète le jour.
+
+def _project_native(rows: list[dict]) -> list[OrgMention]:
+    """Projette les lignes natives (dicts 27 champs) en mentions d'organisation.
+
+    Délègue à ``gkg.project_native_dict`` (logique pure, testée) : une ligne native →
+    N mentions (une par organisation distincte). Concatène toutes les mentions du jour.
     """
-
-    include_translation: bool = True
-    """Inclure le flux traduit (Translingual) en plus de l'anglais.
-
-    ``True`` = « toutes langues » (ADR 0064 : multilingue natif). Les deux master
-    lists sont fusionnées et triées par timestamp avant filtrage par jour.
-    """
-
-    # ── Robustesse face au rate-limiting GDELT (ADR 0064) ──
-    min_interval_s: float = 1.0
-    """Délai minimal entre deux requêtes HTTP (throttle ; ≈ 1 req/s par défaut)."""
-
-    max_attempts: int = 5
-    """Tentatives par requête (retry sur 429/5xx avec backoff, respecte Retry-After)."""
+    mentions: list[OrgMention] = []
+    for row in rows:
+        mentions.extend(gkg.project_native_dict(row))
+    return mentions
 
 
-def _retry_policy(config: RawGkgConfig) -> RetryPolicy:
-    """Politique de robustesse dérivée de la config (throttle + retry)."""
-    return RetryPolicy(
-        max_attempts=config.max_attempts,
-        min_interval_s=config.min_interval_s,
-    )
-
-
-def _fetch_master_files(client: ThrottledClient, config: RawGkgConfig) -> list[GkgFile]:
-    """Construit la liste fusionnée et triée des fichiers GKG disponibles."""
-    try:
-        files = gkg.parse_master_list(client.get_text(_MASTER_LIST_URL))
-        if config.include_translation:
-            files += gkg.parse_master_list(client.get_text(_MASTER_LIST_TRANSLATION_URL))
-    except RateLimitError as exc:
-        raise Failure(
-            description="Téléchargement de la master list échoué (rate-limit ?)",
-            metadata={"error": MetadataValue.text(str(exc))},
-        ) from exc
-    return sorted(files, key=lambda f: f.timestamp)
-
-
-def _download_and_project(client: ThrottledClient, file: GkgFile) -> list[OrgMention]:
-    """Télécharge un ``.gkg.csv.zip``, le décompresse et le projette en mentions."""
-    try:
-        content = client.get_bytes(file.url)
-    except RateLimitError as exc:
-        raise Failure(
-            description=f"Téléchargement du fichier GKG échoué (rate-limit ?) : {file.url}",
-            metadata={"error": MetadataValue.text(str(exc))},
-        ) from exc
-    try:
-        with zipfile.ZipFile(io.BytesIO(content)) as archive:
-            name = archive.namelist()[0]
-            # Le GKG peut contenir des octets non-UTF8 (noms propres) → tolérant.
-            text = archive.read(name).decode("utf-8", errors="replace")
-    except (zipfile.BadZipFile, IndexError) as exc:
-        raise Failure(
-            description=f"Archive GKG illisible : {file.url}",
-            metadata={"error": MetadataValue.text(str(exc))},
-        ) from exc
-    return gkg.project_csv(text)
-
-
-def _write_mentions(
-    mentions: list[OrgMention],
-    timestamp: str,
-    partition_date: str,
-    run_id: str,
-    target: CephTarget,
-    config_path: Path,
+def _write_projected(
+    con, mentions: list[OrgMention], bucket: str, partition_date: str, run_id: str
 ) -> int:
-    """Écrit les mentions d'un fichier en JSONL gzippé sur le lakehouse (rcat).
+    """Écrit les mentions projetées en Parquet sous ``raw/gkg/dt=<jour>/run=<run_id>/``.
 
-    Chemin : ``raw/gkg/dt=<partition_date>/run=<run_id>/<timestamp>.jsonl.gz``. Le
-    ``dt`` est la DATE DE LA PARTITION (pas dérivée du fichier) : tous les fichiers
-    d'une partition partagent le même préfixe ``dt=…/run=…``. Immuable (un rejeu de
-    partition écrit un nouveau ``run=``). ``gzip`` à ``mtime=0`` pour un octet
-    déterministe (ADR 0057). Renvoie le nombre de mentions écrites.
+    Schéma consommé par le staging dbt (contrat, ADR 0100) : ``record_id``, ``date``,
+    ``organization``, ``source_common_name``, ``document_identifier`` (VARCHAR) +
+    ``translated`` (BOOLEAN). Une ligne par mention (record_id × organisation). Écriture
+    Parquet via DuckDB (``COPY``) ; immuable par ``run=`` (nouveau préfixe à chaque rejeu,
+    ADR 0064). Renvoie le nombre de mentions écrites.
     """
-    payload = "\n".join(json.dumps(asdict(m), sort_keys=True) for m in mentions)
-    buffer = io.BytesIO()
-    with gzip.GzipFile(fileobj=buffer, mode="wb", mtime=0) as gz:
-        gz.write(payload.encode("utf-8"))
-    dest = f"ceph:{target.bucket}/raw/gkg/dt={partition_date}/run={run_id}/{timestamp}.jsonl.gz"
-    result = subprocess.run(
-        ["rclone", "--config", str(config_path), "rcat", dest],
-        input=buffer.getvalue(),
-        capture_output=True,
-        check=False,
+    dest = f"s3://{bucket}/{_PROJECTED_PREFIX}/dt={partition_date}/run={run_id}"
+    if not mentions:
+        # Jour sans aucune mention : on n'écrit pas de part vide (le staging dbt tolère
+        # une partition absente ; le manifest reflète l'état réel). Run idempotent.
+        return 0
+    # Table temporaire in-memory depuis les mentions (asdict → colonnes nommées), puis
+    # COPY vers S3. On passe par register d'une table Arrow pour éviter tout littéral SQL
+    # géant (et l'échappement manuel) ; DuckDB type `translated` en BOOLEAN nativement.
+    records = [asdict(m) for m in mentions]
+    table = pa.table(
+        {
+            "record_id": pa.array([r["record_id"] for r in records], pa.string()),
+            "date": pa.array([r["date"] for r in records], pa.string()),
+            "organization": pa.array([r["organization"] for r in records], pa.string()),
+            "source_common_name": pa.array([r["source_common_name"] for r in records], pa.string()),
+            "document_identifier": pa.array(
+                [r["document_identifier"] for r in records], pa.string()
+            ),
+            "translated": pa.array([r["translated"] for r in records], pa.bool_()),
+        }
     )
-    if result.returncode != 0:
-        raise Failure(
-            description=f"Écriture du brut GKG échouée : {dest}",
-            metadata={"stderr": MetadataValue.text(result.stderr.decode()[-500:])},
-        )
+    con.register("projected_mentions", table)
+    try:
+        lakehouse.copy_to_parquet(con, "SELECT * FROM projected_mentions", dest)
+    finally:
+        con.unregister("projected_mentions")
     return len(mentions)
 
 
-@asset(name="raw_gkg", group_name="ingestion", partitions_def=gkg_daily_partitions)
+@asset(
+    name="raw_gkg",
+    group_name="ingestion",
+    partitions_def=gkg_daily_partitions,
+    deps=[AssetKey(["raw_native_gkg"])],
+)
 def raw_gkg(context, config: RawGkgConfig) -> MaterializeResult:
-    """Pull HTTP des fichiers GKG du jour de la partition vers ``raw/gkg`` du lakehouse."""
+    """Dérive la couche projetée (6 champs, Parquet) de la native, sans re-télécharger."""
     target = ceph_target_from_env()
     run_id = context.run_id
     partition_date = context.partition_key  # YYYY-MM-DD
-    # Client HTTP throttlé + retry/backoff (anti rate-limit GDELT, ADR 0064). La
-    # limite de CONCURRENCE des partitions (backfill) est posée par tag Dagster.
-    client = ThrottledClient(_retry_policy(config))
 
-    with tempfile.TemporaryDirectory() as tmp:
-        config_path = Path(tmp) / "rclone.conf"
-        config_path.write_text(render_rclone_config(target))
-
-        available = _fetch_master_files(client, config)
-        day_files, truncated = gkg.files_in_day(available, partition_date, config.max_files)
-
-        lineage.emit(RunState.START, run_id, "raw_gkg", [lineage.source_dataset()], [])
-
-        total_mentions = 0
-        for file in day_files:
-            mentions = _download_and_project(client, file)
-            total_mentions += _write_mentions(
-                mentions, file.timestamp, partition_date, run_id, target, config_path
-            )
-
-        lineage.emit(
-            RunState.COMPLETE,
-            run_id,
-            "raw_gkg",
-            [lineage.source_dataset()],
-            [lineage.raw_dataset()],
+    con = lakehouse.connect()
+    try:
+        native_rows = lakehouse.read_native_rows(
+            con, target.bucket, _NATIVE_PREFIX, partition_date, run_id
         )
+    except Exception as exc:  # noqa: BLE001 — remonté en Failure explicite (contrat asset)
+        raise Failure(
+            description=(
+                "Lecture de la couche native GKG échouée "
+                f"(raw_native/gkg/dt={partition_date}/run={run_id}) — "
+                "raw_native_gkg a-t-il matérialisé cette partition dans ce run ?"
+            ),
+            metadata={"error": MetadataValue.text(str(exc))},
+        ) from exc
+
+    lineage.emit(RunState.START, run_id, "raw_gkg", [lineage.raw_native_dataset()], [])
+
+    mentions = _project_native(native_rows)
+    total = _write_projected(con, mentions, target.bucket, partition_date, run_id)
+
+    lineage.emit(
+        RunState.COMPLETE,
+        run_id,
+        "raw_gkg",
+        [lineage.raw_native_dataset()],
+        [lineage.raw_dataset()],
+    )
 
     return MaterializeResult(
         metadata={
             "partition": MetadataValue.text(partition_date),
-            "files_ingested": MetadataValue.int(len(day_files)),
-            "mentions_written": MetadataValue.int(total_mentions),
-            "truncated": MetadataValue.bool(truncated),
-            "include_translation": MetadataValue.bool(config.include_translation),
-            "bucket": MetadataValue.text(f"{target.bucket}/raw/gkg/dt={partition_date}"),
+            "native_rows_read": MetadataValue.int(len(native_rows)),
+            "mentions_written": MetadataValue.int(total),
+            "bucket": MetadataValue.text(
+                f"{target.bucket}/{_PROJECTED_PREFIX}/dt={partition_date}"
+            ),
         }
     )

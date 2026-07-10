@@ -39,6 +39,7 @@ from mediawatch_dagster.assets import (
     forecast_manifest,
     forecast_university_timeline,
     raw_gkg,
+    raw_native_gkg,
     ref_universities_snapshot,
     timeline_manifest,
 )
@@ -51,6 +52,7 @@ from mediawatch_dagster.assets.quality import (
     ge_curated_universities,
     ge_marts_timeline,
     ge_raw_gkg,
+    ge_raw_native_gkg,
 )
 from mediawatch_dagster.assets.raw_gkg import gkg_daily_partitions
 from mediawatch_dagster.dbt import dbt_components
@@ -150,12 +152,15 @@ def _transform_run_config() -> dict:
 # cluster ADR 0033) — la VALEUR de la limite relève de l'infra, le TAG du code.
 _INGEST_CONCURRENCY_TAG = {"mediawatch/ingest-source": "gdelt"}
 
-# Le job d'ingestion ne sélectionne que raw_gkg (le pull HTTP du flux GKG). Il
-# porte le câblage K8s du run (Secret S3 + lineage) + le tag de concurrence.
-# Partitionné par jour (la définition de partition vient de l'asset).
+# Le job d'ingestion sélectionne la couche NATIVE (pull HTTP du flux GKG) ET la couche
+# PROJETÉE qui en dérive (ADR 0100) : raw_gkg dépend de raw_native_gkg, donc les deux
+# sont matérialisés dans le MÊME run (même run_id → même préfixe dt=…/run=…, la
+# projection lit exactement ce que la native vient d'écrire). Le job porte le câblage
+# K8s du run (Secret S3 + lineage) + le tag de concurrence. Partitionné par jour (la
+# définition de partition vient de l'asset).
 ingestion_job = define_asset_job(
     "ingestion_job",
-    selection=AssetSelection.assets("raw_gkg"),
+    selection=AssetSelection.assets("raw_native_gkg", "raw_gkg"),
     partitions_def=gkg_daily_partitions,
     tags={**RUN_K8S_CONFIG, **_INGEST_CONCURRENCY_TAG},
 )
@@ -203,6 +208,7 @@ _dbt_assets, _dbt_resources = dbt_components()
 # timeline_manifest : en mode dégradé (dbt absent), leurs dépendances pendent et la
 # code-location reste chargeable (assets orphelins).
 _assets = [
+    raw_native_gkg,
     raw_gkg,
     ref_universities_snapshot,
     timeline_manifest,
@@ -218,7 +224,7 @@ _jobs = [ingestion_job, ref_job]
 # evidently_forecast_drift cible l'asset Python forecast_university_timeline (toujours
 # enregistré) → INCONDITIONNEL. Porte de sécurité bloquante sur la bascule served_mode
 # (ADR 0081/0068).
-_asset_checks = [ge_raw_gkg, evidently_forecast_drift]
+_asset_checks = [ge_raw_native_gkg, ge_raw_gkg, evidently_forecast_drift]
 if _dbt_assets:
     _asset_checks += [ge_curated_universities, ge_marts_timeline]
 

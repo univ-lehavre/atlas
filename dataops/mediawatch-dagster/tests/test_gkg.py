@@ -117,3 +117,57 @@ def test_fixture_zip_contains_matching_csv() -> None:
         text = archive.read(name).decode("utf-8")
     # Le ZIP et le .csv décompressé produisent les mêmes mentions (fixture cohérent).
     assert gkg.project_csv(text) == gkg.project_csv(_sample_csv())
+
+
+# ── Couche native : 27 champs fidèles (ADR 0100) ─────────────────────────────
+
+
+def test_native_columns_are_27() -> None:
+    assert len(gkg.NATIVE_COLUMNS) == 27
+    assert gkg.NATIVE_COLUMNS[0] == "gkg_record_id"
+    assert gkg.NATIVE_COLUMNS[-1] == "v2_extras_xml"
+
+
+def test_parse_native_row_keeps_all_27_fields() -> None:
+    cols = [f"f{i}" for i in range(27)]
+    row = gkg.parse_native_row(cols)
+    assert row is not None
+    assert len(row) == 27
+    assert row["gkg_record_id"] == "f0"
+    assert row["v21_date"] == "f1"
+    assert row["v2_enhanced_organizations"] == "f14"
+
+
+def test_parse_native_row_ignores_short_rows() -> None:
+    assert gkg.parse_native_row(["only", "three", "cols"]) is None
+
+
+def test_parse_native_row_ignores_extra_fields() -> None:
+    # 28 champs (tabulation résiduelle) → on garde les 27 premiers, jamais moins.
+    cols = [f"f{i}" for i in range(28)]
+    row = gkg.parse_native_row(cols)
+    assert row is not None and len(row) == 27
+
+
+def test_parse_native_csv_parses_fixture() -> None:
+    rows = gkg.parse_native_csv(_sample_csv())
+    # Le fixture a 4 lignes GKG ; la native les garde TOUTES (contrairement à la
+    # projection qui éclate/filtre par organisation).
+    assert len(rows) == 4
+    assert all(len(r) == 27 for r in rows)
+
+
+def test_project_native_dict_matches_positional_projection() -> None:
+    # La projection depuis le dict natif DOIT donner exactement les mêmes mentions que
+    # la projection positionnelle (source unique de vérité, ADR 0100).
+    native_rows = gkg.parse_native_csv(_sample_csv())
+    from_native = [m for r in native_rows for m in gkg.project_native_dict(r)]
+    from_csv = gkg.project_csv(_sample_csv())
+    assert from_native == from_csv
+
+
+def test_project_native_dict_without_org_yields_nothing() -> None:
+    row = dict.fromkeys(gkg.NATIVE_COLUMNS, "")
+    row["gkg_record_id"] = "rec"
+    row["v21_date"] = "20260101120000"
+    assert gkg.project_native_dict(row) == []

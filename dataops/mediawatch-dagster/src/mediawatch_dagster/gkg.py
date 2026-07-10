@@ -35,6 +35,44 @@ COL_TRANSLATION_INFO = 25  # V2.1TranslationInfo : vide si natif anglais
 
 _GKG_FIELD_COUNT = 27
 
+# Schéma NATIF complet (ADR 0100) : les 27 colonnes V2.1 dans l'ordre du codebook
+# (« GDELT 2.0 Global Knowledge Graph Codebook V2.1 », 2015-02-19). L'ordre a CHANGÉ
+# entre V2.0 et V2.1 — cette liste EST l'ordre positionnel des champs tab-delimited
+# (sans en-tête). Identifiants NEUTRES snake_case exploitables en Parquet/SQL (le
+# « . » de « V2.1DATE » n'est pas un identifiant valide) ; le nom de codebook est en
+# commentaire pour l'auditabilité. Les 6 indices projetés ci-dessus (0,1,3,4,14,25)
+# sont un sous-ensemble cohérent de cette liste.
+NATIVE_COLUMNS = (
+    "gkg_record_id",  # 0  GKGRECORDID
+    "v21_date",  # 1  V2.1DATE
+    "v2_source_collection_identifier",  # 2  V2SourceCollectionIdentifier
+    "v2_source_common_name",  # 3  V2SourceCommonName
+    "v2_document_identifier",  # 4  V2DocumentIdentifier
+    "v1_counts",  # 5  V1Counts
+    "v21_counts",  # 6  V2.1Counts
+    "v1_themes",  # 7  V1Themes
+    "v2_enhanced_themes",  # 8  V2EnhancedThemes
+    "v1_locations",  # 9  V1Locations
+    "v2_enhanced_locations",  # 10 V2EnhancedLocations
+    "v1_persons",  # 11 V1Persons
+    "v2_enhanced_persons",  # 12 V2EnhancedPersons
+    "v1_organizations",  # 13 V1Organizations
+    "v2_enhanced_organizations",  # 14 V2EnhancedOrganizations
+    "v15_tone",  # 15 V1.5Tone
+    "v21_enhanced_dates",  # 16 V2.1EnhancedDates
+    "v2_gcam",  # 17 V2GCAM
+    "v21_sharing_image",  # 18 V2.1SharingImage
+    "v21_related_images",  # 19 V2.1RelatedImages
+    "v21_social_image_embeds",  # 20 V2.1SocialImageEmbeds
+    "v21_social_video_embeds",  # 21 V2.1SocialVideoEmbeds
+    "v21_quotations",  # 22 V2.1Quotations
+    "v21_all_names",  # 23 V2.1AllNames
+    "v21_amounts",  # 24 V2.1Amounts
+    "v21_translation_info",  # 25 V2.1TranslationInfo
+    "v2_extras_xml",  # 26 V2ExtrasXML
+)
+assert len(NATIVE_COLUMNS) == _GKG_FIELD_COUNT  # garde-fou : 27 colonnes exactement
+
 # Nom de fichier 15 minutes du flux GKG (anglais ou traduit ; le suffixe diffère
 # seulement par la présence de "translation." côté master-translation, mais le nom
 # d'objet reste <ts>.gkg.csv.zip).
@@ -176,3 +214,70 @@ def project_csv(text: str) -> list[OrgMention]:
             continue
         mentions.extend(project_row(line.split("\t")))
     return mentions
+
+
+# ── Couche NATIVE : copie fidèle des 27 champs (ADR 0100) ────────────────────────
+# À la différence de ``project_row`` (6 champs, éclatés par organisation), la couche
+# native conserve la LIGNE telle quelle (un document = une ligne) avec ses 27 champs
+# en texte. Aucun typage ni parsing des sous-structures ici : la fidélité prime, le
+# typage est un travail AVAL (dbt). Sert l'écriture Parquet de ``raw_native_gkg``.
+
+
+def parse_native_row(fields: list[str]) -> dict[str, str] | None:
+    """Projette une ligne GKG 2.1 en dict de ses 27 champs (copie fidèle, VARCHAR).
+
+    Renvoie un dict ``{nom_neutre: valeur}`` clé par ``NATIVE_COLUMNS`` (ordre du
+    codebook). Les lignes au nombre de colonnes inattendu (tronquées) sont ignorées
+    (``None``) — même robustesse que ``project_row`` (le flux brut peut contenir des
+    lignes malformées ; la conformité globale est vérifiée par Great Expectations).
+    Les champs EXCÉDENTAIRES (rare : une tabulation résiduelle en fin de ligne) sont
+    ignorés au-delà des 27 attendus ; on ne tronque jamais en-deçà.
+    """
+    if len(fields) < _GKG_FIELD_COUNT:
+        return None
+    return {name: fields[i].strip() for i, name in enumerate(NATIVE_COLUMNS)}
+
+
+def parse_native_csv(text: str) -> list[dict[str, str]]:
+    """Projette un ``.gkg.csv`` complet en lignes natives (27 champs, tab-delimited)."""
+    rows: list[dict[str, str]] = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        row = parse_native_row(line.split("\t"))
+        if row is not None:
+            rows.append(row)
+    return rows
+
+
+def project_native_dict(row: dict[str, str]) -> list[OrgMention]:
+    """Projette une ligne NATIVE (dict 27 champs) en mentions d'organisation.
+
+    Pont de la couche native (bronze) vers la couche projetée (silver, ADR 0100) :
+    ``raw_gkg`` DÉRIVE sa projection 6 champs du Parquet natif au lieu de re-télécharger
+    la source. Réutilise EXACTEMENT la même logique d'éclatement/déduplication des
+    organisations que ``project_row`` (source unique de vérité) — seule l'origine des
+    champs change (dict natif vs liste positionnelle). Robustesse identique : ligne sans
+    identifiant/date ou sans organisation → aucune mention.
+    """
+    record_id = row.get("gkg_record_id", "").strip()
+    date = row.get("v21_date", "").strip()
+    if not record_id or not date:
+        return []
+    orgs = _split_enhanced_organizations(row.get("v2_enhanced_organizations", ""))
+    if not orgs:
+        return []
+    translated = bool(row.get("v21_translation_info", "").strip())
+    source = row.get("v2_source_common_name", "").strip()
+    document = row.get("v2_document_identifier", "").strip()
+    return [
+        OrgMention(
+            record_id=record_id,
+            date=date,
+            organization=org,
+            source_common_name=source,
+            document_identifier=document,
+            translated=translated,
+        )
+        for org in orgs
+    ]

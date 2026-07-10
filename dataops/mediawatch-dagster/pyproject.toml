@@ -33,6 +33,13 @@ dependencies = [
   "duckdb",
   "dbt-duckdb",
   "dagster-dbt==0.29.7",
+  # Écriture du brut en Parquet (couche native 27 champs + couche projetée, ADR
+  # 0100 : le brut mediawatch abandonne le JSONL.gz). L'asset construit la table
+  # Parquet EN MÉMOIRE (pyarrow) puis la pousse au lakehouse via `rclone rcat` —
+  # même schéma d'écriture que l'ancien JSONL, format colonnaire en plus. pyarrow
+  # était déjà tiré en TRANSITIVE (duckdb/pandas/GE) ; on le déclare en dépendance
+  # DIRECTE puisque le code l'importe explicitement (Apache-2.0).
+  "pyarrow",
   # Qualité des données : suites Great Expectations exécutées en asset checks
   # Dagster BLOQUANTS (en complément des tests dbt). Validation in-process sur
   # DataFrame pandas (contexte éphémère, hermétique). GE 1.18 tire

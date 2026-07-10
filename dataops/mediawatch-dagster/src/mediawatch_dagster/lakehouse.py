@@ -75,3 +75,25 @@ def copy_to_parquet(
         options.append(f"PARTITION_BY ({cols})")
         options.append("OVERWRITE_OR_IGNORE")
     con.execute(f"COPY ({select_sql}) TO '{dest_dir}' ({', '.join(options)})")
+
+
+def read_native_rows(
+    con: duckdb.DuckDBPyConnection, bucket: str, native_prefix: str, dt: str, run_id: str
+) -> list[dict]:
+    """Lit les lignes de la couche NATIVE Parquet d'une partition/run (ADR 0100).
+
+    ``raw_gkg`` (silver) DÉRIVE sa projection du Parquet natif écrit par
+    ``raw_native_gkg`` (bronze) DANS LE MÊME RUN (même ``run_id`` → même préfixe
+    ``dt=…/run=…``). On lit donc exactement ``raw_native/gkg/dt=<dt>/run=<run_id>/*.parquet``
+    (pas de « dernier run » à deviner : le run courant est la source). Seuls les champs
+    utiles à la projection 6 champs sont lus (jamais un SELECT * : plus léger, insensible
+    aux 21 autres colonnes). Renvoie une liste de dicts (clés = noms de colonnes natives).
+    """
+    glob = f"s3://{bucket}/{native_prefix}/dt={dt}/run={run_id}/*.parquet"
+    rel = con.sql(
+        "SELECT gkg_record_id, v21_date, v2_source_common_name, v2_document_identifier, "
+        "v2_enhanced_organizations, v21_translation_info "
+        f"FROM read_parquet('{glob}')"
+    )
+    columns = [d[0] for d in rel.description]
+    return [dict(zip(columns, row, strict=True)) for row in rel.fetchall()]
