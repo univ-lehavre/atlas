@@ -128,6 +128,90 @@ collaborations (cf. [le plan](https://univ-lehavre.github.io/atlas/plans/2026-06
 et [ADR 0029](https://univ-lehavre.github.io/atlas/decisions/0029-architecture-pipeline-collaborations/)).
 Ce dossier **produit la donnée** ; il ne sert pas l'utilisateur final directement.
 
+## Structure du bucket S3
+
+Le pipeline écrit dans **un seul bucket** (l'`ObjectBucketClaim` `citation-datalake`,
+dont le nom réel est `citation-datalake-<uuid>` — jamais codé en dur, lu de
+`BUCKET_NAME`). Tout s'organise en **préfixes** (dossiers) par couche ; il n'y a pas
+plusieurs buckets. Convention de chemin immuable **`dt=<période>/run=<id>/`** pour les
+sorties versionnées ([ADR 0054](https://univ-lehavre.github.io/atlas/decisions/0054-ingestion-massive-snapshot-s3/)) :
+un rejeu n'écrase jamais, il crée un nouveau `run=`.
+
+```
+citation-datalake-<uuid>/
+├── raw/                          brut OpenAlex, tel quel (immuable)
+│   ├── works/updated_date=YYYY-MM-DD/*.parquet   partitions par date de MAJ OpenAlex
+│   ├── merged_ids/works/*.csv.gz                 redirections d'ids (stockées, cf. note)
+│   ├── manifest_works.parquet                    (file, num_rows) lu des footers Parquet
+│   └── _watermark.json                           filigrane d'ingestion incrémentale
+├── mart_eunicoast/run=<id>/*.parquet             périmètre EUNICoast filtré (source dbt)
+├── curated/<model>/dt=…/run=…/part.parquet       couche dbt intermédiaire (Parquet external)
+├── marts/<model>/dt=…/run=…/part.parquet         marts servis + manifest.json (contrat)
+│   └── <model>/…/manifest.json                   sentinelle atomique de complétude
+└── drift/                                         verdicts de dérive ML (N vs N-1)
+```
+
+Ordre de grandeur mesuré en prod : `raw/works/` ≈ **1,3 Tio** (plusieurs milliers de
+fichiers, ~480 partitions), `mart_eunicoast/` ≈ **200 Mio** (~10⁵ works du périmètre) —
+le filtre EUNICoast réduit d'un facteur ~6000.
+
+> **Note `merged_ids`.** OpenAlex publie les fusions d'ids (`id → merge_into_id`). Ils
+> sont **rapatriés et conservés** dans `raw/merged_ids/`, mais **pas appliqués** : la
+> réconciliation n'est pas faite (ni sur les works, ni sur les auteurs —
+> [ADR 0059](https://univ-lehavre.github.io/atlas/decisions/0059-mart-researchers-author-id-grain/)).
+> La donnée est là pour un usage futur éventuel, sans décider à la place du déployeur.
+
+> **Déduplication des works ([ADR 0099](https://univ-lehavre.github.io/atlas/decisions/0099-deduplication-mart-eunicoast-par-recence/)).**
+> Comme `raw/works/` **accumule** les rééditions d'un même `work_id` (une par
+> `updated_date`), la déduplication se fait **dans `mart_eunicoast`**, une fois le
+> périmètre filtré (~10⁵ works, pas les 250+ M du lac), en gardant la **version la plus
+> récente** (`updated_date` décroissante). Le mart est ainsi dédupliqué et autoportant.
+
+## Stratégies : parcimonie mémoire et parallélisme
+
+Le pipeline manipule un lac de centaines de millions de works sur des pods aux
+ressources bornées. Deux principes le rendent tenable : **ne jamais charger plus qu'un
+lot borné en mémoire**, et **paralléliser dès que le maillon le permet**.
+
+**Parcimonie mémoire — ne jamais tenir tout le lac en RAM :**
+
+- **Ingestion par lots homogènes.** `mart_eunicoast` ne lit pas le lac d'un bloc : il
+  compose des lots **~homogènes en nombre de works** (cumul de `num_rows` lu des footers
+  via `raw/manifest_works.parquet`, jusqu'à `_WORKS_PER_BATCH = 5_000_000`), et traite
+  chaque lot par **une** requête DuckDB bornée. La mémoire est fonction de la taille d'un
+  lot, jamais des ~250 M works ([ADR 0094](https://univ-lehavre.github.io/atlas/decisions/0094-mart-eunicoast-parquet-co-autorat/)).
+- **Projection colonnaire stricte.** On ne lit **que** les colonnes utiles
+  (`_MART_COLUMNS`) — jamais `abstract_inverted_index` ni `referenced_works` (champs
+  lourds). Le format Parquet colonnaire ne désérialise pas ce qu'on ne projette pas
+  (c'est ce qui a résolu les OOM du parse JSON, drifts L76/L77).
+- **Filtrer massivement, puis dédupliquer.** La déduplication (ADR 0099) n'opère
+  **qu'après** les filtres (année + affiliation), sur ~10⁵ works — dédoublonner le lac
+  brut serait déraisonnable.
+- **Débordement disque en filet.** La connexion DuckDB borne la RAM
+  (`memory_limit`, défaut **24 Go**) et **déborde** ses opérateurs sur disque
+  (`temp_directory`, un `emptyDir` monté) au lieu d'OOM — un filet quasi gratuit
+  ([`lakehouse.py`](src/citation_dagster/lakehouse.py)).
+- **Streaming des prédictions.** Le chemin prédictif du modèle d'uplift **streame** ses
+  prédictions par bloc kNN plutôt que de matérialiser toutes les paires, et le repli
+  descriptif insère par lots de `_PREDICT_BATCH = 200 000` lignes
+  ([`assets/uplift.py`](src/citation_dagster/assets/uplift.py), drifts L90/L92).
+
+**Parallélisme — exploiter les cœurs et le réseau :**
+
+- **Transferts rclone concurrents.** Le sync OpenAlex→Ceph copie avec `--transfers 4`
+  (4 fichiers en parallèle) et `--checkers 8` (8 comparaisons de présence en parallèle) —
+  le débit inter-endpoints S3 sans saturer le pod ([`assets/raw_snapshot.py`](src/citation_dagster/assets/raw_snapshot.py)).
+- **DuckDB multi-thread.** Le moteur de filtrage/transformation tourne sur **32 threads**
+  (`SET threads`, réglable par `DBT_DUCKDB_THREADS`) : un lot est filtré en parallèle sur
+  les cœurs du pod, sans réserver toute la machine ([`lakehouse.py`](src/citation_dagster/lakehouse.py)).
+- **Assets Dagster concurrents.** Les étapes indépendantes (p. ex. les modèles dbt d'une
+  même couche) sont parallélisées par l'orchestrateur selon le graphe de dépendances
+  qu'il déduit des assets.
+
+> **Réglables par l'environnement.** `DBT_DUCKDB_MEMORY_LIMIT`, `DBT_DUCKDB_THREADS`,
+> `DBT_DUCKDB_TEMP_DIR` (spill) et la taille de lot sont des **valeurs d'instance** : un
+> banc plus petit les abaisse, la prod les relève — jamais figées dans le code générique.
+
 ## MLOps : suivi de modèles, dérive et entraînement continu
 
 La chaîne d'embedding est instrumentée pour le **suivi de modèles** (MLOps 1→2,

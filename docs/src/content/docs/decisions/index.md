@@ -128,6 +128,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0096 | [Modèle explicatif du trafic Wikipédia des universités (posture associative)](/atlas/decisions/0096-modele-explicatif-trafic-universites/)                      | Superseded by 0098 |
 | 0097 | [Génération des candidats du modèle d'uplift par plus-proches-voisins (kNN)](/atlas/decisions/0097-candidats-uplift-par-knn/)                                   | Accepted           |
 | 0098 | [Modèle de prévision des vues Wikipédia des établissements (pageviews)](/atlas/decisions/0098-modele-prevision-vues-wikipedia/)                                 | Accepted           |
+| 0099 | [Déduplication du mart EUNICoast par récence (version la plus à jour)](/atlas/decisions/0099-deduplication-mart-eunicoast-par-recence/)                         | Accepted           |
 
 ## Quand ouvrir un ADR
 
