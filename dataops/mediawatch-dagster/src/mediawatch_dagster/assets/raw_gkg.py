@@ -1,9 +1,9 @@
 """Asset de PROJECTION : dérive la couche projetée (6 champs) de la native, en Parquet.
 
-Couche « silver » de la veille médiatique (ADR 0100). À la différence de l'ancienne
+Couche PROJETÉE de la veille médiatique (ADR 0100). À la différence de l'ancienne
 implémentation (qui téléchargeait GDELT et écrivait du JSONL.gz), ``raw_gkg`` **ne
 frappe plus la source** : il LIT le Parquet natif 27 champs écrit par
-``raw_native_gkg`` (couche bronze) pour la **même partition et le même run**, le
+``raw_native_gkg`` (couche native) pour la **même partition et le même run**, le
 **projette** aux 6 champs utiles au chronogramme (identifiant de document, date,
 organisations éclatées, source, URL, info de traduction) et écrit le résultat en
 **Parquet** sous ``raw/gkg/dt=YYYY-MM-DD/run=<run_id>/``.
@@ -59,7 +59,7 @@ _PROJECTED_PREFIX = "raw/gkg"
 
 
 class RawGkgConfig(Config):
-    """Paramètres de la projection (couche silver dérivée de la native)."""
+    """Paramètres de la projection (couche projetée dérivée de la native)."""
 
     # Plus de max_files / include_translation / anti-rate-limit ici : le pull (et donc
     # ces réglages) vit dans raw_native_gkg. La projection lit ce que la native a écrit.
