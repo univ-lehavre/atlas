@@ -2,7 +2,7 @@
 # Installation de la code-location Dagster « citation » sur le BANC — preuve
 # applicative de référence (overlays/bench, SeaweedFS local-path, ADR 0085).
 #
-# Orchestre le runbook (RUNBOOK.md) en UNE commande : build image du banc →
+# Orchestre la preuve locale du banc en UNE commande : build image du banc →
 # checks (validate.sh + lint + tests) → push Gitea (Argo CD réconcilie). Le push est
 # le DÉCLENCHEUR GitOps (ADR cluster 0044) ; ce script va jusqu'au bout MAIS demande
 # une confirmation explicite avant — un HUMAIN le lance (aucun agent ne déclenche le
@@ -10,11 +10,11 @@
 #
 # PROD : ce script ne pilote PAS la prod (ADR 0075). En production, `atlas` ne
 # fabrique ni ne résout l'image : l'overlay prod n'expose que des placeholders
-# (`__CITATION_IMAGE_DIGEST__`, `__CITATION_IMAGE__`) que le seed cluster remplit
-# par le digest immuable de l'image qu'il a buildée+poussée. Build de l'image,
-# injection du digest et réconciliation prod sont des gestes `cluster` (frontière
-# ADR 0033). Ici, on prouve le MÊME code applicatif sur le banc ; seul le backing
-# S3 diffère (ADR 0036/0085).
+# (`__CITATION_IMAGE_DIGEST__`, `__CITATION_IMAGE__`) que le cluster remplit par le
+# digest immuable de l'image de CODE qu'il build in-pod sur la pré-image (ADR cluster
+# 0110). Build de l'image, injection du digest et réconciliation prod sont des gestes
+# `cluster` (frontière ADR 0033/0094). Ici, on prouve le MÊME code applicatif sur le
+# banc ; seul le backing S3 diffère (ADR 0036/0085).
 #
 # Usage :
 #   deploy/install.sh bench [tag] [--yes] [--no-push]
@@ -38,7 +38,7 @@ for arg in "$@"; do
   case "$arg" in
     bench) profile="$arg" ;;
     prod) echo "✗ prod n'est pas pilotée par ce script (ADR 0075) : l'image et le digest" >&2
-          echo "  de production sont fabriqués+injectés par cluster. Voir RUNBOOK.md." >&2
+          echo "  de production sont fabriqués+injectés par cluster (frontière ADR 0094)." >&2
           exit 2 ;;
     --yes | -y) assume_yes=1 ;;
     --no-push) do_push=0 ;;
@@ -85,8 +85,8 @@ docker buildx build --platform linux/arm64 --target code \
   -t "$image:$tag" --push "$dataops_ctx"
 
 # Le banc utilise l'overlay/bench (image de base, pas de placeholder à figer).
-# L'overlay prod n'est pas touché ici : ses placeholders d'image sont remplis par
-# le seed cluster au déploiement (ADR 0075).
+# L'overlay prod n'est pas touché ici : ses placeholders d'image sont remplis côté
+# cluster (build de code in-pod + injection du digest, ADR cluster 0110/0075).
 
 # ── 2. Checks : manifestes (validate.sh) + lint + tests Python ───────────────
 echo "→ checks manifestes (validate.sh)"
@@ -102,7 +102,7 @@ fi
 # ── 3. Push Gitea = DÉCLENCHEUR GitOps (Argo CD réconcilie) ───────────────────
 if [ "$do_push" -eq 0 ]; then
   echo "✓ build + checks OK (banc, tag $tag). --no-push : rien n'est déployé."
-  echo "  Pour déployer le banc : 'git push' vers la cible Gitea (cf. RUNBOOK.md)."
+  echo "  Pour déployer le banc : 'git push' vers la cible Gitea (Argo CD réconcilie)."
   exit 0
 fi
 
@@ -142,4 +142,4 @@ echo "→ push (Gitea → Argo CD) vers la cible confirmée"
 # ci-dessus. On ne retombe JAMAIS sur un `git push` au remote ambiant (ADR 0073 §B).
 git -C "$repo_root" push "$GITEA_PUSH_URL" HEAD:main
 
-echo "✓ poussé. Argo CD réconcilie ; vérifier Synced/Healthy + run de validation (RUNBOOK.md)."
+echo "✓ poussé. Argo CD réconcilie ; vérifier Synced/Healthy + lancer un run de validation."
