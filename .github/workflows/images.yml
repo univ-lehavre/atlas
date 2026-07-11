@@ -7,19 +7,17 @@ name: Images
 # la matrice après migration de `static/private` vers `dynamic/private` (#324) :
 # leurs secrets sont lus au runtime, donc leurs images sont déployables.
 
-# PAS de filtre `paths:` au niveau workflow : les jobs de cette matrice
-# (atlas-dashboard, crf-dashboard, crf) sont des CHECKS REQUIS (ruleset `main`).
-# Un workflow filtré par `paths` ne démarre pas quand le diff ne matche pas (p. ex.
-# une PR dataops-only) → les checks requis restent « Expected » sans jamais être
-# rapportés → la PR est bloquée à vie. On reproduit donc le pattern de `ci.yml`
-# (ADR 0034/0016) : le job tourne TOUJOURS, on court-circuite au niveau des STEPS
-# via le drapeau `RUN` (calculé par le job `changes`). Un job court-circuité sort
-# `success`, jamais `skipped` → le check requis est satisfait sans rien builder.
+# DÉSACTIVÉ : build d'images en CI arrêté. Les images applicatives (7 unités) ne sont
+# pas consommées par le cluster (aucune Application ArgoCD active ne les tire — seule
+# l'infra tierce est déployée), donc les construire/scanner/pousser sur GHCR à chaque
+# push n'apporte plus de valeur. Les 3 checks jadis REQUIS (atlas-dashboard,
+# crf-dashboard, crf) ont été RETIRÉS du ruleset `main` en même temps que cette bascule
+# (sinon un workflow qui ne tourne plus laisse ces checks « Expected » → PR bloquée à vie).
+# Le workflow est CONSERVÉ et réactivable à la demande (`workflow_dispatch`) — le jour où
+# le build reprend (probablement côté cluster, en interne), on restaure les déclencheurs
+# `push`/`pull_request` ci-dessous ET on remet les checks au ruleset.
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  workflow_dispatch: {}
 
 permissions:
   contents: read
