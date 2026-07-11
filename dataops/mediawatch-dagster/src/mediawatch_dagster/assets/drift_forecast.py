@@ -15,7 +15,8 @@ changement de contrat majeur qui doit ARRÊTER le pipeline pour intervention hum
 
 Architecture calquée sur ``citation`` ``drift_uplift.py`` : corps purs testables + wrapper
 ``@asset_check``. Best-effort MLflow. Le mart de prévisions est partitionné par jour
-d'exécution (``dt=``), donc ``_list_runs`` parcourt toutes les partitions.
+d'exécution (``dt=``) ; ``_previous_run`` liste toutes les partitions et retient le run
+précédent par récence ``ModTime`` (ADR 0101), pas par ordre lexical du ``run=``.
 
 NB : pas de ``from __future__ import annotations`` (Dagster introspecte, drift D9).
 """
@@ -29,7 +30,7 @@ from pathlib import Path
 
 from dagster import AssetCheckExecutionContext, AssetCheckResult, AssetKey, asset_check
 
-from mediawatch_dagster import lakehouse
+from mediawatch_dagster import lakehouse, last_run
 from mediawatch_dagster.assets.manifest import _run_rclone, parse_lsjson_entries
 from mediawatch_dagster.partitions import ingested_partitions
 from mediawatch_dagster.resources import ceph_target_from_env, render_rclone_config
@@ -45,15 +46,23 @@ DRIFT_VERDICT_KEY = "drift/university_timeline_forecast/_drift_verdict.json"
 DRIFT_VERDICT_SCHEMA_VERSION = 1
 
 
-def _list_runs(con, bucket: str) -> list[str]:
-    """run_id présents sous ``marts/university_timeline_forecast/dt=…/``, triés (ordre S3
-    lexical = chronologique car run_id Dagster horodaté). Parcourt TOUTES les partitions
-    ``dt=`` (le forecast est partitionné par jour d'exécution)."""
-    glob = f"s3://{bucket}/{_FORECAST_SUBDIR}/dt=*/run=*/*.parquet"
-    rows = con.sql(
-        f"SELECT DISTINCT run FROM read_parquet('{glob}', hive_partitioning=true) ORDER BY run"
-    ).fetchall()
-    return [r[0] for r in rows]
+def _previous_run(bucket: str, run_id: str) -> str | None:
+    """``N-1`` = run le plus récent STRICTEMENT antérieur à ``N`` par ``ModTime`` S3 (ADR 0101).
+
+    ``None`` si ``N`` est le premier run. Liste ``marts/university_timeline_forecast`` via
+    ``rclone`` : le contenu DuckDB n'est PAS requis pour ordonner les runs (la présence du
+    part = run complet, ``COPY`` atomique) — on ordonne par ``ModTime``, pas par l'ordre
+    lexical du ``run=`` (uuid4 aléatoire ; l'ancien ``ORDER BY run`` élisait un baseline au
+    hasard). Construit son ``rclone.conf`` temporaire (patron de ``_persist_verdict``)."""
+    target = ceph_target_from_env()
+    with tempfile.TemporaryDirectory() as tmp:
+        config_path = Path(tmp) / "rclone.conf"
+        config_path.write_text(render_rclone_config(target))
+        root = f"ceph:{bucket}/{_FORECAST_SUBDIR}"
+        proc = _run_rclone(["lsjson", "-R", "--include", "*.parquet", root], config_path)
+        if proc.returncode != 0:
+            return None
+        return last_run.previous_complete_run(parse_lsjson_entries(proc.stdout), run_id)
 
 
 def _load_run_summary(con, bucket: str, run_id: str) -> dict:
@@ -223,14 +232,12 @@ def check_forecast_drift(bucket: str, run_id: str) -> AssetCheckResult:
     distribution (informatif) + verdict de bascule ``served_mode``. ``passed`` est False
     UNIQUEMENT sur la bascule ``predictive → descriptive`` (bloquant)."""
     con = lakehouse.connect()
-    runs = _list_runs(con, bucket)
-    previous = [r for r in runs if r < run_id]
-    if not previous:
+    baseline_run = _previous_run(bucket, run_id)
+    if baseline_run is None:
         return AssetCheckResult(
             passed=True,
             metadata={"drift": "baseline absente (1er run) — rien à comparer", "run_id": run_id},
         )
-    baseline_run = previous[-1]
     reference = _load_run_summary(con, bucket, baseline_run)
     current = _load_run_summary(con, bucket, run_id)
 

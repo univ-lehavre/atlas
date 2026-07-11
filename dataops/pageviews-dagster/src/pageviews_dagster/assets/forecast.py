@@ -22,18 +22,22 @@ NB : pas de ``from __future__ import annotations`` (Dagster introspecte, drift D
 """
 
 import datetime as dt
+import tempfile
+from pathlib import Path
 
 from dagster import (
     AssetExecutionContext,
     AssetKey,
+    Failure,
     MaterializeResult,
     MetadataValue,
     asset,
 )
 from openlineage.client.event_v2 import RunState
 
-from pageviews_dagster import forecast_model, lakehouse, lineage, tracking
-from pageviews_dagster.resources import ceph_target_from_env
+from pageviews_dagster import forecast_model, lakehouse, last_run, lineage, tracking
+from pageviews_dagster.assets.manifest import _run_rclone, parse_lsjson_entries
+from pageviews_dagster.resources import ceph_target_from_env, render_rclone_config
 
 _TIMELINE_SUBDIR = "marts/views_timeline"
 _FORECAST_SUBDIR = "marts/views_forecast"
@@ -59,29 +63,36 @@ def _month_to_date(month) -> dt.date:
     return dt.date(int(digits[:4]), int(digits[4:6]), 1)
 
 
-def _read_timeline(con, bucket: str) -> list[tuple[str, dt.date, int]]:
+def _read_timeline(con, bucket: str, config_path: Path) -> list[tuple[str, dt.date, int]]:
     """Lit TOUT le mart timeline (toutes partitions) en gardant le DERNIER run par mois.
 
     Le mart accumule une partition ``dt=`` par MOIS de vues, chaque re-matérialisation
-    écrivant un nouveau ``run=`` (immutabilité, ADR 0057). On lit via hive_partitioning et
-    on ne retient, par (dt, month), que les lignes du run lexicographiquement maximal —
-    « dernier run gagne », comme le manifest. Filtre la ligne fantôme NULL (placeholder
-    dbt). Le ``month`` observé est normalisé en 1er du mois (``_month_to_date``) pour le
-    cœur pur — la série étant mensuelle (ADR 0098).
+    écrivant un nouveau ``run=`` (immutabilité, ADR 0057). Le **dernier run par mois** est
+    celui au ``ModTime`` S3 le plus récent — PAS l'ordre lexical du ``run=`` (uuid4
+    aléatoire, ADR 0101). Le ``ModTime`` n'étant pas une colonne DuckDB, on liste d'abord
+    le mart (``rclone lsjson``), on retient ``{dt: run}`` via
+    :func:`last_run.latest_run_by_day`, puis on **restreint** la lecture à ces couples.
+    Filtre la ligne fantôme NULL (placeholder dbt). Le ``month`` observé est normalisé en
+    1er du mois (``_month_to_date``) pour le cœur pur — la série étant mensuelle (ADR 0098).
     """
+    root = f"ceph:{bucket}/{_TIMELINE_SUBDIR}"
+    proc = _run_rclone(["lsjson", "-R", "--include", "*.parquet", root], config_path)
+    if proc.returncode != 0:
+        raise Failure(
+            description="rclone lsjson a échoué sur le mart timeline",
+            metadata={"stderr": MetadataValue.text(proc.stderr[-2000:])},
+        )
+    keep = last_run.latest_run_by_day(parse_lsjson_entries(proc.stdout))  # {dt: run}
+    if not keep:
+        return []
+    values = ", ".join(f"('{d}', '{r}')" for d, r in sorted(keep.items()))
     glob = f"s3://{bucket}/{_TIMELINE_SUBDIR}/dt=*/run=*/*.parquet"
     rows = con.sql(
         f"""
-        WITH all_rows AS (
-            SELECT university_id, month, views, dt, run
-            FROM read_parquet('{glob}', hive_partitioning=true)
-            WHERE university_id IS NOT NULL
-        ),
-        latest AS (
-            SELECT dt, max(run) AS run FROM all_rows GROUP BY dt
-        )
-        SELECT a.university_id, a.month, a.views
-        FROM all_rows a JOIN latest l ON a.dt = l.dt AND a.run = l.run
+        SELECT university_id, month, views
+        FROM read_parquet('{glob}', hive_partitioning=true)
+        WHERE university_id IS NOT NULL
+          AND (dt, run) IN (VALUES {values})
         """
     ).fetchall()
     out: list[tuple[str, dt.date, int]] = []
@@ -149,7 +160,10 @@ def forecast_views(context: AssetExecutionContext) -> MaterializeResult:
     )
 
     con = lakehouse.connect()
-    timeline = _read_timeline(con, target.bucket)
+    with tempfile.TemporaryDirectory() as tmp:
+        config_path = Path(tmp) / "rclone.conf"
+        config_path.write_text(render_rclone_config(target))
+        timeline = _read_timeline(con, target.bucket, config_path)
     served_rows, evaluation, served_mode = forecast_model.forecast(timeline)
     _write_forecast(served_rows, target.bucket, run_day, run_id)
 

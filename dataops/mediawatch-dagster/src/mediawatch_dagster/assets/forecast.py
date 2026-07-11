@@ -14,45 +14,57 @@ NB : pas de ``from __future__ import annotations`` (Dagster introspecte, drift D
 """
 
 import datetime as dt
+import tempfile
+from pathlib import Path
 
 from dagster import (
     AssetExecutionContext,
     AssetKey,
+    Failure,
     MaterializeResult,
     MetadataValue,
     asset,
 )
 from openlineage.client.event_v2 import RunState
 
-from mediawatch_dagster import forecast_model, lakehouse, lineage, tracking
+from mediawatch_dagster import forecast_model, lakehouse, last_run, lineage, tracking
+from mediawatch_dagster.assets.manifest import _run_rclone, parse_lsjson_entries
 from mediawatch_dagster.assets.raw_gkg import gkg_daily_partitions
-from mediawatch_dagster.resources import ceph_target_from_env
+from mediawatch_dagster.resources import ceph_target_from_env, render_rclone_config
 
 _TIMELINE_SUBDIR = "marts/university_timeline"
 _FORECAST_SUBDIR = "marts/university_timeline_forecast"
 
 
-def _read_timeline(con, bucket: str) -> list[tuple[str, dt.date, int]]:
+def _read_timeline(con, bucket: str, config_path: Path) -> list[tuple[str, dt.date, int]]:
     """Lit TOUT le mart timeline (toutes partitions) en gardant le DERNIER run par jour.
 
     Le mart accumule une partition ``dt=`` par mois d'événements, chaque re-matérialisation
-    écrivant un nouveau ``run=`` (immutabilité, ADR 0064). On lit via hive_partitioning et on
-    ne retient, par (dt, event_date), que les lignes du run lexicographiquement maximal —
-    « dernier run gagne », comme le manifest. Filtre la ligne fantôme NULL (placeholder dbt).
+    écrivant un nouveau ``run=`` (immutabilité, ADR 0064). Le **dernier run par jour** est
+    celui au ``ModTime`` S3 le plus récent — PAS l'ordre lexical du ``run=`` (uuid4
+    aléatoire, ADR 0101). Le ``ModTime`` n'étant pas une colonne DuckDB, on liste d'abord
+    le mart (``rclone lsjson``), on retient ``{dt: run}`` via
+    :func:`last_run.latest_run_by_day`, puis on **restreint** la lecture à ces couples.
+    Filtre la ligne fantôme NULL (placeholder dbt).
     """
+    root = f"ceph:{bucket}/{_TIMELINE_SUBDIR}"
+    proc = _run_rclone(["lsjson", "-R", "--include", "*.parquet", root], config_path)
+    if proc.returncode != 0:
+        raise Failure(
+            description="rclone lsjson a échoué sur le mart timeline",
+            metadata={"stderr": MetadataValue.text(proc.stderr[-2000:])},
+        )
+    keep = last_run.latest_run_by_day(parse_lsjson_entries(proc.stdout))  # {dt: run}
+    if not keep:
+        return []
+    values = ", ".join(f"('{d}', '{r}')" for d, r in sorted(keep.items()))
     glob = f"s3://{bucket}/{_TIMELINE_SUBDIR}/dt=*/run=*/*.parquet"
     rows = con.sql(
         f"""
-        WITH all_rows AS (
-            SELECT university_id, event_date, n_articles, dt, run
-            FROM read_parquet('{glob}', hive_partitioning=true)
-            WHERE university_id IS NOT NULL
-        ),
-        latest AS (
-            SELECT dt, max(run) AS run FROM all_rows GROUP BY dt
-        )
-        SELECT a.university_id, a.event_date, a.n_articles
-        FROM all_rows a JOIN latest l ON a.dt = l.dt AND a.run = l.run
+        SELECT university_id, event_date, n_articles
+        FROM read_parquet('{glob}', hive_partitioning=true)
+        WHERE university_id IS NOT NULL
+          AND (dt, run) IN (VALUES {values})
         """
     ).fetchall()
     out: list[tuple[str, dt.date, int]] = []
@@ -125,7 +137,10 @@ def forecast_university_timeline(context: AssetExecutionContext) -> MaterializeR
     )
 
     con = lakehouse.connect()
-    timeline = _read_timeline(con, target.bucket)
+    with tempfile.TemporaryDirectory() as tmp:
+        config_path = Path(tmp) / "rclone.conf"
+        config_path.write_text(render_rclone_config(target))
+        timeline = _read_timeline(con, target.bucket, config_path)
     served_rows, evaluation, served_mode = forecast_model.forecast(timeline)
     _write_forecast(served_rows, target.bucket, run_day, run_id)
 
