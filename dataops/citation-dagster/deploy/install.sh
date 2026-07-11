@@ -63,9 +63,25 @@ done
 echo "── install : profil=$profile  image=$image:$tag  push=$do_push ──"
 
 # ── 1. Build + push de l'image (contexte dataops/, arm64 pour Lima) ──────────
-echo "→ build image"
-docker buildx build --platform linux/arm64 \
+# Découpage pré-image (ADR cluster 0110) : UN Dockerfile, DEUX cibles.
+#   1a. cible `deps`  → la pré-image `citation-deps-base` (LOURDE, egress : deps +
+#       wheels du lock + extensions DuckDB + modèle ONNX) — le seul build à Internet ;
+#   1b. cible `code`  → l'image applicative (`FROM ${DEPS_REF}`, zéro egress).
+# Sur le banc local (poste avec réseau), on build les deux à la suite : la deps-base
+# d'abord (poussée sous `:$tag`), puis le code qui la référence par ce même tag. En
+# prod, la deps-base est fournie séparément (poste de contrôle) et le code se build
+# in-pod ; ce script n'orchestre que la PREUVE LOCALE (ADR cluster 0110).
+deps_ref="$registry/citation-deps-base:$tag"
+
+echo "→ build pré-image (cible deps : deps + extensions DuckDB + ONNX, egress)"
+docker buildx build --platform linux/arm64 --target deps \
   -f "$here/../Dockerfile" \
+  -t "$deps_ref" --push "$dataops_ctx"
+
+echo "→ build image de code (cible code : FROM $deps_ref, zéro egress)"
+docker buildx build --platform linux/arm64 --target code \
+  -f "$here/../Dockerfile" \
+  --build-arg "DEPS_REF=$deps_ref" \
   -t "$image:$tag" --push "$dataops_ctx"
 
 # Le banc utilise l'overlay/bench (image de base, pas de placeholder à figer).
