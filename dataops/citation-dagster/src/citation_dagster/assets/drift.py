@@ -25,7 +25,7 @@ from pathlib import Path
 
 from dagster import AssetCheckExecutionContext, AssetCheckResult, AssetKey, asset_check
 
-from citation_dagster import embedding, lakehouse, watermark
+from citation_dagster import embedding, lakehouse, last_run, watermark
 from citation_dagster.dbt import CURATED_DT
 from citation_dagster.resources import ceph_target_from_env, render_rclone_config
 
@@ -45,15 +45,38 @@ DRIFT_VERDICT_SCHEMA_VERSION = 1
 # produirait des faux positifs — on délègue la décision au test statistique d'Evidently.
 
 
-def _list_runs(con, bucket: str) -> list[str]:
-    """Les run_id présents sous ``marts/researcher_vectors/dt=…/``, triés (ordre S3 lexical
-    = chronologique car run_id Dagster horodaté). DuckDB lit la colonne de partition
-    ``run`` via ``hive_partitioning`` ; ``DISTINCT`` dédoublonne les multiples part.parquet."""
-    glob = f"s3://{bucket}/{_VECTORS_SUBDIR}/dt={CURATED_DT}/run=*/*.parquet"
-    rows = con.sql(
-        f"SELECT DISTINCT run FROM read_parquet('{glob}', hive_partitioning=true) ORDER BY run"
-    ).fetchall()
-    return [r[0] for r in rows]
+def _previous_run(bucket: str, run_id: str) -> str | None:
+    """``N-1`` = run le plus récent STRICTEMENT antérieur à ``N`` par ``ModTime`` S3 (ADR 0101).
+
+    ``None`` si ``N`` est le premier run. Liste ``marts/researcher_vectors`` via ``rclone`` :
+    le contenu DuckDB n'est PAS requis pour ordonner les runs (la présence du part = run
+    complet, ``COPY`` atomique) — on ordonne par ``ModTime``, PAS par l'ordre lexical du
+    ``run=`` (uuid4 aléatoire ; l'ancien ``ORDER BY run`` élisait un baseline au hasard).
+    Construit son ``rclone.conf`` temporaire (patron de ``_persist_verdict``)."""
+    target = ceph_target_from_env()
+    with tempfile.TemporaryDirectory() as tmp:
+        config_path = Path(tmp) / "rclone.conf"
+        config_path.write_text(render_rclone_config(target))
+        root = f"ceph:{bucket}/{_VECTORS_SUBDIR}"
+        proc = subprocess.run(
+            [
+                "rclone",
+                "--config",
+                str(config_path),
+                "lsjson",
+                "-R",
+                "--include",
+                "*.parquet",
+                root,
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            return None
+        entries = json.loads(proc.stdout) if proc.stdout.strip() else []
+        return last_run.previous_complete_run(entries, run_id)
 
 
 def _load_vectors_df(con, bucket: str, run_id: str):
@@ -202,15 +225,14 @@ def check_embedding_drift(bucket: str, run_id: str) -> AssetCheckResult:
     de drift notable mais le check est NON bloquant (cf. wrapper) : un drift n'arrête pas
     le pipeline, il alerte."""
     con = lakehouse.connect()
-    runs = _list_runs(con, bucket)
-    # Le run courant est le dernier ; sa baseline est l'avant-dernier run consigné.
-    previous = [r for r in runs if r < run_id]
-    if not previous:
+    # Baseline = le run complet le plus récent STRICTEMENT antérieur à N par ModTime (ADR 0101),
+    # PAS l'ancien previous[-1] d'un tri lexical de run= uuid4 (baseline aléatoire).
+    baseline_run = _previous_run(bucket, run_id)
+    if baseline_run is None:
         return AssetCheckResult(
             passed=True,
             metadata={"drift": "baseline absente (1er run) — rien à comparer", "run_id": run_id},
         )
-    baseline_run = previous[-1]
     reference_df = _load_vectors_df(con, bucket, baseline_run)
     current_df = _load_vectors_df(con, bucket, run_id)
     drift = compute_drift(reference_df, current_df)

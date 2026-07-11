@@ -18,31 +18,59 @@ seule bascule ``predictive → descriptive`` — servir silencieusement du descr
 l'on servait du prédictif est un changement de contrat majeur qui doit ARRÊTER le pipeline.
 
 Architecture calquée sur ``drift.py`` : corps pur testable + wrapper ``@asset_check``.
-Réutilise ``_list_runs`` (runs S3 triés) et le logging MLflow best-effort.
+Sélectionne le baseline ``N-1`` par récence ``ModTime`` (``_previous_run``, ADR 0101) et
+logge dans MLflow (best-effort).
 
 NB : pas de ``from __future__ import annotations`` (Dagster introspecte, drift D9).
 """
 
+import json
 import os
+import subprocess
+import tempfile
+from pathlib import Path
 
 from dagster import AssetCheckExecutionContext, AssetCheckResult, AssetKey, asset_check
 
-from citation_dagster import lakehouse
+from citation_dagster import lakehouse, last_run
 from citation_dagster.dbt import CURATED_DT
-from citation_dagster.resources import ceph_target_from_env
+from citation_dagster.resources import ceph_target_from_env, render_rclone_config
 
 _PREDICTIONS_SUBDIR = "marts/pair_uplift_predictions"
 
 
-def _list_runs(con, bucket: str) -> list[str]:
-    """run_id présents sous ``marts/pair_uplift_predictions/dt=…/``, triés (ordre S3 lexical
-    = chronologique car run_id Dagster horodaté). DuckDB lit la partition ``run`` via
-    ``hive_partitioning`` ; ``DISTINCT`` dédoublonne les part.parquet."""
-    glob = f"s3://{bucket}/{_PREDICTIONS_SUBDIR}/dt={CURATED_DT}/run=*/*.parquet"
-    rows = con.sql(
-        f"SELECT DISTINCT run FROM read_parquet('{glob}', hive_partitioning=true) ORDER BY run"
-    ).fetchall()
-    return [r[0] for r in rows]
+def _previous_run(bucket: str, run_id: str) -> str | None:
+    """``N-1`` = run le plus récent STRICTEMENT antérieur à ``N`` par ``ModTime`` S3 (ADR 0101).
+
+    ``None`` si ``N`` est le premier run. Liste ``marts/pair_uplift_predictions`` via
+    ``rclone`` : le contenu DuckDB n'est PAS requis pour ordonner les runs (la présence du
+    part = run complet, ``COPY`` atomique) — on ordonne par ``ModTime``, PAS par l'ordre
+    lexical du ``run=`` (uuid4 aléatoire ; l'ancien ``ORDER BY run`` élisait un baseline au
+    hasard). Construit son ``rclone.conf`` temporaire."""
+    target = ceph_target_from_env()
+    with tempfile.TemporaryDirectory() as tmp:
+        config_path = Path(tmp) / "rclone.conf"
+        config_path.write_text(render_rclone_config(target))
+        root = f"ceph:{bucket}/{_PREDICTIONS_SUBDIR}"
+        proc = subprocess.run(
+            [
+                "rclone",
+                "--config",
+                str(config_path),
+                "lsjson",
+                "-R",
+                "--include",
+                "*.parquet",
+                root,
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if proc.returncode != 0:
+            return None
+        entries = json.loads(proc.stdout) if proc.stdout.strip() else []
+        return last_run.previous_complete_run(entries, run_id)
 
 
 def _load_run_summary(con, bucket: str, run_id: str) -> dict:
@@ -138,14 +166,14 @@ def check_uplift_drift(bucket: str, run_id: str) -> AssetCheckResult:
     UNIQUEMENT sur la bascule ``predictive → descriptive`` (bloquant) ; un simple décalage
     de distribution est rapporté en métadonnée sans faire échouer le run (informatif)."""
     con = lakehouse.connect()
-    runs = _list_runs(con, bucket)
-    previous = [r for r in runs if r < run_id]
-    if not previous:
+    # Baseline = le run complet le plus récent STRICTEMENT antérieur à N par ModTime (ADR 0101),
+    # PAS l'ancien previous[-1] d'un tri lexical de run= uuid4 (baseline aléatoire).
+    baseline_run = _previous_run(bucket, run_id)
+    if baseline_run is None:
         return AssetCheckResult(
             passed=True,
             metadata={"drift": "baseline absente (1er run) — rien à comparer", "run_id": run_id},
         )
-    baseline_run = previous[-1]
     reference = _load_run_summary(con, bucket, baseline_run)
     current = _load_run_summary(con, bucket, run_id)
 
