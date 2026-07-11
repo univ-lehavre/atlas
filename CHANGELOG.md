@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.7.0](https://github.com/univ-lehavre/atlas/compare/v1.6.0...v1.7.0) (2026-07-11)
+
+
+### Features
+
+* **citation:** déduplication du mart eunicoast par récence (ADR 0099) ([#596](https://github.com/univ-lehavre/atlas/issues/596)) ([3fd874f](https://github.com/univ-lehavre/atlas/commit/3fd874f6471e7f4dbff4bb5251c471d3a0707ca2))
+* **citation:** déduplique le mart eunicoast par récence ([f8edbf9](https://github.com/univ-lehavre/atlas/commit/f8edbf96b71171f895cd897ac0ffe7c5a27c9f70))
+* **mediawatch-dagster:** couche brute native gkg 27 champs en parquet (adr 0100) ([3b8835b](https://github.com/univ-lehavre/atlas/commit/3b8835bc390c6a49e926b62a5d6286003b4ea1b9))
+* **mediawatch:** couche brute native GKG 27 champs en Parquet (ADR 0100) ([#597](https://github.com/univ-lehavre/atlas/issues/597)) ([da12d56](https://github.com/univ-lehavre/atlas/commit/da12d566c51b5925a87eb286b50ee6f20e006ac4))
+
+
+### Bug Fixes
+
+* **pageviews-dagster:** resout les redirections en batch de 50 (action=query, d27 §3) ([43a2c6d](https://github.com/univ-lehavre/atlas/commit/43a2c6d6a082eb4faa127d0e157f0a4592299861))
+* **pageviews-dagster:** résout les redirections en batch de 50 (action=query, D27 §3) ([#595](https://github.com/univ-lehavre/atlas/issues/595)) ([bf15ca4](https://github.com/univ-lehavre/atlas/commit/bf15ca4a85666bfdee0b591b601110aca5c2f308))
+
+
+### Documentation
+
+* **docs:** adr 0099 — déduplication du mart eunicoast par récence ([1cb31c9](https://github.com/univ-lehavre/atlas/commit/1cb31c9fec8fc6baa5cf111f9c068cdd00db1c98))
+* **docs:** adr 0100 — couche brute native gkg (27 champs) et bascule tout-parquet ([3b796ac](https://github.com/univ-lehavre/atlas/commit/3b796ac7f86b397b53d34b783e8d90f51e530a6f))
+* **docs:** corrige deux liens morts dans l'adr 0099 ([232aa0d](https://github.com/univ-lehavre/atlas/commit/232aa0d4ad7fbc63a0e047c164bd279910828d52))
+* **docs:** prémisse d'adaptativité matérielle (README, culture d'ingénierie) ([#600](https://github.com/univ-lehavre/atlas/issues/600)) ([352e688](https://github.com/univ-lehavre/atlas/commit/352e6883ad60babda6a29cdb0b0f2d34230d25fb))
+* **docs:** prémisse d'adaptativité matérielle en tête de la culture d'ingénierie ([d3f202f](https://github.com/univ-lehavre/atlas/commit/d3f202f57d32f11e303e86323c72504bdab92210))
+* **mediawatch-dagster:** remplace le jargon medallion par le vocabulaire de l'adr ([afada22](https://github.com/univ-lehavre/atlas/commit/afada221cda5d1f68f86428ae1c3fa3c28422f85))
+* **mediawatch:** retire le jargon medallion au profit du vocabulaire de l'ADR ([#599](https://github.com/univ-lehavre/atlas/issues/599)) ([37f5a0a](https://github.com/univ-lehavre/atlas/commit/37f5a0a0665382530ad19f831b835c3d179486d1))
+
 ## [1.6.0](https://github.com/univ-lehavre/atlas/compare/v1.5.0...v1.6.0) (2026-07-09)
 
 ### Features

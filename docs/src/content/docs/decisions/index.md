@@ -130,6 +130,7 @@ nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 | 0098 | [Modèle de prévision des vues Wikipédia des établissements (pageviews)](/atlas/decisions/0098-modele-prevision-vues-wikipedia/)                                 | Accepted           |
 | 0099 | [Déduplication du mart EUNICoast par récence (version la plus à jour)](/atlas/decisions/0099-deduplication-mart-eunicoast-par-recence/)                         | Accepted           |
 | 0100 | [Couche brute « native » GKG (27 champs) et bascule tout-Parquet du brut mediawatch](/atlas/decisions/0100-couche-brute-native-gkg-parquet/)                    | Accepted           |
+| 0101 | [Sélection du « dernier run complet » par récence (ModTime), pas par ordre lexical du run_id](/atlas/decisions/0101-selection-dernier-run-complet-par-recence/) | Accepted           |
 
 ## Quand ouvrir un ADR
 

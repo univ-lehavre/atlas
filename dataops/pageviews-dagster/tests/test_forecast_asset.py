@@ -12,11 +12,33 @@ pour que la porte de décision puisse s'exercer. ``month`` en 1er du mois consé
 """
 
 import datetime as dt
+import json
+import subprocess
+from pathlib import Path
 
 import numpy as np
 from dagster import build_asset_context
 
 from pageviews_dagster.assets import forecast as mod
+
+# lsjson factice : un seul (dt, run) suffit pour que _read_timeline retienne un run et lise
+# la timeline mockée par _FakeCon (qui ignore le WHERE (dt, run) IN …). ModTime présent pour
+# que la sélection par récence (ADR 0101) fonctionne.
+_FAKE_LSJSON = json.dumps(
+    [
+        {
+            "Path": "dt=2024-01/run=R0/part.parquet",
+            "Size": 1,
+            "IsDir": False,
+            "ModTime": "2024-01-05T12:00:00Z",
+        }
+    ]
+)
+
+
+def _fake_rclone_lsjson(args, config_path):
+    return subprocess.CompletedProcess(args, 0, stdout=_FAKE_LSJSON, stderr="")
+
 
 _BASE = dt.date(2019, 1, 1)
 
@@ -100,6 +122,9 @@ def _patch(monkeypatch, con):
     monkeypatch.setattr(mod.lakehouse, "connect", lambda cfg=None: con)
     monkeypatch.setattr(mod.lineage, "emit", lambda *a, **k: None)
     monkeypatch.setattr(mod.tracking, "mlflow_config_from_env", lambda env=None: None)
+    # _read_timeline liste le mart via rclone (ADR 0101) : lsjson factice + config no-op.
+    monkeypatch.setattr(mod, "_run_rclone", _fake_rclone_lsjson)
+    monkeypatch.setattr(mod, "render_rclone_config", lambda target: "")
 
 
 def _ctx():
@@ -135,21 +160,25 @@ def test_month_to_date_handles_slash_separator():
 # ── _read_timeline : lecture + normalisation des lignes ──────────────────────
 
 
-def test_read_timeline_normalizes_and_casts_rows():
+def test_read_timeline_normalizes_and_casts_rows(monkeypatch):
+    monkeypatch.setattr(mod, "_run_rclone", _fake_rclone_lsjson)
     rows = [("ror-A", "202401", 1200), ("ror-A", dt.date(2024, 2, 15), 1350)]
     con = _FakeCon(rows)
-    out = mod._read_timeline(con, "pageviews")
+    out = mod._read_timeline(con, "pageviews", Path("/tmp/rclone.conf"))
     assert out == [
         ("ror-A", dt.date(2024, 1, 1), 1200),
         ("ror-A", dt.date(2024, 2, 1), 1350),
     ]
-    # La requête de lecture cible bien le mart timeline via read_parquet/hive_partitioning.
+    # La requête de lecture cible bien le mart timeline via read_parquet/hive_partitioning
+    # et restreint aux (dt, run) retenus par récence (ADR 0101).
     assert any("read_parquet" in q and "views_timeline" in q for q in con.queries)
+    assert any("(dt, run) IN (VALUES" in q for q in con.queries)
 
 
-def test_read_timeline_casts_uid_to_str_and_views_to_int():
+def test_read_timeline_casts_uid_to_str_and_views_to_int(monkeypatch):
+    monkeypatch.setattr(mod, "_run_rclone", _fake_rclone_lsjson)
     con = _FakeCon([(42, "202401", 1200.0)])
-    (uid, month, views) = mod._read_timeline(con, "pageviews")[0]
+    (uid, month, views) = mod._read_timeline(con, "pageviews", Path("/tmp/rclone.conf"))[0]
     assert uid == "42" and isinstance(uid, str)
     assert views == 1200 and isinstance(views, int)
     assert month == dt.date(2024, 1, 1)
