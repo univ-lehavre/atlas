@@ -9,6 +9,8 @@ monkeypatché (pas d'I/O S3, pas de Dagster). Couvre :
 Le vrai bout-en-bout (drift sur le Parquet servi) viendrait du smoke MinIO, comme GE.
 """
 
+import json
+import subprocess
 from pathlib import Path
 
 import numpy as np
@@ -51,25 +53,49 @@ class _FakeRel:
 
 
 class _FakeCon:
-    """Connexion DuckDB factice : `_list_runs` (SELECT DISTINCT run) renvoie `runs` ;
-    `_load_vectors_df` (SELECT … vector[i]) renvoie le DataFrame du run extrait du glob."""
+    """Connexion DuckDB factice : `_load_vectors_df` (SELECT … vector[i]) renvoie le
+    DataFrame du run extrait du glob `run=<id>/`. (La sélection N-1 ne passe plus par DuckDB
+    mais par rclone — voir `_make_fake_subprocess` — donc plus de branche `DISTINCT run`.)"""
 
-    def __init__(self, runs, vectors_by_run):
-        self._runs = runs
+    def __init__(self, vectors_by_run):
         self._vectors = vectors_by_run
 
     def sql(self, query):
-        if "DISTINCT run" in query:
-            return _FakeRel(rows=[(r,) for r in self._runs])
-        # _load_vectors_df : retrouver le run dans le glob `run=<id>/`.
         for run_id, df in self._vectors.items():
             if f"run={run_id}/" in query:
                 return _FakeRel(df=df)
         return _FakeRel(df=pd.DataFrame(columns=_COLS))
 
 
-def _patch(monkeypatch, runs, vectors_by_run):
-    monkeypatch.setattr(d.lakehouse, "connect", lambda cfg=None: _FakeCon(runs, vectors_by_run))
+def _make_fake_subprocess(runs_modtime):
+    """`subprocess.run` factice : le lsjson des runs (+ ModTime) pour la sélection N-1
+    (`_previous_run`), succès vide pour tout autre appel rclone (rcat de `_persist_verdict`,
+    best-effort). `runs_modtime` = [(run, "2026-…Z"), …]."""
+    listing = json.dumps(
+        [
+            {"Path": f"dt=0000-00/run={run}/part.parquet", "Size": 1, "IsDir": False, "ModTime": mt}
+            for run, mt in runs_modtime
+        ]
+    )
+
+    def _fake(args, **kwargs):
+        stdout = listing if "lsjson" in args else ""
+        return subprocess.CompletedProcess(args, 0, stdout=stdout, stderr="")
+
+    return _fake
+
+
+def _patch(monkeypatch, runs_modtime, vectors_by_run):
+    monkeypatch.setattr(d.lakehouse, "connect", lambda cfg=None: _FakeCon(vectors_by_run))
+    monkeypatch.setattr(d.subprocess, "run", _make_fake_subprocess(runs_modtime))
+    monkeypatch.setattr(d, "render_rclone_config", lambda target: "")
+    from citation_dagster.resources import CephTarget
+
+    monkeypatch.setattr(
+        d,
+        "ceph_target_from_env",
+        lambda env=None: CephTarget("AK", "SK", "http://h:8333", "citation"),
+    )
 
 
 # ── compute_drift (pur, sans I/O) ─────────────────────────────────────────────
@@ -100,7 +126,11 @@ def test_compute_drift_detects_shift():
 
 def test_first_run_has_no_baseline(monkeypatch):
     # Un seul run consigné = le courant → pas de N-1 → check passé, baseline absente.
-    _patch(monkeypatch, runs=["run1"], vectors_by_run={"run1": _emb_df(10, 0.0, 1)})
+    _patch(
+        monkeypatch,
+        runs_modtime=[("run1", "2026-01-01T12:00:00Z")],
+        vectors_by_run={"run1": _emb_df(10, 0.0, 1)},
+    )
     res = d.check_embedding_drift("citation", "run1")
     assert isinstance(res, AssetCheckResult)
     assert res.passed is True
@@ -110,9 +140,12 @@ def test_first_run_has_no_baseline(monkeypatch):
 
 def test_stable_run_passes(monkeypatch, _no_mlflow):
     # N-1 et N tirés de la même distribution → Evidently ne détecte pas de drift → passed.
-    runs = ["run1", "run2"]
     vectors = {"run1": _emb_df(60, 0.0, 1), "run2": _emb_df(60, 0.0, 2)}
-    _patch(monkeypatch, runs=runs, vectors_by_run=vectors)
+    _patch(
+        monkeypatch,
+        runs_modtime=[("run1", "2026-01-01T10:00:00Z"), ("run2", "2026-01-01T12:00:00Z")],
+        vectors_by_run=vectors,
+    )
     res = d.check_embedding_drift("citation", "run2")
     assert res.passed is True
     assert res.metadata["drift_detected"].value is False
@@ -123,26 +156,38 @@ def test_stable_run_passes(monkeypatch, _no_mlflow):
 def test_drifted_run_flags_detected(monkeypatch, _no_mlflow):
     # N nettement décalé vs N-1 → Evidently détecte le drift → passed False (informatif,
     # NON bloquant : le wrapper @asset_check porte blocking=False).
-    runs = ["run1", "run2"]
     vectors = {"run1": _emb_df(60, 0.0, 1), "run2": _emb_df(60, 5.0, 2)}
-    _patch(monkeypatch, runs=runs, vectors_by_run=vectors)
+    _patch(
+        monkeypatch,
+        runs_modtime=[("run1", "2026-01-01T10:00:00Z"), ("run2", "2026-01-01T12:00:00Z")],
+        vectors_by_run=vectors,
+    )
     res = d.check_embedding_drift("citation", "run2")
     assert res.passed is False
     assert res.metadata["drift_detected"].value is True
     assert "ré-entraînement" in res.metadata["verdict"].text
 
 
-def test_baseline_is_previous_not_oldest(monkeypatch, _no_mlflow):
-    # Avec 3 runs, la baseline du dernier est l'AVANT-DERNIER (N-1), pas le plus ancien.
-    runs = ["run1", "run2", "run3"]
+def test_baseline_is_previous_run_by_modtime(monkeypatch, _no_mlflow):
+    # N courant "aaa" est lexicalement le PLUS PETIT mais le plus RÉCENT (écrit en dernier).
+    # Le baseline N-1 doit être "zzz" (juste avant par ModTime), PAS un artefact lexical :
+    # l'ancien `ORDER BY run` + `previous[-1]` aurait choisi "mmm".
     vectors = {
-        "run1": _emb_df(60, 0.0, 1),
-        "run2": _emb_df(60, 0.0, 2),
-        "run3": _emb_df(60, 0.0, 3),
+        "mmm": _emb_df(60, 0.0, 1),
+        "zzz": _emb_df(60, 0.0, 2),
+        "aaa": _emb_df(60, 0.0, 3),
     }
-    _patch(monkeypatch, runs=runs, vectors_by_run=vectors)
-    res = d.check_embedding_drift("citation", "run3")
-    assert res.metadata["baseline_run"].text == "run2"
+    _patch(
+        monkeypatch,
+        runs_modtime=[
+            ("mmm", "2026-01-01T08:00:00Z"),
+            ("zzz", "2026-01-01T10:00:00Z"),  # N-1 attendu
+            ("aaa", "2026-01-01T12:00:00Z"),  # N courant
+        ],
+        vectors_by_run=vectors,
+    )
+    res = d.check_embedding_drift("citation", "aaa")
+    assert res.metadata["baseline_run"].text == "zzz"  # récence, pas ordre lexical
 
 
 # ── _log_to_mlflow (best-effort) ──────────────────────────────────────────────
