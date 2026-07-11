@@ -21,18 +21,62 @@ _ENV = {
 # ── latest_run_parts : dernier run par jour ──────────────────────────────────
 
 
-def test_latest_run_parts_keeps_latest_run_per_day() -> None:
+def test_latest_run_parts_keeps_most_recent_run_by_modtime_per_day() -> None:
+    # Le run retenu par jour est le plus RÉCENT (ModTime), pas le max lexical du run= (ADR 0101).
+    # Jour 1 : run=AAA est lexicalement < run=ZZZ, mais écrit APRÈS → AAA doit gagner. Un test
+    # qui échoue sur l'ancien max(run) lexical et passe ici = preuve du correctif.
     entries = [
-        {"Path": "dt=2026-01-01/run=AAA/part.parquet", "Size": 10, "IsDir": False},
-        {"Path": "dt=2026-01-01/run=BBB/part.parquet", "Size": 20, "IsDir": False},  # plus récent
-        {"Path": "dt=2026-01-02/run=CCC/part.parquet", "Size": 30, "IsDir": False},
-        {"Path": "dt=2026-01-01/run=AAA", "Size": 0, "IsDir": True},  # dossier ignoré
+        {
+            "Path": "dt=2026-01-01/run=ZZZ/part.parquet",
+            "Size": 10,
+            "IsDir": False,
+            "ModTime": "2026-01-01T10:00:00Z",
+        },
+        {
+            "Path": "dt=2026-01-01/run=AAA/part.parquet",
+            "Size": 20,
+            "IsDir": False,
+            "ModTime": "2026-01-01T12:00:00Z",
+        },  # plus récent malgré run= lexical inférieur
+        {
+            "Path": "dt=2026-01-02/run=CCC/part.parquet",
+            "Size": 30,
+            "IsDir": False,
+            "ModTime": "2026-01-02T09:00:00Z",
+        },
+        {
+            "Path": "dt=2026-01-01/run=AAA",
+            "Size": 0,
+            "IsDir": True,
+            "ModTime": "",
+        },  # dossier ignoré
     ]
     kept = m.latest_run_parts(entries)
-    # Jour 1 : run BBB gagne (AAA exclu) ; jour 2 : run CCC.
+    # Jour 1 : run AAA gagne (ZZZ exclu, car plus ancien) ; jour 2 : run CCC.
     assert kept == {
-        "marts/university_timeline/dt=2026-01-01/run=BBB/part.parquet": 20,
+        "marts/university_timeline/dt=2026-01-01/run=AAA/part.parquet": 20,
         "marts/university_timeline/dt=2026-01-02/run=CCC/part.parquet": 30,
+    }
+
+
+def test_latest_run_parts_breaks_modtime_ties_by_run_lexical() -> None:
+    # Ex-æquo de ModTime → départage par run= lexical MAX (déterminisme, ADR 0057).
+    entries = [
+        {
+            "Path": "dt=2026-01-01/run=AAA/part.parquet",
+            "Size": 10,
+            "IsDir": False,
+            "ModTime": "2026-01-01T12:00:00Z",
+        },
+        {
+            "Path": "dt=2026-01-01/run=BBB/part.parquet",
+            "Size": 20,
+            "IsDir": False,
+            "ModTime": "2026-01-01T12:00:00Z",
+        },
+    ]
+    assert m.latest_run_parts(entries) == {
+        "marts/university_timeline/dt=2026-01-01/run=BBB/part.parquet": 20,
     }
 
 

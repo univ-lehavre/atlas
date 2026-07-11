@@ -6,6 +6,8 @@ lakehouse + MLflow + lineage mockés (hermétique, sans S3 ni serveur MLflow).
 """
 
 import datetime as dt
+import json
+import subprocess
 
 import numpy as np
 from dagster import build_asset_context
@@ -13,6 +15,24 @@ from dagster import build_asset_context
 from mediawatch_dagster.assets import forecast as mod
 
 _BASE = dt.date(2024, 1, 1)
+
+# lsjson factice : un seul (dt, run) suffit pour que _read_timeline retienne un run et lise
+# la timeline mockée par _FakeCon (qui ignore le WHERE (dt, run) IN …). ModTime présent pour
+# que la sélection par récence (ADR 0101) fonctionne.
+_FAKE_LSJSON = json.dumps(
+    [
+        {
+            "Path": "dt=2024-01/run=R0/part.parquet",
+            "Size": 1,
+            "IsDir": False,
+            "ModTime": "2024-01-05T12:00:00Z",
+        }
+    ]
+)
+
+
+def _fake_rclone_lsjson(args, config_path):
+    return subprocess.CompletedProcess(args, 0, stdout=_FAKE_LSJSON, stderr="")
 
 
 class _FakeRel:
@@ -65,6 +85,9 @@ def _patch(monkeypatch, con):
     monkeypatch.setattr(mod.lineage, "emit", lambda *a, **k: None)
     # MLflow no-op (pas de serveur en test).
     monkeypatch.setattr(mod.tracking, "mlflow_config_from_env", lambda env=None: None)
+    # _read_timeline liste le mart via rclone (ADR 0101) : lsjson factice + config no-op.
+    monkeypatch.setattr(mod, "_run_rclone", _fake_rclone_lsjson)
+    monkeypatch.setattr(mod, "render_rclone_config", lambda target: "")
 
 
 def _ctx():

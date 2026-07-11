@@ -29,71 +29,65 @@
 
 ## [1.6.0](https://github.com/univ-lehavre/atlas/compare/v1.5.0...v1.6.0) (2026-07-09)
 
-
 ### Features
 
-* **citation-dagster:** historise durée et débit du scoring (dagster + mlflow) ([dfbae88](https://github.com/univ-lehavre/atlas/commit/dfbae8848cae8d28a984905b8cf318e23f98513d))
-* **pageviews-dagster:** historise le nb de titres résolus et la durée ([d8f5041](https://github.com/univ-lehavre/atlas/commit/d8f504182f58faff32bc4799e21c67490318e98a))
-
+- **citation-dagster:** historise durée et débit du scoring (dagster + mlflow) ([dfbae88](https://github.com/univ-lehavre/atlas/commit/dfbae8848cae8d28a984905b8cf318e23f98513d))
+- **pageviews-dagster:** historise le nb de titres résolus et la durée ([d8f5041](https://github.com/univ-lehavre/atlas/commit/d8f504182f58faff32bc4799e21c67490318e98a))
 
 ### Bug Fixes
 
-* **citation:** échantillonne les labels d'entraînement uplift (oom, cause réelle) ([dd7206d](https://github.com/univ-lehavre/atlas/commit/dd7206d572da46b6941fef01be4dc32cf229866b))
-* **citation:** échantillonne les labels d'entraînement uplift (oom, cause réelle) ([#583](https://github.com/univ-lehavre/atlas/issues/583)) ([e3f5be5](https://github.com/univ-lehavre/atlas/commit/e3f5be5790e743028676032d28d77370dd23aaa3))
-* **pageviews-dagster:** _Fetcher réessaie les erreurs http transitoires (502 wikidata, d27 §2) ([dd1a22a](https://github.com/univ-lehavre/atlas/commit/dd1a22a5569e482f6fd18c8439d98b13a0fd2b7d))
-* **pageviews-dagster:** _Fetcher réessaie les erreurs HTTP transitoires (502 Wikidata, D27 §2) ([#593](https://github.com/univ-lehavre/atlas/issues/593)) ([2cb613d](https://github.com/univ-lehavre/atlas/commit/2cb613d65dad2561db33cb171fec7f87ce0a2f94))
-* **pageviews-dagster:** client http keep-alive + ndots:1 contre la saturation dns ([d1a87ae](https://github.com/univ-lehavre/atlas/commit/d1a87aed94d45aa1478097373a2eb1d5f5c39252))
-* **pageviews-dagster:** client HTTP keep-alive + ndots:1 contre la saturation DNS (drift D26) ([#591](https://github.com/univ-lehavre/atlas/issues/591)) ([aaf2151](https://github.com/univ-lehavre/atlas/commit/aaf21517036631de3d9875c2c8120d7830151a00))
-* **pageviews-dagster:** contrat de chemin partagé du référentiel établissements ([5c36894](https://github.com/univ-lehavre/atlas/commit/5c36894f2ffcb30043b9c09c885bfcb009b933fd))
-* **pageviews-dagster:** contrat de chemin partagé du référentiel établissements (drift D24) ([#587](https://github.com/univ-lehavre/atlas/issues/587)) ([c09ffa6](https://github.com/univ-lehavre/atlas/commit/c09ffa639476f1fff60455f881039c5a83c204a2))
-* **pageviews-dagster:** découpe la requête sparql en lots et passe en post ([e04f3f8](https://github.com/univ-lehavre/atlas/commit/e04f3f87893cc335c6c5c6ba81b0f4d0de07db1b))
-* **pageviews-dagster:** découpe la requête sparql en lots et passe en post ([#584](https://github.com/univ-lehavre/atlas/issues/584)) ([ecda116](https://github.com/univ-lehavre/atlas/commit/ecda116b4939ff4b3aa4401029ef7bb709cd1677))
-* **pageviews-dagster:** ref_universities lit institutions du snapshot s3 (429, drift d27) ([28f6f94](https://github.com/univ-lehavre/atlas/commit/28f6f949b066a58b51c9996fc75447b205529d37))
-* **pageviews-dagster:** ref_universities lit institutions du snapshot S3 (429, drift D27) ([#592](https://github.com/univ-lehavre/atlas/issues/592)) ([e6d0392](https://github.com/univ-lehavre/atlas/commit/e6d039220925221260c03665131beee5cdeec437))
-* **pageviews-dagster:** relaie PAGEVIEWS_REF_SOURCE au pod de run d'ingestion_job (drift D25) ([#588](https://github.com/univ-lehavre/atlas/issues/588)) ([4568ba3](https://github.com/univ-lehavre/atlas/commit/4568ba3a5d990e2d42c2d7755d4c52eb2993cdfb))
-* **pageviews-dagster:** relaie ref_source au pod de run d'ingestion_job ([0c31919](https://github.com/univ-lehavre/atlas/commit/0c319191efe6d47a81153abd6f1a6da18dc7605c))
-
+- **citation:** échantillonne les labels d'entraînement uplift (oom, cause réelle) ([dd7206d](https://github.com/univ-lehavre/atlas/commit/dd7206d572da46b6941fef01be4dc32cf229866b))
+- **citation:** échantillonne les labels d'entraînement uplift (oom, cause réelle) ([#583](https://github.com/univ-lehavre/atlas/issues/583)) ([e3f5be5](https://github.com/univ-lehavre/atlas/commit/e3f5be5790e743028676032d28d77370dd23aaa3))
+- **pageviews-dagster:** _Fetcher réessaie les erreurs http transitoires (502 wikidata, d27 §2) ([dd1a22a](https://github.com/univ-lehavre/atlas/commit/dd1a22a5569e482f6fd18c8439d98b13a0fd2b7d))
+- **pageviews-dagster:** _Fetcher réessaie les erreurs HTTP transitoires (502 Wikidata, D27 §2) ([#593](https://github.com/univ-lehavre/atlas/issues/593)) ([2cb613d](https://github.com/univ-lehavre/atlas/commit/2cb613d65dad2561db33cb171fec7f87ce0a2f94))
+- **pageviews-dagster:** client http keep-alive + ndots:1 contre la saturation dns ([d1a87ae](https://github.com/univ-lehavre/atlas/commit/d1a87aed94d45aa1478097373a2eb1d5f5c39252))
+- **pageviews-dagster:** client HTTP keep-alive + ndots:1 contre la saturation DNS (drift D26) ([#591](https://github.com/univ-lehavre/atlas/issues/591)) ([aaf2151](https://github.com/univ-lehavre/atlas/commit/aaf21517036631de3d9875c2c8120d7830151a00))
+- **pageviews-dagster:** contrat de chemin partagé du référentiel établissements ([5c36894](https://github.com/univ-lehavre/atlas/commit/5c36894f2ffcb30043b9c09c885bfcb009b933fd))
+- **pageviews-dagster:** contrat de chemin partagé du référentiel établissements (drift D24) ([#587](https://github.com/univ-lehavre/atlas/issues/587)) ([c09ffa6](https://github.com/univ-lehavre/atlas/commit/c09ffa639476f1fff60455f881039c5a83c204a2))
+- **pageviews-dagster:** découpe la requête sparql en lots et passe en post ([e04f3f8](https://github.com/univ-lehavre/atlas/commit/e04f3f87893cc335c6c5c6ba81b0f4d0de07db1b))
+- **pageviews-dagster:** découpe la requête sparql en lots et passe en post ([#584](https://github.com/univ-lehavre/atlas/issues/584)) ([ecda116](https://github.com/univ-lehavre/atlas/commit/ecda116b4939ff4b3aa4401029ef7bb709cd1677))
+- **pageviews-dagster:** ref_universities lit institutions du snapshot s3 (429, drift d27) ([28f6f94](https://github.com/univ-lehavre/atlas/commit/28f6f949b066a58b51c9996fc75447b205529d37))
+- **pageviews-dagster:** ref_universities lit institutions du snapshot S3 (429, drift D27) ([#592](https://github.com/univ-lehavre/atlas/issues/592)) ([e6d0392](https://github.com/univ-lehavre/atlas/commit/e6d039220925221260c03665131beee5cdeec437))
+- **pageviews-dagster:** relaie PAGEVIEWS_REF_SOURCE au pod de run d'ingestion_job (drift D25) ([#588](https://github.com/univ-lehavre/atlas/issues/588)) ([4568ba3](https://github.com/univ-lehavre/atlas/commit/4568ba3a5d990e2d42c2d7755d4c52eb2993cdfb))
+- **pageviews-dagster:** relaie ref_source au pod de run d'ingestion_job ([0c31919](https://github.com/univ-lehavre/atlas/commit/0c319191efe6d47a81153abd6f1a6da18dc7605c))
 
 ### Performance
 
-* **citation-dagster:** vectorise le scoring uplift et logue la progression ([c0d25e3](https://github.com/univ-lehavre/atlas/commit/c0d25e3e984286c934774c3de8c266644c490a10))
-* **citation-dagster:** vectorise le scoring uplift et logue la progression ([#585](https://github.com/univ-lehavre/atlas/issues/585)) ([1774a66](https://github.com/univ-lehavre/atlas/commit/1774a66b86805e3deea514fa45e510af23fad229))
-* **pageviews-dagster:** parallélise la résolution des redirections et logue ([691296b](https://github.com/univ-lehavre/atlas/commit/691296b79e440b02ae4c5929da378b369b5cf0fe))
-* **pageviews-dagster:** parallélise la résolution des redirections et logue ([#586](https://github.com/univ-lehavre/atlas/issues/586)) ([344c67f](https://github.com/univ-lehavre/atlas/commit/344c67ff97f758734aeb9f9adc749735389892d0))
+- **citation-dagster:** vectorise le scoring uplift et logue la progression ([c0d25e3](https://github.com/univ-lehavre/atlas/commit/c0d25e3e984286c934774c3de8c266644c490a10))
+- **citation-dagster:** vectorise le scoring uplift et logue la progression ([#585](https://github.com/univ-lehavre/atlas/issues/585)) ([1774a66](https://github.com/univ-lehavre/atlas/commit/1774a66b86805e3deea514fa45e510af23fad229))
+- **pageviews-dagster:** parallélise la résolution des redirections et logue ([691296b](https://github.com/univ-lehavre/atlas/commit/691296b79e440b02ae4c5929da378b369b5cf0fe))
+- **pageviews-dagster:** parallélise la résolution des redirections et logue ([#586](https://github.com/univ-lehavre/atlas/issues/586)) ([344c67f](https://github.com/univ-lehavre/atlas/commit/344c67ff97f758734aeb9f9adc749735389892d0))
 
 ## [1.5.0](https://github.com/univ-lehavre/atlas/compare/v1.4.0...v1.5.0) (2026-07-08)
 
-
 ### Features
 
-* **pageviews-dagster:** package de prévision des vues wikipedia (adr 0097) ([52db340](https://github.com/univ-lehavre/atlas/commit/52db340ba3e16c1be47f461eb5f9ef5c1594a8b9))
-* **pageviews-dagster:** package de prévision des vues wikipedia (ADR 0098) ([#576](https://github.com/univ-lehavre/atlas/issues/576)) ([e11a77e](https://github.com/univ-lehavre/atlas/commit/e11a77e9ca1d3e1dcc2eabcee7c1d03c8f61a658))
-
+- **pageviews-dagster:** package de prévision des vues wikipedia (adr 0097) ([52db340](https://github.com/univ-lehavre/atlas/commit/52db340ba3e16c1be47f461eb5f9ef5c1594a8b9))
+- **pageviews-dagster:** package de prévision des vues wikipedia (ADR 0098) ([#576](https://github.com/univ-lehavre/atlas/issues/576)) ([e11a77e](https://github.com/univ-lehavre/atlas/commit/e11a77e9ca1d3e1dcc2eabcee7c1d03c8f61a658))
 
 ### Bug Fixes
 
-* **citation:** 56gi pour le pod de run uplift (oom numpy vs duckdb) ([2f07bf9](https://github.com/univ-lehavre/atlas/commit/2f07bf9af6b37aee7cab12156892e181c6224321))
-* **citation:** 56gi pour le pod de run uplift (oom numpy vs duckdb) ([#579](https://github.com/univ-lehavre/atlas/issues/579)) ([97a929f](https://github.com/univ-lehavre/atlas/commit/97a929f16a39a38f2fedae9211632513995c6505))
-* **citation:** candidats uplift par knn thématique (évite l'explosion quadratique, oom prod) ([3e0d50b](https://github.com/univ-lehavre/atlas/commit/3e0d50bdb3aca901bd3f4b00d9cc4886fc497beb))
-* **citation:** candidats uplift par knn thématique (évite l'explosion quadratique, oom prod) ([#575](https://github.com/univ-lehavre/atlas/issues/575)) ([bc27cdb](https://github.com/univ-lehavre/atlas/commit/bc27cdb7bf10f233408ccc1372d34efe85738fa1))
-* **citation:** déduplique work_id dans stg_citation_works (doublons openalex) ([de19cec](https://github.com/univ-lehavre/atlas/commit/de19cecc1b297e6350da13943644d9123c2b9722))
-* **citation:** déduplique work_id dans stg_citation_works (doublons openalex) ([#573](https://github.com/univ-lehavre/atlas/issues/573)) ([0c88824](https://github.com/univ-lehavre/atlas/commit/0c88824344fa7975182f6a40013c1cc40b6d3b99))
-* **citation:** score les paires uplift par lots (features, oom prod) ([6d0ac29](https://github.com/univ-lehavre/atlas/commit/6d0ac29c9fc41bb821a84296de71bf7c46687357))
-* **citation:** score les paires uplift par lots (features, oom prod) ([#578](https://github.com/univ-lehavre/atlas/issues/578)) ([e484084](https://github.com/univ-lehavre/atlas/commit/e4840843457910793fedfa52162ee4f2d7a544e7))
-* **citation:** sérialise le transform_job (max_concurrent=1, oom embeddings) ([dec2301](https://github.com/univ-lehavre/atlas/commit/dec230116c55145eefb81f1ebac3c4afdc0958a8))
-* **citation:** sérialise le transform_job (max_concurrent=1, oom embeddings) ([#574](https://github.com/univ-lehavre/atlas/issues/574)) ([78d7ed5](https://github.com/univ-lehavre/atlas/commit/78d7ed523f2781f98371e2f3f431fcb05e3e896e))
-* **citation:** streame le scoring uplift dans duckdb (mémoire bornée, oom prod) ([bb668bc](https://github.com/univ-lehavre/atlas/commit/bb668bcf4c7c999c88a31e40cec69786dd1d1370))
-* **citation:** streame le scoring uplift dans duckdb (mémoire bornée, oom prod) ([#580](https://github.com/univ-lehavre/atlas/issues/580)) ([ae52d4e](https://github.com/univ-lehavre/atlas/commit/ae52d4e0ad2183d79b33505f0db198798b0d16bf))
-
+- **citation:** 56gi pour le pod de run uplift (oom numpy vs duckdb) ([2f07bf9](https://github.com/univ-lehavre/atlas/commit/2f07bf9af6b37aee7cab12156892e181c6224321))
+- **citation:** 56gi pour le pod de run uplift (oom numpy vs duckdb) ([#579](https://github.com/univ-lehavre/atlas/issues/579)) ([97a929f](https://github.com/univ-lehavre/atlas/commit/97a929f16a39a38f2fedae9211632513995c6505))
+- **citation:** candidats uplift par knn thématique (évite l'explosion quadratique, oom prod) ([3e0d50b](https://github.com/univ-lehavre/atlas/commit/3e0d50bdb3aca901bd3f4b00d9cc4886fc497beb))
+- **citation:** candidats uplift par knn thématique (évite l'explosion quadratique, oom prod) ([#575](https://github.com/univ-lehavre/atlas/issues/575)) ([bc27cdb](https://github.com/univ-lehavre/atlas/commit/bc27cdb7bf10f233408ccc1372d34efe85738fa1))
+- **citation:** déduplique work_id dans stg_citation_works (doublons openalex) ([de19cec](https://github.com/univ-lehavre/atlas/commit/de19cecc1b297e6350da13943644d9123c2b9722))
+- **citation:** déduplique work_id dans stg_citation_works (doublons openalex) ([#573](https://github.com/univ-lehavre/atlas/issues/573)) ([0c88824](https://github.com/univ-lehavre/atlas/commit/0c88824344fa7975182f6a40013c1cc40b6d3b99))
+- **citation:** score les paires uplift par lots (features, oom prod) ([6d0ac29](https://github.com/univ-lehavre/atlas/commit/6d0ac29c9fc41bb821a84296de71bf7c46687357))
+- **citation:** score les paires uplift par lots (features, oom prod) ([#578](https://github.com/univ-lehavre/atlas/issues/578)) ([e484084](https://github.com/univ-lehavre/atlas/commit/e4840843457910793fedfa52162ee4f2d7a544e7))
+- **citation:** sérialise le transform_job (max_concurrent=1, oom embeddings) ([dec2301](https://github.com/univ-lehavre/atlas/commit/dec230116c55145eefb81f1ebac3c4afdc0958a8))
+- **citation:** sérialise le transform_job (max_concurrent=1, oom embeddings) ([#574](https://github.com/univ-lehavre/atlas/issues/574)) ([78d7ed5](https://github.com/univ-lehavre/atlas/commit/78d7ed523f2781f98371e2f3f431fcb05e3e896e))
+- **citation:** streame le scoring uplift dans duckdb (mémoire bornée, oom prod) ([bb668bc](https://github.com/univ-lehavre/atlas/commit/bb668bcf4c7c999c88a31e40cec69786dd1d1370))
+- **citation:** streame le scoring uplift dans duckdb (mémoire bornée, oom prod) ([#580](https://github.com/univ-lehavre/atlas/issues/580)) ([ae52d4e](https://github.com/univ-lehavre/atlas/commit/ae52d4e0ad2183d79b33505f0db198798b0d16bf))
 
 ### Documentation
 
-* adr 0098 prévision des vues (supersede 0096), plan révisé ([c413a55](https://github.com/univ-lehavre/atlas/commit/c413a55ae28967d7d839f747cb58aea111444d7c))
-* corrige les liens vers l'adr 0081 (sans extension .md) ([0bd3945](https://github.com/univ-lehavre/atlas/commit/0bd394591576162b2ed1980f0a5c366fd163b7e9))
-* **docs:** adr 0097 — candidats uplift par knn (complète 0067) ([749e090](https://github.com/univ-lehavre/atlas/commit/749e0903010c1bb3cca9d863af1f35c9f7d6e82a))
-* **docs:** corrige le lien adr 0057 dans 0097 (slug réel) ([d456a1f](https://github.com/univ-lehavre/atlas/commit/d456a1fb5c24904369762ac585f1b5830b6b7595))
-* **pageviews-dagster:** runbook de déploiement + handoff cluster ([#577](https://github.com/univ-lehavre/atlas/issues/577)) ([a172668](https://github.com/univ-lehavre/atlas/commit/a1726688b3ed255b713baee4c33507f8b8dee447))
-* **pageviews-dagster:** runbook de déploiement + handoff cluster (phase 5) ([9ce5cee](https://github.com/univ-lehavre/atlas/commit/9ce5cee61351b7e83ef1b9ed1f35f75064e3717d))
+- adr 0098 prévision des vues (supersede 0096), plan révisé ([c413a55](https://github.com/univ-lehavre/atlas/commit/c413a55ae28967d7d839f747cb58aea111444d7c))
+- corrige les liens vers l'adr 0081 (sans extension .md) ([0bd3945](https://github.com/univ-lehavre/atlas/commit/0bd394591576162b2ed1980f0a5c366fd163b7e9))
+- **docs:** adr 0097 — candidats uplift par knn (complète 0067) ([749e090](https://github.com/univ-lehavre/atlas/commit/749e0903010c1bb3cca9d863af1f35c9f7d6e82a))
+- **docs:** corrige le lien adr 0057 dans 0097 (slug réel) ([d456a1f](https://github.com/univ-lehavre/atlas/commit/d456a1fb5c24904369762ac585f1b5830b6b7595))
+- **pageviews-dagster:** runbook de déploiement + handoff cluster ([#577](https://github.com/univ-lehavre/atlas/issues/577)) ([a172668](https://github.com/univ-lehavre/atlas/commit/a1726688b3ed255b713baee4c33507f8b8dee447))
+- **pageviews-dagster:** runbook de déploiement + handoff cluster (phase 5) ([9ce5cee](https://github.com/univ-lehavre/atlas/commit/9ce5cee61351b7e83ef1b9ed1f35f75064e3717d))
 
 ## [1.4.0](https://github.com/univ-lehavre/atlas/compare/v1.3.2...v1.4.0) (2026-07-07)
 

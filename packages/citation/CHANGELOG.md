@@ -1,5 +1,11 @@
 # @univ-lehavre/atlas-openalex
 
+## 2.2.0
+
+### Minor Changes
+
+- [#536](https://github.com/univ-lehavre/atlas/pull/536) [`2cbb5f0`](https://github.com/univ-lehavre/atlas/commit/2cbb5f02195c408f15d79a13db888e304c6ba54c) Thanks [@chasset](https://github.com/chasset)! - - feat: déduplique le mart eunicoast par récence
+
 ## 2.1.2
 
 ### Patch Changes
