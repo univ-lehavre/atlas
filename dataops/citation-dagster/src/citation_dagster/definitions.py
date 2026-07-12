@@ -368,17 +368,46 @@ def _ingest_cron(env: dict | None = None) -> str:
     return env.get("CITATION_INGEST_CRON") or _DEFAULT_INGEST_CRON
 
 
+# ── persistence.mode → bornes d'ingestion (socle du cache adaptatif, ADR 0102) ──────
+# Le curseur cluster ``persistence.mode`` (ADR cluster 0109) descend jusqu'ici par une
+# SEULE variable d'instance, ``CITATION_INGEST_PERSISTENCE_MODE`` (défaut ``full``). Il ne
+# fait que **prérégler** les bornes d'ingestion DÉJÀ existantes (``sample_size`` /
+# ``max_partitions``) — aucun mécanisme d'éviction nouveau. Invariant zéro-régression :
+# ``full`` (et tout mode absent/inconnu/vide) → AUCUNE borne → run_config ``None`` = le
+# comportement actuel À L'OCTET (cf. ``_ingest_run_config``). Les bornes ``bounded`` /
+# ``ephemeral`` sont un préréglage d'instance (ré-surchargeable) : une variable explicite
+# ``CITATION_INGEST_SAMPLE_SIZE`` / ``…_MAX_PARTITIONS`` GARDE la priorité sur le mode.
+_MODE_BOUNDS: dict[str, dict[str, int]] = {
+    "full": {},  # illimité = défaut prod-complet (byte-identity)
+    "bounded": {"sample_size": 50, "max_partitions": 6},
+    "ephemeral": {"sample_size": 4, "max_partitions": 1},
+}
+
+
+def _mode_bounds(env: dict | None = None) -> dict[str, int]:
+    """Bornes d'ingestion préréglées par ``CITATION_INGEST_PERSISTENCE_MODE`` (ADR 0102).
+
+    Défensif : mode absent / inconnu / vide → ``{}`` (== ``full``) → aucune borne, donc
+    aucune régression possible pour un env mal formé (jamais de crash de l'ingestion)."""
+    env = env if env is not None else os.environ
+    mode = (env.get("CITATION_INGEST_PERSISTENCE_MODE") or "full").strip().lower()
+    return dict(_MODE_BOUNDS.get(mode, {}))
+
+
 def _ingest_run_config(env: dict | None = None) -> RunConfig | None:
     """RunConfig de bornage de l'ingestion — VALEUR D'INSTANCE (ADR 0023).
 
     Le défaut CODE de ``RawSnapshotConfig`` est **prod-complet** (0 = illimité) : la prod
     ne pose donc AUCUNE de ces variables et rapatrie tout. C'est le **banc** qui borne, via
-    son overlay (``CITATION_INGEST_SAMPLE_SIZE`` / ``CITATION_INGEST_MAX_PARTITIONS``). Sans
-    variable posée → ``None`` (pas de surcharge → défaut complet). Parse défensif : une valeur
-    absente/invalide n'est simplement pas surchargée (jamais de crash de l'ingestion pour un
-    env mal formé)."""
+    son overlay (``CITATION_INGEST_SAMPLE_SIZE`` / ``CITATION_INGEST_MAX_PARTITIONS``) ou,
+    depuis ADR 0102, via le préréglage ``CITATION_INGEST_PERSISTENCE_MODE`` (``full`` par
+    défaut = aucune borne). Ordre de préséance : **variable explicite > mode** (la boucle
+    ``_int`` écrase le seed du mode). Sans borne d'aucune source → ``None`` (pas de surcharge
+    → défaut complet, byte-identity). Parse défensif : une valeur absente/invalide n'est
+    simplement pas surchargée (jamais de crash de l'ingestion pour un env mal formé)."""
     env = env if env is not None else os.environ
-    overrides: dict[str, object] = {}
+    # Seed par le mode (ADR 0102) ; les vars explicites ci-dessous gardent la priorité.
+    overrides: dict[str, object] = dict(_mode_bounds(env))
 
     def _int(key: str) -> None:
         raw = env.get(key)
