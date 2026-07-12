@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-openalex-cli
 
+## 2.0.6
+
+### Patch Changes
+
+- Updated dependencies [[`2cbb5f0`](https://github.com/univ-lehavre/atlas/commit/2cbb5f02195c408f15d79a13db888e304c6ba54c)]:
+  - @univ-lehavre/atlas-citation@2.3.0
+
 ## 2.0.5
 
 ### Patch Changes

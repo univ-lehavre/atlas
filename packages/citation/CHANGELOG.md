@@ -1,5 +1,12 @@
 # @univ-lehavre/atlas-openalex
 
+## 2.3.0
+
+### Minor Changes
+
+- [#536](https://github.com/univ-lehavre/atlas/pull/536) [`2cbb5f0`](https://github.com/univ-lehavre/atlas/commit/2cbb5f02195c408f15d79a13db888e304c6ba54c) Thanks [@chasset](https://github.com/chasset)! - - feat: script de build de la pré-image sur le poste (adr cluster 0110)
+  - feat: garde-fou de fraîcheur de la pré-image de build (adr cluster 0110)
+
 ## 2.2.0
 
 ### Minor Changes

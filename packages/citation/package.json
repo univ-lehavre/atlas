@@ -1,6 +1,6 @@
 {
   "name": "@univ-lehavre/atlas-citation",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "OpenAlex citation graph data mining library with DuckDB, ML embeddings, and string grouping",
   "author": "Pierre-Olivier Chasset",
   "license": "MIT",
