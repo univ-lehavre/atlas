@@ -24,8 +24,10 @@ synchronisation déployait le serveur gRPC sur le bon tag mais les runs sur un
 code divergent, **sans erreur franche** (audit cluster #499).
 
 **Le tag mutable n'est pas le bon contrat.** Le déploiement « zéro-touch » de la
-code-location (côté cluster : App-of-Apps et build événementiel) déploie l'image
-**par digest immuable** `registry:80/citation-dagster@sha256:…`, jamais par tag.
+code-location (côté cluster : App-of-Apps et **CI/CD in-cluster** par Gitea
+Actions + build in-pod, [ADR cluster 0112](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0112-cicd-in-cluster-gitea-actions-buildkit.md))
+déploie l'image **par digest immuable** `registry:80/citation-dagster@sha256:…`,
+jamais par tag.
 Le **seed** cluster injecte ce digest dans l'overlay **au moment du
 déploiement**, sans toucher au dépôt `atlas` source. C'est `cluster` — qui
 **build et pousse** l'image dans son registry interne — qui connaît le `sha256`
