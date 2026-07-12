@@ -12,6 +12,7 @@ from citation_dagster.definitions import (
     _ct_cron,
     _ingest_cron,
     _ingest_run_config,
+    _mode_bounds,
     _retrain_auto_enabled,
     _retrain_cooldown_s,
     _s3_env_from,
@@ -167,6 +168,59 @@ def test_ingest_run_config_ignores_malformed_env():
     rc = _ingest_run_config({"CITATION_INGEST_MAX_PARTITIONS": "pas-un-entier"})
     # rien de valide → aucune surcharge → None (défaut complet préservé).
     assert rc is None
+
+
+def test_mode_bounds_full_and_unknown_are_empty():
+    """persistence.mode (ADR 0102) : full / absent / inconnu / vide → aucune borne ({})."""
+    assert _mode_bounds({}) == {}  # absent → défaut full
+    assert _mode_bounds({"CITATION_INGEST_PERSISTENCE_MODE": "full"}) == {}
+    assert _mode_bounds({"CITATION_INGEST_PERSISTENCE_MODE": "FULL"}) == {}  # insensible casse
+    assert _mode_bounds({"CITATION_INGEST_PERSISTENCE_MODE": "typo"}) == {}  # défensif
+    assert _mode_bounds({"CITATION_INGEST_PERSISTENCE_MODE": "  "}) == {}  # vide/espaces
+
+
+def test_mode_bounds_bounded_and_ephemeral():
+    """persistence.mode : bounded et ephemeral préréglent des bornes finies (ADR 0102)."""
+    assert _mode_bounds({"CITATION_INGEST_PERSISTENCE_MODE": "bounded"}) == {
+        "sample_size": 50,
+        "max_partitions": 6,
+    }
+    assert _mode_bounds({"CITATION_INGEST_PERSISTENCE_MODE": "ephemeral"}) == {
+        "sample_size": 4,
+        "max_partitions": 1,
+    }
+
+
+def test_ingest_run_config_full_mode_is_byte_identity_none():
+    """INVARIANT ZÉRO-RÉGRESSION (ADR 0102) : full (explicite ou par défaut) → None.
+
+    Le mode ``full`` ne pose aucune borne → ``overrides`` vide → run_config ``None``,
+    littéralement le même objet qu'aujourd'hui (pas un RunConfig(sample_size=0))."""
+    assert _ingest_run_config({"CITATION_INGEST_PERSISTENCE_MODE": "full"}) is None
+    assert _ingest_run_config({"CITATION_INGEST_PERSISTENCE_MODE": "typo"}) is None
+
+
+def test_ingest_run_config_bounded_mode_preregles_bornes():
+    """Le mode bounded prérègle les bornes d'ingestion sans variable explicite (ADR 0102)."""
+    rc = _ingest_run_config({"CITATION_INGEST_PERSISTENCE_MODE": "bounded"})
+    assert rc is not None
+    cfg = rc.ops["raw_snapshot"]
+    assert cfg.sample_size == 50
+    assert cfg.max_partitions == 6
+
+
+def test_ingest_run_config_explicit_env_wins_over_mode():
+    """Préséance (ADR 0102) : une variable explicite écrase le préréglage du mode."""
+    rc = _ingest_run_config(
+        {
+            "CITATION_INGEST_PERSISTENCE_MODE": "ephemeral",  # prérègle 4/1
+            "CITATION_INGEST_SAMPLE_SIZE": "9",  # explicite → gagne
+        }
+    )
+    assert rc is not None
+    cfg = rc.ops["raw_snapshot"]
+    assert cfg.sample_size == 9  # variable explicite l'emporte
+    assert cfg.max_partitions == 1  # non surchargée → reste celle du mode
 
 
 def test_ingest_schedule_registered_on_ingestion_job():

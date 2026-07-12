@@ -113,6 +113,23 @@ def test_unbounded_defaults_sync_all_partitions_and_files(env):
     assert len(copies) == 4  # les 4 partitions
 
 
+def test_full_mode_is_byte_identity_with_bare_defaults(env):
+    """ADR 0102 — INVARIANT ZÉRO-RÉGRESSION bout-en-bout : le mode ``full`` (défaut) ne pose
+    aucune config → l'asset tourne sur ``RawSnapshotConfig()`` nu → MÊME résultat (8/4) que
+    le défaut prod. Preuve que le socle du cache adaptatif ne change RIEN en ``full``."""
+    from citation_dagster.definitions import _ingest_run_config
+
+    # full (et absent) → aucun run_config injecté : l'asset voit les défauts complets.
+    assert _ingest_run_config({"CITATION_INGEST_PERSISTENCE_MODE": "full"}) is None
+    assert _ingest_run_config({}) is None
+    # Et ces défauts complets produisent bien les 8 fichiers / 4 copies (aucune troncature).
+    fake = FakeRclone(watermark_json="")
+    result = _run(env, fake)
+    assert result.metadata["total_files"].value == 8
+    copies = [c for c in fake.calls if "copy" in c and "merged_ids" not in c[-1]]
+    assert len(copies) == 4
+
+
 def test_sample_size_zero_copies_all_files_of_partition(env):
     """sample_size=0 (illimité) copie tous les .gz listés ; une petite valeur borne (banc)."""
     fake = FakeRclone(watermark_json='{"works": "2021-06-15"}')  # 1 partition postérieure
