@@ -19,6 +19,10 @@ Chaque ADR est numéroté en séquence (`NNNN-titre-en-kebab-case.md`).
 Une fois acté, un ADR n'est pas réécrit : il est **superseded** par un
 nouvel ADR qui décrit la nouvelle posture et référence l'ancien.
 
+Le numéro **0044** est **retiré** (mécanisme de revue quotidienne abandonné,
+commit `a9848855`) et **n'est pas réattribué** : le saut 0043 → 0045 dans
+l'index ci-dessous est donc volontaire.
+
 > **Nouveau venu ?** Le [parcours thématique](/atlas/decisions/parcours/) regroupe ces
 > décisions par sujet et propose un tour cohérent — par où commencer, comment
 > elles s'articulent. L'index ci-dessous reste la référence par numéro.

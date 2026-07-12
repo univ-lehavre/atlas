@@ -86,10 +86,10 @@ donnée.
   propres services, assets Dagster, schéma de l'index).
 - **`cluster`** : tout ce qui est _infrastructure_ (addons `platform/<addon>/`,
   Ansible, opérateurs, exposition, observabilité), **et le déploiement réel**,
-  désormais **déclenché par le push de code** (chaîne événementielle GitOps, zéro
+  désormais **déclenché par le push de code** (chaîne **CI/CD in-cluster**, zéro
   geste) — l'intervention humaine subsiste comme **revue de PR**, pas comme geste
   de déploiement (cf. l'Évolution du 2026-07-02 en bas de page ; le « comment »
-  vit côté cluster, [ADR cluster 0095 §1.b](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0095-build-applicatif-evenementiel-in-cluster.md)).
+  vit côté cluster, [ADR cluster 0112](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0112-cicd-in-cluster-gitea-actions-buildkit.md)).
 - **Aucun manifeste d'infrastructure ne vit dans `atlas` ; aucun code applicatif
   ne vit dans `cluster`.**
 
@@ -131,11 +131,11 @@ déployeur via sa configuration.
 - Si une dérive silencieuse cause une panne malgré le contrat, on **promeut** la
   vérification au niveau supérieur (checks statiques inter-dépôts, puis
   smoke-test au banc) — pas avant qu'une douleur réelle ne le justifie.
-- Le **déploiement réel** est **déclenché par le push de code** (le webhook de
-  build atlas amorce la chaîne événementielle GitOps, zéro geste manuel) ; le
-  **garde-fou humain** est la **revue de PR** en amont du merge, pas un geste de
-  déploiement. Le mécanisme détaillé vit côté cluster
-  ([ADR cluster 0095 §1.b](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0095-build-applicatif-evenementiel-in-cluster.md))
+- Le **déploiement réel** est **déclenché par le push de code** (la chaîne CI/CD
+  in-cluster l'amorce, zéro geste manuel) ; le **garde-fou humain** est la **revue
+  de PR** en amont du merge, pas un geste de déploiement. Le mécanisme détaillé
+  vit côté cluster
+  ([ADR cluster 0112](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0112-cicd-in-cluster-gitea-actions-buildkit.md))
   — atlas ne le duplique pas (neutralité de domaine) ; cf. l'Évolution du
   2026-07-02 ci-dessous.
 
@@ -305,19 +305,36 @@ du contrat (taguées explicitement, jamais `latest`) tient toujours : le **tag
 fait par digest `@sha256`** (ancre d'immuabilité — cf. les manifestes montants et
 [ADR 0075](/atlas/decisions/0075-deploiement-prod-par-digest-injecte-cluster/)).
 
-**Le « comment » vit côté cluster** ([ADR cluster 0095 §1.b](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0095-build-applicatif-evenementiel-in-cluster.md)),
+**Le « comment » vit côté cluster** ([ADR cluster 0112](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0112-cicd-in-cluster-gitea-actions-buildkit.md)),
 qu'atlas ne duplique pas (neutralité de domaine). En bref : un `git push` sur le
-repo `atlas` frappe un **webhook Gitea de build** (distinct du webhook de
-déploiement qui alimente déjà Argo CD sur `cluster/apps`) → Argo Events dérive la
-code-location du **chemin modifié** et la `revision` du commit → un build in-pod
-pousse l'image au registry, en lit le **digest**, puis **écrit en retour** le
-`@sha256` dans le repo GitOps `cluster/apps` → Argo CD réconcilie. Un filet
-anti-perte d'événement compare périodiquement l'état déployé au dernier commit.
+repo `atlas` déclenche la chaîne **CI/CD in-cluster** via **Gitea Actions**
+(runner déclenché au push — **plus** Argo Events, l'événementiel a été retiré
+[ADR cluster 0105](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0105-retrait-build-evenementiel.md))
+→ un **build in-pod** BuildKit rootless (isolé dans un namespace non-`baseline`)
+construit l'image et la pousse, taguée au commit, au registre interne → **Argo CD
+réconcilie**. atlas **instancie lui-même** son `Application` Argo CD
+([ADR cluster 0111](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0111-atlas-instancie-application-argocd.md)).
 
-**Statut — mise en place.** Le **design** ci-dessus est le fonctionnement cible
-de la chaîne ; la **preuve banc de bout en bout** (run from-scratch : push →
-build → write-back digest → réconciliation) **est en cours** et n'est pas encore
-établie. Cet amendement décrit l'architecture, pas un run validé. Aucun point de
+**Statut — prouvé.** Contrairement à la version événementielle antérieure (design
+seul), la chaîne Gitea Actions + build in-pod est **prouvée de bout en bout** au
+banc (scénario 35 côté cluster : push → build → Argo CD). Aucun point de
 contact du contrat n'est modifié — seule la **nature du déclencheur** (push
 automatique vs geste humain) est corrigée, tenue à jour ici comme l'exige le
 garde-fou « même PR ».
+
+## Évolution (2026-07-12) — La fabrique d'images passe de l'événementiel à Gitea Actions
+
+Le mécanisme de build décrit au 2026-07-02 (**événementiel** : webhook → Argo
+Events → build → write-back `@sha256`) a été **retiré côté cluster**
+([ADR cluster 0105](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0105-retrait-build-evenementiel.md))
+au profit d'une chaîne **CI/CD in-cluster** par **Gitea Actions + build in-pod
+BuildKit rootless**
+([ADR cluster 0112](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0112-cicd-in-cluster-gitea-actions-buildkit.md),
+prouvée au banc). Ce contrat est **inchangé dans ses points de contact** (atlas
+publie des images immuables taguées, `cluster` les réconcilie par Argo CD) : seul
+le **« comment »** côté cluster change, et atlas ne le duplique pas (neutralité de
+domaine). Nouveauté côté frontière : atlas **instancie lui-même** son
+`Application` Argo CD
+([ADR cluster 0111](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0111-atlas-instancie-application-argocd.md)).
+Les renvois ci-dessus vers l'ADR cluster 0095 (événementiel) sont mis à jour vers
+0112 dans le corps du contrat.
