@@ -1,5 +1,36 @@
 # Changelog
 
+## [1.8.0](https://github.com/univ-lehavre/atlas/compare/v1.7.0...v1.8.0) (2026-07-12)
+
+
+### Features
+
+* **citation-dagster:** build de l'image de code sur le poste (build-code.sh) ([7251c20](https://github.com/univ-lehavre/atlas/commit/7251c20589d9c5f0e0adc0aa64cba3ec9f1d4861))
+* **citation-dagster:** garde-fou de fraîcheur de l'image de code ([bd79e78](https://github.com/univ-lehavre/atlas/commit/bd79e7857b6024d6265806af8971d91cb6101983))
+* **citation:** garde-fou de fraîcheur de la pré-image de build (adr cluster 0110) ([9570c9a](https://github.com/univ-lehavre/atlas/commit/9570c9ad3e6753d66b800e12741985df6e55bdba))
+* **citation:** garde-fou de fraîcheur de la pré-image de build (ADR cluster 0110) ([#609](https://github.com/univ-lehavre/atlas/issues/609)) ([08c4df4](https://github.com/univ-lehavre/atlas/commit/08c4df4a1ef56aa70a606427a7008dae724497ef))
+* **citation:** script de build de la pré-image sur le poste (adr cluster 0110) ([357bfd6](https://github.com/univ-lehavre/atlas/commit/357bfd6a6c41c80989ffad2ea2d425ceffa5b73b))
+* **citation:** script de build de la pré-image sur le poste (ADR cluster 0110) ([#610](https://github.com/univ-lehavre/atlas/issues/610)) ([4b492d5](https://github.com/univ-lehavre/atlas/commit/4b492d5c97f24ee35e504312d557ab55238ef0a7))
+
+
+### Bug Fixes
+
+* **citation-dagster:** sélectionne le baseline de drift par récence modtime (adr 0101) ([160ddc2](https://github.com/univ-lehavre/atlas/commit/160ddc2c99e4032e907026a585df1d87e56c497b)), closes [#602](https://github.com/univ-lehavre/atlas/issues/602)
+* **citation-dagster:** sélectionne le baseline de drift par récence modtime (adr 0101) ([#605](https://github.com/univ-lehavre/atlas/issues/605)) ([97299b3](https://github.com/univ-lehavre/atlas/commit/97299b3fc9205f8c5fb0b444be51e7781c7a0a70))
+* **dataops:** sélectionne le dernier run complet par récence modtime (adr 0101) ([#601](https://github.com/univ-lehavre/atlas/issues/601)) ([e110f3f](https://github.com/univ-lehavre/atlas/commit/e110f3fe00378fb486ef7cece19b4e91046db4ba))
+
+
+### Refactor
+
+* **citation:** dockerfile en deux cibles pour la pré-image (adr cluster 0110) ([2def961](https://github.com/univ-lehavre/atlas/commit/2def9618c22578a00388661af2650ecaff82b75e))
+* **citation:** Dockerfile en deux cibles pour la pré-image (ADR cluster 0110) ([#608](https://github.com/univ-lehavre/atlas/issues/608)) ([1aae914](https://github.com/univ-lehavre/atlas/commit/1aae914932ff7a691a5b78810b189d335e8b5006))
+
+
+### Documentation
+
+* **citation:** aligne la doc déploiement sur la pré-image, retire le runbook périmé ([5fb0388](https://github.com/univ-lehavre/atlas/commit/5fb03880a90dc42048de1ad8704ea7bf6a47624d))
+* **citation:** aligne la doc déploiement sur la pré-image, retire le RUNBOOK périmé ([#611](https://github.com/univ-lehavre/atlas/issues/611)) ([69851db](https://github.com/univ-lehavre/atlas/commit/69851db46f475d028492c472755fcb1d7b3112ef))
+
 ## [1.7.0](https://github.com/univ-lehavre/atlas/compare/v1.6.0...v1.7.0) (2026-07-11)
 
 ### Features
