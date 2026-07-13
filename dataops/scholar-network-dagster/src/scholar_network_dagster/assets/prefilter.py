@@ -39,6 +39,8 @@ WORK_TYPE = "article"
 #   - ``title``            : affichage aval ;
 #   - ``authorships``      : co-auteurs + affiliations (ROR passe 1, author.id passe 2) ;
 #   - ``topics``/``keywords`` : texte thématique de l'embedding (lot 5) ;
+#   - ``fwci``/``cited_by_count`` : départage DÉTERMINISTE de la dédup par récence à égalité
+#     d'``updated_date`` (ordre total, ADR 0057 — parité citation ``_dedup_sql``) ;
 #   - ``updated_date``     : dédup par récence (ADR 0099).
 # JAMAIS ``abstract_inverted_index`` / ``referenced_works`` (lourds, hors périmètre).
 PROJECTED_COLUMNS = (
@@ -49,6 +51,8 @@ PROJECTED_COLUMNS = (
     "authorships",
     "topics",
     "keywords",
+    "fwci",
+    "cited_by_count",
     "updated_date",
 )
 

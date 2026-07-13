@@ -26,6 +26,10 @@ from scholar_network_dagster.resources import DuckDBS3Config
 _EUNI_ROR = "https://ror.org/05v509s40"  # Le Havre (dans le seed)
 _EXT_ROR = "https://ror.org/042nb2s44"  # MIT — hors EUNICoast
 
+# topics/keywords : listes vides typées (les colonnes projetées doivent exister pour que
+# prefilter_sql — chemin ephemeral — les retrouve ; une vraie source OpenAlex les porte).
+_EMPTY = "[]::STRUCT(display_name VARCHAR)[]"
+
 
 def _duckdb_cfg(minio) -> DuckDBS3Config:
     return DuckDBS3Config(
@@ -52,20 +56,21 @@ def _seed_prefiltered(con, bucket: str) -> str:
         COPY (
             SELECT * FROM (VALUES
                 (
-                    'W1', 2020, 'article', 't1', DATE '2021-01-01',
+                    'W1', 2020, 'article', 't1', {_EMPTY}, {_EMPTY}, 1.0, 5, DATE '2021-01-01',
                     [
                         {{'author': {{'id': 'A1'}}, 'institutions': [{{'ror': '{_EUNI_ROR}'}}]}},
                         {{'author': {{'id': 'A2'}}, 'institutions': [{{'ror': '{_EXT_ROR}'}}]}}
                     ]
                 ),
                 (
-                    'W2', 2021, 'article', 't2', DATE '2022-01-01',
+                    'W2', 2021, 'article', 't2', {_EMPTY}, {_EMPTY}, 1.0, 3, DATE '2022-01-01',
                     [
                         {{'author': {{'id': 'A2'}}, 'institutions': [{{'ror': '{_EXT_ROR}'}}]}},
                         {{'author': {{'id': 'A3'}}, 'institutions': [{{'ror': '{_EXT_ROR}'}}]}}
                     ]
                 )
-            ) AS t(id, publication_year, type, title, updated_date, authorships)
+            ) AS t(id, publication_year, type, title, topics, keywords,
+                   fwci, cited_by_count, updated_date, authorships)
         ) TO '{dest}' (FORMAT PARQUET)
         """
     )
@@ -94,26 +99,24 @@ def _seed_prefiltered_for_pass2(con, bucket: str) -> str:
     Attendu passe 2 : {W1, W3} (W3 retenu PAR ÉLARGISSEMENT — A1 y co-signe, bien qu'aucune
     affiliation EUNICoast sur W3) ; W4 exclu (aucun chercheur identifié)."""
     dest = f"s3://{bucket}/prefiltered/part-00000.parquet"
-    # topics/keywords : listes vides typées (les colonnes projetées doivent exister pour que
-    # prefilter_sql — chemin ephemeral — les retrouve ; une vraie source OpenAlex les porte).
-    empty = "[]::STRUCT(display_name VARCHAR)[]"
     con.execute(
         f"""
         COPY (
             SELECT * FROM (VALUES
-                ('W1', 2020, 'article', 't1', {empty}, {empty}, DATE '2021-01-01',
+                ('W1', 2020, 'article', 't1', {_EMPTY}, {_EMPTY}, 1.0, 5, DATE '2021-01-01',
                     [{{'author': {{'id': 'A1'}}, 'institutions': [{{'ror': '{_EUNI_ROR}'}}]}}]),
-                ('W3', 2022, 'article', 't3', {empty}, {empty}, DATE '2023-01-01',
+                ('W3', 2022, 'article', 't3', {_EMPTY}, {_EMPTY}, 2.0, 8, DATE '2023-01-01',
                     [
                         {{'author': {{'id': 'A1'}}, 'institutions': [{{'ror': '{_EXT_ROR}'}}]}},
                         {{'author': {{'id': 'A2'}}, 'institutions': [{{'ror': '{_EXT_ROR}'}}]}}
                     ]),
-                ('W4', 2021, 'article', 't4', {empty}, {empty}, DATE '2022-01-01',
+                ('W4', 2021, 'article', 't4', {_EMPTY}, {_EMPTY}, 1.0, 2, DATE '2022-01-01',
                     [
                         {{'author': {{'id': 'A2'}}, 'institutions': [{{'ror': '{_EXT_ROR}'}}]}},
                         {{'author': {{'id': 'A3'}}, 'institutions': [{{'ror': '{_EXT_ROR}'}}]}}
                     ])
-            ) AS t(id, publication_year, type, title, topics, keywords, updated_date, authorships)
+            ) AS t(id, publication_year, type, title, topics, keywords,
+                   fwci, cited_by_count, updated_date, authorships)
         ) TO '{dest}' (FORMAT PARQUET)
         """
     )
@@ -138,33 +141,72 @@ def test_pass2_expands_to_works_without_eunicoast_affiliation(minio):
     assert work_ids == ["W1", "W3"]
 
 
-def test_pass2_dedups_reissued_work_by_recency(minio):
-    """Passe 2 : un work_id réédité → une seule ligne, la plus récente (ADR 0099)."""
+def test_pass2_work_ids_are_unique_and_dedup_by_recency(minio):
+    """Passe 2 : work_id UNIQUES dans la liste finale (dédup), la version gardée = la plus récente.
+
+    Un même work_id apparaît DEUX fois (réédition OpenAlex + doublon inter-fichiers) ; la
+    liste finale n'en garde qu'une (ADR 0099), la plus récente par ``updated_date``. On
+    vérifie explicitement l'UNICITÉ (count(distinct)=count) — le cœur de la demande."""
     con = connect(_duckdb_cfg(minio))
     dest = f"s3://{minio.bucket}/prefiltered/part-00000.parquet"
+    auth = f"[{{'author': {{'id': 'A1'}}, 'institutions': [{{'ror': '{_EUNI_ROR}'}}]}}]"
     con.execute(
         f"""
         COPY (
             SELECT * FROM (VALUES
-                ('W1', 2020, 'article', 'ancienne', DATE '2021-01-01',
-                    [{{'author': {{'id': 'A1'}}, 'institutions': [{{'ror': '{_EUNI_ROR}'}}]}}]),
-                ('W1', 2020, 'article', 'recente',  DATE '2023-06-01',
-                    [{{'author': {{'id': 'A1'}}, 'institutions': [{{'ror': '{_EUNI_ROR}'}}]}}])
-            ) AS t(id, publication_year, type, title, updated_date, authorships)
+                ('W1', 2020, 'article', 'ancienne', {_EMPTY}, {_EMPTY}, 1.0, 5, DATE '2021-01-01',
+                    {auth}),
+                ('W1', 2020, 'article', 'recente',  {_EMPTY}, {_EMPTY}, 1.0, 9, DATE '2023-06-01',
+                    {auth}),
+                ('W2', 2021, 'article', 'w2',        {_EMPTY}, {_EMPTY}, 1.0, 1, DATE '2022-01-01',
+                    {auth})
+            ) AS t(id, publication_year, type, title, topics, keywords,
+                   fwci, cited_by_count, updated_date, authorships)
         ) TO '{dest}' (FORMAT PARQUET)
         """
     )
     glob = f"s3://{minio.bucket}/prefiltered/*.parquet"
     prefiltered_from = f"SELECT * FROM read_parquet('{glob}')"
     researchers_from = researchers_sql(prefiltered_from)
+    final = scholar_works_sql(prefiltered_from, researchers_from)
 
-    rows = con.execute(scholar_works_sql(prefiltered_from, researchers_from)).fetchall()
-    # Une seule ligne W1, la version la plus récente (updated_date 2023-06-01 → titre 'recente').
+    # UNICITÉ (demande explicite) : autant de work_id distincts que de lignes.
+    total, distinct = con.execute(f"SELECT count(*), count(DISTINCT id) FROM ({final})").fetchone()
+    assert total == distinct == 2  # W1 (dédupliqué) + W2
+
+    # La version gardée de W1 est la plus récente (updated_date 2023-06-01 → 'recente').
+    kept_w1 = con.execute(f"SELECT title FROM ({final}) WHERE id = 'W1'").fetchone()[0]
+    assert kept_w1 == "recente"
+
+
+def test_pass2_tie_break_is_deterministic_on_equal_updated_date(minio):
+    """Départage DÉTERMINISTE (ADR 0057) : à date égale, fwci puis cited_by_count tranchent."""
+    con = connect(_duckdb_cfg(minio))
+    dest = f"s3://{minio.bucket}/prefiltered/part-00000.parquet"
+    auth = f"[{{'author': {{'id': 'A1'}}, 'institutions': [{{'ror': '{_EUNI_ROR}'}}]}}]"
+    same_date = "DATE '2022-01-01'"
+    con.execute(
+        f"""
+        COPY (
+            SELECT * FROM (VALUES
+                ('W1', 2020, 'article', 'faible_fwci', {_EMPTY}, {_EMPTY}, 1.0, 5, {same_date},
+                    {auth}),
+                ('W1', 2020, 'article', 'fort_fwci',   {_EMPTY}, {_EMPTY}, 9.0, 5, {same_date},
+                    {auth})
+            ) AS t(id, publication_year, type, title, topics, keywords,
+                   fwci, cited_by_count, updated_date, authorships)
+        ) TO '{dest}' (FORMAT PARQUET)
+        """
+    )
+    glob = f"s3://{minio.bucket}/prefiltered/*.parquet"
+    prefiltered_from = f"SELECT * FROM read_parquet('{glob}')"
+    researchers_from = researchers_sql(prefiltered_from)
+    final = scholar_works_sql(prefiltered_from, researchers_from)
+
+    rows = con.execute(f"SELECT title FROM ({final})").fetchall()
     assert len(rows) == 1
-    titles = con.execute(
-        f"SELECT title FROM ({scholar_works_sql(prefiltered_from, researchers_from)})"
-    ).fetchall()
-    assert titles[0][0] == "recente"
+    # À date égale, le fwci le plus fort gagne (ordre total, jamais arbitraire).
+    assert rows[0][0] == "fort_fwci"
 
 
 def _point_env_at_minio(monkeypatch, minio, mode: str) -> None:

@@ -104,8 +104,14 @@ def scholar_works_sql(prefiltered_from: str, researchers_from: str) -> str:
                  JOIN researchers AS r ON r.author_id = wa.author_id
              ),
              kept AS (
+                 -- Ordre TOTAL déterministe (ADR 0057, parité citation _dedup_sql) : récence
+                 -- puis fwci puis cited_by_count départagent une égalité d'updated_date ; sinon
+                 -- row_number choisirait arbitrairement une version d'un work_id réédité.
                  SELECT w.*, row_number() OVER (
-                     PARTITION BY w.id ORDER BY w.updated_date DESC NULLS LAST
+                     PARTITION BY w.id
+                     ORDER BY w.updated_date DESC NULLS LAST,
+                              w.fwci DESC NULLS LAST,
+                              w.cited_by_count DESC NULLS LAST
                  ) AS _rn
                  FROM prefiltered AS w
                  JOIN matched AS m ON m.work_id = w.id

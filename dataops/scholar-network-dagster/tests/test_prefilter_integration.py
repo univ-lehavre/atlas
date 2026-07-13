@@ -47,14 +47,14 @@ def _seed_source_works(con, bucket: str) -> str:
         f"""
         COPY (
             SELECT * FROM (VALUES
-                ('W1', 2020, 'article',  't1', [], [], [], DATE '2021-01-01', 'heavy1'),
-                ('W2', 2015, 'article',  't2', [], [], [], DATE '2016-01-01', 'heavy2'),
-                ('W3', 2020, 'dataset',  't3', [], [], [], DATE '2021-01-01', 'heavy3'),
-                ('W4', 2016, 'article',  't4', [], [], [], DATE '2017-01-01', 'heavy4'),
-                ('W5', 2019, 'preprint', 't5', [], [], [], DATE '2020-01-01', 'heavy5'),
-                ('W6', 2022, 'article',  't6', [], [], [], DATE '2023-01-01', 'heavy6')
+                ('W1', 2020, 'article',  't1', [], [], [], 1.0, 5, DATE '2021-01-01', 'heavy1'),
+                ('W2', 2015, 'article',  't2', [], [], [], 1.0, 5, DATE '2016-01-01', 'heavy2'),
+                ('W3', 2020, 'dataset',  't3', [], [], [], 1.0, 5, DATE '2021-01-01', 'heavy3'),
+                ('W4', 2016, 'article',  't4', [], [], [], 1.0, 5, DATE '2017-01-01', 'heavy4'),
+                ('W5', 2019, 'preprint', 't5', [], [], [], 1.0, 5, DATE '2020-01-01', 'heavy5'),
+                ('W6', 2022, 'article',  't6', [], [], [], 1.0, 5, DATE '2023-01-01', 'heavy6')
             ) AS t(id, publication_year, type, title, authorships, topics, keywords,
-                   updated_date, abstract_inverted_index)
+                   fwci, cited_by_count, updated_date, abstract_inverted_index)
         ) TO '{src}' (FORMAT PARQUET)
         """
     )
