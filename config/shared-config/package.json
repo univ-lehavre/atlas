@@ -48,20 +48,20 @@
   "dependencies": {
     "@eslint-community/eslint-plugin-eslint-comments": "~4.7.2",
     "@eslint/js": "~10.0.1",
-    "@vitest/eslint-plugin": "~1.6.21",
+    "@vitest/eslint-plugin": "~1.6.23",
     "eslint-config-prettier": "~10.1.8",
     "eslint-plugin-barrel-files": "~3.0.1",
     "eslint-plugin-functional": "~9.0.5",
     "eslint-plugin-import-x": "~4.17.1",
-    "eslint-plugin-n": "~18.2.1",
+    "eslint-plugin-n": "~18.2.2",
     "eslint-plugin-no-secrets": "~2.3.3",
     "eslint-plugin-regexp": "~3.1.1",
     "eslint-plugin-security": "~4.0.1",
     "eslint-plugin-svelte": "~3.20.0",
-    "eslint-plugin-turbo": "~2.10.3",
+    "eslint-plugin-turbo": "~2.10.4",
     "eslint-plugin-unicorn": "~64.0.0",
     "globals": "~17.7.0",
-    "typescript-eslint": "~8.62.1"
+    "typescript-eslint": "~8.63.0"
   },
   "peerDependencies": {
     "eslint": "^10.0.0",

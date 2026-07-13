@@ -44,8 +44,8 @@
     "@effect/vitest": "^0.29.0",
     "@univ-lehavre/atlas-shared-config": "workspace:*",
     "effect": "~3.21.4",
-    "eslint": "^10.6.0",
-    "prettier": "^3.9.4",
+    "eslint": "^10.7.0",
+    "prettier": "^3.9.5",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   }
