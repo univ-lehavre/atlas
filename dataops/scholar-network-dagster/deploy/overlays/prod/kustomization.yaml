@@ -1,0 +1,27 @@
+# Overlay PROD (RGW Ceph, ObjectBucketClaim).
+#
+# Ajoute l'ObjectBucketClaim (Rook génère Secret AWS_* + ConfigMap BUCKET_*) et
+# branche la code-location sur les deux via envFrom (patch-s3-envfrom).
+#
+# Image : le tag `:dev` de la base est interdit en production (contrat cluster
+# ADR 0033 : « taguées explicitement, pas `latest` »). Déploiement par DIGEST
+# immuable (ADR cluster 0095 §2) : cluster injecte le sha256 réel de l'image qu'il a
+# buildée+poussée en remplaçant le placeholder ci-dessous. atlas FOURNIT le point
+# d'injection ; cluster le REMPLIT (frontière ADR cluster 0094). Les DEUX références
+# image (ici + DAGSTER_CURRENT_IMAGE du patch-s3-envfrom) sont factorisées en deux
+# placeholders nommés — fin du double-couplage (audit #499).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - objectbucketclaim.yaml
+patches:
+  - path: patch-s3-envfrom.yaml
+    target:
+      kind: Deployment
+      name: scholar-network-dagster
+images:
+  - name: registry:80/scholar-network-dagster
+    # Placeholder DIGEST (sha256 seul) — injecté par cluster (ADR 0095 §2). Kustomize
+    # `digest:` réécrit la référence du conteneur en …@sha256:… (immuable).
+    digest: "__SCHOLAR_NETWORK_IMAGE_DIGEST__"

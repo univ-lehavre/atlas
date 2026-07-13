@@ -17,6 +17,7 @@ packages:
   - dataops/citation-dagster
   - dataops/mediawatch-dagster
   - dataops/pageviews-dagster
+  - dataops/scholar-network-dagster
 
 ignoredOptionalDependencies:
   # sharp (optionalDependency d'astro) tire @img/sharp-libvips-* en LGPL.

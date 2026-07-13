@@ -305,6 +305,17 @@ du contrat (taguées explicitement, jamais `latest`) tient toujours : le **tag
 fait par digest `@sha256`** (ancre d'immuabilité — cf. les manifestes montants et
 [ADR 0075](/atlas/decisions/0075-deploiement-prod-par-digest-injecte-cluster/)).
 
+**Points de contact par code-location.** Ce contrat vaut **par code-location** : chaque
+`*-dagster` d'atlas déclare son propre manifeste montant, ses placeholders d'image
+`__<NOM>_IMAGE__` / `__<NOM>_IMAGE_DIGEST__`, son bucket S3 et sa base logique. Trois
+sont livrées (`citation`, `mediawatch`, `pageviews`) ; une quatrième,
+[`scholar-network`](/atlas/decisions/0103-code-location-profils-chercheurs-reseau/)
+(profils de chercheurs d'un réseau, ADR 0103), ajoute ses propres points de contact —
+placeholders `__SCHOLAR_NETWORK_IMAGE__` / `__SCHOLAR_NETWORK_IMAGE_DIGEST__`, bucket
+`scholar-network-datalake` (RGW Ceph), base logique `pgvector` (partagée, extension
+vectorielle) et secret `pgvector-pg-auth`. Aucun code Python n'est partagé entre
+code-locations (ADR 0055) : le contrat, lui, est le **même patron** répété.
+
 **Le « comment » vit côté cluster** ([ADR cluster 0112](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0112-cicd-in-cluster-gitea-actions-buildkit.md)),
 qu'atlas ne duplique pas (neutralité de domaine). En bref : un `git push` sur le
 repo `atlas` déclenche la chaîne **CI/CD in-cluster** via **Gitea Actions**

@@ -1,0 +1,20 @@
+# Accès S3 du lakehouse — profil PROD (RGW Ceph, ObjectBucketClaim).
+#
+# Rook provisionne le bucket et génère DEUX ressources du nom de la claim
+# (`scholar-network-datalake`), dans le namespace `dagster` :
+#   - un Secret `scholar-network-datalake` : AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY ;
+#   - un ConfigMap `scholar-network-datalake` : BUCKET_HOST / BUCKET_PORT / BUCKET_NAME.
+# La code-location les consomme via `envFrom` (patch-s3-envfrom.yaml). Le code de l'asset
+# est identique quelle que soit la source ; seule la source (Secret + ConfigMap en prod)
+# change, d'où l'injection par overlay.
+#
+# StorageClass `rook-ceph-datalake` : la SC bucket exposée par le socle
+# (contract/storage-classes.example.yaml → object_store.bucket_storage_class).
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: scholar-network-datalake
+  namespace: dagster
+spec:
+  generateBucketName: scholar-network-datalake
+  storageClassName: rook-ceph-datalake
