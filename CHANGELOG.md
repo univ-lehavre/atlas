@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.9.0](https://github.com/univ-lehavre/atlas/compare/v1.8.0...v1.9.0) (2026-07-13)
+
+
+### Features
+
+* **citation:** prérègle les bornes d'ingestion via persistence.mode (adr 0102) ([4b62a46](https://github.com/univ-lehavre/atlas/commit/4b62a4689fcc3ccc8312e35163e3365639d39d31))
+* **citation:** socle sobre du cache adaptatif — persistence.mode → bornes d'ingestion (adr 0102) ([#624](https://github.com/univ-lehavre/atlas/issues/624)) ([b66842e](https://github.com/univ-lehavre/atlas/commit/b66842ea3f638d0b5ed89e55a141387de1a94102))
+
+
+### Documentation
+
+* acte le socle du cache adaptatif atlas (adr 0102 + plan) ([ad6bcd0](https://github.com/univ-lehavre/atlas/commit/ad6bcd05bc5a623dca4c5737f97d946d6cabb8dd))
+* aligne la doc de frontière sur persistence.mode et le ci/cd in-cluster ([02447dc](https://github.com/univ-lehavre/atlas/commit/02447dc49e47f2e620c0d4ac2d2a50e8161b34c5))
+* aligne la doc de frontière sur persistence.mode et le ci/cd in-cluster ([#625](https://github.com/univ-lehavre/atlas/issues/625)) ([80b03cb](https://github.com/univ-lehavre/atlas/commit/80b03cb683eba6c00f8f6156b571d9ce17b59283))
+
 ## [1.8.0](https://github.com/univ-lehavre/atlas/compare/v1.7.0...v1.8.0) (2026-07-12)
 
 ### Features

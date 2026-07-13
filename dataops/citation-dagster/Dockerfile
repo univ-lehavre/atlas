@@ -51,7 +51,7 @@ ARG DEPS_REF=registry:80/citation-deps-base:dev
 # est verrouillée sur 3.10 (parité cluster, ADR cluster 0006 ; `requires-python
 # >=3.10,<3.11`). Un bump Dependabot qui change le tag (3.10 -> 3.x) DOIT être
 # refusé : ne mettre à jour que le digest d'un `python:3.10-slim`.
-FROM python:3.10-slim@sha256:5f9928ea39771e8ddf4fb9a96ab24f65f087793635614405a1dc9384f040852e AS deps
+FROM python:3.10-slim@sha256:e5300dc020a26a34a19337a57602955a2510e22abeb176edd6de6cd2cc927dd4 AS deps
 
 # ── Étape egress 1/5 : dépendances système (apt) ────────────────────────────────
 # rclone (MIT) est un binaire système (pas une dépendance pip) : l'asset de sync
