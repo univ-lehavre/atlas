@@ -16,6 +16,7 @@ from scholar_network_dagster.assets.prefilter import (
     PROJECTED_COLUMNS,
     cache_location,
     prefilter_sql,
+    prefiltered_raw,
 )
 from scholar_network_dagster.cache import CacheMode
 from scholar_network_dagster.lakehouse import connect
@@ -120,3 +121,60 @@ def test_result_is_identical_across_modes(minio):
     # full et bounded écrivent, ephemeral non — mais le CONTENU filtré ne dépend pas du mode.
     assert ids == ["W1", "W4", "W6"]
     assert len(ids) == 3
+
+
+def _point_env_at_minio(monkeypatch, minio, mode: str, glob: str) -> None:
+    """Pose l'env pour que l'asset lise/écrive le MinIO de test (AWS_*/BUCKET_* + mode + glob)."""
+    host, port = minio.endpoint.split(":")
+    monkeypatch.setenv("AWS_ACCESS_KEY_ID", minio.access_key)
+    monkeypatch.setenv("AWS_SECRET_ACCESS_KEY", minio.secret_key)
+    monkeypatch.setenv("BUCKET_HOST", host)
+    monkeypatch.setenv("BUCKET_PORT", port)
+    monkeypatch.setenv("BUCKET_NAME", minio.bucket)
+    monkeypatch.setenv("SCHOLAR_NETWORK_PERSISTENCE_MODE", mode)
+    monkeypatch.setenv("SCHOLAR_NETWORK_SOURCE_GLOB", glob)
+    # Ressources DuckDB modestes en test (connect() force sinon 32 threads / 24GB).
+    monkeypatch.setenv("DBT_DUCKDB_MEMORY_LIMIT", "2GB")
+    monkeypatch.setenv("DBT_DUCKDB_THREADS", "2")
+    monkeypatch.setenv("DBT_DUCKDB_TEMP_DIR", "/tmp/scholar-network-spill")
+
+
+def test_asset_full_materializes_prefiltered(minio, monkeypatch):
+    """L'asset prefiltered_raw en full : lit la source MinIO, filtre, ÉCRIT sous prefiltered/."""
+    seed = connect(_duckdb_cfg(minio))
+    src = _seed_source_works(seed, minio.bucket)
+    _point_env_at_minio(monkeypatch, minio, "full", src)
+
+    result = prefiltered_raw()
+    meta = result.metadata
+    assert meta["cache_mode"].value == "full"
+    assert meta["materialized"].value is True
+    assert meta["prefiltered_works"].value == 3  # W1/W4/W6
+    assert meta["transient_purge"].value is False
+
+    # Le pré-filtré est réellement lisible sous prefiltered/ (relu tel quel au run suivant).
+    dest = cache_location(CacheMode.PERSISTENT, minio.bucket, run_id="x")
+    n = seed.execute(f"SELECT count(*) FROM read_parquet('{dest}/part-00000.parquet')").fetchone()[
+        0
+    ]
+    assert n == 3
+
+
+def test_asset_ephemeral_does_not_materialize(minio, monkeypatch):
+    """L'asset en ephemeral : compte le pré-filtré mais N'ÉCRIT rien (materialized=False)."""
+    seed = connect(_duckdb_cfg(minio))
+    src = _seed_source_works(seed, minio.bucket)
+    _point_env_at_minio(monkeypatch, minio, "ephemeral", src)
+
+    result = prefiltered_raw()
+    meta = result.metadata
+    assert meta["cache_mode"].value == "ephemeral"
+    assert meta["materialized"].value is False
+    assert meta["prefiltered_works"].value == 3  # même filtre, résultat identique
+    # Rien n'a été écrit sous prefiltered/ (aucun objet à lister).
+    base = f"s3://{minio.bucket}/{PREFILTERED_SUBDIR}"
+    try:
+        listed = seed.execute(f"SELECT count(*) FROM glob('{base}/**')").fetchone()[0]
+    except Exception:
+        listed = 0
+    assert listed == 0
