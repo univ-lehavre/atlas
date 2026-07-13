@@ -1,13 +1,21 @@
 """Tests du point d'entrée de la code-location (definitions).
 
-SQUELETTE (lot 1) : on vérifie seulement que la code-location est CHARGEABLE et INERTE —
-``defs`` est un ``Definitions`` valide sans aucun asset métier. Les tests des assets
-(prefiltered_raw, researchers, scholar_works, scholar_profiles) viendront à leurs lots.
+Vérifie que la code-location se charge et expose la CHAÎNE des 5 assets du pipeline
+(prefiltered_raw → researchers → scholar_works → scholar_profiles → index_load) + le job
+d'ingestion (ADR 0103, plan 2026-07-13-scholar-network).
 """
 
 from dagster import Definitions
 
 from scholar_network_dagster.definitions import defs
+
+_EXPECTED_ASSETS = {
+    "prefiltered_raw",
+    "researchers",
+    "scholar_works",
+    "scholar_profiles",
+    "index_load",
+}
 
 
 def test_defs_loads():
@@ -16,10 +24,13 @@ def test_defs_loads():
     assert isinstance(defs, Definitions)
 
 
-def test_defs_is_inert_no_business_assets():
-    """SQUELETTE : aucun asset métier n'est câblé (liste vide) — code-location inerte.
+def test_defs_exposes_the_five_pipeline_assets():
+    """Les 5 assets de la chaîne sont câblés (ADR 0103 §1-2)."""
+    keys = {k.to_user_string() for k in defs.resolve_asset_graph().get_all_asset_keys()}
+    assert keys >= _EXPECTED_ASSETS
 
-    Garde-fou : ce test cassera dès qu'un asset sera ajouté SANS mettre à jour le lot/plan.
-    Les assets arriveront aux lots 2–5 (ADR 0103, plan 2026-07-13-scholar-network)."""
-    keys = list(defs.resolve_asset_graph().get_all_asset_keys())
-    assert keys == []
+
+def test_ingestion_job_is_defined():
+    """Un job ``ingestion_job`` enchaîne la chaîne dans un même run."""
+    job = defs.resolve_job_def("ingestion_job")
+    assert job is not None

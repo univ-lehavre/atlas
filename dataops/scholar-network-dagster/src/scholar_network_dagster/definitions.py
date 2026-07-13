@@ -3,21 +3,34 @@
 Chargé par le serveur gRPC (``dagster api grpc -m scholar_network_dagster.definitions``)
 que l'orchestrateur Dagster du cluster découvre via son workspace.
 
-SQUELETTE (lot 1, plan 2026-07-13-scholar-network) : la code-location est **chargeable et
-inerte** — elle expose des ``Definitions`` VALIDES mais AUCUN asset métier. Les assets du
-pipeline arriveront aux lots suivants (ADR 0103 §1–2, plan §4) :
+Chaîne des 5 assets (recompute intégral mensuel, ADR 0103 ; un seul ``ingestion_job``) :
 
 - ``prefiltered_raw`` — brut pré-filtré (``≥2016 ∧ type=article``, projeté) + cache (lot 2) ;
 - ``researchers`` — passe 1, table des chercheurs affiliés au réseau (lot 3) ;
 - ``scholar_works`` — passe 2, semi-jointure → tous les articles ≥2016 des chercheurs (lot 4) ;
-- ``scholar_profiles`` — embedding + moyenne L2 par chercheur → pgvector (lot 5).
-
-Tant qu'aucun asset n'est câblé, ``defs`` reste un point d'entrée gRPC valide et vide.
+- ``scholar_profiles`` — embedding topics+keywords, moyenne + L2 par chercheur (lot 5) ;
+- ``index_load`` — charge les profils dans l'index pgvector (lot 5c).
 """
 
-from dagster import Definitions
+from dagster import AssetSelection, Definitions, define_asset_job
 
-# Aucun asset métier au squelette (liste vide) : la code-location charge, se valide
-# (`dagster definitions validate`) et se découvre par l'orchestrateur, sans rien exécuter.
-# Les assets seront ajoutés ici (via `scholar_network_dagster.assets`) aux lots 2–5.
-defs = Definitions(assets=[])
+from scholar_network_dagster.assets.index_load import index_load
+from scholar_network_dagster.assets.passes import researchers, scholar_works
+from scholar_network_dagster.assets.prefilter import prefiltered_raw
+from scholar_network_dagster.assets.profiles import scholar_profiles
+
+# Chaîne des 5 assets (recompute intégral mensuel, ADR 0103) : prefiltered_raw → researchers
+# (passe 1) → scholar_works (passe 2) → scholar_profiles → index_load (pgvector). Les
+# dépendances (deps=AssetKey) ordonnent l'exécution dans le run.
+_assets = [
+    prefiltered_raw,
+    researchers,
+    scholar_works,
+    scholar_profiles,
+    index_load,
+]
+
+# Un seul job enchaîne toute la chaîne dans un même run (même run_id → mêmes préfixes run=).
+ingestion_job = define_asset_job("ingestion_job", selection=AssetSelection.all())
+
+defs = Definitions(assets=_assets, jobs=[ingestion_job])

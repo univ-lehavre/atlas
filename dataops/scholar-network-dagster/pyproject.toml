@@ -7,8 +7,8 @@ requires-python = ">=3.10,<3.11"
 # ADR cluster 0006 : verrou chart Helm <-> paquet Python 1:1).
 # SQUELETTE (lot 1, plan 2026-07-13-scholar-network) : dépendances réduites au socle
 # nécessaire à un chargement gRPC inerte + au lot 2 à venir (brut pré-filtré + cache).
-# Les briques ML/qualité (great-expectations, scikit-learn, mlflow, evidently,
-# onnxruntime, tokenizers, dbt) viendront aux lots ultérieurs (embedding/profils, lot 5).
+# Socle Dagster + DuckDB + embedding ONNX (lot 5). Les briques non requises ici
+# (great-expectations, scikit-learn, mlflow, evidently, dbt) restent hors périmètre.
 dependencies = [
   "dagster==1.13.7",
   # Le run worker (K8sRunLauncher) EST cette image : à chaque run, le launcher
@@ -29,6 +29,13 @@ dependencies = [
   # pour figer une résolution stable.
   "duckdb",
   "numpy",
+  # Embedding sémantique par article (lot 5, profils) : vecteur(384) calculé en Python
+  # natif sur le MÊME model_quantized.onnx (all-MiniLM-L6-v2) que citation — parité stricte
+  # (embedding.py copié, ADR 0055). onnxruntime (MIT) exécute l'inférence, tokenizers
+  # (Apache-2.0) reproduit le WordPiece ; déterminisme à 1 thread (ADR 0057). Épinglés comme
+  # citation (résolution multi-arch vérifiée).
+  "onnxruntime==1.23.2",
+  "tokenizers==0.23.1",
 ]
 # NB : dagster-postgres tire psycopg2-binary (LGPL) en transitive. Cette image
 # l'embarque NÉCESSAIREMENT pour rehydrater l'instance dans le run worker (voir
