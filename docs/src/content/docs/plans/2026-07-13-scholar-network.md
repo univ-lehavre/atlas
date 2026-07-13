@@ -92,6 +92,26 @@ Un test anti-drift garde `_EUNICOAST_ROR` aligné sur le seed dbt (comme `citati
 
 **Done.** Test : chercheur à 2 articles → vecteur = L2(mean) attendu ; parité embedding avec `citation` sur un texte fixe ; chargement pgvector (fixture) ; lint/audits.
 
-## 5. Critères de fin de plan
+## 5. Validation — deux étages (banc logique + intégration réelle)
 
-Le pipeline est **complet** quand les 5 lots sont mergés : la code-location charge, produit le brut pré-filtré caché selon le mode, identifie les chercheurs (passe 1), élargit à leur production (passe 2), et sert leurs profils en pgvector — recompute intégral mensuel, déterministe, `citation` inchangé. Le **dimensionnement réel** (volumes, ressources du manifeste) est mesuré au fil des lots 2–4 et ajusté dans `code-location.manifest.yaml`, pas figé d'avance.
+Deux niveaux de preuve, complémentaires (doctrine « preuve deux étages », ADR cluster 0104) :
+
+- **Banc logique — hermétique, à chaque lot (fait).** Tests unitaires (SQL pur, agrégation) +
+  tests d'**intégration conteneurisés** : DuckDB↔**MinIO** (brut pré-filtré, passes 1/2) et
+  **Postgres/pgvector** (chargement de l'index), images épinglées par digest, self-skip sans
+  Docker (ADR 0057). Ils prouvent la **correction** sur données synthétiques (grain auteur,
+  élargissement, unicité des work_id, dédup déterministe, parité embedding, idempotence) —
+  déterministes, sans réseau, dans la CI.
+- **Intégration réelle — jalon manuel, sur données OpenAlex réelles.** Une fois la
+  code-location déployée (node1 k8s monté par nestor, toutes couches), un run de
+  l'`ingestion_job` sur un **échantillon réel** puis à l'échelle valide ce que le banc logique
+  ne peut pas : le **dimensionnement** (taille du brut pré-filtré, de la table chercheurs, du
+  périmètre final ; coût/perf du semi-join passe 2 à l'échelle), la **résolution DNS réelle**
+  (RGW Ceph, CNPG — piège FQDN prod, cf. `_short_incluster_host`), et l'accès **source
+  OpenAlex** (secret DuckDB sur le bucket public). **Geste HUMAIN** (aucun agent ne déclenche
+  un run/déploiement réel, ADR 0033) ; les ressources du `code-location.manifest.yaml` sont
+  ajustées d'après les volumes mesurés à ce jalon, pas figées d'avance.
+
+## 6. Critères de fin de plan
+
+Le pipeline est **complet** quand les 5 lots sont mergés : la code-location charge, produit le brut pré-filtré caché selon le mode, identifie les chercheurs (passe 1), élargit à leur production (passe 2), et sert leurs profils en pgvector — recompute intégral mensuel, déterministe, `citation` inchangé. Le banc logique conteneurisé prouve la correction ; le **jalon d'intégration réelle** (§5, sur node1) prouve le dimensionnement et clôt le plan.
