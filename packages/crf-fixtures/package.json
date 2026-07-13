@@ -55,8 +55,8 @@
   },
   "devDependencies": {
     "@univ-lehavre/atlas-shared-config": "workspace:*",
-    "eslint": "^10.6.0",
-    "prettier": "^3.9.4",
+    "eslint": "^10.7.0",
+    "prettier": "^3.9.5",
     "tsup": "^8.5.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
