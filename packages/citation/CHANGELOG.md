@@ -1,5 +1,11 @@
 # @univ-lehavre/atlas-openalex
 
+## 2.4.0
+
+### Minor Changes
+
+- [#536](https://github.com/univ-lehavre/atlas/pull/536) [`2cbb5f0`](https://github.com/univ-lehavre/atlas/commit/2cbb5f02195c408f15d79a13db888e304c6ba54c) Thanks [@chasset](https://github.com/chasset)! - - feat: prérègle les bornes d'ingestion via persistence.mode (adr 0102)
+
 ## 2.3.0
 
 ### Minor Changes
