@@ -61,3 +61,26 @@ def prefilter_sql(source_glob: str, min_year: int = MIN_YEAR, work_type: str = W
         WHERE publication_year >= {int(min_year)}
           AND type = '{safe_type}'
     """
+
+
+# Sous-préfixe du brut pré-filtré dans le bucket. ``full`` écrit sous ``prefiltered/`` (relu
+# tel quel au run suivant) ; ``bounded`` sous ``prefiltered/_transient/run=<id>/`` (purgé en
+# fin de run) ; ``ephemeral`` n'écrit rien.
+PREFILTERED_SUBDIR = "prefiltered"
+
+
+def cache_location(mode, bucket: str, run_id: str) -> str | None:
+    """Chemin S3 où écrire le brut pré-filtré selon le mode de cache (PURE ; ADR 0103 §3).
+
+    - ``PERSISTENT`` (full)  → ``s3://<bucket>/prefiltered/`` : emplacement STABLE, relu tel
+      quel au run suivant (l'écriture est idempotente, ``OVERWRITE_OR_IGNORE``) ;
+    - ``TRANSIENT`` (bounded)→ ``s3://<bucket>/prefiltered/_transient/run=<id>/`` : isolé par
+      run, purgé en fin de run (le préfixe ``_transient/`` ne collisionne pas avec ``full``) ;
+    - ``NONE`` (ephemeral)   → ``None`` : rien n'est matérialisé (recalcul à la volée).
+
+    ``mode`` est un ``cache.CacheMode`` (importé par l'appelant pour éviter un cycle).
+    """
+    if not mode.materializes:
+        return None
+    base = f"s3://{bucket}/{PREFILTERED_SUBDIR}"
+    return base if mode.persists_between_runs else f"{base}/_transient/run={run_id}"

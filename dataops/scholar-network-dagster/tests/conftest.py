@@ -1,22 +1,127 @@
 """Fixtures partagées des tests de la code-location « scholar-network » (hermétiques, ADR 0057).
 
-SQUELETTE (lot 1) : aucun asset métier, donc aucune fixture de données synthétiques
-(brut pré-filtré, table chercheurs) n'est encore nécessaire — elles arriveront avec leurs
-lots (2–5). Ce conftest reste volontairement MINIMAL ; on n'y garde qu'un helper générique
-de saut de test réutilisable, sans importer de code métier absent.
+Fournit une fixture ``minio`` : un MinIO conteneurisé éphémère, épinglé par DIGEST (jamais
+``latest``, ADR 0057), pour les tests d'intégration DuckDB↔S3 (ex. l'asset ``prefiltered_raw``,
+lot 2). S'auto-saute (``pytest.skip``) si Docker est absent — un contributeur sans Docker
+n'est jamais bloqué. Copie locale du patron de ``citation-dagster`` (pas d'import inter
+code-location, ADR 0055).
+
+NB : pas de ``from __future__ import annotations`` (cohérence dépôt dataops).
 """
 
 import shutil
+import socket
+import subprocess
+import time
+import urllib.error
+import urllib.request
+from dataclasses import dataclass
 
 import pytest
 
+# Image MinIO épinglée par DIGEST (manifest list multi-arch) — jamais ``latest`` (ADR 0057).
+# Même digest que citation-dagster (bumpé consciemment). Release 2025-04-08.
+_MINIO_IMAGE = "minio/minio@sha256:8834ae47a2de3509b83e0e70da9369c24bbbc22de42f2a2eddc530eee88acd1b"
+_ACCESS_KEY = "minioadmin"
+_SECRET_KEY = "minioadmin123"
+_BUCKET = "scholar-network"
+
 
 def requires_docker() -> None:
-    """Saute le test si Docker est absent de l'hôte (tests d'intégration hermétiques).
-
-    Les futurs tests d'intégration DuckDB↔S3 / pgvector (lots 2, 5) démarreront des
-    conteneurs épinglés par digest (ADR 0057) ; ils s'auto-sautent sans Docker pour ne pas
-    bloquer un contributeur. Fourni ici pour que ce contrat de saut soit stable dès le socle.
-    """
+    """Saute le test si Docker est absent de l'hôte (tests d'intégration hermétiques)."""
     if shutil.which("docker") is None:
         pytest.skip("Docker indisponible — test d'intégration hermétique sauté (self-skipping).")
+
+
+@dataclass(frozen=True)
+class MinioHandle:
+    endpoint: str  # host:port (sans schéma), pour DuckDB
+    access_key: str
+    secret_key: str
+    bucket: str
+
+
+def _mc_setup_script(port: int) -> str:
+    """Script ``mc`` jetable : déclare l'alias et crée le bucket de test."""
+    base = f"http://127.0.0.1:{port}"
+    return f"mc alias set t {base} {_ACCESS_KEY} {_SECRET_KEY} && mc mb -p t/{_BUCKET}"
+
+
+def _free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def _wait_ready(url: str, timeout: float = 30.0) -> bool:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            urllib.request.urlopen(url, timeout=2)  # noqa: S310 (URL locale de test)
+            return True
+        except urllib.error.HTTPError:
+            return True  # répond (même 403) → MinIO est up
+        except (urllib.error.URLError, ConnectionError, OSError):
+            time.sleep(0.5)
+    return False
+
+
+@pytest.fixture
+def minio():
+    """MinIO éphémère épinglé par digest ; skip si Docker absent (self-skipping)."""
+    if shutil.which("docker") is None:
+        pytest.skip("Docker indisponible — test hermétique S3 sauté (self-skipping).")
+
+    port = _free_port()
+    name = f"scholar-network-minio-test-{port}"
+    proc = subprocess.run(
+        [
+            "docker",
+            "run",
+            "-d",
+            "--rm",
+            "--name",
+            name,
+            "-p",
+            f"127.0.0.1:{port}:9000",
+            "-e",
+            f"MINIO_ROOT_USER={_ACCESS_KEY}",
+            "-e",
+            f"MINIO_ROOT_PASSWORD={_SECRET_KEY}",
+            _MINIO_IMAGE,
+            "server",
+            "/data",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if proc.returncode != 0:
+        pytest.skip(
+            f"Démarrage MinIO impossible (Docker non opérationnel ?) : {proc.stderr[-200:]}"
+        )
+
+    try:
+        if not _wait_ready(f"http://127.0.0.1:{port}/minio/health/live"):
+            pytest.skip("MinIO n'a pas démarré à temps.")
+        # Crée le bucket via un client mc jetable (même image, hermétique).
+        subprocess.run(
+            [
+                "docker",
+                "run",
+                "--rm",
+                "--network",
+                "host",
+                "--entrypoint",
+                "sh",
+                _MINIO_IMAGE,
+                "-c",
+                _mc_setup_script(port),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        yield MinioHandle(f"127.0.0.1:{port}", _ACCESS_KEY, _SECRET_KEY, _BUCKET)
+    finally:
+        subprocess.run(["docker", "rm", "-f", name], capture_output=True, check=False)

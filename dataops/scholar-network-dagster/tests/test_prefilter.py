@@ -9,10 +9,31 @@ import duckdb
 
 from scholar_network_dagster.assets.prefilter import (
     MIN_YEAR,
+    PREFILTERED_SUBDIR,
     PROJECTED_COLUMNS,
     WORK_TYPE,
+    cache_location,
     prefilter_sql,
 )
+from scholar_network_dagster.cache import CacheMode
+
+
+def test_cache_location_full_is_stable_between_runs():
+    """full → emplacement STABLE (pas de run= : relu tel quel au run suivant)."""
+    loc = cache_location(CacheMode.PERSISTENT, "scholar-network", run_id="abc")
+    assert loc == f"s3://scholar-network/{PREFILTERED_SUBDIR}"
+    assert "run=" not in loc
+
+
+def test_cache_location_bounded_is_isolated_per_run():
+    """bounded → préfixe _transient/run=<id> isolé (purgé en fin de run)."""
+    loc = cache_location(CacheMode.TRANSIENT, "scholar-network", run_id="abc")
+    assert loc == f"s3://scholar-network/{PREFILTERED_SUBDIR}/_transient/run=abc"
+
+
+def test_cache_location_ephemeral_is_none():
+    """ephemeral → pas d'emplacement (rien n'est matérialisé)."""
+    assert cache_location(CacheMode.NONE, "scholar-network", run_id="abc") is None
 
 
 def test_sql_carries_the_common_predicate():
