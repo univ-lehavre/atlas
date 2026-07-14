@@ -22,6 +22,14 @@ CREATE TABLE IF NOT EXISTS scholar_profiles (
     run           text        NOT NULL  -- run_id Dagster (immutabilité par rejeu)
 );
 
+-- Contrat de schéma SERVI (ADR 0103 §2) : UN profil par chercheur et par partition. La
+-- clé d'idempotence de index_load est (dt, run) — DELETE puis INSERT sur cette partition ;
+-- l'unicité (researcher_id, dt, run) garantit qu'un rejeu ou un mart dupliqué ne charge
+-- jamais deux fois le même chercheur dans une partition (kNN faussé sinon). C'est la
+-- garantie Postgres NATIVE (vérifiée à l'insertion) qui double l'asset check applicatif.
+CREATE UNIQUE INDEX IF NOT EXISTS scholar_profiles_uq_researcher_partition
+    ON scholar_profiles (researcher_id, dt, run);
+
 -- kNN cosinus : HNSW sur l'embedding (recherche de chercheurs similaires, ADR 0103 §2).
 CREATE INDEX IF NOT EXISTS scholar_profiles_embedding_hnsw
     ON scholar_profiles USING hnsw (embedding vector_cosine_ops);

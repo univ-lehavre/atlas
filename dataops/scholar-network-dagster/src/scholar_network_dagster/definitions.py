@@ -18,6 +18,7 @@ from scholar_network_dagster.assets.index_load import index_load
 from scholar_network_dagster.assets.passes import researchers, scholar_works
 from scholar_network_dagster.assets.prefilter import prefiltered_raw
 from scholar_network_dagster.assets.profiles import scholar_profiles
+from scholar_network_dagster.assets.quality import profiles_contract
 
 # Chaîne des 5 assets (recompute intégral mensuel, ADR 0103) : prefiltered_raw → researchers
 # (passe 1) → scholar_works (passe 2) → scholar_profiles → index_load (pgvector). Les
@@ -30,7 +31,11 @@ _assets = [
     index_load,
 ]
 
+# Porte de qualité BLOQUANTE sur les profils servis (unicité, dim, L2, validité — ADR 0103
+# §2) : le contrat de schéma servi, à la place d'une couche dbt (scholar-network n'en a pas).
+_asset_checks = [profiles_contract]
+
 # Un seul job enchaîne toute la chaîne dans un même run (même run_id → mêmes préfixes run=).
 ingestion_job = define_asset_job("ingestion_job", selection=AssetSelection.all())
 
-defs = Definitions(assets=_assets, jobs=[ingestion_job])
+defs = Definitions(assets=_assets, asset_checks=_asset_checks, jobs=[ingestion_job])

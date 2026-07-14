@@ -14,8 +14,8 @@
 # tag ne sert qu'à la traçabilité humaine, l'immuabilité tient au digest.
 
 codeLocation: scholar-network
-ready: false # SQUELETTE (lot 1) : structure conforme, chargeable, mais aucun asset métier encore
-revision: "0000000" # placeholder ; renseigné (SHA git court de main) quand le pipeline sera livrable
+ready: true # 5 assets livrés + câblés (#632/#637), 70 tests conteneurisés, validate.sh OK
+revision: 5fdd596c # SHA court du merge #637 sur main (pipeline livrable) ; déploiement PAR DIGEST @sha256
 contractVersion: "1.0" # contract_version ciblé (cluster/contract/endpoints.example.yaml)
 
 # Besoins déclarés → cluster valide la capacité AVANT de déployer.
@@ -45,6 +45,7 @@ dependsOn:
     - name: scholar-network-datalake # convention <service>-<usage> (cf. citation-datalake)
       size: 3Ti # brut pré-filtré projeté + accumulation des partitions immuables
       storageClass: rook-ceph-datalake
-  # Migration de schéma métier FOURNIE par atlas (cluster l'applique en hook PreSync).
-  # AUCUNE au squelette : la migration pgvector des profils chercheurs viendra au lot 5.
-  migrations: []
+  # Migration de schéma métier FOURNIE par atlas (cluster l'applique en hook PreSync,
+  # ADR 0094 §5). Crée la table `scholar_profiles` (vector(384) + index HNSW cosinus +
+  # unicité (researcher_id, dt, run)) consommée par l'asset index_load (lot 5).
+  migrations: [0001_scholar_profiles_index.sql]
