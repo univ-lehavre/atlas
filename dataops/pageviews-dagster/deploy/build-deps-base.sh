@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build + push de la PRÉ-IMAGE de build « scholar-network-deps-base » (ADR cluster 0110).
+# Build + push de la PRÉ-IMAGE de build « pageviews-deps-base » (ADR cluster 0110).
 #
 # La pré-image est l'étage LOURD et FIGÉ du Dockerfile (cible `deps` : deps système,
 # wheels du lock, extensions DuckDB, modèle ONNX) — le SEUL build qui touche Internet.
@@ -9,8 +9,8 @@
 # c'est ce qui rend le cluster air-gappé pour le build (ADR cluster 0110 §2/§7).
 #
 # ── Tag = SHA_DEPS (source de vérité unique) ────────────────────────────────────
-# La base est taguée `registry:80/scholar-network-deps-base:<SHA_DEPS>`, où SHA_DEPS est
-# le digest des ENTRÉES de la cible `deps` (uv.lock + tranche Dockerfile + provenance
+# La base est taguée `registry:80/pageviews-deps-base:<SHA_DEPS>`, où SHA_DEPS est le
+# digest des ENTRÉES de la cible `deps` (uv.lock + tranche Dockerfile + provenance
 # ONNX), calculé par `scripts/check_deps_base_freshness.py --print-tag`. Le MÊME script
 # sert de garde-fou avant un build de code (« la base de ce SHA_DEPS est-elle poussée ? ») :
 # une seule source de vérité du tag, pas de double calcul (ADR 0110 §3). Tag immuable,
@@ -31,7 +31,7 @@ set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 dataops_ctx="$(cd "$here/../.." && pwd)"          # contexte de build = dataops/
-cl_dir="$here/.."                                  # dataops/scholar-network-dagster/
+cl_dir="$here/.."                                  # dataops/pageviews-dagster/
 check="$cl_dir/scripts/check_deps_base_freshness.py"
 
 platform="linux/arm64,linux/amd64"
@@ -54,11 +54,11 @@ for tool in docker uv; do
 done
 
 # ── 1. Tag = SHA_DEPS, via le garde-fou (source de vérité unique) ────────────
-# `--print-tag` imprime `registry:80/scholar-network-deps-base:<SHA_DEPS>` (nom logique).
+# `--print-tag` imprime `registry:80/pageviews-deps-base:<SHA_DEPS>` (nom logique).
 logical_tag="$(uv --project "$cl_dir" run python "$check" --print-tag)"
 sha_deps="${logical_tag##*:}"                       # la part après le dernier ':'
 # Tag de PUSH : même image, endpoint substitué (registry:80 → l'endpoint réel).
-push_tag="${endpoint}/scholar-network-deps-base:${sha_deps}"
+push_tag="${endpoint}/pageviews-deps-base:${sha_deps}"
 
 echo "── build-deps-base : SHA_DEPS=$sha_deps ──"
 echo "  tag logique : $logical_tag"

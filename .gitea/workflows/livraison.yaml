@@ -17,8 +17,9 @@
 # node-side par le kubelet — ADR cluster 0011).
 #
 # GARDE-FOU de boucle : `branches: [main]` — le push de `deploy` par ce workflow ne
-# re-déclenche RIEN. Prérequis runner (lot 2 cluster) : `python3` (pour le garde-fou
-# de fraîcheur --print-tag) et le droit de push du token sur `deploy`.
+# re-déclenche RIEN. Prérequis runner (lot 2 cluster) : le droit de push du token sur
+# `deploy` (seul restant : la fraîcheur pré-image est gardée au portail QUALITÉ via
+# `deploy/deps-base.ref` + test de parité, pas de python sur le runner).
 name: livraison
 
 on:
@@ -72,19 +73,22 @@ jobs:
           set -eu
           cd repo
           : > ../digests.args
-          command -v python3 >/dev/null || {
-            echo "✗ python3 absent du runner — requis par le garde-fou de fraîcheur" >&2
-            echo "  (check_deps_base_freshness --print-tag). Prérequis runner, lot 2 cluster." >&2
-            exit 1
-          }
           while read -r d; do
             [ -n "$d" ] || continue
             cl="${d%-dagster}"
-            # Garde de fraîcheur : le tag SHA_DEPS est CALCULÉ du lock + de la tranche
-            # deps du Dockerfile (+ provenance du modèle). Si la pré-image n'a pas été
-            # rebuildée pour cet état, ce tag N'EXISTE PAS au registre → le FROM du
-            # build échoue BRUYAMMENT — c'est le contrat (pré-image = flux poste, ADR 0110).
-            logical="$(cd "dataops/$d" && python3 scripts/check_deps_base_freshness.py --print-tag)"
+            # Référence de la pré-image : LUE de deploy/deps-base.ref (écrit par
+            # build-deps-base.sh au push de la pré-image, COMMITTÉ avec le bump du lock).
+            # La FRAÎCHEUR est gardée au portail QUALITÉ (test pytest de parité
+            # ref == --print-tag, avant le merge) — le runner air-gappé ne recalcule
+            # rien (pas de python requis). Si le tag n'existe pas au registre (pré-image
+            # jamais poussée), le FROM échoue BRUYAMMENT — flux poste, ADR 0110.
+            ref_file="dataops/$d/deploy/deps-base.ref"
+            [ -f "$ref_file" ] || {
+              echo "✗ $d : deploy/deps-base.ref absent — la pré-image n'a jamais été" >&2
+              echo "  publiée (build-deps-base.sh sur le poste, puis committer le .ref)." >&2
+              exit 1
+            }
+            logical="$(tr -d '[:space:]' < "$ref_file")"
             deps_ref="${REGISTRY_FQDN}/${logical#registry:80/}"
             tag="$(printf '%s' "$GITHUB_SHA" | cut -c1-12)"
             echo "── build $d ← FROM $deps_ref"
