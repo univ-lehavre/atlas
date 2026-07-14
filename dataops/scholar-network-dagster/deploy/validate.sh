@@ -18,7 +18,7 @@
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-overlays=("prod")
+overlays=("bench" "prod")
 
 # kubeconform est optionnel localement (peut manquer) ; en CI il est installé.
 # kubectl est requis (porte `kustomize`).
@@ -132,9 +132,12 @@ for o in "${overlays[@]}"; do
     # (pas le rendu : kustomize concatène le digest au champ `image:`).
     #   - `__SCHOLAR_NETWORK_IMAGE__` / `__SCHOLAR_NETWORK_IMAGE_DIGEST__` : image par digest
     #     (ADR 0075/0110) — la graver = retour au double-couplage (audit #499).
+    #   - `__SCHOLAR_NETWORK_PERSISTENCE_MODE__` : ancre du curseur persistence.mode (Voie A env,
+    #     ADR 0102/0103 §3), NON alimentée à ce jour (#627) — la graver figerait le mode.
     for ph in \
       "__SCHOLAR_NETWORK_IMAGE_DIGEST__:kustomization.yaml" \
-      "__SCHOLAR_NETWORK_IMAGE__:patch-s3-envfrom.yaml"; do
+      "__SCHOLAR_NETWORK_IMAGE__:patch-s3-envfrom.yaml" \
+      "__SCHOLAR_NETWORK_PERSISTENCE_MODE__:patch-s3-envfrom.yaml"; do
       placeholder="${ph%%:*}"; src="$here/overlays/prod/${ph##*:}"
       if ! grep -qF "$placeholder" "$src"; then
         echo "✗ prod : placeholder $placeholder absent de $(basename "$src") — cette ancre" >&2

@@ -17,9 +17,15 @@
 # piège ADR 0086). Le ConfigMap est REQUIS en prod (l'OBC sépare BUCKET_* du Secret AWS_*).
 # Tenir ces noms = celui de l'ObjectBucketClaim.
 #
-# NB SQUELETTE : pas de point d'ancrage `persistence.mode` ici. Le cache du brut pré-filtré
-# piloté par `persistence.mode` (ADR 0103 §3, Voie A env de l'ADR 0102) sera câblé au lot 2
-# (asset `prefiltered_raw` + variable d'env dédiée), pas au squelette.
+# SCHOLAR_NETWORK_PERSISTENCE_MODE est le POINT D'ANCRAGE, côté env du pod, du curseur
+# `persistence.mode` de la topologie (full/bounded/ephemeral, ADR cluster 0109) : `cache.py`
+# le TRADUIT en stratégie de cache du brut pré-filtré (ADR 0103 §3). Mécanisme = Voie A env,
+# acté ADR 0102. ⚠ ALIMENTATION AUTOMATIQUE NON ENCORE POSÉE (même angle mort que citation
+# #618) : le câblage cluster de persistence.mode s'arrête aux briques d'infra et ne touche
+# pas l'env applicatif ; qui écrit le mode dérivé de la topologie reste ouvert (issue #627).
+# GARDE-FOU ZÉRO-RÉGRESSION : valeur littérale non substituée → mode inconnu → `resolve_cache_mode`
+# dégrade en `full` (fail-safe : cache le plus conservateur, tout gardé). Sur node1 en `bounded`,
+# scholar-network tournera donc en `full` tant que l'alimentation n'est pas posée — assumé.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -39,6 +45,10 @@ spec:
               value: scholar-network-datalake # = nom de l'ObjectBucketClaim (Secret AWS_*)
             - name: SCHOLAR_NETWORK_S3_CONFIGMAP
               value: scholar-network-datalake # = nom de l'ObjectBucketClaim (ConfigMap BUCKET_*)
+            - name: SCHOLAR_NETWORK_PERSISTENCE_MODE
+              # Ancre du curseur persistence.mode — NON alimentée à ce jour (cf. en-tête,
+              # #627). Valeur littérale = mode inconnu → `full` (fail-safe) : cache conservateur.
+              value: __SCHOLAR_NETWORK_PERSISTENCE_MODE__
           envFrom:
             - secretRef:
                 name: scholar-network-datalake

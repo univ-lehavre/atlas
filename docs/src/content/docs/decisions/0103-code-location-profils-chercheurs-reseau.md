@@ -142,6 +142,31 @@ nouveau point de contact cluster↔atlas (un bucket, une base, un manifeste de p
 recensé au [contrat d'interface (ADR 0033)](/atlas/decisions/0033-contrat-interface-cluster/)
 dans la même PR que la création de la code-location (garde-fou « même PR »).
 
+### 5. Pas de couche dbt ; le contrat de schéma servi est porté ailleurs
+
+`scholar-network` **n'a pas de projet `*-dbt`** — divergence assumée avec les trois autres
+code-locations (`citation`, `mediawatch`, `pageviews`), qui en ont toutes une. Raison : dbt
+est une couche de **modélisation dimensionnelle** (staging → curated → marts croisés), justifiée
+quand plusieurs produits tabulaires sont servis et croisés — c'est le cas de `citation` (paires
+de collaboration, sacs de labels, profils subfields nourrissant l'uplift). Ici, la chaîne est
+**linéaire** (brut → passe 1 → passe 2 → profil) et le produit est **unique** : un vecteur de
+similarité par chercheur, servi en pgvector. Il n'y a **rien à modéliser en étoile**. Introduire
+dbt ajouterait un projet, les dépendances `dbt-core`/`dbt-duckdb`/`dagster-dbt` dans l'image et
+un `dbt parse` au build, sans rien produire qu'on n'ait déjà en DuckDB SQL + Python.
+
+**Alternative écartée** — dbt « pour ses tests de schéma » : `dbt-duckdb` teste des modèles
+DuckDB/Parquet, **jamais la table pgvector servie** (il ne connaît ni Postgres ni le type
+`vector(384)`), et ne peut pas exprimer l'invariant métier du profil (norme L2 ≈ 1). Il testerait
+donc la mauvaise cible, au prix d'un projet et de dépendances d'image en plus.
+
+Le **contrat de schéma sur la donnée servie** est donc porté là où il est réellement efficace,
+sans dbt : (a) des **contraintes Postgres natives** dans la migration (`researcher_id`/`embedding`
+non nuls, `embedding vector(384)`, **unicité** `(researcher_id, dt, run)`), vérifiées à
+l'insertion ; et (b) un **asset check Dagster bloquant** (`assets/quality.py`) sur le mart de
+profils avant chargement — unicité, dimension 384, **normalité L2**, absence de NaN/inf. C'est le
+pendant, pour la sortie vectorielle, des tests `not_null`/`unique` que dbt fournit chez `citation`
+pour ses marts tabulaires.
+
 ## Conséquences
 
 - **Un produit neuf, un pipeline neuf** : le réseau de chercheurs est servi indépendamment

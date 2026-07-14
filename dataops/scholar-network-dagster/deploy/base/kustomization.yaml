@@ -4,13 +4,37 @@
 # workspace (ConfigMap disjoint `dagster-workspace-scholar-network`, agrégé par le
 # reconciler cluster — ADR cluster 0103). L'accès S3 (ObjectBucketClaim en prod) est
 # ajouté par l'overlay, car sa SOURCE diffère — voir overlays/prod.
-#
-# SQUELETTE (lot 1) : AUCUNE migration de schéma (migrations: [] au manifeste montant).
-# La migration pgvector des profils chercheurs (+ son Job PreSync et le ConfigMap
-# associé) viendra au lot 5 (plan 2026-07-13-scholar-network §4).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - code-location.yaml
   - workspace-fragment.yaml
   - pdb.yaml
+  # Migration du schéma « scholar_profiles » en hook PreSync (ADR cluster 0094 §5) :
+  # appliquée AVANT la code-location. atlas FOURNIT (.sql + Job), cluster ORCHESTRE.
+  - migration-job.yaml
+
+# Le .sql versionné est embarqué en ConfigMap monté par le Job de migration.
+# disableNameSuffixHash : le Job (hook PreSync) référence le ConfigMap par son nom
+# FIXE `scholar-network-migrations` dans ses volumes ; le transformer de noms de kustomize
+# ne réécrit PAS les références à l'intérieur d'un pod-template de Job → un suffixe
+# de hash casserait le montage (ConfigMap introuvable au runtime). Le hash est
+# inutile ici de toute façon : le hook PreSync REJOUE le Job à CHAQUE sync et le
+# SQL est idempotent (CREATE ... IF NOT EXISTS) — la migration se réapplique sans
+# dépendre d'un changement de nom.
+configMapGenerator:
+  - name: scholar-network-migrations
+    files:
+      - migrations/0001_scholar_profiles_index.sql
+generatorOptions:
+  disableNameSuffixHash: true
+  # Le ConfigMap DOIT être un hook PreSync (comme le Job qui le monte) : sans cette
+  # annotation, Argo CD le crée au sync PRINCIPAL, soit APRÈS la phase PreSync → le Job
+  # PreSync `scholar-network-migrate-schema` démarre avant et échoue « MountVolume.SetUp
+  # failed … configmap scholar-network-migrations not found » (constaté prod dirqual
+  # 2026-07-04). En hook PreSync, le ConfigMap est posé AVANT le Job dans la même phase.
+  # hook-delete-policy aligné sur le Job (BeforeHookCreation : recréé à chaque sync, SQL
+  # idempotent CREATE IF NOT EXISTS).
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
