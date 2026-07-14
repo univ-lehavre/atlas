@@ -113,7 +113,7 @@ atlas :
 
 ## Statut
 
-Proposed (2026-07-14). Forme une **paire** avec l'ADR cluster 0113 (la branche
+Accepted (2026-07-14). Forme une **paire** avec l'ADR cluster 0113 (la branche
 `deploy` côté usine). S'appuie sur les ADR cluster 0110/0111/0112 et les
 [ADR 0073](/atlas/decisions/)/[ADR 0075](/atlas/decisions/0075-deploiement-prod-par-digest-injecte-cluster/).
 Conception : plan [2026-07-14](/atlas/plans/2026-07-14-mise-en-production-push-gitea/).
