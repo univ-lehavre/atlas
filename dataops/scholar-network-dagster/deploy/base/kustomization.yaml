@@ -1,0 +1,16 @@
+# Base commune de la code-location Dagster « scholar-network ».
+#
+# Manifestes indépendants du profil : le Deployment + Service gRPC et le FRAGMENT de
+# workspace (ConfigMap disjoint `dagster-workspace-scholar-network`, agrégé par le
+# reconciler cluster — ADR cluster 0103). L'accès S3 (ObjectBucketClaim en prod) est
+# ajouté par l'overlay, car sa SOURCE diffère — voir overlays/prod.
+#
+# SQUELETTE (lot 1) : AUCUNE migration de schéma (migrations: [] au manifeste montant).
+# La migration pgvector des profils chercheurs (+ son Job PreSync et le ConfigMap
+# associé) viendra au lot 5 (plan 2026-07-13-scholar-network §4).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - code-location.yaml
+  - workspace-fragment.yaml
+  - pdb.yaml

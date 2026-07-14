@@ -1,0 +1,99 @@
+# Code-location Dagster « scholar-network » : serveur gRPC + Service.
+#
+# L'orchestrateur Dagster (livré vide par le cluster) découvre ce serveur via son
+# fragment de workspace (voir workspace-fragment.yaml). Le Deployment et le Service
+# vivent dans le namespace `dagster` : c'est là que tournent aussi les runs (Jobs K8s
+# du K8sRunLauncher), qui héritent des NetworkPolicies du namespace (dont
+# allow-internet-egress pour atteindre s3://openalex).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scholar-network-dagster
+  namespace: dagster
+  labels:
+    app.kubernetes.io/name: scholar-network-dagster
+    app.kubernetes.io/part-of: atlas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: scholar-network-dagster
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: scholar-network-dagster
+    spec:
+      containers:
+        - name: grpc
+          image: registry:80/scholar-network-dagster:dev
+          imagePullPolicy: Always
+          ports:
+            - name: grpc
+              containerPort: 4000
+          env:
+            # Image que le K8sRunLauncher donne aux pods de run (run workers).
+            # Sans elle, le launcher échoue (« dagster/image … Got None »).
+            - name: DAGSTER_CURRENT_IMAGE
+              value: registry:80/scholar-network-dagster:dev
+            # Lineage OpenLineage → Marquez (contrat cluster). host en forme COURTE
+            # `marquez.marquez` (<svc>.<ns>) et NON le FQDN `…svc.cluster.local` : en prod,
+            # un search domain externe (resolv.conf, ndots:5) fait timeouter la résolution
+            # du FQDN complet (cf. univ-lehavre/cluster#458). La forme <svc>.<ns> résout via
+            # le 1er search domain ; cross-ns (marquez≠dagster) donc le nom nu ne suffit pas.
+            - name: OPENLINEAGE_URL
+              value: http://marquez.marquez:5000
+            - name: OPENLINEAGE_ENDPOINT
+              value: api/v1/lineage
+            - name: OPENLINEAGE_NAMESPACE
+              value: dagster
+            # Suivi de modèles MLflow → serveur du socle (contrat cluster, ADR 0062).
+            # FQDN intra-cluster identique banc ↔ prod. Le code d'embedding/profils (lot 5)
+            # loguera runs/params/métriques ici ; sans cette variable, le logging best-effort
+            # tombe en no-op silencieux. host COURT `mlflow.mlflow` (<svc>.<ns>) — même raison
+            # DNS que OPENLINEAGE_URL (FQDN complet timeoute en prod, search domain + ndots:5).
+            - name: MLFLOW_TRACKING_URI
+              value: http://mlflow.mlflow:5000
+          # Accès S3 du lakehouse (creds + endpoint) : injecté par overlay, car la SOURCE
+          # diffère selon le profil (prod = Secret + ConfigMap de l'ObjectBucketClaim Ceph).
+          # Les NOMS de variables (AWS_*/BUCKET_*) sont identiques, donc le code est inchangé.
+          readinessProbe:
+            tcpSocket:
+              port: 4000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          # Liveness : redémarre le pod si le serveur gRPC se fige (≠ readiness, qui ne fait
+          # que le retirer du routage). Délais PLUS LARGES que la readiness : le démarrage
+          # charge definitions.py et importe la pile (duckdb/…) — ne pas tuer un pod qui
+          # démarre lentement. failureThreshold tolérant pour la même raison.
+          livenessProbe:
+            tcpSocket:
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+          # QoS (issue #400) : sans requests/limits, le pod est BestEffort → premier tué sous
+          # pression mémoire du nœud. Ce conteneur ne fait que SERVIR le gRPC (les runs lourds
+          # tournent dans des pods séparés du K8sRunLauncher). Valeurs = défaut raisonnable ;
+          # le déployeur les ajuste selon sa volumétrie (valeur d'instance, ADR 0031).
+          resources:
+            requests:
+              cpu: 100m
+              memory: 384Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scholar-network-dagster
+  namespace: dagster
+  labels:
+    app.kubernetes.io/name: scholar-network-dagster
+spec:
+  selector:
+    app.kubernetes.io/name: scholar-network-dagster
+  ports:
+    - name: grpc
+      port: 4000
+      targetPort: 4000

@@ -118,7 +118,8 @@
   "ignoreWorkspaces": [
     "dataops/citation-dagster",
     "dataops/mediawatch-dagster",
-    "dataops/pageviews-dagster"
+    "dataops/pageviews-dagster",
+    "dataops/scholar-network-dagster"
   ],
   "ignoreDependencies": [
     "@univ-lehavre/atlas-shared-config",

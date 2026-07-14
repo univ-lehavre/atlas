@@ -1,0 +1,67 @@
+[project]
+name = "scholar-network-dagster"
+version = "0.0.0"
+description = "Code-location Dagster scholar-network — profils de chercheurs d'un réseau, ADR 0103"
+requires-python = ">=3.10,<3.11"
+# Parité avec l'image Dagster du cluster (python:3.10-slim, dagster==1.13.7,
+# ADR cluster 0006 : verrou chart Helm <-> paquet Python 1:1).
+# SQUELETTE (lot 1, plan 2026-07-13-scholar-network) : dépendances réduites au socle
+# nécessaire à un chargement gRPC inerte + au lot 2 à venir (brut pré-filtré + cache).
+# Socle Dagster + DuckDB + embedding ONNX (lot 5). Les briques non requises ici
+# (great-expectations, scikit-learn, mlflow, evidently, dbt) restent hors périmètre.
+dependencies = [
+  "dagster==1.13.7",
+  # Le run worker (K8sRunLauncher) EST cette image : à chaque run, le launcher
+  # crée un pod depuis DAGSTER_CURRENT_IMAGE (= cette image) qui REHYDRATE
+  # l'instance Dagster du cluster (dagster.yaml). Or le socle configure
+  # PostgresRunStorage/ScheduleStorage + K8sRunLauncher (contrat ADR 0043) : le
+  # pod doit donc pouvoir importer dagster_postgres ET dagster_k8s, sinon il
+  # échoue au démarrage (« Couldn't import module dagster_postgres.run_storage »)
+  # avant même d'exécuter l'asset. Numérotation propre 0.YY.Z (comme dagster-dbt,
+  # PAS celle de dagster core) : 0.29.7 ↔ dagster 1.13.7 (parité chart Helm ↔
+  # paquet Python, ADR cluster 0006).
+  "dagster-postgres==0.29.7",
+  "dagster-k8s==0.29.7",
+  "openlineage-python",
+  # Lakehouse DuckDB↔S3 (lot 2, brut pré-filtré projeté) : DuckDB lit le Parquet
+  # OpenAlex et écrit du Parquet sur S3 (httpfs path-style). numpy est explicité car
+  # importé directement par le futur code d'agrégation (lot 5) ; présent dès le socle
+  # pour figer une résolution stable.
+  "duckdb",
+  "numpy",
+  # Embedding sémantique par article (lot 5, profils) : vecteur(384) calculé en Python
+  # natif sur le MÊME model_quantized.onnx (all-MiniLM-L6-v2) que citation — parité stricte
+  # (embedding.py copié, ADR 0055). onnxruntime (MIT) exécute l'inférence, tokenizers
+  # (Apache-2.0) reproduit le WordPiece ; déterminisme à 1 thread (ADR 0057). Épinglés comme
+  # citation (résolution multi-arch vérifiée).
+  "onnxruntime==1.23.2",
+  "tokenizers==0.23.1",
+]
+# NB : dagster-postgres tire psycopg2-binary (LGPL) en transitive. Cette image
+# l'embarque NÉCESSAIREMENT pour rehydrater l'instance dans le run worker (voir
+# plus haut) ; on l'assume dans dataops/ (Python, hors gate licences Node — ADR
+# 0055). Le code applicatif, lui, n'utilise jamais psycopg2 directement : l'index
+# (lot 5) passera par DuckDB `ATTACH ... TYPE postgres`, pas par psycopg2.
+
+[dependency-groups]
+dev = ["ruff==0.15.21", "pytest", "pytest-cov", "hypothesis==6.156.6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/scholar_network_dagster"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "--cov=scholar_network_dagster --cov-report=term-missing --cov-fail-under=90"

@@ -1,0 +1,46 @@
+# Prod : l'ObjectBucketClaim génère un Secret (AWS_*) ET un ConfigMap (BUCKET_*)
+# du nom de la claim. La code-location branche les deux.
+#
+# DAGSTER_CURRENT_IMAGE est l'image que le K8sRunLauncher donne aux pods de RUN
+# (run workers). kustomize `images:` ne réécrit QUE le champ `image:` du conteneur,
+# pas cette valeur d'env — sinon le serveur gRPC tournerait sur la bonne image mais
+# les runs sur `:dev` (code divergent). On la factorise donc en un placeholder
+# DISTINCT, injecté par cluster avec la RÉFÉRENCE COMPLÈTE par digest
+# (registry:80/…@sha256:…, ADR cluster 0095 §2). Plus de tag à tenir synchronisé à la
+# main : les deux placeholders (ici + images[].digest de la kustomization) sont remplis
+# d'un seul coup par le seed — fin du double-couplage (audit #499). atlas FOURNIT le trou,
+# cluster le REMPLIT (frontière ADR 0094).
+#
+# SCHOLAR_NETWORK_S3_SECRET / SCHOLAR_NETWORK_S3_CONFIGMAP nommeront les ressources de l'OBC
+# pour les pods de RUN : le futur code (lots 2–5) les branchera au niveau run via
+# dagster-k8s/config (les env/envFrom du Deployment ne se propagent PAS aux pods de run,
+# piège ADR 0086). Le ConfigMap est REQUIS en prod (l'OBC sépare BUCKET_* du Secret AWS_*).
+# Tenir ces noms = celui de l'ObjectBucketClaim.
+#
+# NB SQUELETTE : pas de point d'ancrage `persistence.mode` ici. Le cache du brut pré-filtré
+# piloté par `persistence.mode` (ADR 0103 §3, Voie A env de l'ADR 0102) sera câblé au lot 2
+# (asset `prefiltered_raw` + variable d'env dédiée), pas au squelette.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scholar-network-dagster
+  namespace: dagster
+spec:
+  template:
+    spec:
+      containers:
+        - name: grpc
+          env:
+            - name: DAGSTER_CURRENT_IMAGE
+              # Placeholder RÉFÉRENCE COMPLÈTE — injecté par cluster (ADR 0095 §2) :
+              # registry:80/scholar-network-dagster@sha256:… (image par digest des pods de run).
+              value: __SCHOLAR_NETWORK_IMAGE__
+            - name: SCHOLAR_NETWORK_S3_SECRET
+              value: scholar-network-datalake # = nom de l'ObjectBucketClaim (Secret AWS_*)
+            - name: SCHOLAR_NETWORK_S3_CONFIGMAP
+              value: scholar-network-datalake # = nom de l'ObjectBucketClaim (ConfigMap BUCKET_*)
+          envFrom:
+            - secretRef:
+                name: scholar-network-datalake
+            - configMapRef:
+                name: scholar-network-datalake
