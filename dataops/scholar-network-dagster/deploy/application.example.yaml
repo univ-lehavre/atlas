@@ -5,8 +5,8 @@
 # `atlas` (univ-lehavre/cluster → platform/argocd/appproject-atlas.yaml, qui
 # autorise le ns `dagster`).
 #
-# Patron `*.example` (ADR 0023/0111) : `repoURL` et `targetRevision` sont des VALEURS
-# PROPRES À UNE INSTANCE — surchargées au déploiement (config locale non
+# Patron `*.example` (ADR 0023/0111) : `repoURL` est une VALEUR PROPRE À UNE
+# INSTANCE — surchargée au déploiement (config locale non
 # versionnée : kustomize patch, envsubst, ou variante ré-appliquée). On NE grave
 # jamais ici l'URL réelle d'un dépôt atlas. La forge cible est le Gitea
 # intra-banc (air-gapped, ADR 0044) ou un remote git de l'instance.
@@ -25,7 +25,11 @@ spec:
   source:
     # EXEMPLE générique — surcharger par le dépôt réel de l'instance.
     repoURL: http://gitea-http.gitea.svc.cluster.local/atlas/atlas.git
-    targetRevision: main
+    # DOCTRINE (ADR 0104 / ADR cluster 0113) : Argo CD suit `deploy` — la projection
+    # mécanique `main ⊕ digests` matérialisée par la chaîne de livraison
+    # (scripts/regenerate-deploy.sh). JAMAIS `main` : ses placeholders d'image ne sont
+    # pas substitués — un pod ne doit jamais tenter de tirer `__<CL>_IMAGE_DIGEST__`.
+    targetRevision: deploy
     path: dataops/scholar-network-dagster/deploy/overlays/prod
   destination:
     server: https://kubernetes.default.svc
