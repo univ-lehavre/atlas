@@ -83,5 +83,14 @@ echo "→ vérification : la pré-image $sha_deps est présente au registre"
 REGISTRY_ENDPOINT="$endpoint" uv --project "$cl_dir" run python "$check" \
   --check-registry --registry-endpoint "$endpoint"
 
+# ── 4. Matérialise la référence pour la chaîne de livraison (ADR 0104) ───────
+# Le workflow in-cluster (.gitea/workflows/livraison.yaml) LIT ce fichier pour le
+# FROM de la cible `code` : le runner (air-gappé, sans python) ne recalcule rien.
+# La FRAÎCHEUR est gardée au portail QUALITÉ : un test pytest vérifie que ce
+# fichier == `--print-tag` — bumper le lock sans re-builder la pré-image (et
+# committer ce fichier) casse la CI GitHub AVANT le merge.
+printf '%s\n' "$logical_tag" > "$cl_dir/deploy/deps-base.ref"
+echo "→ deploy/deps-base.ref mis à jour — à COMMITTER avec le bump du lock."
+
 echo "✓ pré-image poussée : $logical_tag"
 echo "  Le build de code peut désormais faire FROM …:$sha_deps (--build-arg DEPS_REF)."

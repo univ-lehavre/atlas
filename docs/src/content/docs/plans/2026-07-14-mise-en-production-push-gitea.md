@@ -51,13 +51,25 @@ title: Plan — Mise en production par push Gitea (chaîne de livraison bout-en-
 
 **Done.** Revue du workflow ; preuve au banc : push d'un commit touchant UNE code-location → seule elle est rebuildée, `deploy` porte son nouveau digest ET les anciens des autres.
 
-### Lot 2 — cluster : droits d'écriture du job CI + épreuve
+### Lot 2 — chaîne exécutable ×4 (atlas) + droits du job CI (cluster)
 
-**But.** Le job Actions peut pousser `deploy` sur le dépôt atlas de la forge.
+> **Révision (2026-07-14, à l'implémentation).** Deux constats de reconnaissance ont
+> recadré ce lot. (1) Le runner `act_runner` (alpine) n'embarque pas `python3` : plutôt
+> qu'en faire un prérequis d'usine, la **fraîcheur passe au portail QUALITÉ** —
+> `build-deps-base.sh` écrit `deploy/deps-base.ref` (la référence logique de la
+> pré-image, committée avec le bump du lock), un **test pytest de parité**
+> (`test_deps_base_ref.py`, ref == `--print-tag`) casse la CI GitHub avant le merge si
+> le lock diverge, et le workflow **lit le fichier** (zéro python sur le runner ; le
+> `FROM` échoue bruyamment si le tag n'a jamais été poussé). (2) `mediawatch` et
+> `pageviews` étaient restés en Dockerfile **mono-cible** (in-buildable in-pod) : leur
+> **migration au patron deux-cibles 0110** (Dockerfile, scripts de fraîcheur,
+> build-\*.sh, `.ref`, test) fait partie du lot — sans elle la chaîne ne couvre pas ×4.
 
-**Portée.** Vérifier que le token Actions natif de Gitea autorise le push sur le dépôt courant ; sinon, livrable nestor : compte/token de livraison (secret d'instance, jamais versionné). Ajouter l'épreuve nestor « scénario 27 réel » (une code-location Dagster de bout en bout par la chaîne, remplaçant le jouet du 35) au catalogue.
+**But.** Le job Actions peut pousser `deploy`, et la chaîne couvre les **quatre** code-locations.
 
-**Done.** `deploy` poussé par un job CI au banc ; épreuve au catalogue.
+**Portée.** atlas : pivot `.ref` + parité (×4) et migration deux-cibles de mediawatch/pageviews. cluster : vérifier que le token Actions natif de Gitea autorise le push sur le dépôt courant ; sinon, livrable nestor : compte/token de livraison (secret d'instance, jamais versionné). Ajouter l'épreuve nestor « scénario 27 réel » (une code-location Dagster de bout en bout par la chaîne, remplaçant le jouet du 35) au catalogue.
+
+**Done.** Tests de parité verts ×4 ; les 4 Dockerfiles au patron deux-cibles ; `deploy` poussé par un job CI au banc ; épreuve au catalogue.
 
 ### Lot 3 — atlas : bascule Argo CD + le geste
 
