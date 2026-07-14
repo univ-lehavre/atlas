@@ -137,6 +137,7 @@ l'index ci-dessous est donc volontaire.
 | 0101 | [Sélection du « dernier run complet » par récence (ModTime), pas par ordre lexical du run_id](/atlas/decisions/0101-selection-dernier-run-complet-par-recence/)              | Accepted           |
 | 0102 | [Réaction du pipeline au curseur persistence.mode : cache adaptatif à paliers (socle sobre + horizon)](/atlas/decisions/0102-cache-adaptatif-reaction-persistence-mode/)     | Accepted           |
 | 0103 | [Code-location « profils de chercheurs d'un réseau » : ingestion en deux passes et cache du brut pré-filtré](/atlas/decisions/0103-code-location-profils-chercheurs-reseau/) | Proposed           |
+| 0104 | [Mise en production par push Gitea : geste humain, workflows de livraison, branche deploy](/atlas/decisions/0104-mise-en-production-push-gitea/)                             | Proposed           |
 
 ## Quand ouvrir un ADR
 

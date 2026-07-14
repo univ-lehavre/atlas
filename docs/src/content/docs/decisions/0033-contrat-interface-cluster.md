@@ -295,14 +295,31 @@ est le **déclencheur automatique** (zéro geste manuel), et l'intervention
 humaine se recentre sur la **revue de PR** (garde-fou GitOps en amont du merge),
 plus sur un geste de déploiement.
 
-**Ce qui ne change pas — la frontière ([ADR cluster 0094](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0094-frontiere-deploiement-applicatif.md)).**
-`atlas` **déclare et fournit** (manifeste montant `code-location.manifest.yaml`,
-placeholders `__CITATION_IMAGE__` / `__CITATION_IMAGE_DIGEST__` dans ses
-manifestes) ; `cluster` **valide, instancie et remplit** (lit le manifeste,
-build l'image, lit le digest, crée l'`Application` Argo CD). Le point « Images »
-du contrat (taguées explicitement, jamais `latest`) tient toujours : le **tag
-`:<revision>`** trace le lien commit→image (lisible), mais le **déploiement se
-fait par digest `@sha256`** (ancre d'immuabilité — cf. les manifestes montants et
+**La frontière, précisée (2026-07-14 — [ADR cluster 0111](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0111-atlas-instancie-application-argocd.md), [ADR cluster 0112](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0112-cicd-in-cluster-gitea-actions-buildkit.md), [ADR 0104](/atlas/decisions/0104-mise-en-production-push-gitea/)).**
+La formulation historique « cluster valide, instancie et remplit » ([ADR cluster
+0094](https://github.com/univ-lehavre/cluster/blob/main/docs/decisions/0094-frontiere-deploiement-applicatif.md))
+est **périmée** depuis l'ADR cluster 0111 (le seed de substitution a été retiré
+de cluster). Le flux réel distingue **trois** acteurs :
+
+- `atlas` **déclare, fournit et instancie** : le manifeste montant
+  `code-location.manifest.yaml`, les manifestes kustomize à placeholders
+  (`__<CL>_IMAGE__` / `__<CL>_IMAGE_DIGEST__`), les migrations (hooks PreSync),
+  les **workflows de livraison** (`.gitea/workflows/`) et l'`Application`
+  Argo CD de chaque code-location.
+- `cluster` **valide et fournit l'usine** : il lit/valide le manifeste montant
+  (`check_code_location_manifest.py`), provisionne les contenants (base
+  logique, secret, capacité) et installe la plateforme (forge, runner,
+  buildkitd, registre, Argo CD, Dagster) — il ne build ni ne déploie plus rien
+  lui-même.
+- **l'usine in-cluster exécute** : au push de `main` vers la forge (geste
+  humain, ADR 0104), elle builde les code-locations changées et **matérialise
+  les digests sur la branche `deploy`** (ADR cluster 0113, paire de l'ADR 0104)
+  que suivent les `Application`.
+
+Le point « Images » du contrat (taguées explicitement, jamais `latest`) tient
+toujours : le **tag `:<revision>`** trace le lien commit→image (lisible), mais
+le **déploiement se fait par digest `@sha256`** (ancre d'immuabilité — cf. les
+manifestes montants et
 [ADR 0075](/atlas/decisions/0075-deploiement-prod-par-digest-injecte-cluster/)).
 
 **Points de contact par code-location.** Ce contrat vaut **par code-location** : chaque
