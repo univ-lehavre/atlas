@@ -1,0 +1,109 @@
+# Chaîne de LIVRAISON in-cluster (ADR 0104 atlas / ADR 0113 cluster — lot 1 du plan
+# 2026-07-14-mise-en-production-push-gitea).
+#
+# Lu par la forge GITEA de l'instance (pas par GitHub, qui ignore `.gitea/`) : le push
+# de `main` vers la forge — LE geste humain de mise en production — déclenche ce
+# pipeline, qui builde les code-locations CHANGÉES dans l'usine (buildkitd rootless,
+# zéro egress, ADR cluster 0110/0112) puis MATÉRIALISE les digests sur la branche
+# `deploy` (projection `main ⊕ digests`, scripts/regenerate-deploy.sh) que suivent les
+# Applications Argo CD.
+#
+# PÉRIMÈTRE : livraison seule — AUCUN re-jeu des tests (la qualité se joue avant le
+# merge, hooks + CI GitHub ; le push ne part que de `main` revu). Patterns d'exécution
+# repris du scénario 35 cluster (prouvé air-gap) : `runs-on: host` (act_runner mode
+# host, buildctl copié par initContainer), checkout MANUEL par token (aucune action de
+# marketplace — la forge est air-gappée), push au registre par FQDN + insecure (le pod
+# ne résout pas `registry` court ; les manifestes, eux, gardent `registry:80`, résolu
+# node-side par le kubelet — ADR cluster 0011).
+#
+# GARDE-FOU de boucle : `branches: [main]` — le push de `deploy` par ce workflow ne
+# re-déclenche RIEN. Prérequis runner (lot 2 cluster) : `python3` (pour le garde-fou
+# de fraîcheur --print-tag) et le droit de push du token sur `deploy`.
+name: livraison
+
+on:
+  push:
+    branches: [main]
+
+env:
+  # Adresses du SOCLE (ADR cluster 0112, mêmes valeurs que le scénario 35). Une
+  # instance qui en divergerait les surchargerait par variables de dépôt Gitea.
+  BUILDKITD: tcp://buildkitd.buildkit.svc.cluster.local:1234
+  REGISTRY_FQDN: registry.registry.svc.cluster.local:80
+
+jobs:
+  livrer:
+    runs-on: host
+    steps:
+      - name: checkout (manuel — forge air-gappée, aucune action de marketplace)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -eu
+          AUTH="$(printf "%s" "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git" | sed -E "s#://#://x:${GITHUB_TOKEN}@#")"
+          rm -rf repo && git init -q repo && cd repo && git remote add origin "$AUTH"
+          # Le sha livré, l'ancien deploy (report des digests) et l'ancien main (diff).
+          git fetch -q origin "${GITHUB_SHA}"
+          git fetch -q origin deploy || true
+          BEFORE="${{ github.event.before }}"
+          case "$BEFORE" in *[!0]*) git fetch -q origin "$BEFORE" || true ;; esac
+          git checkout -q "${GITHUB_SHA}"
+
+      - name: code-locations changées (diff before..sha ; repli = toutes)
+        run: |
+          set -eu
+          cd repo
+          BEFORE="${{ github.event.before }}"
+          ALL="$(ls -d dataops/*-dagster 2>/dev/null | while read -r d; do [ -f "$d/Dockerfile" ] && basename "$d"; done)"
+          if printf '%s' "$BEFORE" | grep -qE '^0+$' || ! git cat-file -e "$BEFORE" 2>/dev/null; then
+            # Premier push / historique inaccessible : on rebuilde TOUT (jamais de trou
+            # silencieux — un digest absent rend la code-location non déployable).
+            CHANGED="$ALL"
+          else
+            CHANGED="$(git diff --name-only "$BEFORE" "$GITHUB_SHA" -- 'dataops/*-dagster/**' \
+              | cut -d/ -f2 | sort -u \
+              | while read -r d; do [ -f "dataops/$d/Dockerfile" ] && echo "$d"; done)"
+          fi
+          printf '%s\n' $CHANGED > ../changed.txt
+          echo "code-locations à builder : $(tr '\n' ' ' < ../changed.txt)"
+
+      - name: build in-pod des code-locations changées (buildctl → buildkitd, zéro egress)
+        run: |
+          set -eu
+          cd repo
+          : > ../digests.args
+          command -v python3 >/dev/null || {
+            echo "✗ python3 absent du runner — requis par le garde-fou de fraîcheur" >&2
+            echo "  (check_deps_base_freshness --print-tag). Prérequis runner, lot 2 cluster." >&2
+            exit 1
+          }
+          while read -r d; do
+            [ -n "$d" ] || continue
+            cl="${d%-dagster}"
+            # Garde de fraîcheur : le tag SHA_DEPS est CALCULÉ du lock + de la tranche
+            # deps du Dockerfile (+ provenance du modèle). Si la pré-image n'a pas été
+            # rebuildée pour cet état, ce tag N'EXISTE PAS au registre → le FROM du
+            # build échoue BRUYAMMENT — c'est le contrat (pré-image = flux poste, ADR 0110).
+            logical="$(cd "dataops/$d" && python3 scripts/check_deps_base_freshness.py --print-tag)"
+            deps_ref="${REGISTRY_FQDN}/${logical#registry:80/}"
+            tag="$(printf '%s' "$GITHUB_SHA" | cut -c1-12)"
+            echo "── build $d ← FROM $deps_ref"
+            buildctl --addr "$BUILDKITD" build \
+              --frontend dockerfile.v0 \
+              --local context=dataops --local "dockerfile=dataops/$d" \
+              --opt target=code \
+              --opt "build-arg:DEPS_REF=$deps_ref" \
+              --output "type=image,name=${REGISTRY_FQDN}/${d}:${tag},registry.insecure=true,push=true" \
+              --metadata-file "/tmp/meta-$d.json"
+            digest="$(sed -n 's/.*"containerimage.digest":"\(sha256:[0-9a-f]*\)".*/\1/p' "/tmp/meta-$d.json")"
+            [ -n "$digest" ] || { echo "✗ $d : digest introuvable dans les métadonnées buildctl." >&2; exit 1; }
+            echo "   → ${d}:${tag} @ $digest"
+            printf -- '--set\n%s=%s\n' "$cl" "$digest" >> ../digests.args
+          done < ../changed.txt
+
+      - name: write-back — régénère deploy (main ⊕ digests, report inclus)
+        run: |
+          set -eu
+          cd repo
+          # shellcheck disable=SC2046
+          bash scripts/regenerate-deploy.sh --sha "$GITHUB_SHA" $(tr '\n' ' ' < ../digests.args)
