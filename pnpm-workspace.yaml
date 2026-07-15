@@ -19,25 +19,38 @@ packages:
   - dataops/pageviews-dagster
   - dataops/scholar-network-dagster
 
+# Scripts d'installation : QUI a le droit d'exécuter du code à l'install (pnpm ≥ 11).
+# `allowBuilds` REMPLACE `onlyBuiltDependencies`/`neverBuiltDependencies`/
+# `ignoredBuiltDependencies`, retirés en v11 (une map explicite au lieu de trois listes).
+# Non listé = REFUSÉ, et l'install ÉCHOUE (`strictDepBuilds` vaut true par défaut) : un
+# postinstall est du code arbitraire lancé à chaque install, y compris en CI — chaque
+# `true` ci-dessous est une décision revue, pas un défaut hérité.
+allowBuilds:
+  # Binaires natifs / bindings : le build est le produit même du paquet.
+  "@parcel/watcher": true
+  "@swc/core": true
+  esbuild: true
+  msgpackr-extract: true
+  protobufjs: true
+  unrs-resolver: true
+  # Outils qui posent leur binaire à l'install (hooks git, CLI, OCR, mocks HTTP).
+  "@sentry/cli": true
+  lefthook: true
+  msw: true
+  tesseract.js: true
+  # TÉLÉMÉTRIE d'installation, aucun besoin fonctionnel — refusé.
+  "@scarf/scarf": false
+  # sharp est déjà écarté à l'installation (`ignoredOptionalDependencies` : libvips LGPL,
+  # la doc n'utilise pas le service d'images Astro — ADR 0036). Refus cohérent : son
+  # script ne doit pas tourner si le paquet lui-même n'est pas voulu.
+  sharp: false
+
 ignoredOptionalDependencies:
   # sharp (optionalDependency d'astro) tire @img/sharp-libvips-* en LGPL.
   # On ne l'installe pas : la doc n'utilise pas le service d'images Astro
   # (logos servis statiquement depuis public/). Évite la licence LGPL sans
   # exception à maintenir (ADR 0036).
   - sharp
-
-onlyBuiltDependencies:
-  - "@duckdb/node-api"
-  - "@parcel/watcher"
-  - "@scarf/scarf"
-  - core-js
-  - esbuild
-  - lefthook
-  - msgpackr-extract
-  - protobufjs
-  - tesseract.js
-  - unrs-resolver
-  - vue-demi
 
 # Moved from the deprecated `pnpm.*` block in package.json: pnpm 10 reads
 # these from here, not from package.json (silent-ignore otherwise).
