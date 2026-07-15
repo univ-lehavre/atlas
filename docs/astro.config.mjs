@@ -162,6 +162,10 @@ export default defineConfig({
             { label: "Pipeline CI", link: "/quality/ci-pipeline/" },
             { label: "Hooks Git", link: "/quality/hooks/" },
             {
+              label: "Mettre en production",
+              link: "/collaboration/mise-en-production/",
+            },
+            {
               label: "Avant une mise en service",
               link: "/collaboration/checklist-deploiement/",
             },

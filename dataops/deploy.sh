@@ -14,7 +14,7 @@
 # léger reste `dataops/<cl>-dagster/deploy/install.sh bench`.)
 #
 # Garde de cible (ADR 0073 §B) : la forge cible se LIT dans le `.env` d'instance
-# (`GITEA_PUSH_URL`, généré par l'access.sh du dépôt cluster — contrat ADR 0033) ;
+# (`GITEA_PUSH_URL`, généré par `nestor access` du dépôt cluster — contrat ADR 0033) ;
 # elle n'est JAMAIS déduite de l'environnement ambiant. Cible absente = refus bruyant.
 #
 # Usage : dataops/deploy.sh [--yes]
@@ -40,9 +40,9 @@ if [ -f "$env_file" ]; then
 fi
 if [ -z "${GITEA_PUSH_URL:-}" ]; then
   echo "✗ cible de livraison non confirmée : GITEA_PUSH_URL absente." >&2
-  echo "  Atlas LIT sa cible dans $env_file (généré par l'access.sh du dépôt" >&2
-  echo "  cluster, contrat ADR 0033) ; il ne la devine pas. Régénérer le .env" >&2
-  echo "  d'instance, ou exporter GITEA_PUSH_URL explicitement (ADR 0073 §B)." >&2
+  echo "  Atlas LIT sa cible dans $env_file (généré par \`nestor access\` du" >&2
+  echo "  dépôt cluster, contrat ADR 0033) ; il ne la devine pas. Régénérer le" >&2
+  echo "  .env d'instance, ou exporter GITEA_PUSH_URL explicitement (ADR 0073 §B)." >&2
   exit 2
 fi
 
