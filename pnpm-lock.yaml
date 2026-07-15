@@ -1045,6 +1045,8 @@ importers:
 
   dataops/pageviews-dagster: {}
 
+  dataops/scholar-network-dagster: {}
+
   docs:
     dependencies:
       '@astrojs/starlight':

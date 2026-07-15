@@ -83,9 +83,14 @@ chore, revert`.
 
 ## Outillage
 
-- **pnpm** pinné (`packageManager: pnpm@10.33.2`), **Node ≥ 24** (`.nvmrc` figé
+- **pnpm** pinné (`packageManager: pnpm@11.13.0`), **Node ≥ 24** (`.nvmrc` figé
   au patch). Monorepo Turbo, ≈52 workspaces en 8 catégories enforcées par
   `pnpm audit:structure`.
+- **Scripts d'installation** : toute dépendance qui exécute un script d'install doit
+  être tranchée dans la map **`allowBuilds`** de `pnpm-workspace.yaml` (pnpm ≥ 11 ;
+  remplace `onlyBuiltDependencies`). Non listée = **refusée**, et l'install **échoue**
+  (`strictDepBuilds`). Un `pnpm install` qui réclame une approbation n'est pas un bug :
+  arbitrer (`true`/`false` + la raison), jamais désactiver la garde.
 - **`dataops/`** est en **Python natif** (uv/ruff/pytest), **hors** du graphe
   pnpm ([ADR 0055](docs/src/content/docs/decisions/0055-categorie-dataops-python/)) —
   les outils Node (knip, audit:structure) l'ignorent.
