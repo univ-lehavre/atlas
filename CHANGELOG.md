@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.10.0](https://github.com/univ-lehavre/atlas/compare/v1.9.0...v1.10.0) (2026-07-15)
+
+
+### Features
+
+* bascule les applications argo cd sur deploy + geste deploy.sh (lot 3, adr 0104) ([832b334](https://github.com/univ-lehavre/atlas/commit/832b33434251ea709bd8791a3caf971367c1cef3))
+* bascule les applications argo cd sur deploy + geste deploy.sh (lot 3, adr 0104) ([#641](https://github.com/univ-lehavre/atlas/issues/641)) ([a799eea](https://github.com/univ-lehavre/atlas/commit/a799eea3afc02020f7bab019309b0169aa3974eb))
+* chaîne de livraison exécutable ×4 — deps-base.ref + migration deux cibles (lot 2, adr 0104) ([#642](https://github.com/univ-lehavre/atlas/issues/642)) ([6a5a9d1](https://github.com/univ-lehavre/atlas/commit/6a5a9d1fe916091f241dec842627370ccd81e95d))
+* fraîcheur de la pré-image au portail qualité — deps-base.ref (lot 2, adr 0104) ([54c8804](https://github.com/univ-lehavre/atlas/commit/54c880428991c45c797bd2f9365585cfcb32f368))
+* migre mediawatch et pageviews au patron pré-image deux cibles (lot 2, adr 0104) ([55e5ee6](https://github.com/univ-lehavre/atlas/commit/55e5ee6e15084057eb550c18bc55ba5391a28079))
+* **scholar-network-dagster:** asset prefiltered_raw exécutable (lot 2, [#632](https://github.com/univ-lehavre/atlas/issues/632)) ([52c562a](https://github.com/univ-lehavre/atlas/commit/52c562a2fa3ac984b1b34ede83778853aafb6625))
+* **scholar-network-dagster:** brut pré-filtré + gradient de cache (lot 2, [#632](https://github.com/univ-lehavre/atlas/issues/632)) ([cbe281b](https://github.com/univ-lehavre/atlas/commit/cbe281baffb58c04772e0bed2cf9e18e6ce2a0cf))
+* **scholar-network-dagster:** code-location profils de chercheurs d'un réseau ([#632](https://github.com/univ-lehavre/atlas/issues/632)) ([#637](https://github.com/univ-lehavre/atlas/issues/637)) ([5fdd596](https://github.com/univ-lehavre/atlas/commit/5fdd596c06749ad659b1abc4c136c76c92e98cb8))
+* **scholar-network-dagster:** passes 1 et 2 — chercheurs + élargissement (lots 3-4, [#632](https://github.com/univ-lehavre/atlas/issues/632)) ([086b66c](https://github.com/univ-lehavre/atlas/commit/086b66c7cd512bb05238d6e054ebcbffcd607560))
+* **scholar-network-dagster:** plomberie de mise en production + contrat de schéma servi ([ca6d7c5](https://github.com/univ-lehavre/atlas/commit/ca6d7c51e53a63da5095bd29cb7192c6a8cf65fe))
+* **scholar-network-dagster:** plomberie de mise en production + contrat de schéma servi ([#638](https://github.com/univ-lehavre/atlas/issues/638)) ([6ee266b](https://github.com/univ-lehavre/atlas/commit/6ee266b04ac6482afb6e8efac03413982516f897))
+* **scholar-network-dagster:** profils chercheurs → pgvector + câblage (lot 5, [#632](https://github.com/univ-lehavre/atlas/issues/632)) ([12309e7](https://github.com/univ-lehavre/atlas/commit/12309e78e4ef5b3b10737852869ca3b871eac639))
+* **scholar-network-dagster:** squelette de la code-location (lot 1, [#632](https://github.com/univ-lehavre/atlas/issues/632)) ([31c56c5](https://github.com/univ-lehavre/atlas/commit/31c56c5a193b79c78e4f239a7c58ff76e362527f))
+
+
+### Bug Fixes
+
+* **citation-dagster:** régénère le lock périmé vs pyproject + re-seed deps-base.ref ([edd80d4](https://github.com/univ-lehavre/atlas/commit/edd80d477e8678e965a519d0e1a2a743ff152b9d))
+* **scholar-network-dagster:** unicité des work_id + départage déterministe ([#632](https://github.com/univ-lehavre/atlas/issues/632)) ([b3268c1](https://github.com/univ-lehavre/atlas/commit/b3268c121b61168c5a8c421b64a1169ea9aa2a1b))
+
+
+### Documentation
+
+* acte l'adr 0104 — mise en production par push gitea (accepted) ([eedf09d](https://github.com/univ-lehavre/atlas/commit/eedf09dba789dcb11fd80cc5e3714293182dbd75))
+* acte la code-location scholar-network (adr 0103 + plan des 5 lots) ([d5ea0fa](https://github.com/univ-lehavre/atlas/commit/d5ea0fa400efac3306e34109892646505af5b951))
+* acte la mise en production par push gitea (adr 0104 + plan, paire de l'adr cluster 0113) ([4b35474](https://github.com/univ-lehavre/atlas/commit/4b354740b79bbfb3abd53790f45db6512ab63ed6))
+* acte la mise en production par push gitea (adr 0104 + plan) ([#639](https://github.com/univ-lehavre/atlas/issues/639)) ([323a178](https://github.com/univ-lehavre/atlas/commit/323a178263f493eb858a1d90cfb738da1164f258))
+* ajoute le jalon d'intégration réelle (node1) au plan scholar-network ([02cef75](https://github.com/univ-lehavre/atlas/commit/02cef75df6ed33ef3b2eda90ddf2f25a59424042))
+
 ## [1.9.0](https://github.com/univ-lehavre/atlas/compare/v1.8.0...v1.9.0) (2026-07-13)
 
 
