@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.10.1](https://github.com/univ-lehavre/atlas/compare/v1.10.0...v1.10.1) (2026-07-16)
+
+
+### Bug Fixes
+
+* **deps:** bump pnpm 10.33.2 → 11.13.0 — l'audit npm répond à nouveau ([9b6670d](https://github.com/univ-lehavre/atlas/commit/9b6670d7bb922a51e46ef9818d232359176bc115))
+* **deps:** bump pnpm 10.33.2 → 11.13.0 — l'audit npm répond à nouveau ([#644](https://github.com/univ-lehavre/atlas/issues/644)) ([be03742](https://github.com/univ-lehavre/atlas/commit/be03742b5371868db6b7790241733e0e8fd967a9))
+
+
+### Documentation
+
+* guide de mise en production — le geste, la cible, les trois terrains (adr 0104) ([07916a0](https://github.com/univ-lehavre/atlas/commit/07916a0c9d5f55f11ba6ab7119d4e7bc85c49dd4))
+* guide de mise en production — le geste, la cible, les trois terrains (ADR 0104) ([#645](https://github.com/univ-lehavre/atlas/issues/645)) ([174868d](https://github.com/univ-lehavre/atlas/commit/174868dffe1394444c4e167f2d21c29bdaeea8c7))
+
 ## [1.10.0](https://github.com/univ-lehavre/atlas/compare/v1.9.0...v1.10.0) (2026-07-15)
 
 
