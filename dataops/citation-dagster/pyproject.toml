@@ -43,7 +43,7 @@ dependencies = [
   # in-process sur DataFrame pandas (contexte éphémère, hermétique). GE 1.18 tire
   # numpy/scipy/pandas/cryptography (image plus lourde, ~200 Mo) — toutes licences
   # permissives ; épinglé (la résolution multi-arch vérifiée en dépend).
-  "great-expectations==1.18.2",
+  "great-expectations==1.19.0",
   # Embedding sémantique par publication (étape 4, lot 3) : le vecteur(384) est
   # calculé en Python natif sur le MÊME model_quantized.onnx (all-MiniLM-L6-v2,
   # vendoré sous src/.../models/) que le code TS — sans torch, modèle cuit
@@ -97,7 +97,7 @@ override-dependencies = ["deepdiff>=8,<9"]
 # les dérivations bornées pures (uplift_model.py : symétrie, bornes, déterminisme).
 # Dev-dépendance de test uniquement (zéro empreinte runtime) ; épinglée et verrouillée
 # par uv.lock.
-dev = ["ruff==0.15.21", "pytest", "pytest-cov", "hypothesis==6.156.6"]
+dev = ["ruff==0.15.22", "pytest", "pytest-cov", "hypothesis==6.157.0"]
 
 [build-system]
 requires = ["hatchling"]
